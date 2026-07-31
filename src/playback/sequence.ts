@@ -15,11 +15,14 @@ import { Rect } from '../geometry';
  * (a plain repeat that plays twice is `times: 1`); a volta `repeatending`'s `times` is how many
  * passes that ending covers. An ending can span measures, so every measure it covers carries a
  * `repeatending` and only the run's final one sets `last` — the measure playback jumps from.
+ * `number` is the ending's FIRST pass number ("1" -> 1, "2,3" -> 2), which is what tells two
+ * adjacent volta groups apart: a run whose number is not greater than the previous run's has
+ * restarted, so it belongs to an enclosing repeat block rather than to the same group.
  * Derived from MusicXML barlines/endings by SequenceFactory. */
 export type Jump =
 	| { type: 'repeatstart' }
 	| { type: 'repeatend'; times: number }
-	| { type: 'repeatending'; times: number; last: boolean };
+	| { type: 'repeatending'; times: number; last: boolean; number: number };
 
 /* One measure in document (visual) order. `beats` is its played length in quarter-note beats (the
  * max note end, or the meter); `tempoBpm` is the quarter-note BPM in effect at its start, or null to

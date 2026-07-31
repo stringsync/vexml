@@ -5,7 +5,6 @@ import type {
 	Measure,
 	Note,
 	Part,
-	Voice as ScoreVoice,
 	Time,
 } from '@stringsync/mdom';
 import {
@@ -118,12 +117,14 @@ import type {
 	PedalMark,
 	Placement,
 	ScoreReader,
+	StaffVoice,
 	TempoMark,
 	WedgeMark,
 } from './score-reader';
 import { dynamicGlyphs } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
 import {
+	barlineBreaks,
 	isTabStaff,
 	type PartGroup,
 	partGroups,
@@ -348,7 +349,17 @@ type PendingStave = {
 	isTab: boolean;
 	vexVoices: Voice[];
 	beams: ReturnType<SpannerBuilder['buildBeams']>;
+	// Beam groups read off this stave's voices, waiting on the rest of the part's staves
+	// before they can be built — a cross-staff run names notes another stave drew. Consumed
+	// (and emptied into `beams`) by buildPartBeams.
+	beamPlans: Array<{
+		groups: ReturnType<SpannerBuilder['groupBeams']>;
+		defaultStem?: 'up' | 'down';
+	}>;
 	tuplets: ReturnType<SpannerBuilder['buildTuplets']>;
+	// Each voice's chords, waiting alongside beamPlans: a tuplet hides its bracket when its
+	// notes are already beamed, so it has to be built AFTER the beams are.
+	tupletChords: Chord[][];
 	// Real notes only (no gap-filling ghosts), for the bottom-bound calc.
 	staveNotes: StaveNote[];
 	// StaveNotes whose lead carries a tie — they get a tie-apex collision obstacle once their
@@ -588,6 +599,7 @@ export class DrawPass {
 	private readonly softmaxFactor: number;
 	private readonly systemGap: number;
 	private readonly labelIndent: number;
+	private readonly partLabelIndent: number;
 	private readonly measureNumbering: MeasureNumbering;
 	private readonly showTabHammerPullText: boolean;
 	private readonly showTabSlideText: boolean;
@@ -734,6 +746,13 @@ export class DrawPass {
 		anchor: StaveNote | TabNote | undefined;
 		placement: Placement;
 	}> = [];
+	// <figured-bass> stacks, queued like the other note-anchored annotations. `figures` is the
+	// whole stack, top row first; it draws as one row per figure under the stave.
+	private figuredBassTasks: Array<{
+		stave: Stave;
+		figures: string[];
+		anchor: StaveNote | TabNote | undefined;
+	}> = [];
 	// A part's staves are built here, then formatted and drawn together below so
 	// notes at the same tick align vertically across staves (notation over tab).
 	private pendingStaves: PendingStave[] = [];
@@ -743,6 +762,9 @@ export class DrawPass {
 	private partStaves: Array<{ top: Stave; bottom: Stave } | undefined> = [];
 	// The <part-group> spans from the <part-list>, outermost first. Fixed for the score.
 	private readonly partGroups: PartGroup[];
+	// Part boundaries a barline must not run across (<group-barline>no</group-barline>).
+	// Empty for every score that doesn't ask, which is nearly all of them.
+	private readonly barlineBreaks: Set<number>;
 	// The score's <octave-shift> spans, and the per-note octave offset they imply. Fixed for
 	// the score; both are filled in the constructor.
 	private readonly octaveShiftSpans: OctaveShiftSpan[] = [];
@@ -773,6 +795,7 @@ export class DrawPass {
 			systemGap,
 			width,
 			labelIndent,
+			partLabelIndent,
 		} = layout;
 		this.measureCount = measureCount;
 		this.boxes = boxes;
@@ -781,6 +804,7 @@ export class DrawPass {
 		this.softmaxFactor = softmaxFactor;
 		this.systemGap = systemGap;
 		this.labelIndent = labelIndent;
+		this.partLabelIndent = partLabelIndent;
 		const { measureNumbering, showTabHammerPullText, showTabSlideText } =
 			config;
 		this.measureNumbering = measureNumbering;
@@ -796,6 +820,7 @@ export class DrawPass {
 		// drawMeasureColumn returns early for them without any extra guard here.
 		this.multiRests = this.reader.multiRestsOf(this.parts).leads;
 		this.partGroups = partGroups(this.parts);
+		this.barlineBreaks = barlineBreaks(this.parts);
 		// <octave-shift> spans, resolved up front: every note under one draws an octave (or
 		// two, or three) off its sounding pitch, so buildNotes needs the answer per note
 		// before it builds anything, and the finish pass draws the brackets over them.
@@ -899,6 +924,7 @@ export class DrawPass {
 		this.harmonyTasks = [];
 		this.wordsTasks = [];
 		this.dynamicsTasks = [];
+		this.figuredBassTasks = [];
 		this.partStaves = [];
 
 		for (const [partIndex, part] of this.parts.entries()) {
@@ -936,6 +962,9 @@ export class DrawPass {
 				// reach from the first member's top stave to the last member's bottom one.
 				this.partStaves[partIndex] = { top: partTop, bottom: partBottom };
 			}
+			// Every stave of the part has registered its notes in byLead by now, so a beamed
+			// run that changes staff mid-group can finally resolve all of them.
+			this.buildPartBeams();
 
 			// Defer formatting to one pass over the whole system (below) so notes align
 			// across parts, not just within this part.
@@ -1010,6 +1039,20 @@ export class DrawPass {
 						glyph,
 						anchor: anchor ?? target.staveNotes[0],
 						placement,
+					});
+				}
+			}
+
+			// <figured-bass> stacks. They belong under the bass line they figure, so unlike
+			// words/dynamics there is no <staff> to route by: they hang off the part's LAST
+			// stave, which on a two-stave continuo part is the bass one.
+			const bassStave = this.pendingStaves.at(-1);
+			if (bassStave) {
+				for (const { lead, figures } of this.reader.figuredBassesOf(measure)) {
+					this.figuredBassTasks.push({
+						stave: bassStave.stave,
+						figures,
+						anchor: this.byLead.get(lead) ?? this.byTabLead.get(lead),
 					});
 				}
 			}
@@ -1166,13 +1209,36 @@ export class DrawPass {
 		// instrument's strings (<staff-lines>: 6 for guitar, 4 for bass).
 		const isTab = isTabStaff(part, staffNumber);
 		const tabLines = isTab ? measure.getStaveLines(staffNumber) : 0;
+		const staveLines = measure.getStaveLines(staffNumber);
+		// Half the lines a reduced stave drops come off the top. The whole part of that says
+		// which five-line row it starts on; the leftover half (an even line count can't sit on
+		// the five-line rows) nudges the whole frame — lines and note rows together — down a
+		// half space, which is how an even-line stave centers.
+		const hiddenAbove = Math.max(0, Math.floor((5 - staveLines) / 2));
+		const halfNudge = Math.max(0, (5 - staveLines) / 2 - hiddenAbove);
 		const stave = isTab
 			? new TabStave(this.measureX, staveY, this.measureWidth, {
 					numLines: tabLines,
 				})
 			: new Stave(this.measureX, staveY, this.measureWidth, {
-					numLines: measure.getStaveLines(staffNumber),
+					// A reduced stave keeps the five-line frame and HIDES the lines it doesn't
+					// draw, rather than declaring fewer of them. vexflow anchors a shorter stave
+					// at the top — its lines come off the bottom, so a 1-line percussion stave
+					// draws where a five-line stave's TOP line goes — while leaving note rows,
+					// ledger lines, clef and time signature in the five-line frame regardless.
+					// Hiding instead centers the drawn lines the way MuseScore and OSMD do (the
+					// single line lands on the middle line, with the percussion clef straddling
+					// it) and leaves everything measured off the stave — note rows, connectors,
+					// part spacing — exactly as it was.
+					spaceAboveStaffLn: 4 + halfNudge,
 				});
+		// Tab is exempt: its line count IS its string count, so a 4-string stave draws four
+		// lines and means it.
+		for (let line = 0; line < 5 && !isTab && staveLines < 5; line++) {
+			stave.setConfigForLine(line, {
+				visible: line >= hiddenAbove && line < hiddenAbove + staveLines,
+			});
+		}
 		// Only draw the end barline. Each measure's end barline is the same line
 		// as the next measure's left edge, so internal measures still get a divider;
 		// only the first measure of a system loses its left barline (intended). The
@@ -1506,7 +1572,7 @@ export class DrawPass {
 	private buildNotes(
 		stave: Stave,
 		row: number,
-		voices: ScoreVoice[],
+		voices: StaffVoice[],
 		clef: string,
 		meterFloor: number,
 		clefOctaveShift: number,
@@ -1595,27 +1661,31 @@ export class DrawPass {
 			return this.translator.softVoice(tickables, this.softmaxFactor);
 		});
 
-		// Spanners that mutate notes (beams drop flags, tuplets rescale ticks) must be
-		// built before formatting. Beams are built per voice so each group keeps its
-		// voice's default stem direction.
-		const beams = voices.flatMap((v, voiceIndex) =>
-			this.spanners.buildBeams(
-				this.spanners.groupBeams(v.chords),
-				this.byLead,
-				stemFor(voiceIndex),
-			),
+		// Spanners that mutate notes (beams drop flags, tuplets rescale ticks) must be built
+		// before formatting. Beam GROUPING happens here — per voice, so each group keeps its
+		// voice's default stem direction — but the Beams themselves are constructed once the
+		// part's other staves exist (see buildPartBeams): a group read off `beamChords` can
+		// name notes this staff never drew, and byLead only has them after those staves are
+		// built. Everything else about a beam is settled here.
+		const beamPlans = voices.flatMap((v, voiceIndex) =>
+			v.beamChords === null
+				? []
+				: [
+						{
+							groups: this.spanners.groupBeams(v.beamChords),
+							defaultStem: stemFor(voiceIndex),
+						},
+					],
 		);
-		const tuplets = voices.flatMap((v) =>
-			this.spanners.buildTuplets(v.chords, this.byLead),
-		);
-
 		return {
 			stave,
 			row,
 			isTab: false,
 			vexVoices,
-			beams,
-			tuplets,
+			beams: [],
+			beamPlans,
+			tuplets: [],
+			tupletChords: voices.map((v) => v.chords),
 			staveNotes,
 			tiedNotes,
 			noteChords,
@@ -1624,6 +1694,116 @@ export class DrawPass {
 			graceTabChords: [],
 			midBars,
 		};
+	}
+
+	/*
+	 * Build the Beams for the part whose staves were just added to `pendingStaves`, from the
+	 * groups each stave recorded in buildNotes.
+	 *
+	 * Deferred to here rather than done inside buildNotes because a voice's beams are grouped
+	 * off its FULL note list (see StaffVoice.beamChords), which on a piano part can name notes
+	 * that landed on a different stave of the same part — and byLead only holds those once
+	 * that stave has been built. A beam whose notes sit on two staves is exactly the
+	 * cross-staff beam, which vexflow draws between them off each note's own stave.
+	 *
+	 * Still ahead of the system's format pass, which is what beams have to precede (they drop
+	 * their notes' flags, changing the width the formatter allocates).
+	 */
+	private buildPartBeams(): void {
+		// StaveNote -> the stave row it was built on, which is what orders a split chord's
+		// halves top staff first.
+		const rowOf = new Map<StaveNote, number>();
+		// A chord split across staves draws as one StaveNote per staff, but only the half
+		// holding the chord's own lead is reachable through byLead — the other half's chord
+		// leads with a <chord/> member. Index those by voice and onset so their group can pick
+		// them up too; without it the split-off half draws a flag beside the beam.
+		const splitHalves = new Map<string, StaveNote[]>();
+		const splitKey = (voice: string, beat: number | null) => `${voice}@${beat}`;
+		for (const pending of this.pendingStaves) {
+			for (const note of pending.staveNotes) {
+				rowOf.set(note, pending.row);
+			}
+			for (const { note, chord } of pending.noteChords) {
+				if (!chord.lead.isChordMember) {
+					continue;
+				}
+				const key = splitKey(chord.lead.voice, chord.measureBeat);
+				const halves = splitHalves.get(key);
+				if (halves) {
+					halves.push(note);
+				} else {
+					splitHalves.set(key, [note]);
+				}
+			}
+		}
+		for (const pending of this.pendingStaves) {
+			for (const { groups, defaultStem } of pending.beamPlans) {
+				for (const group of groups) {
+					// A split chord's two halves sit at one tick but their stems hang off
+					// opposite sides of the noteheads (the upper half stems down off the left
+					// edge, the lower half up off the right). Ordering them top staff first so
+					// the beam runs left to right through the group keeps its ends on the
+					// outermost stems instead of stopping a notehead short.
+					const notesByLead = new Map<Note, StaveNote[]>();
+					for (const lead of group.notes) {
+						const halves = splitHalves.get(
+							splitKey(lead.voice, lead.measureBeat),
+						);
+						const main = this.byLead.get(lead);
+						if (halves && main) {
+							notesByLead.set(
+								lead,
+								[main, ...halves].sort(
+									(a, b) => (rowOf.get(a) ?? 0) - (rowOf.get(b) ?? 0),
+								),
+							);
+						}
+					}
+					const notes = group.notes
+						.flatMap((lead) => notesByLead.get(lead) ?? [this.byLead.get(lead)])
+						.filter((note): note is StaveNote => note !== undefined);
+					// A cross-staff group takes ONE direction like any other beam — the beam
+					// parked past the group's outermost stem tip, every stem reaching it,
+					// including the ones a stave away. Only the direction is decided here:
+					// auto-stem reads each note against its own stave, so a group written low in
+					// the bass and high in the treble reads as "up" on one staff and "down" on
+					// the other and the tie-break lands arbitrarily. Down is the convention for
+					// the piano hand-crossing this shows up in, and it keeps the two hands'
+					// groups parallel instead of one beaming over the treble and one under
+					// the bass.
+					// ponytail: always down. A group that lives mostly in the treble with one
+					// low note reads better beamed above; deciding that means comparing the
+					// notes' distance from a common reference line rather than each stave's own,
+					// which no fixture needs yet.
+					let stem = defaultStem;
+					if (new Set(notes.map((note) => rowOf.get(note))).size > 1) {
+						for (const note of notes) {
+							note.setStemDirection(Stem.DOWN);
+						}
+						// Any value here only says "don't auto-stem" — the directions just set
+						// are what the beam reads.
+						stem = 'down';
+					}
+					pending.beams.push(
+						...this.spanners.buildBeams(
+							[group],
+							this.byLead,
+							stem,
+							notesByLead,
+						),
+					);
+				}
+			}
+			pending.beamPlans.length = 0;
+			// After the beams, never before: vexflow's Tuplet omits its bracket when it finds
+			// its notes already beamed, and draws a redundant one over the beam otherwise.
+			for (const chords of pending.tupletChords) {
+				pending.tuplets.push(
+					...this.spanners.buildTuplets(chords, this.byLead),
+				);
+			}
+			pending.tupletChords.length = 0;
+		}
 	}
 
 	/*
@@ -1638,7 +1818,7 @@ export class DrawPass {
 	private buildTabNotes(
 		stave: TabStave,
 		row: number,
-		voices: ScoreVoice[],
+		voices: StaffVoice[],
 		tuning: number[] | null,
 	): PendingStave {
 		const tabChords: Array<{ note: TabNote; chord: Chord }> = [];
@@ -1690,7 +1870,9 @@ export class DrawPass {
 			isTab: true,
 			vexVoices,
 			beams: [],
+			beamPlans: [],
 			tuplets: [],
+			tupletChords: [],
 			staveNotes: [],
 			tiedNotes: new Set(),
 			noteChords: [],
@@ -2523,6 +2705,21 @@ export class DrawPass {
 				this.growDecorationTop(this.systemIndex, placed.y);
 			}
 		}
+		// Figured bass: one row per <figure> under the stave, top figure first. Each row goes
+		// through the same below-stave path as a dynamic, so the collision resolver drops each
+		// one clear of the row already placed above it and the stack builds downward on its
+		// own — no per-row offset arithmetic. Upright rather than italic: the numerals are read
+		// as figures, not as an expression marking.
+		for (const f of this.figuredBassTasks) {
+			for (const figure of f.figures) {
+				this.drawWords(f.stave, figure, f.anchor, 'below', {
+					font: this.labelFont,
+					size: WORDS_FONT_SIZE,
+					italic: false,
+					align: 'center',
+				});
+			}
+		}
 		// Diagrams sit at their lead note's x; two on notes either side of a barline can be
 		// close enough to overlap (especially at a narrow width). The resolver pushes each
 		// box clear of any already-placed diagram in its band (replacing the old running
@@ -3142,6 +3339,41 @@ export class DrawPass {
 	}
 
 	/*
+	 * Print each `<part-group>`'s `<group-name>` at the first system's start, in the column of
+	 * the left indent that sits OUTSIDE the part labels (see ScoreLayout.partLabelIndent) and
+	 * vertically centered on the parts the group spans — the section heading a bracket in an
+	 * orchestral score carries ("Oboe through Clarinet" over its three staves).
+	 *
+	 * Right-aligned like the part labels, so with several groups every name ends at the same x.
+	 * Only drawn with showPartLabels on; the indent it needs is only reserved then.
+	 */
+	private drawPartGroupNames(): void {
+		if (this.systemIndex !== 0 || this.labelIndent <= this.partLabelIndent) {
+			return;
+		}
+		this.context.save();
+		this.context.setFont(this.labelFont, LABEL_FONT_SIZE);
+		this.context.setFillStyle(this.textColor);
+		for (const group of this.partGroups) {
+			const top = this.partStaves[group.fromPart]?.top;
+			const bottom = this.partStaves[group.toPart]?.bottom;
+			if (!group.name || !top || !bottom) {
+				continue;
+			}
+			const width = this.context.measureText(group.name).width;
+			// Centered on the staff lines the group spans, the same measure (and the same
+			// +1.5 baseline nudge) a part label uses.
+			const cy = (top.getYForLine(0) + bottom.getBottomLineY()) / 2;
+			this.context.fillText(
+				group.name,
+				this.measureX - this.partLabelIndent - LABEL_GAP - width,
+				cy + 1.5,
+			);
+		}
+		this.context.restore();
+	}
+
+	/*
 	 * Join the whole system across all parts with a shared left line at the
 	 * system start, and a closing line at the system end.
 	 */
@@ -3169,6 +3401,7 @@ export class DrawPass {
 					this.systemTop.setX(this.measureX);
 				}
 				this.drawPartGroupConnectors();
+				this.drawPartGroupNames();
 			}
 			// A repeat's bars run the full height of the system like any other barline, but its
 			// dots belong to each stave — and no connector type draws dots. So each stave draws
@@ -3199,17 +3432,62 @@ export class DrawPass {
 			// with no dotted, dashed or heavy member, so the exotic styles fall back to the plain
 			// line there. Single-stave scores (where these styles actually show up) get the full
 			// vocabulary via drawCustomBarline; widen this if a multi-stave fixture needs it.
-			new StaveConnector(this.systemTop, this.systemBottom)
-				.setType(
-					this.barStyle === 'light-light'
-						? 'thinDouble'
-						: this.barStyle === 'light-heavy' || this.isLastMeasure
-							? 'boldDoubleRight'
-							: 'singleRight',
-				)
-				.setContext(this.context)
-				.draw();
+			const type =
+				this.barStyle === 'light-light'
+					? 'thinDouble'
+					: this.barStyle === 'light-heavy' || this.isLastMeasure
+						? 'boldDoubleRight'
+						: 'singleRight';
+			for (const run of this.barlineRuns()) {
+				new StaveConnector(run.top, run.bottom)
+					.setType(type)
+					.setContext(this.context)
+					.draw();
+			}
 		}
+	}
+
+	/*
+	 * The vertical runs a measure's barline connector is drawn in — normally the single run
+	 * spanning the whole system, so this is one entry and nothing changes.
+	 *
+	 * A `<part-group>` declaring `<group-barline>no</group-barline>` asks for barlines that
+	 * stop at each of its members rather than running through the group (see barlineBreaks),
+	 * which splits the system into one run per unbroken stretch of parts. A run still spans
+	 * whole parts: a part's own staves are always joined by its barline, which is what the
+	 * brace on a grand staff means.
+	 */
+	private barlineRuns(): Array<{ top: Stave; bottom: Stave }> {
+		const systemTop = this.systemTop;
+		const systemBottom = this.systemBottom;
+		if (!systemTop || !systemBottom) {
+			return [];
+		}
+		if (this.barlineBreaks.size === 0) {
+			return [{ top: systemTop, bottom: systemBottom }];
+		}
+		const runs: Array<{ top: Stave; bottom: Stave }> = [];
+		let top: Stave | undefined;
+		let bottom: Stave | undefined;
+		for (const [partIndex, staves] of this.partStaves.entries()) {
+			// A part with no measure in this column has no staves; it can't close a run, and
+			// leaving the open one running past it matches what the single-connector path did.
+			if (staves) {
+				top ??= staves.top;
+				bottom = staves.bottom;
+			}
+			if (this.barlineBreaks.has(partIndex) && top && bottom) {
+				runs.push({ top, bottom });
+				top = undefined;
+				bottom = undefined;
+			}
+		}
+		if (top && bottom) {
+			runs.push({ top, bottom });
+		}
+		// A run of one stave draws nothing useful (a connector needs two), but the stave's own
+		// end barline already covers it — so the empty case is correct, not a gap.
+		return runs;
 	}
 
 	/*

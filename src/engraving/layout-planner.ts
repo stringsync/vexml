@@ -1,4 +1,4 @@
-import type { Part, Voice as ScoreVoice } from '@stringsync/mdom';
+import type { Part } from '@stringsync/mdom';
 import { Formatter, GraceNoteGroup } from 'vexflow';
 import type { Config } from '../config';
 import {
@@ -32,9 +32,10 @@ import {
 	type MidClefSpec,
 	type NoteTranslator,
 } from './note-translator';
-import type { ScoreReader } from './score-reader';
+import type { ScoreReader, StaffVoice } from './score-reader';
 import {
 	isTabStaff,
+	partGroups,
 	partSymbol,
 	stringTuning,
 	visibleStaffNumbers,
@@ -63,9 +64,13 @@ export type ScoreLayout = {
 	systemGap: number;
 	/** Page width (reference width, or content width in panoramic). */
 	width: number;
-	/** Left space reserved on the first system for part labels (0 when no part is
-	 * labelled). Where draw places the instrument names. */
+	/** Left space reserved on the first system for part labels AND any <part-group> names
+	 * printed outside them (0 when nothing is labelled). Where draw places the names. */
 	labelIndent: number;
+	/** The part-label column alone, out of `labelIndent`: names right-align against the
+	 * staves inside it, and a group name right-aligns against ITS left edge. 0 when no
+	 * <part-group> declares a <group-name>, in which case it equals labelIndent. */
+	partLabelIndent: number;
 	/** Starting page height, before the draw pass grows it for deep ledger lines. */
 	floorHeight: number;
 	/** Resolved spacing curve, shared by this measurement and the draw pass so the
@@ -76,7 +81,7 @@ export type ScoreLayout = {
 /** One stave's inputs to the note-area measurement: the voices to size plus the
  * clef/meter/tab context that shapes their tickables. */
 type StaveSpec = {
-	voices: ScoreVoice[];
+	voices: StaffVoice[];
 	clef: string;
 	meterFloor: number;
 	isTab: boolean;
@@ -271,8 +276,20 @@ export class LayoutPlanner {
 		const labelChars = config.showPartLabels
 			? Math.max(0, ...parts.map((part) => part.label?.length ?? 0))
 			: 0;
-		const labelIndent =
+		const partLabelIndent =
 			labelChars > 0 ? labelChars * LABEL_CHAR_WIDTH + LABEL_GAP : 0;
+		// A <group-name> prints outside the part labels — it names the section the bracket
+		// spans, so it can't sit between a part's name and that part's stave. It gets its own
+		// column of the indent, sized the same way.
+		const groupChars = config.showPartLabels
+			? Math.max(
+					0,
+					...partGroups(parts).map((group) => group.name?.length ?? 0),
+				)
+			: 0;
+		const labelIndent =
+			partLabelIndent +
+			(groupChars > 0 ? groupChars * LABEL_CHAR_WIDTH + LABEL_GAP : 0);
 		const usableOf = (systemIndex: number) =>
 			systemIndex === 0 ? usable - labelIndent : usable;
 
@@ -502,6 +519,7 @@ export class LayoutPlanner {
 			floorHeight,
 			softmaxFactor,
 			labelIndent,
+			partLabelIndent,
 		};
 	}
 }

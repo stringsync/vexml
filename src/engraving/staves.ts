@@ -141,7 +141,38 @@ export type PartGroup = {
 	symbol: 'brace' | 'bracket' | 'line';
 	/** Nesting depth — 0 is outermost, and each level draws further left of the system. */
 	depth: number;
+	/** The group's `<group-name>`, printed left of its symbol; null when it declares none. */
+	name: string | null;
 };
+
+/*
+ * The part boundaries a measure's barlines must NOT run across: entry `i` means the barline
+ * between rendered part `i` and part `i + 1` stops instead of continuing down.
+ *
+ * MusicXML says `<group-barline>no</group-barline>` gives a group "barlines that stop at each
+ * staff", so a 'no' group breaks the line between every pair of its own members. Only an
+ * explicit 'no' breaks anything: with none declared anywhere the set is empty and the system's
+ * barlines run its full height exactly as they always have.
+ *
+ * ponytail: a part OUTSIDE every group still joins its neighbours, where an engraver would
+ * separate the sections of a score. Making "unjoined unless grouped" the default is the
+ * correct rule but re-cuts every existing multi-part baseline, so this only honors what the
+ * document asks for out loud. A group-barline is read off the group's own <part-group>; a
+ * nested pair that disagrees resolves to "any 'no' covering the boundary breaks it", since the
+ * inner group is the one closest to the staves.
+ */
+export function barlineBreaks(parts: Part[]): Set<number> {
+	const breaks = new Set<number>();
+	for (const group of partGroupEntries(parts)) {
+		if (group.barline !== 'no') {
+			continue;
+		}
+		for (let at = group.fromPart; at < group.toPart; at++) {
+			breaks.add(at);
+		}
+	}
+	return breaks;
+}
 
 /*
  * The `<part-group>` spans declared in the `<part-list>`, outermost first.
@@ -152,28 +183,51 @@ export type PartGroup = {
  * numbered stop arrives. Nesting depth is how many other groups were open when this one
  * started, which is what decides how far outside the system its symbol is drawn.
  *
- * Groups whose `<group-symbol>` is absent or 'none' are dropped — they exist only to carry
- * a name or a barline rule. 'square' falls back to 'bracket' (vexflow draws no squared
- * bracket). A group is also dropped when its parts aren't contiguous in the rendered set,
- * or when it spans only one part with nothing to connect.
+ * Groups whose `<group-symbol>` is absent or 'none' draw no connector — they exist only to
+ * carry a name or a barline rule (see barlineBreaks). 'square' falls back to 'bracket'
+ * (vexflow draws no squared bracket). A group is also dropped when its parts aren't
+ * contiguous in the rendered set, or when it spans only one part with nothing to connect.
  *
- * ponytail: `<group-barline>` and `<group-name>`/`<group-abbreviation>` are ignored. vexml
- * already runs every measure's barline across the whole system, which is what
- * `<group-barline>yes</group-barline>` asks for; honoring a 'no' means suppressing that
- * per group, and a group name needs its own reserved left indent. Add either if a fixture
- * needs it.
+ * ponytail: `<group-abbreviation>` is ignored — it's the short name for systems after the
+ * first, and vexml prints part labels on the first system only, so nothing would ever use it.
  */
 export function partGroups(parts: Part[]): PartGroup[] {
+	return (
+		partGroupEntries(parts)
+			// A group with no symbol draws no connector — it exists only to carry a name or a
+			// barline rule — and one spanning a single part has nothing to connect.
+			.filter((group) => group.symbol !== null && group.toPart > group.fromPart)
+			.map(({ fromPart, toPart, symbol, depth, name }) => ({
+				fromPart,
+				toPart,
+				symbol: symbol as PartGroup['symbol'],
+				depth,
+				name,
+			}))
+			.sort((a, b) => a.depth - b.depth)
+	);
+}
+
+/* One `<part-group>` as the `<part-list>` declares it, before any drawing decision: symbol
+ * still nullable, single-part and symbol-less spans still included (they can carry a
+ * `<group-barline>` or a `<group-name>`). See partGroups for the walk this performs. */
+type PartGroupEntry = {
+	fromPart: number;
+	toPart: number;
+	symbol: PartGroup['symbol'] | null;
+	depth: number;
+	name: string | null;
+	barline: string | null;
+};
+
+function partGroupEntries(parts: Part[]): PartGroupEntry[] {
 	const partList = parts[0]?.parent?.child('part-list');
 	if (!partList) {
 		return [];
 	}
-	const groups: PartGroup[] = [];
+	const groups: PartGroupEntry[] = [];
 	// number -> the still-open start marker it belongs to.
-	const open = new Map<
-		string,
-		{ symbol: PartGroup['symbol'] | null; fromPart: number; depth: number }
-	>();
+	const open = new Map<string, Omit<PartGroupEntry, 'toPart'>>();
 	let seen = 0; // parts passed so far, so a start knows where its span begins
 	for (const entry of partList.children) {
 		if (!(entry instanceof MElement)) {
@@ -191,13 +245,8 @@ export function partGroups(parts: Part[]): PartGroup[] {
 			const start = open.get(number);
 			open.delete(number);
 			// `seen` counts parts BEFORE this marker, so the last member is seen - 1.
-			if (start?.symbol && seen - 1 > start.fromPart) {
-				groups.push({
-					fromPart: start.fromPart,
-					toPart: seen - 1,
-					symbol: start.symbol,
-					depth: start.depth,
-				});
+			if (start && seen - 1 >= start.fromPart) {
+				groups.push({ ...start, toPart: seen - 1 });
 			}
 			continue;
 		}
@@ -205,13 +254,13 @@ export function partGroups(parts: Part[]): PartGroup[] {
 			symbol: groupSymbol(entry.child('group-symbol')?.text ?? null),
 			fromPart: seen,
 			depth: open.size,
+			name: entry.child('group-name')?.text || null,
+			barline: entry.child('group-barline')?.text ?? null,
 		});
 	}
 	// The <score-part> entries are in the same order as the <part> elements, so the counted
 	// positions index `parts` directly; a malformed list that runs past the end is dropped.
-	return groups
-		.filter((g) => g.fromPart >= 0 && g.toPart < parts.length)
-		.sort((a, b) => a.depth - b.depth);
+	return groups.filter((g) => g.fromPart >= 0 && g.toPart < parts.length);
 }
 
 /** MusicXML `<group-symbol>` -> the connector vexml draws. null means "draw nothing". */

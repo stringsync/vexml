@@ -6,7 +6,7 @@ import type { RawGeometry } from '../engraving/score-drawer';
 import type { ScoreReader } from '../engraving/score-reader';
 import { gapsByMeasureIndex } from '../gaps';
 import { Rect } from '../geometry';
-import { endingPasses, measureRepeats } from '../repeats';
+import { endingFirstPass, endingPasses, measureRepeats } from '../repeats';
 import {
 	beatsToMs,
 	type Jump,
@@ -46,6 +46,9 @@ type VoltaEnding = {
 	startIndex: number;
 	endIndex: number;
 	times: number;
+	/* The ending's own `<ending number>`, as its first pass — see Jump. Only used to spot the
+	 * restart that separates one volta group from the next. */
+	number: number;
 	startPass: number;
 	endPass: number;
 };
@@ -90,6 +93,19 @@ function analyzeStructure(
 	// The ending still being extended, i.e. one whose `last` measure hasn't been reached.
 	let currentEnding: VoltaEnding | null = null;
 
+	/* Finish the open volta group: its repeat block is done, so drop the block's start off the
+	 * stack and leave the enclosing one (if any) exposed for the next group. */
+	const closeVolta = (): void => {
+		currentEnding = null;
+		if (
+			currentVolta !== null &&
+			startStack.at(-1) === currentVolta.startIndex
+		) {
+			startStack.pop();
+		}
+		currentVolta = null;
+	};
+
 	for (const [i, measure] of measures.entries()) {
 		for (const jump of measure.jumps) {
 			if (jump.type === 'repeatstart') {
@@ -99,6 +115,18 @@ function analyzeStructure(
 
 		const endingJump = findJump(measure.jumps, 'repeatending');
 		if (endingJump) {
+			// Nested blocks put two volta groups back to back with no plain measure between them,
+			// so "the group ends at the first measure carrying no ending" can't see the seam. The
+			// numbering does: endings within one group climb (1., 2., 3.), so a run whose number
+			// doesn't is the enclosing block's first ending, not another of this block's.
+			const previous = currentVolta?.endings.at(-1);
+			if (
+				currentEnding === null &&
+				previous !== undefined &&
+				endingJump.number <= previous.number
+			) {
+				closeVolta();
+			}
 			if (currentVolta === null) {
 				currentVolta = {
 					startIndex: startStack.at(-1) ?? 0,
@@ -113,6 +141,7 @@ function analyzeStructure(
 					startIndex: i,
 					endIndex: i,
 					times: endingJump.times,
+					number: endingJump.number,
 					startPass: 0,
 					endPass: 0,
 				};
@@ -127,11 +156,7 @@ function analyzeStructure(
 		}
 
 		if (currentVolta !== null) {
-			currentEnding = null;
-			if (startStack.at(-1) === currentVolta.startIndex) {
-				startStack.pop();
-			}
-			currentVolta = null;
+			closeVolta();
 		}
 
 		const endJump = findJump(measure.jumps, 'repeatend');
@@ -305,6 +330,7 @@ function jumpsByMeasure(measures: readonly Measure[]): Jump[][] {
 					type: 'repeatending',
 					times: endingPasses(ending.number),
 					last: ending.last,
+					number: endingFirstPass(ending.number),
 				});
 			} else if (repeatEnd) {
 				jumps.push({

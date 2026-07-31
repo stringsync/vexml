@@ -86,7 +86,10 @@ describe('MeasureSequenceIterator', () => {
 		expect(
 			order([
 				{ index: 0, jumps: [{ type: 'repeatstart' }] },
-				{ index: 1, jumps: [{ type: 'repeatending', times: 1, last: true }] },
+				{
+					index: 1,
+					jumps: [{ type: 'repeatending', times: 1, last: true, number: 1 }],
+				},
 				{ index: 2, jumps: [] },
 			]),
 		).toEqual([0, 1, 0, 2]);
@@ -96,7 +99,10 @@ describe('MeasureSequenceIterator', () => {
 		expect(
 			order([
 				{ index: 0, jumps: [{ type: 'repeatstart' }] },
-				{ index: 1, jumps: [{ type: 'repeatending', times: 2, last: true }] },
+				{
+					index: 1,
+					jumps: [{ type: 'repeatending', times: 2, last: true, number: 1 }],
+				},
 				{ index: 2, jumps: [] },
 			]),
 		).toEqual([0, 1, 0, 1, 0, 2]);
@@ -125,7 +131,10 @@ describe('MeasureSequenceIterator', () => {
 		expect(
 			order([
 				{ index: 0, jumps: [] },
-				{ index: 1, jumps: [{ type: 'repeatending', times: 1, last: true }] },
+				{
+					index: 1,
+					jumps: [{ type: 'repeatending', times: 1, last: true, number: 1 }],
+				},
 				{ index: 2, jumps: [] },
 			]),
 		).toEqual([0, 1, 0, 2]);
@@ -178,8 +187,14 @@ describe('MeasureSequenceIterator', () => {
 		expect(
 			order([
 				{ index: 0, jumps: [{ type: 'repeatstart' }] },
-				{ index: 1, jumps: [{ type: 'repeatending', times: 2, last: true }] },
-				{ index: 2, jumps: [{ type: 'repeatending', times: 1, last: true }] },
+				{
+					index: 1,
+					jumps: [{ type: 'repeatending', times: 2, last: true, number: 1 }],
+				},
+				{
+					index: 2,
+					jumps: [{ type: 'repeatending', times: 1, last: true, number: 3 }],
+				},
 				{ index: 3, jumps: [] },
 			]),
 		).toEqual([0, 1, 0, 1, 0, 2, 3]);
@@ -189,9 +204,18 @@ describe('MeasureSequenceIterator', () => {
 		expect(
 			order([
 				{ index: 0, jumps: [{ type: 'repeatstart' }] },
-				{ index: 1, jumps: [{ type: 'repeatending', times: 1, last: true }] },
-				{ index: 2, jumps: [{ type: 'repeatending', times: 1, last: true }] },
-				{ index: 3, jumps: [{ type: 'repeatending', times: 1, last: true }] },
+				{
+					index: 1,
+					jumps: [{ type: 'repeatending', times: 1, last: true, number: 1 }],
+				},
+				{
+					index: 2,
+					jumps: [{ type: 'repeatending', times: 1, last: true, number: 2 }],
+				},
+				{
+					index: 3,
+					jumps: [{ type: 'repeatending', times: 1, last: true, number: 3 }],
+				},
 				{ index: 4, jumps: [] },
 			]),
 		).toEqual([0, 1, 0, 2, 0, 3, 4]);
@@ -203,10 +227,22 @@ describe('MeasureSequenceIterator', () => {
 		expect(
 			order([
 				{ index: 0, jumps: [{ type: 'repeatstart' }] },
-				{ index: 1, jumps: [{ type: 'repeatending', times: 1, last: false }] },
-				{ index: 2, jumps: [{ type: 'repeatending', times: 1, last: true }] },
-				{ index: 3, jumps: [{ type: 'repeatending', times: 1, last: false }] },
-				{ index: 4, jumps: [{ type: 'repeatending', times: 1, last: true }] },
+				{
+					index: 1,
+					jumps: [{ type: 'repeatending', times: 1, last: false, number: 1 }],
+				},
+				{
+					index: 2,
+					jumps: [{ type: 'repeatending', times: 1, last: true, number: 1 }],
+				},
+				{
+					index: 3,
+					jumps: [{ type: 'repeatending', times: 1, last: false, number: 2 }],
+				},
+				{
+					index: 4,
+					jumps: [{ type: 'repeatending', times: 1, last: true, number: 2 }],
+				},
 				{ index: 5, jumps: [] },
 			]),
 		).toEqual([0, 1, 2, 0, 3, 4, 5]);
@@ -218,12 +254,50 @@ describe('MeasureSequenceIterator', () => {
 		expect(
 			order([
 				{ index: 0, jumps: [{ type: 'repeatstart' }] },
-				{ index: 1, jumps: [{ type: 'repeatending', times: 2, last: false }] },
-				{ index: 2, jumps: [{ type: 'repeatending', times: 2, last: true }] },
-				{ index: 3, jumps: [{ type: 'repeatending', times: 1, last: true }] },
+				{
+					index: 1,
+					jumps: [{ type: 'repeatending', times: 2, last: false, number: 1 }],
+				},
+				{
+					index: 2,
+					jumps: [{ type: 'repeatending', times: 2, last: true, number: 1 }],
+				},
+				{
+					index: 3,
+					jumps: [{ type: 'repeatending', times: 1, last: true, number: 3 }],
+				},
 				{ index: 4, jumps: [] },
 			]),
 		).toEqual([0, 1, 2, 0, 1, 2, 0, 3, 4]);
+	});
+
+	it('iterator: starts a new volta group when an ending number restarts', () => {
+		// repeats_nested.musicxml: an outer block (M1) holding an inner one (M2), each closing
+		// with its own 1st/2nd endings. M3-M6 are four consecutive ending measures with no plain
+		// measure between them, so only the numbering restarting at 1 on M5 separates the outer
+		// group from the inner one. Each pass of the outer block replays the inner block whole.
+		expect(
+			order([
+				{ index: 0, jumps: [{ type: 'repeatstart' }] },
+				{ index: 1, jumps: [{ type: 'repeatstart' }] },
+				{
+					index: 2,
+					jumps: [{ type: 'repeatending', times: 1, last: true, number: 1 }],
+				},
+				{
+					index: 3,
+					jumps: [{ type: 'repeatending', times: 1, last: true, number: 2 }],
+				},
+				{
+					index: 4,
+					jumps: [{ type: 'repeatending', times: 1, last: true, number: 1 }],
+				},
+				{
+					index: 5,
+					jumps: [{ type: 'repeatending', times: 1, last: true, number: 2 }],
+				},
+			]),
+		).toEqual([0, 1, 2, 1, 3, 4, 0, 1, 2, 1, 3, 5]);
 	});
 
 	it('iterator: treats a repeatend with times: 0 as a no-op', () => {

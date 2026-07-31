@@ -38,6 +38,7 @@ import {
 	TUPLET_NESTING_EXTRA_GAP,
 } from '../constants';
 import { NoteheadArticulation } from './note-translator';
+
 import { LINE_TYPE_DASH, type PedalMark, type WedgeMark } from './score-reader';
 
 /*
@@ -349,6 +350,10 @@ export class SpannerBuilder {
 		groups: BeamGroup[],
 		byLead: Map<Note, StaveNote>,
 		defaultStem?: 'up' | 'down',
+		// Overrides what a lead resolves to, for a chord split across two staves: it drew one
+		// StaveNote per staff and only one of them is reachable through `byLead`, so the caller
+		// supplies the whole set, already ordered the way the beam should run through them.
+		notesByLead?: Map<Note, StaveNote[]>,
 	): Beam[] {
 		const beams: Beam[] = [];
 		for (const group of groups) {
@@ -357,7 +362,7 @@ export class SpannerBuilder {
 				// only for slur resolution, so skip them here to avoid a second, conflicting
 				// auto-stemmed beam drawn over the ornament.
 				.filter((note) => !note.isGrace)
-				.map((note) => byLead.get(note))
+				.flatMap((note) => notesByLead?.get(note) ?? [byLead.get(note)])
 				.filter((note): note is StaveNote => note !== undefined);
 			if (notes.length > 1) {
 				// auto_stem=true picks one direction for the whole group (notes' own

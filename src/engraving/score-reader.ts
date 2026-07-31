@@ -1,6 +1,6 @@
 import {
 	Barline,
-	type Chord,
+	Chord,
 	Clef,
 	type Harmony,
 	type Key,
@@ -69,6 +69,18 @@ function beatUnitsOf(
 	}
 	return units;
 }
+
+/*
+ * One voice as ONE staff draws it (see ScoreReader.staffVoices). `chords` is the voice
+ * restricted to the notes that sit on this staff; `beamChords` is the voice's full,
+ * unrestricted chord list on the staff that owns it and null everywhere else, so a beamed run
+ * crossing staves is grouped exactly once — off the notes the `<beam>` markers were written
+ * on — and the beam then spans both staves instead of breaking at the staff change.
+ */
+export type StaffVoice = {
+	chords: Chord[];
+	beamChords: Chord[] | null;
+};
 
 /** Which side of the staff a `<direction>` prints on. */
 export type Placement = 'above' | 'below';
@@ -244,6 +256,26 @@ const HARMONY_KIND_SUFFIX: Record<string, string> = {
 };
 
 /*
+ * A <figured-bass><figure>'s <prefix>/<suffix> value -> the sign printed beside its numeral,
+ * in the same real Unicode accidentals HARMONY_ALTER uses so the two faces match.
+ * ponytail: 'slash'/'back-slash' ask for a stroke THROUGH the numeral (the continuo sign for a
+ * raised third) and print as a trailing solidus instead — striking a glyph needs a drawn line
+ * over measured text, not a character, and SMuFL's pre-slashed figbass glyphs exist only for a
+ * few specific numerals (not lilypond_74a's "127"). Draw the stroke if a real continuo score
+ * makes the difference matter.
+ */
+const FIGURE_SIGN: Record<string, string> = {
+	sharp: '♯',
+	flat: '♭',
+	natural: '♮',
+	'double-sharp': '𝄪',
+	'sharp-sharp': '♯♯',
+	'flat-flat': '𝄫',
+	slash: '/',
+	'back-slash': '\\',
+};
+
+/*
  * A <harmony>'s printed chord symbol, e.g. "G7", "C", "F♯m": the <root-step> plus
  * any <root-alter> sign, then the <kind text="…"> suffix MusicXML carries for
  * exactly this (a major triad's text is empty, so it prints the bare root), falling
@@ -371,12 +403,47 @@ function multiRestCountOf(measure: Measure | undefined): number | null {
  */
 export class ScoreReader {
 	/*
-	 * One staff's renderable voices in a measure: voices assigned to this staff that
-	 * actually carry notes (an empty voice would crash the formatter). The layout
-	 * (measuring) and draw passes must select identically, so the predicate lives here.
+	 * One staff's renderable content from a measure's voices — see {@link StaffVoice}.
+	 *
+	 * A voice is PROJECTED onto the staff rather than assigned to one: each chord keeps only
+	 * the notes whose own `<staff>` names this staff. That is what makes cross-staff writing
+	 * work — a piano voice that runs up out of the bass staff mid-beam has its upper notes
+	 * drawn on the treble staff, where the composer put them, instead of climbing out of the
+	 * bass staff on five ledger lines. A chord split across both staves lands as two partial
+	 * chords, one per staff, sharing an onset.
+	 *
+	 * A voice with nothing on this staff drops out entirely (an empty voice would crash the
+	 * formatter), and one that never leaves its own staff projects to itself unchanged — the
+	 * single-staff case is untouched.
+	 *
+	 * The layout (measuring) and draw passes must select identically, so the projection lives
+	 * here.
 	 */
-	staffVoices(voices: ScoreVoice[], staffNumber: string): ScoreVoice[] {
-		return voices.filter((v) => v.staff === staffNumber && v.chords.length > 0);
+	staffVoices(voices: ScoreVoice[], staffNumber: string): StaffVoice[] {
+		const out: StaffVoice[] = [];
+		for (const voice of voices) {
+			const chords: Chord[] = [];
+			for (const chord of voice.chords) {
+				const notes = chord.notes.filter((note) => note.staff === staffNumber);
+				// Keep the original Chord identity when the whole chord stays — it's the key
+				// the hit index maps noteheads back through.
+				if (notes.length === chord.notes.length) {
+					chords.push(chord);
+				} else if (notes.length > 0) {
+					chords.push(new Chord(notes));
+				}
+			}
+			if (chords.length > 0) {
+				out.push({
+					chords,
+					// mdom sets a voice's staff from its FIRST note, so exactly one staff owns
+					// each voice's beams — the run is grouped once and spans whatever staves its
+					// notes landed on.
+					beamChords: voice.staff === staffNumber ? voice.chords : null,
+				});
+			}
+		}
+		return out;
 	}
 
 	/*
@@ -746,6 +813,55 @@ export class ScoreReader {
 				.map((rehearsal) => rehearsal.text ?? '')
 				.filter(Boolean),
 		);
+	}
+
+	/*
+	 * A measure's `<figured-bass>` stacks — the numerals a continuo player reads under the bass
+	 * line — each bound to the note it sits under (the next non-`<chord/>` note, the binding a
+	 * `<harmony>` uses). One string per `<figure>`, top of the stack first, each its
+	 * `<prefix>` sign + `<figure-number>` + `<suffix>` sign; `parentheses="yes"` on the
+	 * `<figured-bass>` wraps every figure of that stack.
+	 *
+	 * A stack with no printable figure at all (the empty `<figured-bass>` that lilypond_74a
+	 * writes on purpose to see what breaks) is dropped rather than reserving a blank row.
+	 * ponytail: `<extend>` is ignored — it draws the dash that carries a figure over the notes
+	 * that follow it, and neither fixture in tmp/ writes one (74a says so in its own
+	 * description). It would hang off this same lead note when one does.
+	 */
+	figuredBassesOf(measure: Measure): { lead: Note; figures: string[] }[] {
+		const out: { lead: Note; figures: string[] }[] = [];
+		const children = measure.children;
+		for (const [index, child] of children.entries()) {
+			if (!(child instanceof MElement) || child.tag !== 'figured-bass') {
+				continue;
+			}
+			let lead: Note | null = null;
+			for (let ahead = index + 1; ahead < children.length; ahead++) {
+				const next = children[ahead];
+				if (next instanceof Note && !next.isChordMember) {
+					lead = next;
+					break;
+				}
+			}
+			if (!lead) {
+				continue;
+			}
+			const parenthesized = child.getAttribute('parentheses') === 'yes';
+			const figures = child
+				.childrenNamed('figure')
+				.map((figure) => {
+					const text =
+						(FIGURE_SIGN[figure.child('prefix')?.text ?? ''] ?? '') +
+						(figure.child('figure-number')?.text ?? '') +
+						(FIGURE_SIGN[figure.child('suffix')?.text ?? ''] ?? '');
+					return text && parenthesized ? `(${text})` : text;
+				})
+				.filter(Boolean);
+			if (figures.length > 0) {
+				out.push({ lead, figures });
+			}
+		}
+		return out;
 	}
 
 	/*

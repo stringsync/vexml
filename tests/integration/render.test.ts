@@ -24,13 +24,16 @@ import { testCase } from '../testing/test-case';
  * still sized by its own content (see ScoreReader.meterBeats).
  *
  * Grep `TODO(coverage)` for the list. They are ordered with the rest of TEST_CASES, by
- * increasing rendering complexity, not by priority. By impact, the one worth doing first is
- * cross-staff notes. (print-object="no", <octave-shift>, the per-element color attribute,
- * percussion <unpitched>/<display-step>, after-graces, the mid-measure <barline>,
- * <repeat times>, the segno/coda glyphs, non-traditional key signatures, the mid-measure and
- * end-of-measure clef change, <multiple-rest>, the <bracket>/<dashes> spanners, per-voice
- * lyric rows and nested repeat blocks were the earlier picks off this list and now have cases
- * of their own.)
+ * increasing rendering complexity, not by priority. The two left both need a decision before
+ * any code: whether vexml owns page headings at all (score header), and whether a big
+ * real-world score is worth the baseline churn.
+ * (print-object="no", <octave-shift>, the per-element color attribute, percussion
+ * <unpitched>/<display-step>, after-graces, the mid-measure <barline>, <repeat times>, the
+ * segno/coda glyphs, non-traditional key signatures, the mid-measure and end-of-measure clef
+ * change, <multiple-rest>, the <bracket>/<dashes> spanners, per-voice lyric rows, nested
+ * repeat blocks, the flat <part-group> symbols, per-staff <direction> routing, <figured-bass>,
+ * cross-staff notes and the reduced percussion stave were the earlier picks off this list and
+ * now have cases of their own.)
  */
 const TEST_CASES = [
 	// A single empty 5-line stave: staff lines, start and end barlines, a treble clef and a
@@ -49,6 +52,32 @@ const TEST_CASES = [
 	// A single-stave part above a two-stave (braced) part — mixed stave counts.
 	testCase('structure_mixed_staves.musicxml', 'structure_mixed_staves.png'),
 
+	// The four <group-symbol> values, each on its own FLAT (non-nested) <part-group>, so a
+	// symbol can be read without the nesting offsets of the case below. Eight single-stave
+	// parts in four consecutive pairs, one whole note each in common time, showPartLabels on.
+	// Two label columns are reserved left of the staves: the part names right-aligned against
+	// the staves, and each group's <group-name> right-aligned in its own column outside those,
+	// vertically centered on the pair it spans.
+	// - "Brace" (P1-2): a curly brace, and <group-barline>yes</group-barline> — the end
+	//   barline runs through the pair, which is what vexml does by default anyway.
+	// - "Bracket" (P3-4): a square bracket with top and bottom curls, and
+	//   <group-barline>no</group-barline> — the end barline STOPS between P3 and P4, the one
+	//   visible break in the column of otherwise continuous barlines.
+	// - "Square" (P5-6): drawn as a bracket. vexflow has no squared-bracket connector, so
+	//   'square' falls back to the nearest reading (see groupSymbol in engraving/staves.ts);
+	//   this pair should look identical to the one above it.
+	// - "Line" (P7-8): a plain vertical line, no curls, and another 'no' breaking the barline
+	//   between P7 and P8.
+	// ponytail: the barlines still run across the boundaries BETWEEN the groups, where an
+	// engraver would separate the sections — vexml breaks a barline only where a group asks
+	// for it out loud, because making "separate unless grouped" the default re-cuts every
+	// existing multi-part baseline. See barlineBreaks in engraving/staves.ts.
+	testCase(
+		'structure_part_group_symbols.musicxml',
+		'structure_part_group_symbols.png',
+		{ showPartLabels: true },
+	),
+
 	// Five single-stave parts (one empty-ish measure each, a whole note in common time)
 	// joined by nested <part-group> spans read off the <part-list>. The system's own left
 	// line closes all five staves; each group's <group-symbol> draws outside it, the
@@ -62,23 +91,6 @@ const TEST_CASES = [
 	// barline across the whole system (what group-barline "yes" asks for), and a group name
 	// needs its own reserved left indent.
 	testCase('structure_part_groups.musicxml', 'structure_part_groups.png'),
-
-	// TODO(coverage): the flat (non-nested) <part-group> symbols, so each symbol type can be
-	// checked on its own before the nested case above.
-	// Fixture: structure_staff_group_brackets.musicxml (lilypond_41c-StaffGroups M1).
-	// Expected: each <group-symbol> renders its own connector — 'bracket' a square bracket,
-	// 'brace' a curly brace, 'line' a plain vertical line, 'square' a squared bracket — and a
-	// <group-barline>yes</group-barline> runs the group's barlines through the staves between
-	// its members while a 'no' leaves each member's barlines separate. <group-name> prints to
-	// the left of the group (needs showPartLabels).
-	// Current: the group SYMBOLS now draw (structure_part_groups above covers line + bracket
-	// nesting); what this 28-part fixture would add is the 'brace' and 'square' symbols, the
-	// group-barline rule, and <group-name>. The last two are still unimplemented — see the
-	// ponytail note on partGroups() in src/engraving/staves.ts — so enabling this case would
-	// pin a render that is knowingly missing them. Unverified.
-	// testCase('structure_staff_group_brackets.musicxml', 'structure_staff_group_brackets.png', {
-	// 	showPartLabels: true,
-	// }),
 
 	// TODO(coverage): score-level header text (title/composer/credits) is never drawn — src/
 	// has no reader for <work-title>, <movement-title>, <identification><creator>, or
@@ -269,38 +281,39 @@ const TEST_CASES = [
 	//   keeping its own row and its own glyph.
 	testCase('percussion_display_step.musicxml', 'percussion_display_step.png'),
 
-	// TODO(coverage): percussion on a REDUCED stave. <unpitched>/<display-step> now resolves
-	// (percussion_display_step above), but a percussion part is often written on a 1-line
-	// stave, and there the position mapping and the stave's own geometry disagree.
-	// Fixture: clef_percussion.musicxml (lilypond_73a-Percussion M1-2) — a bass-clef part over
-	// a 5-line percussion part and a <staff-lines>1</staff-lines> percussion part.
-	// Current: the bass part and the 5-line percussion part are both correct; the 1-line part
-	// draws its single line where a 5-line stave's TOP line would be, so its F4/E4 notes hang
-	// two ledger-lines' worth below it on long stems (verified render). That is vexflow's
-	// stave model, the same one staff_details_lines.musicxml documents and accepts — see the
-	// ponytail note there. Fixing it means centering a reduced stave AND re-anchoring its
-	// positions, which changes that accepted baseline too, so the two must move together.
-	// OSMD centers; decide whether vexml follows before enabling this case.
+	// Percussion on a REDUCED stave (lilypond_73a-Percussion M1-2): three single-stave parts
+	// bracketed together, over two measures of 4/4, with no key signature anywhere.
+	// - Part 1 is an ordinary bass-clef 5-line stave: an E3 whole note tied across the
+	//   barline into an E3 half, then an A2 half.
+	// - Part 2 is a 5-line PERCUSSION stave (the two vertical bars, no key signature),
+	//   carrying <unpitched> notes at display positions E5, C5 and D5: a dotted half and a
+	//   quarter in M1, a whole note in M2.
+	// - Part 3 is the same percussion clef on a <staff-lines>1</staff-lines> stave. Its one
+	//   line is CENTERED on the row a 5-line stave would fill — where the middle line goes,
+	//   not the top one — with the percussion clef straddling it and the 4/4 centered on it,
+	//   the way MuseScore and OSMD both draw a reduced stave. Its F4/F4/E4 notes keep the
+	//   positions their display steps give them on a full stave, so they sit just below the
+	//   line (F4 a space and a half under it, E4 two spaces) with their stems up through it.
+	//   vexml draws no ledger lines out to them: vexflow measures ledgers off a fixed
+	//   five-line frame, so a reduced stave never gets any. MuseScore does draw them here.
 	// See also tmp/drumset.xml, tmp/tutorial_percussion.xml.
-	// testCase('clef_percussion.musicxml', 'clef_percussion.png'),
+	testCase('clef_percussion.musicxml', 'clef_percussion.png'),
 
 	// <staff-details><staff-lines> on NON-tab staves: two single-stave parts joined by a
 	// bracket, neither declaring a clef or time signature — so each opens with the default
 	// treble clef and 4/4 — over three measures. The top part is a 1-line stave
-	// throughout, holding one D5 whole note per measure sitting in the space just under its
-	// lone line, with the clef hanging below that line where the missing four would be. The
-	// bottom part changes line count at every measure, so the three measures show three
-	// different staves under one unbroken row of notes.
+	// throughout, holding one D5 whole note per measure sitting in the space just above its
+	// lone line, with the treble clef curled around that line. The bottom part changes line
+	// count at every measure, so the three measures show three different staves under one
+	// unbroken row of notes.
 	// - M1: bottom part at <staff-lines>5</staff-lines> — an ordinary 5-line stave, one G4
 	//   whole note.
-	// - M2: 4 lines — the bottom line disappears; two G4 half notes, stems up.
-	// - M3: 2 lines — only the top two lines remain; two G4 half notes hanging below them.
-	// Lines are dropped from the BOTTOM and every note keeps the vertical position its pitch
-	// and clef give it on a full stave, so the notes do not move when the count changes.
-	// ponytail: that is vexflow's stave model (line 0 is the top line). MuseScore instead
-	// centers a reduced stave and re-anchors its pitches, which matters for a 1-line
-	// percussion stave — the same decision the clef_percussion TODO below is blocked on, so
-	// this baseline and that one have to move together.
+	// - M2: 4 lines — the four sit a half space lower than M1's top four, centered on the
+	//   same band; two G4 half notes, stems up.
+	// - M3: 2 lines — the middle pair of the band; two G4 half notes hanging below them.
+	// A reduced stave is CENTERED on the row a 5-line stave would fill (see clef_percussion),
+	// and every note keeps the vertical position its pitch and clef give it on a full stave,
+	// so the notes do not move when the count changes — only the lines around them do.
 	// A count that changes MID-measure is still unsupported: vexml reads <attributes> at the
 	// measure start (the same limit as the mid-measure clef TODO above), so this fixture puts
 	// M3's change at the barline rather than after its first note, where lilypond_14a had it.
@@ -907,15 +920,10 @@ const TEST_CASES = [
 	// <ending> per barline, so an inner volta INSIDE an outer one is not expressible and vexml's
 	// MeasureEnding is likewise one per measure. Nesting shows up as blocks, not as stacked
 	// brackets.
-	// TODO(playback): the playback expansion of a nested block is wrong. The pre-scan in
-	// src/playback/sequence-factory.ts closes a volta group only at a measure carrying NO
-	// ending, so M3-M6's four consecutive ending measures merge into one four-ending volta
-	// whose back-jump target is the inner block's start. This fixture plays as
-	// [0,1,2,1,3,1,4,1,5] where a player takes [0,1,2, 1,3,4, 0,1,2, 1,3,5] — the outer repeat
-	// never jumps back to M1, and the inner block never re-arms for the outer's second pass.
-	// Fixing it needs (a) a new volta group when an ending's number restarts, and (b) per-pass
-	// re-arming of an inner block's endings. The RENDER above is unaffected and correct; add
-	// the case to cursor.test.ts with the rest of the playback-order assertions.
+	// The playback expansion is asserted separately in cursor.test.ts: M3-M6 are four consecutive
+	// ending measures with no plain measure between them, so the numbering restarting at 1 on M5
+	// is the only thing that separates the two volta groups (see ScoreReader-side endingFirstPass
+	// and the pre-scan in src/playback/sequence-factory.ts).
 	// See also tmp/lilypond_45e-Repeats-Nested-Alternatives.xml.
 	testCase('repeats_nested.musicxml', 'repeats_nested.png'),
 
@@ -1674,15 +1682,24 @@ const TEST_CASES = [
 	// one. Extend the fixture when a score needs them.
 	testCase('harmony_kinds.musicxml', 'harmony_kinds.png'),
 
-	// TODO(coverage): <figured-bass> — the stacked figures under a continuo bass line. Only 2
-	// files in tmp/ use it and grep finds no support in src/, so this is the lowest-priority
-	// entry in this list; skip it unless a user actually brings a continuo score.
-	// Fixture: figured_bass.musicxml (lilypond_74a-FiguredBass M1-2).
-	// Expected: the <figure> numbers stacked under their note in <figure-number> order, with
-	// <prefix>/<suffix> accidentals beside them and an <extend> drawing a continuation line.
-	// Current: unverified — expect nothing drawn. See also
-	// tmp/lilypond_46g-PickupMeasure-Chordnames-FiguredBass.xml.
-	// testCase('figured_bass.musicxml', 'figured_bass.png'),
+	// <figured-bass> — the stacked numerals a continuo player reads under the bass line. One
+	// treble stave in common time holding six identical G4s, so only the figures vary; each
+	// stack sits under the note that FOLLOWS its <figured-bass> element, centered on the
+	// notehead, upright rather than italic, and builds downward one row per <figure>.
+	// - Note 1: a bare "3" — a single unadorned figure.
+	// - Note 3: ♯1 over ♭3 over ♮5 — three figures, each with a <prefix> accidental, printed
+	//   in document order top to bottom (NOT sorted by numeral).
+	// - Note 4: "(6)" — parentheses="yes" on the <figured-bass> wraps every figure of the
+	//   stack, here just the one.
+	// - Note 5: "5/" over "♭127/" — the <suffix>slash</suffix> form. lilypond_74a's "127" is
+	//   deliberate nonsense, there to prove a multi-digit numeral isn't truncated.
+	// Notes 2 and 6 carry no <figured-bass> and print nothing under them.
+	// ponytail: a slash asks for a stroke THROUGH the numeral and prints as a trailing solidus
+	// — see FIGURE_SIGN in score-reader.ts. <extend> (the dash carrying a figure across the
+	// notes after it) is likewise unimplemented; this fixture writes none, and says so in its
+	// own <miscellaneous-field>.
+	// See also tmp/lilypond_46g-PickupMeasure-Chordnames-FiguredBass.xml.
+	testCase('figured_bass.musicxml', 'figured_bass.png'),
 
 	// Treble stave, 4/4: guitar chord diagrams (fret boxes) from <harmony><frame>, each
 	// drawn above the stave at its measure's first note, with the chord name as the box's
@@ -1882,20 +1899,26 @@ const TEST_CASES = [
 	//   (E5/C5/G4/C3).
 	testCase('voices_grand_staff.musicxml', 'voices_grand_staff.png'),
 
-	// TODO(coverage): cross-staff notes — a voice whose notes change <staff> mid-beam, the
-	// defining gesture of piano writing. ScoreReader.staffVoices assigns a whole voice to one
-	// staff (`v.staff === staffNumber`), so a voice that straddles both staves is pinned to
-	// whichever staff it declared first.
-	// Fixture: cross_stave.musicxml (lilypond_43d-MultiStaff-StaffChange M1-2).
-	// Expected: each note draws on the staff its own <staff> element names, with the beam
-	// running BETWEEN the two staves and the stems reaching across the gap to meet it.
-	// Current: every note is drawn on the bass staff, so the run that belongs on the treble
-	// staff climbs out on four and five ledger lines while the treble staff sits empty
-	// (verified render). This is the most visually broken of all the gaps listed here.
-	// Note the fix is structural: staffVoices' per-voice predicate has to become per-note,
-	// which also affects layout-planner's stave-height budget. See also
-	// tmp/cross_stave_16ths_ghost_notes_simple.xml.
-	// testCase('cross_stave.musicxml', 'cross_stave.png'),
+	// Cross-staff notes — a voice whose notes change <staff> mid-beam, the defining gesture of
+	// piano writing. One braced grand staff (treble over bass), common time, everything in
+	// voice 2: each note draws on the staff its own <staff> names, not on the one the voice
+	// opened with (ScoreReader.staffVoices projects a voice onto both staves rather than
+	// pinning it to one). A cross-staff group is still ONE beam with one direction: every beam
+	// here stems DOWN and sits below the bass staff, so the treble notes' stems run the whole
+	// height of the gap to reach it.
+	// - M1: two beamed groups of four eighths. The first alternates bass A3 / treble E4, so
+	//   its stems alternate short-long-short-long down to the beam. The second is treble
+	//   C5-E4 then bass A3-B4; B4 written on the BASS staff sits four ledger lines above it,
+	//   level with the gap, and its stem is the shortest of the eight.
+	// - M2: chords SPLIT across the staves, under one beam, over a treble whole rest (voice 1)
+	//   and closing on a bass half rest. Beat 1 is a four-note chord entirely on the bass
+	//   staff (C3-E3-G3-C4, so its C4 rides a ledger line above it) and beat 2 an all-treble
+	//   C4-E4-G4; beats 3 and 4 are the split ones — beat 3 puts C3-E3-G3 on the bass and its
+	//   C4 on the treble, beat 4 a lone G3 on the bass under a treble C4-E4-G4. A split chord
+	//   draws as one notehead stack per staff at a shared onset, and BOTH halves join the
+	//   beam, so neither grows a stray flag and the two stacks hang off one shared stem.
+	// See also tmp/cross_stave_16ths_ghost_notes_simple.xml.
+	testCase('cross_stave.musicxml', 'cross_stave.png'),
 
 	// A different key signature on each staff of one part — normal for transposing scores
 	// and for some contemporary piano writing. One braced two-stave part, 4/4, one whole
@@ -1911,15 +1934,21 @@ const TEST_CASES = [
 	// staff's key arrives after a <backup> and so is easy to miss.
 	testCase('staves_different_keys.musicxml', 'staves_different_keys.png'),
 
-	// TODO(coverage): a <direction> carrying a <staff>, on a multi-staff part. ScoreReader.wordsOf
-	// already routes words by <staff> (structure_tab_parts M2 covers that), but nothing covers
-	// the same routing for the direction types that do not exist yet — dynamics between the two
-	// staves of a grand staff is the classic case, where a dynamic belonging to staff 2 must not
-	// print over staff 1.
-	// Fixture: staff_dynamics.musicxml (lilypond_43e-Multistaff-ClefDynamics M1-2).
-	// Expected: each dynamic and clef change lands on the staff its <staff> names.
-	// Current: blocked on the <dynamics> gap above — implement that first, then this.
-	// testCase('staff_dynamics.musicxml', 'staff_dynamics.png'),
+	// A <direction> carrying a <staff>, on a multi-staff part: one braced grand staff in
+	// common time, four quarters per staff per measure. Every direction here is written
+	// placement="below", so the routing is what decides where it lands — a staff-1 mark
+	// prints in the gap BETWEEN the two staves, a staff-2 mark below the bottom one. This is
+	// the same <staff> routing structure_tab_parts M2 covers for <words>, exercised on the
+	// direction types that bind to a note (dynamics, wedge) plus a per-staff clef change.
+	// - M1: treble C5-B4-A4-G4 over bass A2-B2-C3-D3. Three directions, all below:
+	//   <ffff> on staff 1 under its first note, <p> on staff 1 under its fourth, and a
+	//   crescendo <wedge> on staff 2 spanning its first three notes. The two dynamics sit
+	//   between the staves and the hairpin under the bass staff — a staff-2 direction must
+	//   not print over staff 1, and vice versa.
+	// - M2: <clef number="2"> changes the LOWER staff to treble while staff 1 keeps its own,
+	//   so only the bass staff redraws a clef (at the reduced mid-system size) and the new
+	//   2-sharp key signature prints on both. Bass reads F#4-G4-A4-B4 in the new clef.
+	testCase('staff_dynamics.musicxml', 'staff_dynamics.png'),
 
 	// Three transposing parts (Bb trumpet, Eb horn, piano) each playing the same concert C
 	// scale, so each is WRITTEN in its own key: three treble staves in common time, the top

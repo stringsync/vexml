@@ -245,6 +245,32 @@ describe('cursor', () => {
 		expect(result).toEqual([0, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 3, 4]);
 	});
 
+	// A repeat block nested inside another, each closing with its own 1st/2nd endings
+	// (repeats_nested.png draws the brackets). M3-M6 are four consecutive ending measures with no
+	// plain measure between them, so the only thing separating the outer volta group from the inner
+	// one is the numbering restarting at 1 on M5 — read it as one four-ending group and the outer
+	// repeat never jumps back to M1. One whole note per measure, so one step per measure.
+	it.concurrent('a nested repeat block replays whole on each outer pass', async () => {
+		const { result } = await renderTest(
+			'repeats_nested.musicxml',
+			{},
+			(score) => {
+				const seq = score.getSequence();
+				const order = [];
+				for (let i = 0; i < seq.length; i++) {
+					order.push(seq.getStep(i)?.measureIndex);
+				}
+				return order;
+			},
+		);
+
+		// Outer pass 1: M1, then the inner block |: M2 :| — M3 (1st ending) back to M2, then M4
+		// (2nd ending) — then the outer 1st ending M5, which jumps back to M1. Outer pass 2 replays
+		// the inner block in full (the inner endings re-arm), skips the exhausted M5 and closes on
+		// the outer 2nd ending M6.
+		expect(result).toEqual([0, 1, 2, 1, 3, 4, 0, 1, 2, 1, 3, 5]);
+	});
+
 	// A voice that stops before its measure ends (legal, and common in real exports: M1's voice 1 is
 	// one quarter with no trailing rest) has no onset at the note's end, so nothing seeds a step
 	// boundary there and the quarter used to ring until the next measure's onset. The end itself

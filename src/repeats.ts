@@ -100,6 +100,15 @@ export function endingPasses(numberAttr: string | null): number {
 	return Math.max(1, total);
 }
 
+/* The FIRST pass an ending covers, from its `<ending number>` ("1" -> 1, "2,3" -> 2, "3-4" -> 3).
+ * Playback compares this across adjacent runs: a number that doesn't climb means the volta group
+ * restarted, i.e. the new run belongs to an enclosing repeat block. Defaults to 1 for a malformed
+ * or absent attribute, which reads as a restart and so errs toward splitting rather than merging
+ * two unrelated groups. */
+export function endingFirstPass(numberAttr: string | null): number {
+	return Number(numberAttr?.split(/[,-]/)[0]?.trim()) || 1;
+}
+
 /* One measure's `<barline>`s flattened: MusicXML allows several (a left repeat and a right one),
  * and the edge each sits on is already implied by its repeat direction and ending type. */
 function readBarlines(measure: Measure): Read {
