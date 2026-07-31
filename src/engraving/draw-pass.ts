@@ -134,7 +134,7 @@ type TempoTask = {
 	modulation: TempoModulation | null;
 };
 
-import type { SpannerBuilder } from './spanner-builder';
+import type { Hairpin, SpannerBuilder } from './spanner-builder';
 import {
 	barlineBreaks,
 	isTabStaff,
@@ -748,6 +748,9 @@ export class DrawPass {
 	// Which row every stave built this pass sits on. `rowOf` only sees the system being
 	// built; the spanners are drawn at the end of the pass, over staves from every system.
 	private readonly rowByStave = new Map<Stave, number>();
+	// Likewise the system each stave belongs to, so a spanner drawn at the end of the pass can
+	// reserve room against the system above it (see observedOverflow).
+	private readonly systemByStave = new Map<Stave, number>();
 	private systemTop: Stave | undefined;
 	private systemBottom: Stave | undefined;
 	// Every part's staves are formatted together as one column so notes at the same
@@ -1040,6 +1043,7 @@ export class DrawPass {
 			this.systemPending.push(...this.pendingStaves);
 			for (const p of this.pendingStaves) {
 				this.rowByStave.set(p.stave, p.row);
+				this.systemByStave.set(p.stave, this.systemIndex);
 			}
 
 			// Chord symbols from this measure's <harmony> elements, each bound to the
@@ -3805,6 +3809,9 @@ export class DrawPass {
 		for (const tie of this.spanners.buildTies(this.allChords, this.byLead)) {
 			tie.setContext(this.context).draw();
 		}
+		// The bows, kept for the hairpin pass below: a wedge parks at a fixed gap from the
+		// staff, which is the same band a slur bowing the same way lands in.
+		const slurBows: { stave: Stave; rect: Rect }[] = [];
 		for (const slur of this.spanners.buildSlurs(this.allChords, this.byLead)) {
 			// drawWithStyle, not draw: Curve.draw never applies its own style, and a
 			// <slur line-type> rides on the element as a lineDash (see buildSlurs).
@@ -3821,6 +3828,17 @@ export class DrawPass {
 					slur.top,
 					slur.bottom,
 				);
+			}
+			if (slur.stave) {
+				slurBows.push({
+					stave: slur.stave,
+					rect: new Rect(
+						slur.left,
+						slur.top,
+						slur.right - slur.left,
+						slur.bottom - slur.top,
+					),
+				});
 			}
 		}
 		// Tablature hammer-ons/pull-offs and slides, likewise resolved over the whole score.
@@ -3892,9 +3910,32 @@ export class DrawPass {
 			this.allWedges,
 			this.byLead,
 		)) {
+			this.clearWedge(wedge, slurBows);
 			wedge.setContext(this.context).draw();
 			this.pageTop = Math.min(this.pageTop, wedge.bounds.top);
 			this.pageBottom = Math.max(this.pageBottom, wedge.bounds.bottom);
+			// A wedge pushed out past a slur can reach the neighbouring stave, so report the band
+			// it ended up in and let pass two open the gap — within the system as spill, and
+			// against the system above as overflow (an above-placed wedge on a system's top
+			// stave has nothing but the previous system over it).
+			const row = this.rowByStave.get(wedge.stave);
+			if (row !== undefined) {
+				this.recordStaveSpill(
+					{ stave: wedge.stave, row },
+					wedge.bounds.top,
+					wedge.bounds.bottom,
+				);
+			}
+			const system = this.systemByStave.get(wedge.stave);
+			if (system !== undefined) {
+				this.systemHighestTop.set(
+					system,
+					Math.min(
+						this.systemHighestTop.get(system) ?? Infinity,
+						wedge.bounds.top,
+					),
+				);
+			}
 		}
 		// Pedals draw under the stave (vexflow's getYForBottomText), below the notes, so
 		// grow the bottom crop to keep their "Ped…*" text / bracket from being clipped.
@@ -3975,6 +4016,32 @@ export class DrawPass {
 			this.pageBottom,
 			placed.bottom + PEDAL_BOTTOM_MARGIN,
 		);
+	}
+
+	/*
+	 * Move a hairpin further from the staff until it clears any slur bowing into its band. A
+	 * wedge parks at a fixed gap from the staff, which is exactly where a slur on the same
+	 * side lands — an under-slur over low notes dips straight through a below-stave crescendo.
+	 * The slur can't yield (it's pinned to its noteheads), so the wedge is the one that moves.
+	 *
+	 * Scoped like {@link dropPedalClear}: the shared index is per-system and wedges resolve
+	 * after the last one, so this indexes only the bows drawn over this wedge's own stave.
+	 */
+	private clearWedge(
+		wedge: Hairpin,
+		bows: { stave: Stave; rect: Rect }[],
+	): void {
+		const natural = wedge.rect;
+		const scoped = new CollisionResolver(this.scratchViewport);
+		for (const bow of bows) {
+			if (bow.stave === wedge.stave) {
+				scoped.add({ rect: bow.rect, kind: 'tie' });
+			}
+		}
+		const placed = wedge.above
+			? scoped.liftClear(natural, WORDS_NOTE_CLEARANCE)
+			: scoped.dropClear(natural, WORDS_NOTE_CLEARANCE);
+		wedge.setOffset(wedge.above ? natural.y - placed.y : placed.y - natural.y);
 	}
 
 	/*

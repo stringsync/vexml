@@ -632,12 +632,20 @@ const TEST_CASES = [
 	testCase('dynamics.musicxml', 'dynamics.png'),
 
 	// Treble stave, 3/4: <wedge> hairpins, one per measure, each spanning the measure's three
-	// B4 quarters. Both directions carry placement="above", so both draw ABOVE the staff
-	// (hairpins default below; the explicit placement wins) at a fixed gap over the top staff
-	// line, running notehead to notehead from the start direction's note to the stop's.
-	// - M4: a crescendo — an opening wedge, point at the first note, mouth at the third.
-	// - M5: a diminuendo — the mirror, mouth at the first note closing to a point at the
-	//   third.
+	// quarters at a fixed gap from the staff, running notehead to notehead from the start
+	// direction's note to the stop's.
+	// - M4: a crescendo, placement="above" (hairpins default below; the explicit placement
+	//   wins) over three B4s — an opening wedge, point at the first note, mouth at the third.
+	// - M5: a diminuendo, placement="above" over three B4s — the mirror, mouth at the first
+	//   note closing to a point at the third.
+	// - M6: a hairpin and a slur on the SAME side of the staff. G4, C4, G4 all sit low
+	//   enough to be stem-up, so the slur bows BELOW, dipping under the staff over the C4;
+	//   the crescendo takes the default below placement and would print through that bow at
+	//   its fixed gap. The wedge is the movable one (a bow is pinned to its noteheads), so it
+	//   drops clear: staff, then the slur's arc, then the hairpin under it, nothing touching.
+	// - M7: the same clash above the staff. C5, A5, C5 are stem-down so the slur bows ABOVE,
+	//   arcing over the ledger-lined A5, and the placement="above" crescendo lifts over the
+	//   arc instead of crossing it.
 	// ponytail: a hairpin that wraps across a system break isn't split into two partials the
 	// way a tie or slur is; no fixture reaches that yet.
 	testCase('wedges.musicxml', 'wedges.png'),

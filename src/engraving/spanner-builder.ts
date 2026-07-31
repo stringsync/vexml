@@ -38,6 +38,7 @@ import {
 	TAB_TIE_CP2,
 	TUPLET_NESTING_EXTRA_GAP,
 } from '../constants';
+import { Rect } from '../geometry';
 import { NoteheadArticulation } from './note-translator';
 
 import { LINE_TYPE_DASH, type PedalMark, type WedgeMark } from './score-reader';
@@ -58,6 +59,8 @@ export type SlurCurve = {
 	stave: Stave | undefined;
 	top: number;
 	bottom: number;
+	left: number;
+	right: number;
 };
 
 /*
@@ -190,7 +193,7 @@ class SingleSlide {
  * to those constants) than the three lines the shape actually is. Drawn via
  * setContext().draw() like the other spanners.
  */
-class Hairpin {
+export class Hairpin {
 	private context?: RenderContext;
 	constructor(
 		private readonly from: StaveNote,
@@ -198,18 +201,44 @@ class Hairpin {
 		private readonly crescendo: boolean,
 		private readonly placement: 'above' | 'below',
 	) {}
+	/*
+	 * Extra distance from the staff, set by the caller when the fixed gap would put the wedge
+	 * through something already drawn there (a slur bowing the same way). Signed in the
+	 * direction the hairpin sits: positive is further from the staff.
+	 */
+	private offset = 0;
 	setContext(context: RenderContext): this {
 		this.context = context;
 		return this;
 	}
-	/** The band the wedge occupies, for the caller's page crop. */
+	setOffset(offset: number): this {
+		this.offset = offset;
+		return this;
+	}
+	get stave(): Stave {
+		return this.from.checkStave();
+	}
+	get above(): boolean {
+		return this.placement === 'above';
+	}
+	/** The band the wedge occupies, for the caller's page crop and clearance check. */
 	get bounds(): { top: number; bottom: number } {
-		const stave = this.from.checkStave();
+		const stave = this.stave;
 		const top =
 			this.placement === 'above'
-				? stave.getYForLine(0) - HAIRPIN_STAVE_GAP - HAIRPIN_HEIGHT
-				: stave.getBottomLineY() + HAIRPIN_STAVE_GAP;
+				? stave.getYForLine(0) -
+					HAIRPIN_STAVE_GAP -
+					HAIRPIN_HEIGHT -
+					this.offset
+				: stave.getBottomLineY() + HAIRPIN_STAVE_GAP + this.offset;
 		return { top, bottom: top + HAIRPIN_HEIGHT };
+	}
+	/** The box the wedge is drawn in — the band above, over the notes it spans. */
+	get rect(): Rect {
+		const { top, bottom } = this.bounds;
+		const x1 = this.from.getAbsoluteX();
+		const x2 = this.to.getAbsoluteX();
+		return new Rect(Math.min(x1, x2), top, Math.abs(x2 - x1), bottom - top);
 	}
 	draw(): void {
 		const ctx = this.context;
@@ -1197,11 +1226,16 @@ export class SpannerBuilder {
 					if (slur.dash) {
 						curve.setStyle({ lineDash: slur.dash.join(' ') });
 					}
+					// A half-curve (one end wrapped onto another system) bows out to the edge of
+					// the stave it does have.
+					const curveStave = (curveFrom ?? curveTo)?.getStave();
 					slurs.push({
 						curve,
-						stave: (curveFrom ?? curveTo)?.getStave(),
+						stave: curveStave,
 						top: Math.min(endTop, apex),
 						bottom: Math.max(endBottom, apex),
+						left: curveFrom?.getAbsoluteX() ?? curveStave?.getTieStartX() ?? 0,
+						right: curveTo?.getAbsoluteX() ?? curveStave?.getTieEndX() ?? 0,
 					});
 				};
 
