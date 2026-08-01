@@ -74,8 +74,8 @@ export class ScoreRenderer {
 			parts.length > 0
 				? this.scoreDrawer.draw(
 						this.stage.base,
-						parts,
-						this.layoutPlanner.plan(parts, this.config),
+						mdoc.score,
+						this.layoutPlanner.plan(mdoc.score, this.config),
 					)
 				: EMPTY_GEOMETRY;
 

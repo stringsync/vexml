@@ -39,7 +39,7 @@ function fixture() {
 		measures,
 	);
 	boxes.push(box);
-	return { box, system };
+	return { box, system, mmeasure };
 }
 
 describe('MeasureBox', () => {
@@ -53,9 +53,8 @@ describe('MeasureBox', () => {
 	});
 
 	it('getSources returns the mdom measures it spans', () => {
-		const { box } = fixture();
-		expect(box.getSources()).toHaveLength(1);
-		expect(box.getSources()[0]?.tag).toBe('measure');
+		const { box, mmeasure } = fixture();
+		expect(box.getSources()).toEqual([mmeasure]);
 	});
 
 	it('is neither highlightable nor playable in v1', () => {

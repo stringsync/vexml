@@ -1,4 +1,9 @@
-import type { MElement } from '@stringsync/mdom';
+import type {
+	Harmony,
+	Measure as MMeasure,
+	Note as MNote,
+	Part as MPart,
+} from '@stringsync/mdom';
 import type { NoteGlyph } from '../engraving/score-drawer';
 import type { Rect } from '../geometry';
 import type { Viewport } from '../host/stage';
@@ -9,6 +14,9 @@ import type { Viewport } from '../host/stage';
  * during rendering, so identities are stable for the lifetime of a Score (reference equality
  * works).
  */
+
+/** The mdom nodes a vexml Element can be built from. */
+export type MSource = MNote | MMeasure | MPart | Harmony;
 
 /* Something with a known box. `rect` is in score space; getBoundingClientRect() maps it to the
  * page through the live scroll/zoom transform (mirrors DOM Element.getBoundingClientRect). */
@@ -115,8 +123,8 @@ export abstract class Element implements Decoratable {
 	) {}
 
 	/* The mutable mdom nodes this element was built from (a Note's MNote, a MeasureBox's one mdom
-	 * Measure per part, a ChordDiagram's raw <harmony> element). */
-	abstract getSources(): readonly MElement[];
+	 * Measure per part, a ChordDiagram's Harmony). */
+	abstract getSources(): readonly MSource[];
 
 	drawColor(ctx: CanvasRenderingContext2D, color: string): void {
 		const r = this.rect;

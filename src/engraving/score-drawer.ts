@@ -1,4 +1,4 @@
-import type { MElement, Note as MNote, Part } from '@stringsync/mdom';
+import type { Harmony, Note as MNote, Score } from '@stringsync/mdom';
 import { Renderer } from 'vexflow';
 import type { Config } from '../config';
 import {
@@ -52,8 +52,8 @@ export interface RawMeasure {
  * drawn extent (title included). */
 export interface RawChordDiagram {
 	rect: Rect;
-	/* The raw <harmony> MElement that produced this diagram (mdom doesn't type harmony). */
-	harmonySource: MElement;
+	/* The <harmony> that produced this diagram. */
+	harmonySource: Harmony;
 	measureIndex: number;
 	frame: ChordFrame;
 	title: string | null;
@@ -183,9 +183,10 @@ export class ScoreDrawer {
 	 */
 	draw(
 		canvas: HTMLCanvasElement,
-		parts: Part[],
+		score: Score,
 		layout: ScoreLayout,
 	): RawGeometry {
+		const _parts = score.parts;
 		const { boxes, systemGap, width, floorHeight } = layout;
 
 		// Canvas is immediate-mode: resizing a canvas clears its bitmap, so the final
@@ -241,7 +242,7 @@ export class ScoreDrawer {
 				this.spanners,
 				this.config,
 				context,
-				parts,
+				score,
 				activeLayout,
 				labelFont,
 				notationFont,

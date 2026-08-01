@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { MDOMParser, MElement } from '@stringsync/mdom';
+import { MDOMParser } from '@stringsync/mdom';
 import type { RawGeometry, RawNote } from '../engraving/score-drawer';
 import { Rect } from '../geometry';
 import { FakeDecoration } from '../testing/fake-decoration';
@@ -40,12 +40,7 @@ function build() {
 	const mC = must(chords[0]?.notes[0], 'C');
 	const mE = must(chords[0]?.notes[1], 'E');
 	const mBb = must(chords[1]?.notes[0], 'Bb');
-	const harmony = must(
-		mmeasure.children.find(
-			(c): c is MElement => c instanceof MElement && c.tag === 'harmony',
-		),
-		'harmony',
-	);
+	const harmony = must(mmeasure.harmonies[0], 'harmony');
 
 	// C and E stack as a chord; Bb is a lone tab note (fret 3 on string 2).
 	const notes: RawNote[] = [

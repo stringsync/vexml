@@ -1,4 +1,4 @@
-import type { MElement } from '@stringsync/mdom';
+import type { Harmony } from '@stringsync/mdom';
 import type { ChordFrame } from '../engraving/chord-diagram-glyph';
 import type { Rect } from '../geometry';
 import type { Viewport } from '../host/stage';
@@ -21,8 +21,7 @@ export class ChordDiagram extends Element implements Highlightable {
 		rect: Rect,
 		viewport: Viewport,
 		private readonly opts: {
-			/* The raw <harmony> MElement that produced this diagram (mdom doesn't type harmony). */
-			source: MElement;
+			source: Harmony;
 			frame: ChordFrame;
 			title: string | null;
 			decorations: Decorations;
@@ -33,7 +32,7 @@ export class ChordDiagram extends Element implements Highlightable {
 		this.halo = new Toggle(this, opts.decorations.halo);
 	}
 
-	getSources(): readonly MElement[] {
+	getSources(): readonly Harmony[] {
 		return [this.opts.source];
 	}
 

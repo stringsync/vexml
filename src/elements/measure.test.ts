@@ -23,7 +23,10 @@ function fixture() {
 	if (!mpart || !mmeasure) {
 		throw new Error('fixture: missing measure');
 	}
-	return { measure: measureFixture(mpart, mmeasure, new FakeViewport()) };
+	return {
+		measure: measureFixture(mpart, mmeasure, new FakeViewport()),
+		mmeasure,
+	};
 }
 
 describe('Measure', () => {
@@ -46,9 +49,8 @@ describe('Measure', () => {
 	});
 
 	it('getSources returns its single mdom measure', () => {
-		const { measure } = fixture();
-		expect(measure.getSources()).toHaveLength(1);
-		expect(measure.getSources()[0]?.tag).toBe('measure');
+		const { measure, mmeasure } = fixture();
+		expect(measure.getSources()).toEqual([mmeasure]);
 	});
 });
 

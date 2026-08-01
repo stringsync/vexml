@@ -42,6 +42,12 @@ function firstMeasureOf(xml: string) {
 	return measure;
 }
 
+/* Occurrences of `<tag` in the serialized slice — how a duplicated signature shows up.
+ * String-counted rather than walked: what the CLI writes out is the artifact under test. */
+function countOf(xml: string, tag: string): number {
+	return xml.split(`<${tag}`).length - 1;
+}
+
 describe('parseMeasureSpec', () => {
 	it('expands a mix of singles and ranges', () => {
 		expect([...parseMeasureSpec('1,3-5,8')]).toEqual(['1', '3', '4', '5', '8']);
@@ -97,9 +103,8 @@ describe('sliceMusicXML', () => {
 			scoreOf(DIVISIONS + SHARPS + COMMON + TREBLE, '', FLATS),
 			'3',
 		);
-		const measure = firstMeasureOf(xml);
-		expect(measure.child('attributes')?.childrenNamed('key')).toHaveLength(1);
-		expect(measure.getKey()?.fifths).toBe(-2);
+		expect(firstMeasureOf(xml).getKey()?.fifths).toBe(-2);
+		expect(countOf(xml, 'key')).toBe(1);
 	});
 
 	it('hoists a per-staff clef for each staff', () => {
@@ -123,9 +128,8 @@ describe('sliceMusicXML', () => {
 			),
 			'3',
 		);
-		expect(
-			firstMeasureOf(xml).child('attributes')?.childrenNamed('key'),
-		).toHaveLength(1);
+		expect(firstMeasureOf(xml).getKey()?.fifths).toBe(-2);
+		expect(countOf(xml, 'key')).toBe(1);
 	});
 
 	it('hoists into a measure that declares no attributes at all', () => {
@@ -134,19 +138,26 @@ describe('sliceMusicXML', () => {
 			'2',
 		);
 		const measure = firstMeasureOf(xml);
-		expect(measure.child('attributes')).not.toBeNull();
+		expect(measure.getKey()?.fifths).toBe(3);
+		expect(measure.getTime()?.beats).toBe('4');
+		expect(measure.getClef()?.sign).toBe('G');
 		expect(measure.notes).toHaveLength(1);
 	});
 
-	it('emits hoisted attributes in schema order', () => {
+	it('carries every signature in effect, each exactly once', () => {
 		const xml = sliceMusicXML(
 			scoreOf(DIVISIONS + SHARPS + COMMON + TREBLE, '', ''),
 			'3',
 		);
-		const tags = firstMeasureOf(xml)
-			.child('attributes')
-			?.children.map((c) => ('tag' in c ? c.tag : ''));
-		expect(tags).toEqual(['divisions', 'key', 'time', 'clef']);
+		const measure = firstMeasureOf(xml);
+		expect(measure.getKey()?.fifths).toBe(3);
+		expect(measure.getTime()?.beats).toBe('4');
+		expect(measure.getClef()?.sign).toBe('G');
+		// Schema child order inside <attributes> is mdom's invariant to hold, not vexml's
+		// to check — the slice only has to name each signature once.
+		for (const tag of ['divisions', 'key', 'time', 'clef']) {
+			expect(countOf(xml, tag)).toBe(1);
+		}
 	});
 
 	it('does not let a mid-measure change suppress what the measure inherits', () => {
@@ -169,9 +180,9 @@ describe('sliceMusicXML', () => {
 			'2',
 		);
 		const measure = firstMeasureOf(xml);
-		// Opens in 3 sharps (inherited), then changes to 2 flats mid-measure.
+		// Opens in 3 sharps (inherited), then changes to 2 flats mid-measure — both survive.
 		expect(measure.getKey()?.fifths).toBe(3);
-		expect(measure.childrenNamed('attributes')).toHaveLength(2);
+		expect(countOf(xml, 'key')).toBe(2);
 	});
 
 	it('throws when a part has no matching measures', () => {

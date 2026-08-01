@@ -1,27 +1,17 @@
-import { MElement, type Measure, type Part } from '@stringsync/mdom';
+import type { Measure, Part, PartGroupSpan, Score } from '@stringsync/mdom';
 
-/** True when `<staff-details>` gives this staff both string tunings and an explicit
- * `<staff-lines>` — the MusicXML signal for tablature that doesn't depend on the clef.
+/** True when `<staff-details>` tunes a string for every line of this staff — the MusicXML
+ * signal for tablature that doesn't depend on the clef.
  *
- * Tuning alone is not enough: Guitar Pro copies a guitar's six `<staff-tuning>`s onto the
- * *notation* staff of a notation+tab part (and onto unrelated parts sharing the
- * instrument), where they mean nothing. A real tab staff always sizes itself with
- * `<staff-lines>`, so requiring both keeps those spurious tunings from turning notation
- * staves into tab. */
+ * Tunings alone are not enough: Guitar Pro copies a guitar's six `<staff-tuning>`s onto
+ * the *notation* staff of a notation+tab part (and onto unrelated parts sharing the
+ * instrument), where they mean nothing. A real tab staff has one string per line, so
+ * matching the counts keeps those six spurious tunings off a 5-line notation staff. */
 function hasStaffTuning(measure: Measure, staffNumber: string): boolean {
-	for (const attributes of measure.childrenNamed('attributes')) {
-		for (const details of attributes.childrenNamed('staff-details')) {
-			const number = details.getAttribute('number') ?? '1';
-			if (
-				number === staffNumber &&
-				details.childrenNamed('staff-tuning').length > 0 &&
-				details.child('staff-lines') !== null
-			) {
-				return true;
-			}
-		}
-	}
-	return false;
+	const tunings = measure.getStaffTunings(staffNumber);
+	return (
+		tunings.length > 0 && tunings.length === measure.getStaveLines(staffNumber)
+	);
 }
 
 const STEP_SEMITONES: Record<string, number> = {
@@ -50,29 +40,16 @@ export function midiOf(step: string, octave: number, alter = 0): number {
  */
 export function stringTuning(part: Part, staffNumber: string): number[] | null {
 	for (const measure of part.measures) {
-		for (const attributes of measure?.childrenNamed('attributes') ?? []) {
-			for (const details of attributes.childrenNamed('staff-details')) {
-				if ((details.getAttribute('number') ?? '1') !== staffNumber) {
-					continue;
-				}
-				const tunings = details.childrenNamed('staff-tuning');
-				if (tunings.length === 0) {
-					continue;
-				}
-				const lineCount = Math.max(
-					...tunings.map((t) => Number(t.getAttribute('line') ?? 1)),
-				);
-				const midis: number[] = [];
-				for (const tuning of tunings) {
-					const line = Number(tuning.getAttribute('line') ?? 1);
-					const step = tuning.child('tuning-step')?.text ?? 'C';
-					const octave = Number(tuning.child('tuning-octave')?.text ?? 4);
-					const alter = Number(tuning.child('tuning-alter')?.text ?? 0);
-					midis[lineCount - line] = midiOf(step, octave, alter);
-				}
-				return midis;
-			}
+		const tunings = measure.getStaffTunings(staffNumber);
+		if (tunings.length === 0) {
+			continue;
 		}
+		const lineCount = Math.max(...tunings.map((t) => t.line));
+		const midis: number[] = [];
+		for (const tuning of tunings) {
+			midis[lineCount - tuning.line] = tuning.midi;
+		}
+		return midis;
 	}
 	return null;
 }
@@ -83,10 +60,10 @@ export function stringTuning(part: Part, staffNumber: string): number[] | null {
  * stable across a part, so the first measure that declares either settles it. */
 export function isTabStaff(part: Part, staffNumber: string): boolean {
 	for (const measure of part.measures) {
-		if (measure && hasStaffTuning(measure, staffNumber)) {
+		if (hasStaffTuning(measure, staffNumber)) {
 			return true;
 		}
-		const clef = measure?.getClef(staffNumber);
+		const clef = measure.getClef(staffNumber);
 		if (clef) {
 			return clef.sign === 'TAB';
 		}
@@ -167,16 +144,16 @@ export type PartGroup = {
  * the inner group is the one closest to the staves — hence the two passes rather than deleting
  * from a running set, which would let an outer 'yes' erase an inner 'no'.
  */
-export function barlineBreaks(parts: Part[]): Set<number> {
+export function barlineBreaks(score: Score): Set<number> {
 	const joined = new Set<number>();
 	const broken = new Set<number>();
-	for (const group of partGroupEntries(parts)) {
-		for (let at = group.fromPart; at < group.toPart; at++) {
+	for (const group of score.partGroups) {
+		for (let at = group.fromPartIndex; at < group.toPartIndex; at++) {
 			(group.barline === 'no' ? broken : joined).add(at);
 		}
 	}
 	const breaks = new Set<number>();
-	for (let at = 0; at < parts.length - 1; at++) {
+	for (let at = 0; at < score.parts.length - 1; at++) {
 		if (!joined.has(at) || broken.has(at)) {
 			breaks.add(at);
 		}
@@ -185,96 +162,38 @@ export function barlineBreaks(parts: Part[]): Set<number> {
 }
 
 /*
- * The `<part-group>` spans declared in the `<part-list>`, outermost first.
+ * The `<part-group>` spans that draw a connector, outermost first.
  *
- * MusicXML declares groups as flat start/stop markers interleaved with the `<score-part>`
- * entries, paired by `number`, so a group's extent is "the parts between its start and its
- * stop" — read here by walking the list in document order and closing each start when its
- * numbered stop arrives. Nesting depth is how many other groups were open when this one
- * started, which is what decides how far outside the system its symbol is drawn.
- *
- * Groups whose `<group-symbol>` is absent or 'none' draw no connector — they exist only to
- * carry a name or a barline rule (see barlineBreaks). 'square' falls back to 'bracket'
- * (vexflow draws no squared bracket). A group is also dropped when its parts aren't
- * contiguous in the rendered set, or when it spans only one part with nothing to connect.
+ * Groups whose `<group-symbol>` is absent or 'none' draw nothing — they exist only to carry
+ * a name or a barline rule (see barlineBreaks) — and one spanning a single part has nothing
+ * to connect. 'square' falls back to 'bracket' (vexflow draws no squared bracket).
  *
  * ponytail: `<group-abbreviation>` is ignored — it's the short name for systems after the
  * first, and vexml prints part labels on the first system only, so nothing would ever use it.
  */
-export function partGroups(parts: Part[]): PartGroup[] {
-	return (
-		partGroupEntries(parts)
-			// A group with no symbol draws no connector — it exists only to carry a name or a
-			// barline rule — and one spanning a single part has nothing to connect.
-			.filter((group) => group.symbol !== null && group.toPart > group.fromPart)
-			.map(({ fromPart, toPart, symbol, depth, name }) => ({
-				fromPart,
-				toPart,
-				symbol: symbol as PartGroup['symbol'],
-				depth,
-				name,
-			}))
-			.sort((a, b) => a.depth - b.depth)
-	);
-}
-
-/* One `<part-group>` as the `<part-list>` declares it, before any drawing decision: symbol
- * still nullable, single-part and symbol-less spans still included (they can carry a
- * `<group-barline>` or a `<group-name>`). See partGroups for the walk this performs. */
-type PartGroupEntry = {
-	fromPart: number;
-	toPart: number;
-	symbol: PartGroup['symbol'] | null;
-	depth: number;
-	name: string | null;
-	barline: string | null;
-};
-
-function partGroupEntries(parts: Part[]): PartGroupEntry[] {
-	const partList = parts[0]?.parent?.child('part-list');
-	if (!partList) {
-		return [];
-	}
-	const groups: PartGroupEntry[] = [];
-	// number -> the still-open start marker it belongs to.
-	const open = new Map<string, Omit<PartGroupEntry, 'toPart'>>();
-	let seen = 0; // parts passed so far, so a start knows where its span begins
-	for (const entry of partList.children) {
-		if (!(entry instanceof MElement)) {
-			continue;
-		}
-		if (entry.tag === 'score-part') {
-			seen += 1;
-			continue;
-		}
-		if (entry.tag !== 'part-group') {
-			continue;
-		}
-		const number = entry.getAttribute('number') ?? '1';
-		if (entry.getAttribute('type') === 'stop') {
-			const start = open.get(number);
-			open.delete(number);
-			// `seen` counts parts BEFORE this marker, so the last member is seen - 1.
-			if (start && seen - 1 >= start.fromPart) {
-				groups.push({ ...start, toPart: seen - 1 });
-			}
-			continue;
-		}
-		open.set(number, {
-			symbol: groupSymbol(entry.child('group-symbol')?.text ?? null),
-			fromPart: seen,
-			depth: open.size,
-			name: entry.child('group-name')?.text || null,
-			barline: entry.child('group-barline')?.text ?? null,
-		});
-	}
-	// The <score-part> entries are in the same order as the <part> elements, so the counted
-	// positions index `parts` directly; a malformed list that runs past the end is dropped.
-	return groups.filter((g) => g.fromPart >= 0 && g.toPart < parts.length);
+export function partGroups(score: Score): PartGroup[] {
+	return score.partGroups
+		.flatMap((group) => {
+			const symbol = groupSymbol(group.symbol);
+			return symbol && group.toPartIndex > group.fromPartIndex
+				? [
+						{
+							fromPart: group.fromPartIndex,
+							toPart: group.toPartIndex,
+							symbol,
+							depth: group.depth,
+							name: group.name,
+						},
+					]
+				: [];
+		})
+		.sort((a, b) => a.depth - b.depth);
 }
 
 /** MusicXML `<group-symbol>` -> the connector vexml draws. null means "draw nothing". */
-function groupSymbol(symbol: string | null): PartGroup['symbol'] | null {
+function groupSymbol(
+	symbol: PartGroupSpan['symbol'],
+): PartGroup['symbol'] | null {
 	switch (symbol) {
 		case 'brace':
 			return 'brace';

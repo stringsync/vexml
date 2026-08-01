@@ -1,10 +1,4 @@
-import {
-	type Chord,
-	type Tuplet as MTuplet,
-	type Note,
-	Part,
-	type Slur,
-} from '@stringsync/mdom';
+import type { Chord, Tuplet as MTuplet, Note } from '@stringsync/mdom';
 import {
 	Beam,
 	Curve,
@@ -340,29 +334,31 @@ type TupletDisplay = {
 };
 
 function tupletDisplay(marker: MTuplet): TupletDisplay {
-	const printedNumber = (tag: string) =>
-		Number(marker.child(tag)?.child('tuplet-number')?.text) || null;
-	const bracket = marker.getAttribute('bracket');
 	return {
-		numNotes: printedNumber('tuplet-actual'),
-		notesOccupied: printedNumber('tuplet-normal'),
-		ratioed: marker.getAttribute('show-number') === 'both',
-		bracketed: bracket === null ? null : bracket === 'yes',
+		numNotes: marker.actual?.number ?? null,
+		notesOccupied: marker.normal?.number ?? null,
+		ratioed: marker.showNumber === 'both',
+		bracketed: marker.bracket,
 	};
 }
 
 export class SpannerBuilder {
 	/*
 	 * Group a voice's chord run into beam runs off the primary <beam number="1">
-	 * markers. Unlike mdom's measure.beams, an "end" does NOT close the run: only a
-	 * "begin" (new run) or a non-beamed note does. This keeps a beat whose primary beam
-	 * is split at a sub-beam boundary — e.g. Guitar Pro encoding a triplet-of-16ths +
-	 * 2-16ths beat as begin,continue,end,continue,end — as one continuous primary beam
-	 * (mdom instead drops the orphaned continue/end notes, leaving them flagged).
+	 * markers. An "end" does NOT close the run: only a "begin" (new run) or a non-beamed
+	 * note does. This keeps a beat whose primary beam is split at a sub-beam boundary —
+	 * e.g. Guitar Pro encoding a triplet-of-16ths + 2-16ths beat as
+	 * begin,continue,end,continue,end — as one continuous primary beam.
 	 * The secondary beam still breaks at those boundaries: any <beam number="2"> "end"
 	 * that isn't the run's last note marks where the 16th beam splits.
 	 * A rest with no beam markers does NOT close the run either: it can sit under a
 	 * beam, so it's skipped and the surrounding notes stay in one beam.
+	 *
+	 * mdom's Measure.beamRuns() now folds beams by these exact rules, but it is
+	 * MEASURE-scoped and this has to be VOICE-scoped: `beamChords` is a voice's full,
+	 * unrestricted chord list, which is what groups a cross-stave beam exactly once (see
+	 * StaffVoice). mdom's own note-scoped groupBeamRuns() would fit, but the package
+	 * doesn't export it.
 	 */
 	groupBeams(chords: Chord[]): BeamGroup[] {
 		const groups: BeamGroup[] = [];
@@ -561,7 +557,7 @@ export class SpannerBuilder {
 		>();
 		chords.forEach((chord, i) => {
 			for (const tuplet of chord.lead.tuplets) {
-				const number = tuplet.getAttribute('number') ?? '1';
+				const number = tuplet.number;
 				if (tuplet.tupletType === 'start') {
 					const depth = open.size;
 					for (const enclosing of open.values()) {
@@ -571,7 +567,7 @@ export class SpannerBuilder {
 						start: i,
 						depth,
 						maxDepth: depth,
-						placement: tuplet.getAttribute('placement'),
+						placement: tuplet.placement,
 						display: tupletDisplay(tuplet),
 					});
 					continue;
@@ -722,7 +718,7 @@ export class SpannerBuilder {
 				if (slur.slurType !== 'start') {
 					continue;
 				}
-				const partner = slurPartner(slur);
+				const partner = slur.partner?.note ?? null;
 				const lastNote = partner && byTabLead.get(partner);
 				// An unclosed slur (no resolved partner) isn't a real hammer-on/pull-off;
 				// skip it rather than drawing a dangling tie.
@@ -1569,7 +1565,7 @@ type SlurConnector = {
 	dash: number[] | null;
 };
 function slurConnectors(note: Note): SlurConnector[] {
-	const slurTargets = new Set(note.slurs.map(slurPartner));
+	const slurTargets = new Set(note.slurs.map((s) => s.partner?.note ?? null));
 	const techniques: SlurConnector[] = [
 		...note.hammerOns.map((h) => ({
 			slurType: h.hammerOnType,
@@ -1586,100 +1582,16 @@ function slurConnectors(note: Note): SlurConnector[] {
 	].filter((t) => !slurTargets.has(t.partner?.note ?? null));
 	return [
 		...note.slurs.map((s) => {
-			const partner = slurPartner(s);
+			const partner = s.partner?.note ?? null;
 			return {
 				slurType: s.slurType,
 				partner: partner && { note: partner },
 				placement: s.placement,
-				dash: LINE_TYPE_DASH[s.getAttribute('line-type') ?? 'solid'] ?? null,
+				dash: LINE_TYPE_DASH[s.lineType ?? 'solid'] ?? null,
 			};
 		}),
 		...techniques,
 	];
-}
-
-/*
- * The note at a slur's far end: the next stop with the same number, in ONSET order.
- *
- * Same rule mdom's `partner` applies, but over the notes sorted by when they sound rather
- * than by where the exporter wrote them. A <backup> puts a later voice's notes after an
- * earlier voice's in the document even though the two sound together, and Finale exports
- * the piano's cross-stave figures that way: the slur opens on the left hand's first 16th
- * and closes on a right-hand note the file lists BEFORE it (Dichterliebe, every other
- * bar). Document order finds no stop at all there, so the slur runs on until it hits some
- * later measure's stop — two bars of ink across the page.
- *
- * Resolved per part and cached, because the scan is part-wide and every note asks.
- */
-const SLUR_PARTNERS = new WeakMap<Part, Map<Slur, Note>>();
-function slurPartner(slur: Slur): Note | null {
-	const part = slur.closest(Part);
-	if (!part) {
-		return slur.partner?.note ?? null;
-	}
-	let pairs = SLUR_PARTNERS.get(part);
-	if (!pairs) {
-		pairs = pairSlurs(part);
-		SLUR_PARTNERS.set(part, pairs);
-	}
-	return pairs.get(slur) ?? null;
-}
-
-/*
- * Walks a part's slur markers in onset order, matching each stop to a still-open start of
- * the same number. Records both directions so either end can look the other up.
- *
- * MusicXML says a number can't reopen until it closes, so in a well-formed part only one
- * start of a given number is ever open and the rule reduces to "the next stop". Exporters
- * break that constantly, though — a divisi stave's two voices, or a chord's members, all
- * slurring under number 1 — and onset order interleaves the markers those emit. Hence the
- * two tie-breaks, both aimed at keeping such arcs parallel rather than crossed:
- *
- *   - Same voice wins. Two voices in parallel each keep their own arc even when their
- *     slurs are different lengths, which is the case a positional rule can't get right.
- *   - Otherwise the OLDEST open start wins. That's a chord: its members open together, so
- *     voice can't separate them, but the first start belongs with the first stop.
- */
-function pairSlurs(part: Part): Map<Slur, Note> {
-	const pairs = new Map<Slur, Note>();
-	const open = new Map<string, Slur[]>();
-	const markers = part.measures.flatMap((measure) =>
-		notesByOnset(measure.notes).flatMap((note) => note.slurs),
-	);
-	for (const marker of markers) {
-		const queue = open.get(marker.number) ?? [];
-		if (marker.slurType === 'start') {
-			open.set(marker.number, [...queue, marker]);
-			continue;
-		}
-		if (marker.slurType !== 'stop') {
-			continue;
-		}
-		const sameVoice = queue.findIndex(
-			(s) => s.note.voice === marker.note.voice,
-		);
-		const [start] = queue.splice(Math.max(sameVoice, 0), 1);
-		if (start) {
-			pairs.set(start, marker.note);
-			pairs.set(marker, start.note);
-		}
-	}
-	return pairs;
-}
-
-/* A measure's notes in playing order. A <backup> makes document order disagree with it,
- * and a grace note carries no onset of its own — it belongs with the note it was written
- * against, so it inherits the running one rather than sorting to the head of the bar. */
-function notesByOnset(notes: Note[]): Note[] {
-	let running = 0;
-	const onsets = new Map<Note, number>();
-	for (const note of notes) {
-		running = note.measureBeat ?? running;
-		onsets.set(note, running);
-	}
-	// Stable, so notes sharing an onset (chord members, graces, voices in unison) keep
-	// document order.
-	return [...notes].sort((a, b) => (onsets.get(a) ?? 0) - (onsets.get(b) ?? 0));
 }
 
 /*

@@ -1,4 +1,4 @@
-import { Measure, type Part } from '@stringsync/mdom';
+import type { Part } from '@stringsync/mdom';
 import type { Gap } from './config';
 
 /*
@@ -79,37 +79,13 @@ export function insertGapMeasures(parts: Part[], gaps: readonly Gap[]): void {
 	sorted.forEach((gap, k) => {
 		for (const part of parts) {
 			// beforeMeasureIndex + k: earlier gaps already shifted this position right.
-			const ref = part.measures[gap.beforeMeasureIndex + k] ?? null;
-			const measure = new Measure();
-			// mdom requires a number on every measure; '' keeps it distinct from the real
-			// printed labels and DrawPass never prints it.
-			measure.setAttribute('number', '');
-			part.insertBefore(measure, ref);
+			const at = gap.beforeMeasureIndex + k;
+			// '' keeps the number distinct from the real printed labels; DrawPass never
+			// prints it.
+			const measure = part.insertMeasureAt(at, { number: '' });
+			const ref = part.measures[at + 1];
 			if (ref) {
-				for (let s = 1; s <= Math.max(part.staveCount, 1); s++) {
-					const staff = String(s);
-					const clef = ref.getClef(staff);
-					if (clef) {
-						measure.setClef({
-							sign: clef.sign,
-							line: clef.line ?? undefined,
-							octaveChange: clef.octaveChange || undefined,
-							staff,
-						});
-					}
-					const fifths = ref.getKey(staff)?.fifths;
-					if (fifths !== null && fifths !== undefined) {
-						measure.setKey({ fifths, staff });
-					}
-					const time = ref.getTime(staff);
-					if (time?.beats && time?.beatType) {
-						measure.setTime({
-							beats: Number(time.beats),
-							beatType: Number(time.beatType),
-							symbol: time.symbol ?? undefined,
-						});
-					}
-				}
+				measure.copySignaturesFrom(ref);
 			}
 		}
 	});

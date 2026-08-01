@@ -1,12 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, extname, isAbsolute, resolve } from 'node:path';
-import {
-	MDOMParser,
-	MElement,
-	type Measure,
-	type MNode,
-	MusicXMLSerializer,
-} from '@stringsync/mdom';
+import { MDOMParser, MusicXMLSerializer } from '@stringsync/mdom';
 
 export async function slice(opts: {
 	input: string;
@@ -53,7 +47,7 @@ export function sliceMusicXML(xml: string, spec: string): string {
 		if (!first) {
 			throw new Error(`part ${part.id} has no measures matching "${spec}"`);
 		}
-		hoistAttributes(measures, first);
+		first.materializeSignatures();
 		for (const measure of measures) {
 			if (!wanted.has(measure.number)) {
 				measure.remove();
@@ -88,139 +82,4 @@ export function parseMeasureSpec(spec: string): Set<string> {
 		}
 	}
 	return out;
-}
-
-/**
- * `<attributes>` child order, from the XSD sequence. Unlisted tags sort last.
- * The slice re-sorts because inherited children are appended, not placed.
- */
-const ATTRIBUTE_ORDER = [
-	'footnote',
-	'level',
-	'divisions',
-	'key',
-	'time',
-	'staves',
-	'part-symbol',
-	'instruments',
-	'clef',
-	'staff-details',
-	'transpose',
-	'for-part',
-	'directive',
-	'measure-style',
-];
-
-/** Attributes that stay in effect until replaced, so a slice has to carry them in. */
-const CARRIED = new Set([
-	'divisions',
-	'key',
-	'time',
-	'staves',
-	'part-symbol',
-	'instruments',
-	'clef',
-	'staff-details',
-	'transpose',
-]);
-
-/** Carried attributes with one score-wide value, rather than one per staff. */
-const GLOBAL = new Set(['divisions', 'staves', 'part-symbol', 'instruments']);
-
-/**
- * Copy into `first` every carried attribute that was in effect just before it —
- * the signatures the dropped measures established. Walks backward, nearest wins,
- * and never overwrites what `first` already declares.
- */
-function hoistAttributes(measures: Measure[], first: Measure): void {
-	// Value null marks a key `first` already declares: claimed, but nothing to copy.
-	const inherited = new Map<string, MElement | null>();
-	// A numberless key/time/staff-details/transpose applies to every staff, so once
-	// the nearest one is found nothing further back in that tag can still apply.
-	const sealed = new Set<string>();
-
-	const collect = (block: MElement, own: boolean) => {
-		for (const child of block.children) {
-			if (!(child instanceof MElement) || !CARRIED.has(child.tag)) {
-				continue;
-			}
-			const number = child.getAttribute('number');
-			// Clefs are the exception to numberless-means-all-staves: they match a
-			// single staff exactly, defaulting to the first.
-			const staff = child.tag === 'clef' ? (number ?? '1') : (number ?? '*');
-			const key = GLOBAL.has(child.tag) ? child.tag : `${child.tag}:${staff}`;
-			if (sealed.has(child.tag) || inherited.has(key)) {
-				continue;
-			}
-			inherited.set(key, own ? null : child);
-			if (staff === '*' && !GLOBAL.has(child.tag)) {
-				sealed.add(child.tag);
-			}
-		}
-	};
-
-	for (const block of leadingAttributes(first)) {
-		collect(block, true);
-	}
-	// Nearest first: later measures before earlier ones, and within a measure a
-	// mid-measure change before the one that opened it.
-	const earlier = measures.slice(0, measures.indexOf(first)).reverse();
-	for (const measure of earlier) {
-		for (const block of measure.childrenNamed('attributes').reverse()) {
-			collect(block, false);
-		}
-	}
-
-	const target = leadingAttributes(first)[0] ?? openAttributes(first);
-	for (const child of inherited.values()) {
-		if (child) {
-			target.append(child);
-		}
-	}
-	sortChildren(target);
-}
-
-/**
- * The `<attributes>` blocks in effect at the start of `measure`. A block after
- * the first note is a mid-measure change and must not suppress what the measure
- * inherits — the measure still opens with the old signature.
- */
-function leadingAttributes(measure: Measure): MElement[] {
-	const blocks: MElement[] = [];
-	for (const child of measure.children) {
-		if (!(child instanceof MElement)) {
-			continue;
-		}
-		if (child.tag === 'note') {
-			break;
-		}
-		if (child.tag === 'attributes') {
-			blocks.push(child);
-		}
-	}
-	return blocks;
-}
-
-/** Add an empty `<attributes>` ahead of the measure's notes. */
-function openAttributes(measure: Measure): MElement {
-	const block = new MElement('attributes');
-	const firstNote =
-		measure.children.find((c) => c instanceof MElement && c.tag === 'note') ??
-		null;
-	measure.insertBefore(block, firstNote);
-	return block;
-}
-
-/** Reorder children into the schema sequence, stably (same-tag order is kept). */
-function sortChildren(block: MElement): void {
-	const rank = (node: MNode) => {
-		const i = node instanceof MElement ? ATTRIBUTE_ORDER.indexOf(node.tag) : -1;
-		return i === -1 ? ATTRIBUTE_ORDER.length : i;
-	};
-	const sorted = block.children
-		.map((node, i) => ({ node, i }))
-		.sort((a, b) => rank(a.node) - rank(b.node) || a.i - b.i);
-	for (const { node } of sorted) {
-		block.append(node);
-	}
 }

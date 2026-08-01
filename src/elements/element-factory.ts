@@ -1,4 +1,8 @@
-import type { MElement, Note as MNote, Part as MPart } from '@stringsync/mdom';
+import type {
+	Measure as MMeasure,
+	Note as MNote,
+	Part as MPart,
+} from '@stringsync/mdom';
 import type { RawGeometry } from '../engraving/score-drawer';
 import { Rect } from '../geometry';
 import type { Viewport } from '../host/stage';
@@ -98,7 +102,7 @@ export class ElementFactory {
 		// through noteByMnote (filled below, before any query). A measure the draw pass emitted
 		// no column for (nothing rendered at that index) gets no Measure.
 		const partList: Part[] = [];
-		const measureByMMeasure = new Map<MElement, Measure>();
+		const measureByMMeasure = new Map<MMeasure, Measure>();
 		for (const mpart of parts) {
 			const measureList: Measure[] = [];
 			const part = new Part(mpart, measureList);
@@ -119,11 +123,9 @@ export class ElementFactory {
 		}
 
 		for (const rn of geometry.notes) {
-			// A note's mdom parent is its measure; no per-part Measure means its column was never
-			// rendered, so the note has no place in the index either.
-			const measure = rn.mnote.parent
-				? measureByMMeasure.get(rn.mnote.parent)
-				: undefined;
+			// No per-part Measure means the note's column was never rendered, so the note has no
+			// place in the index either.
+			const measure = measureByMMeasure.get(rn.mnote.measure);
 			if (!measure) {
 				continue;
 			}

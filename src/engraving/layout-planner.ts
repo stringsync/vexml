@@ -1,4 +1,4 @@
-import type { Part } from '@stringsync/mdom';
+import type { Score } from '@stringsync/mdom';
 import { Formatter, GraceNoteGroup } from 'vexflow';
 import type { Config } from '../config';
 import {
@@ -290,7 +290,8 @@ export class LayoutPlanner {
 	 * staves stack within a system, and how tall/wide the page starts. Depends only on
 	 * the music and the options, never on the live container — the finished result is
 	 * scaled to fit its container. */
-	plan(parts: Part[], config: Config): ScoreLayout {
+	plan(score: Score, config: Config): ScoreLayout {
+		const parts = score.parts;
 		const layout = config.layout;
 		const layoutMode = layout.type;
 		// Standard lays out at its reference width; panoramic starts there and grows the page
@@ -375,7 +376,7 @@ export class LayoutPlanner {
 		const groupChars = config.showPartLabels
 			? Math.max(
 					0,
-					...partGroups(parts).map((group) => group.name?.length ?? 0),
+					...partGroups(score).map((group) => group.name?.length ?? 0),
 				)
 			: 0;
 		const labelIndent =
@@ -551,8 +552,7 @@ export class LayoutPlanner {
 				// genuinely can't both hold, and `overflow` says which one gives: 'wrap' breaks
 				// the line here, 'allow' and 'widen' keep it and pay for it in page width.
 				const keepsLine =
-					honorSystemBreaks &&
-					print.some((p) => p?.getAttribute('new-system') === 'no');
+					honorSystemBreaks && print.some((p) => p?.systemBreak === 'no');
 				const usable = usableOf(systems.length);
 				const overruns = keepsLine
 					? overflow === 'wrap' &&

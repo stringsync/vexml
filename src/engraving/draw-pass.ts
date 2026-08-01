@@ -1,10 +1,11 @@
 import type {
 	Chord,
+	Harmony,
 	Key,
-	MElement,
 	Measure,
 	Note,
 	Part,
+	Score,
 	Time,
 } from '@stringsync/mdom';
 import {
@@ -254,40 +255,25 @@ function keySignatureLine(
  * triples MusicXML writes instead of <fifths> — as the glyph list a CustomKeySignature draws,
  * in the order given rather than in circle-of-fifths order. Empty when the key is an ordinary
  * <fifths> one (or carries nothing at all), which is the signal to use the plain key spec.
- *
- * The children are read positionally: MusicXML interleaves the three element kinds rather
- * than nesting each alteration, so the nth <key-step> pairs with the nth <key-alter>. The
- * <key-octave number="n"> elements index the same nth alteration.
  */
 function customKeyAccidentals(
 	key: Key,
 	clef: string,
 ): Array<{ type: string; line: number }> {
-	const steps = key.childrenNamed('key-step');
-	if (steps.length === 0) {
-		return [];
-	}
-	const alters = key.childrenNamed('key-alter');
-	const accidentals = key.childrenNamed('key-accidental');
-	const octaves = new Map(
-		key
-			.childrenNamed('key-octave')
-			.map((o) => [Number(o.getAttribute('number')), Number(o.text)]),
-	);
 	const out: Array<{ type: string; line: number }> = [];
-	steps.forEach((step, index) => {
-		const named = accidentals[index]?.text;
+	for (const alteration of key.alterations) {
+		const named = alteration.accidental;
 		const type =
 			(named ? ACCIDENTAL_CODES[named] : undefined) ??
-			KEY_ALTER_CODES[alters[index]?.text ?? '0'];
-		if (!type || !step.text) {
-			return;
+			KEY_ALTER_CODES[String(alteration.alter)];
+		if (!type) {
+			continue;
 		}
 		out.push({
 			type,
-			line: keySignatureLine(step.text, octaves.get(index + 1) ?? null, clef),
+			line: keySignatureLine(alteration.step, alteration.octave, clef),
 		});
-	});
+	}
 	return out;
 }
 
@@ -671,6 +657,9 @@ export class DrawPass {
 	// When false, notation staves are dropped the same way tab staves are.
 	private readonly showNotation: boolean;
 	// Document measure index -> the gap spec rendered there (empty when config has none).
+	/* score.parts rebuilds its array on every read, so hold it once. */
+	/* score.parts rebuilds its array on every read, so hold it once. */
+	private readonly parts: Part[];
 	private readonly gaps: ReadonlyMap<number, Gap>;
 	// Lead measure index -> the number of measures its <multiple-rest> consolidates.
 	private readonly multiRests: ReadonlyMap<number, number>;
@@ -805,7 +794,7 @@ export class DrawPass {
 		staveNote: StaveNote | TabNote;
 		text: string;
 		frame: ChordFrame | null;
-		source: MElement;
+		source: Harmony;
 	}> = [];
 	// Words directions (e.g. "ritardando"), each drawn on its stave's `placement` side at
 	// the laid-out x of the note it applies to.
@@ -863,7 +852,7 @@ export class DrawPass {
 		private readonly spanners: SpannerBuilder,
 		config: Config,
 		private readonly context: RenderContext,
-		private readonly parts: Part[],
+		private readonly score: Score,
 		layout: ScoreLayout,
 		private readonly labelFont: string,
 		private readonly notationFont: string,
@@ -902,12 +891,13 @@ export class DrawPass {
 		this.showNotation = config.showNotation;
 		this.notationColor = config.fonts.notation?.color ?? '#000000';
 		this.textColor = config.fonts.text?.color ?? '#000000';
+		this.parts = this.score.parts;
 		this.gaps = gapsByMeasureIndex(config.gaps);
 		// <multiple-rest> runs: the lead measure draws the consolidated bar instead of its own
 		// notes, and the measures it swallows have no box (the layout planner dropped them), so
 		// drawMeasureColumn returns early for them without any extra guard here.
 		this.multiRests = this.reader.multiRestsOf(this.parts).leads;
-		this.partGroups = partGroups(this.parts);
+		this.partGroups = partGroups(this.score);
 		// A notation+TAB pair split across parts is ONE instrument that just happens to be
 		// written as two parts, and it's bracketed as one (see partsPairTabWithNotation), so
 		// its barline runs through the pair too — the barline run has to agree with what the
@@ -918,7 +908,7 @@ export class DrawPass {
 			this.showNotation,
 		)
 			? new Set<number>()
-			: barlineBreaks(this.parts);
+			: barlineBreaks(this.score);
 		// <octave-shift> spans, resolved up front: every note under one draws an octave (or
 		// two, or three) off its sounding pitch, so buildNotes needs the answer per note
 		// before it builds anything, and the finish pass draws the brackets over them.

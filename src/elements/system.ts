@@ -1,4 +1,4 @@
-import type { MElement } from '@stringsync/mdom';
+import type { Measure as MMeasure } from '@stringsync/mdom';
 import type { Rect } from '../geometry';
 import type { Viewport } from '../host/stage';
 import { Element } from './element';
@@ -21,7 +21,7 @@ export class System extends Element {
 		super(rect, viewport);
 	}
 
-	getSources(): readonly MElement[] {
+	getSources(): readonly MMeasure[] {
 		return this.boxList.flatMap((box) => box.getSources());
 	}
 

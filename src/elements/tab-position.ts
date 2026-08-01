@@ -1,4 +1,4 @@
-import type { MElement } from '@stringsync/mdom';
+import type { Note as MNote } from '@stringsync/mdom';
 import type { NoteGlyph } from '../engraving/score-drawer';
 import type { Rect } from '../geometry';
 import type { Viewport } from '../host/stage';
@@ -38,7 +38,7 @@ export class TabPosition extends Element implements Highlightable {
 	}
 
 	/* The same mdom note its Note wraps — one source of truth for both renderings. */
-	getSources(): readonly MElement[] {
+	getSources(): readonly MNote[] {
 		return this.opts.note.getSources();
 	}
 

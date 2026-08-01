@@ -1,12 +1,13 @@
 import {
-	Barline,
 	Chord,
-	Clef,
+	type Clef,
+	Dashes,
+	type Direction,
 	type Harmony,
 	type Key,
-	MElement,
 	type Measure,
-	Note,
+	type MetronomeNote,
+	type Note,
 	type Part,
 	type Voice as ScoreVoice,
 	type Time,
@@ -38,82 +39,23 @@ export type TempoMark = {
 export type Swing = { first: number; second: number; unit: number };
 
 /**
- * Every `<direction-type><metronome>` element of a `<direction>`, in document order. mdom's
- * own `metronome` accessor flattens the element to its FIRST beat unit, which loses the
- * metric-modulation form and the `parentheses` attribute, so read the raw children.
- *
- * A direction routinely carries two: the rate ("quarter = 60") in one <direction-type> and a
- * note-group relation (the swing figure) in the next, printed side by side.
+ * One side of a metric modulation, as the drawing side wants it. Beams are counted rather
+ * than tracked as a run: a 'begin'/'continue' marker means that beam level carries on to the
+ * NEXT note, so counting them gives the beams to draw in the gap, while an 'end'/'backward
+ * hook' marker only says this note is beamed at all.
  */
-function metronomesOf(direction: MElement): MElement[] {
-	const metronomes: MElement[] = [];
-	for (const type of direction.childrenNamed('direction-type')) {
-		const metronome = type.child('metronome');
-		if (metronome) {
-			metronomes.push(metronome);
-		}
-	}
-	return metronomes;
-}
-
-/**
- * A `<metronome>`'s beat units in document order: each `<beat-unit>` paired with the count
- * of `<beat-unit-dot/>` markers that trail it. MusicXML puts the dots AFTER the unit they
- * modify rather than inside it, so a positional walk is the only way to tell "dotted
- * quarter = half" from "quarter = dotted half".
- */
-function beatUnitsOf(
-	metronome: MElement,
-): Array<{ unit: string; dots: number }> {
-	const units: Array<{ unit: string; dots: number }> = [];
-	for (const child of metronome.children) {
-		if (!(child instanceof MElement)) {
-			continue;
-		}
-		if (child.tag === 'beat-unit') {
-			units.push({ unit: child.text ?? 'quarter', dots: 0 });
-		} else if (child.tag === 'beat-unit-dot') {
-			const last = units.at(-1);
-			if (last) {
-				last.dots++;
-			}
-		}
-	}
-	return units;
-}
-
-/**
- * The `<metronome-note>` elements among `children`, as the notes one side of a metric
- * modulation. Beams are counted rather than tracked as a run: a 'begin'/'continue' marker means
- * that beam level carries on to the NEXT note, so counting them gives the beams to draw in the
- * gap, while an 'end'/'backward hook' marker only says this note is beamed at all.
- */
-function modulationNotesOf(children: MElement[]): ModulationNote[] {
-	const notes: ModulationNote[] = [];
-	for (const child of children) {
-		if (child.tag !== 'metronome-note') {
-			continue;
-		}
-		const beams = child.childrenNamed('metronome-beam');
-		const tuplet = child.child('metronome-tuplet');
-		const type = tuplet?.getAttribute('type');
-		notes.push({
-			type: child.child('metronome-type')?.text ?? 'quarter',
-			dots: child.childrenNamed('metronome-dot').length,
-			beamed: beams.length > 0,
-			beamsToNext: beams.filter(
-				(beam) => beam.text === 'begin' || beam.text === 'continue',
-			).length,
-			tuplet:
-				tuplet && (type === 'start' || type === 'stop')
-					? {
-							actual: Number(tuplet.child('actual-notes')?.text) || 3,
-							type,
-						}
-					: null,
-		});
-	}
-	return notes;
+function modulationNotesOf(notes: MetronomeNote[]): ModulationNote[] {
+	return notes.map((note) => ({
+		type: note.type,
+		dots: note.dots,
+		beamed: note.beams.length > 0,
+		beamsToNext: note.beams.filter(
+			(beam) => beam === 'begin' || beam === 'continue',
+		).length,
+		tuplet: note.tuplet
+			? { actual: note.tuplet.actual, type: note.tuplet.type }
+			: null,
+	}));
 }
 
 /*
@@ -138,11 +80,10 @@ export type Placement = 'above' | 'below';
  * their own default rather than reading it from here.
  */
 function placementOf(
-	direction: MElement,
+	direction: Direction,
 	fallback: Placement = 'above',
 ): Placement {
-	const placement = direction.getAttribute('placement');
-	return placement === 'below' || placement === 'above' ? placement : fallback;
+	return direction.placement ?? fallback;
 }
 
 /*
@@ -236,13 +177,6 @@ export const LINE_TYPE_DASH: Record<string, number[] | null> = {
 	dotted: [1, 3],
 	wavy: null,
 };
-
-function lineEndOf(element: MElement): LineEnd {
-	const value = element.getAttribute('line-end');
-	return value === 'up' || value === 'down' || value === 'arrow'
-		? value
-		: 'none';
-}
 
 // MusicXML <root-alter>/<bass-alter> semitones -> the printed accidental sign, using the
 // real Unicode music symbols (♯ ♭ ♮). 0 prints an explicit natural — rare in a root, but
@@ -505,14 +439,11 @@ export class ScoreReader {
 		if (key?.rootNote) {
 			return key.rootNote;
 		}
-		const steps = key?.childrenNamed('key-step') ?? [];
-		if (steps.length === 0) {
+		const alterations = key?.alterations ?? [];
+		if (alterations.length === 0) {
 			return null;
 		}
-		const alters = key?.childrenNamed('key-alter') ?? [];
-		return steps
-			.map((step, index) => `${step.text}${alters[index]?.text ?? '0'}`)
-			.join(' ');
+		return alterations.map((a) => `${a.step}${a.alter}`).join(' ');
 	}
 
 	/*
@@ -523,7 +454,7 @@ export class ScoreReader {
 	 * to the meter would draw a pickup as wide as a full bar.
 	 */
 	meterFloor(measure: Measure, staffNumber?: string): number {
-		return measure.getAttribute('implicit') === 'yes'
+		return measure.isImplicit
 			? 0
 			: this.meterBeats(measure.getTime(staffNumber));
 	}
@@ -562,43 +493,20 @@ export class ScoreReader {
 	 * A measure's <barline location="middle"> dividers: the beat each one falls on and its
 	 * <bar-style>. These are the barlines that land off the measure edge — a double bar or a
 	 * dotted divider mid-bar — which MusicXML writes between two notes rather than at an
-	 * edge, so the beat comes from the running position of the notes before it in document
-	 * order. Left/right barlines are the measure's own edges and are read elsewhere.
-	 * ponytail: a <backup> is not rewound here, so on a multi-voice measure the divider binds
-	 * to the last note in DOCUMENT order rather than to the beat the second voice reached.
-	 * Every mid-measure barline in tmp/ is single-voice; add the rewind if one isn't.
+	 * edge. Left/right barlines are the measure's own edges and are read elsewhere.
 	 */
 	midBarlinesOf(measure: Measure): { beat: number; style: string }[] {
-		const out: { beat: number; style: string }[] = [];
-		let beat = 0;
-		for (const child of measure.children) {
-			if (child instanceof Note) {
-				// A chord member shares its lead's onset and a grace steals no time, so
-				// neither advances the position.
-				if (!child.isChordMember && !child.isGrace) {
-					beat = (child.measureBeat ?? beat) + (child.beats ?? 0);
-				}
-			} else if (child instanceof Barline && child.location === 'middle') {
-				out.push({ beat, style: child.barStyle ?? 'regular' });
-			}
-		}
-		return out;
+		return measure.barlines
+			.filter((barline) => barline.location === 'middle')
+			.map((barline) => ({
+				beat: barline.measureBeat ?? 0,
+				style: barline.barStyle ?? 'regular',
+			}));
 	}
 
 	/*
-	 * A measure's mid-measure <clef> changes for one staff: the beat each one lands on and
-	 * the <clef> itself. MusicXML writes these as an <attributes> block sitting between two
-	 * notes rather than at the measure's head.
-	 *
-	 * Only blocks AFTER the measure's first note count: the leading <attributes> is the
-	 * measure's own signature block, already drawn with the stave (Measure.getClef reads
-	 * exactly that one). A block trailing the LAST note lands at the measure's end beat and
-	 * engraves as the courtesy clef before the barline.
-	 *
-	 * The beat comes from the NEXT note's own measureBeat rather than from a running sum of
-	 * the durations before it, because measureBeat already rewinds a <backup> — which is how
-	 * a grand staff writes its lower staff's clef (upper notes, backup, <attributes>
-	 * <clef number="2">, lower notes), and that block belongs at beat 0, not at the end.
+	 * A measure's mid-measure <clef> changes for one staff — Measure.clefChanges, minus any
+	 * landing at beat 0.
 	 * ponytail: a change landing at beat 0 is dropped rather than drawn inline — it is the
 	 * staff's OPENING clef. Measure.getClef doesn't look past the measure's first note, so
 	 * such a staff still opens in the previous clef and switches at the next barline
@@ -609,39 +517,9 @@ export class ScoreReader {
 		measure: Measure,
 		staffNumber = '1',
 	): { beat: number; clef: Clef }[] {
-		const children = measure.children;
-		const endBeat = this.endBeatOf([{ chords: measure.chords }]);
-		const out: { beat: number; clef: Clef }[] = [];
-		let seenNote = false;
-		for (let index = 0; index < children.length; index++) {
-			const child = children[index];
-			if (child instanceof Note) {
-				seenNote = true;
-				continue;
-			}
-			if (!seenNote || !(child instanceof MElement)) {
-				continue;
-			}
-			const clefs = child
-				.childrenOfType(Clef)
-				.filter((clef) => clef.staff === staffNumber);
-			if (clefs.length === 0) {
-				continue;
-			}
-			// No note after it means it trails the measure: the courtesy clef, at the end beat.
-			let beat = endBeat;
-			for (let ahead = index + 1; ahead < children.length; ahead++) {
-				const next = children[ahead];
-				if (next instanceof Note) {
-					beat = next.measureBeat ?? endBeat;
-					break;
-				}
-			}
-			if (beat > EPSILON) {
-				out.push(...clefs.map((clef) => ({ beat, clef })));
-			}
-		}
-		return out;
+		return measure
+			.clefChanges(staffNumber)
+			.filter((change) => change.beat > EPSILON);
 	}
 
 	/*
@@ -696,6 +574,10 @@ export class ScoreReader {
 		if (!measure) {
 			return null;
 		}
+		// Not Measure.clefAtEnd: that counts a change landing at beat 0, which midClefsOf
+		// deliberately drops. Counting it here would tell the next measure the clef is already
+		// in effect, so nothing would ever print it and the staff would silently stay in the
+		// old clef (navigation.musicxml's bass staff). The two have to agree.
 		return (
 			this.midClefsOf(measure, staffNumber).at(-1)?.clef ??
 			measure.getClef(staffNumber)
@@ -719,20 +601,20 @@ export class ScoreReader {
 	 */
 	tempoOf(measure: Measure): TempoMark | null {
 		for (const direction of measure.directions) {
-			for (const metronome of metronomesOf(direction)) {
-				const [first, second] = beatUnitsOf(metronome);
+			for (const metronome of direction.metronomes) {
+				const [first, second] = metronome.beatUnits;
 				if (!first) {
 					continue;
 				}
-				const perMinute = metronome.child('per-minute')?.text;
-				const sound = direction.soundTempo;
 				return {
-					duration: first.unit,
+					duration: first.type,
 					dots: first.dots,
-					bpm: Number(perMinute ?? sound) || DEFAULT_TEMPO_BPM,
-					duration2: second?.unit ?? null,
+					bpm:
+						Number(metronome.perMinute ?? direction.soundTempo) ||
+						DEFAULT_TEMPO_BPM,
+					duration2: second?.type ?? null,
 					dots2: second?.dots ?? 0,
-					parenthesis: metronome.getAttribute('parentheses') === 'yes',
+					parenthesis: metronome.parentheses,
 				};
 			}
 		}
@@ -754,28 +636,19 @@ export class ScoreReader {
 	 */
 	modulationOf(measure: Measure): TempoModulation | null {
 		for (const direction of measure.directions) {
-			for (const metronome of metronomesOf(direction)) {
+			for (const metronome of direction.metronomes) {
 				// <metronome-relation> splits the notes into the two sides of the equation. With
 				// no relation there is nothing to equate, so the mark states nothing and is skipped.
-				const children = metronome.children.filter(
-					(child): child is MElement => child instanceof MElement,
-				);
-				const split = children.findIndex(
-					(child) => child.tag === 'metronome-relation',
-				);
-				if (split === -1) {
+				const relation = metronome.relation;
+				if (!relation) {
 					continue;
 				}
-				const left = modulationNotesOf(children.slice(0, split));
-				const right = modulationNotesOf(children.slice(split + 1));
+				const left = modulationNotesOf(relation.left);
+				const right = modulationNotesOf(relation.right);
 				if (left.length === 0 || right.length === 0) {
 					continue;
 				}
-				return {
-					left,
-					right,
-					parenthesis: metronome.getAttribute('parentheses') === 'yes',
-				};
+				return { left, right, parenthesis: metronome.parentheses };
 			}
 		}
 		return null;
@@ -796,34 +669,12 @@ export class ScoreReader {
 		if (metronome) {
 			return metronome;
 		}
-		for (const direction of measure.directions) {
-			if (direction.soundTempo !== null) {
-				return { duration: 'quarter', bpm: direction.soundTempo };
+		for (const sound of measure.sounds) {
+			if (sound.tempo) {
+				return { duration: 'quarter', bpm: sound.tempo };
 			}
-		}
-		const bpm = Number(measure.child('sound')?.getAttribute('tempo'));
-		if (bpm) {
-			return { duration: 'quarter', bpm };
 		}
 		return null;
-	}
-
-	/*
-	 * A measure's <sound> elements: one per <direction> that carries it, then the measure's
-	 * own standalone child. MusicXML allows <sound> in both positions and the meaning is the
-	 * same, so anything reading it has to look in both.
-	 */
-	private *soundsOf(measure: Measure): Generator<MElement> {
-		for (const direction of measure.directions) {
-			const sound = direction.child('sound');
-			if (sound) {
-				yield sound;
-			}
-		}
-		const own = measure.child('sound');
-		if (own) {
-			yield own;
-		}
 	}
 
 	/*
@@ -833,29 +684,14 @@ export class ScoreReader {
 	 * mark states the same intent to a human reader but carries no timing (see
 	 * {@link modulationOf}), so a score with the mark and no <swing> plays straight.
 	 *
-	 * <straight/> is the explicit "stop swinging" form; it reads as an even 1:1 so that it
-	 * cancels a carried swing rather than being mistaken for "no instruction here".
-	 * <swing-type> names the note value the ratio divides and defaults to eighth.
+	 * <straight/> is the explicit "stop swinging" form; mdom normalizes it to an even 1:1 so
+	 * that it cancels a carried swing rather than being mistaken for "no instruction here".
 	 */
 	swingOf(measure: Measure): Swing | null {
-		for (const sound of this.soundsOf(measure)) {
-			const swing = sound.child('swing');
-			if (!swing) {
-				continue;
+		for (const sound of measure.sounds) {
+			if (sound.swing) {
+				return sound.swing;
 			}
-			if (swing.child('straight')) {
-				return { first: 1, second: 1, unit: 0.5 };
-			}
-			const first = Number(swing.child('first')?.text);
-			const second = Number(swing.child('second')?.text);
-			if (!first || !second) {
-				continue;
-			}
-			return {
-				first,
-				second,
-				unit: swing.child('swing-type')?.text === '16th' ? 0.25 : 0.5,
-			};
 		}
 		return null;
 	}
@@ -883,7 +719,7 @@ export class ScoreReader {
 		placement: Placement;
 	}[] {
 		return measure.directions.flatMap((d) => {
-			const staffNumber = d.child('staff')?.text ?? '1';
+			const staffNumber = d.staff;
 			const lead = d.nextNote;
 			const placement = placementOf(d);
 			return d.words
@@ -912,18 +748,11 @@ export class ScoreReader {
 		placement: Placement;
 	}[] {
 		return measure.directions.flatMap((d) => {
-			const staffNumber = d.child('staff')?.text ?? '1';
+			const staffNumber = d.staff;
 			const lead = d.nextNote;
 			const placement = placementOf(d, 'below');
-			return d
-				.childrenNamed('direction-type')
-				.flatMap((type) => type.childrenNamed('dynamics'))
-				.flatMap((dynamics) =>
-					dynamics.children.filter((c): c is MElement => c instanceof MElement),
-				)
-				.map((mark) =>
-					mark.tag === 'other-dynamics' ? (mark.text ?? '') : mark.tag,
-				)
+			return d.dynamics
+				.flatMap((dynamics) => dynamics.marks)
 				.filter(Boolean)
 				.map((text) => ({
 					text,
@@ -939,19 +768,13 @@ export class ScoreReader {
 	 * A measure's <direction><direction-type><rehearsal> section headers (e.g. "A", "B",
 	 * "Chorus"), in document order. These are the boxed letters a player navigates a chart
 	 * by, printed at the measure's left edge above the system's top staff.
-	 * Read off the generic element axes: mdom's Direction defers rehearsal, so there's no
-	 * typed accessor for it yet.
 	 * ponytail: the <rehearsal> enclosure/font attributes are ignored — every mark prints
 	 * boxed in the default style; add an enclosure field if a fixture needs a circle or a
 	 * bare letter.
 	 */
 	rehearsalsOf(measure: Measure): string[] {
 		return measure.directions.flatMap((d) =>
-			d
-				.childrenNamed('direction-type')
-				.flatMap((type) => type.childrenNamed('rehearsal'))
-				.map((rehearsal) => rehearsal.text ?? '')
-				.filter(Boolean),
+			d.rehearsals.map((rehearsal) => rehearsal.text).filter(Boolean),
 		);
 	}
 
@@ -970,31 +793,18 @@ export class ScoreReader {
 	 */
 	figuredBassesOf(measure: Measure): { lead: Note; figures: string[] }[] {
 		const out: { lead: Note; figures: string[] }[] = [];
-		const children = measure.children;
-		for (const [index, child] of children.entries()) {
-			if (!(child instanceof MElement) || child.tag !== 'figured-bass') {
-				continue;
-			}
-			let lead: Note | null = null;
-			for (let ahead = index + 1; ahead < children.length; ahead++) {
-				const next = children[ahead];
-				if (next instanceof Note && !next.isChordMember) {
-					lead = next;
-					break;
-				}
-			}
+		for (const stack of measure.figuredBasses) {
+			const lead = stack.nextNote;
 			if (!lead) {
 				continue;
 			}
-			const parenthesized = child.getAttribute('parentheses') === 'yes';
-			const figures = child
-				.childrenNamed('figure')
+			const figures = stack.figures
 				.map((figure) => {
 					const text =
-						(FIGURE_SIGN[figure.child('prefix')?.text ?? ''] ?? '') +
-						(figure.child('figure-number')?.text ?? '') +
-						(FIGURE_SIGN[figure.child('suffix')?.text ?? ''] ?? '');
-					return text && parenthesized ? `(${text})` : text;
+						(FIGURE_SIGN[figure.prefix ?? ''] ?? '') +
+						(figure.number ?? '') +
+						(FIGURE_SIGN[figure.suffix ?? ''] ?? '');
+					return text && stack.parentheses ? `(${text})` : text;
 				})
 				.filter(Boolean);
 			if (figures.length > 0) {
@@ -1014,15 +824,7 @@ export class ScoreReader {
 	 * player looks for it.
 	 */
 	navigationsOf(measure: Measure): Array<'segno' | 'coda'> {
-		return measure.directions.flatMap((d) =>
-			d
-				.childrenNamed('direction-type')
-				.flatMap((type) =>
-					type.children.filter((c): c is MElement => c instanceof MElement),
-				)
-				.filter((mark) => mark.tag === 'segno' || mark.tag === 'coda')
-				.map((mark) => mark.tag as 'segno' | 'coda'),
-		);
+		return measure.directions.flatMap((d) => d.navigations);
 	}
 
 	/*
@@ -1196,29 +998,35 @@ export class ScoreReader {
 		>();
 		for (const measure of part.measures) {
 			for (const direction of measure.directions) {
-				const marks = direction
-					.childrenNamed('direction-type')
-					.flatMap((type) => [
-						...type.childrenNamed('bracket'),
-						...type.childrenNamed('dashes'),
-					]);
-				for (const mark of marks) {
-					const key = `${mark.tag}:${mark.getAttribute('number') ?? '1'}`;
-					if (mark.getAttribute('type') === 'stop') {
+				for (const mark of [...direction.brackets, ...direction.dashes]) {
+					// A <dashes> is the degenerate bracket: dashed, hookless, and typed
+					// separately by mdom, so flatten the two into one shape here.
+					const spec =
+						mark instanceof Dashes
+							? {
+									kind: 'dashes',
+									type: mark.dashesType,
+									lineEnd: 'none' as LineEnd,
+									dash: [5, 5] as number[] | null,
+								}
+							: {
+									kind: 'bracket',
+									type: mark.bracketType,
+									lineEnd: mark.lineEnd,
+									dash: LINE_TYPE_DASH[mark.lineType ?? 'solid'] ?? null,
+								};
+					const key = `${spec.kind}:${mark.number}`;
+					if (spec.type === 'stop') {
 						const opened = open.get(key);
 						open.delete(key);
 						const to = direction.nextNote ?? direction.previousNote;
 						if (opened && to && opened.from !== to) {
-							spans.push({
-								...opened,
-								to,
-								stopEnd: mark.tag === 'dashes' ? 'none' : lineEndOf(mark),
-							});
+							spans.push({ ...opened, to, stopEnd: spec.lineEnd });
 						}
 						continue;
 					}
 					// 'continue' only re-states an open span, so only a 'start' opens one.
-					if (mark.getAttribute('type') !== 'start') {
+					if (spec.type !== 'start') {
 						continue;
 					}
 					const from = direction.nextNote;
@@ -1228,12 +1036,8 @@ export class ScoreReader {
 					open.set(key, {
 						from,
 						above: placementOf(direction) === 'above',
-						dash:
-							mark.tag === 'dashes'
-								? [5, 5]
-								: (LINE_TYPE_DASH[mark.getAttribute('line-type') ?? 'solid'] ??
-									null),
-						startEnd: mark.tag === 'dashes' ? 'none' : lineEndOf(mark),
+						dash: spec.dash,
+						startEnd: spec.lineEnd,
 					});
 				}
 			}
@@ -1256,13 +1060,13 @@ export class ScoreReader {
 		lead: Note;
 		text: string;
 		frame: ChordFrame | null;
-		source: MElement;
+		source: Harmony;
 	}[] {
 		const harmonies: {
 			lead: Note;
 			text: string;
 			frame: ChordFrame | null;
-			source: MElement;
+			source: Harmony;
 		}[] = [];
 		const seen = new Set<string>();
 		for (const harmony of measure.harmonies) {

@@ -1,10 +1,4 @@
-import {
-	type Chord,
-	type Clef,
-	type Lyric,
-	MElement,
-	type Note,
-} from '@stringsync/mdom';
+import type { Chord, Clef, Lyric, Note, Technical } from '@stringsync/mdom';
 import {
 	Accidental,
 	Annotation,
@@ -174,7 +168,7 @@ function addSlashNoteheads(staveNote: StaveNote, chord: Chord): void {
 		if (!isSlashNotehead(note)) {
 			return;
 		}
-		const filled = noteheadFilled(note);
+		const filled = note.notehead?.filled ?? null;
 		noteHeads[i]?.setText(
 			filled === null
 				? byDuration
@@ -215,19 +209,8 @@ const NOTEHEAD_SUFFIX: Record<string, string> = {
 };
 
 /*
- * The `filled` override, when a <notehead> carries one: true forces the black head, false the
- * open one, null leaves the choice to the duration. MusicXML uses it to draw an open quarter
- * (a ghost/ringing note) or a filled half. mdom's notehead accessor drops the attribute, so
- * read the raw child.
- */
-function noteheadFilled(note: Note): boolean | null {
-	const filled = note.child('notehead')?.getAttribute('filled');
-	return filled == null ? null : filled === 'yes';
-}
-
-/*
  * The heads whose open and filled glyphs vexflow codes separately, so a `filled` attribute can
- * override the duration's default (see noteheadFilled). Values not listed here have only the
+ * override the duration's default. Values not listed here have only the
  * duration-driven code in NOTEHEAD_SUFFIX and ignore the attribute.
  */
 const NOTEHEAD_FILL_SUFFIX: Record<string, { open: string; filled: string }> = {
@@ -241,13 +224,12 @@ const NOTEHEAD_FILL_SUFFIX: Record<string, { open: string; filled: string }> = {
 /*
  * The vexflow key a <display-step>/<display-octave> pair names, e.g. 'e/4'. Both <rest> and
  * <unpitched> carry the pair, and in both it is a staff POSITION rather than a pitch — it
- * says which line or space to draw the glyph on, not what sounds. null when the element is
- * absent or carries no pair. mdom has no accessor for these, so read the raw children.
+ * says which line or space to draw the glyph on, not what sounds.
  */
-function displayKey(element: MElement | null): string | null {
-	const step = element?.child('display-step')?.text;
-	const octave = element?.child('display-octave')?.text;
-	return step && octave ? `${step.toLowerCase()}/${octave}` : null;
+function displayKey(
+	at: { step: string; octave: number } | null,
+): string | null {
+	return at ? `${at.step.toLowerCase()}/${at.octave}` : null;
 }
 
 /*
@@ -262,7 +244,7 @@ function vexflowKey(note: Note): string {
 	const pitch = note.pitch;
 	const key = pitch
 		? `${pitch.step.toLowerCase()}/${pitch.octave}`
-		: displayKey(note.child('unpitched'));
+		: displayKey(note.unpitched);
 	if (!key) {
 		return 'b/4';
 	}
@@ -273,7 +255,7 @@ function vexflowKey(note: Note): string {
 	if (!notehead) {
 		return key;
 	}
-	const filled = noteheadFilled(note);
+	const filled = notehead.filled;
 	const fill = filled === null ? null : NOTEHEAD_FILL_SUFFIX[notehead.value];
 	const suffix =
 		(fill && (filled ? fill.filled : fill.open)) ??
@@ -288,7 +270,7 @@ function vexflowKey(note: Note): string {
  * no display position.
  */
 function pitchedRestKey(note: Note): string | null {
-	return displayKey(note.child('rest'));
+	return displayKey(note.restPosition);
 }
 
 /*
@@ -322,14 +304,6 @@ class InvisibleStaveNote extends StaveNote {
 			}
 		}
 	}
-}
-
-/*
- * Whether a note is hidden (<note print-object="no">). mdom has no accessor for it — it is
- * one raw attribute.
- */
-function isInvisible(note: Note): boolean {
-	return note.getAttribute('print-object') === 'no';
 }
 
 /*
@@ -393,19 +367,6 @@ function beamsGraceGroup(graces: ReadonlyArray<{ lead: Note }>): boolean {
 }
 
 /*
- * An element's MusicXML color attribute as a canvas fill/stroke, or null when it carries
- * none. MusicXML writes "#RRGGBB" or "#AARRGGBB" — alpha FIRST, which canvas doesn't
- * understand — so the eight-digit form drops its alpha rather than drawing the wrong color.
- */
-function colorOf(element: MElement | null): string | null {
-	const color = element?.getAttribute('color');
-	if (!color) {
-		return null;
-	}
-	return color.length === 9 ? `#${color.slice(3)}` : color;
-}
-
-/*
  * The MusicXML color attributes a note carries, laid over the configured notation ink:
  * <note color> covers everything the note draws, while <notehead color> and <stem color>
  * each name one piece and win over it.
@@ -418,13 +379,13 @@ function colorOf(element: MElement | null): string | null {
  */
 export function applyNoteColors(staveNote: StaveNote, chord: Chord): void {
 	const lead = chord.lead;
-	const noteColor = colorOf(lead);
+	const noteColor = lead.color;
 	if (noteColor) {
 		staveNote.setStyle({ fillStyle: noteColor, strokeStyle: noteColor });
 		staveNote.setLedgerLineStyle({ strokeStyle: noteColor });
 	}
 	chord.notes.forEach((note, index) => {
-		const color = colorOf(note.child('notehead')) ?? colorOf(note);
+		const color = note.notehead?.color ?? note.color;
 		if (color) {
 			staveNote.noteHeads[index]?.setStyle({
 				fillStyle: color,
@@ -435,7 +396,7 @@ export function applyNoteColors(staveNote: StaveNote, chord: Chord): void {
 	// The stem takes its color directly: vexflow's Metrics hand every Stem a hardcoded
 	// strokeStyle, so it never inherits the note's ink (see the draw pass, which restyles
 	// stems for the same reason).
-	const stemColor = colorOf(lead.child('stem')) ?? noteColor;
+	const stemColor = lead.stemColor ?? noteColor;
 	if (stemColor) {
 		staveNote.getStem()?.setStyle({ strokeStyle: stemColor });
 	}
@@ -576,19 +537,6 @@ const ORNAMENT_TYPES: Record<string, string> = {
 };
 
 /*
- * A note's <notations><ornaments> children, in document order. mdom reads <ornaments> only
- * for the <wavy-line> that becomes a tab vibrato, so these come off the generic axes.
- */
-function ornamentElements(note: Note): MElement[] {
-	return note
-		.childrenNamed('notations')
-		.flatMap((notations) => notations.childrenNamed('ornaments'))
-		.flatMap((ornaments) =>
-			ornaments.children.filter((c): c is MElement => c instanceof MElement),
-		);
-}
-
-/*
  * The ornament glyphs above a notehead: trills, turns, mordents, the schleifer, and the
  * slashes of a single-note <tremolo>.
  *
@@ -603,9 +551,9 @@ function ornamentElements(note: Note): MElement[] {
 function addOrnaments(staveNote: StaveNote, note: Note): void {
 	let last: Ornament | undefined;
 	let accidentalMarks = 0;
-	for (const element of ornamentElements(note)) {
-		if (element.tag === 'accidental-mark') {
-			const code = ACCIDENTAL_CODES[element.text ?? ''];
+	for (const ornament of note.ornaments) {
+		if (ornament.ornamentType === 'accidental-mark') {
+			const code = ACCIDENTAL_CODES[ornament.accidentalMark ?? ''];
 			if (last && code) {
 				if (accidentalMarks === 0) {
 					last.setUpperAccidental(code);
@@ -616,20 +564,20 @@ function addOrnaments(staveNote: StaveNote, note: Note): void {
 			}
 			continue;
 		}
-		if (element.tag === 'tremolo') {
+		if (ornament.ornamentType === 'tremolo') {
 			// <tremolo type="single">N</tremolo>: N slashes through the stem.
 			// ponytail: the type="start"/"stop" bowed-tremolo pair (slashes BETWEEN two notes)
 			// is not handled — it needs a spanner, and no fixture reaches it yet.
-			staveNote.addModifier(new Tremolo(Number(element.text) || 1));
+			staveNote.addModifier(new Tremolo(ornament.tremoloMarks || 1));
 			continue;
 		}
-		const type = ORNAMENT_TYPES[element.tag];
+		const type = ORNAMENT_TYPES[ornament.ornamentType];
 		if (!type) {
 			continue;
 		}
 		last = new Ornament(type);
 		accidentalMarks = 0;
-		if (element.tag.startsWith('delayed-')) {
+		if (ornament.ornamentType.startsWith('delayed-')) {
 			last.setDelayed(true);
 		}
 		staveNote.addModifier(last);
@@ -659,35 +607,22 @@ const TECHNICAL_CODES: Record<string, string> = {
 };
 
 /*
- * A note's <notations><technical> children, in document order. mdom reads <technical> only
- * for the tab accessors (string/fret/bend/harmonic), so these come off the generic axes.
- */
-function technicalElements(note: Note): MElement[] {
-	return note
-		.childrenNamed('notations')
-		.flatMap((notations) => notations.childrenNamed('technical'))
-		.flatMap((technical) =>
-			technical.children.filter((c): c is MElement => c instanceof MElement),
-		);
-}
-
-/*
  * The digits/letters one note's <fingering> and <pluck> elements print, joined into a single
  * label. A note usually carries one, but an editor offering a choice of hand positions writes
  * several: MusicXML marks a substitution (change fingers while the key is held) with
  * substitution="yes" and a second option with alternate="yes", which engrave as "5-3" and
  * "(2)" respectively. Empty elements — an exporter's placeholder — contribute nothing.
  */
-function fingeringLabel(elements: MElement[]): string {
+function fingeringLabel(marks: Technical[]): string {
 	let label = '';
-	for (const element of elements) {
-		const text = element.text?.trim();
+	for (const mark of marks) {
+		const text = mark.text?.trim();
 		if (!text) {
 			continue;
 		}
-		if (element.getAttribute('alternate') === 'yes') {
+		if (mark.alternate) {
 			label += `(${text})`;
-		} else if (label && element.getAttribute('substitution') === 'yes') {
+		} else if (label && mark.substitution) {
 			label += `-${text}`;
 		} else {
 			label += label ? ` ${text}` : text;
@@ -820,32 +755,31 @@ function addTechnicals(staveNote: StaveNote, chord: Chord): void {
 	const strings: { index: number; number: string; below: boolean }[] = [];
 	const fingerings: { index: number; text: string; below: boolean }[] = [];
 	chord.notes.forEach((note, index) => {
-		const labels: MElement[] = [];
+		const labels: Technical[] = [];
 		let below = false;
-		for (const element of technicalElements(note)) {
-			if (element.getAttribute('placement') === 'below') {
+		for (const mark of note.technicals) {
+			if (mark.placement === 'below') {
 				below = true;
 			}
-			if (element.tag === 'fingering' || element.tag === 'pluck') {
-				labels.push(element);
+			if (
+				mark.technicalType === 'fingering' ||
+				mark.technicalType === 'pluck'
+			) {
+				labels.push(mark);
 				continue;
 			}
-			if (element.tag === 'string') {
-				const number = element.text?.trim();
+			if (mark.technicalType === 'string') {
+				const number = mark.text?.trim();
 				if (number) {
-					strings.push({
-						index,
-						number,
-						below: element.getAttribute('placement') === 'below',
-					});
+					strings.push({ index, number, below: mark.placement === 'below' });
 				}
 				continue;
 			}
-			const code = TECHNICAL_CODES[element.tag];
+			const code = TECHNICAL_CODES[mark.technicalType];
 			if (code) {
 				staveNote.addModifier(
 					new Articulation(code).setPosition(
-						element.getAttribute('placement') === 'below'
+						mark.placement === 'below'
 							? Modifier.Position.BELOW
 							: Modifier.Position.ABOVE,
 					),
@@ -968,21 +902,6 @@ class NonArpeggioBracket extends Stroke {
 }
 
 /*
- * The `type` of a note's <notations><non-arpeggiate> ('bottom' or 'top'), or null when it
- * carries none. mdom has an accessor for <arpeggiate> but not its opposite, so read the
- * raw children.
- */
-function nonArpeggiateType(note: Note): string | null {
-	for (const notations of note.childrenNamed('notations')) {
-		const mark = notations.child('non-arpeggiate');
-		if (mark) {
-			return mark.getAttribute('type');
-		}
-	}
-	return null;
-}
-
-/*
  * A <notations><non-arpeggiate>: the bracket marking a chord to be struck together, the
  * explicit opposite of the arpeggio wiggle. MusicXML puts type="bottom" on the lowest
  * member it covers and type="top" on the highest, and the members between carry nothing —
@@ -991,7 +910,7 @@ function nonArpeggiateType(note: Note): string | null {
  * does name out to the edge of the chord rather than dropping the mark.
  */
 function addNonArpeggiate(staveNote: StaveNote, chord: Chord): void {
-	const types = chord.notes.map(nonArpeggiateType);
+	const types = chord.notes.map((note) => note.nonArpeggiate);
 	const bottom = types.indexOf('bottom');
 	const top = types.lastIndexOf('top');
 	if (bottom < 0 && top < 0) {
@@ -1062,10 +981,8 @@ function addAccidentals(staveNote: StaveNote, chord: Chord): void {
 		if (!printed || !code) {
 			return;
 		}
-		// <accidental editorial="yes"> has no mdom accessor — it is one raw attribute, and
-		// prints the same as an explicit bracket="yes".
-		const bracket =
-			printed.bracket || printed.getAttribute('editorial') === 'yes';
+		// An editorial accidental prints the same as an explicit bracket="yes".
+		const bracket = printed.bracket || printed.editorial;
 		// vexflow only knows the parenthesized (cautionary) form, so brackets are drawn by
 		// handing it a composed glyph string as the code: it passes through an unrecognized
 		// code verbatim, which measures and renders the same way the real ones do. Wrapping
@@ -1191,13 +1108,9 @@ function addLyrics(staveNote: StaveNote, lead: Note): void {
  * carrying its own text (an undertie, an underscore) uses that instead.
  */
 function syllableOf(verse: Lyric): string {
-	const runs = verse.children.filter(
-		(child): child is MElement =>
-			child instanceof MElement &&
-			(child.tag === 'text' || child.tag === 'elision'),
-	);
-	return runs
-		.map((run) => run.text ?? (run.tag === 'elision' ? ' ' : ''))
+	// U+00A0, not a plain space: it must not be a line-break opportunity or collapse.
+	return verse.runs
+		.map((run) => run.text || (run.kind === 'elision' ? ' ' : ''))
 		.join('');
 }
 
@@ -1563,7 +1476,7 @@ export class NoteTranslator {
 		// A hidden note builds as an InvisibleStaveNote: same formatting, no glyphs drawn.
 		// ponytail: hiding is read off the lead only, so a chord with a mix of hidden and
 		// visible members draws all of them; add per-notehead hiding if a fixture needs it.
-		const NoteClass = isInvisible(lead) ? InvisibleStaveNote : StaveNote;
+		const NoteClass = lead.printObject ? StaveNote : InvisibleStaveNote;
 		// Pass `dots` to the constructor so vexflow counts the dot(s) in the note's ticks
 		// (Dot.buildAndAttach only draws the glyph, it never changes duration). Without it
 		// a dotted note is one tick-position short and its voice falls out of alignment

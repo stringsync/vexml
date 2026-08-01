@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { MDOMParser, MElement } from '@stringsync/mdom';
+import { MDOMParser } from '@stringsync/mdom';
 import type { ChordFrame } from '../engraving/chord-diagram-glyph';
 import { Rect } from '../geometry';
 import { FakeDecoration } from '../testing/fake-decoration';
@@ -21,9 +21,7 @@ const XML = `<?xml version="1.0"?>
 
 function fixture() {
 	const mdoc = new MDOMParser().parseFromString(XML);
-	const source = mdoc.score.parts[0]?.measures[0]?.children.find(
-		(c): c is MElement => c instanceof MElement && c.tag === 'harmony',
-	);
+	const source = mdoc.score.parts[0]?.measures[0]?.harmonies[0];
 	if (!source) {
 		throw new Error('fixture: missing harmony');
 	}

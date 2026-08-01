@@ -1,4 +1,4 @@
-import type { MElement, Part as MPart } from '@stringsync/mdom';
+import type { Part as MPart } from '@stringsync/mdom';
 import type { Measure } from './measure';
 
 /*
@@ -14,7 +14,7 @@ export class Part {
 		private readonly measureList: readonly Measure[],
 	) {}
 
-	getSources(): readonly MElement[] {
+	getSources(): readonly MPart[] {
 		return [this.mpart];
 	}
 

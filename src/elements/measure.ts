@@ -1,4 +1,4 @@
-import type { MElement, Measure as MMeasure } from '@stringsync/mdom';
+import type { Measure as MMeasure } from '@stringsync/mdom';
 import type { MeasureBox } from './measure-box';
 import type { Part } from './part';
 import type { Voice } from './voice';
@@ -17,7 +17,7 @@ export class Measure {
 		private readonly voiceList: readonly Voice[],
 	) {}
 
-	getSources(): readonly MElement[] {
+	getSources(): readonly MMeasure[] {
 		return [this.mmeasure];
 	}
 
