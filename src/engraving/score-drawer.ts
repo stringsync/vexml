@@ -68,7 +68,7 @@ export interface RawGeometry {
 }
 
 /*
- * Re-space a system's staves around the music actually drawn on them. The layout planner
+ * Re-space each system's staves around the music actually drawn on them. The layout planner
  * gaps staves by fixed constants, which is right until a part's content spills far enough
  * past its staff lines to reach the next stave (deep ledger lines, tall chords, a words
  * direction or chord symbol riding above it). Given pass one's measured spill, widen any
@@ -76,17 +76,56 @@ export interface RawGeometry {
  * lowest by STAVE_CLEARANCE. Gaps that already fit are left exactly as planned, so
  * ordinary scores keep their planned spacing.
  *
- * Gaps planned at the same size stay the same size: the planned size is what says whether
- * a gap is within a part or between two of them, so widening one for a single stave's
- * chord symbol — and leaving its siblings alone — would read as uneven part spacing rather
- * than as room made for the symbol. Different planned sizes stay independent, so a grand
- * staff's inner gap doesn't drag the gaps around it open with it.
+ * Resolved PER SYSTEM, which is what a reference engraving does: a piano's two staves ride
+ * close together through a plain bar and open up under a bar that needs it, on the same
+ * page. Sharing one worst case across the score instead would let the densest measure in
+ * the piece set the gap for every line of it.
  *
- * ponytail: one worst case for the whole score — every system shares one set of stave
- * offsets, so a single extreme measure spreads its system's staves everywhere. Make the
- * offsets per-system if that ever costs too much page.
+ * Within a system, gaps planned at the same size stay the same size: the planned size is
+ * what says whether a gap is within a part or between two of them, so widening one for a
+ * single stave's chord symbol — and leaving its siblings alone — would read as uneven part
+ * spacing rather than as room made for the symbol. Different planned sizes stay
+ * independent, so a grand staff's inner gap doesn't drag the gaps around it open with it.
  */
+/*
+ * How far two staves' content reaches into the gap between them, at the worst single x.
+ * `drop` is the upper stave's profile below its bottom line, `rise` the lower stave's above
+ * its top line, both columned by SPILL_COLUMN.
+ *
+ * Summed per column, not overall: the whole point is that a deep stem hanging over an empty
+ * patch of the stave below costs nothing. Taking the two maxima independently would size
+ * every gap for a collision that never happens — the run beamed low in bar 3 against the
+ * chord reaching high in bar 9. Columns absent from a map contribute 0, so a lone extreme
+ * still gets its own clearance and a gap with nothing in it comes out at 0 (the caller
+ * floors that at the planned spacing).
+ */
+function worstColumn(
+	drop: ReadonlyMap<number, number>,
+	rise: ReadonlyMap<number, number>,
+): number {
+	let worst = 0;
+	for (const [column, px] of drop) {
+		worst = Math.max(worst, px + (rise.get(column) ?? 0));
+	}
+	for (const [column, px] of rise) {
+		worst = Math.max(worst, px + (drop.get(column) ?? 0));
+	}
+	return worst;
+}
+
 export function spacedOffsets(
+	planned: number[],
+	spillBySystem: ReadonlyMap<number, ReadonlyMap<number, StaveSpill>>,
+): Map<number, number[]> {
+	const bySystem = new Map<number, number[]>();
+	for (const [system, spill] of spillBySystem) {
+		bySystem.set(system, systemOffsets(planned, spill));
+	}
+	return bySystem;
+}
+
+/* One system's stave offsets, from the spill measured on that system alone. */
+function systemOffsets(
 	planned: number[],
 	spill: ReadonlyMap<number, StaveSpill>,
 ): number[] {
@@ -102,9 +141,8 @@ export function spacedOffsets(
 		const needed =
 			above && below
 				? above.lineBottom +
-					above.drop +
-					STAVE_CLEARANCE +
-					below.rise -
+					worstColumn(above.drop, below.rise) +
+					STAVE_CLEARANCE -
 					below.lineTop
 				: plannedGap;
 		plannedGaps.push(plannedGap);
@@ -214,11 +252,13 @@ export class ScoreDrawer {
 			).run();
 
 		let pass = runPass(layout, new Map(), scratchHeight);
-		const staveOffsets = spacedOffsets(
+		const systemStaveOffsets = spacedOffsets(
 			layout.staveOffsets,
 			pass.observedStaveSpill,
 		);
-		const respace = staveOffsets.some((o, i) => o !== layout.staveOffsets[i]);
+		const respace = [...systemStaveOffsets.values()].some((offsets) =>
+			offsets.some((o, i) => o !== layout.staveOffsets[i]),
+		);
 		const needsOverflow =
 			systemCount > 1 && [...pass.observedOverflow.values()].some((v) => v > 0);
 		// A verse hangs at one height per system, but each measure column is formatted alone
@@ -226,15 +266,22 @@ export class ScoreDrawer {
 		// drew a stepped verse, and pass two pins the whole row to the deepest of them.
 		const needsLyricPin = pass.lyricsStepped;
 		if (respace || needsOverflow || needsLyricPin) {
-			// Re-spacing makes every system taller, so the page floor and the scratch canvas
-			// both have to grow with it before the redraw.
-			const grew =
-				(staveOffsets.at(-1) ?? 0) - (layout.staveOffsets.at(-1) ?? 0);
+			// Re-spacing makes a system taller, so the page floor and the scratch canvas both
+			// have to grow before the redraw. Sized off the system that grew MOST — systems
+			// now grow by different amounts, and every one of them has to fit. Over-allocating
+			// costs nothing: the crop below trims back to the content actually drawn.
+			const grew = Math.max(
+				0,
+				...[...systemStaveOffsets.values()].map(
+					(offsets) =>
+						(offsets.at(-1) ?? 0) - (layout.staveOffsets.at(-1) ?? 0),
+				),
+			);
 			activeFloorHeight = floorHeight + grew;
 			scratchHeight = layout.top + topSlack + systemCount * (perSystem + grew);
 			renderer.resize(width, scratchHeight);
 			pass = runPass(
-				{ ...layout, staveOffsets, floorHeight: activeFloorHeight },
+				{ ...layout, systemStaveOffsets, floorHeight: activeFloorHeight },
 				pass.observedOverflow,
 				scratchHeight,
 				pass.observedLyricDrops,

@@ -56,8 +56,13 @@ export type ScoreLayout = {
 	measureCount: number;
 	totalStaves: number;
 	boxes: MeasureBox[];
-	/** Each stave's y-offset within a system, indexed by global stave row. */
+	/** Each stave's y-offset within a system, indexed by global stave row. The planned
+	 * spacing, from the fixed constants — and the floor no system goes below. */
 	staveOffsets: number[];
+	/** What pass one measured each system actually needs, indexed by system (see
+	 * ScoreDrawer.spacedOffsets). Absent on pass one, where every system uses the planned
+	 * offsets; a system missing from it falls back to them too. */
+	systemStaveOffsets?: ReadonlyMap<number, number[]>;
 	/** Top margin: the first system's y. */
 	top: number;
 	/** Vertical gap between stacked systems. */

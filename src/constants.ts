@@ -33,8 +33,15 @@ export const PEDAL_INK_RISE = 24;
 export const SYSTEM_GAP = 30;
 
 /** Vertical gap between staves within one part (a brace-joined group reads as one
- * instrument because this exceeds INTER_PART_SPACING). */
-export const INTRA_PART_SPACING = 120;
+ * instrument because this exceeds INTER_PART_SPACING).
+ *
+ * A FLOOR, not the spacing: 100 leaves 6 staff spaces of air between the two staves, which
+ * is about what a reference engraving gives a grand staff with nothing in the gap, and the
+ * draw pass opens it further wherever the music needs it (see ScoreDrawer.spacedOffsets).
+ * It used to be the whole answer at 120, sized for music it couldn't see. Keep it clear of
+ * INTER_PART_SPACING: the re-spacing pass tells a within-part gap from a between-part one
+ * by its planned size, so the two must stay distinct numbers. */
+export const INTRA_PART_SPACING = 100;
 
 /** Vertical gap between adjacent parts. */
 export const INTER_PART_SPACING = 80;
@@ -44,6 +51,14 @@ export const INTER_PART_SPACING = 80;
  * the drawn notes spill past their staff lines far enough to close that gap, the draw pass
  * widens it so this much air survives between the two (see ScoreDrawer.spacedOffsets). */
 export const STAVE_CLEARANCE = 12;
+
+/** Width of one x column in a stave's spill profile. Spill is measured per column, and two
+ * staves only push each other apart where their profiles overlap — a deep stem hanging over
+ * an empty patch of the stave below costs nothing, which is what keeps a gap sized for the
+ * one bar that needs it rather than for the worst drop plus the worst rise in the system.
+ * Coarse enough that a notehead and a stem a few px apart share a column (they'd read as
+ * colliding anyway), fine enough that one bar's extremes stay out of its neighbours'. */
+export const SPILL_COLUMN = 8;
 
 /** Absolute floor for a measure's note area. */
 export const BASE_VOICE_WIDTH = 80;

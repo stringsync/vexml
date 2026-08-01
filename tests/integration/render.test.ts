@@ -1159,6 +1159,19 @@ const TEST_CASES = [
 	// which an exporter's absolute offsets would fight rather than improve.
 	testCase('slur_line_types.musicxml', 'slur_line_types.png'),
 
+	// Treble stave, 4/4, two voices: slurs paired across a <backup>, which makes document
+	// order disagree with playing order. Every slur here is number 1, the way exporters
+	// (Finale especially) actually write them.
+	// - M1: the slur opens on voice 2's F4 (beat 1) and closes on voice 1's D5 (beat 3),
+	//   but voice 1 is written first, so the file lists the STOP before the START. One arc
+	//   rises from the F4 notehead to the D5, inside the measure. Pairing by document order
+	//   instead finds no stop at all and runs the arc off past the barline.
+	// - M2: two voices open a number-1 slur on the same beat and close at different times —
+	//   voice 1 above all four quarters (C5-F5), voice 2 below just the first two (E4-F4).
+	//   The two arcs are nested, not crossed: whichever voice a stop is in claims the start
+	//   from that same voice.
+	testCase('slur_backup_voices.musicxml', 'slur_backup_voices.png'),
+
 	// Piano grand staff, 2/4, 3 sharps: a slur spanning a cross-stave figure. Each measure is
 	// one voice of four 16ths whose first three sit on the bass stave and whose fourth jumps
 	// to the treble, beamed together (the treble note's stem drops across the gap to the
@@ -2180,6 +2193,20 @@ const TEST_CASES = [
 	// lines/noteheads of staff 2 — nothing from either staff may touch the other.
 	testCase('stave_spacing.musicxml', 'stave_spacing.png'),
 
+	// The same braced two-stave part and the same extremes as stave_spacing.musicxml (staff 1
+	// down to C3, staff 2 up to C7), rearranged so the gap has to be measured per x column
+	// and per system instead of once for the score. Each measure is its own system.
+	// - M1 (system 1): the extremes ALTERNATE — C3 on beats 1 and 3, C7 on 2 and 4, a plain
+	//   B4 opposite each. Neither reaches into a column the other occupies, so the gap has
+	//   nothing to open for and the two staves sit near their planned spacing. The ledger
+	//   lines interleave in one band without touching: C3's hang between C7's, not over them.
+	// - M2 (system 2): the same two extremes STACKED on beats 1 and 3, so now they do share
+	//   columns and this system's gap opens until C3's lowest ledger clears C7's highest.
+	// The point is that the two systems come out at visibly DIFFERENT gaps in one score.
+	// Summing the worst drop and the worst rise (or resolving one gap for the whole score)
+	// would draw M1 as far apart as M2 for a collision that never happens there.
+	testCase('stave_spacing_dynamic.musicxml', 'stave_spacing_dynamic.png'),
+
 	// Two two-stave (braced) treble parts, 4/4, one measure. Tests the vertical gap
 	// *between* parts: the pair of staves that meet in the middle are the extreme ones —
 	// P1's staff 2 plays four C3 quarters (many ledger lines below) and P2's staff 1
@@ -2275,27 +2302,29 @@ const TEST_CASES = [
 	// - The piano's above-slurs (over the right hand's beamed 16ths in measures 8 and 10-11)
 	//   used to arc up through the verse — "chen auf" and "ge- bückt" were drawn straight
 	//   over. The bow is pinned to its noteheads and can't move, so the gap between the
-	//   voice and the piano now opens to hold it (see recordStaveSpill in draw-pass.ts) and
-	//   the whole score sits taller.
+	//   voice and the piano opens to hold it (see recordStaveSpill in draw-pass.ts) — but
+	//   only on the systems carrying those bars, and only across the x range the bow covers.
+	//   Every other line sits back at its planned spacing.
 	testCase(
 		'score_mozart_das_veilchen.musicxml',
 		'score_mozart_das_veilchen.png',
 	),
 
-	// TODO: the piano's opening slur (measure 1, left hand) still rises a long way into the
-	// gap between the two staves. It no longer cuts through the beam on its way up — it now
-	// starts on the beam's outer edge and arcs from there — but the figure it spans is beamed
-	// up out of the bass stave, so that starting point is already most of a stave above the
-	// noteheads and the bow goes higher still. Decide whether a slur over a run beamed into
-	// the other hand should ride its beam at all, or hug the noteheads under it. Compare the
-	// arc height here against slur.musicxml, which never leaves its own stave. The gap itself
-	// is a separate, larger problem: the cross-stave stems (see measures 8-11) are what hold
-	// the two piano staves that far apart, not the slur.
 	// Schumann, "Dichterliebe": 27 measures of voice over piano, 3 sharps.
-	// The piano's cross-stave 16th runs (left hand beamed up into the right, nearly every
-	// bar) carry a slur that now bows ABOVE the run instead of sagging diagonally through the
-	// gap between the two staves. slur_cross_stave.musicxml is measures 4-5 reduced to that
-	// one behaviour.
+	// The piano's cross-stave 16th figures (nearly every bar) each carry a slur from the left
+	// hand's first 16th up to a right-hand note on the same beat. Finale writes the right hand
+	// first, so the file lists every one of those slurs' STOPS before their STARTS; each now
+	// closes inside its own measure instead of running two bars down the page looking for a
+	// stop (slur_backup_voices.musicxml is that pairing in isolation). Both ends sit on
+	// noteheads, so the arc leaves the bass notehead and crosses its own beam on the way up
+	// rather than starting on the beam's outer edge a stave above the note it belongs to.
+	// slur_cross_stave.musicxml is measures 4-5 reduced to the cross-stave arc alone.
+	// The arcs read as SHORT diagonals here because the piano's two staves are spaced per
+	// system off the music on them (see ScoreDrawer.spacedOffsets): the opening bars ride
+	// near the floor, and the gap opens only under the bars whose hands reach into it — the
+	// cross-stave runs in measures 8-11. The slurs themselves get no say in it, since a
+	// cross-stave bow's height is the gap it spans. This is the score that used to be a
+	// third taller than it needed to be, at one uniform gap set by its densest bar.
 	testCase(
 		'score_schumann_dichterliebe.musicxml',
 		'score_schumann_dichterliebe.png',

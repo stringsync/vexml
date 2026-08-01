@@ -59,7 +59,12 @@ These are deterministic engraving placement, not runtime clash resolution. Routi
 the detector would add indirection for no benefit. Documented so future work doesn't "migrate"
 them by mistake:
 
-- Page margins (`PAGE_MARGIN_*`), `INTER/INTRA_PART_SPACING`, `BASE_VOICE_WIDTH`.
+- Page margins (`PAGE_MARGIN_*`), `INTER/INTRA_PART_SPACING`, `BASE_VOICE_WIDTH`. The two
+  spacing constants are the *floor* a gap starts from, not the gap: `ScoreDrawer.spacedOffsets`
+  widens it per system from the spill pass one measured, per x column. That widening is real
+  clash resolution, but it resolves it by moving whole staves rather than by nudging one
+  element clear of another, so it stays its own mechanism (`StaveSpill` in `draw-pass.ts`)
+  rather than going through `CollisionDetector`.
 - Lead-glyph width estimates (`LEAD_BARLINE/CLEF/KEY/TIME`) — generous reservations so notes
   never collide with clef/key/time glyphs.
 - `LABEL_GAP` / part-label centering (`+1.5`), `BRACKET_X_SHIFT` (bracket sits just outside the
