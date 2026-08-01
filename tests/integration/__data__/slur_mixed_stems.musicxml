@@ -86,5 +86,45 @@
         <type>half</type>
       </note>
     </measure>
+    <!-- A slur with no placement running from a stem-up beamed pair into a stem-down
+         one. The start note's stem alone would send the bow underneath, where it has to
+         dive under both beams to reach the far end; disagreeing stems put it above. -->
+    <measure number="3">
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <stem>up</stem>
+        <beam number="1">begin</beam>
+        <notations><slur number="1" type="start" /></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <stem>up</stem>
+        <beam number="1">end</beam>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <stem>down</stem>
+        <beam number="1">begin</beam>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <stem>down</stem>
+        <beam number="1">end</beam>
+        <notations><slur number="1" type="stop" /></notations>
+      </note>
+      <note>
+        <rest />
+        <duration>4</duration>
+        <type>half</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>

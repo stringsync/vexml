@@ -34,6 +34,7 @@ import {
 	SLUR_MARGIN,
 	SLUR_MAX_ASPECT,
 	SLUR_MIN_CP_Y,
+	SLUR_STEM_TIP_SLANT,
 	SLUR_WIDTH_FACTOR,
 	SLUR_Y_SHIFT,
 	TAB_TIE_CP1,
@@ -1071,7 +1072,12 @@ export class SpannerBuilder {
 							? true
 							: slur.placement === 'below'
 								? false
-								: from.getStemDirection() !== 1;
+								: // Stems disagreeing across the slur put it above the notes
+									// (Gould): a bow from a stem-up note to a stem-down one has no
+									// notehead side to follow, and below it has to dive under the
+									// whole run to reach the far end.
+									from.getStemDirection() !== to.getStemDirection() ||
+									from.getStemDirection() !== 1;
 
 				// Anchor each endpoint on the bulge side of its own note: NEAR_TOP (the stem
 				// tip) when that stem points toward the bulge, else NEAR_HEAD (the outer
@@ -1085,6 +1091,13 @@ export class SpannerBuilder {
 				// whip. A slur is a bow between two points at comparable heights, so choose
 				// per slur rather than per note — take the stem tips only while they leave the
 				// two ends at least as level as the noteheads would.
+				//
+				// Unless an end is BEAMED on the bulge side, where the notehead is the worse anchor
+				// however level it is: the beam is a bar lying between that notehead and the bow, so
+				// a curve leaving the notehead climbs out through it. Such a slur takes the stem
+				// tips — the beam's own outer edge — as long as its span is wide enough to carry the
+				// drop as a slant (SLUR_STEM_TIP_SLANT). That budget is what still holds the whip
+				// case above to the noteheads: its far stem is a stave tall over two adjacent notes.
 				const towardBulge = (note: StaveNote) =>
 					(note.getStemDirection() === 1) === bulgeUp;
 				// vexflow's getStemExtents() names these backwards from how they read: baseY is
@@ -1103,7 +1116,15 @@ export class SpannerBuilder {
 					y - (note.getStave()?.getY() ?? 0);
 				const spread = (anchorY: (note: StaveNote) => number) =>
 					Math.abs(relative(from, anchorY(from)) - relative(to, anchorY(to)));
-				const useStemTips = spread(stemAnchorY) <= spread(headAnchorY);
+				const beamedOnBulgeSide = [from, to].some(
+					(note) => note.hasBeam() && towardBulge(note),
+				);
+				const slantBudget = beamedOnBulgeSide
+					? Math.abs(to.getAbsoluteX() - from.getAbsoluteX()) *
+						SLUR_STEM_TIP_SLANT
+					: 0;
+				const useStemTips =
+					spread(stemAnchorY) <= Math.max(spread(headAnchorY), slantBudget);
 				const metric = (note: StaveNote) =>
 					useStemTips && towardBulge(note)
 						? Curve.Position.NEAR_TOP

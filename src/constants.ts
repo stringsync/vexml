@@ -356,6 +356,15 @@ export const SLUR_END_ZONE = 0.15;
  * stays a slur rather than deforming into a spike or floating off its own noteheads. */
 export const SLUR_MAX_ASPECT = 0.25;
 
+/** How much height difference a slur will accept between its two ends to anchor them on
+ * the stem tips rather than the noteheads, as a fraction of its width. Stem tips are the
+ * right anchors when a stem (or the beam it runs into) sits between the notehead and the
+ * bow — otherwise the curve leaves its notehead by cutting straight through the beam. But
+ * an end on a stem tip and an end on a notehead can be most of a stave apart, which over
+ * a short span draws a near-vertical whip rather than a bow. A long span carries the same
+ * drop as a gentle slant, so the test is against the width, not an absolute height. */
+export const SLUR_STEM_TIP_SLANT = 0.5;
+
 /** A grace-to-main curve (an explicit slur or a hammer-on/pull-off) is drawn as a
  * small tight bow hugging directly under the two noteheads, not the fuller slur arc —
  * a subtler endpoint lift, a shallow control-point rise, and a tighter clearance

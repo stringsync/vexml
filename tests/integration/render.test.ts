@@ -1101,6 +1101,10 @@ const TEST_CASES = [
 	//   from G5, the second heading a stem-up group beamed to A5 so its stem spans the
 	//   stave. Ending on that far stem tip would draw a near-vertical whip, so both ends
 	//   sit on the noteheads: a short shallow bow between the two heads, under the beams.
+	// - M3: no <slur placement> at all — a stem-up beamed pair (E4, G4) running into a
+	//   stem-down one (D5, B4). The start note is stem-up, which alone would bow the slur
+	//   underneath and make it dive under both beams; because the two ends disagree the
+	//   slur goes above instead, one arc over the beams from the E4 stem tip to the B4.
 	testCase('slur_mixed_stems.musicxml', 'slur_mixed_stems.png'),
 
 	// Treble stave, 4/4: two half notes A5 and C4 slurred across a wide downward leap —
@@ -1122,9 +1126,10 @@ const TEST_CASES = [
 	testCase('slur_multiple.musicxml', 'slur_multiple.png'),
 
 	// Treble stave, 4/4: three chained slurs over E4, G4, E5, C5 — a slur below the
-	// first pair (E4-G4, stem-up), a slur bridging note 2 to note 3 (G4-E5) below, and a
-	// slur above the last pair (E5-C5, stem-down). Overlapping slurs use distinct
-	// numbers, so notes 2 and 3 each carry both a stop and a start.
+	// first pair (E4-G4, both stem-up), a slur bridging note 2 to note 3 (G4 stem-up to
+	// E5 stem-down) above because its ends disagree, and a slur above the last pair
+	// (E5-C5, stem-down). Overlapping slurs use distinct numbers, so notes 2 and 3 each
+	// carry both a stop and a start.
 	testCase('slur_chained.musicxml', 'slur_chained.png'),
 
 	// Treble, 4/4, narrowed to 350px so the system breaks between M1 and M2. A slur runs
@@ -2278,13 +2283,14 @@ const TEST_CASES = [
 	),
 
 	// TODO: the piano's opening slur (measure 1, left hand) still rises a long way into the
-	// gap between the two staves. It is doing the right thing for the wrong-looking result:
-	// the figure it spans is beamed up out of the bass stave, and cpYFor sizes the arc to
-	// clear that beam, so it rides high. Decide whether a slur over a run beamed into the
-	// other hand should clear the beam at all, or hug the noteheads under it. Compare the arc
-	// height here against slur.musicxml, which never leaves its own stave. The gap itself is
-	// a separate, larger problem: the cross-stave stems (see measures 8-11) are what hold the
-	// two piano staves that far apart, not the slur.
+	// gap between the two staves. It no longer cuts through the beam on its way up — it now
+	// starts on the beam's outer edge and arcs from there — but the figure it spans is beamed
+	// up out of the bass stave, so that starting point is already most of a stave above the
+	// noteheads and the bow goes higher still. Decide whether a slur over a run beamed into
+	// the other hand should ride its beam at all, or hug the noteheads under it. Compare the
+	// arc height here against slur.musicxml, which never leaves its own stave. The gap itself
+	// is a separate, larger problem: the cross-stave stems (see measures 8-11) are what hold
+	// the two piano staves that far apart, not the slur.
 	// Schumann, "Dichterliebe": 27 measures of voice over piano, 3 sharps.
 	// The piano's cross-stave 16th runs (left hand beamed up into the right, nearly every
 	// bar) carry a slur that now bows ABOVE the run instead of sagging diagonally through the
