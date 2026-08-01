@@ -1107,8 +1107,14 @@ const TEST_CASES = [
 	// the slur spans the measure between the distant noteheads.
 	testCase('slur_leap.musicxml', 'slur_leap.png'),
 
-	// Treble stave, 4/4: eight beamed eighths (two four-note beams) under a single slur
-	// arcing above the whole beamed run.
+	// Treble stave, 4/4: slurs over beamed runs. Both measures are stem-down eighths in two
+	// four-note beams, so the beam sits below and the slur arcs above the noteheads.
+	// - M1: a plain ascending-then-descending run C5-F5-G5-D5 under one slur.
+	// - M2: the note next to each end stands higher than the end itself — C5 G5 E5 G5 C5 F5
+	//   G5 D5, so G5 sits second and second-to-last while the slur starts on C5 and ends on
+	//   D5. Those two G5s lie where the bow is pinned nearly flat against its endpoints, so
+	//   the arc cannot clear them by inflating; the slur's ends lift off their noteheads
+	//   instead and the whole curve passes above all eight heads. No notehead touches it.
 	testCase('slur_beamed.musicxml', 'slur_beamed.png'),
 
 	// Treble stave, 4/4: four quarters carrying two separate two-note slurs (C5-D5 and
@@ -2271,15 +2277,14 @@ const TEST_CASES = [
 		'score_mozart_das_veilchen.png',
 	),
 
-	// TODO: False positive — this baseline was created from the current render and shows a bug.
-	// The piano's opening slur over-arcs: instead of hugging the right-hand figure it balloons
-	// up across the empty voice stave above it (systems 1 and 2). Compare the arc height here
-	// against slur.musicxml, which never leaves its own stave. Likely the same
-	// long/steep-slur flattening the upstream slurs_long_steep_arc_flattening_chopin.xml case
-	// covers. Fix, then `vex test score_schumann_dichterliebe --update`.
-	// The arc now costs page as well as looks: a slur reserves the room its bow needs
-	// (recordStaveSpill), so this dome is what holds the piano a stave's worth below the
-	// voice. Flattening it should give most of that height back.
+	// TODO: the piano's opening slur (measure 1, left hand) still rises a long way into the
+	// gap between the two staves. It is doing the right thing for the wrong-looking result:
+	// the figure it spans is beamed up out of the bass stave, and cpYFor sizes the arc to
+	// clear that beam, so it rides high. Decide whether a slur over a run beamed into the
+	// other hand should clear the beam at all, or hug the noteheads under it. Compare the arc
+	// height here against slur.musicxml, which never leaves its own stave. The gap itself is
+	// a separate, larger problem: the cross-stave stems (see measures 8-11) are what hold the
+	// two piano staves that far apart, not the slur.
 	// Schumann, "Dichterliebe": 27 measures of voice over piano, 3 sharps.
 	// The piano's cross-stave 16th runs (left hand beamed up into the right, nearly every
 	// bar) carry a slur that now bows ABOVE the run instead of sagging diagonally through the

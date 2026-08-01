@@ -338,8 +338,23 @@ export const SLUR_MARGIN = 14;
 /** Minimum control-point rise, so even short slurs bow off the noteheads. */
 export const SLUR_MIN_CP_Y = 16;
 
-/** Arc height grows with slur width so long slurs get a rounder bow. */
-export const SLUR_WIDTH_FACTOR = 0.12;
+/** Arc height grows with slur width so long slurs get a rounder bow. Kept small: a
+ * long slur is drawn FLAT, not as a deep dome — the bow over a whole measure should
+ * still read as roughly two staff spaces deep, not four. */
+export const SLUR_WIDTH_FACTOR = 0.03;
+
+/** How much of each end of a slur's span is exempt from setting the bow's DEPTH, as a
+ * fraction of its width. The bow is pinned to its endpoints, so buying clearance for a
+ * note lying under one of them means doming the whole arc far past what the rest of the
+ * span needs. Such a note is cleared by lifting the endpoints instead (see shapeFor). */
+export const SLUR_END_ZONE = 0.15;
+
+/** Ceiling on how far past its base lift a slur will stand off its chord to clear
+ * things, as a fraction of its width — covering both knobs shapeFor has, the bow's depth
+ * and the endpoint lift. A span can hold obstacles no slur can get over (a second voice,
+ * the stem of a run beamed into the other hand); past this the slur stops trying and
+ * stays a slur rather than deforming into a spike or floating off its own noteheads. */
+export const SLUR_MAX_ASPECT = 0.25;
 
 /** A grace-to-main curve (an explicit slur or a hammer-on/pull-off) is drawn as a
  * small tight bow hugging directly under the two noteheads, not the fuller slur arc —

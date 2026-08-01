@@ -26,11 +26,13 @@ import {
 	SINGLE_SLIDE_RISE,
 	SLIDE_MIN_SLANT,
 	SLIDE_PADDING,
+	SLUR_END_ZONE,
 	SLUR_GRACE_ANCHOR,
 	SLUR_GRACE_CP_Y,
 	SLUR_GRACE_MARGIN,
 	SLUR_GRACE_Y_SHIFT,
 	SLUR_MARGIN,
+	SLUR_MAX_ASPECT,
 	SLUR_MIN_CP_Y,
 	SLUR_WIDTH_FACTOR,
 	SLUR_Y_SHIFT,
@@ -1142,45 +1144,9 @@ export class SpannerBuilder {
 				};
 				// A grace-to-main curve hugs directly under the two noteheads with a small
 				// tight bow instead of the fuller slur arc (see the SLUR_GRACE_* constants).
-				const yShift = isGrace ? SLUR_GRACE_Y_SHIFT : SLUR_Y_SHIFT;
+				const baseYShift = isGrace ? SLUR_GRACE_Y_SHIFT : SLUR_Y_SHIFT;
+				const dir = bulgeUp ? -1 : 1;
 
-				// The control-point lift needed for a curve whose endpoints both sit at
-				// `midEnd` (the bulge-side Y) and that must clear the extreme note among
-				// `spanNotes` over the horizontal `width`. For a full slur only the notes it
-				// passes *over* count — the endpoints are where it attaches, so their own stems
-				// must not inflate it. A note beamed up out of the stave has a stem taller than
-				// the stave itself, and clearing that from a notehead anchor turns a two-note
-				// slur into a narrow spike; with no interior notes the arc takes the floor. A
-				// grace curve measures against its own endpoint anchors (extentsOf collapses to
-				// anchorY), never a stem, so it has nothing to exclude.
-				const clearanceOf = (spanNotes: StaveNote[]) =>
-					isGrace ? spanNotes : spanNotes.filter((n) => n !== from && n !== to);
-				const cpYFor = (
-					midEnd: number,
-					spanNotes: StaveNote[],
-					width: number,
-				) => {
-					const clearing = clearanceOf(spanNotes);
-					const extreme = bulgeUp
-						? Math.min(...clearing.map((n) => extentsOf(n).top))
-						: Math.max(...clearing.map((n) => extentsOf(n).bottom));
-					// Only a note that pokes PAST the endpoints on the bulge side needs
-					// clearing. Measured as an absolute distance instead, a note well below an
-					// upward-bowing slur (the other voice on the stave, the next measure's
-					// lower neighbour) asks the arc to rise by however far below it sits —
-					// which turns a two-note bow across a barline into a tall narrow spike.
-					const overshoot = bulgeUp ? midEnd - extreme : extreme - midEnd;
-					const need = clearing.length
-						? Math.max(0, overshoot) +
-							(isGrace ? SLUR_GRACE_MARGIN : SLUR_MARGIN)
-						: 0;
-					// A grace bow stays tight — it takes the clearance it needs and no more,
-					// where a full slur also widens with its span.
-					const floor = isGrace
-						? SLUR_GRACE_CP_Y
-						: Math.max(SLUR_MIN_CP_Y, width * SLUR_WIDTH_FACTOR);
-					return Math.max(floor, (need - yShift) / 0.75);
-				};
 				// The exact Y each end of the curve will be drawn at: what HeadCurve was handed
 				// for a grace, and what vexflow reads off getStemExtents() for everything else.
 				const endpointY = (note: StaveNote) => {
@@ -1191,12 +1157,112 @@ export class SpannerBuilder {
 					return metric(note) === Curve.Position.NEAR_TOP ? topY : baseY;
 				};
 
+				// How far the bow stands off its chord (the straight line joining the two
+				// drawn ends) at horizontal fraction `s` of the span, per unit of cpY. vexflow
+				// lifts both control points off the chord by the same cpY, so the cubic reduces
+				// to 3s(1-s): 0.75 at the midpoint, tapering to nothing at either end.
+				const riseFactor = (s: number) => 3 * s * (1 - s);
+
+				// How the curve clears every note it passes over, given where its two ends are
+				// drawn (xL/yL to xR/yR). Two independent knobs, and which one does the work
+				// matters:
+				//
+				//   - `cpY` inflates the bow. Cheap in the middle of the span, where the bow
+				//     already stands 0.75*cpY off its chord; useless near the ends, where it
+				//     stands off almost nothing and buying clearance there means doming the
+				//     whole arc.
+				//   - `yShift` lifts both ends, sliding the whole curve off the notes without
+				//     changing its shape. Costs the same everywhere along the span.
+				//
+				// So: solve cpY against the notes in the middle, then lift by whatever is still
+				// short anywhere — the notes under the ends, and anything the aspect cap refused
+				// to inflate for. A steep near-end obstacle raises the slur off its first
+				// notehead instead of ballooning it, which is what a reference engraving does.
+				//
+				// Clearance is checked at each note's OWN x, not just at the apex: an apex-only
+				// test lets the arc skim a note lying under the tapering part. Solving per note
+				// also catches notes the old midpoint-vs-extreme comparison couldn't see at all,
+				// like one poking above a steeply slanted chord.
+				//
+				// For a full slur only the notes it passes *over* count — the endpoints are
+				// where it attaches, so their own stems must not inflate it. A note beamed up
+				// out of the stave has a stem taller than the stave itself, and clearing that
+				// from a notehead anchor turns a two-note slur into a narrow spike; with no
+				// interior notes the arc takes the floor. A grace curve measures against its own
+				// endpoint anchors (extentsOf collapses to anchorY), never a stem, so it has
+				// nothing to exclude.
+				//
+				// A cross-stave slur clears nothing at all. Its two ends are a stave apart, so
+				// the run it climbs through sits above its chord for most of the span by
+				// construction — no bow gets over that, and solving for it domes the arc across
+				// the hand it's leaving. The endpoints alone shape it.
+				const clearanceOf = (spanNotes: StaveNote[]) =>
+					crossStave
+						? []
+						: isGrace
+							? spanNotes
+							: spanNotes.filter((n) => n !== from && n !== to);
+				const shapeFor = (
+					spanNotes: StaveNote[],
+					xL: number,
+					xR: number,
+					yL: number,
+					yR: number,
+				) => {
+					const width = Math.abs(xR - xL);
+					// A grace bow stays tight — it takes the clearance it needs and no more,
+					// where a full slur also widens with its span.
+					const floor = isGrace
+						? SLUR_GRACE_CP_Y
+						: Math.max(SLUR_MIN_CP_Y, width * SLUR_WIDTH_FACTOR);
+					const margin = isGrace ? SLUR_GRACE_MARGIN : SLUR_MARGIN;
+					// How far above the base chord (the line joining the two lifted ends) each
+					// note the curve passes over reaches, plus its margin. Only the overshoot
+					// past the CHORD counts. Measured against a single Y instead, a note well
+					// below an upward-bowing slur (the other voice on the stave, the next
+					// measure's lower neighbour) asks the arc to rise by however far below it
+					// sits — which turns a two-note bow across a barline into a tall narrow
+					// spike.
+					const clearances = clearanceOf(spanNotes).map((n) => {
+						const s = width ? (n.getAbsoluteX() - xL) / (xR - xL) : 0.5;
+						const extents = extentsOf(n);
+						const y = bulgeUp ? extents.top : extents.bottom;
+						const chordY = yL + dir * baseYShift + s * (yR - yL);
+						return { s, need: Math.max(0, dir * (y - chordY) + margin) };
+					});
+					// Only the notes clear of both ends set the bow's depth. Math.max seeded
+					// with 0, not spread bare: with no mid-span notes an unseeded Math.min
+					// against the cap would return the cap itself.
+					const inflation = Math.max(
+						0,
+						...clearances
+							.filter((c) => c.s >= SLUR_END_ZONE && c.s <= 1 - SLUR_END_ZONE)
+							.map((c) => c.need / riseFactor(c.s)),
+					);
+					// One ceiling for both knobs: how far past its base lift the curve may stand
+					// off the chord at all. Beyond this it stops reading as a bow, whether it
+					// got there by inflating or by rising, so it stops trying — a slur can't
+					// clear everything a span might hold (a second voice, the stem of a run
+					// beamed into the other hand) and shouldn't deform itself pretending to.
+					const reach = width * SLUR_MAX_ASPECT;
+					const cpY = Math.max(floor, Math.min(reach, inflation));
+					// Whatever that bow still doesn't reach, the endpoints make up by rising,
+					// out of what's left of the same budget.
+					const shortfall = Math.max(
+						0,
+						...clearances.map((c) => c.need - riseFactor(c.s) * cpY),
+					);
+					const yShift =
+						baseYShift + Math.min(shortfall, Math.max(0, reach - 0.75 * cpY));
+					return { cpY, yShift };
+				};
+
 				const pushCurve = (
 					curveFrom: StaveNote | undefined,
 					curveTo: StaveNote | undefined,
 					position: number,
 					positionEnd: number,
-					cpY: number,
+					{ cpY, yShift }: { cpY: number; yShift: number },
 				) => {
 					// vexflow offsets each control point from its OWN endpoint by the same cps.y, so
 					// on a slur whose two ends sit at very different heights both points land the
@@ -1210,9 +1276,8 @@ export class SpannerBuilder {
 					// side of the midpoint — hence the ±slant. What that draws is a parabola over
 					// the chord: symmetric bow, both ends tangent to the chord, no hook. The apex
 					// is unchanged at chord-midpoint + 0.75*cpY (the cubic's t=0.5 works out to
-					// that), so the clearance cpYFor solved for still holds. Level endpoints have
-					// no slant and reduce to the old symmetric cps exactly.
-					const dir = bulgeUp ? -1 : 1;
+					// that), so the clearance shapeFor solved for still holds. Level endpoints
+					// have no slant and reduce to the old symmetric cps exactly.
 					const only = (curveFrom ?? curveTo) as StaveNote;
 					const y0 = endpointY(curveFrom ?? only);
 					const y1 = endpointY(curveTo ?? only);
@@ -1270,19 +1335,21 @@ export class SpannerBuilder {
 				// open end at the stave's tie edge. (Y, not X: a slur whose start note is the
 				// first in its system shares the stop note's left X but not its row.)
 				if (toStave && fromStave && toStave.getY() > fromStave.getY()) {
-					const fromSpan = span.filter((n) => n.getStave() === fromStave);
-					const toSpan = span.filter((n) => n.getStave() === toStave);
-					const fromY = extentsOf(from);
-					const toY = extentsOf(to);
+					// Each half is level: pushCurve reads the open end's Y off the note the half
+					// does have, so both its ends sit at that one Y.
+					const fromY = endpointY(from);
+					const toY = endpointY(to);
 					pushCurve(
 						from,
 						undefined,
 						metric(from),
 						metric(from),
-						cpYFor(
-							bulgeUp ? fromY.top : fromY.bottom,
-							fromSpan,
-							fromStave.getTieEndX() - from.getTieRightX(),
+						shapeFor(
+							span.filter((n) => n.getStave() === fromStave),
+							from.getAbsoluteX(),
+							fromStave.getTieEndX(),
+							fromY,
+							fromY,
 						),
 					);
 					pushCurve(
@@ -1290,27 +1357,29 @@ export class SpannerBuilder {
 						to,
 						metric(to),
 						metric(to),
-						cpYFor(
-							bulgeUp ? toY.top : toY.bottom,
-							toSpan,
-							to.getTieLeftX() - toStave.getTieStartX(),
+						shapeFor(
+							span.filter((n) => n.getStave() === toStave),
+							toStave.getTieStartX(),
+							to.getAbsoluteX(),
+							toY,
+							toY,
 						),
 					);
 					continue;
 				}
 
-				const width = Math.abs(to.getTieLeftX() - from.getTieRightX());
-				const fromY = extentsOf(from);
-				const toY = extentsOf(to);
-				const midEnd = bulgeUp
-					? (fromY.top + toY.top) / 2
-					: (fromY.bottom + toY.bottom) / 2;
 				pushCurve(
 					from,
 					to,
 					metric(from),
 					metric(to),
-					cpYFor(midEnd, span, width),
+					shapeFor(
+						span,
+						from.getAbsoluteX(),
+						to.getAbsoluteX(),
+						endpointY(from),
+						endpointY(to),
+					),
 				);
 			}
 		});
