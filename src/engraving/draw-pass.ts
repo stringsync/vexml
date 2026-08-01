@@ -3853,6 +3853,12 @@ export class DrawPass {
 			// drawWithStyle, not draw: Curve.draw never applies its own style, and a
 			// <slur line-type> rides on the element as a lineDash (see buildSlurs).
 			slur.curve.setContext(this.context).drawWithStyle();
+			// The bow is ink like any other, so the page has to cover it: a slur arcing over
+			// the top stave of the first system rises into the cropped top slack, and one
+			// dipping under the last system's bottom stave hangs past the floor. Without this
+			// the crop cuts the arc off mid-air.
+			this.pageTop = Math.min(this.pageTop, slur.top);
+			this.pageBottom = Math.max(this.pageBottom, slur.bottom);
 			// A bow arcs past the notes it joins, so it can reach further off the stave than
 			// anything the note pass measured — a slur over a beamed group climbs over the
 			// beam, and in a song that lands on the singer's lyrics. Report it as spill so
@@ -3873,6 +3879,15 @@ export class DrawPass {
 						slur.right - slur.left,
 						slur.bottom - slur.top,
 					),
+				);
+			}
+			// And against the system above: a bow over a middle system's top stave has nothing
+			// but the previous system over it, so report it the way an above-placed wedge does.
+			const slurSystem = slur.stave && this.systemByStave.get(slur.stave);
+			if (slurSystem !== undefined) {
+				this.systemHighestTop.set(
+					slurSystem,
+					Math.min(this.systemHighestTop.get(slurSystem) ?? Infinity, slur.top),
 				);
 			}
 			if (slur.stave) {
