@@ -1,12 +1,14 @@
-import type {
-	Chord,
-	Harmony,
-	Key,
-	Measure,
-	Note,
-	Part,
-	Score,
-	Time,
+import {
+	type BeamRun,
+	type Chord,
+	groupBeamRuns,
+	type Harmony,
+	type Key,
+	type Measure,
+	type Note,
+	type Part,
+	type Score,
+	type Time,
 } from '@stringsync/mdom';
 import {
 	Barline,
@@ -387,7 +389,7 @@ type PendingStave = {
 	// before they can be built — a cross-staff run names notes another stave drew. Consumed
 	// (and emptied into `beams`) by buildPartBeams.
 	beamPlans: Array<{
-		groups: ReturnType<SpannerBuilder['groupBeams']>;
+		groups: BeamRun[];
 		defaultStem?: 'up' | 'down';
 	}>;
 	tuplets: ReturnType<SpannerBuilder['buildTuplets']>;
@@ -1792,7 +1794,9 @@ export class DrawPass {
 				? []
 				: [
 						{
-							groups: this.spanners.groupBeams(v.beamChords),
+							// Chord members are transparent to the fold (the <beam> markers hang off
+							// the lead), so the lead list is the whole run.
+							groups: groupBeamRuns(v.beamChords.map((c) => c.lead)),
 							defaultStem: stemFor(voiceIndex),
 						},
 					],

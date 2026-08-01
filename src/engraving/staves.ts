@@ -1,16 +1,18 @@
 import type { Measure, Part, PartGroupSpan, Score } from '@stringsync/mdom';
 
-/** True when `<staff-details>` tunes a string for every line of this staff — the MusicXML
- * signal for tablature that doesn't depend on the clef.
+/** True when `<staff-details>` gives this staff both string tunings and an explicit
+ * `<staff-lines>` — the MusicXML signal for tablature that doesn't depend on the clef.
  *
  * Tunings alone are not enough: Guitar Pro copies a guitar's six `<staff-tuning>`s onto
  * the *notation* staff of a notation+tab part (and onto unrelated parts sharing the
- * instrument), where they mean nothing. A real tab staff has one string per line, so
- * matching the counts keeps those six spurious tunings off a 5-line notation staff. */
+ * instrument), where they mean nothing. A real tab staff always sizes itself with
+ * `<staff-lines>`, so requiring both keeps those spurious tunings from turning notation
+ * staves into tab. StaffDetails is what makes this askable: Measure.getStaveLines applies
+ * the 5-line default, which erases the difference between declared and absent. */
 function hasStaffTuning(measure: Measure, staffNumber: string): boolean {
-	const tunings = measure.getStaffTunings(staffNumber);
+	const details = measure.getStaffDetails(staffNumber);
 	return (
-		tunings.length > 0 && tunings.length === measure.getStaveLines(staffNumber)
+		!!details && details.staffTunings.length > 0 && details.staffLines !== null
 	);
 }
 

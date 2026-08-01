@@ -1,4 +1,4 @@
-import type { Chord, Tuplet as MTuplet, Note } from '@stringsync/mdom';
+import type { BeamRun, Chord, Tuplet as MTuplet, Note } from '@stringsync/mdom';
 import {
 	Beam,
 	Curve,
@@ -309,10 +309,6 @@ class HeadCurve extends Curve {
 	}
 }
 
-// A beam run: the notes joined by their primary (8th-level) beam, plus the indexes
-// within the run where the secondary (16th+) beam breaks into sub-beams.
-type BeamGroup = { notes: Note[]; secondaryBreaks: number[] };
-
 /*
  * How a <tuplet> start marker asks to be PRINTED, which MusicXML keeps separate from the
  * <time-modification> that compresses the durations: <tuplet-actual>/<tuplet-normal> give the
@@ -344,68 +340,11 @@ function tupletDisplay(marker: MTuplet): TupletDisplay {
 
 export class SpannerBuilder {
 	/*
-	 * Group a voice's chord run into beam runs off the primary <beam number="1">
-	 * markers. An "end" does NOT close the run: only a "begin" (new run) or a non-beamed
-	 * note does. This keeps a beat whose primary beam is split at a sub-beam boundary —
-	 * e.g. Guitar Pro encoding a triplet-of-16ths + 2-16ths beat as
-	 * begin,continue,end,continue,end — as one continuous primary beam.
-	 * The secondary beam still breaks at those boundaries: any <beam number="2"> "end"
-	 * that isn't the run's last note marks where the 16th beam splits.
-	 * A rest with no beam markers does NOT close the run either: it can sit under a
-	 * beam, so it's skipped and the surrounding notes stay in one beam.
-	 *
-	 * mdom's Measure.beamRuns() now folds beams by these exact rules, but it is
-	 * MEASURE-scoped and this has to be VOICE-scoped: `beamChords` is a voice's full,
-	 * unrestricted chord list, which is what groups a cross-stave beam exactly once (see
-	 * StaffVoice). mdom's own note-scoped groupBeamRuns() would fit, but the package
-	 * doesn't export it.
-	 */
-	groupBeams(chords: Chord[]): BeamGroup[] {
-		const groups: BeamGroup[] = [];
-		let current: BeamGroup | null = null;
-		for (const chord of chords) {
-			const note = chord.lead;
-			const primary = note.beams.find((b) => b.number === '1')?.beamValue;
-			if (primary === 'begin') {
-				current = { notes: [note], secondaryBreaks: [] };
-				groups.push(current);
-			} else if (primary === 'continue' || primary === 'end') {
-				if (!current) {
-					current = { notes: [note], secondaryBreaks: [] };
-					groups.push(current);
-				} else {
-					current.notes.push(note);
-				}
-			} else if (note.isRest) {
-				// A rest carries no beam markers but can sit *under* a beam (a "continue"
-				// run that resumes after it). Don't close the run — skip the rest so the
-				// following notes stay in the same beam, as the golden engraving shows.
-				continue;
-			} else {
-				current = null;
-				continue;
-			}
-			// A secondary (16th+) beam that ends mid-run splits the sub-beams there. Record
-			// the break at this note's index; the last note's "end" is the run end, not a split.
-			if (note.beams.some((b) => b.number !== '1' && b.beamValue === 'end')) {
-				current.secondaryBreaks.push(current.notes.length - 1);
-			}
-		}
-		// The break index recorded for the run's final note is its terminus, not a split.
-		for (const group of groups) {
-			group.secondaryBreaks = group.secondaryBreaks.filter(
-				(i) => i < group.notes.length - 1,
-			);
-		}
-		return groups;
-	}
-
-	/*
 	 * Beams: map each beam group's notes to their StaveNotes. Built before formatting
 	 * so the beamed notes drop their flags.
 	 */
 	buildBeams(
-		groups: BeamGroup[],
+		groups: BeamRun[],
 		byLead: Map<Note, StaveNote>,
 		defaultStem?: 'up' | 'down',
 		// Overrides what a lead resolves to, for a chord split across two staves: it drew one
@@ -447,8 +386,8 @@ export class SpannerBuilder {
 					beam.renderOptions.minFlatBeamOffset =
 						Stem.HEIGHT - beam.renderOptions.beamWidth * 1.5;
 				}
-				if (group.secondaryBreaks.length > 0) {
-					beam.breakSecondaryAt(group.secondaryBreaks);
+				if (group.breaksAfter.length > 0) {
+					beam.breakSecondaryAt(group.breaksAfter);
 				}
 				beams.push(beam);
 			}
@@ -472,7 +411,7 @@ export class SpannerBuilder {
 	 * position that has nothing to do with the melodic contour, and graces beam on their
 	 * own. vexflow's own slope search (capped at ±0.25) still shapes the slanted case.
 	 */
-	private isFlatBeam(group: BeamGroup, byLead: Map<Note, StaveNote>): boolean {
+	private isFlatBeam(group: BeamRun, byLead: Map<Note, StaveNote>): boolean {
 		// vexflow's `line` counts upward from the bottom stave line, so a higher pitch is
 		// a larger number.
 		const lines = group.notes
