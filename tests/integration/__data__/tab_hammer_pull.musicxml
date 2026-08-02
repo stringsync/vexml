@@ -313,5 +313,149 @@
         </notations>
       </note>
     </measure>
+    <!-- Written with <technical> markers only, no <slur>. A hammer-on/pull-off is a slur on a
+         notation stave, so the tab stave has to draw its arc from these too — quarter notes on
+         string 1, a hammer-on (5 -> 7) then a pull-off (7 -> 5). -->
+    <measure number="8">
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <string>1</string><fret>5</fret>
+            <hammer-on number="1" type="start">H</hammer-on>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <string>1</string><fret>7</fret>
+            <hammer-on number="1" type="stop" />
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <string>1</string><fret>7</fret>
+            <pull-off number="2" type="start">P</pull-off>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <string>1</string><fret>5</fret>
+            <pull-off number="2" type="stop" />
+          </technical>
+        </notations>
+      </note>
+    </measure>
+    <!-- A slur AND a slide over the same pair (how MuseScore exports a slid legato run). Both
+         gestures draw, so the arc has to sit clear of the diagonal instead of crossing it. -->
+    <measure number="9">
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>1</string><fret>5</fret></technical>
+          <slur number="1" type="start" />
+          <slide number="1" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+          <slur number="1" type="stop" />
+          <slide number="1" type="stop" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+          <slur number="2" type="start" />
+          <slide number="2" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>1</string><fret>5</fret></technical>
+          <slur number="2" type="stop" />
+          <slide number="2" type="stop" />
+        </notations>
+      </note>
+    </measure>
+    <!-- One <slur> over a three-note run PLUS a <technical> hammer-on/pull-off per adjacent
+         pair (how MuseScore exports a legato run). The slur already arcs over the whole run,
+         so the per-pair techniques must be dropped: one long arc, not a bump over each pair. -->
+    <measure number="10">
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <string>1</string><fret>5</fret>
+            <hammer-on number="1" type="start">H</hammer-on>
+          </technical>
+          <slur number="1" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <string>1</string><fret>7</fret>
+            <pull-off number="1" type="start">P</pull-off>
+            <hammer-on number="1" type="stop" />
+          </technical>
+          <slur number="1" type="continue" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <string>1</string><fret>5</fret>
+            <pull-off number="1" type="stop" />
+          </technical>
+          <slur number="1" type="stop" />
+        </notations>
+      </note>
+      <!-- Outside the slur: nothing to draw. -->
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+        </notations>
+      </note>
+    </measure>
   </part>
 </score-partwise>

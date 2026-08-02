@@ -140,6 +140,12 @@ export const TAB_GRACE_SPACING = 14;
 export const TAB_TIE_CP1 = 8;
 export const TAB_TIE_CP2 = 12;
 
+/** Distance a hammer-on/pull-off arc is lifted above the fret digits when a slide joins the
+ * same two notes. vexflow's TabTie yShift is 3, which leaves the arc inside the band the slide
+ * erases (TAB_LINE_CLEAR_HEIGHT / 2 either side of the string line), so the two gestures merge
+ * into one lens shape; lifting clears the band and reads as an arc over a diagonal. */
+export const TAB_TIE_SLIDE_Y_SHIFT = 9;
+
 /** A notation slide/glissando line (see NotationSlide) runs between the two notehead centers,
  * tilted by the slide direction. SLIDE_MIN_SLANT is the smallest vertical rise/fall it is
  * allowed (so a near-unison slide still reads instead of going flat, and a chord's near-equal

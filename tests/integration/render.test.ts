@@ -1221,6 +1221,17 @@ const TEST_CASES = [
 	// - M7: a three-string chord (strings 4/3/2) hammering into a single note on string 2
 	//   (5 -> 7). Only string 2 is played by both, so exactly one arc draws — from the "5"
 	//   to the "7" — and the 2/2 frets on strings 4 and 3 are left untied.
+	// - M8: the same two gestures on quarter notes (string 1, 5 -> 7 then 7 -> 5) written with
+	//   <technical> hammer-on/pull-off markers and NO <slur>. Both arcs must still draw — the
+	//   notation stave treats those markers as slurs, so the tab stave has to as well.
+	// - M9: quarter notes on string 1 where a <slur> AND a <slide> cover the same pair (5 -> 7
+	//   then 7 -> 5), as MuseScore exports a slid legato run. Each pair shows both gestures:
+	//   the slide's diagonal between the frets, and the arc riding clear ABOVE the fret
+	//   digits — the arc must not sink into the diagonal and read as one lens shape.
+	// - M10: one <slur> over a three-note run (5 - 7 - 5) that ALSO carries a hammer-on and a
+	//   pull-off between its adjacent pairs. Exactly one arc draws, spanning all three frets;
+	//   the per-pair techniques are already covered by it, so they add no second bump. The
+	//   fourth note (7) sits outside the slur, untied.
 	// Default render: the tie arcs draw but the "H"/"P" labels are off
 	// (showTabHammerPullText defaults to false).
 	testCase('tab_hammer_pull.musicxml', 'tab_hammer_pull.png'),

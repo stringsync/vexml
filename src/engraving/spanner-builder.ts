@@ -39,6 +39,7 @@ import {
 	SLUR_Y_SHIFT,
 	TAB_TIE_CP1,
 	TAB_TIE_CP2,
+	TAB_TIE_SLIDE_Y_SHIFT,
 	TUPLET_NESTING_EXTRA_GAP,
 } from '../constants';
 import { Rect } from '../geometry';
@@ -722,7 +723,9 @@ export class SpannerBuilder {
 	 * vexflow draws each as a TabTie labelled "H" or "P". When no explicit
 	 * <hammer-on>/<pull-off> marker says which, infer from the fret motion of the
 	 * lead string: a higher target fret is a hammer-on, a lower one a pull-off (pulling
-	 * off to an open string is just a target fret of 0).
+	 * off to an open string is just a target fret of 0). Reads the same slurConnectors
+	 * buildSlurs does, so a <hammer-on>/<pull-off> written WITHOUT a companion <slur> draws
+	 * on the tab stave too — otherwise the notation stave shows an arc the tab is missing.
 	 */
 	buildHammerPulls(
 		chords: Chord[],
@@ -730,12 +733,13 @@ export class SpannerBuilder {
 		showText: boolean,
 	): TabTie[] {
 		const ties: TabTie[] = [];
+		const spans = slurSpans(chords);
 		for (const chord of chords) {
 			const firstNote = byTabLead.get(chord.lead);
 			if (!firstNote) {
 				continue;
 			}
-			for (const slur of chord.lead.slurs) {
+			for (const slur of slurConnectors(chord.lead, spans)) {
 				if (slur.slurType !== 'start') {
 					continue;
 				}
@@ -761,6 +765,12 @@ export class SpannerBuilder {
 					// the stave-note slurs (vexflow defaults it thinner than a StaveTie).
 					tie.renderOptions.cp1 = TAB_TIE_CP1;
 					tie.renderOptions.cp2 = TAB_TIE_CP2;
+					// A slid pair carries both gestures (the slide line AND the legato arc). At
+					// vexflow's default yShift the arc runs through the stretch of string line the
+					// slide erases, so arc and diagonal cross into a single lens; lift it clear.
+					if (slideConnects(chord.lead, partner)) {
+						tie.renderOptions.yShift = TAB_TIE_SLIDE_Y_SHIFT;
+					}
 					// The arc always draws; clear the "H"/"P" label when the text is off.
 					if (!showText) {
 						tie.setText('');
@@ -1041,10 +1051,11 @@ export class SpannerBuilder {
 	 */
 	buildSlurs(chords: Chord[], byLead: Map<Note, StaveNote>): SlurCurve[] {
 		const slurs: SlurCurve[] = [];
+		const spans = slurSpans(chords);
 		chords.forEach((chord, i) => {
 			const from = byLead.get(chord.lead);
 			const isGrace = chord.lead.isGrace;
-			for (const slur of slurConnectors(chord.lead)) {
+			for (const slur of slurConnectors(chord.lead, spans)) {
 				if (slur.slurType !== 'start' || !slur.partner || !from) {
 					continue;
 				}
@@ -1574,8 +1585,11 @@ function samePitchMember(note: Note, chord: Chord | undefined): Note | null {
  * The slur-like connectors starting/stopping on a note: its <slur> markers plus any
  * <hammer-on>/<pull-off> in <technical>. In standard notation a hammer-on/pull-off IS
  * just a slur curve (the "H"/"P" label is a tab-only convention), so buildSlurs draws
- * them the same way — including grace-to-main graces. A technique whose target a real
- * <slur> already reaches is dropped, so an exporter that emits both doesn't double the arc.
+ * them the same way — including grace-to-main graces. A technique a real <slur> already
+ * covers is dropped, so an exporter that emits both doesn't double the arc: either the
+ * slur reaches the same partner, or (`spans`) one slur arcs over both of the technique's
+ * ends. The second case is a legato run written as one long <slur> plus a hammer-on/pull-off
+ * per adjacent pair — the run gets its one arc, not that arc plus a bump over every pair.
  */
 type SlurConnector = {
 	slurType: string;
@@ -1585,7 +1599,10 @@ type SlurConnector = {
 	 * hammer-on/pull-off has no line-type, so it is always solid. */
 	dash: number[] | null;
 };
-function slurConnectors(note: Note): SlurConnector[] {
+function slurConnectors(
+	note: Note,
+	spans: Array<Set<Note>> = [],
+): SlurConnector[] {
 	const slurTargets = new Set(note.slurs.map((s) => s.partner?.note ?? null));
 	const techniques: SlurConnector[] = [
 		...note.hammerOns.map((h) => ({
@@ -1600,7 +1617,13 @@ function slurConnectors(note: Note): SlurConnector[] {
 			placement: null,
 			dash: null,
 		})),
-	].filter((t) => !slurTargets.has(t.partner?.note ?? null));
+	].filter((t) => {
+		const partner = t.partner?.note ?? null;
+		return (
+			!slurTargets.has(partner) &&
+			!spans.some((span) => span.has(note) && !!partner && span.has(partner))
+		);
+	});
 	return [
 		...note.slurs.map((s) => {
 			const partner = s.partner?.note ?? null;
@@ -1613,6 +1636,47 @@ function slurConnectors(note: Note): SlurConnector[] {
 		}),
 		...techniques,
 	];
+}
+
+/*
+ * Every note each resolved <slur> arcs over, one set per slur. Used by slurConnectors to
+ * spot a hammer-on/pull-off the slur already covers. Only leads carry slurs here, and a
+ * span whose partner isn't a lead (or runs backwards) has no notes to cover, so it drops out.
+ */
+function slurSpans(chords: Chord[]): Array<Set<Note>> {
+	const leads = chords.map((chord) => chord.lead);
+	const index = new Map(leads.map((note, i) => [note, i]));
+	const spans: Array<Set<Note>> = [];
+	leads.forEach((note, i) => {
+		for (const slur of note.slurs) {
+			const j =
+				slur.slurType === 'start' && slur.partner
+					? (index.get(slur.partner.note) ?? -1)
+					: -1;
+			if (j > i) {
+				spans.push(new Set(leads.slice(i, j + 1)));
+			}
+		}
+	});
+	return spans;
+}
+
+/*
+ * Whether a <slide>/<glissando> also joins these two notes — the same start..stop pairing
+ * buildSlides does, by `number`.
+ */
+function slideConnects(from: Note, to: Note): boolean {
+	const markers = (note: Note) => [
+		...note.slides.map((s) => ({ number: s.number, type: s.slideType })),
+		...note.glissandos.map((g) => ({
+			number: g.number,
+			type: g.glissandoType,
+		})),
+	];
+	const stops = markers(to).filter((m) => m.type === 'stop');
+	return markers(from).some(
+		(m) => m.type === 'start' && stops.some((stop) => stop.number === m.number),
+	);
 }
 
 /*
