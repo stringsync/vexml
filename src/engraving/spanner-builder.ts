@@ -199,6 +199,39 @@ class SingleSlide {
 }
 
 /*
+ * vexflow's TabSlide strokes its two-point line with a closePath() in between (tabslide.ts
+ * renderTie), which walks the segment back to where it started — so the rasterizer strokes it
+ * twice and the two antialiased passes composite into a line that reads fat and blurry next to
+ * the pixel-crisp string lines. Same geometry, stroked once.
+ */
+class CrispTabSlide extends TabSlide {
+	override renderTie(params: {
+		direction: number;
+		firstX: number;
+		lastX: number;
+		firstYs: number[];
+		lastYs: number[];
+	}): void {
+		const ctx = this.checkContext();
+		for (const index of this.getNotes().firstIndexes ?? []) {
+			const y = params.firstYs[index];
+			if (typeof y !== 'number' || Number.isNaN(y)) {
+				continue;
+			}
+			// vexflow's geometry: the line pivots on the first note's string y (plus the
+			// half-pixel renderOptions.yShift its constructor sets), rising 3px on each side of
+			// it for a slide up and falling for a slide down.
+			const slideY = y + this.renderOptions.yShift;
+			ctx.beginPath();
+			ctx.moveTo(params.firstX, slideY + 3 * params.direction);
+			ctx.lineTo(params.lastX, slideY - 3 * params.direction);
+			ctx.stroke();
+		}
+		this.setRendered();
+	}
+}
+
+/*
  * A tab slide, plus the erasure of the string line it runs along. vexflow draws a TabStave's
  * string lines edge to edge and the slide's diagonal on top of them, so the two frets end up
  * joined by a straight line *and* a slanted one, which reads as two gestures instead of one.
@@ -788,10 +821,10 @@ export class SpannerBuilder {
 						firstIndexes: from.note.getPositions().map((_, i) => i),
 						lastIndexes: tabNote.getPositions().map((_, i) => i),
 					};
-					const slide =
-						fret > from.fret
-							? TabSlide.createSlideUp(notes)
-							: TabSlide.createSlideDown(notes);
+					const slide = new CrispTabSlide(
+						notes,
+						fret > from.fret ? TabSlide.SLIDE_UP : TabSlide.SLIDE_DOWN,
+					);
 					// The line always draws; clear the "sl." label when the text is off.
 					if (!showText) {
 						slide.setText('');
