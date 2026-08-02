@@ -1297,6 +1297,15 @@ const TEST_CASES = [
 		showTabSlideText: true,
 	}),
 
+	// Notation stave over a 6-line TAB stave, 4/4: the same two slides on both staves, as
+	// voice 1 (pitched, staff 1) and voice 2 (fretted, string 3, staff 2).
+	// - M1: four quarter notes — a slide up (C4 -> D4, frets 5 -> 7) then a slide down
+	//   (E4 -> D4, frets 9 -> 7). The notation stave draws a straight line between the
+	//   noteheads; the TAB stave draws a tilted line between the frets with the string
+	//   line erased under it, so each slide reads as one diagonal, not a diagonal
+	//   alongside a horizontal.
+	testCase('tab_slide_notation.musicxml', 'tab_slide_notation.png'),
+
 	// Notation stave over a 6-line TAB stave, 4/4: a slide INTO a note (an unpaired
 	// <slide type="stop">, indeterminate origin). A half rest then a half note B4 (beat 3),
 	// so the note sits mid-stave with room on both sides.
