@@ -1,9 +1,10 @@
-import type { Score } from '@stringsync/mdom';
+import type { Measure, Score } from '@stringsync/mdom';
 import { Formatter, GraceNoteGroup } from 'vexflow';
 import type { Config } from '../config';
 import {
 	BASE_VOICE_WIDTH,
 	DEFAULT_WIDTH,
+	EPSILON,
 	GAP_LABEL_FONT_SIZE,
 	GRACE_SPACING,
 	INTER_PART_SPACING,
@@ -25,6 +26,7 @@ import {
 	PAGE_MARGIN_X,
 	QUARTER_NOTE_TICKS,
 	TAB_MIN_NOTE_SPACING,
+	WORDS_CHAR_WIDTH,
 } from '../constants';
 import { gapsByMeasureIndex } from '../gaps';
 import {
@@ -45,6 +47,10 @@ import {
 export type MeasureBox = {
 	x: number;
 	width: number;
+	/** Part of `width` held open before the right barline for a words directive on the
+	 * measure's last note (see LayoutPlanner.trailingWordsPad); the notes format into the
+	 * rest. 0 for measures with no such directive. */
+	trailingPad: number;
 	systemIndex: number;
 	isSystemStart: boolean;
 	isSystemEnd: boolean;
@@ -286,6 +292,49 @@ export class LayoutPlanner {
 		return { min, ideal: Math.max(min, logWidth) };
 	}
 
+	/*
+	 * Space to hold open before a measure's right barline, so a words directive on the measure's
+	 * LAST note fits inside the measure instead of printing across the divider. The directive is
+	 * left-anchored at its note's x (see DrawPass.drawWords), and the last note has nothing after
+	 * it, so the only room the text has is that note's own share of the width — anything longer
+	 * spills over the barline. A directive anchored earlier prints over the notes that follow it,
+	 * which is ordinary engraving and needs no room of its own.
+	 *
+	 * Reserved as a pad rather than as extra note area: stretching the note area feeds most of
+	 * the growth to the earlier notes and the anchor slides right along with the barline, so the
+	 * overhang barely closes. The pad sits outside what the formatter justifies into, which puts
+	 * the space where the text actually needs it.
+	 */
+	private trailingWordsPad(measures: Measure[], noteSpacing: number): number {
+		// The column's last onset, across every part, voice and staff — the whole column is
+		// formatted together, so a note in ANY part is room a directive can print over.
+		// Compared against onsets rather than against the column's end beat, so a whole-measure
+		// rest — which ENDS last but starts at beat 0 — isn't mistaken for a note at the barline.
+		let lastOnset = 0;
+		for (const measure of measures) {
+			for (const voice of measure.voices) {
+				for (const chord of voice.chords) {
+					lastOnset = Math.max(lastOnset, chord.measureBeat ?? 0);
+				}
+			}
+		}
+		let pad = 0;
+		for (const measure of measures) {
+			for (const { text, lead } of this.reader.wordsOf(measure)) {
+				// A directive naming no note anchors at the measure's first one instead.
+				if (!lead || (lead.measureBeat ?? 0) + EPSILON < lastOnset) {
+					continue;
+				}
+				const room = this.noteLogWidth(
+					(lead.beats ?? 0) * QUARTER_NOTE_TICKS,
+					noteSpacing,
+				);
+				pad = Math.max(pad, text.length * WORDS_CHAR_WIDTH - room);
+			}
+		}
+		return Math.max(0, pad);
+	}
+
 	/** Lay the parts out at the reference width: where every measure box sits, how
 	 * staves stack within a system, and how tall/wide the page starts. Depends only on
 	 * the music and the options, never on the live container — the finished result is
@@ -459,6 +508,19 @@ export class LayoutPlanner {
 		const areaOf = (m: number): NoteArea =>
 			noteAreas[m] ?? { min: BASE_VOICE_WIDTH, ideal: BASE_VOICE_WIDTH };
 
+		// Room held open before the right barline for a directive on the measure's last note
+		// (see trailingWordsPad). Budgeted alongside the leads: fixed either way, never
+		// stretched or squeezed, so the text keeps its room at any system width.
+		const pads = Array.from({ length: measureCount }, (_, m) =>
+			gaps.has(m)
+				? 0
+				: this.trailingWordsPad(
+						parts.flatMap((part) => part.measures[m] ?? []),
+						noteSpacing,
+					),
+		);
+		const padOf = (m: number) => pads[m] ?? 0;
+
 		// Lead = glyphs a stave prints before its notes. Clef (+ key, when present)
 		// repeats at every system start; the time signature prints once at the piece
 		// start; mid-system measures carry only a barline, plus a smaller clef when the
@@ -501,10 +563,12 @@ export class LayoutPlanner {
 							),
 				),
 			);
+		// The measure's fixed width: everything that isn't note area. Lead glyphs at the front,
+		// trailing-directive room at the back.
 		const leadOf = (m: number, systemStart: boolean) =>
-			systemStart
+			(systemStart
 				? leadFull(m)
-				: LEAD_BARLINE + (clefChangesAt(m) ? LEAD_CLEF_CHANGE : 0);
+				: LEAD_BARLINE + (clefChangesAt(m) ? LEAD_CLEF_CHANGE : 0)) + padOf(m);
 
 		// A system's width at each of the two note-area sizes: `ideal` is what it wants,
 		// `min` is the narrowest it can be drawn without its notes colliding. Leads are fixed
@@ -678,6 +742,7 @@ export class LayoutPlanner {
 				boxes[m] = {
 					x: cx,
 					width: w,
+					trailingPad: padOf(m),
 					systemIndex,
 					isSystemStart: i === 0,
 					isSystemEnd: i === measures.length - 1,

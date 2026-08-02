@@ -230,6 +230,12 @@ export const WORDS_FONT_SIZE = 13;
 /** How far a words-direction baseline sits above the top staff line. */
 export const WORDS_Y_OFFSET = 14;
 
+/** Estimated px per character of a words directive at WORDS_FONT_SIZE, used by the layout
+ * planner to reserve room for a directive on a measure's last note (no render context there
+ * to measure with). Deliberately over the ~8.0px italic Arial measures, because an
+ * under-estimate is what puts the text back over the barline. */
+export const WORDS_CHAR_WIDTH = 8.5;
+
 /** Clearance kept between a words-direction baseline and the top of a high note it sits
  * over, so the directive lifts clear instead of colliding with the notehead. Matched to
  * WORDS_Y_OFFSET so a lifted directive keeps the same air over a notehead that an

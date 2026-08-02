@@ -741,6 +741,9 @@ export class DrawPass {
 	// part loop) exactly where the original loop declared them.
 	private measureX = 0;
 	private measureWidth = 0;
+	// Width at the right end of this measure the notes must NOT format into, so a words
+	// directive on the last note has room to print before the barline (see MeasureBox).
+	private measureTrailingPad = 0;
 	private systemIndex = 0;
 	private isSystemStart = false;
 	private isLastMeasure = false;
@@ -973,6 +976,7 @@ export class DrawPass {
 		}
 		this.measureX = box.x;
 		this.measureWidth = box.width;
+		this.measureTrailingPad = box.trailingPad;
 		this.systemIndex = box.systemIndex;
 		this.isSystemStart = box.isSystemStart;
 		// The last measure DRAWN, not the last in the document: a <multiple-rest> run reaching
@@ -2057,7 +2061,10 @@ export class DrawPass {
 			formatter.joinVoices(p.vexVoices);
 		}
 		const allVoices = pending.flatMap((p) => p.vexVoices);
-		const justifyWidth = noteEndX - startX - Stave.defaultPadding;
+		// The trailing pad is inside the stave but off-limits to the formatter, so the last
+		// note stops short of the barline and its words directive prints in the gap.
+		const justifyWidth =
+			noteEndX - startX - Stave.defaultPadding - this.measureTrailingPad;
 		formatter.format(allVoices, justifyWidth, { context: this.context });
 		this.closeGraceGaps(allVoices);
 

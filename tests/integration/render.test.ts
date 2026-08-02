@@ -602,6 +602,10 @@ const TEST_CASES = [
 	// - M5: placement="below" over a low first note (E3, two ledger lines below) that hangs
 	//   into the text's default band, so the text is pushed down clear of the noteheads —
 	//   the below-stave mirror of M2's lift. Wraps to its own system.
+	// - M6: a long directive ("harmonics with the bar") on the measure's LAST note, which has
+	//   no notes after it to print over. The measure reserves room before its right barline, so
+	//   the four quarters sit left of a visible gap and the text ends inside the measure
+	//   instead of running across the divider.
 	testCase('words.musicxml', 'words.png'),
 
 	// Treble stave, common time: the full <dynamics> vocabulary, one marking per C4 quarter,
