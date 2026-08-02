@@ -13,9 +13,9 @@ import {
 	type StemmableNote,
 	type TabNote,
 	TabSlide,
-	TabTie,
 	type TieNotes,
 	Tuplet,
+	type Note as VexNote,
 	VibratoBracket,
 } from 'vexflow';
 import {
@@ -37,9 +37,10 @@ import {
 	SLUR_STEM_TIP_SLANT,
 	SLUR_WIDTH_FACTOR,
 	SLUR_Y_SHIFT,
-	TAB_TIE_CP1,
-	TAB_TIE_CP2,
-	TAB_TIE_SLIDE_Y_SHIFT,
+	TAB_CURVE_CP_Y,
+	TAB_CURVE_FULL_WIDTH,
+	TAB_CURVE_LINE_CLEARANCE,
+	TAB_CURVE_Y_SHIFT,
 	TUPLET_NESTING_EXTRA_GAP,
 } from '../constants';
 import { Rect } from '../geometry';
@@ -47,9 +48,10 @@ import { NoteheadArticulation } from './note-translator';
 
 import { LINE_TYPE_DASH, type PedalMark, type WedgeMark } from './score-reader';
 
-/* vexflow's default Curve renderOptions.thickness: the offset of the second bezier pass that
- * gives a solid slur its lens shape, so the ink reaches this far past the arc's midpoint. */
-const CURVE_THICKNESS = 2;
+/* The offset of the second bezier pass that gives a solid slur its lens shape, so the ink
+ * reaches this far past the arc's midpoint. Larger than vexflow's default 2 because CrispCurve
+ * drops the stroke that used to widen the shape — the lens alone is only 0.75 of this deep. */
+const CURVE_THICKNESS = 4;
 
 /* The height of the band vexflow's TabNote clears around a fret digit to punch a hole in the
  * string line it sits on (tabnote.ts drawPositions clears y-3 by 6). TabSlideLine reuses it to
@@ -352,6 +354,45 @@ export class Hairpin {
 }
 
 /*
+ * A curve painted once instead of twice. vexflow strokes the outline of the lens shape AND
+ * then fills it (curve.ts renderCurve). Canvas composites the two passes independently, so
+ * along every edge the antialiased stroke and the antialiased fill each contribute partial
+ * coverage that never adds up to solid: the arc reads soft, with a lighter seam running
+ * inside it. Filling alone gives a crisp edge — at CURVE_THICKNESS, which is raised to make
+ * up for the stroke that no longer widens the shape. Every curve vexml draws goes through
+ * this, so slurs and tab arcs stay the same weight.
+ */
+class CrispCurve extends Curve {
+	constructor(
+		from: VexNote | undefined,
+		to: VexNote | undefined,
+		options: CurveOptions,
+	) {
+		super(from, to, { ...options, thickness: CURVE_THICKNESS });
+	}
+
+	override renderCurve(params: {
+		firstX: number;
+		lastX: number;
+		firstY: number;
+		lastY: number;
+		direction: number;
+	}): void {
+		// A dashed curve is a single stroked bezier with no fill (vexflow skips both the
+		// second pass and the fill), so there's no seam to fix and no ink without the stroke.
+		if (this.getStyle()?.lineDash) {
+			super.renderCurve(params);
+			return;
+		}
+		const ctx = this.checkContext();
+		ctx.save();
+		ctx.setStrokeStyle('rgba(0,0,0,0)');
+		super.renderCurve(params);
+		ctx.restore();
+	}
+}
+
+/*
  * A slur whose endpoints are pinned to explicit Ys. vexflow's Curve can only anchor an
  * end at getStemExtents(): NEAR_TOP is the stem tip, NEAR_HEAD the notehead *opposite*
  * the stem. On a stem-down chord neither names the notehead a bow should touch —
@@ -360,7 +401,7 @@ export class Hairpin {
  * NEAR_TOP lands below the beam. Take the endpoint Ys as given; the X, the bezier and
  * the fill still come from vexflow.
  */
-class HeadCurve extends Curve {
+class HeadCurve extends CrispCurve {
 	constructor(
 		from: StaveNote | undefined,
 		to: StaveNote | undefined,
@@ -387,6 +428,86 @@ class HeadCurve extends Curve {
 			firstY: this.fromY,
 			lastY: this.toY,
 			direction: this.renderOptions.openingDirection === 'down' ? -1 : 1,
+		});
+		return true;
+	}
+}
+
+/*
+ * A tab hammer-on/pull-off arc drawn with the SLUR renderer instead of the tie one. vexflow
+ * has two, and they do not draw the same bow: Curve.renderCurve is a cubic bezier whose
+ * control points sit a quarter and three quarters along the span, offset by cps.y, with the
+ * ends lifted yShift off the notes; StaveTie.renderTie (which TabTie extends) is a pair of
+ * quadratics pinned to the span's midpoint, whose apex is only cp/2 off the notes. So the tab
+ * arc came out flatter, and hugging the fret digits, next to the slur the notation stave draws
+ * over the same two notes. This is the adapter: same endpoints TabTie would use (getYs()[index]
+ * per shared string), shape and fill from Curve, so both staves bow alike. TabTie's "H"/"P"
+ * label is dropped along with it — a player reads the gesture off the arc and the fret motion.
+ */
+class TabCurve extends CrispCurve {
+	constructor(
+		private readonly notes: TieNotes,
+		private readonly firstIndex: number,
+		private readonly lastIndex: number,
+	) {
+		super(notes.firstNote ?? undefined, notes.lastNote ?? undefined, {
+			yShift: TAB_CURVE_Y_SHIFT,
+			cps: [
+				{ x: 0, y: TAB_CURVE_CP_Y },
+				{ x: 0, y: TAB_CURVE_CP_Y },
+			],
+		});
+	}
+
+	override draw(): boolean {
+		this.checkContext();
+		this.setRendered();
+		const { firstNote, lastNote } = this.notes;
+		// A wrapped arc has only one end (tieSpecs splits it in two); it bows out to the edge
+		// of the stave it does have, level with the note it does have.
+		const anchor = firstNote ?? lastNote;
+		const stave = anchor?.checkStave();
+		if (!anchor || !stave) {
+			return false;
+		}
+		const firstY = (firstNote ?? anchor).getYs()[this.firstIndex];
+		const lastY = (lastNote ?? anchor).getYs()[this.lastIndex];
+		if (typeof firstY !== 'number' || typeof lastY !== 'number') {
+			return false;
+		}
+		const firstX = firstNote ? firstNote.getTieRightX() : stave.getTieStartX();
+		const lastX = lastNote ? lastNote.getTieLeftX() : stave.getTieEndX();
+		// Keep the bow in proportion to its span. A grace note hammering into the note beside
+		// it, or the stub half of a wrapped arc, spans a few pixels — at the full lift that
+		// draws as a tall narrow spike instead of an arc. (The slurs cap on the same idea with
+		// SLUR_MAX_ASPECT.) Done at draw time because the span in pixels isn't known until the
+		// notes are placed.
+		//
+		// And keep it under the string line above. An arc on an inner string only has that
+		// gap to live in; at the full lift it climbs past the line and bows over the frets of
+		// the string above, so a chord hammering two strings at once draws two arcs that each
+		// read as belonging to the other one's pair. A note on the top line has the open space
+		// above the stave and keeps the full bow.
+		const spacing = stave.getSpacingBetweenLines();
+		const onTopLine = Math.min(firstY, lastY) - spacing < stave.getYForLine(0);
+		const rise = TAB_CURVE_Y_SHIFT + 0.75 * TAB_CURVE_CP_Y;
+		const scale = Math.min(
+			1,
+			Math.abs(lastX - firstX) / TAB_CURVE_FULL_WIDTH,
+			onTopLine ? 1 : (spacing - TAB_CURVE_LINE_CLEARANCE) / rise,
+		);
+		this.renderOptions.yShift = TAB_CURVE_Y_SHIFT * scale;
+		this.renderOptions.cps = [
+			{ x: 0, y: TAB_CURVE_CP_Y * scale },
+			{ x: 0, y: TAB_CURVE_CP_Y * scale },
+		];
+		this.renderCurve({
+			firstX,
+			lastX,
+			firstY,
+			lastY,
+			// Tab hammer-ons/pull-offs always bow above the frets (TabTie hard-codes -1 too).
+			direction: -1,
 		});
 		return true;
 	}
@@ -719,20 +840,16 @@ export class SpannerBuilder {
 	}
 
 	/*
-	 * Hammer-ons and pull-offs on a TAB stave. Both are notated with a plain <slur>;
-	 * vexflow draws each as a TabTie labelled "H" or "P". When no explicit
-	 * <hammer-on>/<pull-off> marker says which, infer from the fret motion of the
-	 * lead string: a higher target fret is a hammer-on, a lower one a pull-off (pulling
-	 * off to an open string is just a target fret of 0). Reads the same slurConnectors
-	 * buildSlurs does, so a <hammer-on>/<pull-off> written WITHOUT a companion <slur> draws
-	 * on the tab stave too — otherwise the notation stave shows an arc the tab is missing.
+	 * Hammer-ons and pull-offs on a TAB stave. Both are notated with a plain <slur> and draw
+	 * as a TabCurve — the same bow the notation stave's slurs get, rather than vexflow's
+	 * flatter TabTie arc. Which of the two it is doesn't change the drawing: the arc plus the
+	 * fret motion says it (higher target = hammer-on, lower = pull-off), so the "H"/"P" letters
+	 * vexflow prints are left off. Reads the same slurConnectors buildSlurs does, so a
+	 * <hammer-on>/<pull-off> written WITHOUT a companion <slur> draws on the tab stave too —
+	 * otherwise the notation stave shows an arc the tab is missing.
 	 */
-	buildHammerPulls(
-		chords: Chord[],
-		byTabLead: Map<Note, TabNote>,
-		showText: boolean,
-	): TabTie[] {
-		const ties: TabTie[] = [];
+	buildHammerPulls(chords: Chord[], byTabLead: Map<Note, TabNote>): TabCurve[] {
+		const ties: TabCurve[] = [];
 		const spans = slurSpans(chords);
 		for (const chord of chords) {
 			const firstNote = byTabLead.get(chord.lead);
@@ -750,32 +867,16 @@ export class SpannerBuilder {
 				if (!partner || !lastNote) {
 					continue;
 				}
-				const hammer =
-					(explicitTechnique(chord.lead) ??
-						((partner.fret ?? 0) > (chord.lead.fret ?? 0)
-							? 'hammer'
-							: 'pull')) === 'hammer';
 				const { firstIndexes, lastIndexes } = pairByString(firstNote, lastNote);
 				const specs = tieSpecs(firstNote, lastNote, firstIndexes, lastIndexes);
 				for (const notes of specs) {
-					const tie = hammer
-						? TabTie.createHammeron(notes)
-						: TabTie.createPulloff(notes);
-					// Widen TabTie's narrowed control points so the filled arc is as thick as
-					// the stave-note slurs (vexflow defaults it thinner than a StaveTie).
-					tie.renderOptions.cp1 = TAB_TIE_CP1;
-					tie.renderOptions.cp2 = TAB_TIE_CP2;
-					// A slid pair carries both gestures (the slide line AND the legato arc). At
-					// vexflow's default yShift the arc runs through the stretch of string line the
-					// slide erases, so arc and diagonal cross into a single lens; lift it clear.
-					if (slideConnects(chord.lead, partner)) {
-						tie.renderOptions.yShift = TAB_TIE_SLIDE_Y_SHIFT;
-					}
-					// The arc always draws; clear the "H"/"P" label when the text is off.
-					if (!showText) {
-						tie.setText('');
-					}
-					ties.push(tie);
+					// One arc per shared string: a two-string chord hammering into another draws
+					// two. (TabTie took the whole index list and looped internally; a Curve is a
+					// single bow, so the loop is here.)
+					notes.firstIndexes?.forEach((firstIndex, i) => {
+						const lastIndex = notes.lastIndexes?.[i] ?? firstIndex;
+						ties.push(new TabCurve(notes, firstIndex, lastIndex));
+					});
 				}
 			}
 		}
@@ -1361,7 +1462,7 @@ export class SpannerBuilder {
 					};
 					const curve = isGrace
 						? new HeadCurve(curveFrom, curveTo, options, y0, y1)
-						: new Curve(curveFrom, curveTo, options);
+						: new CrispCurve(curveFrom, curveTo, options);
 					// Where the bow will actually reach. vexflow shifts both endpoints by
 					// `yShift` and lands both control points at `depth`, so the cubic's midpoint
 					// sits at mid(y0,y1) + dir*(yShift + 0.75*cpY) — the arc's far side, plus the
@@ -1497,8 +1598,8 @@ function pedalSpan(
  * The position indexes a hammer-on/pull-off arc connects: each string played by both
  * notes, paired up. A hammer-on runs along one string, so a two-string chord hammering
  * into another draws one arc per shared string. Positions with no counterpart drop out —
- * that's how an arpeggiated chord hammering into a single note stays drawable, since
- * TabTie rejects mismatched index counts. Falls back to the lead position on both sides
+ * that's how an arpeggiated chord hammering into a single note stays drawable: the two
+ * lists have to stay the same length to pair up. Falls back to the lead position on both sides
  * when the two share no string at all (a slur across strings isn't really a hammer-on,
  * but it still has to draw something).
  */
@@ -1659,38 +1760,6 @@ function slurSpans(chords: Chord[]): Array<Set<Note>> {
 		}
 	});
 	return spans;
-}
-
-/*
- * Whether a <slide>/<glissando> also joins these two notes — the same start..stop pairing
- * buildSlides does, by `number`.
- */
-function slideConnects(from: Note, to: Note): boolean {
-	const markers = (note: Note) => [
-		...note.slides.map((s) => ({ number: s.number, type: s.slideType })),
-		...note.glissandos.map((g) => ({
-			number: g.number,
-			type: g.glissandoType,
-		})),
-	];
-	const stops = markers(to).filter((m) => m.type === 'stop');
-	return markers(from).some(
-		(m) => m.type === 'start' && stops.some((stop) => stop.number === m.number),
-	);
-}
-
-/*
- * An explicit hammer-on/pull-off marker in <notations><technical>, or null when
- * neither is present (the common case — most tab is notated with only a slur).
- */
-function explicitTechnique(note: Note): 'hammer' | 'pull' | null {
-	if (note.hammerOns.length > 0) {
-		return 'hammer';
-	}
-	if (note.pullOffs.length > 0) {
-		return 'pull';
-	}
-	return null;
 }
 
 /*

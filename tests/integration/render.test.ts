@@ -1204,16 +1204,17 @@ const TEST_CASES = [
 	//   mid-staff notes, stays at the default height as the control.
 	testCase('pedal.musicxml', 'pedal.png'),
 
-	// 6-line TAB stave, half notes: hammer-ons and pull-offs notated with plain
-	// <slur>s, the "H"/"P" label inferred from fret motion (higher target = hammer-on,
-	// lower = pull-off). No <time>, so no time signature is drawn.
-	// - M1: single note on string 2, fret 5 -> 7 (ascending) — a hammer-on "H".
-	// - M2: single note on string 2, fret 7 -> 5 (descending) — a pull-off "P".
+	// 6-line TAB stave, half notes: hammer-ons and pull-offs, both notated with plain
+	// <slur>s and both drawn as a plain arc — no "H"/"P" label, the fret motion says which
+	// it is (higher target = hammer-on, lower = pull-off). The arc is the notation slur's
+	// bow, not vexflow's flatter tab-tie one. No <time>, so no time signature is drawn.
+	// - M1: single note on string 2, fret 5 -> 7 (ascending) — a hammer-on.
+	// - M2: single note on string 2, fret 7 -> 5 (descending) — a pull-off.
 	// - M3: a two-string chord (strings 3+2) hammered up (5/5 -> 7/8); the lead string's
 	//   ascending motion drives the whole chord. The target chord also starts a pull-off
 	//   slur that resolves in M4.
-	// - M4: the pull-off chord resolves back down (7/8 -> 5/5, "P"), then a pull-off to an
-	//   open string on string 1 (fret 7 -> 0, "P"), the open string drawn as "0".
+	// - M4: the pull-off chord resolves back down (7/8 -> 5/5), then a pull-off to an
+	//   open string on string 1 (fret 7 -> 0), the open string drawn as "0".
 	// - M5: the same gestures on eighth notes (string 1) — two hammer-on pairs (5 -> 7)
 	//   then two pull-off pairs (7 -> 5) — to show the technique at a tighter rhythm.
 	// - M6: sixteenth notes (string 2) — a hammer-on pair (5 -> 7) then a pull-off pair
@@ -1232,15 +1233,7 @@ const TEST_CASES = [
 	//   pull-off between its adjacent pairs. Exactly one arc draws, spanning all three frets;
 	//   the per-pair techniques are already covered by it, so they add no second bump. The
 	//   fourth note (7) sits outside the slur, untied.
-	// Default render: the tie arcs draw but the "H"/"P" labels are off
-	// (showTabHammerPullText defaults to false).
 	testCase('tab_hammer_pull.musicxml', 'tab_hammer_pull.png'),
-
-	// Same fixture with showTabHammerPullText: true — the "H"/"P" labels print above
-	// each hammer-on/pull-off arc.
-	testCase('tab_hammer_pull.musicxml', 'tab_hammer_pull_text.png', {
-		showTabHammerPullText: true,
-	}),
 
 	// Same fixture at a narrow width that breaks the system between M3 and M4, where a
 	// hammer-on/pull-off slur spans the break. The split tie must bow off the right edge

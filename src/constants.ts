@@ -134,17 +134,25 @@ export const TAB_GRACE_SCALE = 2 / 3;
 /** Padding added to a tab grace group's width (vexflow's groupSpacingTab is 0). */
 export const TAB_GRACE_SPACING = 14;
 
-/** Top/bottom control points for a tab hammer-on/pull-off arc. vexflow's TabTie
- * narrows these to 9/11 (a ~1px filled band); widening back to the StaveTie default
- * 8/12 gives a ~2px band so the arc weight matches the stave-note slurs. */
-export const TAB_TIE_CP1 = 8;
-export const TAB_TIE_CP2 = 12;
+/** Shape of a tab hammer-on/pull-off arc, drawn with the notation slur renderer (see
+ * TabCurve): how far the ends are lifted off the fret digits, and the bezier control-point
+ * rise that sets the bow's depth (the apex stands 0.75 of it above the ends). The slur
+ * counterparts are SLUR_Y_SHIFT / SLUR_MIN_CP_Y; a fret digit is taller than a notehead and
+ * sits on its string line, so the lift is larger, and the arc spans two frets rather than a
+ * whole phrase, so the bow is shallower. */
+export const TAB_CURVE_Y_SHIFT = 12;
+export const TAB_CURVE_CP_Y = 12;
 
-/** Distance a hammer-on/pull-off arc is lifted above the fret digits when a slide joins the
- * same two notes. vexflow's TabTie yShift is 3, which leaves the arc inside the band the slide
- * erases (TAB_LINE_CLEAR_HEIGHT / 2 either side of the string line), so the two gestures merge
- * into one lens shape; lifting clears the band and reads as an arc over a diagonal. */
-export const TAB_TIE_SLIDE_Y_SHIFT = 9;
+/** The span (px, notehead edge to notehead edge) at which a tab arc gets its full height.
+ * Below it the arc scales down in proportion, so a short one — a grace note hammering into
+ * the note beside it, or the stub half of an arc split across a system break — shrinks
+ * instead of drawing as a tall narrow spike. Set just under the span of a normal
+ * fret-to-fret arc, which keeps its full height. */
+export const TAB_CURVE_FULL_WIDTH = 28;
+
+/** Gap (px) a tab arc on an inner string keeps below the string line above it, so it stays
+ * visibly attached to its own fret digits instead of bowing into the string above's. */
+export const TAB_CURVE_LINE_CLEARANCE = 2;
 
 /** A notation slide/glissando line (see NotationSlide) runs between the two notehead centers,
  * tilted by the slide direction. SLIDE_MIN_SLANT is the smallest vertical rise/fall it is

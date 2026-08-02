@@ -652,7 +652,6 @@ export class DrawPass {
 	private readonly labelIndent: number;
 	private readonly partLabelIndent: number;
 	private readonly measureNumbering: MeasureNumbering;
-	private readonly showTabHammerPullText: boolean;
 	private readonly showTabSlideText: boolean;
 	// When false, tab staves are dropped — iterate visibleStaffNumbers, not staveCount.
 	private readonly showTabs: boolean;
@@ -887,10 +886,8 @@ export class DrawPass {
 		this.systemGap = systemGap;
 		this.labelIndent = labelIndent;
 		this.partLabelIndent = partLabelIndent;
-		const { measureNumbering, showTabHammerPullText, showTabSlideText } =
-			config;
+		const { measureNumbering, showTabSlideText } = config;
 		this.measureNumbering = measureNumbering;
-		this.showTabHammerPullText = showTabHammerPullText;
 		this.showTabSlideText = showTabSlideText;
 		this.showTabs = config.showTabs;
 		this.showNotation = config.showNotation;
@@ -3913,7 +3910,6 @@ export class DrawPass {
 		for (const tie of this.spanners.buildHammerPulls(
 			this.allTabChords,
 			this.byTabLead,
-			this.showTabHammerPullText,
 		)) {
 			tie.setContext(this.context).draw();
 		}
