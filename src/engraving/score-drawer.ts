@@ -235,6 +235,7 @@ export class ScoreDrawer {
 			topOverflow: Map<number, number>,
 			height: number,
 			lyricDrops: Map<string, number> = new Map(),
+			voltaLifts: Map<number, number> = new Map(),
 		) =>
 			new DrawPass(
 				this.translator,
@@ -250,6 +251,7 @@ export class ScoreDrawer {
 				height,
 				topOverflow,
 				lyricDrops,
+				voltaLifts,
 			).run();
 
 		let pass = runPass(layout, new Map(), scratchHeight);
@@ -266,7 +268,11 @@ export class ScoreDrawer {
 		// and can only see its own notes — so a system whose columns wanted different heights
 		// drew a stepped verse, and pass two pins the whole row to the deepest of them.
 		const needsLyricPin = pass.lyricsStepped;
-		if (respace || needsOverflow || needsLyricPin) {
+		// A volta bracket is drawn with its stave, before the notes it spans are formatted, so
+		// a measure whose notes climb through it is only visible after the fact. Pass two
+		// redraws the brackets lifted clear.
+		const needsVoltaLift = pass.voltasLifted;
+		if (respace || needsOverflow || needsLyricPin || needsVoltaLift) {
 			// Re-spacing makes a system taller, so the page floor and the scratch canvas both
 			// have to grow before the redraw. Sized off the system that grew MOST — systems
 			// now grow by different amounts, and every one of them has to fit. Over-allocating
@@ -286,6 +292,7 @@ export class ScoreDrawer {
 				pass.observedOverflow,
 				scratchHeight,
 				pass.observedLyricDrops,
+				pass.observedVoltaLifts,
 			);
 		}
 		const { pageTop, pageBottom } = pass;

@@ -93,6 +93,7 @@ import {
 	TEMPO_SCALE,
 	TIE_APEX_RISE,
 	VOLTA_LABEL_DROP,
+	VOLTA_NOTE_CLEARANCE,
 	VOLTA_STAVE_GAP,
 	WORDS_FONT_SIZE,
 	WORDS_NOTE_CLEARANCE,
@@ -783,6 +784,13 @@ export class DrawPass {
 	// disagreed (see recordLyricDrop).
 	private observedLyricDrops = new Map<string, number>();
 	private lyricsStepped = false;
+
+	// How far this system's volta brackets have to rise off their default gap to clear the
+	// notes under them, measured this pass and applied on the next (see voltaLifts).
+	private observedVoltaLifts = new Map<number, number>();
+	// This column's unlifted volta line y, or null when the column carries no bracket — set
+	// while the staves are built, read once the notes have been formatted.
+	private columnVoltaBase: number | null = null;
 	// Every stave of the measure column being built, drawn once the whole column exists so a
 	// repeat sign can be lined up across staves that reserve different opening widths.
 	private columnStaves: Stave[] = [];
@@ -864,6 +872,7 @@ export class DrawPass {
 		scratchHeight: number,
 		private readonly topOverflow: Map<number, number>,
 		private readonly lyricDrops: Map<string, number> = new Map(),
+		private readonly voltaLifts: Map<number, number> = new Map(),
 	) {
 		const {
 			measureCount,
@@ -940,6 +949,8 @@ export class DrawPass {
 		observedStaveSpill: Map<number, Map<number, StaveSpill>>;
 		observedLyricDrops: Map<string, number>;
 		lyricsStepped: boolean;
+		observedVoltaLifts: Map<number, number>;
+		voltasLifted: boolean;
 		rawNotes: RawNote[];
 		rawMeasures: RawMeasure[];
 		rawChordDiagrams: RawChordDiagram[];
@@ -1011,6 +1022,7 @@ export class DrawPass {
 		this.systemTop = undefined;
 		this.systemBottom = undefined;
 		this.systemPending = [];
+		this.columnVoltaBase = null;
 		this.columnStaves = [];
 		this.columnMultiRests = [];
 		this.tempoTasks = [];
@@ -1284,6 +1296,26 @@ export class DrawPass {
 					noteExtent.top,
 				),
 			);
+			// A bracket over this measure and notes that climb past where it sits: record how
+			// far the whole system's brackets have to rise so the next pass can draw them clear
+			// of the noteheads and ledger lines. Also fed to systemHighestTop, so the headroom
+			// reserved above this system already covers where the bracket is about to move.
+			if (this.columnVoltaBase !== null) {
+				const lift = Math.max(
+					0,
+					this.columnVoltaBase - noteExtent.top + VOLTA_NOTE_CLEARANCE,
+				);
+				if (lift > (this.observedVoltaLifts.get(this.systemIndex) ?? 0)) {
+					this.observedVoltaLifts.set(this.systemIndex, lift);
+					this.systemHighestTop.set(
+						this.systemIndex,
+						Math.min(
+							this.systemHighestTop.get(this.systemIndex) ?? Infinity,
+							this.columnVoltaBase - lift,
+						),
+					);
+				}
+			}
 		}
 		this.drawAnnotations(m);
 		this.drawConnectors();
@@ -1406,13 +1438,16 @@ export class DrawPass {
 		// vexflow anchors a volta at getYForTopText(numLines) — five text lines up, far above
 		// everything else vexml draws — so shift it back down to a fixed gap over the top staff
 		// line, in the same band as the other above-stave decorations.
-		// ponytail: a fixed gap, sized to clear notes a couple of ledger lines up. The bracket
-		// is drawn with the stave, before the notes are formatted, so the collision resolver
-		// can't see them yet; draw it as a standalone Volta after the format pass if a very
-		// high note ever needs to push it.
+		// The bracket is drawn with the stave, before the notes are formatted, so a measure
+		// whose notes climb past that gap can't be seen yet — the lift that clears them is
+		// measured on the previous pass and arrives per system in voltaLifts. Per SYSTEM, not
+		// per measure: one bracket spans its measures as separate BEGIN/MID/END stave voltas,
+		// and heights that disagree would draw it as a staircase.
 		const volta = this.decoration.volta;
-		const voltaTop = stave.getYForLine(0) - VOLTA_STAVE_GAP;
+		const voltaBase = stave.getYForLine(0) - VOLTA_STAVE_GAP;
+		const voltaTop = voltaBase - (this.voltaLifts.get(this.systemIndex) ?? 0);
 		if (volta && this.staveRow === 0) {
+			this.columnVoltaBase = voltaBase;
 			stave.setVoltaType(
 				volta.type,
 				volta.label,
@@ -3821,6 +3856,8 @@ export class DrawPass {
 		observedStaveSpill: Map<number, Map<number, StaveSpill>>;
 		observedLyricDrops: Map<string, number>;
 		lyricsStepped: boolean;
+		observedVoltaLifts: Map<number, number>;
+		voltasLifted: boolean;
 		rawNotes: RawNote[];
 		rawMeasures: RawMeasure[];
 		rawChordDiagrams: RawChordDiagram[];
@@ -4035,6 +4072,10 @@ export class DrawPass {
 			observedStaveSpill: this.staveSpill,
 			observedLyricDrops: this.observedLyricDrops,
 			lyricsStepped: this.lyricsStepped,
+			observedVoltaLifts: this.observedVoltaLifts,
+			voltasLifted: [...this.observedVoltaLifts].some(
+				([system, lift]) => lift !== (this.voltaLifts.get(system) ?? 0),
+			),
 			rawNotes: this.rawNotes,
 			rawMeasures: this.rawMeasures,
 			rawChordDiagrams: this.rawChordDiagrams,

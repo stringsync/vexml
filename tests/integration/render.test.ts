@@ -877,9 +877,9 @@ const TEST_CASES = [
 	// lilypond_46e-PickupMeasure-SecondVoiceStartsLater.xml.
 	testCase('pickup_measure.musicxml', 'pickup_measure.png'),
 
-	// Treble stave, 4/4, one whole note per measure (M8 excepted): repeat barlines and volta
-	// brackets. M1-7 ascend C5 through B5; M8-11 restart at C5 and ascend to F5. The playback order
-	// the same barlines produce (M1 M2 M1 M2 M3 M4 M5 M3 M6 M7, then M8 M9 M8 M10 M8 M11)
+	// Treble stave, 4/4, one whole note per measure (M8 and M12-15 excepted): repeat barlines and
+	// volta brackets. M1-7 ascend C5 through B5; M8-11 restart at C5 and ascend to F5. The playback
+	// order the same barlines produce (M1 M2 M1 M2 M3 M4 M5 M3 M6 M7, then M8 M9 M8 M10 M8 M11)
 	// is asserted in cursor.test.ts.
 	// - M1: opens with a forward-repeat barline — thick-thin plus two dots, printed after
 	//   the clef and time signature.
@@ -901,9 +901,21 @@ const TEST_CASES = [
 	// - M9: a one-measure volta labelled "1." (hooks at both ends) closing with a backward
 	//   repeat under its right hook.
 	// - M10: the same shape labelled "2." — bracket with both hooks, backward repeat beneath.
-	// - M11: the final ending, labelled "3.", with no backward repeat. Unlike M6 its bracket
-	//   still hooks at both ends: the score stops here, so there is no music for it to run on
-	//   into. The measure closes with the piece's thin-thick end barline.
+	// - M11: that block's final ending, labelled "3.", with no backward repeat — so like M6 its
+	//   right end runs flat with no hook, because nothing jumps back from it and the music
+	//   carries on into M12.
+	// - M12: opens a fourth repeat block (forward repeat) whose endings reach ABOVE the height a
+	//   volta bracket normally sits at. Its own note is an ordinary C5.
+	// - M13: a one-measure volta labelled "1." over a half-note C5 followed by a half-note A6 —
+	//   four ledger lines up, well past the bracket's default gap over the top staff line. The
+	//   bracket rides above that notehead and its ledger lines instead of cutting through them.
+	// - M14-15: one bracket labelled "2." spanning both measures, with only M15 carrying the
+	//   high A6. The line runs FLAT across the M14/M15 divider at the height M15 needs — a
+	//   bracket is one object, so it can't step down over the measure that happens to be low.
+	//   M15 is the last measure, so this final ending DOES hook at its right end (nothing left
+	//   to run on into), over the piece's thin-thick end barline.
+	// Every bracket on a system shares one height, so M9-11's brackets ride at M13/M15's level
+	// too — the second system's brackets are visibly higher than the first system's.
 	testCase('repeats.musicxml', 'repeats.png'),
 
 	// A treble stave over a 6-line TAB stave (bracketed, one part), 4/4, one whole note per
