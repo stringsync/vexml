@@ -1379,6 +1379,9 @@ const TEST_CASES = [
 	// so no time signature is drawn.
 	// - M1: a leading quarter rest, then a palm mute "P.M." and a dead note "x" (both
 	//   string 3, fret 7), then a trailing quarter rest.
+	// - M2: a "Dm" words direction over a slurred quarter pair on string 1 (5 -> 7), then a
+	//   half rest. The arc bows up into the band the words park in, so "Dm" sits ABOVE the
+	//   arc's apex — the curve must not strike through the text.
 	testCase('tab_annotation.musicxml', 'tab_annotation.png'),
 
 	// 6-line TAB stave, quarter-note tab chords. Each chord member carries its own

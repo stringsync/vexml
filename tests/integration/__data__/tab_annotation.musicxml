@@ -55,5 +55,35 @@
         <type>quarter</type>
       </note>
     </measure>
+    <!-- A chord symbol over a slurred pair on the top string: the arc bows into the band the
+         words would sit in, so the words have to lift over it. -->
+    <measure number="2">
+      <direction placement="above">
+        <direction-type><words>Dm</words></direction-type>
+      </direction>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <slur type="start" number="1" />
+          <technical><string>1</string><fret>5</fret></technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <slur type="stop" number="1" />
+          <technical><string>1</string><fret>7</fret></technical>
+        </notations>
+      </note>
+      <note>
+        <rest />
+        <duration>2</duration>
+        <type>half</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>

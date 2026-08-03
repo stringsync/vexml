@@ -87,6 +87,7 @@ import {
 	REHEARSAL_PADDING,
 	REHEARSAL_Y_OFFSET,
 	SPILL_COLUMN,
+	TAB_CURVE_RISE,
 	TECHNICAL_EDGE_GAP,
 	TEMPO_MARK_GAP,
 	TEMPO_NOTE_CLEARANCE,
@@ -2253,8 +2254,45 @@ export class DrawPass {
 					});
 				}
 			}
+			for (const { note, chord } of p.tabChords) {
+				const rect = this.tabArcApexRect(p.stave, note, chord.lead);
+				if (rect) {
+					this.collisionResolver.add({ rect, kind: 'tie', band: p.row });
+				}
+			}
 		}
 		return { top, bottom };
+	}
+
+	/*
+	 * The collision obstacle for a tab arc (a <slur>, or a <hammer-on>/<pull-off> drawn as
+	 * one): the band it bows into above the fret digits it springs from. Same problem
+	 * tieApexRect solves — the arc is a spanner drawn in the finish pass, so there's no glyph
+	 * for the above-stave annotations to clear when they're placed here — and the same
+	 * answer, reconstructed from the rise TabCurve.draw bows by.
+	 *
+	 * Only an arc on the top string gets one: TabCurve caps an inner-string arc under the
+	 * line above it, where no above-stave text can reach. Returns null when there's no arc.
+	 *
+	 * ponytail: registered at the notes that carry the slur marker — its two ends — not at
+	 * the notes in between, and at the arc's full height whatever it scales down to. Widen
+	 * to the drawn span if a chord symbol ever lands mid-arc.
+	 */
+	private tabArcApexRect(stave: Stave, note: TabNote, lead: Note): Rect | null {
+		if (!lead.slurs.length && !lead.hammerOns.length && !lead.pullOffs.length) {
+			return null;
+		}
+		const y = Math.min(...note.getYs());
+		if (y - stave.getSpacingBetweenLines() >= stave.getYForLine(0)) {
+			return null;
+		}
+		const hw = this.translator.noteheadHalfWidth();
+		return new Rect(
+			note.getAbsoluteX() - hw,
+			y - TAB_CURVE_RISE,
+			2 * hw,
+			TAB_CURVE_RISE,
+		);
 	}
 
 	/*

@@ -40,6 +40,7 @@ import {
 	TAB_CURVE_CP_Y,
 	TAB_CURVE_FULL_WIDTH,
 	TAB_CURVE_LINE_CLEARANCE,
+	TAB_CURVE_RISE,
 	TAB_CURVE_Y_SHIFT,
 	TUPLET_NESTING_EXTRA_GAP,
 } from '../constants';
@@ -490,7 +491,7 @@ class TabCurve extends CrispCurve {
 		// above the stave and keeps the full bow.
 		const spacing = stave.getSpacingBetweenLines();
 		const onTopLine = Math.min(firstY, lastY) - spacing < stave.getYForLine(0);
-		const rise = TAB_CURVE_Y_SHIFT + 0.75 * TAB_CURVE_CP_Y;
+		const rise = TAB_CURVE_RISE;
 		const scale = Math.min(
 			1,
 			Math.abs(lastX - firstX) / TAB_CURVE_FULL_WIDTH,

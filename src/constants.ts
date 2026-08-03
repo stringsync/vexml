@@ -143,6 +143,11 @@ export const TAB_GRACE_SPACING = 14;
 export const TAB_CURVE_Y_SHIFT = 12;
 export const TAB_CURVE_CP_Y = 12;
 
+/** How far a full-height tab arc bows above the fret digits it springs from — the ends' lift
+ * plus the apex's share of the control-point rise. Used both to scale the arc down under the
+ * string line above it and to reserve the band it occupies as a collision obstacle. */
+export const TAB_CURVE_RISE = TAB_CURVE_Y_SHIFT + 0.75 * TAB_CURVE_CP_Y;
+
 /** The span (px, notehead edge to notehead edge) at which a tab arc gets its full height.
  * Below it the arc scales down in proportion, so a short one — a grace note hammering into
  * the note beside it, or the stub half of an arc split across a system break — shrinks
