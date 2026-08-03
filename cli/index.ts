@@ -68,14 +68,19 @@ program
 		'--osmd',
 		'render with OpenSheetMusicDisplay instead — a reference, not ground truth',
 	)
+	.option(
+		'--alpha',
+		'render with alphaTab instead — a reference, not ground truth',
+	)
 	.action(async (opts) => {
-		if (opts.muse && opts.osmd) {
-			console.error('vex render: --muse and --osmd are incompatible');
+		const refs = ['muse', 'osmd', 'alpha'].filter((flag) => opts[flag]);
+		if (refs.length > 1) {
+			console.error(`vex render: --${refs.join(' and --')} are incompatible`);
 			process.exit(1);
 		}
 		// The reference renderers are different renderers entirely; no Config.
-		if ((opts.muse || opts.osmd) && opts.config) {
-			console.error('vex render: --config and --muse/--osmd are incompatible');
+		if (refs.length > 0 && opts.config) {
+			console.error(`vex render: --config and --${refs[0]} are incompatible`);
 			process.exit(1);
 		}
 		await render({
@@ -84,6 +89,7 @@ program
 			config: opts.config,
 			muse: opts.muse ?? false,
 			osmd: opts.osmd ?? false,
+			alpha: opts.alpha ?? false,
 			cwd: invocationDir,
 		});
 	});

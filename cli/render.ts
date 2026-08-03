@@ -13,6 +13,7 @@ export async function render(opts: {
 	config?: string;
 	muse?: boolean;
 	osmd?: boolean;
+	alpha?: boolean;
 	cwd: string;
 }) {
 	// index.ts chdir'd to the repo root, so resolve user paths against their cwd.
@@ -31,6 +32,14 @@ export async function render(opts: {
 	if (opts.osmd) {
 		const output = at(opts.output ?? `osmd ${timestamp()}.png`);
 		await renderWithOsmd(readFileSync(at(opts.input), 'utf8'), output);
+		return;
+	}
+
+	// The third reference renderer, and the only one that isn't VexFlow or
+	// MuseScore — useful for guitar tab, where it's the strongest of the three.
+	if (opts.alpha) {
+		const output = at(opts.output ?? `alphatab ${timestamp()}.png`);
+		await renderWithAlphaTab(readFileSync(at(opts.input), 'utf8'), output);
 		return;
 	}
 
@@ -97,6 +106,72 @@ async function renderWithOsmd(musicXML: string, output: string) {
 			osmd.render();
 		}, musicXML);
 		writeFileSync(output, await page.locator('#osmd').screenshot());
+		console.log(`wrote ${output}`);
+	} finally {
+		await browser.close();
+	}
+}
+
+// Like OSMD, a browser library driven from a blank page. Unlike OSMD, it draws
+// with its own Bravura webfont, which it fetches by URL — so the font goes in
+// as a data URL rather than standing up a server just to serve one file.
+async function renderWithAlphaTab(musicXML: string, output: string) {
+	type AlphaTabWindow = {
+		alphaTab: {
+			AlphaTabApi: new (
+				el: Element,
+				settings: object,
+			) => {
+				renderFinished: { on(handler: () => void): void };
+				error: { on(handler: (e: Error) => void): void };
+				load(data: Uint8Array): boolean;
+			};
+		};
+	};
+
+	const font = readFileSync(
+		'./node_modules/@coderline/alphatab/dist/font/Bravura.woff2',
+	).toBase64();
+
+	const browser = await chromium.launch();
+	try {
+		const page = await browser.newPage({
+			viewport: { width: 1064, height: 600 },
+		});
+		await page.setContent(
+			'<body style="margin:0;background:#fff"><div id="alphatab" style="width:1064px"></div></body>',
+		);
+		await page.addScriptTag({
+			path: './node_modules/@coderline/alphatab/dist/alphaTab.min.js',
+		});
+		await page.evaluate(
+			async ({ musicXML, font }) => {
+				const { AlphaTabApi } = (window as unknown as AlphaTabWindow).alphaTab;
+				const container = document.getElementById('alphatab');
+				if (!container) {
+					throw new Error('container not found');
+				}
+				const api = new AlphaTabApi(container, {
+					core: {
+						engine: 'svg',
+						// Workers would need alphaTab's own script URL, which a script
+						// tag injected from disk doesn't give it.
+						useWorkers: false,
+						smuflFontSources: { woff2: `data:font/woff2;base64,${font}` },
+					},
+					player: { enablePlayer: false },
+				});
+				await new Promise<void>((resolve, reject) => {
+					api.renderFinished.on(resolve);
+					api.error.on(reject);
+					if (!api.load(Uint8Array.fromBase64(musicXML))) {
+						reject(new Error('alphatab could not load the file'));
+					}
+				});
+			},
+			{ musicXML: Buffer.from(musicXML).toBase64(), font },
+		);
+		writeFileSync(output, await page.locator('#alphatab').screenshot());
 		console.log(`wrote ${output}`);
 	} finally {
 		await browser.close();

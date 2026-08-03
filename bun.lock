@@ -10,6 +10,7 @@
       },
       "devDependencies": {
         "@biomejs/biome": "2.5.1",
+        "@coderline/alphatab": "^1.8.4",
         "@tailwindcss/vite": "^4.3.1",
         "@types/bun": "latest",
         "@types/pngjs": "^6.0.5",
@@ -52,6 +53,8 @@
     "@biomejs/cli-win32-arm64": ["@biomejs/cli-win32-arm64@2.5.1", "", { "os": "win32", "cpu": "arm64" }, "sha512-zgXnKNgWPC4iPF7Y1lR3STUeCUuZRpD6IiOrC7TZTlh0Lx6FiVUT05myuMQHQ9D+1cc7uyMldi4forE6lp0ivQ=="],
 
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.5.1", "", { "os": "win32", "cpu": "x64" }, "sha512-6uxpR9hvaglANkZemeSiN/FhYgkGasrEGn267eXIWvjrjJ2LhDlk251IhjVJq6MXzkV2/bcXwLwSroLyPtqRZg=="],
+
+    "@coderline/alphatab": ["@coderline/alphatab@1.8.4", "", {}, "sha512-VN5rfTZZWgA63Ny1aDKCp02k3Qm9CHhg4Q9AnK0kHm7G+fNDNZo36TeToPDFoJ6VpB9+AHcCrHwHFUP1tKqdsw=="],
 
     "@emnapi/core": ["@emnapi/core@1.11.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.2", "tslib": "^2.4.0" } }, "sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ=="],
 
