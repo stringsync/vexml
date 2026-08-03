@@ -1995,7 +1995,7 @@ const TEST_CASES = [
 	// measure, which has nothing to attach to) and lilypond_24e-GraceNote-StaffChange.xml.
 	testCase('grace_after.musicxml', 'grace_after.png'),
 
-	// Treble stave, 4/4: two voices sharing one stave across three measures of increasing
+	// Treble stave, 4/4: two voices sharing one stave across five measures of increasing
 	// complexity, exercising <backup>/<forward> in different ways. V1 stems up, V2 stems
 	// down. May wrap across systems.
 	// - M1: V1 a mixed quarter/eighth line spanning the whole measure; V2 silent on beats 1
@@ -2017,6 +2017,12 @@ const TEST_CASES = [
 	//   even though auto-stemming would point those down, V2 (quarters G4, B4, A4 and a
 	//   beamed A4/G4 eighth pair, beam below) stems down even though auto-stemming would
 	//   point G4/A4 up.
+	// - M5: V2's <chord/> members carry no <voice> of their own (e.g. a Guitar Pro export).
+	//   V1 is four plain quarters (E5); V2 must draw four evenly spaced G4/B4 dyads, one per
+	//   beat, stems down. A chord member belongs to the voice of the note it stacks on, so
+	//   reading its missing <voice> as "1" would strand all four B4s in a phantom voice 1 —
+	//   an unbroken <chord/> run with no lead between them, collapsing into a single
+	//   four-note B4 cluster on beat 1 with the remaining three G4s left bare.
 	testCase('two_voices.musicxml', 'two_voices.png'),
 
 	// Grand staff (treble over bass, braced), 4/4, three measures of a four-voice SATB
