@@ -108,7 +108,7 @@ Always run this checklist before accepting or updating a screenshot baseline. An
 - If this is a diff, can you explain the visual change in plain language from the diff artifact before updating the baseline?
 - If any answer is uncertain, do not update the baseline yet. Add or keep a `TODO` that names the uncertainty and links to the screenshot or diff artifact.
 
-## Checking Against MuseScore or OSMD
+## Checking Against MuseScore, OSMD, or alphaTab
 
 When the checklist leaves you genuinely unsure what the *correct* engraving is — not whether vexml matches its own baseline, but what a competent engraver would draw — get a second opinion:
 
@@ -116,21 +116,22 @@ When the checklist leaves you genuinely unsure what the *correct* engraving is �
 vex slice -i tests/integration/__data__/slur.musicxml -m 4 -o /tmp/one.musicxml
 vex render --muse -i /tmp/one.musicxml -o /tmp/musescore.png
 vex render --osmd -i /tmp/one.musicxml -o /tmp/osmd.png
+vex render --alpha -i /tmp/one.musicxml -o /tmp/alphatab.png
 vex render -i /tmp/one.musicxml -o /tmp/vexml.png
 ```
 
-Two references, and they disagree with each other as often as with vexml. MuseScore is a full notation editor with the strongest engraving of the three. OSMD (OpenSheetMusicDisplay) is the closer cousin — another MusicXML-in, VexFlow-out renderer — so it is the better read on "did we parse this right", and it needs no Docker, so it is also the faster one to reach for. Either one alone is enough for most questions; when they agree with each other and not with vexml, that is a stronger signal.
+Three references, and they disagree with each other as often as with vexml. MuseScore is a full notation editor with the strongest engraving of the four. OSMD (OpenSheetMusicDisplay) is the closer cousin — another MusicXML-in, VexFlow-out renderer — so it is the better read on "did we parse this right", and it needs no Docker, so it is also the faster one to reach for. alphaTab is the tab specialist: reach for it on guitar fixtures, where it engraves tablature better than the other two. Any one alone is enough for most questions; when they agree with each other and not with vexml, that is a stronger signal.
 
 Then read the PNGs and compare the one detail in question. Rules, in order of how easy they are to violate:
 
-- **MuseScore and OSMD are references, not ground truth.** They have their own bugs and their own house styles. When one disagrees with vexml, that is evidence worth investigating — not a proven vexml bug.
+- **MuseScore, OSMD, and alphaTab are references, not ground truth.** They have their own bugs and their own house styles. When one disagrees with vexml, that is evidence worth investigating — not a proven vexml bug.
 - **Slice to one measure. Three is the hard maximum.** Whole-page comparisons drown the real question in spacing noise and reliably produce the wrong conclusion that everything is broken.
 - **Compare notation, not layout.** Stem directions, beam grouping and slant, accidental order and placement, slur/tie curvature and which side they sit on, rest positions, articulation placement — those are comparable. Spacing, margins, staff size, font, page breaks, and system layout are *always* different and are never evidence of anything.
-- **Ignore glyph shapes entirely.** MuseScore draws in Emmentaler, OSMD in Gonville, and vexml in Bravura, so every notehead, clef, accidental, rest, and time-signature numeral is a different shape by design. Neither reference's font is configurable — Debian's MuseScore package ships no font data, and OSMD's bundled VexFlow embeds Gonville outlines. A clef that "looks wrong" next to vexml's is the font, not a bug.
+- **Ignore glyph shapes entirely.** MuseScore draws in Emmentaler, OSMD in Gonville, and vexml in Bravura, so every notehead, clef, accidental, rest, and time-signature numeral is a different shape by design. Neither reference's font is configurable — Debian's MuseScore package ships no font data, and OSMD's bundled VexFlow embeds Gonville outlines. A clef that "looks wrong" next to vexml's is the font, not a bug. (alphaTab is the exception: it draws in Bravura too, so its glyphs *are* comparable.)
 - **Reference agreement never justifies a baseline update.** It informs the wording of a `TODO` and the direction of a fix. A human still accepts the screenshot per the checklist above.
 - Don't chase parity. The goal is answering one specific question, then getting back to the fix.
 
-`--muse`'s first run builds a ~740MB Docker image (a minute or two); after that a render takes a few seconds. Warnings like `no instrument found for part 'P1'` are MuseScore complaining that fixtures omit `<score-instrument>`; it still renders, and they can be ignored. `--osmd` needs no image and takes a couple of seconds; it always draws a title and part label above the first system, which is OSMD's default and not part of the comparison.
+`--muse`'s first run builds a ~740MB Docker image (a minute or two); after that a render takes a few seconds. Warnings like `no instrument found for part 'P1'` are MuseScore complaining that fixtures omit `<score-instrument>`; it still renders, and they can be ignored. `--osmd` needs no image and takes a couple of seconds; it always draws a title and part label above the first system, which is OSMD's default and not part of the comparison. `--alpha` is likewise fast and Docker-free; it stamps a "rendered by alphaTab" line under the score and numbers every measure, neither of which is part of the comparison.
 
 8. If the target render passes the screenshot review checklist, update only that baseline:
 

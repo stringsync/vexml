@@ -274,6 +274,15 @@ function pitchedRestKey(note: Note): string | null {
 }
 
 /*
+ * Where an unpitched rest sits when voices share a stave: one line above the centered
+ * line for the up-stemmed voice, one below for the down-stemmed ones, so two voices
+ * resting on the same beat don't stack their glyphs on the same spot. Read against
+ * vexflow's default treble positioning (the caller leaves `clef` unset), so these are
+ * offsets from the middle line rather than real pitches. 'b/4' is the lone-voice center.
+ */
+const VOICE_REST_KEY = { up: 'd/5', down: 'g/4' } as const;
+
+/*
  * A note (or rest) marked print-object="no": it holds its tick so the other voices stay
  * aligned, but draws nothing. Exporters lean on this to hide the spacer notes that keep a
  * voice open, so drawing them puts noteheads on the page that shouldn't be there.
@@ -1484,12 +1493,17 @@ export class NoteTranslator {
 		if (lead.isRest) {
 			const restKey = pitchedRestKey(lead);
 			const rest = new NoteClass({
-				keys: [restKey ?? 'b/4'],
+				keys: [
+					restKey ??
+						(defaultStem ? VOICE_REST_KEY[defaultStem] : undefined) ??
+						'b/4',
+				],
 				duration: `${duration}r`,
 				dots: lead.dots,
-				// Only a display position resolves against the clef. The 'b/4' default is
-				// vexflow's centered line and must stay clef-independent, or every bass-stave
-				// rest would jump to where B4 sits in that clef.
+				// Only a display position resolves against the clef. The 'b/4' default and the
+				// voice offsets around it are vexflow's centered line and must stay
+				// clef-independent, or every bass-stave rest would jump to where B4 sits in
+				// that clef.
 				clef: restKey ? clef : undefined,
 				// A whole rest alone in a measure is a full-measure rest: engraving convention
 				// centers it horizontally (the formatter does the centering, see vexflowVoiceTickables).

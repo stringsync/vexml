@@ -448,6 +448,10 @@ const TEST_CASES = [
 	// - M3: a rest carrying only a <duration> and no <type> — the spacer rest Finale writes to
 	//   hold a voice open. Its duration fills the bar, so it draws as a whole rest centered in
 	//   the measure, identical to M1, rather than falling back to a left-aligned quarter.
+	// - M4: two voices, each a half-note G4 then a half rest, so both rests fall on beat 3.
+	//   Neither carries a display position, so both would sit on the centered line; the
+	//   voice offset splits them, V1's rest one line above center and V2's one line below.
+	//   The G4s are deliberately identical — only the rests' placement is under test.
 	testCase('rest.musicxml', 'rest.png'),
 
 	// Treble stave, 5/4: five quarter rests, identical but for where they are displayed. The
@@ -1056,6 +1060,14 @@ const TEST_CASES = [
 	// degenerate self-tie drawing nothing); buildTies re-resolves it so both links draw. Beat
 	// 1 leads in with a 16th E4 beamed to the dotted eighth; beats 3-4 add a below-placed slur
 	// over a 16th run (F#4-G4) into a slashed grace E4 that slurs into the closing F#4 eighth.
+	// TODO: True negative, blocked on mdom 0.2.3. The accepted baseline shows two short arcs
+	// meeting end to end on the middle F#4; the new render draws one long flat arc from the
+	// dotted eighth all the way to the third note, with a second arc crossing under it.
+	// mdom 0.2.2's pairing takes the latest open start but never excludes one at the closer's
+	// OWN onset, so the middle note's start (written before its stop) self-pairs and the first
+	// note's start is left to reach the third. buildTies' nextTieStopMember repair only covers
+	// the self-tie half. Re-run and re-accept once mdom pairs same-onset markers correctly.
+	// Diff: tests/integration/__diffs__/tie_chain.png.
 	testCase('tie_chain.musicxml', 'tie_chain.png'),
 
 	// Treble stave, 4/4, one measure: two stem-up half-note chords (C5/E5/G5) with all three
@@ -1245,12 +1257,26 @@ const TEST_CASES = [
 	//   pull-off between its adjacent pairs. Exactly one arc draws, spanning all three frets;
 	//   the per-pair techniques are already covered by it, so they add no second bump. The
 	//   fourth note (7) sits outside the slur, untied.
+	// - M11-12: a malformed Guitar Pro export. M11's second note closes slur 1 and opens a
+	//   stray slur 1 that never stops, written start-BEFORE-stop on that note. Exactly three
+	//   arcs draw: 5 -> 7 in M11, then 5 -> 7 and 7 -> 5 in M12. The stray start has no
+	//   partner and draws nothing — it must not reach across the barline and swallow one of
+	//   M12's stops, which would leave a bow stretched over the whole measure.
+	// TODO: False positive risk / blocked on mdom 0.2.3 — do NOT accept this baseline yet.
+	// M11 currently draws a tiny stub arc perched on its "7" instead of a 5 -> 7 bow: the
+	// stray start shares an onset with the stop it should not pair with, and mdom 0.2.2 lets
+	// it self-pair. Same root cause as the tie_chain TODO. Slurs have no equivalent of
+	// buildTies' nextTieStopMember repair, so this one is visible. Once mdom excludes
+	// same-onset openers, M11 should show one 5 -> 7 arc; verify all three arcs then
+	// vex test tab_hammer_pull --update.
 	testCase('tab_hammer_pull.musicxml', 'tab_hammer_pull.png'),
 
 	// Same fixture at a narrow width that breaks the system between M3 and M4, where a
 	// hammer-on/pull-off slur spans the break. The split tie must bow off the right edge
 	// of M3's stave and in from the left edge of M4's — not draw one diagonal across the
 	// page gap.
+	// TODO: Same block as tab_hammer_pull.png — the fixture grew M11-12, so this baseline is
+	// stale on page height as well as on M11's stub arc. Re-accept after mdom 0.2.3.
 	testCase('tab_hammer_pull.musicxml', 'tab_hammer_pull_wrap.png', {
 		layout: { type: 'standard', referenceWidth: 491 },
 	}),
@@ -2305,6 +2331,12 @@ const TEST_CASES = [
 	),
 
 	// 16 measures of solo guitar on a TAB stave with no notation stave above it.
+	// TODO: True negative, blocked on mdom 0.2.3. Tie/slur arcs in this score are
+	// mis-paired: on a note whose <tied>/<slur> start is written BEFORE its stop, mdom
+	// 0.2.2 lets the start pair with that same note's stop, stranding the real opener to
+	// reach the following span's stop and stretching a bow across it. Same root cause as
+	// the tie_chain TODO — no vexml change is expected here. Re-run and re-accept after
+	// mdom excludes same-onset openers.
 	testCase('score_wanna_skip_class.musicxml', 'score_wanna_skip_class.png'),
 
 	// Mozart, "An Chloe": 18 measures of voice over piano in cut common, with turn ornaments.
@@ -2312,6 +2344,12 @@ const TEST_CASES = [
 
 	// Bach, "Air": 19 measures of string quartet with repeats and numbered endings spanning all
 	// four parts.
+	// TODO: True negative, blocked on mdom 0.2.3. Tie/slur arcs in this score are
+	// mis-paired: on a note whose <tied>/<slur> start is written BEFORE its stop, mdom
+	// 0.2.2 lets the start pair with that same note's stop, stranding the real opener to
+	// reach the following span's stop and stretching a bow across it. Same root cause as
+	// the tie_chain TODO — no vexml change is expected here. Re-run and re-accept after
+	// mdom excludes same-onset openers.
 	testCase('score_bach_air.musicxml', 'score_bach_air.png'),
 
 	// Mozart, "Das Veilchen": 23 measures of voice over piano, with grace notes. The document
@@ -2354,6 +2392,12 @@ const TEST_CASES = [
 	// cross-stave runs in measures 8-11. The slurs themselves get no say in it, since a
 	// cross-stave bow's height is the gap it spans. This is the score that used to be a
 	// third taller than it needed to be, at one uniform gap set by its densest bar.
+	// TODO: True negative, blocked on mdom 0.2.3. Tie/slur arcs in this score are
+	// mis-paired: on a note whose <tied>/<slur> start is written BEFORE its stop, mdom
+	// 0.2.2 lets the start pair with that same note's stop, stranding the real opener to
+	// reach the following span's stop and stretching a bow across it. Same root cause as
+	// the tie_chain TODO — no vexml change is expected here. Re-run and re-accept after
+	// mdom excludes same-onset openers.
 	testCase(
 		'score_schumann_dichterliebe.musicxml',
 		'score_schumann_dichterliebe.png',
@@ -2361,6 +2405,12 @@ const TEST_CASES = [
 
 	// Austrian national anthem: 28 measures of voice over piano, with three stacked verses of
 	// lyrics setting the measure widths.
+	// TODO: True negative, blocked on mdom 0.2.3. Tie/slur arcs in this score are
+	// mis-paired: on a note whose <tied>/<slur> start is written BEFORE its stop, mdom
+	// 0.2.2 lets the start pair with that same note's stop, stranding the real opener to
+	// reach the following span's stop and stretching a bow across it. Same root cause as
+	// the tie_chain TODO — no vexml change is expected here. Re-run and re-accept after
+	// mdom excludes same-onset openers.
 	testCase('score_land_der_berge.musicxml', 'score_land_der_berge.png'),
 
 	// "Amazing Grace": 33 measures of voice over guitar notation + TAB, with lyrics and chord

@@ -5,7 +5,7 @@
     "": {
       "name": "@stringsync/vexml",
       "dependencies": {
-        "@stringsync/mdom": "0.2.1",
+        "@stringsync/mdom": "0.2.2",
         "vexflow": "5.0.0",
       },
       "devDependencies": {
@@ -110,7 +110,7 @@
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
 
-    "@stringsync/mdom": ["@stringsync/mdom@0.2.1", "", { "dependencies": { "jszip": "^3.10.1", "xml-js": "^1.6.11" }, "bin": { "mdom": "cli/index.ts" } }, "sha512-ijqwQKgeGVWrTPtglEmdpgUnELrO0/q4vBcjCq63jCeLSjAl4ZCwOvjXf5zqW5oPZS+27zosXsAKlQQKCP+2nQ=="],
+    "@stringsync/mdom": ["@stringsync/mdom@0.2.2", "", { "dependencies": { "jszip": "^3.10.1", "xml-js": "^1.6.11" }, "bin": { "mdom": "cli/index.ts" } }, "sha512-SkbVw2gUd90GJwAWnAIQDvYk1Wod+NOlI2kmiBpzi3Af5ZZdexlK6CddMHk6lYMvucdrwkMgeVODRBtWaUL6zg=="],
 
     "@tailwindcss/node": ["@tailwindcss/node@4.3.1", "", { "dependencies": { "@jridgewell/remapping": "^2.3.5", "enhanced-resolve": "5.21.6", "jiti": "^2.7.0", "lightningcss": "1.32.0", "magic-string": "^0.30.21", "source-map-js": "^1.2.1", "tailwindcss": "4.3.1" } }, "sha512-6NDaqRoAMSXD1mr/RXu0HBvNE9a2n5tHPsxu9XHLws8o4Twes5rBM2205SUUiJ9goAtadrN6xTGX0UDEwp/N4A=="],
 

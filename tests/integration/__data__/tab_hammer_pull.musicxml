@@ -457,5 +457,77 @@
         </notations>
       </note>
     </measure>
+    <!-- M11-12: a malformed export. The second note closes slur 1 and immediately opens a
+         new one that is never stopped anywhere in the part (Guitar Pro writes this). All the
+         other slurs here are number 1 too, so the stray start must not swallow M12's stops:
+         it has no partner and draws nothing. Written start-before-stop on the shared note,
+         which is legal MusicXML and the order that trips naive pairing. -->
+    <measure number="11">
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>1</string><fret>5</fret></technical>
+          <slur number="1" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+          <slur type="start" />
+          <slur number="1" type="stop" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>1</string><fret>5</fret></technical>
+        </notations>
+      </note>
+    </measure>
+    <measure number="12">
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>1</string><fret>5</fret></technical>
+          <slur number="1" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+          <slur number="1" type="stop" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>1</string><fret>7</fret></technical>
+          <slur number="1" type="start" />
+        </notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations>
+          <technical><string>1</string><fret>5</fret></technical>
+          <slur number="1" type="stop" />
+        </notations>
+      </note>
+    </measure>
   </part>
 </score-partwise>
