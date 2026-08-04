@@ -794,21 +794,10 @@ export class SpannerBuilder {
 					// share number "1", so partner() pairs every start to the chord's first
 					// stop. Re-resolve to the same-pitch member so the tie hits the right
 					// notehead.
-					let partnerNote =
+					const partnerNote =
 						(tie.partner &&
 							samePitchMember(note, chordOf.get(tie.partner.note))) ??
 						tie.partner?.note;
-					// A chain-middle note carries both a tie stop and a tie start. When the
-					// exporter orders <tied start> before <tied stop> on that note, mdom's
-					// document-order pairing matches the start to the note's OWN stop — a
-					// degenerate self-tie that draws nothing. Re-resolve to the next same-pitch
-					// note carrying a tie stop, so each link of the chain draws its own arc.
-					if (
-						tie.tieType === 'start' &&
-						(!partnerNote || partnerNote === note)
-					) {
-						partnerNote = nextTieStopMember(note, chords);
-					}
 					const to = partnerNote && placement.get(partnerNote);
 					if (tie.tieType !== 'start' || !from || !to) {
 						continue;
@@ -1637,31 +1626,6 @@ function tieSpecs(
 				{ lastNote, firstIndexes: lastIndexes, lastIndexes },
 			]
 		: [{ firstNote, lastNote, firstIndexes, lastIndexes }];
-}
-
-/*
- * The next same-pitch note after `note` (in document order) that carries a tie stop.
- * Used to recover the partner of a chain-middle tie start when mdom mis-pairs it to
- * the note's own stop (see buildTies). null when the chain dangles past the score.
- */
-function nextTieStopMember(note: Note, chords: Chord[]): Note | undefined {
-	const p = note.pitch;
-	if (!p) {
-		return undefined;
-	}
-	const flat = chords.flatMap((chord) => chord.notes);
-	for (let i = flat.indexOf(note) + 1; i < flat.length; i++) {
-		const n = flat[i];
-		if (
-			n?.pitch?.step === p.step &&
-			n.pitch?.octave === p.octave &&
-			n.pitch?.alter === p.alter &&
-			n.ties.some((t) => t.tieType === 'stop')
-		) {
-			return n;
-		}
-	}
-	return undefined;
 }
 
 /*
