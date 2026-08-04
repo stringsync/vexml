@@ -3137,37 +3137,44 @@ export class DrawPass {
 					CHORD_DIAGRAM_WIDTH,
 					CHORD_DIAGRAM_HEIGHT,
 				);
+				const band = this.rowOf(stave);
+				// Lift, THEN space — not the other way round. A diagram over a run of high
+				// notes rises a long way off its default row, so the boxes already placed in
+				// this system sit well above where an unlifted box would probe: pushRightOf
+				// there matches nothing and two crowded diagrams print through each other.
+				// Lifting first puts the box in the row its neighbours are actually in.
+				//
+				// Padded below its bottom so the lift-clear probe reaches a high note (or its
+				// tie) poking up into the box's column — the same padding treatment a chord
+				// symbol uses. The box then rises off the note instead of overlapping it; with
+				// nothing in the way it keeps its default position. Banded to its own stave
+				// row: without it, a lower part's diagram sees the part above's notes and
+				// lyrics in the same column and climbs over the whole part, stranding the box
+				// above music it doesn't label.
+				const lift = (box: Rect) =>
+					this.collisionResolver.liftClear(
+						new Rect(
+							box.x,
+							box.y,
+							box.w,
+							CHORD_DIAGRAM_HEIGHT + CHORD_DIAGRAM_PADDING,
+						),
+						CHORD_DIAGRAM_GAP,
+						TEXT_CLEAR_KINDS,
+						band,
+					);
+				// Recover the real (unpadded) box; the padding only extended the probe.
+				const unpad = (box: Rect) =>
+					new Rect(box.x, box.y, CHORD_DIAGRAM_WIDTH, CHORD_DIAGRAM_HEIGHT);
+				const lifted = unpad(lift(natural));
 				const spaced = this.collisionResolver.pushRightOf(
-					natural,
+					lifted,
 					'diagram',
 					CHORD_DIAGRAM_GAP,
 				);
-				// Pad the box below its bottom so the lift-clear probe reaches a high note
-				// (or its tie) poking up into the box's column — the same padding treatment
-				// a chord symbol uses. The box then rises off the note instead of overlapping
-				// it; with nothing in the way it keeps its default position.
-				const padded = new Rect(
-					spaced.x,
-					spaced.y,
-					spaced.w,
-					CHORD_DIAGRAM_HEIGHT + CHORD_DIAGRAM_PADDING,
-				);
-				// Banded to its own stave row: without it, a lower part's diagram sees the
-				// part above's notes and lyrics in the same column and climbs over the whole
-				// part, stranding the box above music it doesn't label.
-				const lifted = this.collisionResolver.liftClear(
-					padded,
-					CHORD_DIAGRAM_GAP,
-					TEXT_CLEAR_KINDS,
-					this.rowOf(stave),
-				);
-				// Recover the real (unpadded) box; the padding only extended the probe.
-				const unclamped = new Rect(
-					lifted.x,
-					lifted.y,
-					CHORD_DIAGRAM_WIDTH,
-					CHORD_DIAGRAM_HEIGHT,
-				);
+				// Spacing moved it into a different column, which may hold taller notes than
+				// the one it was lifted out of — so lift again where it actually landed.
+				const unclamped = spaced.x === lifted.x ? lifted : unpad(lift(spaced));
 				// A box anchored at a note near the right edge would overrun the canvas and be
 				// clipped (page overflow has no crop-growth knob like the vertical edges do), so
 				// nudge it back inside the drawable region.

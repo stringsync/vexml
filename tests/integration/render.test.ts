@@ -1916,6 +1916,12 @@ const TEST_CASES = [
 	// - M2: four B4 quarters; a G-major fret box above the FIRST quarter.
 	// The C box (anchored at M1's last beat) and the G box (anchored at M2's first beat)
 	// are nudged apart so they clear each other — no overlapping boards or titles.
+	// - M3: the same two boxes on consecutive beats, but over a bass-clef run of C6 quarters
+	//   (four ledger lines up) that lifts both ~95px clear of the stave. The spacing has to
+	//   survive that lift: a box is spaced against its neighbours where it LANDS, not where
+	//   it would have sat, or two boxes that both rise out of the default row stop seeing
+	//   each other and print through each other. Cut from a real bass score
+	//   (Bass-LP-05-Fretboard M15).
 	testCase('chord_diagram_adjacent.musicxml', 'chord_diagram_adjacent.png', {
 		layout: { type: 'standard', referenceWidth: 500 },
 	}),
