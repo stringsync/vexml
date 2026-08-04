@@ -624,6 +624,11 @@ const TEST_CASES = [
 	//   no notes after it to print over. The measure reserves room before its right barline, so
 	//   the four quarters sit left of a visible gap and the text ends inside the measure
 	//   instead of running across the divider.
+	// - M7: a long directive ("move around the major shape") on the first of four A5 quarters,
+	//   with a placement="above" slur over the second and third. The noteheads sit below the
+	//   text's default band, but the bow arcs up through it — so the text is lifted clear of
+	//   the CURVE, and the whole line prints above the arc rather than being struck through by
+	//   it. Cut from a real bass score (Bass-LP-05-Fretboard M9).
 	testCase('words.musicxml', 'words.png'),
 
 	// Treble stave, common time: the full <dynamics> vocabulary, one marking per C4 quarter,

@@ -2282,6 +2282,31 @@ export class DrawPass {
 					this.collisionResolver.add({ rect: bend, kind: 'note', band: p.row });
 				}
 			}
+			// A slur bows into the same band the above-stave annotations drawn next sit in,
+			// and it can't yield — it's pinned to its noteheads — so it's an obstacle, the
+			// way a tie's apex is. The real curves are built (and drawn) in finishPass; this
+			// rebuilds them over this stave's own chords just to measure the bow.
+			//
+			// ponytail: within-measure slurs only. A bow crossing a barline has one endpoint
+			// outside `noteChords`, so slurSpans never pairs it and it registers nothing —
+			// widen to the system's chords if a wrapping bow ever collides with text.
+			for (const slur of this.spanners.buildSlurs(
+				p.noteChords.map(({ chord }) => chord),
+				this.byLead,
+			)) {
+				if (slur.stave === p.stave && !slur.crossStave) {
+					this.collisionResolver.add({
+						rect: new Rect(
+							slur.left,
+							slur.top,
+							slur.right - slur.left,
+							slur.bottom - slur.top,
+						),
+						kind: 'tie',
+						band: p.row,
+					});
+				}
+			}
 		}
 		return { top, bottom };
 	}
