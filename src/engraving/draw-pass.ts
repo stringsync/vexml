@@ -4285,6 +4285,20 @@ export class DrawPass {
 		bracket.setLine(OTTAVA_TEXT_LINE + shift);
 		this.pageTop = Math.min(this.pageTop, placed.y);
 		this.pageBottom = Math.max(this.pageBottom, placed.bottom);
+		// Report the band the label ended up in so pass two opens room for it — as spill
+		// against the neighbouring stave inside the system (a piano 8va sits in the gap
+		// under the vocal part's lyrics), and as overflow against the system above.
+		const row = this.rowByStave.get(stave);
+		if (row !== undefined) {
+			this.recordStaveSpill({ stave, row }, placed);
+		}
+		const system = this.systemByStave.get(stave);
+		if (system !== undefined && above) {
+			this.systemHighestTop.set(
+				system,
+				Math.min(this.systemHighestTop.get(system) ?? Infinity, placed.y),
+			);
+		}
 	}
 
 	/*
