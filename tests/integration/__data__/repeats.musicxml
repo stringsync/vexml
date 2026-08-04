@@ -178,9 +178,10 @@
         <type>half</type>
       </note>
       <note>
-        <pitch><step>A</step><octave>6</octave></pitch>
+        <pitch><step>A</step><alter>-1</alter><octave>6</octave></pitch>
         <duration>2</duration>
         <type>half</type>
+        <accidental>flat</accidental>
       </note>
       <barline location="right">
         <bar-style>light-heavy</bar-style>

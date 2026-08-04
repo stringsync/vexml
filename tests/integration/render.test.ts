@@ -910,12 +910,15 @@ const TEST_CASES = [
 	//   carries on into M12.
 	// - M12: opens a fourth repeat block (forward repeat) whose endings reach ABOVE the height a
 	//   volta bracket normally sits at. Its own note is an ordinary C5.
-	// - M13: a one-measure volta labelled "1." over a half-note C5 followed by a half-note A6 —
+	// - M13: a one-measure volta labelled "1." over a half-note C5 followed by a half-note A♭6 —
 	//   four ledger lines up, well past the bracket's default gap over the top staff line. The
-	//   bracket rides above that notehead and its ledger lines instead of cutting through them.
+	//   bracket rides above that notehead and its ledger lines instead of cutting through them,
+	//   and above the FLAT beside it too: a flat's ascender reaches higher than the notehead it
+	//   belongs to, so a bracket cleared only for the notehead would still slice the accidental.
 	// - M14-15: one bracket labelled "2." spanning both measures, with only M15 carrying the
-	//   high A6. The line runs FLAT across the M14/M15 divider at the height M15 needs — a
-	//   bracket is one object, so it can't step down over the measure that happens to be low.
+	//   high A6 (no accidental — the plain notehead lift, M13's case minus the flat). The line
+	//   runs FLAT across the M14/M15 divider at the shared height the system's brackets ride at —
+	//   a bracket is one object, so it can't step down over the measure that happens to be low.
 	//   M15 is the last measure, so this final ending DOES hook at its right end (nothing left
 	//   to run on into), over the piece's thin-thick end barline.
 	// Every bracket on a system shares one height, so M9-11's brackets ride at M13/M15's level

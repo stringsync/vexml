@@ -2234,7 +2234,7 @@ export class DrawPass {
 			for (const note of p.staveNotes) {
 				const box = note.getBoundingBox();
 				bottom = Math.max(bottom, box.getY() + box.getH());
-				top = Math.min(top, this.noteTop(note));
+				top = Math.min(top, this.noteTop(note), this.accidentalTop(note));
 				// The page still has to fit a cross-staff stem (hence `top`/`bottom` above
 				// reading it), but the gap between the staves does not — see crossStaveNotes.
 				const heads = this.crossStaveNotes.has(note)
@@ -2364,6 +2364,27 @@ export class DrawPass {
 				mod.getCategory() === 'Articulation' &&
 				mod.getPosition() === Modifier.Position.ABOVE
 			) {
+				top = Math.min(top, mod.getBoundingBox().getY());
+			}
+		}
+		return top;
+	}
+
+	/*
+	 * The top of a note's accidentals, or Infinity when it has none. A flat's ascender climbs
+	 * well past the notehead it belongs to, so a volta bracket lifted to clear the noteheads
+	 * alone still slices through it.
+	 *
+	 * Deliberately NOT folded into {@link noteTop}: that also builds the note's collision
+	 * obstacle (see noteRect), which is one notehead wide and centered on the notehead — an
+	 * accidental sits to its LEFT, so widening the box upward there claims height at an x the
+	 * accidental never occupies, and below-stave spanners resolving against it shift for a
+	 * glyph that isn't over them.
+	 */
+	private accidentalTop(note: StaveNote): number {
+		let top = Infinity;
+		for (const mod of note.getModifiers()) {
+			if (mod.getCategory() === 'Accidental') {
 				top = Math.min(top, mod.getBoundingBox().getY());
 			}
 		}
