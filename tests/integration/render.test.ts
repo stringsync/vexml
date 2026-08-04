@@ -92,6 +92,20 @@ const TEST_CASES = [
 	// barline runs through parts 2-4 and stops at the 1|2 and 4|5 boundaries.
 	testCase('structure_part_groups.musicxml', 'structure_part_groups.png'),
 
+	// Two single-stave parts (treble over bass, one whole note each) inside a single
+	// <part-group> bracket that starts on the TOP part, with measureNumbering 'every' so both
+	// measures print a number. The bracket's top curl overhangs the top staff line right where
+	// vexflow centers a measure number, so "1" is drawn by vexml instead: left-aligned just
+	// right of the barline and lifted clear ABOVE the curl. "2" is an ordinary interior
+	// measure — no connector there — so it keeps vexflow's centered placement, sitting lower
+	// and centered over its barline. The two numbers deliberately do not line up; that
+	// difference is the case.
+	testCase(
+		'structure_part_group_bracket_top.musicxml',
+		'structure_part_group_bracket_top.png',
+		{ measureNumbering: 'every' },
+	),
+
 	// Score-level header text (<work-title>, <movement-title>,
 	// <identification><creator>, <credit-words>) is deliberately NOT drawn, and has no
 	// reader in src/. vexml engraves staff notation; the page heading belongs to the host

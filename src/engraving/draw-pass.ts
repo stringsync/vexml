@@ -1570,16 +1570,25 @@ export class DrawPass {
 
 		// A bracket (drawn below) has a top curl that sits where vexflow's
 		// setMeasure centers the measure number, so the number gets occluded — true
-		// both for a multi-stave part's own bracket and for the system bracket of a
-		// notation+tab pair split across parts. Only for a bracket do we draw the
-		// number ourselves, left-aligned just right of the barline and lifted above
-		// the curl; the curly brace doesn't reach that high, so it keeps vexflow's
-		// placement. The number prints once (measureNumbered), on the top stave.
+		// for a multi-stave part's own bracket, for the system bracket of a
+		// notation+tab pair split across parts, and for a <part-group> bracket that
+		// starts on the top part (the only one whose curl reaches the number). Only
+		// for a bracket do we draw the number ourselves, left-aligned just right of
+		// the barline and lifted above the curl; the curly brace doesn't reach that
+		// high, so it keeps vexflow's placement. The number prints once
+		// (measureNumbered), on the top stave.
 		const numberOccluded =
 			this.isSystemStart &&
 			((visibleCount > 1 &&
 				partSymbol(part, this.showTabs, this.showNotation) === 'bracket') ||
-				partsPairTabWithNotation(this.parts, this.showTabs, this.showNotation));
+				partsPairTabWithNotation(
+					this.parts,
+					this.showTabs,
+					this.showNotation,
+				) ||
+				this.partGroups.some(
+					(group) => group.symbol === 'bracket' && group.fromPart === 0,
+				));
 		if (this.showMeasureNumber && !this.measureNumbered && !numberOccluded) {
 			stave.setMeasure(Number(measure.number));
 			// vexflow centers the number on the stave's x, baselined 3px under its top-text
