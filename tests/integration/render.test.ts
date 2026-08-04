@@ -1371,6 +1371,8 @@ const TEST_CASES = [
 	// - M1: a whole-step bend labelled "1" on string 3 fret 7, then a half-step bend
 	//   labelled "½" on string 2 fret 5.
 	// - M2: a bend-and-release on string 3 fret 7 (whole note) — an up-then-down arrow.
+	// - M3: M1's first bend with a "Slowly" words direction over it — the text sits above
+	//   the arrow and its "1" label, clear of both.
 	testCase('tab_bend.musicxml', 'tab_bend.png'),
 
 	// 6-line TAB stave: vibrato (wavy line) stretching to the next note or the bar's end,
@@ -1398,6 +1400,11 @@ const TEST_CASES = [
 	//   the opening barline. The measure holds room open after that barline (leadingWordsPad)
 	//   and starts its notes past it, so the word prints in the gap and the divider stays
 	//   clear — the mirror of the trailing room words.png M6 reserves before a right barline.
+	// - M3: the same word on a first note, but at a SYSTEM START behind a forward repeat,
+	//   where the lead glyphs eat the room M2 gets. The word is bounded to the note area, so
+	//   it starts right of the repeat's bars instead of printing through the connector that
+	//   carries them up across the notation/TAB gap. Unjustified last system (see
+	//   system_break).
 	testCase('tab_words_align.musicxml', 'tab_words_align.png'),
 
 	// 6-line TAB stave, quarter-note tab chords. Each chord member carries its own

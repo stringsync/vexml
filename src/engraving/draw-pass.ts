@@ -2268,6 +2268,10 @@ export class DrawPass {
 				if (rect) {
 					this.collisionResolver.add({ rect, kind: 'tie', band: p.row });
 				}
+				const bend = this.tabBendRect(p.stave, note);
+				if (bend) {
+					this.collisionResolver.add({ rect: bend, kind: 'note', band: p.row });
+				}
 			}
 		}
 		return { top, bottom };
@@ -2302,6 +2306,42 @@ export class DrawPass {
 			2 * hw,
 			TAB_CURVE_RISE,
 		);
+	}
+
+	/*
+	 * The collision obstacle for a tab <bend>: the band its arrow and label occupy above the
+	 * fret it springs from. Same problem tabArcApexRect solves — a Bend is a note modifier
+	 * that vexflow gives no bounding box, so above-stave words placed later see nothing there
+	 * and print straight through the arrow. Reconstructed from Bend.draw's own geometry: the
+	 * arrow tips out (textLine + 1) stave spaces above the fret, with the "full"/"1/2" label
+	 * centered a text height above that. `textLine` is protected — hence the cast, as in
+	 * stretchBends, which is also what sets the leg widths this reads.
+	 */
+	private tabBendRect(stave: Stave, note: TabNote): Rect | null {
+		const bend = findModifier<Bend>(note, Bend.CATEGORY);
+		if (!bend) {
+			return null;
+		}
+		const { textLine, phrase } = bend as unknown as {
+			textLine: number;
+			phrase: { drawWidth?: number }[];
+		};
+		const fretY = Math.min(...note.getYs());
+		const top =
+			fretY -
+			(textLine + 1) * stave.getSpacingBetweenLines() -
+			1 -
+			bend.getTextHeight();
+		const left = note.getAbsoluteX();
+		// Mirrors stretchBends' start x, plus the drawn legs, plus the label's overhang past
+		// the arrow tip it's centered on.
+		const right =
+			note.getAbsoluteX() +
+			note.getWidth() +
+			5 +
+			phrase.reduce((sum, leg) => sum + (leg.drawWidth ?? 0), 0) +
+			bend.getWidth() / 2;
+		return new Rect(left, top, right - left, fretY - top);
 	}
 
 	/*
@@ -3553,11 +3593,33 @@ export class DrawPass {
 					TEXT_CLEAR_KINDS,
 					band,
 				);
+		// The stave's opening modifiers own everything left of the note start x — clef, key,
+		// time, and a begin-repeat's bars, which on a multi-stave system a connector carries
+		// straight up through the band this text sits in (no lift can clear a line that spans
+		// the whole gap). A tab annotation is CENTERED on its note (see drawAnnotations), so
+		// over a measure's first note its left half reaches back into that area and prints
+		// through the sign. Bound note-anchored text on the left by the note area — but not on
+		// the right by the barline: a trailing "rit." on a measure's last note is supposed to
+		// overrun it, so the right bound is the page, which the viewport nudge below owns.
+		// Only note-anchored text: a caller passing an explicit x (the segno/coda at the
+		// stave's left edge, the "Nx" on the closing barline) is stating where it wants to be.
+		const bounded =
+			typeof anchor === 'number'
+				? cleared
+				: this.collisionResolver.nudgeInsideX(
+						cleared,
+						new Rect(
+							stave.getNoteStartX(),
+							cleared.y,
+							this.scratchViewport.right - stave.getNoteStartX(),
+							cleared.h,
+						),
+					);
 		// A mark anchored near the right edge would run off the canvas and be clipped (there's
 		// no horizontal crop-growth knob), so pull it back inside — the same treatment a chord
 		// diagram at the edge gets.
 		const placed = this.collisionResolver.nudgeInsideX(
-			cleared,
+			bounded,
 			this.scratchViewport,
 			PAGE_MARGIN_X,
 		);

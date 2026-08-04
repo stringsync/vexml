@@ -60,5 +60,31 @@
         </notations>
       </note>
     </measure>
+    <!-- A words direction sharing the column with a bend: same first note as M1, plus
+         "Slowly" above the stave. -->
+    <measure number="3">
+      <direction placement="above">
+        <direction-type><words>Slowly</words></direction-type>
+      </direction>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical>
+            <string>3</string><fret>7</fret>
+            <bend><bend-alter>2</bend-alter></bend>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical><string>2</string><fret>5</fret></technical>
+        </notations>
+      </note>
+    </measure>
   </part>
 </score-partwise>
