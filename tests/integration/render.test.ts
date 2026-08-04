@@ -1384,6 +1384,19 @@ const TEST_CASES = [
 	//   arc's apex — the curve must not strike through the text.
 	testCase('tab_annotation.musicxml', 'tab_annotation.png'),
 
+	// A notation stave (P1) over a 6-line TAB stave (P2), 4/4, formatted together. Four C5
+	// quarters (string 2, fret 5), each with its own words direction on the TAB part, the
+	// four texts deliberately different widths: "T", "sl.", "P.M.", "let ring".
+	// - M1: every word is CENTERED on its note's column, so it lands over the fret "5" and
+	//   under the notehead no matter how long it is. Left-anchoring the text instead hangs
+	//   it off to the right of both, by half its own width — so the widths must vary for
+	//   this to prove anything, and "let ring" is the one that would drift furthest.
+	// - M2: "let ring" on the measure's FIRST note, where centering reaches BACKWARDS over
+	//   the opening barline. The measure holds room open after that barline (leadingWordsPad)
+	//   and starts its notes past it, so the word prints in the gap and the divider stays
+	//   clear — the mirror of the trailing room words.png M6 reserves before a right barline.
+	testCase('tab_words_align.musicxml', 'tab_words_align.png'),
+
 	// 6-line TAB stave, quarter-note tab chords. Each chord member carries its own
 	// string/fret; members after the first are <chord/>. No <time>, so no time
 	// signature is drawn.

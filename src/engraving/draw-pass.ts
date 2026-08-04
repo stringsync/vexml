@@ -35,7 +35,7 @@ import {
 	StaveTempo,
 	Stem,
 	type StemmableNote,
-	type TabNote,
+	TabNote,
 	TabStave,
 	TextBracket,
 	TimeSignature,
@@ -745,6 +745,9 @@ export class DrawPass {
 	// Width at the right end of this measure the notes must NOT format into, so a words
 	// directive on the last note has room to print before the barline (see MeasureBox).
 	private measureTrailingPad = 0;
+	// The same at the LEFT end, so a centered words directive on the first note prints clear
+	// of the opening barline instead of across it (see MeasureBox).
+	private measureLeadingPad = 0;
 	private systemIndex = 0;
 	private isSystemStart = false;
 	private isLastMeasure = false;
@@ -986,6 +989,7 @@ export class DrawPass {
 		this.measureX = box.x;
 		this.measureWidth = box.width;
 		this.measureTrailingPad = box.trailingPad;
+		this.measureLeadingPad = box.leadingPad;
 		this.systemIndex = box.systemIndex;
 		this.isSystemStart = box.isSystemStart;
 		// The last measure DRAWN, not the last in the document: a <multiple-rest> run reaching
@@ -2067,7 +2071,12 @@ export class DrawPass {
 			return { top: Infinity, bottom: 0 };
 		}
 
-		const startX = Math.max(...pending.map((p) => p.stave.getNoteStartX()));
+		// The leading pad sits inside the stave but off-limits to the formatter, the mirror of
+		// the trailing one below: the first note starts clear of the barline so a directive
+		// centered on it prints in the gap instead of over the divider.
+		const startX =
+			Math.max(...pending.map((p) => p.stave.getNoteStartX())) +
+			this.measureLeadingPad;
 		let noteEndX = 0;
 		for (const p of pending) {
 			p.stave.setNoteStartX(startX);
@@ -2937,7 +2946,25 @@ export class DrawPass {
 		// Words go before the diagrams so a chord diagram draws on top of any words it
 		// shares a measure with — the fret box stays fully legible, the text yields.
 		for (const w of this.wordsTasks) {
-			const placed = this.drawWords(w.stave, w.text, w.anchor, w.placement);
+			// A tab fret glyph is drawn CENTERED on its column x, but a notation notehead is
+			// drawn FROM it — so text left-anchored at that x starts at the fret's middle and
+			// reads as shifted right of the fret AND of the notehead above it. Center it over a
+			// tab anchor so it lines up with both. On a notation stave, left-anchored at the
+			// notehead is already right (and is what MuseScore draws), so leave that alone.
+			const placed = this.drawWords(
+				w.stave,
+				w.text,
+				w.anchor,
+				w.placement,
+				w.anchor instanceof TabNote
+					? {
+							font: this.labelFont,
+							size: WORDS_FONT_SIZE,
+							italic: true,
+							align: 'center',
+						}
+					: undefined,
+			);
 			// A below-stave directive grows the crop downward instead (drawWords already
 			// reported the drop); only above-stave text lifts the measure box's top.
 			if (w.placement !== 'below') {

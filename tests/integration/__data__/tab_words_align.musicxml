@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Guitar</part-name>
+    </score-part>
+    <score-part id="P2">
+      <part-name>Guitar</part-name>
+    </score-part>
+  </part-list>
+  <!-- Notation stave (P1) over a TAB stave (P2), formatted together so same-tick notes
+       line up. Each TAB note carries a words direction of a different width. The text is
+       centered on its note's column, so every word sits under the notehead and over the
+       fret regardless of how long it is — a left-anchored word drifts right by half its
+       own width, which a varying-width row makes obvious. -->
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>1</staves>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+  </part>
+  <part id="P2">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>1</staves>
+        <clef>
+          <sign>TAB</sign>
+          <line>5</line>
+        </clef>
+        <staff-details>
+          <staff-lines>6</staff-lines>
+        </staff-details>
+      </attributes>
+      <direction placement="above">
+        <direction-type><words>T</words></direction-type>
+      </direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type><notations><technical><string>2</string><fret>5</fret></technical></notations></note>
+      <direction placement="above">
+        <direction-type><words>sl.</words></direction-type>
+      </direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type><notations><technical><string>2</string><fret>5</fret></technical></notations></note>
+      <direction placement="above">
+        <direction-type><words>P.M.</words></direction-type>
+      </direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type><notations><technical><string>2</string><fret>5</fret></technical></notations></note>
+      <direction placement="above">
+        <direction-type><words>let ring</words></direction-type>
+      </direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type><notations><technical><string>2</string><fret>5</fret></technical></notations></note>
+    </measure>
+    <measure number="2">
+      <direction placement="above">
+        <direction-type><words>let ring</words></direction-type>
+      </direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type><notations><technical><string>2</string><fret>5</fret></technical></notations></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type><notations><technical><string>2</string><fret>5</fret></technical></notations></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type><notations><technical><string>2</string><fret>5</fret></technical></notations></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type><notations><technical><string>2</string><fret>5</fret></technical></notations></note>
+    </measure>
+  </part>
+</score-partwise>

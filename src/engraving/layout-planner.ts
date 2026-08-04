@@ -1,4 +1,4 @@
-import type { Measure, Score } from '@stringsync/mdom';
+import type { Measure, Part, Score } from '@stringsync/mdom';
 import { Formatter, GraceNoteGroup } from 'vexflow';
 import type { Config } from '../config';
 import {
@@ -51,6 +51,10 @@ export type MeasureBox = {
 	 * measure's last note (see LayoutPlanner.trailingWordsPad); the notes format into the
 	 * rest. 0 for measures with no such directive. */
 	trailingPad: number;
+	/** Part of `width` held open after the left barline for a CENTERED words directive on the
+	 * measure's first note (see LayoutPlanner.leadingWordsPad); the notes start after it.
+	 * 0 for measures with no such directive. */
+	leadingPad: number;
 	systemIndex: number;
 	isSystemStart: boolean;
 	isSystemEnd: boolean;
@@ -335,6 +339,48 @@ export class LayoutPlanner {
 		return Math.max(0, pad);
 	}
 
+	/*
+	 * The mirror of {@link trailingWordsPad}: space to hold open after a measure's LEFT barline.
+	 * A directive on a TAB note is drawn CENTERED on it (see DrawPass.drawAnnotations), so one on
+	 * the measure's first note reaches half its width backwards, across the divider — the notes
+	 * before it are in the previous measure and are no room at all. Half the text is what has to
+	 * fit; the caller nets off the lead glyphs, which already hold the front of the measure open.
+	 *
+	 * Only tab-anchored directives count. A notation-stave one is left-anchored at its notehead
+	 * and reaches only forward, so it needs nothing here.
+	 */
+	private leadingWordsPad(parts: Part[], m: number): number {
+		// The column's first onset, across every part, voice and staff — matching the last-onset
+		// read in trailingWordsPad, so "anchored at the measure's first note" means the same
+		// thing on both sides even when one part rests through the downbeat.
+		let firstOnset = Number.POSITIVE_INFINITY;
+		for (const part of parts) {
+			for (const voice of part.measures[m]?.voices ?? []) {
+				for (const chord of voice.chords) {
+					firstOnset = Math.min(firstOnset, chord.measureBeat ?? 0);
+				}
+			}
+		}
+		let pad = 0;
+		for (const part of parts) {
+			const measure = part.measures[m];
+			if (!measure) {
+				continue;
+			}
+			for (const { text, staffNumber, lead } of this.reader.wordsOf(measure)) {
+				// A directive naming no note anchors at the measure's first one instead.
+				if (lead && (lead.measureBeat ?? 0) > firstOnset + EPSILON) {
+					continue;
+				}
+				if (!isTabStaff(part, staffNumber)) {
+					continue;
+				}
+				pad = Math.max(pad, (text.length * WORDS_CHAR_WIDTH) / 2);
+			}
+		}
+		return pad;
+	}
+
 	/** Lay the parts out at the reference width: where every measure box sits, how
 	 * staves stack within a system, and how tall/wide the page starts. Depends only on
 	 * the music and the options, never on the live container — the finished result is
@@ -521,6 +567,11 @@ export class LayoutPlanner {
 		);
 		const padOf = (m: number) => pads[m] ?? 0;
 
+		// The same for the front of the measure (see leadingWordsPad).
+		const leadingPads = Array.from({ length: measureCount }, (_, m) =>
+			gaps.has(m) ? 0 : this.leadingWordsPad(parts, m),
+		);
+
 		// Lead = glyphs a stave prints before its notes. Clef (+ key, when present)
 		// repeats at every system start; the time signature prints once at the piece
 		// start; mid-system measures carry only a barline, plus a smaller clef when the
@@ -565,10 +616,17 @@ export class LayoutPlanner {
 			);
 		// The measure's fixed width: everything that isn't note area. Lead glyphs at the front,
 		// trailing-directive room at the back.
-		const leadOf = (m: number, systemStart: boolean) =>
-			(systemStart
+		const leadGlyphs = (m: number, systemStart: boolean) =>
+			systemStart
 				? leadFull(m)
-				: LEAD_BARLINE + (clefChangesAt(m) ? LEAD_CLEF_CHANGE : 0)) + padOf(m);
+				: LEAD_BARLINE + (clefChangesAt(m) ? LEAD_CLEF_CHANGE : 0);
+		// A leading directive prints over the lead glyphs' room, so only the part of it those
+		// glyphs don't already cover is reserved — a measure opening with a clef and a key
+		// usually needs nothing extra.
+		const leadingPadOf = (m: number, systemStart: boolean) =>
+			Math.max(0, (leadingPads[m] ?? 0) - leadGlyphs(m, systemStart));
+		const leadOf = (m: number, systemStart: boolean) =>
+			leadGlyphs(m, systemStart) + padOf(m) + leadingPadOf(m, systemStart);
 
 		// A system's width at each of the two note-area sizes: `ideal` is what it wants,
 		// `min` is the narrowest it can be drawn without its notes colliding. Leads are fixed
@@ -743,6 +801,7 @@ export class LayoutPlanner {
 					x: cx,
 					width: w,
 					trailingPad: padOf(m),
+					leadingPad: leadingPadOf(m, i === 0),
 					systemIndex,
 					isSystemStart: i === 0,
 					isSystemEnd: i === measures.length - 1,
