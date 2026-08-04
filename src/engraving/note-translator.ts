@@ -464,6 +464,38 @@ const BRUSH_ORNAMENTS: Record<string, { type: string; glyph?: string }> = {
 };
 
 /*
+ * An articulation that clears the beam.
+ *
+ * vexflow parks a stem-side mark half a stave space off the STEM TIP, which on a beamed note
+ * is exactly where the beam's ink starts — half a space of air reads as clearance over a thin
+ * stem, but as a mark resting on the beam. Lift it another space when the note is beamed,
+ * which is roughly what MuseScore engraves. The beam extends AWAY from the mark (down from a
+ * stem-up tip), so its thickness costs nothing and the beam count doesn't matter.
+ *
+ * Applied by shifting the text line for the duration of the draw rather than at format time:
+ * vexflow's Articulation.format has no view of the beam, and a note can be drawn more than
+ * once (the spill pass), so a persistent bump would ratchet.
+ */
+class StaveArticulation extends Articulation {
+	override draw(): void {
+		const note = this.checkAttachedNote();
+		const onStemTip =
+			this.position ===
+			(note.getStemDirection() === Stem.UP
+				? Modifier.Position.ABOVE
+				: Modifier.Position.BELOW);
+		if (!note.hasBeam() || !onStemTip) {
+			super.draw();
+			return;
+		}
+		const line = this.textLine;
+		this.setTextLine(line + 1);
+		super.draw();
+		this.setTextLine(line);
+	}
+}
+
+/*
  * An articulation that sits opposite the stem — BELOW for a stem-up note, ABOVE otherwise.
  *
  * The side isn't final when the mark is built: a beamed note's stem direction is only
@@ -473,7 +505,7 @@ const BRUSH_ORNAMENTS: Record<string, { type: string; glyph?: string }> = {
  * for. Fermatas take their side from their type instead, so they stay plain Articulations
  * and this pass leaves them alone.
  */
-export class NoteheadArticulation extends Articulation {
+export class NoteheadArticulation extends StaveArticulation {
 	private readonly codes: [above: string, below: string];
 
 	constructor(code: string | [above: string, below: string]) {
@@ -510,7 +542,7 @@ function addArticulations(staveNote: StaveNote, note: Note): void {
 		const measureMark = MEASURE_MARK_GLYPHS[name];
 		if (measureMark) {
 			staveNote.addModifier(
-				new Articulation(measureMark).setPosition(Modifier.Position.ABOVE),
+				new StaveArticulation(measureMark).setPosition(Modifier.Position.ABOVE),
 			);
 			continue;
 		}
@@ -787,7 +819,7 @@ function addTechnicals(staveNote: StaveNote, chord: Chord): void {
 			const code = TECHNICAL_CODES[mark.technicalType];
 			if (code) {
 				staveNote.addModifier(
-					new Articulation(code).setPosition(
+					new StaveArticulation(code).setPosition(
 						mark.placement === 'below'
 							? Modifier.Position.BELOW
 							: Modifier.Position.ABOVE,
@@ -827,7 +859,7 @@ function addFermata(staveNote: StaveNote, note: Note): void {
 		return;
 	}
 	const inverted = fermata === 'inverted';
-	const articulation = new Articulation(inverted ? 'a@u' : 'a@a');
+	const articulation = new StaveArticulation(inverted ? 'a@u' : 'a@a');
 	// Vexflow defaults every Articulation to ABOVE; the below-shaped glyph also needs the
 	// BELOW position so it sits under the note instead of floating over it.
 	articulation.setPosition(

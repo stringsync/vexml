@@ -1696,6 +1696,10 @@ const TEST_CASES = [
 	//   drawn like a fingering.
 	// - M16: double-tongue (two dots), triple-tongue (three dots), the "+" of a stopped
 	//   note, and the snap-pizzicato ring-and-stem, all above the stave.
+	// - M17: a mark on the BEAM side — eight B4 eighths beamed 4+4 with <stem>up</stem>, so
+	//   the beam sits above the stave, each carrying a down-bow. The eight brackets ride in a
+	//   row a full stave space clear of the beam; they must not rest on it (see
+	//   StaveArticulation).
 	testCase('technical_marks.musicxml', 'technical_marks.png'),
 
 	// The realistic fingering case: <technical><fingering> on CHORDS across a grand staff,
