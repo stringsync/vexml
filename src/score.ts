@@ -1,3 +1,4 @@
+import type { Resource } from 'webappwiz/disposable';
 import type { Element } from './elements/element';
 import type { ElementIndex } from './elements/element-index';
 import { MeasureBox } from './elements/measure-box';
@@ -51,15 +52,15 @@ export class Score implements Listenable<ScoreEventMap> {
 		keyof ScoreEventMap,
 		Array<[string, EventListener]>
 	>();
-	private readonly unobserveResize: () => void;
+	private readonly resizeObserver: Resource;
 	// Last container size we emitted a 'resize' for, so a base-only reflow (same container size)
 	// relayouts without re-emitting. null until the first notification.
 	private lastResize: { width: number; height: number } | null = null;
 	// Hover state: the element last reported and the last pointer position (client coords) to
-	// re-hit-test on scroll. unobserveScroll is hover's window-scroll subscription.
+	// re-hit-test on scroll. scrollObserver is hover's window-scroll subscription.
 	private hovered: Element | null = null;
 	private lastClient: { x: number; y: number } | null = null;
-	private unobserveScroll: (() => void) | null = null;
+	private scrollObserver: Resource | null = null;
 	// Live playback cursors, disposed with the score; each removes itself on its own dispose.
 	private readonly cursors = new Set<CursorController>();
 
@@ -80,7 +81,7 @@ export class Score implements Listenable<ScoreEventMap> {
 		// without a container resize. Viewport layers are refit and cleared; content layers just
 		// re-track the base canvas, so a viewport-layer redraw in the resize handler lands on a
 		// correctly sized, cleared surface.
-		this.unobserveResize = host.observeResize((size) => {
+		this.resizeObserver = host.observeResize((size) => {
 			host.relayoutLayers();
 			// Only an actual container-size change is a 'resize' for the caller. A base-only reflow
 			// reports the unchanged container size, so dedupe: relayout above, but don't suspend
@@ -127,8 +128,10 @@ export class Score implements Listenable<ScoreEventMap> {
 			this.sequence,
 			new CursorHostAdapter(this.host),
 			this.scroller,
-			() => this.cursors.delete(cursor),
 		);
+		// The cursor announces its own disposal, so the score can let go without the cursor
+		// having to know who is holding it.
+		cursor.addEventListener('dispose', () => this.cursors.delete(cursor));
 		this.cursors.add(cursor);
 		return cursor;
 	}
@@ -271,9 +274,9 @@ export class Score implements Listenable<ScoreEventMap> {
 			}
 		}
 		this.bound.clear();
-		this.unobserveScroll?.();
-		this.unobserveScroll = null;
-		this.unobserveResize();
+		this.scrollObserver?.dispose();
+		this.scrollObserver = null;
+		this.resizeObserver.dispose();
 		for (const decoration of this.decorations) {
 			decoration.dispose();
 		}
@@ -311,7 +314,7 @@ export class Score implements Listenable<ScoreEventMap> {
 				};
 				this.listen(type, 'pointerleave', clear);
 				this.listen(type, 'pointercancel', clear);
-				this.unobserveScroll = this.host.observeScroll(() =>
+				this.scrollObserver = this.host.observeScroll(() =>
 					this.recomputeHover(),
 				);
 				return;
@@ -347,8 +350,8 @@ export class Score implements Listenable<ScoreEventMap> {
 			this.bound.delete(type);
 		}
 		if (type === 'hover') {
-			this.unobserveScroll?.();
-			this.unobserveScroll = null;
+			this.scrollObserver?.dispose();
+			this.scrollObserver = null;
 			this.hovered = null;
 			this.lastClient = null;
 		}

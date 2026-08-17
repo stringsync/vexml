@@ -1,3 +1,6 @@
+/* Re-exported so a caller can name what sync()/follow()/observe*() hand back without
+ * depending on webappwiz directly. */
+export type { Resource } from 'webappwiz/disposable';
 export type {
 	Config,
 	ConfigInput,

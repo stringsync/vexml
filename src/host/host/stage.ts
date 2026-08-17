@@ -1,3 +1,4 @@
+import { disposables, type Resource } from 'webappwiz/disposable';
 import type { Rect } from '../../geometry';
 import type { Layer, LayerKind } from '../layer/layer';
 import { ManagedLayer } from '../layer/managed-layer';
@@ -207,7 +208,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 
 	observeResize(
 		onResize: (size: { width: number; height: number }) => void,
-	): () => void {
+	): Resource {
 		// Observe BOTH the container and the base canvas. Placement (placeLayer and the score<->client
 		// frame) is derived from the base canvas's rendered box, which can change *without* the
 		// container's box changing — e.g. the Bravura web font finishing load and reflowing the
@@ -228,10 +229,10 @@ export class Stage implements Viewport, Host, ScrollHost {
 		});
 		observer.observe(this.container);
 		observer.observe(this.base);
-		return () => observer.disconnect();
+		return disposables.callback(() => observer.disconnect());
 	}
 
-	observeScroll(onScroll: () => void): () => void {
+	observeScroll(onScroll: () => void): Resource {
 		// Capture phase on window catches every scroll container (the score's own or any ancestor),
 		// since scroll events don't bubble. passive: we only read positions, never preventDefault.
 		const handler = () => onScroll();
@@ -239,8 +240,9 @@ export class Stage implements Viewport, Host, ScrollHost {
 			capture: true,
 			passive: true,
 		});
-		return () =>
-			window.removeEventListener('scroll', handler, { capture: true });
+		return disposables.callback(() =>
+			window.removeEventListener('scroll', handler, { capture: true }),
+		);
 	}
 
 	createLayer(kind: LayerKind, zIndex?: number): Layer {

@@ -72,8 +72,11 @@ export interface CursorVisibilityEvent {
 	readonly fullyVisible: boolean;
 }
 
-/* The events a CursorController dispatches, keyed by name. */
+/* The events a CursorController dispatches, keyed by name. `dispose` fires once, as the cursor
+ * is disposed, so whoever is holding it can let go. Payload-free: the cursor that fired it is
+ * the one you subscribed to. */
 export interface CursorEventMap {
 	change: CursorChangeEvent;
 	visibility: CursorVisibilityEvent;
+	dispose: undefined;
 }

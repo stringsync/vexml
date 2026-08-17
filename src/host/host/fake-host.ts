@@ -1,3 +1,4 @@
+import { disposables, type Resource } from 'webappwiz/disposable';
 import type { Rect } from '../../geometry';
 import { FakeLayer } from '../layer/fake-layer';
 import type { Layer, LayerKind } from '../layer/layer';
@@ -27,19 +28,19 @@ export class FakeHost implements Host {
 
 	observeResize(
 		onResize: (size: { width: number; height: number }) => void,
-	): () => void {
+	): Resource {
 		this.resizeListener = onResize;
-		return () => {
+		return disposables.callback(() => {
 			this.resizeUnobserved = true;
 			this.resizeListener = null;
-		};
+		});
 	}
 
-	observeScroll(onScroll: () => void): () => void {
+	observeScroll(onScroll: () => void): Resource {
 		this.scrollListener = onScroll;
-		return () => {
+		return disposables.callback(() => {
 			this.scrollListener = null;
-		};
+		});
 	}
 
 	createLayer(kind: LayerKind, zIndex?: number): Layer {

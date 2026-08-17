@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import { disposables, type Resource } from 'webappwiz/disposable';
 import type { FontConfig } from './config';
 import { DEFAULT_CONFIG } from './config';
 import { ElementFactory } from './elements/element-factory';
@@ -29,11 +30,11 @@ class FakeStage implements RenderStage {
 	toScoreSpace(clientX: number, clientY: number): { x: number; y: number } {
 		return { x: clientX, y: clientY };
 	}
-	observeResize(): () => void {
-		return () => {};
+	observeResize(): Resource {
+		return disposables.noop();
 	}
-	observeScroll(): () => void {
-		return () => {};
+	observeScroll(): Resource {
+		return disposables.noop();
 	}
 	createLayer(_kind: LayerKind, _zIndex?: number): Layer {
 		return {

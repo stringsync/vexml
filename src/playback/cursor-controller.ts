@@ -1,8 +1,9 @@
+import { Disposer, disposables, type Resource } from 'webappwiz/disposable';
 import type { Bounded } from '../elements/decoration/decoration';
 import type { Note } from '../elements/note';
 import type { CursorChangeEvent, CursorEventMap } from '../events';
 import { Rect } from '../geometry';
-import type { Scroller } from '../host/scroller/scroller';
+import type { Scroller, ScrollerOptions } from '../host/scroller/scroller';
 import { EventTarget } from '../listenable/event-target';
 import type { Listenable } from '../listenable/listenable';
 import type { CursorHost } from './cursor-host/cursor-host';
@@ -32,11 +33,11 @@ class CursorPosition implements Bounded {
 	}
 }
 
-export class CursorController implements Listenable<CursorEventMap> {
+export class CursorController implements Listenable<CursorEventMap>, Resource {
 	private readonly target = new EventTarget<CursorEventMap>();
-	// Unhook fns for sync/follow subscriptions, run on dispose; the views still attached at dispose,
+	// The sync/follow subscriptions, released on dispose; the views still attached at dispose are
 	// disposed with the cursor (a detached one is the caller's again).
-	private readonly cleanups = new Set<() => void>();
+	private readonly subscriptions = new Disposer();
 	private readonly views = new Set<CursorView>();
 	private index = 0;
 	private ms = 0;
@@ -51,13 +52,11 @@ export class CursorController implements Listenable<CursorEventMap> {
 		// The score's scroller: the default follow()/scrollIntoView() target, and what
 		// cancelScroll() halts.
 		private readonly scroller: Scroller & { cancel(): void },
-		// Called from dispose so the Score can forget this cursor (avoids a leak / double dispose).
-		private readonly onDispose?: () => void,
 	) {
 		this.lastVisible = this.isFullyVisible();
 		const onViewport = () => this.checkVisibility();
 		this.host.addEventListener('viewportchange', onViewport);
-		this.cleanups.add(() =>
+		this.subscriptions.defer(() =>
 			this.host.removeEventListener('viewportchange', onViewport),
 		);
 	}
@@ -148,26 +147,26 @@ export class CursorController implements Listenable<CursorEventMap> {
 		);
 	}
 
-	/* Attach a visual, synced on every change. Renders once immediately. Returns an unsubscribe that
-	 * detaches without disposing the view (the caller gets it back); dispose() disposes whatever's
-	 * still attached. */
-	sync(view: CursorView): () => void {
+	/* Attach a visual, synced on every change. Renders once immediately. Disposing the returned
+	 * Resource detaches without disposing the view (the caller gets it back); this cursor's own
+	 * dispose() disposes whatever is still attached. */
+	sync(view: CursorView): Resource {
 		const listener = (e: CursorChangeEvent) => view.render(e);
 		this.target.addEventListener('change', listener);
 		this.views.add(view);
-		const detach = () => {
+		const detach = disposables.callback(() => {
 			this.target.removeEventListener('change', listener);
 			this.views.delete(view);
-			this.cleanups.delete(detach);
-		};
-		this.cleanups.add(detach);
+		});
+		this.subscriptions.use(detach);
 		view.render(this.snapshot(null));
 		return detach;
 	}
 
 	/* Auto-scroll: on every change, scroll the bar into view when it isn't fully visible. Uses the
-	 * given scroller, or the score's. Scrolls once immediately if needed. Returns an unsubscribe. */
-	follow(scroller?: Scroller): () => void {
+	 * given scroller, or the score's. Scrolls once immediately if needed. Dispose the returned
+	 * Resource to stop following. */
+	follow(scroller?: Scroller): Resource {
 		const target = scroller ?? this.scroller;
 		const listener = () => {
 			if (!this.isFullyVisible()) {
@@ -175,17 +174,16 @@ export class CursorController implements Listenable<CursorEventMap> {
 			}
 		};
 		this.target.addEventListener('change', listener);
-		const unfollow = () => {
-			this.target.removeEventListener('change', listener);
-			this.cleanups.delete(unfollow);
-		};
-		this.cleanups.add(unfollow);
+		const unfollow = disposables.callback(() =>
+			this.target.removeEventListener('change', listener),
+		);
+		this.subscriptions.use(unfollow);
 		listener();
 		return unfollow;
 	}
 
 	/* Scroll the bar into view once, via the score's scroller. */
-	scrollIntoView(opts?: { behavior?: ScrollBehavior }): void {
+	scrollIntoView(opts?: ScrollerOptions): void {
 		this.scroller.scrollIntoView(this.barRect(), opts);
 	}
 
@@ -215,18 +213,15 @@ export class CursorController implements Listenable<CursorEventMap> {
 			return;
 		}
 		this.disposed = true;
-		// Snapshot the attached views first: the cleanups below detach them (removing them from the
-		// set), so capture who to dispose before running them.
+		// Snapshot the attached views first: releasing the subscriptions below detaches them
+		// (removing them from the set), so capture who to dispose before doing it.
 		const toDispose = [...this.views];
-		for (const cleanup of [...this.cleanups]) {
-			cleanup();
-		}
-		this.cleanups.clear();
+		this.subscriptions.dispose();
 		for (const view of toDispose) {
 			view.dispose();
 		}
 		this.views.clear();
-		this.onDispose?.();
+		this.target.dispatchEvent('dispose', undefined);
 	}
 
 	private barRect(): Rect {

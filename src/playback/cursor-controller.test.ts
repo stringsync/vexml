@@ -38,16 +38,11 @@ function fourQuarters() {
 	});
 }
 
-function controller(opts?: {
-	host?: FakeCursorHost;
-	scroller?: FakeScroller;
-	onDispose?: () => void;
-}) {
+function controller(opts?: { host?: FakeCursorHost; scroller?: FakeScroller }) {
 	return new CursorController(
 		fourQuarters(),
 		opts?.host ?? new FakeCursorHost(),
 		opts?.scroller ?? new FakeScroller(),
-		opts?.onDispose,
 	);
 }
 
@@ -145,7 +140,7 @@ describe('CursorController', () => {
 		expect(view.events).toHaveLength(1); // immediate render
 		cursor.next();
 		expect(view.events).toHaveLength(2);
-		detach();
+		detach.dispose();
 		cursor.next();
 		expect(view.events).toHaveLength(2); // detached
 	});
@@ -155,7 +150,7 @@ describe('CursorController', () => {
 		const attached = new FakeCursorView();
 		const detached = new FakeCursorView();
 		cursor.sync(attached);
-		cursor.sync(detached)();
+		cursor.sync(detached).dispose();
 		cursor.dispose();
 		expect(attached.disposed).toBe(true);
 		expect(detached.disposed).toBe(false);
@@ -172,7 +167,7 @@ describe('CursorController', () => {
 		host.vp = new Rect(500, 0, 1000, 1000); // bar x ~20 now off-screen left
 		cursor.next();
 		expect(scroller.calls.length).toBeGreaterThan(0);
-		unfollow();
+		unfollow.dispose();
 		const before = scroller.calls.length;
 		cursor.next();
 		expect(scroller.calls).toHaveLength(before);
@@ -216,10 +211,11 @@ describe('CursorController', () => {
 		expect(seen).toEqual([false, true]);
 	});
 
-	it('dispose is idempotent and stops movement/emits; onDispose fires once', () => {
+	it('stops moving and emitting once disposed, announcing it exactly once', () => {
 		let disposes = 0;
-		const cursor = controller({ onDispose: () => disposes++ });
+		const cursor = controller();
 		const seen: number[] = [];
+		cursor.addEventListener('dispose', () => disposes++);
 		cursor.addEventListener('change', (e) => seen.push(e.index));
 		cursor.dispose();
 		cursor.dispose();
