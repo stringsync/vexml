@@ -1,4 +1,4 @@
-import type { Decoratable, Decoration } from '../elements/element';
+import type { Decoratable, Decoration } from './decoration';
 
 /* Fake fulfilling the Decoration seam (preferred over mocks); records what it was told, so tests
  * that don't care simply never read `active`. Test-only — excluded from the published package via

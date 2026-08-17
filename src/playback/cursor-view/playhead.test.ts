@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
-import type { CursorChangeEvent } from '../events';
-import { Rect } from '../geometry';
-import { FakeLayer } from '../host/layer/fake-layer';
+import type { CursorChangeEvent } from '../../events';
+import { Rect } from '../../geometry';
+import { FakeLayer } from '../../host/layer/fake-layer';
 import { Playhead } from './playhead';
 
 function changeAt(rect: Rect): CursorChangeEvent {

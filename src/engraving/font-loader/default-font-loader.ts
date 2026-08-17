@@ -3,17 +3,8 @@ import {
 	DEFAULT_FONT_CONFIG,
 	type FontConfig,
 	type FontOverride,
-} from '../config';
-
-/** Loads the fonts for a render container and returns the resolved family names.
- * Implementations differ only in side effects: DefaultFontLoader injects DOM and
- * configures VexFlow's global glyph fonts; NoopFontLoader only resolves the names. */
-export interface FontLoader {
-	load(
-		container: HTMLElement,
-		config?: FontConfig,
-	): { notation: string; text: string };
-}
+} from '../../config';
+import type { FontLoader } from './font-loader';
 
 // DOM-derived dedup: injected <style>/<link> elements are tagged with data attributes
 // (data-vexml-font-face="family|url", data-vexml-google-fonts) and checked before
@@ -138,20 +129,9 @@ export class DefaultFontLoader implements FontLoader {
 	}
 }
 
-/** Resolves the family names without touching the DOM or VexFlow — for callers that
- * need the resolved names but none of the side effects (headless environments, tests). */
-export class NoopFontLoader implements FontLoader {
-	load(
-		_container: HTMLElement,
-		config?: FontConfig,
-	): { notation: string; text: string } {
-		return resolveFamilies(config);
-	}
-}
-
 // The pure name-resolution logic shared by both loaders: the family-name fallbacks
 // from DEFAULT_FONT_CONFIG, sanitized once.
-function resolveFamilies(config?: FontConfig): {
+export function resolveFamilies(config?: FontConfig): {
 	notation: string;
 	text: string;
 } {

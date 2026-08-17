@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'bun:test';
-import type { NoteGlyph } from '../engraving/score-drawer';
-import { Rect } from '../geometry';
-import { FakeLayerHost } from '../host/layer-host/fake-layer-host';
-import { ColorStyle, DefaultDecoration, HaloStyle } from './decorations';
-import type { Decoratable } from './element';
+import type { NoteGlyph } from '../../engraving/score-drawer';
+import { Rect } from '../../geometry';
+import { FakeLayerHost } from '../../host/layer-host/fake-layer-host';
+import { ColorStyle } from '../decoration-style/color-style';
+import { HaloStyle } from '../decoration-style/halo-style';
+import type { Decoratable } from './decoration';
+import { DefaultDecoration } from './default-decoration';
 
 const HALO = 'fill:arc:rgba(41, 98, 255, 0.35)';
 const GLYPH: NoteGlyph = { text: 'q', font: '30px Bravura', x: 12, y: 20 };

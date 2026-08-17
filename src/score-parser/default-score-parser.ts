@@ -1,8 +1,5 @@
 import { MDOMParser, type MDocument } from '@stringsync/mdom';
-
-export interface ScoreParser {
-	parse(input: string | Blob): Promise<MDocument>;
-}
+import type { ScoreParser } from './score-parser';
 
 export class DefaultScoreParser implements ScoreParser {
 	async parse(input: string | Blob): Promise<MDocument> {

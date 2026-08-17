@@ -1,16 +1,12 @@
 import { describe, expect, it } from 'bun:test';
 import type { Note } from '../elements/note';
 import { ScoreReader } from '../engraving/score-reader';
-import { EventTarget } from '../event-target';
 import type { CursorChangeEvent } from '../events';
 import { Rect } from '../geometry';
 import { FakeScroller } from '../host/scroller/fake-scroller';
-import {
-	CursorController,
-	type CursorHost,
-	type CursorHostEventMap,
-	type CursorView,
-} from './cursor-controller';
+import { CursorController } from './cursor-controller';
+import { FakeCursorHost } from './cursor-host/fake-cursor-host';
+import { FakeCursorView } from './cursor-view/fake-cursor-view';
 import type { SequenceNote } from './sequence';
 import { SequenceFactory } from './sequence-factory';
 
@@ -42,63 +38,14 @@ function fourQuarters() {
 	});
 }
 
-class FakeHost implements CursorHost {
-	private readonly target = new EventTarget<CursorHostEventMap>();
-	// The visible box, in the same identity coords clientRectOf maps to. Defaults to covering SYS.
-	vp = new Rect(0, 0, 1000, 1000);
-	clientRectOf(rect: Rect): DOMRect {
-		return {
-			x: rect.x,
-			y: rect.y,
-			width: rect.w,
-			height: rect.h,
-			left: rect.x,
-			top: rect.y,
-			right: rect.right,
-			bottom: rect.bottom,
-		} as DOMRect;
-	}
-	viewportRect(): DOMRect {
-		return this.clientRectOf(this.vp);
-	}
-	addEventListener<K extends keyof CursorHostEventMap>(
-		type: K,
-		listener: (event: CursorHostEventMap[K]) => void,
-	): void {
-		this.target.addEventListener(type, listener);
-	}
-	removeEventListener<K extends keyof CursorHostEventMap>(
-		type: K,
-		listener: (event: CursorHostEventMap[K]) => void,
-	): void {
-		this.target.removeEventListener(type, listener);
-	}
-	// Test helper: move the viewport and notify, as a real scroll/resize would.
-	moveViewport(rect: Rect): void {
-		this.vp = rect;
-		this.target.dispatchEvent('viewportchange', undefined);
-	}
-}
-
-class FakeView implements CursorView {
-	events: CursorChangeEvent[] = [];
-	disposed = false;
-	render(e: CursorChangeEvent): void {
-		this.events.push(e);
-	}
-	dispose(): void {
-		this.disposed = true;
-	}
-}
-
 function controller(opts?: {
-	host?: FakeHost;
+	host?: FakeCursorHost;
 	scroller?: FakeScroller;
 	onDispose?: () => void;
 }) {
 	return new CursorController(
 		fourQuarters(),
-		opts?.host ?? new FakeHost(),
+		opts?.host ?? new FakeCursorHost(),
 		opts?.scroller ?? new FakeScroller(),
 		opts?.onDispose,
 	);
@@ -193,7 +140,7 @@ describe('CursorController', () => {
 
 	it('sync renders once immediately, then on each change; unsubscribe detaches', () => {
 		const cursor = controller();
-		const view = new FakeView();
+		const view = new FakeCursorView();
 		const detach = cursor.sync(view);
 		expect(view.events).toHaveLength(1); // immediate render
 		cursor.next();
@@ -205,8 +152,8 @@ describe('CursorController', () => {
 
 	it('dispose disposes still-attached views but not detached ones', () => {
 		const cursor = controller();
-		const attached = new FakeView();
-		const detached = new FakeView();
+		const attached = new FakeCursorView();
+		const detached = new FakeCursorView();
 		cursor.sync(attached);
 		cursor.sync(detached)();
 		cursor.dispose();
@@ -215,7 +162,7 @@ describe('CursorController', () => {
 	});
 
 	it('follow scrolls only when the bar is not fully visible', () => {
-		const host = new FakeHost();
+		const host = new FakeCursorHost();
 		const scroller = new FakeScroller();
 		const cursor = controller({ host, scroller });
 		host.vp = new Rect(0, 0, 1000, 1000); // covers the bar
@@ -239,7 +186,7 @@ describe('CursorController', () => {
 	});
 
 	it('isFullyVisible reflects the viewport box', () => {
-		const host = new FakeHost();
+		const host = new FakeCursorHost();
 		const cursor = controller({ host });
 		host.vp = new Rect(0, 0, 1000, 1000);
 		expect(cursor.isFullyVisible()).toBe(true);
@@ -248,7 +195,7 @@ describe('CursorController', () => {
 	});
 
 	it('visibility fires on transitions from both cursor moves and viewport changes', () => {
-		const host = new FakeHost(); // vp covers every bar (x 10..40, width 1)
+		const host = new FakeCursorHost(); // vp covers every bar (x 10..40, width 1)
 		const cursor = controller({ host });
 		const seen: boolean[] = [];
 		cursor.addEventListener('visibility', (e) => seen.push(e.fullyVisible));

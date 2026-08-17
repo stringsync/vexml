@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'bun:test';
-import type { MDocument } from '@stringsync/mdom';
 import type { FontConfig } from './config';
 import { DEFAULT_CONFIG } from './config';
 import { ElementFactory } from './elements/element-factory';
-import { NoopFontLoader } from './engraving/fonts';
+import { NoopFontLoader } from './engraving/font-loader/noop-font-loader';
 import { LayoutPlanner } from './engraving/layout-planner';
 import { NoteTranslator } from './engraving/note-translator';
 import { ScoreDrawer } from './engraving/score-drawer';
@@ -13,7 +12,7 @@ import type { Rect } from './geometry';
 import type { Layer, LayerKind } from './host/layer/layer';
 import { FakeScroller } from './host/scroller/fake-scroller';
 import { SequenceFactory } from './playback/sequence-factory';
-import type { ScoreParser } from './score-parser';
+import { FakeScoreParser } from './score-parser/fake-score-parser';
 import { type RenderStage, ScoreRenderer } from './score-renderer';
 
 // Separate fake classes fulfilling the injected seams (preferred over mocks).
@@ -52,14 +51,6 @@ class FakeStage implements RenderStage {
 	setMaxHeight(_px: number | null): void {}
 	dispose(): void {
 		this.disposed = true;
-	}
-}
-
-class FakeScoreParser implements ScoreParser {
-	parses = 0;
-	async parse(): Promise<MDocument> {
-		this.parses++;
-		return { score: { parts: [] } } as unknown as MDocument;
 	}
 }
 

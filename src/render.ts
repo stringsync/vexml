@@ -6,7 +6,7 @@ import {
 	type Layout,
 } from './config';
 import { ElementFactory } from './elements/element-factory';
-import { DefaultFontLoader } from './engraving/fonts';
+import { DefaultFontLoader } from './engraving/font-loader/default-font-loader';
 import { LayoutPlanner } from './engraving/layout-planner';
 import { NoteTranslator } from './engraving/note-translator';
 import { ScoreDrawer } from './engraving/score-drawer';
@@ -15,7 +15,7 @@ import { SpannerBuilder } from './engraving/spanner-builder';
 import { Stage } from './host/host/stage';
 import { SequenceFactory } from './playback/sequence-factory';
 import type { Score } from './score';
-import { DefaultScoreParser } from './score-parser';
+import { DefaultScoreParser } from './score-parser/default-score-parser';
 import { ScoreRenderer } from './score-renderer';
 
 /*

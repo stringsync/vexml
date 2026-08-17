@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import type { Note } from '../elements/note';
 import { ScoreReader } from '../engraving/score-reader';
 import { Rect } from '../geometry';
-import { DefaultScoreParser } from '../score-parser';
+import { DefaultScoreParser } from '../score-parser/default-score-parser';
 import type {
 	Jump,
 	MeasureInfo,

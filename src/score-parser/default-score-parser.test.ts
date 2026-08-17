@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { DefaultScoreParser } from './score-parser';
+import { DefaultScoreParser } from './default-score-parser';
 
 const XML = `<?xml version="1.0"?>
 <score-partwise version="4.0">

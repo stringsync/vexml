@@ -5,16 +5,18 @@ import { Note } from './elements/note';
 import type { Part } from './elements/part';
 import type { System } from './elements/system';
 import { TabPosition } from './elements/tab-position';
-import { EventTarget, type Listenable } from './event-target';
 import type { ScoreEventMap } from './events';
 import type { Host } from './host/host/host';
 import type { Layer, LayerKind } from './host/layer/layer';
 import type { Scroller } from './host/scroller/scroller';
+import { EventTarget } from './listenable/event-target';
+import type { Listenable } from './listenable/listenable';
+import { CursorController } from './playback/cursor-controller';
+import { CursorHostAdapter } from './playback/cursor-host/cursor-host-adapter';
 import {
-	CursorController,
-	CursorHostAdapter,
-} from './playback/cursor-controller';
-import { Playhead, type PlayheadOptions } from './playback/playhead';
+	Playhead,
+	type PlayheadOptions,
+} from './playback/cursor-view/playhead';
 import type { Sequence } from './playback/sequence';
 
 /** A rendered gap measure's sync metadata — see `Config.gaps` and `Score.getGaps`. */

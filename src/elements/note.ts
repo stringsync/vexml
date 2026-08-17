@@ -2,8 +2,8 @@ import type { Note as MNote } from '@stringsync/mdom';
 import type { NoteGlyph } from '../engraving/score-drawer';
 import type { Rect } from '../geometry';
 import type { Viewport } from '../host/viewport/viewport';
+import type { Decorations } from './decoration/decoration';
 import {
-	type Decorations,
 	Element,
 	type Highlightable,
 	type Playable,

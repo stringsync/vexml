@@ -1,11 +1,9 @@
 import type { Config } from './config';
-import {
-	ColorStyle,
-	DefaultDecoration,
-	HaloStyle,
-} from './elements/decorations';
+import { DefaultDecoration } from './elements/decoration/default-decoration';
+import { ColorStyle } from './elements/decoration-style/color-style';
+import { HaloStyle } from './elements/decoration-style/halo-style';
 import type { ElementFactory } from './elements/element-factory';
-import type { FontLoader } from './engraving/fonts';
+import type { FontLoader } from './engraving/font-loader/font-loader';
 import type { LayoutPlanner } from './engraving/layout-planner';
 import type { RawGeometry, ScoreDrawer } from './engraving/score-drawer';
 import { gapDocumentIndexes, insertGapMeasures } from './gaps';
@@ -14,7 +12,7 @@ import type { Host } from './host/host/host';
 import type { Scroller } from './host/scroller/scroller';
 import type { SequenceFactory } from './playback/sequence-factory';
 import { type GapInfo, Score } from './score';
-import type { ScoreParser } from './score-parser';
+import type { ScoreParser } from './score-parser/score-parser';
 
 const EMPTY_GEOMETRY: RawGeometry = {
 	bounds: new Rect(0, 0, 0, 0),

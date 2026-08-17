@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { measureRepeats } from './repeats';
-import { DefaultScoreParser } from './score-parser';
+import { DefaultScoreParser } from './score-parser/default-score-parser';
 
 /* A one-part score whose measures carry exactly the given <barline>s (and a note, so the
  * measure is well-formed). Each entry is the raw inner XML of that measure's barlines. */

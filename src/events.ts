@@ -1,4 +1,5 @@
-import type { Bounded, Element } from './elements/element';
+import type { Bounded } from './elements/decoration/decoration';
+import type { Element } from './elements/element';
 import type { Note } from './elements/note';
 
 /* A pointer interaction over the score: the element under the pointer (null on empty space), the

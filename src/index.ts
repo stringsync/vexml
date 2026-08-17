@@ -13,8 +13,8 @@ export type {
 	SystemOverflow,
 } from './config';
 export { ChordDiagram } from './elements/chord-diagram';
+export type { Bounded } from './elements/decoration/decoration';
 export {
-	type Bounded,
 	Element,
 	type Highlightable,
 	isHighlightable,
@@ -31,7 +31,6 @@ export { System } from './elements/system';
 export { TabPosition } from './elements/tab-position';
 export { Voice } from './elements/voice';
 export type { NoteGlyph } from './engraving/score-drawer';
-export type { Listenable } from './event-target';
 export type {
 	CursorChangeEvent,
 	CursorEventMap,
@@ -45,11 +44,13 @@ export type {
 export { Rect } from './geometry';
 export type { Layer, LayerKind } from './host/layer/layer';
 export type { Scroller, ScrollerOptions } from './host/scroller/scroller';
+export type { Listenable } from './listenable/listenable';
+export { CursorController } from './playback/cursor-controller';
+export type { CursorView } from './playback/cursor-view/cursor-view';
 export {
-	CursorController,
-	type CursorView,
-} from './playback/cursor-controller';
-export { Playhead, type PlayheadOptions } from './playback/playhead';
+	Playhead,
+	type PlayheadOptions,
+} from './playback/cursor-view/playhead';
 export { Sequence, type Step } from './playback/sequence';
 export { render } from './render';
 export { type GapInfo, Score } from './score';

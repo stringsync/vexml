@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'bun:test';
-import { ColorStyle, DefaultDecoration } from './elements/decorations';
+import { DefaultDecoration } from './elements/decoration/default-decoration';
+import { ColorStyle } from './elements/decoration-style/color-style';
 import type { Element } from './elements/element';
 import { ElementIndex } from './elements/element-index';
-import type { HitTester } from './elements/hit-tester';
+import { FakeHitTester } from './elements/hit-tester/fake-hit-tester';
+import type { HitTester } from './elements/hit-tester/hit-tester';
 import { MeasureBox } from './elements/measure-box';
 import type { Note } from './elements/note';
 import { System } from './elements/system';
@@ -22,22 +24,6 @@ const EMPTY_SEQUENCE = new SequenceFactory(
 	measures: [],
 	notes: [],
 });
-
-class FakeHitTester implements HitTester {
-	readonly probes: Array<{ x: number; y: number }> = [];
-	constructor(private readonly result: Element | null) {}
-	hitTest(point: { x: number; y: number }): Element | null {
-		this.probes.push(point);
-		return this.result;
-	}
-	hitTestAll(point: { x: number; y: number }): Element[] {
-		this.probes.push(point);
-		return this.result ? [this.result] : [];
-	}
-	hitTestWithin(): Element[] {
-		return this.result ? [this.result] : [];
-	}
-}
 
 // Wrap a HitTester into the ElementIndex Score takes; these tests don't enumerate.
 function elementIndex(hitTester: HitTester): ElementIndex {

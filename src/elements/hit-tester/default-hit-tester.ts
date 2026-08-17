@@ -1,18 +1,7 @@
-import { Rect } from '../geometry';
-import type { Element } from './element';
-import type { QuadTree } from './quadtree';
-
-/*
- * The hit index: a spatial map from a point in score space to the element under it. Built once
- * per render from the geometry the draw pass emits, then queried on every pointer event.
- */
-export interface HitTester {
-	hitTest(point: { x: number; y: number }): Element | null;
-	/* Every element whose box covers the point, same priority order as hitTest (so [0] === hitTest). */
-	hitTestAll(point: { x: number; y: number }): Element[];
-	/* Every element whose box lies fully within the rect (marquee selection), same priority order. */
-	hitTestWithin(rect: Rect): Element[];
-}
+import { Rect } from '../../geometry';
+import type { Element } from '../element';
+import type { QuadTree } from '../quadtree';
+import type { HitTester } from './hit-tester';
 
 // Topmost-first: a foreground glyph (note/fret) before the measure it sits on, and within a tier
 // the tighter (smaller-area) box first — the ordering hitTest picks its single winner from.

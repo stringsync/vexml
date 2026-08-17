@@ -19,7 +19,10 @@
 		"assets",
 		"css",
 		"!src/**/*.test.ts",
-		"!src/testing"
+		"!src/testing",
+		"!src/**/fake-*.ts",
+		"!src/**/recording-*.ts",
+		"!src/**/*-harness.ts"
 	],
 	"dependencies": {
 		"@stringsync/mdom": "0.2.4",

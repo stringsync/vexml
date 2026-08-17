@@ -1,10 +1,12 @@
-import type { Bounded } from '../elements/element';
+import type { Bounded } from '../elements/decoration/decoration';
 import type { Note } from '../elements/note';
-import { EventTarget, type Listenable } from '../event-target';
 import type { CursorChangeEvent, CursorEventMap } from '../events';
 import { Rect } from '../geometry';
-import type { Host } from '../host/host/host';
 import type { Scroller } from '../host/scroller/scroller';
+import { EventTarget } from '../listenable/event-target';
+import type { Listenable } from '../listenable/listenable';
+import type { CursorHost } from './cursor-host/cursor-host';
+import type { CursorView } from './cursor-view/cursor-view';
 import type { Sequence } from './sequence';
 
 /*
@@ -16,74 +18,6 @@ import type { Sequence } from './sequence';
  * never draws (that's the CursorView, e.g. Playhead). Distinct from mdom's editing Cursor — this
  * never edits.
  */
-
-/* A visual for the cursor, driven by the cursor on every change. vexml ships a vertical-bar default
- * (Score.createPlayhead); a caller can implement this to move a DOM element, draw on a layer, etc.
- * `render` gets the full change event but a position-only view just reads `e.position`. */
-export interface CursorView {
-	render(e: CursorChangeEvent): void;
-	dispose(): void;
-}
-
-/* The host fires this whenever the viewport moves or resizes, so the cursor can re-test visibility
- * even though it hasn't moved. Payload-free — the cursor reads viewportRect()/clientRectOf() itself. */
-export interface CursorHostEventMap {
-	viewportchange: undefined;
-}
-
-/* What a CursorController needs from the rendered score's stage: score<->client mapping (to expose
- * the bar's page rect and test visibility), the visible scrollport box, and a viewport-change
- * subscription. CursorHostAdapter implements it over the Stage; a unit test injects a fake. */
-export interface CursorHost extends Listenable<CursorHostEventMap> {
-	clientRectOf(rect: Rect): DOMRect;
-	viewportRect(): DOMRect;
-}
-
-/* Adapts the Stage host into a CursorController's CursorHost: passes through the rect methods and
- * turns the host's window-scroll + resize observers into a single `viewportchange` event. One per
- * cursor; the observers are bound only while the cursor is listening and torn down when it disposes
- * (its removeEventListener drops the last listener). */
-export class CursorHostAdapter implements CursorHost {
-	private readonly target = new EventTarget<CursorHostEventMap>();
-	private unbind: (() => void) | null = null;
-
-	constructor(private readonly host: Host) {}
-
-	clientRectOf(rect: Rect): DOMRect {
-		return this.host.clientRectOf(rect);
-	}
-
-	viewportRect(): DOMRect {
-		return this.host.viewportRect();
-	}
-
-	addEventListener<K extends keyof CursorHostEventMap>(
-		type: K,
-		listener: (event: CursorHostEventMap[K]) => void,
-	): void {
-		this.target.addEventListener(type, listener);
-		if (!this.unbind) {
-			const fire = () => this.target.dispatchEvent('viewportchange', undefined);
-			const offScroll = this.host.observeScroll(fire);
-			const offResize = this.host.observeResize(fire);
-			this.unbind = () => {
-				offScroll();
-				offResize();
-			};
-		}
-	}
-
-	removeEventListener<K extends keyof CursorHostEventMap>(
-		type: K,
-		listener: (event: CursorHostEventMap[K]) => void,
-	): void {
-		this.target.removeEventListener(type, listener);
-		if (this.target.count('viewportchange') === 0) {
-			this.unbind?.();
-			this.unbind = null;
-		}
-	}
-}
 
 const EMPTY_RECT = new Rect(0, 0, 0, 0);
 

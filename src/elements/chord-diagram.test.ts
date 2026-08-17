@@ -3,8 +3,8 @@ import { MDOMParser } from '@stringsync/mdom';
 import type { ChordFrame } from '../engraving/chord-diagram-glyph';
 import { Rect } from '../geometry';
 import { FakeViewport } from '../host/viewport/fake-viewport';
-import { FakeDecoration } from '../testing/fake-decoration';
 import { ChordDiagram } from './chord-diagram';
+import { FakeDecoration } from './decoration/fake-decoration';
 import { isHighlightable, isPlayable } from './element';
 
 const XML = `<?xml version="1.0"?>

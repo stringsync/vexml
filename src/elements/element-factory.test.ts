@@ -3,7 +3,7 @@ import { MDOMParser } from '@stringsync/mdom';
 import type { RawGeometry, RawNote } from '../engraving/score-drawer';
 import { Rect } from '../geometry';
 import { FakeViewport } from '../host/viewport/fake-viewport';
-import { FakeDecoration } from '../testing/fake-decoration';
+import { FakeDecoration } from './decoration/fake-decoration';
 import { ElementFactory } from './element-factory';
 import type { Note } from './note';
 import type { TabPosition } from './tab-position';
