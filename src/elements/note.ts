@@ -56,6 +56,11 @@ export interface NoteDeps {
 }
 
 /* A single musical note (one notehead). The unit of selection, playback, and editing. */
+/* Whether the note asking counts as one of its own chord siblings. */
+export interface ChordSiblingsOptions {
+	includeSelf: boolean;
+}
+
 export class Note extends Element implements Highlightable, Playable {
 	readonly type = 'note';
 	readonly color: Toggle;
@@ -115,7 +120,7 @@ export class Note extends Element implements Highlightable, Playable {
 		return this.deps.chord.length > 1;
 	}
 
-	getChordSiblings(opts: { includeSelf: boolean }): Note[] {
+	getChordSiblings(opts: ChordSiblingsOptions): Note[] {
 		const all: Note[] = [];
 		for (const mnote of this.deps.chord) {
 			const note = this.deps.notes.get(mnote);

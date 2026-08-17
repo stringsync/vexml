@@ -8,6 +8,19 @@ import type { Note } from './note';
 
 /* A fret number on a tab string. The same note can render as both a Note (notehead) and a
  * TabPosition (fret); they cross-reference via Note.getTabPosition() / TabPosition.getNote(). */
+/* What a TabPosition is built from: where on the fretboard it sits, the Note it shares an
+ * mdom note with, and the decoration stores its toggles delegate to. */
+export interface TabPositionOptions {
+	string: number;
+	fret: number;
+	note: Note;
+	decorations: Decorations;
+	/* The engraved fret glyph ("5", "<7>", "(2)", "✕") captured with vexflow's exact
+	 * baseline, so a decoration replays the digit recolored. Null when no fret was drawn
+	 * (a tie-stop/held string omits its number) — nothing on the tab to recolor. */
+	glyph: NoteGlyph | null;
+}
+
 export class TabPosition extends Element implements Highlightable {
 	readonly type = 'tab-position';
 	readonly color: Toggle;
@@ -16,16 +29,7 @@ export class TabPosition extends Element implements Highlightable {
 	constructor(
 		rect: Rect,
 		viewport: Viewport,
-		private readonly opts: {
-			string: number;
-			fret: number;
-			note: Note;
-			decorations: Decorations;
-			/* The engraved fret glyph ("5", "<7>", "(2)", "✕") captured with vexflow's exact
-			 * baseline, so a decoration replays the digit recolored. Null when no fret was drawn
-			 * (a tie-stop/held string omits its number) — nothing on the tab to recolor. */
-			glyph: NoteGlyph | null;
-		},
+		private readonly opts: TabPositionOptions,
 	) {
 		super(rect, viewport);
 		this.color = new Toggle(this, opts.decorations.color);

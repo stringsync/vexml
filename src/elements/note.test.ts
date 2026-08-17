@@ -80,7 +80,7 @@ function fixture() {
 }
 
 describe('Note', () => {
-	it('getPitch formats vexflow keys and returns null for rests', () => {
+	it('reports its sounding pitch as a vexflow key, or null for a rest', () => {
 		const { noteC, noteE, noteRest, noteBb } = fixture();
 		expect(noteC.getPitch()).toBe('C/4');
 		expect(noteE.getPitch()).toBe('E/4');
@@ -88,19 +88,19 @@ describe('Note', () => {
 		expect(noteBb.getPitch()).toBe('Bb/3');
 	});
 
-	it('getDurationBeats and isGrace read the underlying note', () => {
+	it('reads its duration and grace flag off the underlying note', () => {
 		const { noteC } = fixture();
 		expect(noteC.getDurationBeats()).toBe(1);
 		expect(noteC.isGrace()).toBe(false);
 	});
 
-	it('getArticulations reads the notation markings', () => {
+	it('lists the articulation markings on its notation', () => {
 		const { noteC, noteE } = fixture();
 		expect(noteC.getArticulations()).toEqual(['staccato']);
 		expect(noteE.getArticulations()).toEqual([]);
 	});
 
-	it('getSources returns the underlying mdom note', () => {
+	it('traces back to the mdom note it was built from', () => {
 		const { noteC, mC } = fixture();
 		expect(noteC.getSources()).toEqual([mC]);
 	});
@@ -122,7 +122,7 @@ describe('Note', () => {
 		]);
 	});
 
-	it('getMeasure and getTabPosition return the linked objects', () => {
+	it('links across to its measure and its tab position', () => {
 		const { noteC, measure } = fixture();
 		expect(noteC.getMeasure()).toBe(measure);
 		expect(noteC.getTabPosition()).toBeNull();
@@ -149,13 +149,13 @@ describe('Note', () => {
 		expect(noteC.halo.active).toBe(false);
 	});
 
-	it('getBoundingClientRect maps the score-space rect through the viewport', () => {
+	it('maps its score-space box to the page through the viewport', () => {
 		const { noteC } = fixture();
 		const r = noteC.getBoundingClientRect();
 		expect([r.x, r.y, r.width, r.height]).toEqual([10, 10, 8, 8]);
 	});
 
-	it('getGraceNotes returns the grace run immediately preceding a note', () => {
+	it('collects the grace run immediately preceding it', () => {
 		const xml = `<?xml version="1.0"?>
 <score-partwise version="4.0">
   <part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>

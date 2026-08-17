@@ -8,6 +8,16 @@ import { Element, type Highlightable, Toggle } from './element';
 /* A rendered chord diagram (the fret box a <harmony> with a <frame> draws above the stave).
  * Decorations use the base ellipse/halo fallback — there's no single glyph to restamp. Not in the
  * pointer tree in v1: reachable via ElementIndex.chordDiagrams(), not by hit-testing. */
+/* What a ChordDiagram is built from: the <harmony> it came from, the fingering it draws,
+ * its printed chord name, and the decoration stores its toggles delegate to. */
+export interface ChordDiagramOptions {
+	source: Harmony;
+	frame: ChordFrame;
+	/* The chord name printed above the box ("Gm7b5"), or null when the frame has no symbol text. */
+	title: string | null;
+	decorations: Decorations;
+}
+
 export class ChordDiagram extends Element implements Highlightable {
 	readonly type = 'chord-diagram';
 	readonly color: Toggle;
@@ -16,12 +26,7 @@ export class ChordDiagram extends Element implements Highlightable {
 	constructor(
 		rect: Rect,
 		viewport: Viewport,
-		private readonly opts: {
-			source: Harmony;
-			frame: ChordFrame;
-			title: string | null;
-			decorations: Decorations;
-		},
+		private readonly opts: ChordDiagramOptions,
 	) {
 		super(rect, viewport);
 		this.color = new Toggle(this, opts.decorations.color);

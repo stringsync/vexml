@@ -13,7 +13,7 @@ function randomRect(): Rect {
 }
 
 describe('QuadTree', () => {
-	it('query matches a brute-force oracle, including out-of-bounds items', () => {
+	it('finds every overlapping item a brute-force scan would, out-of-bounds ones included', () => {
 		const bounds = new Rect(0, 0, 1000, 1000);
 		for (let trial = 0; trial < 25; trial++) {
 			const tree = new QuadTree<Item>(bounds, { maxItems: 4, maxDepth: 6 });
@@ -56,7 +56,7 @@ describe('QuadTree', () => {
 		expect(hits).toEqual(new Set([2]));
 	});
 
-	it('clear resets the tree and the outside bucket', () => {
+	it('is empty again after a clear, outside bucket included', () => {
 		const tree = new QuadTree<Item>(new Rect(0, 0, 100, 100), {
 			maxItems: 2,
 			maxDepth: 4,
