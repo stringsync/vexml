@@ -4,3 +4,6 @@ site/dist
 tests/integration/__diffs__/
 .DS_Store
 .playwright-mcp
+
+# a release under way; the last artifact to land deletes it
+RELEASE
