@@ -26,15 +26,18 @@ import {
  */
 
 /**
- * Iterates measure indices in playback order, expanding repeats and voltas. Two phases: pre-scan to
- * pair `repeatend`s with their `repeatstart`s and group `repeatending` runs into voltas, then a
- * linear walk that back-jumps and skips exhausted endings. Ported from legacy vexml.
+ * Iterates measure indices in playback order, expanding repeats and voltas: iterate it to get the
+ * order a player would visit the measures in, with repeated stretches appearing as often as they
+ * are played.
  */
 export class MeasureSequenceIterator implements Iterable<number> {
 	constructor(
 		private readonly measures: ReadonlyArray<{ index: number; jumps: Jump[] }>,
 	) {}
 
+	// Two phases: a pre-scan pairs `repeatend`s with their `repeatstart`s and groups
+	// `repeatending` runs into voltas, then a linear walk back-jumps and skips exhausted
+	// endings.
 	[Symbol.iterator](): Iterator<number> {
 		return computeSequence(this.measures)[Symbol.iterator]();
 	}

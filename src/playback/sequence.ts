@@ -92,9 +92,10 @@ export type TempoSegment = { startBeat: number; endBeat: number; bpm: number };
 /**
  * Quarter-note beats -> milliseconds across tempo segments. Folds the elapsed time of every segment
  * the beat spans, plus the partial of the segment it lands in. Segments are contiguous and ordered;
- * a beat past the last segment extrapolates at the last segment's rate. Internal to the
- * sequence/factory pair — drive it through Sequence in tests.
+ * a beat past the last segment extrapolates at the last segment's rate.
  */
+// Internal to the sequence/factory pair: drive it through Sequence in tests, so the segments
+// under test are the ones the factory really builds.
 export function beatsToMs(
 	beats: number,
 	segments: readonly TempoSegment[],

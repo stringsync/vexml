@@ -23,10 +23,10 @@ import { ScoreRenderer } from './score-renderer';
  * .mxl Blob), build the stage inside the div, lay the score out, and draw it onto the stage's
  * managed canvas. The caller never sees the canvas — only the returned Score, which owns the DOM
  * and is the handle for events/decorations/layers (and dispose).
- *
- * The composition root: merges the caller's partial config over the defaults and wires the
- * production classes into a ScoreRenderer — no logic lives here.
  */
+// The composition root: it merges the caller's partial config over the defaults and wires the
+// production classes into a ScoreRenderer. No logic lives here, so a change to how the score is
+// built belongs in one of those classes rather than in this function.
 export function render(
 	input: string | Blob,
 	container: HTMLDivElement,

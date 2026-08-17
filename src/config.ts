@@ -113,10 +113,9 @@ export type MeasureNumbering =
 	| 'every-2'
 	| 'every-3';
 
-/** Fully-resolved render configuration. Every property is required: `render` fills
- * any the caller omits from `DEFAULT_CONFIG`, so internal code passes a complete
- * `Config` around instead of threading optionals. The public entrypoint accepts a
- * `Partial<Config>`. */
+/** Fully-resolved render configuration: every property is set. You pass a
+ * `Partial<Config>` to `render`, which fills whatever you leave out from
+ * `DEFAULT_CONFIG`. */
 export type Config = {
 	/** Font overrides. CSS custom properties on the container are the primary override API;
 	 * use this for self-hosted or offline fonts. Each font's optional `color` recolors the ink
@@ -141,8 +140,7 @@ export type Config = {
 	 * of its duration and a little less per halving (see LOG_SPACING_RATIO), so a measure's
 	 * width grows mostly with its note *count* and only weakly with note *value* — denser
 	 * measures are wider, the way engravers space music. The spacing-density knob: bigger
-	 * spreads every measure wider. (Replaces a fixed px-per-tick, which made width purely
-	 * proportional to total duration regardless of note count.) */
+	 * spreads every measure wider. */
 	noteSpacing: number;
 	/** *How the space notes get is divided* (not how much): vexflow's note-spacing curve.
 	 * Given the width noteSpacing allots, higher exaggerates the long-vs-short note ratio. A
@@ -188,7 +186,7 @@ export type Config = {
 	stretchSingleSystem: boolean;
 	/** Fraction (0–1) of the reference width a system may fill before the breaker bumps
 	 * the next measure to a new system (default: 0.9). Lower leaves more air; 1 packs each
-	 * system to the edge (the old greedy behavior). Only affects near-full systems — a line
+	 * system to the edge. Only affects near-full systems — a line
 	 * whose measures already sit below this fill breaks at the same place either way. */
 	maxSystemFill: number;
 	/** Fixed container height in px, or null for none (default: null). When set, vexml puts the score
@@ -209,11 +207,12 @@ export type Config = {
 
 /** Default fonts: bundled Bravura for notation, Source Sans 3 for text. Families only —
  * the font loader resolves these to the bundled woff2 / Google Fonts. The single source
- * of the family-name fallbacks; `satisfies` keeps `notation`/`text` known-present so the
- * loader can read `.family` without re-defaulting. */
+ * of the family-name fallbacks. */
 export const DEFAULT_FONT_CONFIG = {
 	notation: { family: 'Bravura' },
 	text: { family: 'Source Sans 3' },
+	// satisfies, not a type annotation: it checks the shape while keeping `notation` and
+	// `text` known-present, so the loader reads `.family` without defaulting again.
 } satisfies FontConfig;
 
 /** What a caller may pass as `layout`: a standard layout's knobs are all optional, and

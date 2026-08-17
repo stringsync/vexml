@@ -32,10 +32,10 @@ export interface RenderStage extends Host {
 
 /*
  * Runs the render pipeline over injected collaborators: fonts, parse, plan, draw, then the
- * interaction model (elements/decorations/sequence) wrapped into the returned Score. Constructed by
- * render() (the composition root) with the production classes; unit tests swap in NoopFontLoader /
- * FakeScoreParser and a fake stage.
+ * interaction model (elements/decorations/sequence) wrapped into the returned Score.
  */
+// render() constructs this with the production classes; every collaborator is an interface, so a
+// unit test injects fakes for the ones it does not want to run for real.
 export class ScoreRenderer {
 	constructor(
 		private readonly config: Config,
