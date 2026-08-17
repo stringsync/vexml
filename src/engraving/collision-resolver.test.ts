@@ -50,7 +50,9 @@ describe('CollisionResolver', () => {
 		d.add({ rect: new Rect(0, 70, 20, 5), kind: 'diagram' }); // higher, but a diagram
 		const natural = new Rect(0, 85, 20, 15); // bottom at y=100
 		// Clearing only note/tie/annotation: lifts to clear the note (90), not the diagram (70).
-		const placed = d.liftClear(natural, 8, ['note', 'tie', 'annotation']);
+		const placed = d.liftClear(natural, 8, {
+			kinds: ['note', 'tie', 'annotation'],
+		});
 		expect(placed.bottom).toBe(82); // 90 - 8, the diagram was ignored
 	});
 

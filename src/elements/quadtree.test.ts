@@ -16,7 +16,7 @@ describe('QuadTree', () => {
 	it('query matches a brute-force oracle, including out-of-bounds items', () => {
 		const bounds = new Rect(0, 0, 1000, 1000);
 		for (let trial = 0; trial < 25; trial++) {
-			const tree = new QuadTree<Item>(bounds, 4, 6);
+			const tree = new QuadTree<Item>(bounds, { maxItems: 4, maxDepth: 6 });
 			const items: Item[] = [];
 			for (let i = 0; i < 200; i++) {
 				const item = { id: i, rect: randomRect() };
@@ -35,7 +35,10 @@ describe('QuadTree', () => {
 	});
 
 	it('items outside the root bounds land in the outside bucket and are still queryable', () => {
-		const tree = new QuadTree<Item>(new Rect(0, 0, 100, 100), 4, 4);
+		const tree = new QuadTree<Item>(new Rect(0, 0, 100, 100), {
+			maxItems: 4,
+			maxDepth: 4,
+		});
 		const inside = { id: 1, rect: new Rect(10, 10, 5, 5) };
 		const escaped = { id: 2, rect: new Rect(-50, -50, 20, 20) }; // wholly outside
 		const straddler = { id: 3, rect: new Rect(90, 90, 40, 40) }; // spills past the edge
@@ -54,7 +57,10 @@ describe('QuadTree', () => {
 	});
 
 	it('clear resets the tree and the outside bucket', () => {
-		const tree = new QuadTree<Item>(new Rect(0, 0, 100, 100), 2, 4);
+		const tree = new QuadTree<Item>(new Rect(0, 0, 100, 100), {
+			maxItems: 2,
+			maxDepth: 4,
+		});
 		for (let i = 0; i < 20; i++) {
 			tree.insert({ id: i, rect: new Rect(i, i, 2, 2) });
 		}

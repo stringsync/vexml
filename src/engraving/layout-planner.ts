@@ -246,19 +246,14 @@ export class LayoutPlanner {
 			const perVoice = voices.map((voice, voiceIndex) =>
 				isTab
 					? this.translator.vexflowTabTickables(voice.chords, tuning)
-					: this.translator.vexflowVoiceTickables(
-							voice.chords,
-							clef,
+					: this.translator.vexflowVoiceTickables(voice.chords, clef, {
 							endBeat,
-							undefined,
-							undefined,
-							undefined,
 							// Matches buildNotes: the dividers and clef glyphs ride on the first
 							// voice only, but the clef changes re-aim every voice's notes.
-							voiceIndex === 0 ? barlines : [],
+							barlines: voiceIndex === 0 ? barlines : [],
 							midClefs,
-							voiceIndex === 0,
-						),
+							drawMidClefs: voiceIndex === 0,
+						}),
 			);
 			const vexVoices = perVoice.map((tickables) =>
 				this.translator.softVoice(tickables, softmaxFactor),
@@ -431,7 +426,7 @@ export class LayoutPlanner {
 		const { showTabs, showNotation } = config;
 		const totalStaves = parts.reduce(
 			(sum, part) =>
-				sum + visibleStaffNumbers(part, showTabs, showNotation).length,
+				sum + visibleStaffNumbers(part, { showTabs, showNotation }).length,
 			0,
 		);
 		// Precompute each stave's y-offset within a system: a within-part gap after
@@ -439,12 +434,12 @@ export class LayoutPlanner {
 		const staveOffsets: number[] = [];
 		let offset = 0;
 		for (const part of parts) {
-			const staves = visibleStaffNumbers(part, showTabs, showNotation);
+			const staves = visibleStaffNumbers(part, { showTabs, showNotation });
 			// The wider within-part gap exists so a connector-joined group reads as one
 			// instrument. A part whose staves carry no connector (two tab staves, an
 			// explicit <part-symbol>none) isn't such a group, so its staves sit at the
 			// same even pitch as the parts around them.
-			const intra = partSymbol(part, showTabs, showNotation)
+			const intra = partSymbol(part, { showTabs, showNotation })
 				? INTRA_PART_SPACING
 				: INTER_PART_SPACING;
 			staves.forEach((_, s) => {
@@ -517,11 +512,10 @@ export class LayoutPlanner {
 				if (!measure) {
 					continue;
 				}
-				for (const staffNumber of visibleStaffNumbers(
-					part,
+				for (const staffNumber of visibleStaffNumbers(part, {
 					showTabs,
 					showNotation,
-				)) {
+				})) {
 					const clef = measure.getClef(staffNumber);
 					const voices = this.reader.staffVoices(measure.voices, staffNumber);
 					if (voices.length > 0) {
@@ -584,7 +578,7 @@ export class LayoutPlanner {
 			// (staves_different_keys), so a part whose first stave is in C still needs the
 			// key's width budgeted when its second stave is not.
 			const hasKey = parts.some((part) =>
-				visibleStaffNumbers(part, showTabs, showNotation).some(
+				visibleStaffNumbers(part, { showTabs, showNotation }).some(
 					(staffNumber) =>
 						this.reader.keyIdentity(
 							part.measures[m]?.getKey(staffNumber) ?? null,
@@ -601,7 +595,7 @@ export class LayoutPlanner {
 		const clefChangesAt = (m: number) =>
 			m > 0 &&
 			parts.some((part) =>
-				visibleStaffNumbers(part, showTabs, showNotation).some(
+				visibleStaffNumbers(part, { showTabs, showNotation }).some(
 					(staffNumber) =>
 						!isTabStaff(part, staffNumber) &&
 						this.translator.vexflowClefSpec(

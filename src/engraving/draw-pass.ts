@@ -320,7 +320,7 @@ function partsPairTabWithNotation(
 	// part (a singer over a notation+TAB guitar) also brackets the whole system, sweeping the
 	// unrelated part into the guitar's bracket.
 	if (
-		parts.some((part) => pairsTabWithNotation(part, showTabs, showNotation))
+		parts.some((part) => pairsTabWithNotation(part, { showTabs, showNotation }))
 	) {
 		return false;
 	}
@@ -633,6 +633,15 @@ function showsMeasureNumber(
 	}
 }
 
+/* What a redraw carries over from the pass before it. Both are empty on a first pass, which
+ * is what measures them. */
+export interface DrawPassOptions {
+	/* Per lyric row, how far to drop it so it clears the lyrics of the system above. */
+	lyricDrops?: Map<string, number>;
+	/* Per system, how far to lift its volta bracket so it clears the notes under it. */
+	voltaLifts?: Map<number, number>;
+}
+
 /*
  * Draw every measure once. `topOverflow` maps a systemIndex to extra space to reserve
  * above that system so its notes (which rise above its own top stave) clear the system
@@ -861,6 +870,9 @@ export class DrawPass {
 	private readonly octaveShiftByNote = new Map<Note, number>();
 	// The score's <bracket>/<dashes> spans, drawn once at the end alongside the other spanners.
 	private readonly directionLineSpans: DirectionLineSpan[] = [];
+	// Measured on the previous pass and reserved on this one; empty on the first pass.
+	private readonly lyricDrops: Map<string, number>;
+	private readonly voltaLifts: Map<number, number>;
 
 	constructor(
 		private readonly translator: NoteTranslator,
@@ -875,9 +887,10 @@ export class DrawPass {
 		topSlack: number,
 		scratchHeight: number,
 		private readonly topOverflow: Map<number, number>,
-		private readonly lyricDrops: Map<string, number> = new Map(),
-		private readonly voltaLifts: Map<number, number> = new Map(),
+		opts: DrawPassOptions = {},
 	) {
+		this.lyricDrops = opts.lyricDrops ?? new Map();
+		this.voltaLifts = opts.voltaLifts ?? new Map();
 		const {
 			measureCount,
 			boxes,
@@ -1041,11 +1054,10 @@ export class DrawPass {
 			// The staves this part actually renders: with showTabs/showNotation off, its
 			// tab/notation staves are dropped. staveRow indexes into staveOffsets, which the
 			// layout planner built from this same visible set, so the two stay aligned.
-			const staves = visibleStaffNumbers(
-				part,
-				this.showTabs,
-				this.showNotation,
-			);
+			const staves = visibleStaffNumbers(part, {
+				showTabs: this.showTabs,
+				showNotation: this.showNotation,
+			});
 			const measure = part.measures[m];
 			if (!measure) {
 				this.staveRow += staves.length;
@@ -1201,7 +1213,10 @@ export class DrawPass {
 			// A part's own staves are joined at each system start by the symbol named in
 			// <part-symbol> (brace by default; bracket for guitar notation+tab pairs).
 			// 'none' suppresses the connector entirely.
-			const symbol = partSymbol(part, this.showTabs, this.showNotation);
+			const symbol = partSymbol(part, {
+				showTabs: this.showTabs,
+				showNotation: this.showNotation,
+			});
 			if (
 				partTop &&
 				partBottom &&
@@ -1580,7 +1595,10 @@ export class DrawPass {
 		const numberOccluded =
 			this.isSystemStart &&
 			((visibleCount > 1 &&
-				partSymbol(part, this.showTabs, this.showNotation) === 'bracket') ||
+				partSymbol(part, {
+					showTabs: this.showTabs,
+					showNotation: this.showNotation,
+				}) === 'bracket') ||
 				partsPairTabWithNotation(
 					this.parts,
 					this.showTabs,
@@ -1786,11 +1804,9 @@ export class DrawPass {
 			for (const chord of chords) {
 				chordByLead.set(chord.lead, chord);
 			}
-			const tickables = this.translator.vexflowVoiceTickables(
-				chords,
-				clef,
+			const tickables = this.translator.vexflowVoiceTickables(chords, clef, {
 				endBeat,
-				(lead, note) => {
+				record: (lead, note) => {
 					this.byLead.set(lead, note);
 					staveNotes.push(note);
 					if (lead.ties.length > 0) {
@@ -1802,11 +1818,11 @@ export class DrawPass {
 					}
 				},
 				octaveShiftOf,
-				stemFor(voiceIndex),
-				voiceIndex === 0 ? barlines : [],
+				defaultStem: stemFor(voiceIndex),
+				barlines: voiceIndex === 0 ? barlines : [],
 				midClefs,
-				voiceIndex === 0,
-			);
+				drawMidClefs: voiceIndex === 0,
+			});
 			if (voiceIndex === 0) {
 				// Built in the same order as `barlines`, so they pair by index.
 				const barNotes = tickables.filter((t) => t instanceof BarNote);
@@ -3009,11 +3025,17 @@ export class DrawPass {
 		let brace = false;
 		for (const part of this.parts) {
 			if (
-				visibleStaffNumbers(part, this.showTabs, this.showNotation).length <= 1
+				visibleStaffNumbers(part, {
+					showTabs: this.showTabs,
+					showNotation: this.showNotation,
+				}).length <= 1
 			) {
 				continue;
 			}
-			const symbol = partSymbol(part, this.showTabs, this.showNotation);
+			const symbol = partSymbol(part, {
+				showTabs: this.showTabs,
+				showNotation: this.showNotation,
+			});
 			bracket ||= symbol === 'bracket';
 			brace ||= symbol === 'brace';
 		}
@@ -3160,8 +3182,7 @@ export class DrawPass {
 							CHORD_DIAGRAM_HEIGHT + CHORD_DIAGRAM_PADDING,
 						),
 						CHORD_DIAGRAM_GAP,
-						TEXT_CLEAR_KINDS,
-						band,
+						{ kinds: TEXT_CLEAR_KINDS, band },
 					);
 				// Recover the real (unpadded) box; the padding only extended the probe.
 				const unpad = (box: Rect) =>
@@ -3336,8 +3357,7 @@ export class DrawPass {
 		const placed = this.collisionResolver.liftClear(
 			natural,
 			REHEARSAL_NOTE_CLEARANCE,
-			TEXT_CLEAR_KINDS,
-			band,
+			{ kinds: TEXT_CLEAR_KINDS, band },
 		);
 		this.recordAnnotationSpill(stave, placed);
 		this.context.setLineWidth(1);
@@ -3449,8 +3469,7 @@ export class DrawPass {
 		const placed = this.collisionResolver.liftClear(
 			natural,
 			TEMPO_NOTE_CLEARANCE,
-			TEXT_CLEAR_KINDS,
-			band,
+			{ kinds: TEXT_CLEAR_KINDS, band },
 		);
 		// liftClear only translates, so the box's rise is the mark's y-shift.
 		const shiftY = placed.y - natural.y;
@@ -3543,8 +3562,7 @@ export class DrawPass {
 		const placed = this.collisionResolver.liftClear(
 			natural,
 			HARMONY_NOTE_CLEARANCE,
-			TEXT_CLEAR_KINDS,
-			band,
+			{ kinds: TEXT_CLEAR_KINDS, band },
 		);
 		this.recordAnnotationSpill(stave, placed);
 		const y = placed.bottom - HARMONY_PADDING;
@@ -3622,18 +3640,14 @@ export class DrawPass {
 		);
 		const band = this.rowOf(stave);
 		const cleared = below
-			? this.collisionResolver.dropClear(
-					natural,
-					WORDS_NOTE_CLEARANCE,
-					TEXT_CLEAR_KINDS,
+			? this.collisionResolver.dropClear(natural, WORDS_NOTE_CLEARANCE, {
+					kinds: TEXT_CLEAR_KINDS,
 					band,
-				)
-			: this.collisionResolver.liftClear(
-					natural,
-					WORDS_NOTE_CLEARANCE,
-					TEXT_CLEAR_KINDS,
+				})
+			: this.collisionResolver.liftClear(natural, WORDS_NOTE_CLEARANCE, {
+					kinds: TEXT_CLEAR_KINDS,
 					band,
-				);
+				});
 		// The stave's opening modifiers own everything left of the note start x — clef, key,
 		// time, and a begin-repeat's bars, which on a multi-stave system a connector carries
 		// straight up through the band this text sits in (no lift can clear a line that spans

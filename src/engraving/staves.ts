@@ -73,6 +73,13 @@ export function isTabStaff(part: Part, staffNumber: string): boolean {
 	return false;
 }
 
+/* Which kinds of stave a render shows, from Config.showTabs/showNotation. Both are asked
+ * together everywhere a part's stave rows are derived, so they travel as one value. */
+export interface StaveVisibility {
+	showTabs: boolean;
+	showNotation: boolean;
+}
+
 /** The staff numbers ('1', '2', …) a part renders, in order. All of them normally; with
  * showTabs off its tablature staves are dropped, with showNotation off its notation staves
  * are — a notation+tab part then shows only the kept kind, and a part of the dropped kind
@@ -80,9 +87,9 @@ export function isTabStaff(part: Part, staffNumber: string): boolean {
  * offsets/connectors keyed off them) stay aligned. */
 export function visibleStaffNumbers(
 	part: Part,
-	showTabs: boolean,
-	showNotation: boolean,
+	opts: StaveVisibility,
 ): string[] {
+	const { showTabs, showNotation } = opts;
 	const all = Array.from({ length: Math.max(part.staveCount, 1) }, (_, s) =>
 		String(s + 1),
 	);
@@ -90,12 +97,8 @@ export function visibleStaffNumbers(
 }
 
 /** True when every stave the part renders is tablature. */
-export function isAllTabPart(
-	part: Part,
-	showTabs: boolean,
-	showNotation: boolean,
-): boolean {
-	const staves = visibleStaffNumbers(part, showTabs, showNotation);
+export function isAllTabPart(part: Part, opts: StaveVisibility): boolean {
+	const staves = visibleStaffNumbers(part, opts);
 	return staves.length > 0 && staves.every((n) => isTabStaff(part, n));
 }
 
@@ -105,14 +108,13 @@ export function isAllTabPart(
  */
 export function pairsTabWithNotation(
 	part: Part,
-	showTabs: boolean,
-	showNotation: boolean,
+	opts: StaveVisibility,
 ): boolean {
 	// A notation+tab pairing needs both kinds on screen; hide either and it can't pair.
-	if (!showTabs || !showNotation) {
+	if (!opts.showTabs || !opts.showNotation) {
 		return false;
 	}
-	const staves = visibleStaffNumbers(part, showTabs, showNotation);
+	const staves = visibleStaffNumbers(part, opts);
 	return (
 		staves.some((n) => isTabStaff(part, n)) &&
 		staves.some((n) => !isTabStaff(part, n))
@@ -220,15 +222,14 @@ function groupSymbol(
  */
 export function partSymbol(
 	part: Part,
-	showTabs: boolean,
-	showNotation: boolean,
+	opts: StaveVisibility,
 ): 'brace' | 'bracket' | null {
 	const symbol = part.partSymbol;
 	if (symbol === null) {
-		if (pairsTabWithNotation(part, showTabs, showNotation)) {
+		if (pairsTabWithNotation(part, opts)) {
 			return 'bracket';
 		}
-		return isAllTabPart(part, showTabs, showNotation) ? null : 'brace';
+		return isAllTabPart(part, opts) ? null : 'brace';
 	}
 	if (symbol === 'none') {
 		return null;

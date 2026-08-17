@@ -9,7 +9,7 @@ import {
 } from '../constants';
 import { Rect } from '../geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
-import { DrawPass, type StaveSpill } from './draw-pass';
+import { DrawPass, type DrawPassOptions, type StaveSpill } from './draw-pass';
 import type { ScoreLayout } from './layout-planner';
 import type { NoteTranslator } from './note-translator';
 import type { ScoreReader } from './score-reader';
@@ -234,8 +234,7 @@ export class ScoreDrawer {
 			activeLayout: ScoreLayout,
 			topOverflow: Map<number, number>,
 			height: number,
-			lyricDrops: Map<string, number> = new Map(),
-			voltaLifts: Map<number, number> = new Map(),
+			opts: DrawPassOptions = {},
 		) =>
 			new DrawPass(
 				this.translator,
@@ -250,8 +249,7 @@ export class ScoreDrawer {
 				topSlack,
 				height,
 				topOverflow,
-				lyricDrops,
-				voltaLifts,
+				opts,
 			).run();
 
 		let pass = runPass(layout, new Map(), scratchHeight);
@@ -291,8 +289,10 @@ export class ScoreDrawer {
 				{ ...layout, systemStaveOffsets, floorHeight: activeFloorHeight },
 				pass.observedOverflow,
 				scratchHeight,
-				pass.observedLyricDrops,
-				pass.observedVoltaLifts,
+				{
+					lyricDrops: pass.observedLyricDrops,
+					voltaLifts: pass.observedVoltaLifts,
+				},
 			);
 		}
 		const { pageTop, pageBottom } = pass;

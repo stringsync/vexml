@@ -15,17 +15,31 @@ import { Rect } from '../geometry';
  * an annotation is nudged, then inserted), so a rect already in the tree is never moved —
  * there is no rebuild-on-move path to get wrong.
  */
+export interface QuadTreeOptions {
+	/* How many items a node holds before it splits into quadrants. */
+	maxItems?: number;
+	/* How deep the splitting goes; past this a node just keeps growing its item list. */
+	maxDepth?: number;
+	/* This node's own depth. Only a split passes it; a root leaves it at 0. */
+	depth?: number;
+}
+
 export class QuadTree<T extends { rect: Rect }> {
 	private items: T[] = [];
 	private children: QuadTree<T>[] | null = null;
 	private readonly outsideItems: T[] = [];
+	private readonly maxItems: number;
+	private readonly maxDepth: number;
+	private readonly depth: number;
 
 	constructor(
 		private readonly bounds: Rect,
-		private readonly maxItems = 8,
-		private readonly maxDepth = 8,
-		private readonly depth = 0,
-	) {}
+		opts: QuadTreeOptions = {},
+	) {
+		this.maxItems = opts.maxItems ?? 8;
+		this.maxDepth = opts.maxDepth ?? 8;
+		this.depth = opts.depth ?? 0;
+	}
 
 	/* Insert an item. Items not fully inside the root bounds go to the outside bucket. */
 	insert(item: T): void {
@@ -58,12 +72,11 @@ export class QuadTree<T extends { rect: Rect }> {
 		const hw = w / 2;
 		const hh = h / 2;
 		const mk = (bx: number, by: number) =>
-			new QuadTree<T>(
-				new Rect(bx, by, hw, hh),
-				this.maxItems,
-				this.maxDepth,
-				this.depth + 1,
-			);
+			new QuadTree<T>(new Rect(bx, by, hw, hh), {
+				maxItems: this.maxItems,
+				maxDepth: this.maxDepth,
+				depth: this.depth + 1,
+			});
 		this.children = [
 			mk(x, y),
 			mk(x + hw, y),

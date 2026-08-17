@@ -411,9 +411,6 @@ export function applyNoteColors(staveNote: StaveNote, chord: Chord): void {
 	}
 }
 
-/*
- * Augmentation dots.
- */
 function addDots(staveNote: StaveNote, note: Note): void {
 	for (let i = 0; i < note.dots; i++) {
 		Dot.buildAndAttach([staveNote], { all: true });
@@ -1424,6 +1421,43 @@ function ghostNotes(beats: number): GhostNote[] {
 	return ghosts;
 }
 
+/* The settings NoteTranslator.vexflowChord applies to one chord. */
+interface VexflowChordOptions {
+	/* Center the glyph in the measure, as a whole-measure rest is drawn. */
+	alignCenter?: boolean;
+	/* <clef-octave-change>: shifts every notehead's staff position by that many octaves
+	 * (e.g. -1 for a treble-8vb guitar clef draws sounding pitches an octave higher).
+	 * vexflow's own StaveNote option; keys stay at their sounding octave. */
+	octaveShift?: number;
+	/* Stem direction for notes without an explicit <stem>, set when multiple voices
+	 * share the stave (voice 1 up, the rest down) so the voices stem apart. */
+	defaultStem?: 'up' | 'down';
+}
+
+/* The settings NoteTranslator.vexflowVoiceTickables applies to one voice. */
+export interface VexflowVoiceTickablesOptions {
+	/* Pad the voice with ghost notes out to this beat, so an underfull measure still
+	 * reserves the trailing space the meter asks for. */
+	endBeat?: number;
+	/* Called with each lead note and the StaveNote built for it, as they are built, so a
+	 * caller can index them. */
+	record?: (lead: Note, staveNote: StaveNote) => void;
+	/* Per-note octave shift, since a mid-measure clef change can vary it note by note
+	 * rather than it being one value for the stave. */
+	octaveShiftOf?: (lead: Note) => number;
+	/* Stem direction for notes without an explicit <stem>. */
+	defaultStem?: 'up' | 'down';
+	/* The measure's mid-measure dividers (see ScoreReader.midBarlinesOf), each inserted as
+	 * a zero-duration BarNote just before the first note at or past its beat. */
+	barlines?: readonly { beat: number; style: string }[];
+	/* The measure's mid-measure clef changes (see ScoreReader.midClefsOf). Each one re-aims
+	 * every LATER note's staff position. */
+	midClefs?: readonly MidClefSpec[];
+	/* Also emit the small ClefNote glyph for each midClef. Like a divider, the glyph belongs
+	 * to the measure, so it rides on the first voice only. */
+	drawMidClefs?: boolean;
+}
+
 /*
  * Translates mdom chords into vexflow tickables. One instance per render: the layout
  * (measuring) pass and the draw pass share it so both build their notes — and probe
@@ -1503,15 +1537,9 @@ export class NoteTranslator {
 	private vexflowChord(
 		chord: Chord,
 		clef: string,
-		alignCenter = false,
-		// <clef-octave-change>: shifts every notehead's staff position by that many octaves
-		// (e.g. -1 for a treble-8vb guitar clef draws sounding pitches an octave higher).
-		// vexflow's own StaveNote option; keys stay at their sounding octave.
-		octaveShift = 0,
-		// Stem direction for notes without an explicit <stem>, set when multiple voices
-		// share the stave (voice 1 up, the rest down) so the voices stem apart.
-		defaultStem?: 'up' | 'down',
+		opts: VexflowChordOptions = {},
 	): StaveNote {
+		const { alignCenter = false, octaveShift = 0, defaultStem } = opts;
 		const lead = chord.lead;
 		const duration = durationCode(lead);
 		// A hidden note builds as an InvisibleStaveNote: same formatting, no glyphs drawn.
@@ -1714,33 +1742,27 @@ export class NoteTranslator {
 	/*
 	 * A voice's tickables in onset order: each chord's StaveNote, with GhostNotes
 	 * filling any gap before the first chord, between chords, or after the last chord
-	 * up to `endBeat`. A voice placed by <backup>/<forward> needn't start at beat 0,
+	 * up to `opts.endBeat`. A voice placed by <backup>/<forward> needn't start at beat 0,
 	 * be contiguous, or run to the measure's end, so the chords' own measureBeats —
 	 * not document order — decide where each note lands, keeping it aligned with the
 	 * other voices on the stave. Without the trailing fill, a voice that stops early
 	 * lets the formatter cram the other voices' later notes against its last note.
-	 * `record` captures each chord's lead -> StaveNote for later spanner resolution.
-	 * `octaveShiftOf` is how many octaves to move each chord's noteheads by when drawing them:
-	 * the staff's <clef-octave-change> plus any <octave-shift> (8va/8vb) covering that note, so
-	 * it varies note by note rather than being one value for the stave.
-	 * `barlines` are the measure's mid-measure dividers (see ScoreReader.midBarlinesOf), each
-	 * inserted as a zero-duration BarNote just before the first note at or past its beat.
-	 * `midClefs` are the measure's mid-measure clef changes (see ScoreReader.midClefsOf). Each
-	 * one re-aims every LATER note's staff position, which is a property of the stave and so
-	 * applies to every voice on it; `drawMidClefs` says to also emit the small ClefNote glyph,
-	 * which — like a divider — belongs to the measure and so rides on the first voice only.
+	 * See VexflowVoiceTickablesOptions for what the rest of the settings do.
 	 */
 	vexflowVoiceTickables(
 		chords: Chord[],
 		clef: string,
-		endBeat = 0,
-		record?: (lead: Note, staveNote: StaveNote) => void,
-		octaveShiftOf: (lead: Note) => number = () => 0,
-		defaultStem?: 'up' | 'down',
-		barlines: readonly { beat: number; style: string }[] = [],
-		midClefs: readonly MidClefSpec[] = [],
-		drawMidClefs = true,
+		opts: VexflowVoiceTickablesOptions = {},
 	): VoiceTickable[] {
+		const {
+			endBeat = 0,
+			record,
+			octaveShiftOf = () => 0,
+			defaultStem,
+			barlines = [],
+			midClefs = [],
+			drawMidClefs = true,
+		} = opts;
 		const tickables: VoiceTickable[] = [];
 		// Mid-measure clef changes, consumed the same way the dividers below are. `activeClef`
 		// is what the notes after each one are positioned against.
@@ -1803,12 +1825,9 @@ export class NoteTranslator {
 		for (const chord of chords) {
 			if (chord.lead.isGrace) {
 				pendingGrace.push({
-					note: this.vexflowChord(
-						chord,
-						activeClef,
-						false,
-						octaveShiftOf(chord.lead),
-					) as GraceNote,
+					note: this.vexflowChord(chord, activeClef, {
+						octaveShift: octaveShiftOf(chord.lead),
+					}) as GraceNote,
 					lead: chord.lead,
 				});
 				continue;
@@ -1821,13 +1840,11 @@ export class NoteTranslator {
 			if (onset > cursor + EPSILON) {
 				tickables.push(...ghostNotes(onset - cursor));
 			}
-			const staveNote = this.vexflowChord(
-				chord,
-				activeClef,
-				centerWholeRest,
-				octaveShiftOf(chord.lead),
+			const staveNote = this.vexflowChord(chord, activeClef, {
+				alignCenter: centerWholeRest,
+				octaveShift: octaveShiftOf(chord.lead),
 				defaultStem,
-			);
+			});
 			if (pendingGrace.length > 0) {
 				const group = new GraceNoteGroup(pendingGrace.map((g) => g.note));
 				// The main beam pass skips grace notes (they never enter `byLead`), so a grace

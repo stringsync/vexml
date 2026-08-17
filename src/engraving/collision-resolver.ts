@@ -1,5 +1,5 @@
 import { FAR } from '../constants';
-import { QuadTree } from '../elements/quadtree';
+import { QuadTree, type QuadTreeOptions } from '../elements/quadtree';
 import { Rect } from '../geometry';
 
 /*
@@ -42,11 +42,20 @@ type Collision = {
 	mtv: { axis: Axis; dx: number; dy: number };
 };
 
+/* How a rect is cleared of obstacles. Both narrow which obstacles count. */
+export interface ClearOptions {
+	/* Restricts which obstacle kinds count — e.g. above-stave text clears notes/ties/other
+	 * text but deliberately ignores diagrams (which draw on top). */
+	kinds?: CollisionKind[];
+	/* Restricts the move to obstacles in that band (plus bandless ones); see Collidable. */
+	band?: number;
+}
+
 export class CollisionResolver {
 	private readonly tree: QuadTree<Collidable>;
 
-	constructor(bounds: Rect, maxItems = 8, maxDepth = 8) {
-		this.tree = new QuadTree<Collidable>(bounds, maxItems, maxDepth);
+	constructor(bounds: Rect, opts: QuadTreeOptions = {}) {
+		this.tree = new QuadTree<Collidable>(bounds, opts);
 	}
 
 	add(c: Collidable): void {
@@ -76,18 +85,10 @@ export class CollisionResolver {
 	 * bottom and take the single highest obstacle top, so it converges immediately and can't
 	 * oscillate. This is the unified form of the old per-annotation "clear noteTop" lifts.
 	 *
-	 * `kinds`, when given, restricts which obstacle kinds count — e.g. above-stave text
-	 * clears notes/ties/other text but deliberately ignores diagrams (which draw on top).
-	 *
-	 * `band`, when given, restricts the lift to obstacles in that band (plus bandless ones) —
-	 * see {@link Collidable}.
+	 * See {@link ClearOptions} for how to narrow which obstacles count.
 	 */
-	liftClear(
-		rect: Rect,
-		gap: number,
-		kinds?: CollisionKind[],
-		band?: number,
-	): Rect {
+	liftClear(rect: Rect, gap: number, opts: ClearOptions = {}): Rect {
+		const { kinds, band } = opts;
 		// A tall, thin probe down the rect's x-column, ending at the rect's bottom: catches
 		// every obstacle in the column whose top is at/above where the rect currently sits.
 		const probe = new Rect(rect.x, -FAR, rect.w, FAR + rect.bottom);
@@ -118,12 +119,8 @@ export class CollisionResolver {
 	 * (dynamics, a placement="below" direction) stacks downward the same way above-stave
 	 * text stacks upward, so the two share one policy with the sign flipped.
 	 */
-	dropClear(
-		rect: Rect,
-		gap: number,
-		kinds?: CollisionKind[],
-		band?: number,
-	): Rect {
+	dropClear(rect: Rect, gap: number, opts: ClearOptions = {}): Rect {
+		const { kinds, band } = opts;
 		// A tall, thin probe down the rect's x-column, starting at the rect's top: catches
 		// every obstacle in the column whose bottom is at/below where the rect currently sits.
 		const probe = new Rect(rect.x, rect.y, rect.w, FAR);
