@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { ScrollController } from './scroll-controller';
+import { ScrollController } from '../scroller/scroll-controller';
 import { Stage } from './stage';
 
 describe('Stage', () => {

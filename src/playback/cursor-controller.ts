@@ -3,8 +3,8 @@ import type { Note } from '../elements/note';
 import { EventTarget, type Listenable } from '../event-target';
 import type { CursorChangeEvent, CursorEventMap } from '../events';
 import { Rect } from '../geometry';
-import type { Scroller } from '../host/scroll-controller';
-import type { Host } from '../host/stage';
+import type { Host } from '../host/host/host';
+import type { Scroller } from '../host/scroller/scroller';
 import type { Sequence } from './sequence';
 
 /*

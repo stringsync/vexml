@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { MDOMParser, type Note as MNote } from '@stringsync/mdom';
 import { Rect } from '../geometry';
+import { FakeViewport } from '../host/viewport/fake-viewport';
 import { FakeDecoration } from '../testing/fake-decoration';
-import { FakeViewport } from '../testing/fake-viewport';
 import { measureFixture } from '../testing/measure-fixture';
 import { isHighlightable, isPlayable } from './element';
 import { Note } from './note';

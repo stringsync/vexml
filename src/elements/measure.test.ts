@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { MDOMParser, type Note as MNote } from '@stringsync/mdom';
-import { FakeViewport } from '../testing/fake-viewport';
+import { FakeViewport } from '../host/viewport/fake-viewport';
 import { measureFixture } from '../testing/measure-fixture';
 import type { Note } from './note';
 import { Voice } from './voice';

@@ -1,9 +1,10 @@
-import type { Rect } from '../geometry';
-import {
-	ScrollController,
-	type Scroller,
-	type ScrollHost,
-} from './scroll-controller';
+import type { Rect } from '../../geometry';
+import type { Layer, LayerKind } from '../layer/layer';
+import { ManagedLayer } from '../layer/managed-layer';
+import type { ScrollHost } from '../scroll-host/scroll-host';
+import { ScrollController } from '../scroller/scroll-controller';
+import type { Viewport } from '../viewport/viewport';
+import type { Host } from './host';
 
 /* The managed canvas's default on-screen size, injected once per document. Both rules are wrapped
  * in `:where()` so they carry zero specificity: a caller's own `.vexml-canvas { … }` overrides them
@@ -27,132 +28,6 @@ function ensureCanvasStyles(): void {
 		':where(.vexml-canvas){width:var(--vexml-width);height:var(--vexml-height)}' +
 		':where(.vexml-canvas.vexml-fit){max-width:100%;height:auto;aspect-ratio:var(--vexml-aspect)}';
 	document.head.appendChild(style);
-}
-
-/* Where a custom drawing layer sits. A `content` layer covers the whole engraved score (score
- * space, scrolls with the content) — what decorations draw on. A `background` layer is a content
- * layer placed *behind* the base canvas (z-index -1), so it shows through the score's transparent
- * pixels — e.g. a halo glowing behind the noteheads. A `viewport` layer covers only the visible box
- * (client space) and is resized as the container resizes. */
-export type LayerKind = 'content' | 'background' | 'viewport';
-
-/* A caller-owned drawing surface stacked over the score. Only the 2D context is exposed — never
- * the canvas, its size, or a clear — so the layer's lifecycle stays vexml's. The caller draws via
- * ctx (CSS pixels; the dpr scale is applied for them) and removes the layer with dispose(). */
-export interface Layer {
-	readonly ctx: CanvasRenderingContext2D;
-	dispose(): void;
-}
-
-/* The minimal seam for making a drawing layer — what Decorations needs from the stage (it draws
- * on its own content layer but needs nothing else). Stage satisfies it; a unit test injects a
- * fake whose layer carries a recording context. */
-export interface LayerHost {
-	createLayer(kind: LayerKind, zIndex?: number): Layer;
-}
-
-/*
- * The coordinate authority: converts between score space (where rects live) and client/page
- * space (where pointer events and DOM popups live). Stage implements it for real; tests
- * inject a fake.
- */
-export interface Viewport {
-	clientRectOf(rect: Rect): DOMRect;
-	toScoreSpace(clientX: number, clientY: number): { x: number; y: number };
-}
-
-/*
- * What a Score needs from its host: the score<-client transform (toScoreSpace), a raw event
- * source to bind pointer/scroll listeners on, the current scroll offset, a resize subscription,
- * custom-layer creation/resizing, and teardown. Stage is the production implementer; a Score unit
- * test injects a fake. Kept separate from Viewport (the targets' coordinate seam) so each consumer
- * depends only on what it uses, even though Stage satisfies both.
- */
-export interface Host extends LayerHost, Viewport {
-	readonly events: EventTarget;
-	readonly scroll: { left: number; top: number };
-	/* The visible scrollport box in client coords — what a cursor's visibility check compares against. */
-	viewportRect(): DOMRect;
-	/* Scrolls a score-space rect into view (axis-aware); a cursor's follow()/scrollIntoView() use it. */
-	readonly scroller: Scroller;
-	observeResize(
-		onResize: (size: { width: number; height: number }) => void,
-	): () => void;
-	/* Subscribe to any scroll that slides the score within the viewport — the container's own, or
-	 * any ancestor's (scroll doesn't bubble, so the real host listens on window in the capture
-	 * phase). Returns an unsubscribe. Drives hover: content can move under a stationary pointer with
-	 * no pointer event. */
-	observeScroll(onScroll: () => void): () => void;
-	/* Re-sync every layer to the container's current geometry (called on resize). Viewport layers
-	 * are refit to the visible box (clearing them); content layers keep their score-resolution bitmap
-	 * (no clear) but re-track the base canvas's rendered box, so they stay aligned however the
-	 * caller's CSS has scaled the score. */
-	relayoutLayers(): void;
-	/* Change the container's vertical cap live (px, or null to remove it). */
-	setMaxHeight(px: number | null): void;
-	dispose(): void;
-}
-
-/* The per-axis bitmap ceiling for overlay layers, in device px. GPUs commonly top out at 16384px
- * textures; a canvas past that on either axis falls back to software rasterization.
- * ponytail: hardcoded common limit, not queried from WebGL — probe MAX_TEXTURE_SIZE if a
- * platform under 16384 ever matters. */
-const MAX_BITMAP_PX = 16384;
-
-/*
- * A managed overlay canvas — the production Layer. Absolutely positioned over the base canvas, dpr
- * scaled so the caller's ctx draws in CSS pixels, and sized by its kind. Resizing resets the
- * bitmap (which clears it) and re-applies the dpr transform. Back-references its Stage only to
- * deregister on dispose (both live here and are disposed together).
- */
-class ManagedLayer implements Layer {
-	readonly ctx: CanvasRenderingContext2D;
-
-	constructor(
-		readonly kind: LayerKind,
-		private readonly canvas: HTMLCanvasElement,
-		private readonly stage: Stage,
-	) {
-		const ctx = canvas.getContext('2d');
-		if (!ctx) {
-			throw new Error('vexml: 2D context unavailable for layer');
-		}
-		this.ctx = ctx;
-	}
-
-	resize(cssWidth: number, cssHeight: number): void {
-		const dpr = window.devicePixelRatio || 1;
-		// Cap each bitmap axis at the common GPU max texture size. A content layer spans the whole
-		// engraved score, and a long score at dpr 2 can exceed the cap — which silently drops the
-		// canvas onto the software rasterization path, where every change costs tens of ms of buffer
-		// churn per frame. Under the cap the layer stays GPU-composited; the axis renders at slightly
-		// reduced resolution (overlays only — the engraving itself is untouched), which a translucent
-		// halo, a recolored glyph, or a cursor bar wears invisibly.
-		const sx = Math.min(dpr, cssWidth > 0 ? MAX_BITMAP_PX / cssWidth : dpr);
-		const sy = Math.min(dpr, cssHeight > 0 ? MAX_BITMAP_PX / cssHeight : dpr);
-		this.canvas.width = Math.max(0, Math.round(cssWidth * sx));
-		this.canvas.height = Math.max(0, Math.round(cssHeight * sy));
-		this.canvas.style.width = `${cssWidth}px`;
-		this.canvas.style.height = `${cssHeight}px`;
-		// Setting width/height cleared the bitmap and reset the transform; re-apply the scale so the
-		// caller keeps drawing in CSS pixels. setTransform (not scale) stays idempotent on re-resize.
-		this.ctx.setTransform(sx, 0, 0, sy, 0, 0);
-	}
-
-	// Position and stretch the element's on-screen box, independent of the bitmap resolution resize()
-	// set. For a content layer this lets a fixed score-resolution bitmap be displayed at the base
-	// canvas's (possibly CSS-scaled) rendered size, so the overlay tracks it without a clearing resize.
-	place(left: number, top: number, width: number, height: number): void {
-		this.canvas.style.left = `${left}px`;
-		this.canvas.style.top = `${top}px`;
-		this.canvas.style.width = `${width}px`;
-		this.canvas.style.height = `${height}px`;
-	}
-
-	dispose(): void {
-		this.canvas.remove();
-		this.stage.forget(this);
-	}
 }
 
 /* The caller's container options from config. A set height/width cap turns the container into a

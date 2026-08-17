@@ -7,8 +7,9 @@ import type { System } from './elements/system';
 import { TabPosition } from './elements/tab-position';
 import { EventTarget, type Listenable } from './event-target';
 import type { ScoreEventMap } from './events';
-import type { Scroller } from './host/scroll-controller';
-import type { Host, Layer, LayerKind } from './host/stage';
+import type { Host } from './host/host/host';
+import type { Layer, LayerKind } from './host/layer/layer';
+import type { Scroller } from './host/scroller/scroller';
 import {
 	CursorController,
 	CursorHostAdapter,

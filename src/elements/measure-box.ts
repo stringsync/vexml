@@ -1,6 +1,6 @@
 import type { Measure as MMeasure } from '@stringsync/mdom';
 import type { Rect } from '../geometry';
-import type { Viewport } from '../host/stage';
+import type { Viewport } from '../host/viewport/viewport';
 import { Element } from './element';
 import type { Measure } from './measure';
 import type { System } from './system';

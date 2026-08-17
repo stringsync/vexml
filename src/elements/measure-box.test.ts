@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { MDOMParser } from '@stringsync/mdom';
 import { Rect } from '../geometry';
-import { FakeViewport } from '../testing/fake-viewport';
+import { FakeViewport } from '../host/viewport/fake-viewport';
 import { isHighlightable, isPlayable } from './element';
 import type { Measure } from './measure';
 import { MeasureBox } from './measure-box';

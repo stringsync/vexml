@@ -4,7 +4,7 @@ import { ScoreReader } from '../engraving/score-reader';
 import { EventTarget } from '../event-target';
 import type { CursorChangeEvent } from '../events';
 import { Rect } from '../geometry';
-import { FakeScroller } from '../testing/fake-scroller';
+import { FakeScroller } from '../host/scroller/fake-scroller';
 import {
 	CursorController,
 	type CursorHost,

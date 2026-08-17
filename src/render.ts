@@ -12,7 +12,7 @@ import { NoteTranslator } from './engraving/note-translator';
 import { ScoreDrawer } from './engraving/score-drawer';
 import { ScoreReader } from './engraving/score-reader';
 import { SpannerBuilder } from './engraving/spanner-builder';
-import { Stage } from './host/stage';
+import { Stage } from './host/host/stage';
 import { SequenceFactory } from './playback/sequence-factory';
 import type { Score } from './score';
 import { DefaultScoreParser } from './score-parser';

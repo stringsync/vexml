@@ -4,26 +4,10 @@ import {
 	SCROLL_DURATION_MS,
 	SCROLL_FRAME_MS,
 	SCROLL_TOP_PADDING_PX,
-} from '../constants';
-import type { Rect } from '../geometry';
-
-/* Scrolls a score-space rect into the viewport. vexml's Stage provides one (Score.scroller); a caller
- * may pass their own to follow(). */
-export interface Scroller {
-	scrollIntoView(rect: Rect, opts?: { behavior?: ScrollBehavior }): void;
-}
-
-/* The minimal seam a ScrollController needs from its stage: the score->rendered CSS scale, the
- * base canvas's offset within the scroll content, the container's current scroll offsets and
- * visible client size, and the scrollTo that moves the scroll box. Stage implements it; a unit
- * test injects a fake. */
-export interface ScrollHost {
-	frame(): { sx: number; sy: number };
-	baseOffset(): { left: number; top: number };
-	readonly scroll: { left: number; top: number };
-	clientSize(): { width: number; height: number };
-	scrollTo(options: ScrollToOptions): void;
-}
+} from '../../constants';
+import type { Rect } from '../../geometry';
+import type { ScrollHost } from '../scroll-host/scroll-host';
+import type { Scroller, ScrollerOptions } from './scroller';
 
 /*
  * Scrolls the host's scroll box so score-space rects come into view (axis-aware: only an off-screen
@@ -67,7 +51,7 @@ export class ScrollController implements Scroller {
 
 	// Scroll the container so a score-space rect is visible, moving only the axis that's off-screen.
 	// The rect maps to the container's scroll content through the base canvas's offset and CSS scale.
-	scrollIntoView(rect: Rect, opts?: { behavior?: ScrollBehavior }): void {
+	scrollIntoView(rect: Rect, opts?: ScrollerOptions): void {
 		if (this.resizeSettleTimer) {
 			return;
 		}

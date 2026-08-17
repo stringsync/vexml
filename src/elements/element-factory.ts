@@ -5,7 +5,7 @@ import type {
 } from '@stringsync/mdom';
 import type { RawGeometry } from '../engraving/score-drawer';
 import { Rect } from '../geometry';
-import type { Viewport } from '../host/stage';
+import type { Viewport } from '../host/viewport/viewport';
 import { ChordDiagram } from './chord-diagram';
 import type { Decorations, Element } from './element';
 import { ElementIndex } from './element-index';

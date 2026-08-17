@@ -43,8 +43,8 @@ export type {
 	ScoreScrollEvent,
 } from './events';
 export { Rect } from './geometry';
-export type { Scroller } from './host/scroll-controller';
-export type { Layer, LayerKind } from './host/stage';
+export type { Layer, LayerKind } from './host/layer/layer';
+export type { Scroller, ScrollerOptions } from './host/scroller/scroller';
 export {
 	CursorController,
 	type CursorView,

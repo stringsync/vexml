@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'bun:test';
-import { SCROLL_TOP_PADDING_PX } from '../constants';
-import { Rect } from '../geometry';
-import {
-	ScrollController,
-	type ScrollHost,
-	scrollOffsetFor,
-} from './scroll-controller';
+import { SCROLL_TOP_PADDING_PX } from '../../constants';
+import { Rect } from '../../geometry';
+import { FakeScrollHost } from '../scroll-host/fake-scroll-host';
+import { ScrollController, scrollOffsetFor } from './scroll-controller';
 
 // Both boxes are in the container's scroll-content coordinates; view = the current scroll window.
 const VIEW = { left: 0, top: 0, right: 100, bottom: 100 };
@@ -44,30 +41,6 @@ describe('scrollOffsetFor', () => {
 	});
 });
 
-// The controller's host seam, recording every scrollTo. Score space maps 1:1 onto the scroll
-// content (scale 1, base at the origin) and the visible box is 100x100, so test rects read
-// directly as VIEW-coordinate target boxes.
-class FakeScrollHost implements ScrollHost {
-	readonly calls: ScrollToOptions[] = [];
-	scroll = { left: 0, top: 0 };
-
-	frame(): { sx: number; sy: number } {
-		return { sx: 1, sy: 1 };
-	}
-
-	baseOffset(): { left: number; top: number } {
-		return { left: 0, top: 0 };
-	}
-
-	clientSize(): { width: number; height: number } {
-		return { width: 100, height: 100 };
-	}
-
-	scrollTo(options: ScrollToOptions): void {
-		this.calls.push(options);
-	}
-}
-
 const controller = () => {
 	const host = new FakeScrollHost();
 	const scroller = new ScrollController(host);
@@ -83,7 +56,6 @@ const controller = () => {
 
 // Longer than SCROLL_DURATION_MS (350) so an in-flight tween has fully landed.
 const settle = () => new Promise((r) => setTimeout(r, 500));
-const last = (calls: ScrollToOptions[]) => calls[calls.length - 1];
 
 describe('ScrollController', () => {
 	it('instant scroll passes the axis-resolved offset straight through', () => {
@@ -98,7 +70,7 @@ describe('ScrollController', () => {
 		await settle();
 		expect(host.calls.length).toBeGreaterThan(2); // it animated rather than snapping
 		expect(host.calls.every((c) => c.behavior === 'instant')).toBe(true);
-		expect(last(host.calls)).toEqual({
+		expect(host.last()).toEqual({
 			left: 0,
 			top: 100,
 			behavior: 'instant',
@@ -111,7 +83,7 @@ describe('ScrollController', () => {
 		scroll(200);
 		scroll(300); // latest wins; the tween redirects here
 		await settle();
-		expect(last(host.calls)).toEqual({
+		expect(host.last()).toEqual({
 			left: 0,
 			top: 300,
 			behavior: 'instant',
@@ -131,7 +103,7 @@ describe('ScrollController', () => {
 		scroll(100);
 		host.scroll = { left: 0, top: 40 }; // wherever the tween happens to be mid-flight
 		scroller.cancel();
-		expect(last(host.calls)).toEqual({ left: 0, top: 40, behavior: 'instant' });
+		expect(host.last()).toEqual({ left: 0, top: 40, behavior: 'instant' });
 		const count = host.calls.length;
 		await settle();
 		expect(host.calls).toHaveLength(count); // no more frames after cancel
@@ -147,7 +119,7 @@ describe('ScrollController', () => {
 		expect(host.calls).toHaveLength(count); // nothing scrolled while suspended
 		scroll(300); // suspension lifted after the settle window
 		await settle();
-		expect(last(host.calls)).toEqual({
+		expect(host.last()).toEqual({
 			left: 0,
 			top: 300,
 			behavior: 'instant',

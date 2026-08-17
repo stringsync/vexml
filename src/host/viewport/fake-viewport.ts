@@ -1,5 +1,5 @@
-import type { Rect } from '../geometry';
-import type { Viewport } from '../host/stage';
+import type { Rect } from '../../geometry';
+import type { Viewport } from './viewport';
 
 /* Fake fulfilling the Viewport seam (preferred over mocks). Test-only — excluded from the
  * published package via package.json "files". */

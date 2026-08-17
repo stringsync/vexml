@@ -1,35 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import type { CursorChangeEvent } from '../events';
 import { Rect } from '../geometry';
-import type { Layer } from '../host/stage';
+import { FakeLayer } from '../host/layer/fake-layer';
 import { Playhead } from './playhead';
-
-// A recording 2D context: captures fillRect and clearRect calls.
-class RecordingCtx {
-	fills: Array<{ x: number; y: number; w: number; h: number; style: string }> =
-		[];
-	clears: Array<{ x: number; y: number; w: number; h: number }> = [];
-	fillStyle = '';
-	readonly canvas = { width: 1000, height: 100 };
-	save(): void {}
-	restore(): void {}
-	setTransform(): void {}
-	clearRect(x: number, y: number, w: number, h: number): void {
-		this.clears.push({ x, y, w, h });
-	}
-	fillRect(x: number, y: number, w: number, h: number): void {
-		this.fills.push({ x, y, w, h, style: this.fillStyle });
-	}
-}
-
-class FakeLayer implements Layer {
-	readonly recording = new RecordingCtx();
-	readonly ctx = this.recording as unknown as CanvasRenderingContext2D;
-	disposed = false;
-	dispose(): void {
-		this.disposed = true;
-	}
-}
 
 function changeAt(rect: Rect): CursorChangeEvent {
 	return {

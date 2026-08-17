@@ -1,74 +1,9 @@
 import { describe, expect, it } from 'bun:test';
 import type { NoteGlyph } from '../engraving/score-drawer';
 import { Rect } from '../geometry';
-import type { Layer, LayerHost, LayerKind } from '../host/stage';
+import { FakeLayerHost } from '../host/layer-host/fake-layer-host';
 import { ColorStyle, DefaultDecoration, HaloStyle } from './decorations';
 import type { Decoratable } from './element';
-
-// A recording 2D context: logs the operations DefaultDecoration performs so a test can assert
-// what was painted (and in what order) without a real canvas. Cast to CanvasRenderingContext2D —
-// only the members DefaultDecoration touches are implemented.
-
-class RecordingContext {
-	fillStyle: string | CanvasGradient | CanvasPattern = '#000000';
-	font = '';
-	textAlign = 'left';
-	textBaseline = 'alphabetic';
-	readonly canvas = { width: 800, height: 600 } as HTMLCanvasElement;
-	// In call order: 'clear', 'fill:<shape>:<style>', or 'text:<text>:<style>:<font>'.
-	readonly ops: string[] = [];
-	private shape = '';
-	save(): void {}
-	restore(): void {}
-	setTransform(): void {}
-	clearRect(): void {
-		this.ops.push('clear');
-	}
-	rect(): void {}
-	clip(): void {}
-	beginPath(): void {}
-	ellipse(): void {
-		this.shape = 'ellipse';
-	}
-	arc(): void {
-		this.shape = 'arc';
-	}
-	fill(): void {
-		this.ops.push(`fill:${this.shape}:${String(this.fillStyle)}`);
-	}
-	fillText(text: string): void {
-		this.ops.push(`text:${text}:${String(this.fillStyle)}:${this.font}`);
-	}
-}
-
-class FakeLayer implements Layer {
-	disposed = false;
-	constructor(readonly ctx: CanvasRenderingContext2D) {}
-	dispose(): void {
-		this.disposed = true;
-	}
-}
-
-// ColorStyle and HaloStyle place their layers apart ('content' over the score, 'background'
-// behind it), so the host keeps a recorder per kind and the tests assert against the relevant one.
-class FakeLayerHost implements LayerHost {
-	readonly recorders = new Map<LayerKind, RecordingContext>();
-	readonly layers = new Map<LayerKind, FakeLayer>();
-	createLayerCalls = 0;
-	createLayer(kind: LayerKind): Layer {
-		this.createLayerCalls++;
-		const recorder = new RecordingContext();
-		this.recorders.set(kind, recorder);
-		const layer = new FakeLayer(
-			recorder as unknown as CanvasRenderingContext2D,
-		);
-		this.layers.set(kind, layer);
-		return layer;
-	}
-	ops(kind: LayerKind): string[] {
-		return this.recorders.get(kind)?.ops ?? [];
-	}
-}
 
 const HALO = 'fill:arc:rgba(41, 98, 255, 0.35)';
 const GLYPH: NoteGlyph = { text: 'q', font: '30px Bravura', x: 12, y: 20 };
@@ -112,9 +47,9 @@ describe('DefaultDecoration', () => {
 	it('the overlay layer is created lazily, on the first decoration', () => {
 		const host = new FakeLayerHost();
 		const colors = new DefaultDecoration(host, new ColorStyle());
-		expect(host.createLayerCalls).toBe(0);
+		expect(host.created).toHaveLength(0);
 		colors.set(decoratable(new Rect(0, 0, 12, 10), GLYPH), '#2962ff');
-		expect(host.createLayerCalls).toBe(1);
+		expect(host.created).toHaveLength(1);
 	});
 
 	it('a color stamps the notehead glyph in the color and reports has()', () => {
@@ -203,7 +138,7 @@ describe('DefaultDecoration', () => {
 		const host = new FakeLayerHost();
 		const colors = new DefaultDecoration(host, new ColorStyle());
 		colors.set(decoratable(new Rect(0, 0, 12, 10), GLYPH), null);
-		expect(host.createLayerCalls).toBe(0);
+		expect(host.created).toHaveLength(0);
 	});
 
 	it('dispose disposes the layer and clears state', () => {
@@ -213,8 +148,8 @@ describe('DefaultDecoration', () => {
 		const target = decoratable(new Rect(0, 0, 12, 10), GLYPH);
 		colors.set(target, '#2962ff');
 		halos.set(target, 'rgba(41, 98, 255, 0.35)');
-		const content = host.layers.get('content');
-		const background = host.layers.get('background');
+		const content = host.layer('content');
+		const background = host.layer('background');
 		colors.dispose();
 		halos.dispose();
 		expect(content?.disposed).toBe(true);

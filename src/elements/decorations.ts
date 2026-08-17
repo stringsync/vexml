@@ -1,6 +1,7 @@
 import { HALO_MARGIN } from '../constants';
 import { Rect } from '../geometry';
-import type { Layer, LayerHost, LayerKind } from '../host/stage';
+import type { Layer, LayerKind } from '../host/layer/layer';
+import type { LayerHost } from '../host/layer-host/layer-host';
 import type { Decoratable, Decoration } from './element';
 
 /*

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'bun:test';
 import { MDOMParser } from '@stringsync/mdom';
 import type { ChordFrame } from '../engraving/chord-diagram-glyph';
 import { Rect } from '../geometry';
+import { FakeViewport } from '../host/viewport/fake-viewport';
 import { FakeDecoration } from '../testing/fake-decoration';
-import { FakeViewport } from '../testing/fake-viewport';
 import { ChordDiagram } from './chord-diagram';
 import { isHighlightable, isPlayable } from './element';
 

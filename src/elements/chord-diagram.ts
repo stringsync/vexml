@@ -1,7 +1,7 @@
 import type { Harmony } from '@stringsync/mdom';
 import type { ChordFrame } from '../engraving/chord-diagram-glyph';
 import type { Rect } from '../geometry';
-import type { Viewport } from '../host/stage';
+import type { Viewport } from '../host/viewport/viewport';
 import {
 	type Decorations,
 	Element,

@@ -1,7 +1,7 @@
 import type { Note as MNote } from '@stringsync/mdom';
 import type { NoteGlyph } from '../engraving/score-drawer';
 import type { Rect } from '../geometry';
-import type { Viewport } from '../host/stage';
+import type { Viewport } from '../host/viewport/viewport';
 import {
 	type Decorations,
 	Element,

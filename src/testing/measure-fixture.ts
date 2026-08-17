@@ -4,7 +4,7 @@ import { MeasureBox } from '../elements/measure-box';
 import { Part } from '../elements/part';
 import { System } from '../elements/system';
 import { Rect } from '../geometry';
-import type { Viewport } from '../host/stage';
+import type { Viewport } from '../host/viewport/viewport';
 
 /* The minimal real tree around one mdom measure (System -> MeasureBox <- Measure -> Part), for
  * tests that need a Note's measure without running the ElementFactory. No voices. */

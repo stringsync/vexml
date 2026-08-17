@@ -1,5 +1,5 @@
-import type { Rect } from '../geometry';
-import type { Scroller } from '../host/scroll-controller';
+import type { Rect } from '../../geometry';
+import type { Scroller } from './scroller';
 
 /* Fake fulfilling the Scroller seam (preferred over mocks); records what it was told, so tests
  * that don't care simply never read `calls`/`cancels`. Test-only — excluded from the published

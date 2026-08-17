@@ -1,7 +1,7 @@
 import { CURSOR_COLOR, CURSOR_WIDTH_PX } from '../constants';
 import type { CursorChangeEvent } from '../events';
 import { Rect } from '../geometry';
-import type { Layer } from '../host/stage';
+import type { Layer } from '../host/layer/layer';
 import type { CursorView } from './cursor-controller';
 
 /*

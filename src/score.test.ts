@@ -8,10 +8,11 @@ import type { Note } from './elements/note';
 import { System } from './elements/system';
 import { ScoreReader } from './engraving/score-reader';
 import { Rect } from './geometry';
-import type { Host, Layer, LayerKind, Viewport } from './host/stage';
+import { FakeHost } from './host/host/fake-host';
+import type { FakeLayer } from './host/layer/fake-layer';
+import type { Viewport } from './host/viewport/viewport';
 import { SequenceFactory } from './playback/sequence-factory';
 import { Score } from './score';
-import { FakeScroller } from './testing/fake-scroller';
 
 // An empty timeline — these tests exercise events/layers/hover, not playback.
 const EMPTY_SEQUENCE = new SequenceFactory(
@@ -21,92 +22,6 @@ const EMPTY_SEQUENCE = new SequenceFactory(
 	measures: [],
 	notes: [],
 });
-
-// Separate fake classes fulfilling the injected seams (preferred over mocks).
-
-// A no-op 2D context: the real DefaultDecoration draws on the layer it gets from the host, so the
-// fake layer's context must absorb those calls. (What's painted is asserted in decorations.test.ts.)
-function noopContext(): CanvasRenderingContext2D {
-	return {
-		canvas: { width: 0, height: 0 },
-		fillStyle: '',
-		save() {},
-		restore() {},
-		setTransform() {},
-		clearRect() {},
-		rect() {},
-		clip() {},
-		beginPath() {},
-		ellipse() {},
-		arc() {},
-		fill() {},
-	} as unknown as CanvasRenderingContext2D;
-}
-
-class FakeLayer implements Layer {
-	disposed = false;
-	readonly ctx = noopContext();
-	constructor(
-		readonly kind: LayerKind,
-		readonly zIndex?: number,
-	) {}
-	dispose(): void {
-		this.disposed = true;
-	}
-}
-
-class FakeHost implements Host {
-	readonly events = new EventTarget();
-	scroll = { left: 0, top: 0 };
-	resizeListener: ((size: { width: number; height: number }) => void) | null =
-		null;
-	resizeUnobserved = false;
-	disposed = false;
-	relayoutLayersCalls = 0;
-	readonly created: FakeLayer[] = [];
-	// Identity transform: client coords are score coords, so tests assert on the input directly.
-	toScoreSpace(clientX: number, clientY: number): { x: number; y: number } {
-		return { x: clientX, y: clientY };
-	}
-	scrollListener: (() => void) | null = null;
-	observeResize(
-		onResize: (size: { width: number; height: number }) => void,
-	): () => void {
-		this.resizeListener = onResize;
-		return () => {
-			this.resizeUnobserved = true;
-			this.resizeListener = null;
-		};
-	}
-	observeScroll(onScroll: () => void): () => void {
-		this.scrollListener = onScroll;
-		return () => {
-			this.scrollListener = null;
-		};
-	}
-	createLayer(kind: LayerKind, zIndex?: number): Layer {
-		const layer = new FakeLayer(kind, zIndex);
-		this.created.push(layer);
-		return layer;
-	}
-	clientRectOf(rect: Rect): DOMRect {
-		return { x: rect.x, y: rect.y, width: rect.w, height: rect.h } as DOMRect;
-	}
-	viewportRect(): DOMRect {
-		return { x: 0, y: 0, width: 0, height: 0 } as DOMRect;
-	}
-	readonly scroller = new FakeScroller();
-	relayoutLayers(): void {
-		this.relayoutLayersCalls++;
-	}
-	maxHeight: number | null = null;
-	setMaxHeight(px: number | null): void {
-		this.maxHeight = px;
-	}
-	dispose(): void {
-		this.disposed = true;
-	}
-}
 
 class FakeHitTester implements HitTester {
 	readonly probes: Array<{ x: number; y: number }> = [];

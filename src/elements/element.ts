@@ -6,7 +6,7 @@ import type {
 } from '@stringsync/mdom';
 import type { NoteGlyph } from '../engraving/score-drawer';
 import type { Rect } from '../geometry';
-import type { Viewport } from '../host/stage';
+import type { Viewport } from '../host/viewport/viewport';
 
 /*
  * The interaction model: vexml-owned objects a caller gets from hit-testing a rendered score.
