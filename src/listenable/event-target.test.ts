@@ -8,7 +8,7 @@ interface TestMap {
 }
 
 describe('EventTarget', () => {
-	it('emit delivers to every listener for the type, not others', () => {
+	it('delivers an event to every listener for its type, and no others', () => {
 		const target = new EventTarget<TestMap>();
 		const pings: number[] = [];
 		const pongs: string[] = [];
@@ -21,7 +21,7 @@ describe('EventTarget', () => {
 		expect(pongs).toEqual([]);
 	});
 
-	it('count reflects registrations and dedups the same listener', () => {
+	it('counts each listener once, however often it registers', () => {
 		const target = new EventTarget<TestMap>();
 		const listener = (_e: { n: number }) => {};
 		expect(target.count('ping')).toBe(0);
@@ -32,7 +32,7 @@ describe('EventTarget', () => {
 		expect(target.count('ping')).toBe(2);
 	});
 
-	it('removeEventListener stops delivery and decrements count', () => {
+	it('stops delivering to a removed listener, and forgets it', () => {
 		const target = new EventTarget<TestMap>();
 		const seen: number[] = [];
 		const listener = (e: { n: number }) => seen.push(e.n);
@@ -44,7 +44,7 @@ describe('EventTarget', () => {
 		expect(target.count('ping')).toBe(0);
 	});
 
-	it('emit with no listeners is a no-op', () => {
+	it('does nothing when an event has no listeners', () => {
 		const target = new EventTarget<TestMap>();
 		expect(() => target.dispatchEvent('pong', 'x')).not.toThrow();
 	});

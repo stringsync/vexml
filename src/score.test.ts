@@ -2,85 +2,22 @@ import { describe, expect, it } from 'bun:test';
 import { DefaultDecoration } from './elements/decoration/default-decoration';
 import { ColorStyle } from './elements/decoration-style/color-style';
 import type { Element } from './elements/element';
-import { ElementIndex } from './elements/element-index';
 import { FakeHitTester } from './elements/hit-tester/fake-hit-tester';
 import type { HitTester } from './elements/hit-tester/hit-tester';
-import { MeasureBox } from './elements/measure-box';
 import type { Note } from './elements/note';
-import { System } from './elements/system';
 import { ScoreReader } from './engraving/score-reader';
 import { Rect } from './geometry';
 import { FakeHost } from './host/host/fake-host';
 import type { FakeLayer } from './host/layer/fake-layer';
-import type { Viewport } from './host/viewport/viewport';
 import { SequenceFactory } from './playback/sequence-factory';
 import { Score } from './score';
-
-// An empty timeline — these tests exercise events/layers/hover, not playback.
-const EMPTY_SEQUENCE = new SequenceFactory(
-	new ScoreReader(),
-	[],
-).createFromInput({
-	measures: [],
-	notes: [],
-});
-
-// Wrap a HitTester into the ElementIndex Score takes; these tests don't enumerate.
-function elementIndex(hitTester: HitTester): ElementIndex {
-	return new ElementIndex(
-		hitTester,
-		new Map(),
-		new Map(),
-		new Map(),
-		[],
-		[],
-		[],
-	);
-}
-
-// A bare hit-target measure box: an empty system, no per-part measures.
-function measureBox(rect: Rect): MeasureBox {
-	return new MeasureBox(
-		rect,
-		viewport,
-		'1',
-		0,
-		[],
-		new System(rect, viewport, 0, []),
-		[],
-	);
-}
-
-// A bare EventTarget has no DOM tree, so a synthetic Event with the coords the handler reads is
-// enough to drive a pointer event through.
-class FakePointerEvent extends Event {
-	constructor(
-		type: string,
-		readonly clientX: number,
-		readonly clientY: number,
-	) {
-		super(type);
-	}
-}
-
-const viewport: Viewport = {
-	clientRectOf: (r) => ({ x: r.x, y: r.y, width: r.w, height: r.h }) as DOMRect,
-	toScoreSpace: (x, y) => ({ x, y }),
-};
-
-function fixture(target: Element | null) {
-	const host = new FakeHost();
-	const index = new FakeHitTester(target);
-	const decoration = new DefaultDecoration(host, new ColorStyle());
-	const score = new Score(
-		host,
-		elementIndex(index),
-		[decoration],
-		EMPTY_SEQUENCE,
-		host.scroller,
-	);
-	return { host, index, decoration, score };
-}
+import {
+	EMPTY_SEQUENCE,
+	elementIndex,
+	FakePointerEvent,
+	fixture,
+	measureBox,
+} from './score-harness';
 
 describe('Score', () => {
 	it('a pointer event hit-tests the point and emits target, score-space point, and native', () => {
@@ -219,7 +156,7 @@ describe('Score', () => {
 		expect(seen).toEqual([{ width: 100, height: 50 }]);
 	});
 
-	it('addLayer delegates to the host and forwards zIndex; rejects non-integers', () => {
+	it('gets a layer from the host at the requested z-index, and rejects a non-integer one', () => {
 		const { host, score } = fixture(null);
 		const layer = score.addLayer('content');
 		expect(host.created).toHaveLength(1);
@@ -230,14 +167,14 @@ describe('Score', () => {
 		expect(() => score.addLayer('content', Number.NaN)).toThrow();
 	});
 
-	it('createPlayhead draws on its own content layer', () => {
+	it('gives a new playhead a content layer of its own to draw on', () => {
 		const { host, score } = fixture(null);
 		score.createPlayhead();
 		expect(host.created).toHaveLength(1);
 		expect(host.created[0]?.kind).toBe('content');
 	});
 
-	it('getElements returns the index the score was built with', () => {
+	it('hands back the element index it was built with', () => {
 		const index = elementIndex(new FakeHitTester(null));
 		const host = new FakeHost();
 		const score = new Score(
@@ -250,7 +187,7 @@ describe('Score', () => {
 		expect(score.getElements()).toBe(index);
 	});
 
-	it('getTimeAt interpolates the time under a point and reports the closest step', () => {
+	it('interpolates the playback time under a point, and reports the step nearest it', () => {
 		const host = new FakeHost();
 		// A measure at index 0 with two quarter notes (x 10 @ beat 0, x 20 @ beat 1) at 120bpm.
 		const sequence = new SequenceFactory(new ScoreReader(), []).createFromInput(
@@ -320,7 +257,7 @@ describe('Score', () => {
 		expect(offScore.getTimeAt({ x: 15, y: 50 })).toBeNull();
 	});
 
-	it('dispose detaches every listener and tears down the decorations and host', () => {
+	it('detaches every listener and tears down its decorations and host when disposed', () => {
 		const target = measureBox(new Rect(0, 0, 10, 10));
 		const { host, index, decoration, score } = fixture(target);
 		score.addEventListener('pointermove', () => {});

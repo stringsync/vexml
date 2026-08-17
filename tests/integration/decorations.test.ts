@@ -63,13 +63,13 @@ async function decorate(mode: 'color' | 'halo', file: string): Promise<Buffer> {
 }
 
 describe('decorations', () => {
-	it.concurrent('a colored note', async () => {
+	it.concurrent('draws a colored note', async () => {
 		expect(await decorate('color', 'note.musicxml')).toMatchScreenshot(
 			'decoration_color.png',
 		);
 	});
 
-	it.concurrent('a haloed note', async () => {
+	it.concurrent('draws a halo behind a note', async () => {
 		expect(await decorate('halo', 'note.musicxml')).toMatchScreenshot(
 			'decoration_halo.png',
 		);
@@ -78,13 +78,13 @@ describe('decorations', () => {
 	// A notation+tab document: the notation staff's noteheads and the tab staff's fret numbers both
 	// light up. Color restamps each notehead glyph and each fret digit in blue; halo draws a soft
 	// blue circle behind every notehead and every fret.
-	it.concurrent('colored notes and frets', async () => {
+	it.concurrent('colors both a note and its tab fret', async () => {
 		expect(
 			await decorate('color', 'structure_notation_and_tab_parts.musicxml'),
 		).toMatchScreenshot('decoration_tab_color.png');
 	});
 
-	it.concurrent('haloed notes and frets', async () => {
+	it.concurrent('halos both a note and its tab fret', async () => {
 		expect(
 			await decorate('halo', 'structure_notation_and_tab_parts.musicxml'),
 		).toMatchScreenshot('decoration_tab_halo.png');

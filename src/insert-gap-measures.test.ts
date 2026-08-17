@@ -1,60 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { MDOMParser, type Part } from '@stringsync/mdom';
-import type { Gap } from './config';
 import { gapDocumentIndexes, insertGapMeasures } from './gaps';
-
-const XML = `<?xml version="1.0"?>
-<score-partwise version="4.0">
-  <part-list>
-    <score-part id="P1"><part-name>A</part-name></score-part>
-    <score-part id="P2"><part-name>B</part-name></score-part>
-  </part-list>
-  <part id="P1">
-    <measure number="1">
-      <attributes>
-        <divisions>1</divisions>
-        <key><fifths>2</fifths></key>
-        <time><beats>4</beats><beat-type>4</beat-type></time>
-        <clef><sign>G</sign><line>2</line></clef>
-      </attributes>
-      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
-    </measure>
-    <measure number="2">
-      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
-    </measure>
-  </part>
-  <part id="P2">
-    <measure number="1">
-      <attributes>
-        <divisions>1</divisions>
-        <clef><sign>F</sign><line>4</line></clef>
-      </attributes>
-      <note><pitch><step>C</step><octave>3</octave></pitch><duration>4</duration><type>whole</type></note>
-    </measure>
-    <measure number="2">
-      <note><pitch><step>C</step><octave>3</octave></pitch><duration>4</duration><type>whole</type></note>
-    </measure>
-  </part>
-</score-partwise>`;
-
-function parts(): Part[] {
-	return new MDOMParser().parseFromString(XML).score.parts;
-}
-
-const gap = (beforeMeasureIndex: number, durationMs = 1000): Gap => ({
-	beforeMeasureIndex,
-	durationMs,
-});
-
-describe('gapDocumentIndexes', () => {
-	it('maps caller indexes to shifted document indexes, preserving config order', () => {
-		expect(gapDocumentIndexes([gap(4), gap(0), gap(0)])).toEqual([
-			{ gap: gap(4), measureIndex: 6 },
-			{ gap: gap(0), measureIndex: 0 },
-			{ gap: gap(0), measureIndex: 1 },
-		]);
-	});
-});
+import { gap, parts } from './gaps-harness';
 
 describe('insertGapMeasures', () => {
 	it('inserts an empty, unnumbered measure into every part, shifting indexes but not numbers', () => {

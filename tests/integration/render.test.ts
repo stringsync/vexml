@@ -2460,10 +2460,14 @@ const TEST_CASES = [
 ];
 
 describe('render', () => {
+	// rule-ignore simple-test-setup: these 190 cases are one assertion over a corpus, and
+	// TEST_CASES above is the readable form of it: each entry is a fixture, a baseline and
+	// the comment explaining what that file covers. Unrolling them would be 190 copies of
+	// the same three lines, and adding a fixture would stop being a one-line change.
 	for (const t of TEST_CASES) {
 		// Concurrent: each render borrows its own page from the pool (see setup.ts), so
 		// bun runs up to POOL_SIZE of them in parallel across separate renderer processes.
-		it.concurrent(t.screenshotFilename, async () => {
+		it.concurrent(`renders ${t.screenshotFilename}`, async () => {
 			const png = await render(t.musicXMLFilename, t.config);
 			expect(png).toMatchScreenshot(t.screenshotFilename);
 		});

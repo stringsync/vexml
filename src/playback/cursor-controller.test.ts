@@ -1,53 +1,13 @@
 import { describe, expect, it } from 'bun:test';
-import type { Note } from '../elements/note';
-import { ScoreReader } from '../engraving/score-reader';
 import type { CursorChangeEvent } from '../events';
 import { Rect } from '../geometry';
 import { FakeScroller } from '../host/scroller/fake-scroller';
-import { CursorController } from './cursor-controller';
+import { A, B, controller } from './cursor-controller-harness';
 import { FakeCursorHost } from './cursor-host/fake-cursor-host';
 import { FakeCursorView } from './cursor-view/fake-cursor-view';
-import type { SequenceNote } from './sequence';
-import { SequenceFactory } from './sequence-factory';
-
-// Identity tokens — only used for identity in active sets / deltas.
-function fakeNote(label: string): Note {
-	return { label } as unknown as Note;
-}
-const SYS = new Rect(0, 0, 1000, 100);
-const A = fakeNote('a');
-const B = fakeNote('b');
-const C = fakeNote('c');
-const D = fakeNote('d');
-
-// Four quarters in one 4/4 measure @120bpm: steps at 0/500/1000/1500 ms, durationMs 2000.
-function fourQuarters() {
-	const notes: SequenceNote[] = [A, B, C, D].map((note, i) => ({
-		note,
-		measureIndex: 0,
-		measureBeat: i,
-		beats: 1,
-		x: 10 + i * 10,
-		tiedFrom: null,
-	}));
-	return new SequenceFactory(new ScoreReader(), []).createFromInput({
-		measures: [
-			{ index: 0, beats: 4, tempoBpm: 120, jumps: [], systemRect: SYS },
-		],
-		notes,
-	});
-}
-
-function controller(opts?: { host?: FakeCursorHost; scroller?: FakeScroller }) {
-	return new CursorController(
-		fourQuarters(),
-		opts?.host ?? new FakeCursorHost(),
-		opts?.scroller ?? new FakeScroller(),
-	);
-}
 
 describe('CursorController', () => {
-	it('next/previous step through tickables and clamp at the ends', () => {
+	it('steps forward and back through the tickables, clamping at both ends', () => {
 		const cursor = controller();
 		expect(cursor.getIndex()).toBe(0);
 		cursor.next();
@@ -64,7 +24,7 @@ describe('CursorController', () => {
 		expect(cursor.getIndex()).toBe(3);
 	});
 
-	it('seekMs clamps to [0, durationMs] and resolves the step', () => {
+	it('clamps a seek in ms to [0, durationMs] and resolves the step it lands on', () => {
 		const cursor = controller();
 		cursor.seekMs(1200);
 		expect(cursor.getIndex()).toBe(2);
@@ -79,14 +39,14 @@ describe('CursorController', () => {
 		expect(cursor.isDone()).toBe(true);
 	});
 
-	it('seekBeats lands on the matching time', () => {
+	it('lands on the matching time when seeking in beats', () => {
 		const cursor = controller();
 		cursor.seekBeats(2);
 		expect(cursor.getTimeMs()).toBeCloseTo(1000);
 		expect(cursor.getIndex()).toBe(2);
 	});
 
-	it('getActiveElements reports the sounding set at the current step', () => {
+	it('reports the set sounding at the current step', () => {
 		const cursor = controller();
 		expect(cursor.getActiveElements()).toEqual([A]);
 		cursor.next();
@@ -122,7 +82,7 @@ describe('CursorController', () => {
 		expect(e?.done).toBe(false);
 	});
 
-	it('removeEventListener stops delivery', () => {
+	it('stops delivering to a listener that has been removed', () => {
 		const cursor = controller();
 		const seen: number[] = [];
 		const listener = (e: CursorChangeEvent) => seen.push(e.index);
@@ -133,7 +93,7 @@ describe('CursorController', () => {
 		expect(seen).toEqual([1]);
 	});
 
-	it('sync renders once immediately, then on each change; unsubscribe detaches', () => {
+	it('renders a synced view once immediately, then on each change, until it detaches', () => {
 		const cursor = controller();
 		const view = new FakeCursorView();
 		const detach = cursor.sync(view);
@@ -145,7 +105,7 @@ describe('CursorController', () => {
 		expect(view.events).toHaveLength(2); // detached
 	});
 
-	it('dispose disposes still-attached views but not detached ones', () => {
+	it('disposes the views still attached to it, but not the detached ones', () => {
 		const cursor = controller();
 		const attached = new FakeCursorView();
 		const detached = new FakeCursorView();
@@ -156,7 +116,7 @@ describe('CursorController', () => {
 		expect(detached.disposed).toBe(false);
 	});
 
-	it('follow scrolls only when the bar is not fully visible', () => {
+	it('scrolls while following only when the bar is not fully visible', () => {
 		const host = new FakeCursorHost();
 		const scroller = new FakeScroller();
 		const cursor = controller({ host, scroller });
@@ -173,14 +133,14 @@ describe('CursorController', () => {
 		expect(scroller.calls).toHaveLength(before);
 	});
 
-	it('cancelScroll halts the score scroller', () => {
+	it('halts the score scroller on request', () => {
 		const scroller = new FakeScroller();
 		const cursor = controller({ scroller });
 		cursor.cancelScroll();
 		expect(scroller.cancels).toBe(1);
 	});
 
-	it('isFullyVisible reflects the viewport box', () => {
+	it('knows whether its bar sits entirely inside the viewport', () => {
 		const host = new FakeCursorHost();
 		const cursor = controller({ host });
 		host.vp = new Rect(0, 0, 1000, 1000);

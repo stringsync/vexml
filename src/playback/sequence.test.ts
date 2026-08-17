@@ -48,13 +48,13 @@ function withActive(
 }
 
 describe('Sequence', () => {
-	it('beatsToMs/msToBeats: default 120 bpm when no segments', () => {
+	it('assumes 120 bpm when the score declares no tempo', () => {
 		const seq = tempoOnly([]);
 		expect(seq.beatsToMs(4)).toBeCloseTo(2000);
 		expect(seq.msToBeats(2000)).toBeCloseTo(4);
 	});
 
-	it('beatsToMs/msToBeats: honors a mid-piece tempo change and round-trips', () => {
+	it('honors a mid-piece tempo change, and converts back to the beat it started from', () => {
 		const seq = tempoOnly([
 			{ startBeat: 0, endBeat: 4, bpm: 120 }, // 500 ms / beat
 			{ startBeat: 4, endBeat: 8, bpm: 60 }, // 1000 ms / beat
@@ -66,7 +66,7 @@ describe('Sequence', () => {
 		expect(seq.msToBeats(seq.beatsToMs(6.5))).toBeCloseTo(6.5);
 	});
 
-	it('classify: disjoint sets are all started/stopped', () => {
+	it('counts every note as started or stopped when two steps share none', () => {
 		const seq = withActive([
 			[A, B],
 			[C, D],
@@ -77,7 +77,7 @@ describe('Sequence', () => {
 		expect(r.stopped).toEqual([A, B]);
 	});
 
-	it('classify: a held note (same identity) is sustained', () => {
+	it('counts a held note as sustained', () => {
 		const seq = withActive([
 			[A, B],
 			[B, C],
@@ -88,7 +88,7 @@ describe('Sequence', () => {
 		expect(r.stopped).toEqual([A]);
 	});
 
-	it('classify: a tie sustains and the tied-out note is not a release', () => {
+	it('sustains across a tie, so the tied-out note is not a release', () => {
 		const seq = withActive([[A], [B]], new Map([[B, A]]));
 		const r = seq.classify(0, 1);
 		expect(r.started).toEqual([]);
@@ -96,13 +96,13 @@ describe('Sequence', () => {
 		expect(r.stopped).toEqual([]);
 	});
 
-	it('getHighlighted: lights a whole tie chain from any member (both directions)', () => {
+	it('lights a whole tie chain from any member of it', () => {
 		const seq = withActive([[A], [B]], new Map([[B, A]]));
 		expect(new Set(seq.getHighlighted(0))).toEqual(new Set([A, B]));
 		expect(new Set(seq.getHighlighted(1))).toEqual(new Set([A, B]));
 	});
 
-	it('getHighlighted: walks a whole tie chain from any member', () => {
+	it('walks a tie chain of any length from any member of it', () => {
 		const seq = withActive(
 			[[A], [B], [C]],
 			new Map([
@@ -114,19 +114,19 @@ describe('Sequence', () => {
 		expect(new Set(seq.getHighlighted(2))).toEqual(new Set([A, B, C]));
 	});
 
-	it('getHighlighted: leaves untied notes alone', () => {
+	it('leaves an untied note lit on its own', () => {
 		const seq = withActive([[A, B]], new Map([[C, D]]));
 		expect(new Set(seq.getHighlighted(0))).toEqual(new Set([A, B]));
 	});
 
-	it('classify: same pitch without a tie is a retrigger (stop + start)', () => {
+	it('treats the same pitch without a tie as a retrigger, stopping then starting it', () => {
 		const seq = withActive([[A], [B]]);
 		const r = seq.classify(0, 1);
 		expect(r.started).toEqual([B]);
 		expect(r.stopped).toEqual([A]);
 	});
 
-	it('classify: from nothing, everything is started', () => {
+	it('counts everything as started when coming from nothing', () => {
 		const seq = withActive([[A, B]]);
 		const r = seq.classify(null, 0);
 		expect(r.started).toEqual([A, B]);
