@@ -1,21 +1,9 @@
-import type {
-	ConfigInput,
-	CursorController,
-	Element,
-	HoverEvent,
-	PointerTargetEvent,
-	StandardLayout,
-	SystemOverflow,
-} from '@stringsync/vexml';
-import { Note, render, type Score, TabPosition } from '@stringsync/vexml';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import type { SystemOverflow } from '@stringsync/vexml';
+import { useDisposerEffect, useReactive, useResource } from '@webappwiz/react';
+import { useEffect, useRef, useState } from 'react';
 import { ConfigSlider } from './config-slider';
 import {
-	ACTIVE_COLOR,
 	DARK_BG,
-	DARK_INK,
-	DARK_KEY,
-	DEBOUNCE_MS,
 	DEFAULT_FIXTURE,
 	DEFAULT_MAX_SYSTEM_FILL,
 	DEFAULT_NOTE_SPACING,
@@ -23,532 +11,137 @@ import {
 	DEFAULT_SYSTEM_SPACING,
 	DEFAULT_WIDTH,
 	FAST_RENDER_MS,
-	GRACE_MS,
-	HALO_COLOR,
-	HOVER_COLOR,
-	STORAGE_KEY,
 } from './constants';
-import { describe } from './format';
 import { Header } from './header';
-import { useInstrument, useLocalStorage } from './hooks';
-import { INSTRUMENTS } from './instrument';
+import { INSTRUMENTS } from './instrument/instruments';
 import { Player } from './player';
+import { ScoreFit } from './score-fit';
 import { Or, Section } from './section';
+import { SiteModel } from './site-model';
 
 // Vite reads the test fixtures straight from ../tests at build time (fs.allow: ['..'] in
 // vite.config permits it) and hands us the file list — no symlink or hand-written manifest.
 // Keyed by basename, each value lazily loads the file's raw text.
-const fixtures: Record<string, () => Promise<string>> = {};
+const loaders: Record<string, () => Promise<string>> = {};
 for (const [path, load] of Object.entries(
 	import.meta.glob<string>('../../tests/integration/__data__/*.musicxml', {
 		query: '?raw',
 		import: 'default',
 	}),
 )) {
-	fixtures[path.slice(path.lastIndexOf('/') + 1).replace('.musicxml', '')] =
+	loaders[path.slice(path.lastIndexOf('/') + 1).replace('.musicxml', '')] =
 		load;
 }
-const fixtureNames = Object.keys(fixtures).sort();
+const fixtureNames = Object.keys(loaders).sort();
+const fixtures = {
+	names: () => fixtureNames,
+	load: (name: string) => loaders[name]?.(),
+};
+
+// Hoisted, not inline: useResource rebuilds when the factory's identity changes, so an arrow
+// written at the call site would build (and dispose) a fresh model on every render.
+// Render-pure, as useResource requires: SiteModel's constructor wires in-memory state and its own
+// dispatchers, and acquires nothing that needs cleanup (the AudioContext is built lazily).
+const buildModel = () => new SiteModel(fixtures, localStorage);
+
+// What the component reads off the model. Every field is a primitive or a stable reference, so
+// useReactive's shallow comparison decides re-renders.
+const projection = (model: SiteModel) => ({
+	text: model.document.text,
+	input: model.document.input,
+	fixture: model.document.fixture,
+	error: model.error,
+	initialized: model.initialized,
+	dark: model.dark,
+	session: model.session,
+	applied: model.config.applied,
+	renderMs: model.config.renderMs,
+	debouncing: model.config.debouncing || model.document.debouncing,
+	config: model.config.live,
+	canReset: model.config.canReset(),
+	instrumentName: model.instrument.name,
+	muted: model.instrument.muted,
+	playing: model.session?.playing ?? false,
+	timeMs: model.session?.timeMs ?? 0,
+	durationMs: model.session?.durationMs ?? 0,
+	tooltip: model.session?.tooltip ?? null,
+});
 
 export default function App() {
 	const containerRef = useRef<HTMLDivElement>(null);
-	const scoreRef = useRef<Score | null>(null);
 	const playerRef = useRef<HTMLDivElement>(null);
-	const [text, setText] = useState('');
-	const [input, setInput] = useState<string | Blob | null>(null);
-	const [fixture, setFixture] = useState('');
-	const [error, setError] = useState<string | null>(null);
-	const [renderMs, setRenderMs] = useState<number | null>(null);
-	// Mirror of renderMs the debounce effect reads without depending on it — otherwise a
-	// render-time report would re-fire the effect and flash a phantom debounce.
-	const renderMsRef = useRef<number | null>(null);
+	const fitRef = useRef<ScoreFit | null>(null);
+	const model = useResource(buildModel);
+	const {
+		text,
+		input,
+		fixture,
+		error,
+		initialized,
+		dark,
+		session,
+		applied,
+		renderMs,
+		debouncing,
+		config,
+		canReset,
+		instrumentName,
+		muted,
+		playing,
+		timeMs,
+		durationMs,
+		tooltip,
+	} = useReactive(model, projection, ['changed']);
+
+	// Purely local view state: nothing outside the component reads any of it.
 	const [dragging, setDragging] = useState(false);
-	const [debouncing, setDebouncing] = useState(false);
-	// Loading overlay until the first render settles; the app always renders on mount.
-	const [initialized, setInitialized] = useState(false);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	// The sheet opens collapsed with no animation: the grid-rows transition is only enabled once
 	// the user first taps it, so the initial (and any HMR/remount) render can't slide it down.
 	const [sheetToggled, setSheetToggled] = useState(false);
-	// The fit effect's measure(), re-run when the mobile sheet finishes opening/closing — the
-	// player riding the sheet moves without firing any resize/ResizeObserver event.
-	const measureRef = useRef<(() => void) | null>(null);
-	const [dark, setDark] = useLocalStorage(DARK_KEY, false);
 	const [scrolled, setScrolled] = useState(false);
-	const [tooltip, setTooltip] = useState<{
-		x: number;
-		y: number;
-		text: string;
-	} | null>(null);
-	// The note whose halo is currently lit, so the next move can turn it back off.
-	const haloRef = useRef<Note | null>(null);
-	// Playback cursor: owned by the current Score (disposed with it). `change` keeps timeMs in sync,
-	// whether movement came from the play loop, next/previous, or seek.
-	const cursorRef = useRef<CursorController | null>(null);
-	// Attack the notes already under the cursor when play starts. The note at the cursor's position
-	// fired its `started` event while paused (during load/seek), so the play loop — which moves
-	// *within* that note's duration — never sees it start. Set by the score-load effect, called by
-	// the play loop on each start so the first (or resumed) note actually sounds.
-	const playStartRef = useRef<(() => void) | null>(null);
-	const [playing, setPlaying] = useState(false);
-	// Mirror of `playing` the cursor's visibility listener reads live (it's bound once per render).
-	const playingRef = useRef(false);
-	playingRef.current = playing;
-	// Synth voice for playback + note previews. The change/click handlers below drive it via the ref.
-	const {
-		ref: instrumentRef,
-		name: instrumentName,
-		setName: setInstrumentName,
-		muted,
-		setMuted,
-	} = useInstrument();
-	const [timeMs, setTimeMs] = useState(0);
-	const [durationMs, setDurationMs] = useState(0);
-	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-		undefined,
-	);
-	// The effect below re-renders the last input whenever config changes.
-	const [config, setConfig] = useState<ConfigInput>({});
+
+	const layout = config.layout?.type === 'standard' ? config.layout : undefined;
 	const noteSpacing = config.noteSpacing ?? DEFAULT_NOTE_SPACING;
 	const softmaxFactor = config.softmaxFactor ?? DEFAULT_SOFTMAX_FACTOR;
 	const systemSpacing = config.systemSpacing ?? DEFAULT_SYSTEM_SPACING;
 	const maxSystemFill = config.maxSystemFill ?? DEFAULT_MAX_SYSTEM_FILL;
 	const notationFont = config.fonts?.notation?.family ?? 'Bravura';
-	const resetKeys = [
-		'noteSpacing',
-		'softmaxFactor',
-		'systemSpacing',
-		'maxSystemFill',
-	] as const;
-	const reset = (key: (typeof resetKeys)[number]) =>
-		setConfig(({ [key]: _, ...rest }) => rest);
-
-	// The layout knobs live in one nested object, so each writes through the others instead
-	// of replacing it — setting the width must not silently reset the overflow mode.
-	const layout = config.layout?.type === 'standard' ? config.layout : undefined;
 	const width = layout?.referenceWidth ?? DEFAULT_WIDTH;
-	const layoutKeys = [
-		'referenceWidth',
-		'honorSystemBreaks',
-		'overflow',
-	] as const;
-	const setLayout = (patch: Partial<StandardLayout>) =>
-		setConfig((c) => ({
-			...c,
-			layout: {
-				...(c.layout?.type === 'standard' ? c.layout : null),
-				...patch,
-				type: 'standard',
-			},
-		}));
-	const resetLayout = (key: (typeof layoutKeys)[number]) =>
-		setConfig((c) =>
-			c.layout?.type === 'standard'
-				? { ...c, layout: (({ [key]: _, ...rest }) => rest)(c.layout) }
-				: c,
-		);
 
-	const canReset =
-		resetKeys.some((k) => config[k] !== undefined) ||
-		layoutKeys.some((k) => layout?.[k] !== undefined);
-	const resetAll = () =>
-		setConfig((c) => {
-			const next = { ...c };
-			for (const k of resetKeys) {
-				delete next[k];
-			}
-			delete next.layout;
-			return next;
-		});
-
-	// `config` stays live so the sliders/reset respond instantly; `renderConfig` lags
-	// behind it by the debounce so dragging a slider re-renders once it settles, not on
-	// every step. The loading overlay shows while waiting (shared `debouncing` flag).
-	// Seed from `config` (same reference) so the first render uses the real config, not {}.
-	// Otherwise the first setRenderMs flips renderConfig {} -> config and double-renders on mount.
-	const [renderConfig, setRenderConfig] = useState<ConfigInput>(config);
-	const skipConfigDebounce = useRef(true);
 	useEffect(() => {
-		if (skipConfigDebounce.current) {
-			skipConfigDebounce.current = false;
-			return;
-		}
-		// If the last render was fast, apply config changes immediately; only debounce
-		// once renders get slow enough to lag the sliders.
-		if (renderMsRef.current != null && renderMsRef.current <= FAST_RENDER_MS) {
-			setRenderConfig(config);
-			setDebouncing(false);
-			return;
-		}
-		setDebouncing(true);
-		const t = setTimeout(() => {
-			setRenderConfig(config);
-			setDebouncing(false);
-		}, DEBOUNCE_MS);
-		return () => clearTimeout(t);
-	}, [config]);
+		model.document.restore();
+		model.instrument.preload();
+	}, [model]);
 
+	// Re-render the score whenever what to draw, or how to draw it, changes.
 	useEffect(() => {
 		const container = containerRef.current;
-		if (!container || input == null) {
-			return;
-		}
-		// Replace the previous render before starting a new one: render() appends a fresh
-		// managed canvas, so the old Score must be disposed or canvases would stack.
-		scoreRef.current?.dispose();
-		scoreRef.current = null;
-		setError(null);
-		const start = performance.now();
-		// Engrave once at the configured reference width; CSS then scales the canvas to fit
-		// its container — down when narrow, never past 100% when wide — so resizing the
-		// window re-scales instantly without re-rendering.
-		let cancelled = false;
-		// Turn off the lit halo and hide the tooltip; used to reset on teardown/re-render.
-		const clearHalo = () => {
-			haloRef.current?.halo.off();
-			haloRef.current?.color.off();
-			haloRef.current = null;
-			container.style.cursor = '';
-			setTooltip(null);
-		};
-		let detach: (() => void) | undefined;
-		// Dark mode re-engraves the score in light ink (rather than CSS-inverting a black engraving),
-		// preserving the chosen font families and just tinting them. The dark page color is painted on
-		// the container itself (below), so it shows through the score's transparent pixels with no flash.
-		render(input, container, {
-			...renderConfig,
-			...(dark && {
-				fonts: {
-					notation: {
-						family: renderConfig.fonts?.notation?.family ?? 'Bravura',
-						color: DARK_INK,
-					},
-					text: {
-						family: renderConfig.fonts?.text?.family ?? 'Source Sans 3',
-						color: DARK_INK,
-					},
-				},
-			}),
-		})
-			.then((score) => {
-				// The effect can re-run before this resolves; drop the late score so it
-				// doesn't leak a canvas into a container a newer render already owns.
-				if (cancelled) {
-					score.dispose();
-					return;
-				}
-				scoreRef.current = score;
-				renderMsRef.current = performance.now() - start;
-				setRenderMs(renderMsRef.current);
-				setInitialized(true);
-
-				// Headless cursor + the built-in bar view. Page-turn scrolling: when the bar crosses
-				// out of the scroll box (by moving, or the user scrolling it away), bring it back.
-				const cursor = score.createCursor();
-				cursor.sync(score.createPlayhead());
-				cursor.addEventListener('visibility', (e) => {
-					if (!e.fullyVisible && playingRef.current) {
-						cursor.scrollIntoView();
-					}
-				});
-				// The notes (and their tab frets) currently under the cursor. Cursor coloring and the
-				// hover halo share one color channel, so recolor() resolves both: hover wins while a
-				// note is hovered, otherwise the active color shows, otherwise it clears. Rests never
-				// enter `lit` (no pitch), so only sounding notes get the active color.
-				const lit = new Set<Note>();
-				const recolor = (n: Note) => {
-					if (n === haloRef.current) {
-						n.color.on(HOVER_COLOR);
-					} else if (lit.has(n)) {
-						n.color.on(ACTIVE_COLOR);
-					} else {
-						n.color.off();
-					}
-				};
-				const paint = (active: readonly Note[]) => {
-					const sounding = active.filter((n) => n.getPitch() !== null);
-					for (const n of [...lit]) {
-						if (!sounding.includes(n)) {
-							lit.delete(n);
-							recolor(n);
-						}
-					}
-					for (const n of sounding) {
-						if (!lit.has(n)) {
-							lit.add(n);
-							recolor(n);
-						}
-					}
-				};
-				// The synth voice each sounding note owns, so it can be released when the note stops.
-				// Keyed by Note (not pitch) so a re-struck pitch — which the transition reports in
-				// both `stopped` and `started` — releases the old voice and attacks a fresh one.
-				const voices = new Map<Note, () => void>();
-				// Attack one sounding note, registering its releaser in `voices`. No-op if already
-				// voiced (so a re-attack of a still-sounding note is skipped).
-				const attack = (n: Note) => {
-					const instrument = instrumentRef.current;
-					const pitch = n.getPitch();
-					if (!instrument || !pitch || voices.has(n)) {
-						return;
-					}
-					const graces = n.getGraceNotes();
-					if (graces.length === 0) {
-						voices.set(n, instrument.play(pitch));
-						return;
-					}
-					// Grace notes steal no timeline time, so sound them as quick plucks staggered
-					// just before the main note, then attack the main note after the run. The
-					// voice releaser cancels a still-pending main attack (clearTimeout) or
-					// releases the live voice; pause/teardown stopAll() is the backstop.
-					let offset = 0;
-					for (const g of graces) {
-						const gp = g.getPitch();
-						if (gp) {
-							const at = offset;
-							// Light the grace while it sounds, then clear it as the next one (or
-							// the main note) takes over.
-							setTimeout(() => {
-								instrument.pluck(gp, GRACE_MS);
-								g.color.on(ACTIVE_COLOR);
-							}, at);
-							setTimeout(() => g.color.off(), at + GRACE_MS);
-							offset += GRACE_MS;
-						}
-					}
-					let release = () => {};
-					const id = setTimeout(() => {
-						release = instrument.play(pitch);
-					}, offset);
-					voices.set(n, () => {
-						clearTimeout(id);
-						release();
-					});
-				};
-				cursor.addEventListener('change', (e) => {
-					setTimeMs(e.timeMs);
-					paint(e.highlighted);
-					// Release stopped notes; attack started ones (only while playing, so seeking/
-					// scrubbing stays silent). Stop before start so a re-strike re-attacks cleanly.
-					for (const n of e.stopped) {
-						voices.get(n)?.();
-						voices.delete(n);
-					}
-					if (playingRef.current) {
-						for (const n of e.started) {
-							attack(n);
-						}
-					}
-				});
-				// On play start, sound the notes already under the cursor — they started while paused,
-				// so the play loop (moving within their duration) never re-fires `started` for them.
-				playStartRef.current = () => {
-					for (const n of cursor.getActiveElements()) {
-						attack(n);
-					}
-				};
-				paint(cursor.getHighlightedElements());
-				cursorRef.current = cursor;
-				setDurationMs(score.getDurationMs());
-				setTimeMs(0);
-				setPlaying(false);
-
-				// A click/tap pins a target (toggle); hover is transient. The pinned one wins, so
-				// hovering elsewhere — or scrolling it out from under the pointer — never clears the
-				// pin. Clicking it again, or clicking empty space, unpins.
-				let pinned: Element | null = null;
-				let hovered: Element | null = null;
-				const apply = () => {
-					const target = pinned ?? hovered;
-					const note =
-						target instanceof Note
-							? target
-							: target instanceof TabPosition
-								? target.getNote()
-								: null;
-					if (note !== haloRef.current) {
-						const prev = haloRef.current;
-						haloRef.current = note;
-						prev?.halo.off();
-						// recolor reads haloRef.current, so update it first: prev falls back to its
-						// active color (or clears), note picks up the hover color.
-						if (prev) {
-							recolor(prev);
-						}
-						note?.halo.on(HALO_COLOR);
-						if (note) {
-							recolor(note);
-						}
-					}
-					container.style.cursor = note ? 'pointer' : '';
-					// Only note-bearing targets get a tooltip; describe() is empty for a measure.
-					if (note && target) {
-						const r = target.getBoundingClientRect();
-						setTooltip({
-							x: r.left + r.width / 2,
-							y: r.top,
-							text: describe(target),
-						});
-					} else {
-						setTooltip(null);
-					}
-				};
-				// hover fires once per target change — on move, and (unlike pointermove) when a scroll
-				// slides a different target under the pointer, so it tracks what's actually hovered.
-				const onHover = (e: HoverEvent) => {
-					hovered = e.target;
-					apply();
-				};
-				const onClick = (e: PointerTargetEvent) => {
-					// Only notes/frets are pinnable; clicking a measure or empty space unpins.
-					const t =
-						e.target instanceof Note || e.target instanceof TabPosition
-							? e.target
-							: null;
-					pinned = pinned === t ? null : t;
-					apply();
-				};
-				// Click or drag anywhere on the score scrubs the cursor to that position's time.
-				const seekTo = (point: { x: number; y: number }) => {
-					const t = score.getTimeAt(point);
-					if (t) {
-						setPlaying(false);
-						cursor.seekMs(t.ms);
-					}
-				};
-				const onPointerDown = (e: PointerTargetEvent) => seekTo(e.point);
-				// buttons === 1 means the primary button is held, so this continues the scrub
-				// during a drag and ignores a plain hover (no manual drag-state flag needed).
-				const onPointerMove = (e: PointerTargetEvent) => {
-					if (e.native.buttons === 1) {
-						seekTo(e.point);
-						if (!cursor.isFullyVisible()) {
-							cursor.scrollIntoView({ behavior: 'smooth' });
-						}
-					}
-				};
-				// Finishing a scrub-drag: if the cursor landed off-screen, bring it into view (the
-				// playing-gated visibility listener above stays quiet while paused).
-				const onPointerUp = () => {
-					if (!cursor.isFullyVisible()) {
-						cursor.scrollIntoView({ behavior: 'smooth' });
-					}
-				};
-				score.addEventListener('hover', onHover);
-				score.addEventListener('click', onClick);
-				score.addEventListener('pointerdown', onPointerDown);
-				score.addEventListener('pointermove', onPointerMove);
-				score.addEventListener('pointerup', onPointerUp);
-				detach = clearHalo;
-			})
-			.catch((e: unknown) => {
-				renderMsRef.current = null;
-				setRenderMs(null);
-				setError(e instanceof Error ? e.message : String(e));
-				setInitialized(true);
-			});
-		return () => {
-			cancelled = true;
-			// score.dispose() drops its own listeners (and disposes the cursor); this only unbinds
-			// the DOM-level leave handler and stops the play loop.
-			detach?.();
-			scoreRef.current?.dispose();
-			scoreRef.current = null;
-			cursorRef.current = null;
-			setPlaying(false);
-		};
-	}, [input, renderConfig, dark, instrumentRef.current]);
-
-	// Advance the cursor in real time while playing. seekMs drives the bar and the synth (the change
-	// handler attacks/releases voices). ponytail: wall-clock RAF, not an audio clock.
-	useEffect(() => {
-		const cursor = cursorRef.current;
-		if (!playing || !cursor) {
-			return;
-		}
-		playStartRef.current?.();
-		let raf = 0;
-		let last = performance.now();
-		const tick = (now: number) => {
-			const next = cursor.getTimeMs() + (now - last);
-			last = now;
-			if (next >= durationMs) {
-				cursor.seekMs(durationMs);
-				setPlaying(false);
-				return;
-			}
-			cursor.seekMs(next);
-			raf = requestAnimationFrame(tick);
-		};
-		raf = requestAnimationFrame(tick);
-		// Cut the sounding voices when playback stops (pause, end, or teardown).
-		return () => {
-			cancelAnimationFrame(raf);
-			instrumentRef.current?.stopAll();
-		};
-	}, [playing, durationMs, instrumentRef.current?.stopAll]);
-
-	// Fit the score's scroll box to the gap between the canvas top and the player controls so the
-	// music fills the space above them and scrolls (page-turns) within it. config.height flows
-	// through the config -> renderConfig effect, which conditionally debounces the re-render
-	// (immediate when the last render was fast) — so a viewport-height resize is debounced there.
-	useEffect(() => {
-		if (!initialized) {
-			return;
-		}
-		const measure = () => {
-			const c = containerRef.current?.getBoundingClientRect();
-			const p = playerRef.current?.getBoundingClientRect();
-			if (!c || !p) {
-				return;
-			}
-			// On mobile the player rides up with the open bottom sheet, so a gap measured
-			// against it would collapse the scroll box to ~0 — and stick, since closing the
-			// sheet fires no event here. Skip those readings; the sheet's transition end
-			// calls measureRef, which re-measures once the player is back at rest.
-			if (p.top < c.top) {
-				return;
-			}
-			// -16 leaves a little air above the floating controls.
-			const height = Math.max(0, Math.round(p.top - c.top - 16));
-			// Returning the same object bails the update, breaking the feedback loop: applying
-			// height resizes the container, re-firing the observer — but the gap (top of card
-			// to top of player) is unchanged. Also no-ops width-only resizes.
-			setConfig((cfg) => (cfg.height === height ? cfg : { ...cfg, height }));
-		};
-		measureRef.current = measure;
-		measure();
-		// Refit on any container dimension change (width resize, editor toggle, our own height
-		// update); the window 'resize' covers viewport-height changes that move the player
-		// without resizing the container.
-		const container = containerRef.current;
-		const ro = new ResizeObserver(measure);
 		if (container) {
-			ro.observe(container);
+			model.renderInto(container, { input, config: applied, dark });
 		}
-		window.addEventListener('resize', measure);
-		return () => {
-			measureRef.current = null;
-			ro.disconnect();
-			window.removeEventListener('resize', measure);
-		};
-	}, [initialized]);
+	}, [model, input, applied, dark]);
 
-	const togglePlay = useCallback(() => {
-		const cursor = cursorRef.current;
-		if (!cursor) {
-			return;
-		}
-		// Restart from the top if we're parked at the end.
-		if (!playingRef.current && cursor.isDone()) {
-			cursor.seekMs(0);
-		}
-		// Bring the cursor into view when starting playback (e.g. after scrolling away while paused).
-		if (!playingRef.current && !cursor.isFullyVisible()) {
-			cursor.scrollIntoView({ behavior: 'smooth' });
-		}
-		setPlaying((p) => !p);
-	}, []);
+	// Size the score's scroll box to the gap above the player controls, once both exist.
+	// A disposer effect, not useResource: this really does acquire a ResizeObserver and a window
+	// listener, which must not happen during render.
+	useDisposerEffect(
+		(disposer) => {
+			const container = containerRef.current;
+			const player = playerRef.current;
+			if (!initialized || !container || !player) {
+				return;
+			}
+			fitRef.current = disposer.use(
+				new ScoreFit(container, player, model.config),
+			);
+			disposer.defer(() => {
+				fitRef.current = null;
+			});
+		},
+		[model, initialized],
+	);
+
 	// Spacebar toggles playback, except while typing in the editor.
 	useEffect(() => {
 		const onKeyDown = (e: KeyboardEvent) => {
@@ -564,101 +157,25 @@ export default function App() {
 				return;
 			}
 			e.preventDefault();
-			togglePlay();
+			model.session?.togglePlay();
 		};
 		window.addEventListener('keydown', onKeyDown);
 		return () => window.removeEventListener('keydown', onKeyDown);
-	}, [togglePlay]);
-	const stepPrev = () => {
-		setPlaying(false);
-		cursorRef.current?.previous();
-	};
-	const stepNext = () => {
-		setPlaying(false);
-		cursorRef.current?.next();
-	};
-
-	// Load the default example into the editor and the score.
-	const loadDefault = useCallback(() => {
-		setFixture(DEFAULT_FIXTURE);
-		fixtures[DEFAULT_FIXTURE]?.().then((xml) => {
-			setText(xml);
-			setInput(xml);
-		});
-	}, []);
-
-	// Restore the last-edited MusicXML, or open with the default example.
-	useEffect(() => {
-		const saved = localStorage.getItem(STORAGE_KEY);
-		// ponytail: .mxl saves a `[mxl] name` placeholder, not the file — can't restore it, so fall through to the default example.
-		if (saved != null && !saved.startsWith('[mxl] ')) {
-			setText(saved);
-			setInput(saved);
-			return;
-		}
-		loadDefault();
-	}, [loadDefault]);
-
-	function save(value: string) {
-		localStorage.setItem(STORAGE_KEY, value);
-	}
-
-	function clearStorage() {
-		localStorage.removeItem(STORAGE_KEY);
-		clearTimeout(debounceRef.current);
-		setDebouncing(false);
-		loadDefault();
-	}
-
-	function loadFile(file: File) {
-		clearTimeout(debounceRef.current);
-		setDebouncing(false);
-		setFixture('');
-		// .mxl is a zip; render() detects MXL from a Blob. MusicXML is plain text we also
-		// drop into the textarea so it can be tweaked.
-		if (file.name.toLowerCase().endsWith('.mxl')) {
-			setText('');
-			setInput(file);
-			save(`[mxl] ${file.name}`);
-		} else {
-			file.text().then((t) => {
-				setText(t);
-				setInput(t);
-				save(t);
-			});
-		}
-	}
+	}, [model]);
 
 	function onFile(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
 		if (file) {
-			loadFile(file);
+			model.document.loadFile(file);
 		}
 	}
 
 	function onTextChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-		const value = e.target.value;
-		setText(value);
-		save(value);
-		setFixture('');
-		clearTimeout(debounceRef.current);
-		if (!value.trim()) {
-			setDebouncing(false);
-			return;
-		}
-		// If the last render was fast, just render on every keystroke; only debounce
-		// once renders get slow enough to lag typing.
-		if (renderMs != null && renderMs <= FAST_RENDER_MS) {
-			setDebouncing(false);
-			setInput(value);
-			return;
-		}
-		// Spinner shows while we wait out the typing, then render the settled text.
-		setDebouncing(true);
-		debounceRef.current = setTimeout(() => {
-			setDebouncing(false);
-			setInput(value);
-		}, DEBOUNCE_MS);
+		// Only the component knows how long the last render took, so it decides whether this
+		// keystroke can skip the debounce.
+		model.document.edit(e.target.value, {
+			immediate: renderMs != null && renderMs <= FAST_RENDER_MS,
+		});
 	}
 
 	function onDragOver(e: React.DragEvent) {
@@ -678,23 +195,8 @@ export default function App() {
 		setDragging(false);
 		const file = e.dataTransfer.files[0];
 		if (file) {
-			loadFile(file);
+			model.document.loadFile(file);
 		}
-	}
-
-	async function onPickFixture(e: React.ChangeEvent<HTMLSelectElement>) {
-		const name = e.target.value;
-		setFixture(name);
-		clearTimeout(debounceRef.current);
-		setDebouncing(false);
-		const load = fixtures[name];
-		if (!load) {
-			return;
-		}
-		const xml = await load();
-		setText(xml);
-		setInput(xml);
-		save(xml);
 	}
 
 	return (
@@ -717,17 +219,12 @@ export default function App() {
 						<Player
 							playerRef={playerRef}
 							dark={dark}
-							playing={playing}
+							session={session}
+							instrument={model.instrument}
 							muted={muted}
+							playing={playing}
 							timeMs={timeMs}
 							durationMs={durationMs}
-							setPlaying={setPlaying}
-							setMuted={setMuted}
-							onPrev={stepPrev}
-							onNext={stepNext}
-							onToggle={togglePlay}
-							cursorRef={cursorRef}
-							scoreRef={scoreRef}
 						/>
 					)}
 					{/* top part: always visible, taps toggle the panel */}
@@ -761,7 +258,7 @@ export default function App() {
 					{/* grid-rows 0fr↔1fr animates the height open/closed (only once tapped, so the
 					    default collapsed state never slides in); its end re-fits the score box */}
 					<div
-						onTransitionEnd={() => measureRef.current?.()}
+						onTransitionEnd={() => fitRef.current?.remeasure()}
 						className={`grid md:grid-rows-[1fr] ${sheetToggled ? 'transition-[grid-template-rows] duration-300' : ''} ${mobileOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
 					>
 						<div className="min-h-0 overflow-hidden">
@@ -794,7 +291,9 @@ export default function App() {
 										<select
 											id="example"
 											value={fixture}
-											onChange={onPickFixture}
+											onChange={(e) =>
+												model.document.loadFixture(e.target.value)
+											}
 											className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700"
 										>
 											<option value="">Load an example…</option>
@@ -828,7 +327,7 @@ export default function App() {
 									action={
 										<button
 											type="button"
-											onClick={resetAll}
+											onClick={() => model.config.resetAll()}
 											disabled={!canReset}
 											className="text-xs font-medium text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
 										>
@@ -848,7 +347,7 @@ export default function App() {
 											id="darkMode"
 											type="checkbox"
 											checked={dark}
-											onChange={(e) => setDark(e.target.checked)}
+											onChange={(e) => model.setDark(e.target.checked)}
 										/>
 										Dark mode
 									</label>
@@ -862,7 +361,7 @@ export default function App() {
 										<select
 											id="instrument"
 											value={instrumentName}
-											onChange={(e) => setInstrumentName(e.target.value)}
+											onChange={(e) => model.instrument.setName(e.target.value)}
 											className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-700"
 										>
 											{INSTRUMENTS.map((i) => (
@@ -885,19 +384,18 @@ export default function App() {
 										<select
 											id="notationFont"
 											value={notationFont}
-											onChange={(e) =>
-												setConfig((c) =>
-													e.target.value === 'Bravura'
-														? (({ fonts: _, ...rest }) => rest)(c)
-														: {
-																...c,
-																fonts: {
-																	...c.fonts,
-																	notation: { family: e.target.value },
-																},
-															},
-												)
-											}
+											onChange={(e) => {
+												if (e.target.value === 'Bravura') {
+													model.config.clear('fonts');
+												} else {
+													model.config.patch({
+														fonts: {
+															...config.fonts,
+															notation: { family: e.target.value },
+														},
+													});
+												}
+											}}
 											className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-700"
 										>
 											<option value="Bravura">Bravura</option>
@@ -919,12 +417,11 @@ export default function App() {
 										max={120}
 										step={1}
 										onChange={(e) =>
-											setConfig((c) => ({
-												...c,
+											model.config.patch({
 												noteSpacing: e.target.valueAsNumber,
-											}))
+											})
 										}
-										onReset={() => reset('noteSpacing')}
+										onReset={() => model.config.clear('noteSpacing')}
 										canReset={config.noteSpacing !== undefined}
 										description="How much horizontal space notes get: the px a quarter note is allotted. Higher spreads every measure wider."
 									/>
@@ -938,12 +435,11 @@ export default function App() {
 										max={30}
 										step={1}
 										onChange={(e) =>
-											setConfig((c) => ({
-												...c,
+											model.config.patch({
 												softmaxFactor: e.target.valueAsNumber,
-											}))
+											})
 										}
-										onReset={() => reset('softmaxFactor')}
+										onReset={() => model.config.clear('softmaxFactor')}
 										canReset={config.softmaxFactor !== undefined}
 										description="How that space is divided among notes. Higher exaggerates the width difference between long and short notes."
 									/>
@@ -957,12 +453,11 @@ export default function App() {
 										max={50}
 										step={1}
 										onChange={(e) =>
-											setConfig((c) => ({
-												...c,
+											model.config.patch({
 												systemSpacing: e.target.valueAsNumber,
-											}))
+											})
 										}
-										onReset={() => reset('systemSpacing')}
+										onReset={() => model.config.clear('systemSpacing')}
 										canReset={config.systemSpacing !== undefined}
 										description="Vertical gap between stacked systems. Lower packs systems closer together down the page."
 									/>
@@ -976,12 +471,11 @@ export default function App() {
 										max={1}
 										step={0.05}
 										onChange={(e) =>
-											setConfig((c) => ({
-												...c,
+											model.config.patch({
 												maxSystemFill: e.target.valueAsNumber,
-											}))
+											})
 										}
-										onReset={() => reset('maxSystemFill')}
+										onReset={() => model.config.clear('maxSystemFill')}
 										canReset={config.maxSystemFill !== undefined}
 										description="How full a system gets before the next measure wraps to a new line. Lower leaves more air; 1 packs each line to the edge."
 									/>
@@ -996,7 +490,9 @@ export default function App() {
 												type="checkbox"
 												checked={layout?.honorSystemBreaks ?? true}
 												onChange={(e) =>
-													setLayout({ honorSystemBreaks: e.target.checked })
+													model.config.patchLayout({
+														honorSystemBreaks: e.target.checked,
+													})
 												}
 											/>
 											Honor system breaks
@@ -1017,9 +513,11 @@ export default function App() {
 										max={2000}
 										step={50}
 										onChange={(e) =>
-											setLayout({ referenceWidth: e.target.valueAsNumber })
+											model.config.patchLayout({
+												referenceWidth: e.target.valueAsNumber,
+											})
 										}
-										onReset={() => resetLayout('referenceWidth')}
+										onReset={() => model.config.clearLayout('referenceWidth')}
 										canReset={layout?.referenceWidth !== undefined}
 										description="The width the score is engraved to; the rendering then scales up or down to fit its container. Wider fits more measures per system before wrapping."
 									/>
@@ -1035,7 +533,7 @@ export default function App() {
 											id="overflow"
 											value={layout?.overflow ?? 'wrap'}
 											onChange={(e) =>
-												setLayout({
+												model.config.patchLayout({
 													overflow: e.target.value as SystemOverflow,
 												})
 											}
@@ -1084,7 +582,7 @@ export default function App() {
 							{fixture !== DEFAULT_FIXTURE && (
 								<button
 									type="button"
-									onClick={clearStorage}
+									onClick={() => model.document.clear()}
 									title="Clear the saved score and reload the default example"
 									className="flex items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
 								>

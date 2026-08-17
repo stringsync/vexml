@@ -1,7 +1,21 @@
-import type { CursorController, Score } from '@stringsync/vexml';
 import { type RefObject, useState } from 'react';
 import { fmtTime } from './format';
 import { ICON, PlayerIcon } from './icons';
+import type { InstrumentHolder } from './instrument/instrument-holder';
+import type { ScoreSession } from './score-session';
+
+export interface PlayerProps {
+	playerRef: RefObject<HTMLDivElement | null>;
+	dark: boolean;
+	/* What the transport drives. Null before the first render lands, which the caller guards. */
+	session: ScoreSession | null;
+	instrument: InstrumentHolder;
+	/* Read off the two objects above by the caller's projection, so a change re-renders this. */
+	muted: boolean;
+	playing: boolean;
+	timeMs: number;
+	durationMs: number;
+}
 
 // Floating transport bar: prev / play-pause / next / mute on top, a seek track flanked by the
 // elapsed and total times below. Seeking (slider or scrub-drag) drives the cursor directly; the
@@ -9,32 +23,13 @@ import { ICON, PlayerIcon } from './icons';
 export function Player({
 	playerRef,
 	dark,
-	playing,
+	session,
+	instrument,
 	muted,
+	playing,
 	timeMs,
 	durationMs,
-	setPlaying,
-	setMuted,
-	onPrev,
-	onNext,
-	onToggle,
-	cursorRef,
-	scoreRef,
-}: {
-	playerRef: RefObject<HTMLDivElement | null>;
-	dark: boolean;
-	playing: boolean;
-	muted: boolean;
-	timeMs: number;
-	durationMs: number;
-	setPlaying: (playing: boolean) => void;
-	setMuted: (update: (muted: boolean) => boolean) => void;
-	onPrev: () => void;
-	onNext: () => void;
-	onToggle: () => void;
-	cursorRef: RefObject<CursorController | null>;
-	scoreRef: RefObject<Score | null>;
-}) {
+}: PlayerProps) {
 	const [scrubTip, setScrubTip] = useState<{ x: number; text: string } | null>(
 		null,
 	);
@@ -49,11 +44,10 @@ export function Player({
 			// keeps inset-x-4 padding. Rides up with the bottom sheet on mobile, fixed on desktop.
 			className={`absolute inset-x-4 bottom-full z-30 mx-auto mb-4 flex max-w-237.5 flex-col gap-2 rounded-2xl border px-4 py-2.5 shadow-lg backdrop-blur sm:inset-x-6 sm:px-6 md:fixed md:inset-x-auto md:bottom-4 md:left-86 md:right-6 md:mb-0 ${dark ? 'border-zinc-700 bg-zinc-800/95' : 'border-zinc-200 bg-white/95'}`}
 		>
-			{/* Spotify layout: controls centered on top, progress bar flanked by times below. */}
 			<div className="relative flex items-center justify-center gap-5">
 				<button
 					type="button"
-					onClick={onPrev}
+					onClick={() => session?.previous()}
 					aria-label="Previous note"
 					className={button}
 				>
@@ -61,7 +55,7 @@ export function Player({
 				</button>
 				<button
 					type="button"
-					onClick={onToggle}
+					onClick={() => session?.togglePlay()}
 					aria-label={playing ? 'Pause' : 'Play'}
 					className={button}
 				>
@@ -69,7 +63,7 @@ export function Player({
 				</button>
 				<button
 					type="button"
-					onClick={onNext}
+					onClick={() => session?.next()}
 					aria-label="Next note"
 					className={button}
 				>
@@ -77,7 +71,7 @@ export function Player({
 				</button>
 				<button
 					type="button"
-					onClick={() => setMuted((m) => !m)}
+					onClick={() => instrument.toggleMuted()}
 					aria-label={muted ? 'Unmute' : 'Mute'}
 					aria-pressed={muted}
 					className={`absolute right-0 ${button}`}
@@ -103,14 +97,13 @@ export function Player({
 						step={10}
 						value={timeMs}
 						onChange={(e) => {
-							setPlaying(false);
-							const cursor = cursorRef.current;
-							if (!cursor) {
+							if (!session) {
 								return;
 							}
-							cursor.seekMs(Number(e.target.value));
-							if (!cursor.isFullyVisible()) {
-								cursor.scrollIntoView({ behavior: 'smooth' });
+							session.setPlaying(false);
+							session.seekMs(Number(e.target.value));
+							if (!session.cursor.isFullyVisible()) {
+								session.cursor.scrollIntoView({ behavior: 'smooth' });
 							}
 						}}
 						onPointerMove={(e) => {
@@ -120,11 +113,10 @@ export function Player({
 								Math.max(0, (e.clientX - rect.left) / rect.width),
 							);
 							const ms = frac * durationMs;
-							const i = (scoreRef.current?.getMeasureIndexAtMs(ms) ?? 0) + 1;
-							const n = scoreRef.current?.getMeasureCount() ?? 0;
+							const score = session?.score;
 							setScrubTip({
 								x: e.clientX - rect.left,
-								text: `measure ${i} of ${n}`,
+								text: `measure ${(score?.getMeasureIndexAtMs(ms) ?? 0) + 1} of ${score?.getMeasureCount() ?? 0}`,
 							});
 						}}
 						onPointerLeave={() => setScrubTip(null)}

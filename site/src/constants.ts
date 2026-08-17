@@ -1,8 +1,6 @@
-// localStorage key for the last-edited MusicXML.
+// Namespaced so a playground on a shared origin can't collide with another app's keys.
 export const STORAGE_KEY = 'vexml:musicxml';
-// localStorage key for the dark-mode toggle.
 export const DARK_KEY = 'vexml:dark';
-// localStorage key for the selected playback instrument.
 export const INSTRUMENT_KEY = 'vexml:instrument';
 
 // How long each grace note sounds before the main note, in ms. Short enough to read as an ornament.

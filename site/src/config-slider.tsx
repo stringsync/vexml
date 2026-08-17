@@ -5,6 +5,22 @@ import { ResetIcon } from './icons';
 // range input, and a description. The caller owns the value and the reset behavior (the four
 // scalar config keys reset alike; reference width strips the layout object), so onChange/onReset/
 // canReset are passed in.
+export interface ConfigSliderProps {
+	id: string;
+	label: string;
+	/* The value as shown beside the label, which may be formatted (e.g. two decimals). */
+	display: ReactNode;
+	value: number;
+	min: number;
+	max: number;
+	step: number;
+	onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	onReset: () => void;
+	/* Whether this knob differs from vexml's default, which is what enables the reset button. */
+	canReset: boolean;
+	description: string;
+}
+
 export function ConfigSlider({
 	id,
 	label,
@@ -17,19 +33,7 @@ export function ConfigSlider({
 	onReset,
 	canReset,
 	description,
-}: {
-	id: string;
-	label: string;
-	display: ReactNode;
-	value: number;
-	min: number;
-	max: number;
-	step: number;
-	onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-	onReset: () => void;
-	canReset: boolean;
-	description: string;
-}) {
+}: ConfigSliderProps) {
 	return (
 		<div className="flex flex-col gap-1.5">
 			<label
