@@ -33,14 +33,18 @@ if (process.env.I_AM_RUNNING_TESTS_USING_VEX_TEST !== '1') {
 // test (the screenshot harness and the events smoke test) reuses these. Preloaded, so the
 // lifecycle scopes to the run, not one file. Eager (beforeAll) to keep the launch out of the
 // first test's own timeout; lazy getters so a unit-only run still pays for them only if used.
-const TEST_PORT = 3100;
-export const TEST_URL = `http://localhost:${TEST_PORT}/`;
 let sharedServer: ReturnType<typeof serve> | null = null;
 let sharedBrowser: Promise<Browser> | null = null;
 
 export function testServer(): ReturnType<typeof serve> {
-	sharedServer ??= serve(TEST_PORT);
+	sharedServer ??= serve();
 	return sharedServer;
+}
+
+/* The page URL, off the port the server actually got: serve() moves along when 3100 is
+ * taken, so a run alongside another one still points at its own server. */
+export function testUrl(): string {
+	return `http://localhost:${testServer().port}/`;
 }
 
 export function testBrowser(): Promise<Browser> {
@@ -72,7 +76,7 @@ async function acquirePage(): Promise<Page> {
 		const page = await browser.newPage({
 			viewport: { width: 964, height: 600 },
 		});
-		await page.goto(TEST_URL);
+		await page.goto(testUrl());
 		await warmFonts(page);
 		pool.push(page);
 		return page;

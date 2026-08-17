@@ -21,16 +21,24 @@ type BrowserFn<A, T> = (
 	arg: A,
 ) => T | Promise<T>;
 
+export interface RenderTestOptions<A, T> {
+	/* Run against the live Score in the browser once it has rendered. Omit it for a test
+	 * that only wants the screenshot. */
+	fn?: BrowserFn<A, T>;
+	/* Passed to `fn` as its third argument. Must be structured-cloneable: it crosses into
+	 * the page, so a closure will not do. */
+	arg?: A;
+}
+
 /**
- * Render a corpus file on a pooled page, run `fn` against the live Score in the browser,
- * and screenshot the container. Tests that only want pixels ignore `result`; tests that
- * only want data ignore `png`.
+ * Render a corpus file on a pooled page, run `opts.fn` against the live Score in the
+ * browser, and screenshot the container. Tests that only want pixels ignore `result`;
+ * tests that only want data ignore `png`.
  */
 export async function renderTest<T = undefined, A = undefined>(
 	file: string,
 	config: ConfigInput,
-	fn?: BrowserFn<A, T>,
-	arg?: A,
+	opts: RenderTestOptions<A, T> = {},
 ): Promise<{ result: T; png: Buffer }> {
 	const width =
 		(config.layout?.type === 'standard'
@@ -61,8 +69,9 @@ export async function renderTest<T = undefined, A = undefined>(
 				if (!(container instanceof HTMLDivElement)) {
 					throw new Error('container not found');
 				}
-				container.replaceChildren(); // clear the previous test's render
-				container.removeAttribute('style'); // and any styles it set (pages are pooled)
+				container.replaceChildren();
+				// Pages are pooled, so a style the previous test set would carry into this one.
+				container.removeAttribute('style');
 				const score = await window.render(input, container, config);
 				if (!fnSrc) {
 					return undefined;
@@ -71,7 +80,7 @@ export async function renderTest<T = undefined, A = undefined>(
 				const fn = new Function(`return (${fnSrc})`)();
 				return await fn(score, container, arg);
 			},
-			{ file, config: resolved, fnSrc: fn?.toString(), arg },
+			{ file, config: resolved, fnSrc: opts.fn?.toString(), arg: opts.arg },
 		)) as T;
 		const png = await page.locator('#screenshot').screenshot();
 		return { result, png };

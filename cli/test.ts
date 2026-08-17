@@ -2,11 +2,16 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { run } from './run';
 
-export async function test(opts: {
+export interface TestOptions {
+	/* Rewrite the screenshot baselines from this run instead of diffing against them. */
 	update: boolean;
+	/* Delete baselines no test claims any more. */
 	clean: boolean;
+	/* Filter tests by name (bun's -t). */
 	pattern?: string;
-}) {
+}
+
+export async function test(opts: TestOptions) {
 	// Tests run in Docker for stable baselines; docker-in-docker isn't supported.
 	if (existsSync('/.dockerenv')) {
 		console.error('vex test: already running inside Docker');
@@ -15,13 +20,10 @@ export async function test(opts: {
 	// No dir: bun discovers every *.test.ts (unit in src/ + integration), skipping
 	// node_modules. bun's -t filters tests by name.
 	const args = opts.pattern ? ['-t', opts.pattern] : [];
-	return testDocker(opts, args);
+	return testDocker(args, opts);
 }
 
-async function testDocker(
-	opts: { update: boolean; clean: boolean },
-	testArgs: string[],
-) {
+async function testDocker(testArgs: string[], opts: TestOptions) {
 	const cwd = process.cwd();
 
 	const args = [

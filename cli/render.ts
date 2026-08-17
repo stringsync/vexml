@@ -49,13 +49,14 @@ export async function render(opts: {
 	// from DEFAULT_CONFIG, so this knows nothing about config's shape.
 	const config = opts.config ? JSON.parse(opts.config) : {};
 
+	// 3101 so a `vex render` alongside a test run does not fight it for 3100.
 	const server = serve(3101);
 	const browser = await chromium.launch();
 	try {
 		const page = await browser.newPage({
 			viewport: { width: 1064, height: 600 },
 		});
-		await page.goto('http://localhost:3101/');
+		await page.goto(`http://localhost:${server.port}/`);
 		await page.evaluate(
 			async ({ musicXML, config }) => {
 				const container = document.getElementById('screenshot');
@@ -178,7 +179,6 @@ async function renderWithAlphaTab(musicXML: string, output: string) {
 	}
 }
 
-// "YYYY-MM-DD HH.MM.SS" in local time.
 function timestamp(): string {
 	const d = new Date();
 	const p = (n: number) => String(n).padStart(2, '0');

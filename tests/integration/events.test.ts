@@ -9,35 +9,37 @@ describe('events', () => {
 		const { result } = await renderTest(
 			'structure_single_stave.musicxml',
 			{},
-			(score, container) => {
-				const canvas = container.querySelector('canvas');
-				if (!canvas) {
-					throw new Error('canvas not found');
-				}
-
-				const types = new Set<string>();
-				const points: Array<{ x: number; y: number }> = [];
-				score.addEventListener('pointerdown', (e) => {
-					if (e.target) {
-						types.add(e.target.type);
+			{
+				fn: (score, container) => {
+					const canvas = container.querySelector('canvas');
+					if (!canvas) {
+						throw new Error('canvas not found');
 					}
-					points.push({ x: e.point.x, y: e.point.y });
-				});
 
-				// Scan down the vertical center line so the stave is crossed wherever the crop
-				// places it — robust to the exact engraved height.
-				const rect = canvas.getBoundingClientRect();
-				const cx = rect.left + rect.width / 2;
-				for (let dy = 4; dy < rect.height; dy += 4) {
-					canvas.dispatchEvent(
-						new PointerEvent('pointerdown', {
-							clientX: cx,
-							clientY: rect.top + dy,
-							bubbles: true,
-						}),
-					);
-				}
-				return { types: [...types], points, width: rect.width };
+					const types = new Set<string>();
+					const points: Array<{ x: number; y: number }> = [];
+					score.addEventListener('pointerdown', (e) => {
+						if (e.target) {
+							types.add(e.target.type);
+						}
+						points.push({ x: e.point.x, y: e.point.y });
+					});
+
+					// Scan down the vertical center line so the stave is crossed wherever the crop
+					// places it — robust to the exact engraved height.
+					const rect = canvas.getBoundingClientRect();
+					const cx = rect.left + rect.width / 2;
+					for (let dy = 4; dy < rect.height; dy += 4) {
+						canvas.dispatchEvent(
+							new PointerEvent('pointerdown', {
+								clientX: cx,
+								clientY: rect.top + dy,
+								bubbles: true,
+							}),
+						);
+					}
+					return { types: [...types], points, width: rect.width };
+				},
 			},
 		);
 

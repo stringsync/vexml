@@ -2,12 +2,18 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, extname, isAbsolute, resolve } from 'node:path';
 import { MDOMParser, MusicXMLSerializer } from '@stringsync/mdom';
 
-export async function slice(opts: {
+export interface SliceOptions {
 	input: string;
+	/* Which measures to keep, e.g. `1,3-5,8`. */
 	measures: string;
+	/* Defaults to `<input stem>.slice.musicxml` beside the input. */
 	output?: string;
+	/* Where the user ran `vex`; index.ts chdir'd to the repo root, so relative
+	 * paths resolve against this. */
 	cwd: string;
-}) {
+}
+
+export async function slice(opts: SliceOptions) {
 	// index.ts chdir'd to the repo root, so resolve user paths against their cwd.
 	const at = (p: string) => (isAbsolute(p) ? p : resolve(opts.cwd, p));
 	const input = at(opts.input);

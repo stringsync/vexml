@@ -15,43 +15,45 @@ async function decorate(mode: 'color' | 'halo', file: string): Promise<Buffer> {
 	const { result: count, png } = await renderTest(
 		file,
 		{},
-		(score, container, mode) => {
-			const canvas = container.querySelector('canvas');
-			if (!canvas) {
-				throw new Error('canvas not found');
-			}
+		{
+			fn: (score, container, mode) => {
+				const canvas = container.querySelector('canvas');
+				if (!canvas) {
+					throw new Error('canvas not found');
+				}
 
-			// Hover the whole canvas to collect every decoratable target under the pointer
-			// (noteheads and tab frets), deduped by identity.
-			const targets = new Set<Note | TabPosition>();
-			score.addEventListener('pointermove', (e) => {
-				if (e.target?.type === 'note' || e.target?.type === 'tab-position') {
-					targets.add(e.target as Note | TabPosition);
+				// Hover the whole canvas to collect every decoratable target under the pointer
+				// (noteheads and tab frets), deduped by identity.
+				const targets = new Set<Note | TabPosition>();
+				score.addEventListener('pointermove', (e) => {
+					if (e.target?.type === 'note' || e.target?.type === 'tab-position') {
+						targets.add(e.target as Note | TabPosition);
+					}
+				});
+				const rect = canvas.getBoundingClientRect();
+				for (let dy = 2; dy < rect.height; dy += 4) {
+					for (let dx = 2; dx < rect.width; dx += 4) {
+						canvas.dispatchEvent(
+							new PointerEvent('pointermove', {
+								clientX: rect.left + dx,
+								clientY: rect.top + dy,
+								bubbles: true,
+							}),
+						);
+					}
 				}
-			});
-			const rect = canvas.getBoundingClientRect();
-			for (let dy = 2; dy < rect.height; dy += 4) {
-				for (let dx = 2; dx < rect.width; dx += 4) {
-					canvas.dispatchEvent(
-						new PointerEvent('pointermove', {
-							clientX: rect.left + dx,
-							clientY: rect.top + dy,
-							bubbles: true,
-						}),
-					);
-				}
-			}
 
-			for (const target of targets) {
-				if (mode === 'color') {
-					target.color.on('#2962ff');
-				} else {
-					target.halo.on('rgba(41, 98, 255, 0.35)');
+				for (const target of targets) {
+					if (mode === 'color') {
+						target.color.on('#2962ff');
+					} else {
+						target.halo.on('rgba(41, 98, 255, 0.35)');
+					}
 				}
-			}
-			return targets.size;
+				return targets.size;
+			},
+			arg: mode,
 		},
-		mode,
 	);
 
 	if (count === 0) {

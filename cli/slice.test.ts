@@ -1,74 +1,16 @@
 import { describe, expect, it } from 'bun:test';
-import { MDOMParser } from '@stringsync/mdom';
-import { parseMeasureSpec, sliceMusicXML } from './slice';
-
-/* A one-part score whose measures carry exactly the given <attributes> inner XML
- * (and a note, so the measure is well-formed). '' means the measure declares none. */
-function scoreOf(...attributes: string[]): string {
-	const measures = attributes
-		.map(
-			(a, i) => `<measure number="${i + 1}">
-			${a ? `<attributes>${a}</attributes>` : ''}
-			<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
-		</measure>`,
-		)
-		.join('');
-	return `<?xml version="1.0"?>
-<score-partwise version="4.0">
-	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
-	<part id="P1">${measures}</part>
-</score-partwise>`;
-}
-
-const DIVISIONS = '<divisions>1</divisions>';
-const TREBLE = '<clef><sign>G</sign><line>2</line></clef>';
-const COMMON = '<time><beats>4</beats><beat-type>4</beat-type></time>';
-const SHARPS = '<key><fifths>3</fifths></key>';
-const FLATS = '<key><fifths>-2</fifths></key>';
-
-function measuresOf(xml: string) {
-	const [part] = new MDOMParser().parseFromString(xml).score.parts;
-	if (!part) {
-		throw new Error('sliced score has no parts');
-	}
-	return part.measures;
-}
-
-function firstMeasureOf(xml: string) {
-	const [measure] = measuresOf(xml);
-	if (!measure) {
-		throw new Error('sliced part has no measures');
-	}
-	return measure;
-}
-
-/* Occurrences of `<tag` in the serialized slice — how a duplicated signature shows up.
- * String-counted rather than walked: what the CLI writes out is the artifact under test. */
-function countOf(xml: string, tag: string): number {
-	return xml.split(`<${tag}`).length - 1;
-}
-
-describe('parseMeasureSpec', () => {
-	it('expands a mix of singles and ranges', () => {
-		expect([...parseMeasureSpec('1,3-5,8')]).toEqual(['1', '3', '4', '5', '8']);
-	});
-
-	it('tolerates whitespace and duplicates', () => {
-		expect([...parseMeasureSpec(' 2 , 1-3 ')]).toEqual(['2', '1', '3']);
-	});
-
-	it('keeps a non-numeric label literal', () => {
-		expect([...parseMeasureSpec('X1')]).toEqual(['X1']);
-	});
-
-	it('rejects an empty measure', () => {
-		expect(() => parseMeasureSpec('1,,2')).toThrow();
-	});
-
-	it('rejects a descending range', () => {
-		expect(() => parseMeasureSpec('5-3')).toThrow();
-	});
-});
+import { sliceMusicXML } from './slice';
+import {
+	COMMON,
+	countOf,
+	DIVISIONS,
+	FLATS,
+	firstMeasureOf,
+	measuresOf,
+	SHARPS,
+	scoreOf,
+	TREBLE,
+} from './slice-harness';
 
 describe('sliceMusicXML', () => {
 	it('keeps only the requested measures, in document order', () => {

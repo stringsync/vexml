@@ -7,12 +7,18 @@ describe('cursor', () => {
 	// engraving at the sought time. The timeline/cursor/view logic is unit-tested in src/*; this is the
 	// integration screenshot.
 	it.concurrent('a playback cursor draws its bar on the score at the sought time', async () => {
-		const { png } = await renderTest('arpeggio.musicxml', {}, (score) => {
-			const cursor = score.createCursor();
-			cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
-			// Seek 40% through the piece — a deterministic spot independent of the note count.
-			cursor.seekMs(score.getDurationMs() * 0.4);
-		});
+		const { png } = await renderTest(
+			'arpeggio.musicxml',
+			{},
+			{
+				fn: (score) => {
+					const cursor = score.createCursor();
+					cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
+					// Seek 40% through the piece — a deterministic spot independent of the note count.
+					cursor.seekMs(score.getDurationMs() * 0.4);
+				},
+			},
+		);
 		expect(png).toMatchScreenshot('cursor_bar.png');
 	});
 
@@ -25,15 +31,17 @@ describe('cursor', () => {
 		const { png } = await renderTest(
 			'aloof_measure_2.musicxml',
 			{},
-			(score) => {
-				const cursor = score.createCursor();
-				cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
-				cursor.addEventListener('change', (e) => {
-					for (const n of e.highlighted) {
-						n.color.on('#155dfc');
-					}
-				});
-				cursor.seekMs(score.getDurationMs() * 0.3);
+			{
+				fn: (score) => {
+					const cursor = score.createCursor();
+					cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
+					cursor.addEventListener('change', (e) => {
+						for (const n of e.highlighted) {
+							n.color.on('#155dfc');
+						}
+					});
+					cursor.seekMs(score.getDurationMs() * 0.3);
+				},
 			},
 		);
 		expect(png).toMatchScreenshot('cursor_tab_tie.png');
@@ -46,10 +54,12 @@ describe('cursor', () => {
 		const { png } = await renderTest(
 			'chord_diagram_tab.musicxml',
 			{},
-			(score) => {
-				const cursor = score.createCursor();
-				cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
-				cursor.seekMs(score.getDurationMs() * 0.4);
+			{
+				fn: (score) => {
+					const cursor = score.createCursor();
+					cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
+					cursor.seekMs(score.getDurationMs() * 0.4);
+				},
 			},
 		);
 		expect(png).toMatchScreenshot('cursor_chord_diagram.png');
@@ -62,21 +72,24 @@ describe('cursor', () => {
 		const { result: graces } = await renderTest(
 			'grace_notes.musicxml',
 			{},
-			(score) => {
-				const cursor = score.createCursor();
-				const found: Array<{ pitch: string | null; x: number; w: number }> = [];
-				cursor.addEventListener('change', (e) => {
-					for (const n of e.started) {
-						for (const g of n.getGraceNotes()) {
-							found.push({ pitch: g.getPitch(), x: g.rect.x, w: g.rect.w });
+			{
+				fn: (score) => {
+					const cursor = score.createCursor();
+					const found: Array<{ pitch: string | null; x: number; w: number }> =
+						[];
+					cursor.addEventListener('change', (e) => {
+						for (const n of e.started) {
+							for (const g of n.getGraceNotes()) {
+								found.push({ pitch: g.getPitch(), x: g.rect.x, w: g.rect.w });
+							}
 						}
+					});
+					const duration = score.getDurationMs();
+					for (let t = 0; t <= duration; t += duration / 200) {
+						cursor.seekMs(t);
 					}
-				});
-				const duration = score.getDurationMs();
-				for (let t = 0; t <= duration; t += duration / 200) {
-					cursor.seekMs(t);
-				}
-				return found;
+					return found;
+				},
 			},
 		);
 		// The fixture puts a grace before several notes; each must resolve with a sounding pitch and a
@@ -95,25 +108,27 @@ describe('cursor', () => {
 		const { result: graces } = await renderTest(
 			'tab_grace.musicxml',
 			{},
-			(score) => {
-				const cursor = score.createCursor();
-				const found: Array<{ hasFret: boolean; x: number; w: number }> = [];
-				cursor.addEventListener('change', (e) => {
-					for (const n of e.started) {
-						for (const g of n.getGraceNotes()) {
-							found.push({
-								hasFret: g.getTabPosition() !== null,
-								x: g.rect.x,
-								w: g.rect.w,
-							});
+			{
+				fn: (score) => {
+					const cursor = score.createCursor();
+					const found: Array<{ hasFret: boolean; x: number; w: number }> = [];
+					cursor.addEventListener('change', (e) => {
+						for (const n of e.started) {
+							for (const g of n.getGraceNotes()) {
+								found.push({
+									hasFret: g.getTabPosition() !== null,
+									x: g.rect.x,
+									w: g.rect.w,
+								});
+							}
 						}
+					});
+					const duration = score.getDurationMs();
+					for (let t = 0; t <= duration; t += duration / 200) {
+						cursor.seekMs(t);
 					}
-				});
-				const duration = score.getDurationMs();
-				for (let t = 0; t <= duration; t += duration / 200) {
-					cursor.seekMs(t);
-				}
-				return found;
+					return found;
+				},
 			},
 		);
 		// Each grace resolves to a target whose fret glyph (TabPosition) is laid out at a real x.
@@ -136,21 +151,28 @@ describe('cursor', () => {
 	// the same pitch repeats WITHOUT a tie (M1's C5 into M2's fresh C5) is the control that DOES
 	// re-attack. Exercises the real parse -> tiedFrom resolution -> classify path end to end.
 	it.concurrent('a tie sustains the note instead of re-attacking it', async () => {
-		const { result } = await renderTest('tie.musicxml', {}, (score) => {
-			const seq = score.getSequence();
-			const pitches = (notes: ReadonlyArray<{ getPitch(): string | null }>) =>
-				notes.map((n) => n.getPitch()).sort();
-			const transitions = [];
-			for (let i = 1; i < seq.length; i++) {
-				const t = seq.classify(i - 1, i);
-				transitions.push({
-					started: pitches(t.started),
-					sustained: pitches(t.sustained),
-					stopped: pitches(t.stopped),
-				});
-			}
-			return { length: seq.length, transitions };
-		});
+		const { result } = await renderTest(
+			'tie.musicxml',
+			{},
+			{
+				fn: (score) => {
+					const seq = score.getSequence();
+					const pitches = (
+						notes: ReadonlyArray<{ getPitch(): string | null }>,
+					) => notes.map((n) => n.getPitch()).sort();
+					const transitions = [];
+					for (let i = 1; i < seq.length; i++) {
+						const t = seq.classify(i - 1, i);
+						transitions.push({
+							started: pitches(t.started),
+							sustained: pitches(t.sustained),
+							stopped: pitches(t.stopped),
+						});
+					}
+					return { length: seq.length, transitions };
+				},
+			},
+		);
 
 		// Onsets: M1 C5, M1 C5 (tie stop), M2 C5, M3 C5 (tie stop), M4 F#5, M4 F#5 (tie stop).
 		expect(result.length).toBe(6);
@@ -172,16 +194,18 @@ describe('cursor', () => {
 		const { result } = await renderTest(
 			'tie_chord_dyad.musicxml',
 			{},
-			(score) => {
-				const cursor = score.createCursor();
-				const dur = score.getDurationMs();
-				cursor.seekMs(dur * 0.75); // within the 2nd chord's step
-				const sounding = cursor
-					.getHighlightedElements()
-					.map((n) => n.getPitch())
-					.sort();
-				cursor.seekMs(dur); // done
-				return { sounding, whenDone: cursor.getHighlightedElements().length };
+			{
+				fn: (score) => {
+					const cursor = score.createCursor();
+					const dur = score.getDurationMs();
+					cursor.seekMs(dur * 0.75); // within the 2nd chord's step
+					const sounding = cursor
+						.getHighlightedElements()
+						.map((n) => n.getPitch())
+						.sort();
+					cursor.seekMs(dur); // done
+					return { sounding, whenDone: cursor.getHighlightedElements().length };
+				},
 			},
 		);
 		expect(result.sounding).toEqual(['C/5', 'C/5', 'E/5', 'E/5']);
@@ -195,19 +219,25 @@ describe('cursor', () => {
 	// back-jump rather than jumping from its first measure, and that a three-ending block takes
 	// each ending once across three passes. One whole note per measure, so one step per measure.
 	it.concurrent('repeats and endings expand the playback order', async () => {
-		const { result } = await renderTest('repeats.musicxml', {}, (score) => {
-			const seq = score.getSequence();
-			const order = [];
-			for (let i = 0; i < seq.length; i++) {
-				order.push(seq.getStep(i)?.measureIndex);
-			}
-			return {
-				order,
-				measureCount: seq.getMeasureCount(),
-				// A repeated measure's cursor lands on its first pass, not its last.
-				firstStepOfM2: seq.getFirstStepOfMeasure(1),
-			};
-		});
+		const { result } = await renderTest(
+			'repeats.musicxml',
+			{},
+			{
+				fn: (score) => {
+					const seq = score.getSequence();
+					const order = [];
+					for (let i = 0; i < seq.length; i++) {
+						order.push(seq.getStep(i)?.measureIndex);
+					}
+					return {
+						order,
+						measureCount: seq.getMeasureCount(),
+						// A repeated measure's cursor lands on its first pass, not its last.
+						firstStepOfM2: seq.getFirstStepOfMeasure(1),
+					};
+				},
+			},
+		);
 
 		// |: M1 M2 :| twice, then M3 into the two-measure 1st ending (M4 M5) and back to M3,
 		// skipping the whole exhausted ending into the 2nd (M6), then out to M7. M8 then opens a
@@ -234,13 +264,15 @@ describe('cursor', () => {
 		const { result } = await renderTest(
 			'repeats_multiple_times.musicxml',
 			{},
-			(score) => {
-				const seq = score.getSequence();
-				const order = [];
-				for (let i = 0; i < seq.length; i++) {
-					order.push(seq.getStep(i)?.measureIndex);
-				}
-				return order;
+			{
+				fn: (score) => {
+					const seq = score.getSequence();
+					const order = [];
+					for (let i = 0; i < seq.length; i++) {
+						order.push(seq.getStep(i)?.measureIndex);
+					}
+					return order;
+				},
 			},
 		);
 
@@ -257,13 +289,15 @@ describe('cursor', () => {
 		const { result } = await renderTest(
 			'repeats_nested.musicxml',
 			{},
-			(score) => {
-				const seq = score.getSequence();
-				const order = [];
-				for (let i = 0; i < seq.length; i++) {
-					order.push(seq.getStep(i)?.measureIndex);
-				}
-				return order;
+			{
+				fn: (score) => {
+					const seq = score.getSequence();
+					const order = [];
+					for (let i = 0; i < seq.length; i++) {
+						order.push(seq.getStep(i)?.measureIndex);
+					}
+					return order;
+				},
 			},
 		);
 
@@ -279,18 +313,24 @@ describe('cursor', () => {
 	// boundary there and the quarter used to ring until the next measure's onset. The end itself
 	// seeds a step: C5 releases at beat 1 while the whole note under it keeps sounding.
 	it.concurrent('a voice that ends before its measure does stops sounding there', async () => {
-		const { result } = await renderTest('voice_short.musicxml', {}, (score) => {
-			const seq = score.getSequence();
-			const steps = [];
-			for (let i = 0; i < seq.length; i++) {
-				const step = seq.getStep(i);
-				steps.push({
-					startBeat: step?.startBeat,
-					active: (step?.active ?? []).map((n) => n.getPitch()).sort(),
-				});
-			}
-			return steps;
-		});
+		const { result } = await renderTest(
+			'voice_short.musicxml',
+			{},
+			{
+				fn: (score) => {
+					const seq = score.getSequence();
+					const steps = [];
+					for (let i = 0; i < seq.length; i++) {
+						const step = seq.getStep(i);
+						steps.push({
+							startBeat: step?.startBeat,
+							active: (step?.active ?? []).map((n) => n.getPitch()).sort(),
+						});
+					}
+					return steps;
+				},
+			},
+		);
 
 		expect(result).toEqual([
 			{ startBeat: 0, active: ['C/5', 'E/3'] },
@@ -311,15 +351,21 @@ describe('swing', () => {
 	 * the way late, and the pickup — which IS an off-beat — plays short rather than long.
 	 */
 	it.concurrent('a 2:1 <swing> lengthens the on-beat eighths and shortens the off-beats', async () => {
-		const { result } = await renderTest('swing.musicxml', {}, (score) => {
-			const seq = score.getSequence();
-			const steps = [];
-			for (let i = 0; i < seq.length; i++) {
-				const step = seq.getStep(i);
-				steps.push(Math.round(step?.startMs ?? -1));
-			}
-			return { steps, durationMs: Math.round(score.getDurationMs()) };
-		});
+		const { result } = await renderTest(
+			'swing.musicxml',
+			{},
+			{
+				fn: (score) => {
+					const seq = score.getSequence();
+					const steps = [];
+					for (let i = 0; i < seq.length; i++) {
+						const step = seq.getStep(i);
+						steps.push(Math.round(step?.startMs ?? -1));
+					}
+					return { steps, durationMs: Math.round(score.getDurationMs()) };
+				},
+			},
+		);
 
 		// Downbeats stay put at whole seconds; each off-beat sits 2/3 of the way through its pair.
 		// The 4333/4667 pair is M2's written-out TRIPLET, which divides its beat evenly (4000 ->

@@ -8,7 +8,6 @@ function isBumpType(type: string): type is Bump {
 }
 
 export async function release(type: string) {
-	// unrecognized <type> is rejected with a nonzero exit
 	if (!isBumpType(type)) {
 		throw new Error(
 			`unknown version bump "${type}" (expected ${TYPES.join(', ')})`,
