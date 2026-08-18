@@ -14,7 +14,6 @@ import {
 	BarNote,
 	Bend,
 	ClefNote,
-	Font,
 	Formatter,
 	GhostNote,
 	GraceNoteGroup,
@@ -23,7 +22,6 @@ import {
 	MetricsDefaults,
 	Modifier,
 	MultiMeasureRest,
-	type PedalMarking,
 	type RenderContext,
 	Stave,
 	StaveConnector,
@@ -34,7 +32,6 @@ import {
 	type StemmableNote,
 	type TabNote,
 	TabStave,
-	TextBracket,
 	TimeSignature,
 	Vibrato,
 	type Voice,
@@ -52,17 +49,12 @@ import {
 	LYRIC_NOTE_CLEARANCE,
 	LYRIC_Y_OFFSET,
 	MULTI_REST_PADDING,
-	OTTAVA_TEXT_LINE,
-	PEDAL_BOTTOM_MARGIN,
-	PEDAL_BOTTOM_TEXT_LINE,
-	PEDAL_INK_RISE,
 	TAB_CURVE_RISE,
 	TECHNICAL_EDGE_GAP,
 	TIE_APEX_RISE,
 	VOLTA_LABEL_DROP,
 	VOLTA_NOTE_CLEARANCE,
 	VOLTA_STAVE_GAP,
-	WORDS_NOTE_CLEARANCE,
 } from './constants';
 import {
 	type DirectionColumn,
@@ -98,12 +90,11 @@ import type {
 	MeasureEnding,
 	OctaveShiftSpan,
 	PartGroup,
-	PedalMark,
 	ScoreReader,
 	StaffVoice,
-	WedgeMark,
 } from './score-reader';
-import type { Hairpin, SpannerBuilder } from './spanner-builder';
+import type { SpannerBuilder } from './spanner-builder';
+import { SpannerResolver } from './spanner-resolver';
 import { SpillTracker, type StaveSpill } from './spill-tracker';
 
 /*
@@ -468,7 +459,6 @@ export class DrawPass {
 	private readonly systemGap: number;
 	private readonly labelIndent: number;
 	private readonly measureNumbering: MeasureNumbering;
-	private readonly showTabSlideText: boolean;
 	// When false, tab staves are dropped — iterate visibleStaffNumbers, not staveCount.
 	private readonly showTabs: boolean;
 	// When false, notation staves are dropped the same way tab staves are.
@@ -499,18 +489,10 @@ export class DrawPass {
 	// own length. The noteheads still count: a note written far outside its stave (M1's B4
 	// on the bass staff) genuinely needs the clearance.
 	private readonly crossStaveNotes = new Set<StaveNote>();
-	private readonly allChords: Chord[] = [];
-	// Pedal directions are spanners too (a start..stop pair), collected per measure
-	// and resolved over the whole score alongside ties and slurs.
-	private readonly allPedals: PedalMark[] = [];
-	// Wedge (hairpin) markers, resolved into StaveHairpins over the whole score alongside
-	// the pedals — a hairpin can span barlines, so it can't be built per measure.
-	private readonly allWedges: WedgeMark[] = [];
 
 	// The same arrangement for tablature staves: hammer-ons/pull-offs also span
 	// barlines, so TAB notes record into their own map and resolve at the end.
 	private readonly byTabLead = new Map<Note, TabNote>();
-	private readonly allTabChords: Chord[] = [];
 
 	// Systems stack top-to-bottom. Each is placed below the previous system's lowest
 	// drawn content (notes + staff lines), so deep ledger lines push the next system
@@ -570,12 +552,6 @@ export class DrawPass {
 	private measureNumbered = false;
 	private systemY = 0;
 	private staveRow = 0;
-	// Which row every stave built this pass sits on. `rowOf` only sees the system being
-	// built; the spanners are drawn at the end of the pass, over staves from every system.
-	private readonly rowByStave = new Map<Stave, number>();
-	// Likewise the system each stave belongs to, so a spanner drawn at the end of the pass can
-	// reserve room against the system above it (see observedOverflow).
-	private readonly systemByStave = new Map<Stave, number>();
 	private systemTop: Stave | undefined;
 	private systemBottom: Stave | undefined;
 	// Every part's staves are formatted together as one column so notes at the same
@@ -628,12 +604,13 @@ export class DrawPass {
 	// system start, barline runs across parts, custom/repeat barlines. Fed the measure
 	// loop's locals through connectorColumn().
 	private readonly connectorDrawer: ConnectorDrawer;
-	// The score's <octave-shift> spans, and the per-note octave offset they imply. Fixed for
-	// the score; both are filled in the constructor.
-	private readonly octaveShiftSpans: OctaveShiftSpan[] = [];
+	// The per-note octave offset the score's <octave-shift> spans imply. Fixed for the
+	// score; filled in the constructor (the spans themselves go to the spanner resolver).
 	private readonly octaveShiftByNote = new Map<Note, number>();
-	// The score's <bracket>/<dashes> spans, drawn once at the end alongside the other spanners.
-	private readonly directionLineSpans: DirectionLineSpan[] = [];
+	// The whole-score spanners — ties, slurs, wedges, pedals, ottava brackets and friends —
+	// recorded into during the measure loop and resolved once after the last measure, when
+	// every note is placed.
+	private readonly spannerResolver: SpannerResolver;
 	// Measured on the previous pass and reserved on this one; empty on the first pass.
 	private readonly voltaLifts: Map<number, number>;
 
@@ -676,7 +653,6 @@ export class DrawPass {
 		this.labelIndent = labelIndent;
 		const { measureNumbering, showTabSlideText } = config;
 		this.measureNumbering = measureNumbering;
-		this.showTabSlideText = showTabSlideText;
 		this.showTabs = config.showTabs;
 		this.showNotation = config.showNotation;
 		this.notationColor = config.fonts.notation?.color ?? '#000000';
@@ -713,14 +689,16 @@ export class DrawPass {
 		// <octave-shift> spans, resolved up front: every note under one draws an octave (or
 		// two, or three) off its sounding pitch, so buildNotes needs the answer per note
 		// before it builds anything, and the finish pass draws the brackets over them.
+		const octaveShiftSpans: OctaveShiftSpan[] = [];
+		const directionLineSpans: DirectionLineSpan[] = [];
 		for (const part of this.parts) {
 			for (const span of this.reader.octaveShiftsOf(part)) {
-				this.octaveShiftSpans.push(span);
+				octaveShiftSpans.push(span);
 				for (const note of span.notes) {
 					this.octaveShiftByNote.set(note, span.octaves);
 				}
 			}
-			this.directionLineSpans.push(...this.reader.directionLinesOf(part));
+			directionLineSpans.push(...this.reader.directionLinesOf(part));
 		}
 		// Read from the first part — a repeat or volta boundary applies across the system.
 		this.decorations = barlineDecorations(
@@ -767,6 +745,31 @@ export class DrawPass {
 				notationFont,
 				notationColor: this.notationColor,
 				textColor: this.textColor,
+				scratchViewport: this.scratchViewport,
+			},
+		);
+		this.spannerResolver = new SpannerResolver(
+			context,
+			spanners,
+			translator,
+			this.spill,
+			this.directionPlacer,
+			// The pass's own bookkeeping again, as a narrow view: the note obstacles come
+			// from the note measurements this pass took, and the crop bounds live here with
+			// the rest of the page state.
+			{
+				noteObstacle: (note) => this.noteRect(note),
+				growPageTop: (top) => {
+					this.pageTop = Math.min(this.pageTop, top);
+				},
+				growPageBottom: (bottom) => {
+					this.pageBottom = Math.max(this.pageBottom, bottom);
+				},
+			},
+			{
+				octaveShiftSpans,
+				directionLineSpans,
+				showTabSlideText,
 				scratchViewport: this.scratchViewport,
 			},
 		);
@@ -905,8 +908,7 @@ export class DrawPass {
 			// across parts, not just within this part.
 			this.systemPending.push(...this.pendingStaves);
 			for (const p of this.pendingStaves) {
-				this.rowByStave.set(p.stave, p.row);
-				this.systemByStave.set(p.stave, this.systemIndex);
+				this.spannerResolver.registerStave(p.stave, p.row, this.systemIndex);
 			}
 
 			// Chord symbols from this measure's <harmony> elements, each bound to the
@@ -1010,9 +1012,9 @@ export class DrawPass {
 			}
 
 			// Pedal markers, resolved into PedalMarkings over the whole score (a pedal
-			// can span barlines) after every note is placed — see below the measure loop.
-			this.allPedals.push(...this.reader.pedalsOf(measure));
-			this.allWedges.push(...this.reader.wedgesOf(measure));
+			// can span barlines) after every note is placed — see finishPass.
+			this.spannerResolver.addPedals(this.reader.pedalsOf(measure));
+			this.spannerResolver.addWedges(this.reader.wedgesOf(measure));
 
 			// A part's own staves are joined at each system start by the symbol named in
 			// <part-symbol> (brace by default; bracket for guitar notation+tab pairs).
@@ -1544,7 +1546,7 @@ export class DrawPass {
 				),
 			);
 			for (const voice of voices) {
-				this.allTabChords.push(...voice.chords);
+				this.spannerResolver.addTabChords(voice.chords);
 			}
 		} else if (voices.length > 0) {
 			const clefName = clef
@@ -1565,7 +1567,7 @@ export class DrawPass {
 				),
 			);
 			for (const voice of voices) {
-				this.allChords.push(...voice.chords);
+				this.spannerResolver.addChords(voice.chords);
 			}
 		}
 
@@ -2669,179 +2671,12 @@ export class DrawPass {
 
 		this.geometry.applyDecorationTops(this.spill);
 
-		// Ties and slurs are resolved over the whole score now that every note is
-		// placed, so a span can cross a barline (its endpoints sit in different
-		// measures). Drawn last, on top of the notes.
-		for (const tie of this.spanners.buildTies(this.allChords, this.byLead)) {
-			tie.setContext(this.context).draw();
-		}
-		// The bows, kept for the hairpin pass below: a wedge parks at a fixed gap from the
-		// staff, which is the same band a slur bowing the same way lands in.
-		const slurBows: { stave: Stave; rect: Rect }[] = [];
-		for (const slur of this.spanners.buildSlurs(this.allChords, this.byLead)) {
-			// drawWithStyle, not draw: Curve.draw never applies its own style, and a
-			// <slur line-type> rides on the element as a lineDash (see buildSlurs).
-			slur.curve.setContext(this.context).drawWithStyle();
-			// The bow is ink like any other, so the page has to cover it: a slur arcing over
-			// the top stave of the first system rises into the cropped top slack, and one
-			// dipping under the last system's bottom stave hangs past the floor. Without this
-			// the crop cuts the arc off mid-air.
-			this.pageTop = Math.min(this.pageTop, slur.top);
-			this.pageBottom = Math.max(this.pageBottom, slur.bottom);
-			// A bow arcs past the notes it joins, so it can reach further off the stave than
-			// anything the note pass measured — a slur over a beamed group climbs over the
-			// beam, and in a song that lands on the singer's lyrics. Report it as spill so
-			// pass two opens the gap instead (the arc is pinned to its noteheads and has
-			// nowhere else to go).
-			//
-			// Except a cross-stave bow, which is a passenger in the gap rather than a thing
-			// the gap has to hold: its height IS the distance between the two staves, so
-			// reporting it would have the gap widen to make room for a curve that then grows
-			// to match. Same reason crossStaveNotes drops a cross-staff stem tip.
-			const row = slur.stave && this.rowByStave.get(slur.stave);
-			if (slur.stave && row !== undefined && !slur.crossStave) {
-				this.recordStaveSpill(
-					{ stave: slur.stave, row },
-					new Rect(
-						slur.left,
-						slur.top,
-						slur.right - slur.left,
-						slur.bottom - slur.top,
-					),
-				);
-			}
-			// And against the system above: a bow over a middle system's top stave has nothing
-			// but the previous system over it, so report it the way an above-placed wedge does.
-			const slurSystem = slur.stave && this.systemByStave.get(slur.stave);
-			if (slurSystem !== undefined) {
-				this.spill.growHighestTop(slurSystem, slur.top);
-			}
-			if (slur.stave) {
-				slurBows.push({
-					stave: slur.stave,
-					rect: new Rect(
-						slur.left,
-						slur.top,
-						slur.right - slur.left,
-						slur.bottom - slur.top,
-					),
-				});
-			}
-		}
-		// Tablature hammer-ons/pull-offs and slides, likewise resolved over the whole score.
-		for (const tie of this.spanners.buildHammerPulls(
-			this.allTabChords,
-			this.byTabLead,
-		)) {
-			tie.setContext(this.context).draw();
-		}
-		for (const slide of this.spanners.buildSlides(
-			this.allTabChords,
-			this.byTabLead,
-			this.showTabSlideText,
-		)) {
-			slide.setContext(this.context).draw();
-		}
-		// Standard-notation glissandos/slides (the StaveLine counterpart of the tab
-		// slides above), e.g. a grace note that slides into the note it precedes.
-		for (const line of this.spanners.buildGlissandos(
-			this.allChords,
-			this.byLead,
-		)) {
-			line.setContext(this.context).draw();
-		}
-		// Ottava brackets (<octave-shift>): the "8va"/"15mb" label and its dashed line over
-		// (or under) the notes it covers. The notes were already drawn at the shifted
-		// position by buildNotes; this is the label that says so.
-		for (const span of this.octaveShiftSpans) {
-			const first = span.notes[0];
-			const last = span.notes.at(-1);
-			const start = first && this.byLead.get(first);
-			const stop = last && this.byLead.get(last);
-			// Either endpoint off a hidden staff leaves nothing to bracket.
-			if (!start || !stop) {
-				continue;
-			}
-			const bracket = new TextBracket({
-				start,
-				stop,
-				text: span.label,
-				superscript: span.suffix,
-				position: span.above
-					? TextBracket.Position.TOP
-					: TextBracket.Position.BOTTOM,
-			});
-			this.clearOctaveBracket(
-				bracket,
-				span.notes
-					.map((note) => this.byLead.get(note))
-					.filter((note): note is StaveNote => note !== undefined),
-				span.above,
-			);
-			bracket.setContext(this.context).draw();
-		}
-		// The <bracket>/<dashes> spans, with each endpoint resolved to its drawn note (or
-		// left undefined when it sits on a hidden staff).
-		this.directionPlacer.drawDirectionLines(
-			this.directionLineSpans.map((span) => ({
-				span,
-				start: this.byLead.get(span.from),
-				stop: this.byLead.get(span.to),
-			})),
-		);
-		// Trill extension lines, resolved over the whole score like the other spanners so a
-		// trill can be held across a barline.
-		for (const bracket of this.spanners.buildWavyLines(
-			this.allChords,
-			this.byLead,
-		)) {
-			bracket.setContext(this.context).draw();
-		}
-		// Hairpins, like the pedals below them, are resolved over the whole score so a wedge
-		// can open in one measure and close in another. A below-stave one reaches under the
-		// staff, so grow the bottom crop to its drawn extent.
-		for (const wedge of this.spanners.buildWedges(
-			this.allWedges,
-			this.byLead,
-		)) {
-			this.clearWedge(wedge, slurBows);
-			wedge.setContext(this.context).draw();
-			this.pageTop = Math.min(this.pageTop, wedge.bounds.top);
-			this.pageBottom = Math.max(this.pageBottom, wedge.bounds.bottom);
-			// A wedge pushed out past a slur can reach the neighbouring stave, so report the band
-			// it ended up in and let pass two open the gap — within the system as spill, and
-			// against the system above as overflow (an above-placed wedge on a system's top
-			// stave has nothing but the previous system over it).
-			const row = this.rowByStave.get(wedge.stave);
-			if (row !== undefined) {
-				this.recordStaveSpill({ stave: wedge.stave, row }, wedge.rect);
-			}
-			const system = this.systemByStave.get(wedge.stave);
-			if (system !== undefined) {
-				this.spill.growHighestTop(system, wedge.bounds.top);
-			}
-		}
-		// Pedals draw under the stave (vexflow's getYForBottomText), below the notes, so
-		// grow the bottom crop to keep their "Ped…*" text / bracket from being clipped.
-		// ponytail: only the final crop is grown — a pedal on a non-last system isn't
-		// reserved against the system below it; add that if a fixture stacks one there.
-		for (const { marking, notes } of this.spanners.buildPedals(
-			this.allPedals,
-			this.byLead,
-			this.allChords,
-		)) {
-			this.dropPedalClear(marking, notes);
-			marking.setContext(this.context).draw();
-		}
-		for (const marker of this.allPedals) {
-			const stave = this.byLead.get(marker.lead)?.getStave();
-			if (stave) {
-				this.pageBottom = Math.max(
-					this.pageBottom,
-					stave.getYForBottomText(PEDAL_BOTTOM_TEXT_LINE) + PEDAL_BOTTOM_MARGIN,
-				);
-			}
-		}
+		// Every note is placed now, so the whole-score spanners can finally find both of
+		// their endpoints and draw — last, on top of the notes.
+		this.spannerResolver.resolve({
+			byLead: this.byLead,
+			byTabLead: this.byTabLead,
+		});
 
 		return {
 			pageTop: this.pageTop,
@@ -2858,136 +2693,6 @@ export class DrawPass {
 			rawMeasures: this.geometry.measures(),
 			rawChordDiagrams: this.geometry.chordDiagrams(),
 		};
-	}
-
-	/*
-	 * Drop a pedal's band below anything of its own that hangs under the staff — a low
-	 * notehead and its ledger lines — instead of drawing the "Ped." glyph through it.
-	 * vexflow positions the whole marking off one `line` offset, so the band moves as a
-	 * unit and the drop converts to line units.
-	 *
-	 * The shared collision index is per-system (cleared at each system boundary) and pedals
-	 * resolve after the last system, so this scopes a resolver to the pedal's own notes
-	 * rather than reading a stale obstacle from an unrelated system at the same x.
-	 */
-	private dropPedalClear(marking: PedalMarking, notes: StaveNote[]): void {
-		const stave = notes[0]?.getStave();
-		if (!stave) {
-			return;
-		}
-		const hw = this.translator.noteheadHalfWidth();
-		const xs = notes.map((note) => note.getAbsoluteX());
-		const left = Math.min(...xs) - hw;
-		const baseline = stave.getYForBottomText(PEDAL_BOTTOM_TEXT_LINE);
-		const natural = new Rect(
-			left,
-			baseline - PEDAL_INK_RISE,
-			Math.max(...xs) + hw - left,
-			PEDAL_INK_RISE,
-		);
-		const scoped = new CollisionResolver(this.scratchViewport);
-		for (const note of notes) {
-			scoped.add({ rect: this.noteRect(note), kind: 'note' });
-		}
-		const placed = scoped.dropClear(natural, WORDS_NOTE_CLEARANCE);
-		marking.setLine((placed.y - natural.y) / stave.getSpacingBetweenLines());
-		this.pageBottom = Math.max(
-			this.pageBottom,
-			placed.bottom + PEDAL_BOTTOM_MARGIN,
-		);
-	}
-
-	/*
-	 * Move a hairpin further from the staff until it clears any slur bowing into its band. A
-	 * wedge parks at a fixed gap from the staff, which is exactly where a slur on the same
-	 * side lands — an under-slur over low notes dips straight through a below-stave crescendo.
-	 * The slur can't yield (it's pinned to its noteheads), so the wedge is the one that moves.
-	 *
-	 * Scoped like {@link dropPedalClear}: the shared index is per-system and wedges resolve
-	 * after the last one, so this indexes only the bows drawn over this wedge's own stave.
-	 */
-	private clearWedge(
-		wedge: Hairpin,
-		bows: { stave: Stave; rect: Rect }[],
-	): void {
-		const natural = wedge.rect;
-		const scoped = new CollisionResolver(this.scratchViewport);
-		for (const bow of bows) {
-			if (bow.stave === wedge.stave) {
-				scoped.add({ rect: bow.rect, kind: 'tie' });
-			}
-		}
-		const placed = wedge.above
-			? scoped.liftClear(natural, WORDS_NOTE_CLEARANCE)
-			: scoped.dropClear(natural, WORDS_NOTE_CLEARANCE);
-		wedge.setOffset(wedge.above ? natural.y - placed.y : placed.y - natural.y);
-	}
-
-	/*
-	 * Move an ottava bracket's row further from the stave until its label clears the notes it
-	 * covers. vexflow parks a TextBracket one text line off the staff, which is right until a
-	 * beam reaches into that band — a stem-down beam under an "8vb", a stem-up one over an
-	 * "8va" — and then the label is drawn straight through the beam line.
-	 *
-	 * Same shape as {@link dropPedalClear}: a scoped resolver over the span's own notes (the
-	 * shared index is per-system and brackets resolve after the last one), and the resolved
-	 * shift converted back into the single `line` offset vexflow positions the whole bracket
-	 * from. The note obstacles reach the beam-extended stem tip, which is what makes the beam
-	 * visible to the probe at all (see noteRect).
-	 */
-	private clearOctaveBracket(
-		bracket: TextBracket,
-		notes: StaveNote[],
-		above: boolean,
-	): void {
-		const stave = notes[0]?.getStave();
-		if (!stave) {
-			return;
-		}
-		// The baseline vexflow would draw the label on, reproduced from TextBracket.draw.
-		// renderText draws upward from a baseline, so the label's ink band is the one font
-		// size above it.
-		// TextBracket adds Tables.TEXT_HEIGHT_OFFSET_HACK (1, and not exported) to a
-		// below-stave line, so match it here or the probe measures the wrong row.
-		const baseline = above
-			? stave.getYForTopText(OTTAVA_TEXT_LINE)
-			: stave.getYForBottomText(OTTAVA_TEXT_LINE + 1);
-		const height = Font.convertSizeToPixelValue(bracket.fontInfo.size);
-		const hw = this.translator.noteheadHalfWidth();
-		const xs = notes.map((note) => note.getAbsoluteX());
-		const left = Math.min(...xs) - hw;
-		const natural = new Rect(
-			left,
-			baseline - height,
-			Math.max(...xs) + hw - left,
-			height,
-		);
-		const scoped = new CollisionResolver(this.scratchViewport);
-		for (const note of notes) {
-			scoped.add({ rect: this.noteRect(note), kind: 'note' });
-		}
-		const placed = above
-			? scoped.liftClear(natural, WORDS_NOTE_CLEARANCE)
-			: scoped.dropClear(natural, WORDS_NOTE_CLEARANCE);
-		// getYForTopText counts away from the stave upward and getYForBottomText downward, so
-		// the same "further out" shift has the opposite sign in line units.
-		const shift =
-			(above ? natural.y - placed.y : placed.y - natural.y) /
-			stave.getSpacingBetweenLines();
-		bracket.setLine(OTTAVA_TEXT_LINE + shift);
-		this.pageTop = Math.min(this.pageTop, placed.y);
-		this.pageBottom = Math.max(this.pageBottom, placed.bottom);
-		// Report the band the label ended up in so pass two opens room for it — as spill
-		// against the neighbouring stave inside the system (a piano 8va sits in the gap
-		// under the vocal part's lyrics), and as overflow against the system above.
-		const row = this.rowByStave.get(stave);
-		if (row !== undefined) {
-			this.recordStaveSpill({ stave, row }, placed);
-		}
-		const system = this.systemByStave.get(stave);
-		if (system !== undefined && above) {
-			this.spill.growHighestTop(system, placed.y);
-		}
 	}
 
 	/*
@@ -3065,12 +2770,11 @@ export class DrawPass {
 		this.spill.recordDrop(this.systemOf(stave), row, stave, rect);
 	}
 
-	/* Which system a stave belongs to. Registered once the stave's part is built; the
-	 * fallback covers a caller still inside the measure loop that placed it, where the
-	 * current system IS its system. Spanners resolved after the last measure (slurs,
-	 * wedges) have no current system, so for them the map is the only right answer. */
+	/* Which system a stave belongs to, read off the spanner resolver's registry. The
+	 * fallback covers a caller still inside the measure loop that placed the stave, where
+	 * the current system IS its system. */
 	private systemOf(stave: Stave): number {
-		return this.systemByStave.get(stave) ?? this.systemIndex;
+		return this.spannerResolver.systemOf(stave) ?? this.systemIndex;
 	}
 
 	private warnEscapes(): void {
