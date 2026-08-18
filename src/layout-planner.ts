@@ -28,20 +28,13 @@ import {
 	TAB_MIN_NOTE_SPACING,
 	WORDS_CHAR_WIDTH,
 } from './constants';
-import { gapsByMeasureIndex } from './gaps';
+import type { Gaps } from './gaps';
 import {
 	findModifier,
 	type MidClefSpec,
 	type NoteTranslator,
 } from './note-translator';
 import type { ScoreReader, StaffVoice } from './score-reader';
-import {
-	isTabStaff,
-	partGroups,
-	partSymbol,
-	stringTuning,
-	visibleStaffNumbers,
-} from './staves';
 
 /** A measure's placed box within its system. */
 export type MeasureBox = {
@@ -122,6 +115,7 @@ export class LayoutPlanner {
 	constructor(
 		private readonly translator: NoteTranslator,
 		private readonly reader: ScoreReader,
+		private readonly configuredGaps: Gaps,
 	) {}
 
 	// A note's horizontal share under the logarithmic spacing curve: `noteSpacing` px at a
@@ -367,7 +361,7 @@ export class LayoutPlanner {
 				if (lead && (lead.measureBeat ?? 0) > firstOnset + EPSILON) {
 					continue;
 				}
-				if (!isTabStaff(part, staffNumber)) {
+				if (!this.reader.isTabStaff(part, staffNumber)) {
 					continue;
 				}
 				pad = Math.max(pad, (text.length * WORDS_CHAR_WIDTH) / 2);
@@ -407,7 +401,7 @@ export class LayoutPlanner {
 		// clear of a high first note). Without a tempo the top margin is unchanged.
 		// Gap measures carry no directions, so a leading gap defers to the first real
 		// measure (whose mark still prints on the first system).
-		const gaps = gapsByMeasureIndex(config.gaps);
+		const gaps = this.configuredGaps.byMeasureIndex();
 		const hasTopTempo = parts.some((part) => {
 			const measure = part.measures.find((_, m) => !gaps.has(m));
 			return (
@@ -426,7 +420,9 @@ export class LayoutPlanner {
 		const { showTabs, showNotation } = config;
 		const totalStaves = parts.reduce(
 			(sum, part) =>
-				sum + visibleStaffNumbers(part, { showTabs, showNotation }).length,
+				sum +
+				this.reader.visibleStaffNumbers(part, { showTabs, showNotation })
+					.length,
 			0,
 		);
 		// Precompute each stave's y-offset within a system: a within-part gap after
@@ -434,12 +430,15 @@ export class LayoutPlanner {
 		const staveOffsets: number[] = [];
 		let offset = 0;
 		for (const part of parts) {
-			const staves = visibleStaffNumbers(part, { showTabs, showNotation });
+			const staves = this.reader.visibleStaffNumbers(part, {
+				showTabs,
+				showNotation,
+			});
 			// The wider within-part gap exists so a connector-joined group reads as one
 			// instrument. A part whose staves carry no connector (two tab staves, an
 			// explicit <part-symbol>none) isn't such a group, so its staves sit at the
 			// same even pitch as the parts around them.
-			const intra = partSymbol(part, { showTabs, showNotation })
+			const intra = this.reader.partSymbol(part, { showTabs, showNotation })
 				? INTRA_PART_SPACING
 				: INTER_PART_SPACING;
 			staves.forEach((_, s) => {
@@ -466,7 +465,9 @@ export class LayoutPlanner {
 		const groupChars = config.showPartLabels
 			? Math.max(
 					0,
-					...partGroups(score).map((group) => group.name?.length ?? 0),
+					...this.reader
+						.partGroups(score)
+						.map((group) => group.name?.length ?? 0),
 				)
 			: 0;
 		const labelIndent =
@@ -512,7 +513,7 @@ export class LayoutPlanner {
 				if (!measure) {
 					continue;
 				}
-				for (const staffNumber of visibleStaffNumbers(part, {
+				for (const staffNumber of this.reader.visibleStaffNumbers(part, {
 					showTabs,
 					showNotation,
 				})) {
@@ -525,8 +526,8 @@ export class LayoutPlanner {
 								? this.translator.vexflowClef(clef.sign, clef.line)
 								: 'treble',
 							meterFloor: this.reader.meterFloor(measure, staffNumber),
-							isTab: isTabStaff(part, staffNumber),
-							tuning: stringTuning(part, staffNumber),
+							isTab: this.reader.isTabStaff(part, staffNumber),
+							tuning: this.reader.stringTuning(part, staffNumber),
 							barlines: this.reader.midBarlinesOf(measure),
 							midClefs: this.translator.midClefSpecs(
 								this.reader.midClefsOf(measure, staffNumber),
@@ -578,12 +579,14 @@ export class LayoutPlanner {
 			// (staves_different_keys), so a part whose first stave is in C still needs the
 			// key's width budgeted when its second stave is not.
 			const hasKey = parts.some((part) =>
-				visibleStaffNumbers(part, { showTabs, showNotation }).some(
-					(staffNumber) =>
-						this.reader.keyIdentity(
-							part.measures[m]?.getKey(staffNumber) ?? null,
-						) !== null,
-				),
+				this.reader
+					.visibleStaffNumbers(part, { showTabs, showNotation })
+					.some(
+						(staffNumber) =>
+							this.reader.keyIdentity(
+								part.measures[m]?.getKey(staffNumber) ?? null,
+							) !== null,
+					),
 			);
 			return (
 				LEAD_BARLINE +
@@ -595,9 +598,9 @@ export class LayoutPlanner {
 		const clefChangesAt = (m: number) =>
 			m > 0 &&
 			parts.some((part) =>
-				visibleStaffNumbers(part, { showTabs, showNotation }).some(
+				this.reader.visibleStaffNumbers(part, { showTabs, showNotation }).some(
 					(staffNumber) =>
-						!isTabStaff(part, staffNumber) &&
+						!this.reader.isTabStaff(part, staffNumber) &&
 						this.translator.vexflowClefSpec(
 							part.measures[m]?.getClef(staffNumber) ?? null,
 						) !==

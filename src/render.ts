@@ -7,6 +7,7 @@ import {
 } from './config';
 import { ElementFactory } from './element-factory';
 import { DefaultFontLoader } from './font-loader/default-font-loader';
+import { Gaps } from './gaps';
 import { Stage } from './host/stage';
 import { LayoutPlanner } from './layout-planner';
 import { NoteTranslator } from './note-translator';
@@ -60,14 +61,16 @@ export function render(
 	// voices for the measured widths to match the drawn ones.
 	const translator = new NoteTranslator(resolved.tabStemPlacement);
 	const reader = new ScoreReader();
+	const gaps = new Gaps(resolved.gaps);
 	return new ScoreRenderer(
 		resolved,
 		stage,
 		new DefaultFontLoader(),
 		new DefaultScoreParser(),
-		new LayoutPlanner(translator, reader),
-		new ScoreDrawer(resolved, translator, reader, new SpannerBuilder()),
+		new LayoutPlanner(translator, reader, gaps),
+		new ScoreDrawer(resolved, translator, reader, new SpannerBuilder(), gaps),
 		new ElementFactory(),
-		new SequenceFactory(reader, resolved.gaps),
+		new SequenceFactory(reader, gaps),
+		gaps,
 	).render(input);
 }

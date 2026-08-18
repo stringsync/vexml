@@ -41,7 +41,7 @@ import {
 	TAB_GRACE_SPACING,
 	TECHNICAL_ROW_GAP,
 } from './constants';
-import { midiOf } from './staves';
+import { midiOf } from './score-reader';
 
 // MusicXML <type> -> vexflow duration code; rests append 'r'.
 const DURATION_CODES: Record<string, string> = {

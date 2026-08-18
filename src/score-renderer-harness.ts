@@ -3,6 +3,7 @@ import type { FontConfig } from './config';
 import { DEFAULT_CONFIG } from './config';
 import { ElementFactory } from './element-factory';
 import { NoopFontLoader } from './font-loader/noop-font-loader';
+import { Gaps } from './gaps';
 import type { Rect } from './geometry';
 import type { Layer, LayerKind } from './layer/layer';
 import { LayoutPlanner } from './layout-planner';
@@ -71,15 +72,17 @@ export function renderer(overrides?: { minLastSystemFill?: number }) {
 	const parser = new FakeScoreParser();
 	const translator = new NoteTranslator();
 	const reader = new ScoreReader();
+	const gaps = new Gaps([]);
 	const scoreRenderer = new ScoreRenderer(
 		config,
 		stage,
 		fontLoader,
 		parser,
-		new LayoutPlanner(translator, reader),
-		new ScoreDrawer(config, translator, reader, new SpannerBuilder()),
+		new LayoutPlanner(translator, reader, gaps),
+		new ScoreDrawer(config, translator, reader, new SpannerBuilder(), gaps),
 		new ElementFactory(),
-		new SequenceFactory(reader, []),
+		new SequenceFactory(reader, gaps),
+		gaps,
 	);
 	return { scoreRenderer, stage, fontLoader, parser };
 }

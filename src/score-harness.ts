@@ -2,6 +2,7 @@ import { DefaultDecoration } from './decoration/default-decoration';
 import { ColorStyle } from './decoration-style/color-style';
 import type { Element } from './element';
 import { ElementIndex } from './element-index';
+import { Gaps } from './gaps';
 import type { Rect } from './geometry';
 import { FakeHitTester } from './hit-tester/fake-hit-tester';
 import type { HitTester } from './hit-tester/hit-tester';
@@ -16,7 +17,7 @@ import type { Viewport } from './viewport/viewport';
 /* An empty timeline: these tests exercise events/layers/hover, not playback. */
 export const EMPTY_SEQUENCE = new SequenceFactory(
 	new ScoreReader(),
-	[],
+	new Gaps([]),
 ).createFromInput({
 	measures: [],
 	notes: [],

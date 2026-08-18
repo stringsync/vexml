@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { DefaultDecoration } from './decoration/default-decoration';
 import { ColorStyle } from './decoration-style/color-style';
 import type { Element } from './element';
+import { Gaps } from './gaps';
 import { Rect } from './geometry';
 import { FakeHitTester } from './hit-tester/fake-hit-tester';
 import type { HitTester } from './hit-tester/hit-tester';
@@ -190,37 +191,38 @@ describe('Score', () => {
 	it('interpolates the playback time under a point, and reports the step nearest it', () => {
 		const host = new FakeHost();
 		// A measure at index 0 with two quarter notes (x 10 @ beat 0, x 20 @ beat 1) at 120bpm.
-		const sequence = new SequenceFactory(new ScoreReader(), []).createFromInput(
-			{
-				measures: [
-					{
-						index: 0,
-						beats: 2,
-						tempoBpm: 120,
-						jumps: [],
-						systemRect: new Rect(0, 0, 1000, 100),
-					},
-				],
-				notes: [
-					{
-						note: {} as Note,
-						measureIndex: 0,
-						measureBeat: 0,
-						beats: 1,
-						x: 10,
-						tiedFrom: null,
-					},
-					{
-						note: {} as Note,
-						measureIndex: 0,
-						measureBeat: 1,
-						beats: 1,
-						x: 20,
-						tiedFrom: null,
-					},
-				],
-			},
-		);
+		const sequence = new SequenceFactory(
+			new ScoreReader(),
+			new Gaps([]),
+		).createFromInput({
+			measures: [
+				{
+					index: 0,
+					beats: 2,
+					tempoBpm: 120,
+					jumps: [],
+					systemRect: new Rect(0, 0, 1000, 100),
+				},
+			],
+			notes: [
+				{
+					note: {} as Note,
+					measureIndex: 0,
+					measureBeat: 0,
+					beats: 1,
+					x: 10,
+					tiedFrom: null,
+				},
+				{
+					note: {} as Note,
+					measureIndex: 0,
+					measureBeat: 1,
+					beats: 1,
+					x: 20,
+					tiedFrom: null,
+				},
+			],
+		});
 		const target = measureBox(new Rect(0, 0, 1000, 100));
 		const score = new Score(
 			host,

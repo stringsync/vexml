@@ -1,12 +1,15 @@
 import type { Measure, Note as MNote, Part } from '@stringsync/mdom';
-import type { Gap } from './config';
 import { DEFAULT_TEMPO_BPM } from './constants';
-import { gapsByMeasureIndex } from './gaps';
+import type { Gaps } from './gaps';
 import { Rect } from './geometry';
 import type { Note } from './note';
-import { endingFirstPass, endingPasses, measureRepeats } from './repeats';
 import type { RawGeometry } from './score-drawer';
-import type { ScoreReader, Swing } from './score-reader';
+import {
+	endingFirstPass,
+	endingPasses,
+	type ScoreReader,
+	type Swing,
+} from './score-reader';
 import {
 	beatsToMs,
 	type Jump,
@@ -383,9 +386,13 @@ const QUARTERS_PER_UNIT: Record<string, number> = {
 /* The repeat/volta jumps for every measure, mapped from the shared repeat structure
  * (src/repeats.ts, which the renderer reads too). An ending supersedes a co-located backward
  * repeat — the iterator drives the back-jump off the ending instead. */
-function jumpsByMeasure(measures: readonly Measure[]): Jump[][] {
-	return measureRepeats(measures).map(
-		({ repeatBegin, repeatEnd, repeatTimes, ending }) => {
+function jumpsByMeasure(
+	reader: ScoreReader,
+	measures: readonly Measure[],
+): Jump[][] {
+	return reader
+		.measureRepeats(measures)
+		.map(({ repeatBegin, repeatEnd, repeatTimes, ending }) => {
 			const jumps: Jump[] = [];
 			if (repeatBegin) {
 				jumps.push({ type: 'repeatstart' });
@@ -404,8 +411,7 @@ function jumpsByMeasure(measures: readonly Measure[]): Jump[][] {
 				});
 			}
 			return jumps;
-		},
-	);
+		});
 }
 
 /* Two notes at the same pitch (a tie's two ends always match). */
@@ -457,7 +463,7 @@ const BEAT_EPSILON = 1e-6;
 export class SequenceFactory {
 	constructor(
 		private readonly reader: ScoreReader,
-		private readonly gaps: readonly Gap[],
+		private readonly gaps: Gaps,
 	) {}
 
 	/* Build the timeline for a rendered score: the parsed parts give onsets/meter/tempo/repeats/
@@ -699,10 +705,10 @@ export class SequenceFactory {
 			systemRectByIndex.set(measure.index, measure.rect);
 		}
 
-		const gaps = gapsByMeasureIndex(this.gaps);
+		const gaps = this.gaps.byMeasureIndex();
 		const measureCount = parts[0]?.measures.length ?? 0;
 		// Repeats and endings apply across the system, so they're read from the first part.
-		const jumps = jumpsByMeasure(parts[0]?.measures ?? []);
+		const jumps = jumpsByMeasure(this.reader, parts[0]?.measures ?? []);
 		// Swing warps the beat axis per measure; identity everywhere no <sound><swing> is in force.
 		const swings = this.swingWarps(parts);
 		const swung = (index: number, beat: number): number =>

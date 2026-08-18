@@ -1,5 +1,6 @@
 import { CursorController } from './cursor-controller';
 import { FakeCursorHost } from './cursor-host/fake-cursor-host';
+import { Gaps } from './gaps';
 import { Rect } from './geometry';
 import type { Note } from './note';
 import { ScoreReader } from './score-reader';
@@ -27,7 +28,7 @@ export function fourQuarters() {
 		x: 10 + i * 10,
 		tiedFrom: null,
 	}));
-	return new SequenceFactory(new ScoreReader(), []).createFromInput({
+	return new SequenceFactory(new ScoreReader(), new Gaps([])).createFromInput({
 		measures: [
 			{ index: 0, beats: 4, tempoBpm: 120, jumps: [], systemRect: SYS },
 		],

@@ -102,7 +102,7 @@ import {
 	WORDS_NOTE_CLEARANCE,
 	WORDS_Y_OFFSET,
 } from './constants';
-import { gapsByMeasureIndex } from './gaps';
+import type { Gaps } from './gaps';
 import { Rect } from './geometry';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
 import { MetronomeGlyph, type TempoModulation } from './metronome-glyph';
@@ -116,12 +116,13 @@ import {
 	type NoteTranslator,
 	TechnicalAnnotation,
 } from './note-translator';
-import { type MeasureEnding, measureRepeats } from './repeats';
 import type { RawChordDiagram, RawMeasure, RawNote } from './score-drawer';
 import type {
 	DirectionLineSpan,
 	LineEnd,
+	MeasureEnding,
 	OctaveShiftSpan,
+	PartGroup,
 	PedalMark,
 	Placement,
 	ScoreReader,
@@ -141,16 +142,6 @@ type TempoTask = {
 };
 
 import type { Hairpin, SpannerBuilder } from './spanner-builder';
-import {
-	barlineBreaks,
-	isTabStaff,
-	type PartGroup,
-	pairsTabWithNotation,
-	partGroups,
-	partSymbol,
-	stringTuning,
-	visibleStaffNumbers,
-} from './staves';
 
 /*
  * MusicXML <time> -> vexflow time-signature spec: 'C' (common), 'C|' (cut), or
@@ -299,43 +290,6 @@ function timeSignatureSpec(time: Time | null): string | null {
 	return null;
 }
 
-/*
- * True when a notation+tab pair is split across separate single-stave parts (a
- * guitar's notation in one part, its TAB in another) rather than stacked in one
- * two-stave part. Such a system is bracketed by convention, the cross-part analog
- * of pairsTabWithNotation. Only meaningful for multi-part systems — a single
- * notation+tab part already brackets itself via partSymbol.
- */
-function partsPairTabWithNotation(
-	parts: Part[],
-	showTabs: boolean,
-	showNotation: boolean,
-): boolean {
-	// A notation+tab pairing needs both kinds on screen; hide either and it can't pair.
-	if (!showTabs || !showNotation || parts.length < 2) {
-		return false;
-	}
-	// A part that stacks both kinds ITSELF is not a cross-part pairing — it already brackets
-	// its own two staves via partSymbol. Without this, a score that merely CONTAINS such a
-	// part (a singer over a notation+TAB guitar) also brackets the whole system, sweeping the
-	// unrelated part into the guitar's bracket.
-	if (
-		parts.some((part) => pairsTabWithNotation(part, { showTabs, showNotation }))
-	) {
-		return false;
-	}
-	// ponytail: the bracket still spans the whole system, which is right for the two-part
-	// case this exists for. Track the pair's part indexes if a score ever puts an ungrouped
-	// third part alongside a split notation/TAB pair.
-	const kinds: boolean[] = [];
-	for (const part of parts) {
-		for (let staff = 1; staff <= Math.max(part.staveCount, 1); staff++) {
-			kinds.push(isTabStaff(part, String(staff)));
-		}
-	}
-	return kinds.includes(true) && kinds.includes(false);
-}
-
 // One stave's notes, built but not yet formatted or drawn. A part's staves are
 // formatted together (see formatAndDrawSystem) so notes at the same tick line up
 // vertically across staves, so the build (voice/spanner construction) is split from
@@ -472,9 +426,13 @@ type BarlineDecoration = {
  * hookless (MID), and closes with a right hook (END) — BEGIN_END when the run is one measure.
  * A `discontinue` close leaves the bracket open on the right, so it keeps the hookless form.
  */
-function barlineDecorations(measures: readonly Measure[]): BarlineDecoration[] {
-	return measureRepeats(measures).map(
-		({ repeatBegin, repeatEnd, repeatTimes, ending }) => ({
+function barlineDecorations(
+	reader: ScoreReader,
+	measures: readonly Measure[],
+): BarlineDecoration[] {
+	return reader
+		.measureRepeats(measures)
+		.map(({ repeatBegin, repeatEnd, repeatTimes, ending }) => ({
 			repeatBegin,
 			repeatEnd,
 			// <repeat times> counts the total passes, and two is what a repeat sign already
@@ -485,8 +443,7 @@ function barlineDecorations(measures: readonly Measure[]): BarlineDecoration[] {
 				type: voltaType(ending),
 				label: voltaLabel(ending.number),
 			},
-		}),
-	);
+		}));
 }
 
 function voltaType(ending: MeasureEnding): number {
@@ -879,6 +836,7 @@ export class DrawPass {
 		private readonly reader: ScoreReader,
 		private readonly spanners: SpannerBuilder,
 		config: Config,
+		configuredGaps: Gaps,
 		private readonly context: RenderContext,
 		private readonly score: Score,
 		layout: ScoreLayout,
@@ -920,23 +878,22 @@ export class DrawPass {
 		this.notationColor = config.fonts.notation?.color ?? '#000000';
 		this.textColor = config.fonts.text?.color ?? '#000000';
 		this.parts = this.score.parts;
-		this.gaps = gapsByMeasureIndex(config.gaps);
+		this.gaps = configuredGaps.byMeasureIndex();
 		// <multiple-rest> runs: the lead measure draws the consolidated bar instead of its own
 		// notes, and the measures it swallows have no box (the layout planner dropped them), so
 		// drawMeasureColumn returns early for them without any extra guard here.
 		this.multiRests = this.reader.multiRestsOf(this.parts).leads;
-		this.partGroups = partGroups(this.score);
+		this.partGroups = this.reader.partGroups(this.score);
 		// A notation+TAB pair split across parts is ONE instrument that just happens to be
 		// written as two parts, and it's bracketed as one (see partsPairTabWithNotation), so
 		// its barline runs through the pair too — the barline run has to agree with what the
 		// connector groups, or the bracket says "one instrument" while the gap says "two".
-		this.barlineBreaks = partsPairTabWithNotation(
-			this.parts,
-			this.showTabs,
-			this.showNotation,
-		)
+		this.barlineBreaks = this.reader.partsPairTabWithNotation(this.parts, {
+			showTabs: this.showTabs,
+			showNotation: this.showNotation,
+		})
 			? new Set<number>()
-			: barlineBreaks(this.score);
+			: this.reader.barlineBreaks(this.score);
 		// <octave-shift> spans, resolved up front: every note under one draws an octave (or
 		// two, or three) off its sounding pitch, so buildNotes needs the answer per note
 		// before it builds anything, and the finish pass draws the brackets over them.
@@ -950,7 +907,10 @@ export class DrawPass {
 			this.directionLineSpans.push(...this.reader.directionLinesOf(part));
 		}
 		// Read from the first part — a repeat or volta boundary applies across the system.
-		this.decorations = barlineDecorations(this.parts[0]?.measures ?? []);
+		this.decorations = barlineDecorations(
+			reader,
+			this.parts[0]?.measures ?? [],
+		);
 		this.systemTopY = layout.top + topSlack;
 		this.systemContentBottom = this.systemTopY;
 		this.collisionResolver = new CollisionResolver(
@@ -1054,7 +1014,7 @@ export class DrawPass {
 			// The staves this part actually renders: with showTabs/showNotation off, its
 			// tab/notation staves are dropped. staveRow indexes into staveOffsets, which the
 			// layout planner built from this same visible set, so the two stay aligned.
-			const staves = visibleStaffNumbers(part, {
+			const staves = this.reader.visibleStaffNumbers(part, {
 				showTabs: this.showTabs,
 				showNotation: this.showNotation,
 			});
@@ -1213,7 +1173,7 @@ export class DrawPass {
 			// A part's own staves are joined at each system start by the symbol named in
 			// <part-symbol> (brace by default; bracket for guitar notation+tab pairs).
 			// 'none' suppresses the connector entirely.
-			const symbol = partSymbol(part, {
+			const symbol = this.reader.partSymbol(part, {
 				showTabs: this.showTabs,
 				showNotation: this.showNotation,
 			});
@@ -1382,7 +1342,7 @@ export class DrawPass {
 
 		// A TAB clef draws on a TabStave whose line count matches the
 		// instrument's strings (<staff-lines>: 6 for guitar, 4 for bass).
-		const isTab = isTabStaff(part, staffNumber);
+		const isTab = this.reader.isTabStaff(part, staffNumber);
 		const tabLines = isTab ? measure.getStaveLines(staffNumber) : 0;
 		const staveLines = measure.getStaveLines(staffNumber);
 		// Half the lines a reduced stave drops come off the top. The whole part of that says
@@ -1595,15 +1555,14 @@ export class DrawPass {
 		const numberOccluded =
 			this.isSystemStart &&
 			((visibleCount > 1 &&
-				partSymbol(part, {
+				this.reader.partSymbol(part, {
 					showTabs: this.showTabs,
 					showNotation: this.showNotation,
 				}) === 'bracket') ||
-				partsPairTabWithNotation(
-					this.parts,
-					this.showTabs,
-					this.showNotation,
-				) ||
+				this.reader.partsPairTabWithNotation(this.parts, {
+					showTabs: this.showTabs,
+					showNotation: this.showNotation,
+				}) ||
 				this.partGroups.some(
 					(group) => group.symbol === 'bracket' && group.fromPart === 0,
 				));
@@ -1717,7 +1676,7 @@ export class DrawPass {
 					stave as TabStave,
 					this.staveRow,
 					voices,
-					stringTuning(part, staffNumber),
+					this.reader.stringTuning(part, staffNumber),
 				),
 			);
 			for (const voice of voices) {
@@ -3017,22 +2976,21 @@ export class DrawPass {
 		if (!this.isSystemStart || !this.systemTop || !this.systemBottom) {
 			return null;
 		}
-		let bracket = partsPairTabWithNotation(
-			this.parts,
-			this.showTabs,
-			this.showNotation,
-		);
+		let bracket = this.reader.partsPairTabWithNotation(this.parts, {
+			showTabs: this.showTabs,
+			showNotation: this.showNotation,
+		});
 		let brace = false;
 		for (const part of this.parts) {
 			if (
-				visibleStaffNumbers(part, {
+				this.reader.visibleStaffNumbers(part, {
 					showTabs: this.showTabs,
 					showNotation: this.showNotation,
 				}).length <= 1
 			) {
 				continue;
 			}
-			const symbol = partSymbol(part, {
+			const symbol = this.reader.partSymbol(part, {
 				showTabs: this.showTabs,
 				showNotation: this.showNotation,
 			});
@@ -3880,7 +3838,10 @@ export class DrawPass {
 					.setContext(this.context)
 					.draw();
 				if (
-					partsPairTabWithNotation(this.parts, this.showTabs, this.showNotation)
+					this.reader.partsPairTabWithNotation(this.parts, {
+						showTabs: this.showTabs,
+						showNotation: this.showNotation,
+					})
 				) {
 					// The bracket's x comes entirely from its top stave; nudge that 4px left
 					// so the bracket sits just outside the system line with a small gap, then

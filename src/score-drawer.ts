@@ -9,6 +9,7 @@ import {
 	STAVE_CLEARANCE,
 } from './constants';
 import { DrawPass, type DrawPassOptions, type StaveSpill } from './draw-pass';
+import type { Gaps } from './gaps';
 import { Rect } from './geometry';
 import type { ScoreLayout } from './layout-planner';
 import type { NoteTranslator } from './note-translator';
@@ -172,6 +173,7 @@ export class ScoreDrawer {
 		private translator: NoteTranslator,
 		private reader: ScoreReader,
 		private spanners: SpannerBuilder,
+		private gaps: Gaps,
 	) {}
 
 	/*
@@ -241,6 +243,7 @@ export class ScoreDrawer {
 				this.reader,
 				this.spanners,
 				this.config,
+				this.gaps,
 				context,
 				score,
 				activeLayout,

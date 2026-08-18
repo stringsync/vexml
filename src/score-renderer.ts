@@ -4,7 +4,7 @@ import { ColorStyle } from './decoration-style/color-style';
 import { HaloStyle } from './decoration-style/halo-style';
 import type { ElementFactory } from './element-factory';
 import type { FontLoader } from './font-loader/font-loader';
-import { gapDocumentIndexes, insertGapMeasures } from './gaps';
+import type { Gaps } from './gaps';
 import { Rect } from './geometry';
 import type { Host } from './host/host';
 import type { LayoutPlanner } from './layout-planner';
@@ -46,6 +46,7 @@ export class ScoreRenderer {
 		private readonly scoreDrawer: ScoreDrawer,
 		private readonly elementFactory: ElementFactory,
 		private readonly sequenceFactory: SequenceFactory,
+		private readonly configuredGaps: Gaps,
 	) {}
 
 	async render(input: string | Blob): Promise<Score> {
@@ -65,8 +66,8 @@ export class ScoreRenderer {
 		const parts = mdoc.score.parts;
 		// Gap measures go into the parsed document itself, so everything downstream
 		// (layout, draw, elements, sequence) sees them as ordinary empty measures.
-		if (this.config.gaps.length > 0 && parts.length > 0) {
-			insertGapMeasures(parts, this.config.gaps);
+		if (parts.length > 0) {
+			this.configuredGaps.insertInto(parts);
 		}
 		const geometry =
 			parts.length > 0
@@ -102,7 +103,7 @@ export class ScoreRenderer {
 		// renders exactly one step; under repeats that's its first occurrence.
 		const gaps: GapInfo[] =
 			parts.length > 0
-				? gapDocumentIndexes(this.config.gaps).map(({ gap, measureIndex }) => {
+				? this.configuredGaps.documentIndexes().map(({ gap, measureIndex }) => {
 						const range = sequence.getStepRangeOfMeasure(measureIndex);
 						const step = range ? sequence.getStep(range.start) : null;
 						return {

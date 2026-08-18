@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import { Gaps } from './gaps';
 import { ScoreReader } from './score-reader';
 import { metronomeDir, nth, parseMeasures } from './score-reader-harness';
 import type { MeasureInfo, SequenceNote } from './sequence';
@@ -349,7 +350,7 @@ describe('SequenceFactory', () => {
 			jumps: [],
 			systemRect: SYS,
 		}));
-		const seq = new SequenceFactory(reader, []).createFromInput({
+		const seq = new SequenceFactory(reader, new Gaps([])).createFromInput({
 			measures,
 			// Whole notes, so each measure is filled and its single onset is its only step.
 			notes: [0, 1].map((index) => ({

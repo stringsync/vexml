@@ -1,3 +1,4 @@
+import { Gaps } from './gaps';
 import { Rect } from './geometry';
 import type { Note } from './note';
 import { ScoreReader } from './score-reader';
@@ -21,5 +22,7 @@ export function quarter(
 
 // createFromInput never touches the reader (only create() does), so a real stateless one is fine.
 export function build(input: SequenceInput) {
-	return new SequenceFactory(new ScoreReader(), []).createFromInput(input);
+	return new SequenceFactory(new ScoreReader(), new Gaps([])).createFromInput(
+		input,
+	);
 }
