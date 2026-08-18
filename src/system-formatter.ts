@@ -55,7 +55,7 @@ export type PendingStave = {
 	beams: ReturnType<SpannerBuilder['buildBeams']>;
 	// Beam groups read off this stave's voices, waiting on the rest of the part's staves
 	// before they can be built — a cross-staff run names notes another stave drew. Consumed
-	// (and emptied into `beams`) by DrawPass.buildPartBeams.
+	// (and emptied into `beams`) by VoiceBuilder.buildPartBeams.
 	beamPlans: Array<{
 		groups: BeamRun[];
 		defaultStem?: 'up' | 'down';
@@ -175,9 +175,9 @@ export interface SystemFormatterOptions {
 	 * override vexflow's hardcoded styles to match it. */
 	notationColor: string;
 	/** The pass-wide lead-note registry, read to rebuild this stave's slurs for the
-	 * collision measurement. The draw pass keeps filling it; the reference is stable. */
+	 * collision measurement. The voice builder keeps filling it; the reference is stable. */
 	byLead: ReadonlyMap<Note, StaveNote>;
-	/** Notes whose beam group spans two staves (see DrawPass.crossStaveNotes): their
+	/** Notes whose beam group spans two staves (see VoiceBuilder.buildPartBeams): their
 	 * cross-gap stems are kept out of the stave spill that sizes that gap. */
 	crossStaveNotes: ReadonlySet<StaveNote>;
 }
