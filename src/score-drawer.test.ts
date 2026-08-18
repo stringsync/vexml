@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { STAVE_CLEARANCE } from './constants';
-import type { StaveSpill } from './draw-pass';
 import { spacedOffsets } from './score-drawer';
+import type { StaveSpill } from './spill-tracker';
 
 // Staff lines 40px below the stave's y and 40px tall — a plain 5-line notation stave.
 // Spill is columned by x; `column` says which one it sits over, so two staves can be given

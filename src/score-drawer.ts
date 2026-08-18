@@ -8,13 +8,14 @@ import {
 	PAGE_MARGIN_TOP,
 	STAVE_CLEARANCE,
 } from './constants';
-import { DrawPass, type DrawPassOptions, type StaveSpill } from './draw-pass';
+import { DrawPass, type DrawPassOptions } from './draw-pass';
 import type { Gaps } from './gaps';
 import { Rect } from './geometry';
 import type { ScoreLayout } from './layout-planner';
 import type { NoteTranslator } from './note-translator';
 import type { ScoreReader } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
+import type { StaveSpill } from './spill-tracker';
 
 /* A note's engraved glyph, captured so a decoration can re-stamp it in color on an overlay: the
  * SMuFL text, the exact CSS font vexflow drew it with, and its baseline position in score space.
