@@ -1,24 +1,21 @@
 import type { Resource } from 'webappwiz/disposable';
-import type { Element } from './elements/element';
-import type { ElementIndex } from './elements/element-index';
-import { MeasureBox } from './elements/measure-box';
-import { Note } from './elements/note';
-import type { Part } from './elements/part';
-import type { System } from './elements/system';
-import { TabPosition } from './elements/tab-position';
+import { CursorController } from './cursor-controller';
+import { CursorHostAdapter } from './cursor-host/cursor-host-adapter';
+import { Playhead, type PlayheadOptions } from './cursor-view/playhead';
+import type { Element } from './element';
+import type { ElementIndex } from './element-index';
 import type { ScoreEventMap } from './events';
-import type { Host } from './host/host/host';
-import type { Layer, LayerKind } from './host/layer/layer';
-import type { Scroller } from './host/scroller/scroller';
+import type { Host } from './host/host';
+import type { Layer, LayerKind } from './layer/layer';
 import { EventTarget } from './listenable/event-target';
 import type { Listenable } from './listenable/listenable';
-import { CursorController } from './playback/cursor-controller';
-import { CursorHostAdapter } from './playback/cursor-host/cursor-host-adapter';
-import {
-	Playhead,
-	type PlayheadOptions,
-} from './playback/cursor-view/playhead';
-import type { Sequence } from './playback/sequence';
+import { MeasureBox } from './measure-box';
+import { Note } from './note';
+import type { Part } from './part';
+import type { Scroller } from './scroller/scroller';
+import type { Sequence } from './sequence';
+import type { System } from './system';
+import { TabPosition } from './tab-position';
 
 /** A rendered gap measure's sync metadata — see `Config.gaps` and `Score.getGaps`. */
 export interface GapInfo {

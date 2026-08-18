@@ -19,7 +19,7 @@
 		"assets",
 		"css",
 		"!src/**/*.test.ts",
-		"!src/testing",
+		"!src/measure-fixture.ts",
 		"!src/**/fake-*.ts",
 		"!src/**/recording-*.ts",
 		"!src/**/*-harness.ts"

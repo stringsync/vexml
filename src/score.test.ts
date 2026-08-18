@@ -1,15 +1,13 @@
 import { describe, expect, it } from 'bun:test';
-import { DefaultDecoration } from './elements/decoration/default-decoration';
-import { ColorStyle } from './elements/decoration-style/color-style';
-import type { Element } from './elements/element';
-import { FakeHitTester } from './elements/hit-tester/fake-hit-tester';
-import type { HitTester } from './elements/hit-tester/hit-tester';
-import type { Note } from './elements/note';
-import { ScoreReader } from './engraving/score-reader';
+import { DefaultDecoration } from './decoration/default-decoration';
+import { ColorStyle } from './decoration-style/color-style';
+import type { Element } from './element';
 import { Rect } from './geometry';
-import { FakeHost } from './host/host/fake-host';
-import type { FakeLayer } from './host/layer/fake-layer';
-import { SequenceFactory } from './playback/sequence-factory';
+import { FakeHitTester } from './hit-tester/fake-hit-tester';
+import type { HitTester } from './hit-tester/hit-tester';
+import { FakeHost } from './host/fake-host';
+import type { FakeLayer } from './layer/fake-layer';
+import type { Note } from './note';
 import { Score } from './score';
 import {
 	EMPTY_SEQUENCE,
@@ -18,6 +16,8 @@ import {
 	fixture,
 	measureBox,
 } from './score-harness';
+import { ScoreReader } from './score-reader';
+import { SequenceFactory } from './sequence-factory';
 
 describe('Score', () => {
 	it('a pointer event hit-tests the point and emits target, score-space point, and native', () => {

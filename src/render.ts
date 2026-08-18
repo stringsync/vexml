@@ -5,18 +5,18 @@ import {
 	DEFAULT_STANDARD_LAYOUT,
 	type Layout,
 } from './config';
-import { ElementFactory } from './elements/element-factory';
-import { DefaultFontLoader } from './engraving/font-loader/default-font-loader';
-import { LayoutPlanner } from './engraving/layout-planner';
-import { NoteTranslator } from './engraving/note-translator';
-import { ScoreDrawer } from './engraving/score-drawer';
-import { ScoreReader } from './engraving/score-reader';
-import { SpannerBuilder } from './engraving/spanner-builder';
-import { Stage } from './host/host/stage';
-import { SequenceFactory } from './playback/sequence-factory';
+import { ElementFactory } from './element-factory';
+import { DefaultFontLoader } from './font-loader/default-font-loader';
+import { Stage } from './host/stage';
+import { LayoutPlanner } from './layout-planner';
+import { NoteTranslator } from './note-translator';
 import type { Score } from './score';
+import { ScoreDrawer } from './score-drawer';
 import { DefaultScoreParser } from './score-parser/default-score-parser';
+import { ScoreReader } from './score-reader';
 import { ScoreRenderer } from './score-renderer';
+import { SequenceFactory } from './sequence-factory';
+import { SpannerBuilder } from './spanner-builder';
 
 /*
  * Render a MusicXML score into a container: parse the input (a MusicXML string or a compressed

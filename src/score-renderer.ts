@@ -1,18 +1,18 @@
 import type { Config } from './config';
-import { DefaultDecoration } from './elements/decoration/default-decoration';
-import { ColorStyle } from './elements/decoration-style/color-style';
-import { HaloStyle } from './elements/decoration-style/halo-style';
-import type { ElementFactory } from './elements/element-factory';
-import type { FontLoader } from './engraving/font-loader/font-loader';
-import type { LayoutPlanner } from './engraving/layout-planner';
-import type { RawGeometry, ScoreDrawer } from './engraving/score-drawer';
+import { DefaultDecoration } from './decoration/default-decoration';
+import { ColorStyle } from './decoration-style/color-style';
+import { HaloStyle } from './decoration-style/halo-style';
+import type { ElementFactory } from './element-factory';
+import type { FontLoader } from './font-loader/font-loader';
 import { gapDocumentIndexes, insertGapMeasures } from './gaps';
 import { Rect } from './geometry';
-import type { Host } from './host/host/host';
-import type { Scroller } from './host/scroller/scroller';
-import type { SequenceFactory } from './playback/sequence-factory';
+import type { Host } from './host/host';
+import type { LayoutPlanner } from './layout-planner';
 import { type GapInfo, Score } from './score';
+import type { RawGeometry, ScoreDrawer } from './score-drawer';
 import type { ScoreParser } from './score-parser/score-parser';
+import type { Scroller } from './scroller/scroller';
+import type { SequenceFactory } from './sequence-factory';
 
 const EMPTY_GEOMETRY: RawGeometry = {
 	bounds: new Rect(0, 0, 0, 0),

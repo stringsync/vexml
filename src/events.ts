@@ -1,6 +1,6 @@
-import type { Bounded } from './elements/decoration/decoration';
-import type { Element } from './elements/element';
-import type { Note } from './elements/note';
+import type { Bounded } from './decoration/decoration';
+import type { Element } from './element';
+import type { Note } from './note';
 
 /* A pointer interaction over the score: the element under the pointer (null on empty space), the
  * pointer position in score space, and the raw DOM event for everything else (buttons, modifier

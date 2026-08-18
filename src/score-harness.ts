@@ -1,17 +1,17 @@
-import { DefaultDecoration } from './elements/decoration/default-decoration';
-import { ColorStyle } from './elements/decoration-style/color-style';
-import type { Element } from './elements/element';
-import { ElementIndex } from './elements/element-index';
-import { FakeHitTester } from './elements/hit-tester/fake-hit-tester';
-import type { HitTester } from './elements/hit-tester/hit-tester';
-import { MeasureBox } from './elements/measure-box';
-import { System } from './elements/system';
-import { ScoreReader } from './engraving/score-reader';
+import { DefaultDecoration } from './decoration/default-decoration';
+import { ColorStyle } from './decoration-style/color-style';
+import type { Element } from './element';
+import { ElementIndex } from './element-index';
 import type { Rect } from './geometry';
-import { FakeHost } from './host/host/fake-host';
-import type { Viewport } from './host/viewport/viewport';
-import { SequenceFactory } from './playback/sequence-factory';
+import { FakeHitTester } from './hit-tester/fake-hit-tester';
+import type { HitTester } from './hit-tester/hit-tester';
+import { FakeHost } from './host/fake-host';
+import { MeasureBox } from './measure-box';
 import { Score } from './score';
+import { ScoreReader } from './score-reader';
+import { SequenceFactory } from './sequence-factory';
+import { System } from './system';
+import type { Viewport } from './viewport/viewport';
 
 /* An empty timeline: these tests exercise events/layers/hover, not playback. */
 export const EMPTY_SEQUENCE = new SequenceFactory(

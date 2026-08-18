@@ -1,6 +1,7 @@
 /* Re-exported so a caller can name what sync()/follow()/observe*() hand back without
  * depending on webappwiz directly. */
 export type { Resource } from 'webappwiz/disposable';
+export { ChordDiagram } from './chord-diagram';
 export type {
 	Config,
 	ConfigInput,
@@ -15,8 +16,13 @@ export type {
 	StandardLayout,
 	SystemOverflow,
 } from './config';
-export { ChordDiagram } from './elements/chord-diagram';
-export type { Bounded } from './elements/decoration/decoration';
+export { CursorController } from './cursor-controller';
+export type { CursorView } from './cursor-view/cursor-view';
+export {
+	Playhead,
+	type PlayheadOptions,
+} from './cursor-view/playhead';
+export type { Bounded } from './decoration/decoration';
 export {
 	Element,
 	type Highlightable,
@@ -24,16 +30,8 @@ export {
 	isPlayable,
 	type Playable,
 	type Toggle,
-} from './elements/element';
-export type { ElementIndex } from './elements/element-index';
-export { Measure } from './elements/measure';
-export { MeasureBox } from './elements/measure-box';
-export { Note } from './elements/note';
-export { Part } from './elements/part';
-export { System } from './elements/system';
-export { TabPosition } from './elements/tab-position';
-export { Voice } from './elements/voice';
-export type { NoteGlyph } from './engraving/score-drawer';
+} from './element';
+export type { ElementIndex } from './element-index';
 export type {
 	CursorChangeEvent,
 	CursorEventMap,
@@ -45,15 +43,17 @@ export type {
 	ScoreScrollEvent,
 } from './events';
 export { Rect } from './geometry';
-export type { Layer, LayerKind } from './host/layer/layer';
-export type { Scroller, ScrollerOptions } from './host/scroller/scroller';
+export type { Layer, LayerKind } from './layer/layer';
 export type { Listenable } from './listenable/listenable';
-export { CursorController } from './playback/cursor-controller';
-export type { CursorView } from './playback/cursor-view/cursor-view';
-export {
-	Playhead,
-	type PlayheadOptions,
-} from './playback/cursor-view/playhead';
-export { Sequence, type Step } from './playback/sequence';
+export { Measure } from './measure';
+export { MeasureBox } from './measure-box';
+export { Note } from './note';
+export { Part } from './part';
 export { render } from './render';
 export { type GapInfo, Score } from './score';
+export type { NoteGlyph } from './score-drawer';
+export type { Scroller, ScrollerOptions } from './scroller/scroller';
+export { Sequence, type Step } from './sequence';
+export { System } from './system';
+export { TabPosition } from './tab-position';
+export { Voice } from './voice';

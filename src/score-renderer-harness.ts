@@ -1,19 +1,19 @@
 import { disposables, type Resource } from 'webappwiz/disposable';
 import type { FontConfig } from './config';
 import { DEFAULT_CONFIG } from './config';
-import { ElementFactory } from './elements/element-factory';
-import { NoopFontLoader } from './engraving/font-loader/noop-font-loader';
-import { LayoutPlanner } from './engraving/layout-planner';
-import { NoteTranslator } from './engraving/note-translator';
-import { ScoreDrawer } from './engraving/score-drawer';
-import { ScoreReader } from './engraving/score-reader';
-import { SpannerBuilder } from './engraving/spanner-builder';
+import { ElementFactory } from './element-factory';
+import { NoopFontLoader } from './font-loader/noop-font-loader';
 import type { Rect } from './geometry';
-import type { Layer, LayerKind } from './host/layer/layer';
-import { FakeScroller } from './host/scroller/fake-scroller';
-import { SequenceFactory } from './playback/sequence-factory';
+import type { Layer, LayerKind } from './layer/layer';
+import { LayoutPlanner } from './layout-planner';
+import { NoteTranslator } from './note-translator';
+import { ScoreDrawer } from './score-drawer';
 import { FakeScoreParser } from './score-parser/fake-score-parser';
+import { ScoreReader } from './score-reader';
 import { type RenderStage, ScoreRenderer } from './score-renderer';
+import { FakeScroller } from './scroller/fake-scroller';
+import { SequenceFactory } from './sequence-factory';
+import { SpannerBuilder } from './spanner-builder';
 
 // A headless stage: no DOM. The empty-parts path never touches container/base, so inert
 // placeholders are enough; the Host surface mirrors score.test.ts's fake.
