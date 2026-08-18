@@ -6,7 +6,6 @@ import type { ScoreSession } from './score-session';
 
 export interface PlayerProps {
 	playerRef: RefObject<HTMLDivElement | null>;
-	dark: boolean;
 	/* What the transport drives. Null before the first render lands, which the caller guards. */
 	session: ScoreSession | null;
 	instrument: InstrumentHolder;
@@ -22,7 +21,6 @@ export interface PlayerProps {
 // "measure i of N" scrub tooltip is local state since nothing outside the bar needs it.
 export function Player({
 	playerRef,
-	dark,
 	session,
 	instrument,
 	muted,
@@ -33,8 +31,9 @@ export function Player({
 	const [scrubTip, setScrubTip] = useState<{ x: number; text: string } | null>(
 		null,
 	);
-	const button = `flex size-9 items-center justify-center rounded-md ${dark ? 'text-zinc-400 hover:bg-zinc-700' : 'text-zinc-500 hover:bg-zinc-100'}`;
-	const time = `font-mono text-xs tabular-nums ${dark ? 'text-zinc-400' : 'text-zinc-500'}`;
+	const button =
+		'flex size-9 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100';
+	const time = 'font-mono text-xs tabular-nums text-zinc-500';
 	return (
 		<div
 			ref={playerRef}
@@ -42,7 +41,7 @@ export function Player({
 			// gutter so the two align edge-to-edge (left-86 = 20rem sidebar + 1.5rem gutter,
 			// right-6 = 1.5rem gutter). Below sm the sheet goes full-width but the player
 			// keeps inset-x-4 padding. Rides up with the bottom sheet on mobile, fixed on desktop.
-			className={`absolute inset-x-4 bottom-full z-30 mx-auto mb-4 flex max-w-237.5 flex-col gap-2 rounded-2xl border px-4 py-2.5 shadow-lg backdrop-blur sm:inset-x-6 sm:px-6 md:fixed md:inset-x-auto md:bottom-4 md:left-86 md:right-6 md:mb-0 ${dark ? 'border-zinc-700 bg-zinc-800/95' : 'border-zinc-200 bg-white/95'}`}
+			className="absolute inset-x-4 bottom-full z-30 mx-auto mb-4 flex max-w-237.5 flex-col gap-2 rounded-2xl border border-zinc-200 bg-white/95 px-4 py-2.5 shadow-lg backdrop-blur sm:inset-x-6 sm:px-6 md:fixed md:inset-x-auto md:bottom-4 md:left-86 md:right-6 md:mb-0"
 		>
 			<div className="relative flex items-center justify-center gap-5">
 				<button

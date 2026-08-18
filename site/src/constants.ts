@@ -1,6 +1,5 @@
 // Namespaced so a playground on a shared origin can't collide with another app's keys.
 export const STORAGE_KEY = 'vexml:musicxml';
-export const DARK_KEY = 'vexml:dark';
 export const INSTRUMENT_KEY = 'vexml:instrument';
 
 // How long each grace note sounds before the main note, in ms. Short enough to read as an ornament.
@@ -12,11 +11,6 @@ export const ACTIVE_COLOR = '#155dfc';
 export const HOVER_COLOR = '#f4f800';
 // The halo outline drawn around the hovered/pinned note.
 export const HALO_COLOR = 'rgba(255, 0, 105, 0.9)';
-
-// Dark-mode theme: the page behind the score, and the ink vexml engraves (glyphs, labels). The
-// score re-renders in these colors rather than CSS-inverting a black engraving.
-export const DARK_BG = 'rgb(35, 36, 41)';
-export const DARK_INK = 'rgb(235, 235, 235)';
 
 // Debounce window for slider/typing-driven re-renders, and the render-time threshold below which we
 // skip the debounce entirely (renders fast enough to keep up with input).

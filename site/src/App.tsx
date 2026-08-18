@@ -3,7 +3,6 @@ import { useDisposerEffect, useReactive, useResource } from '@webappwiz/react';
 import { useEffect, useRef, useState } from 'react';
 import { ConfigSlider } from './config-slider';
 import {
-	DARK_BG,
 	DEFAULT_FIXTURE,
 	DEFAULT_MAX_SYSTEM_FILL,
 	DEFAULT_NOTE_SPACING,
@@ -52,7 +51,6 @@ const projection = (model: SiteModel) => ({
 	fixture: model.document.fixture,
 	error: model.error,
 	initialized: model.initialized,
-	dark: model.dark,
 	session: model.session,
 	applied: model.config.applied,
 	renderMs: model.config.renderMs,
@@ -78,7 +76,6 @@ export default function App() {
 		fixture,
 		error,
 		initialized,
-		dark,
 		session,
 		applied,
 		renderMs,
@@ -118,9 +115,9 @@ export default function App() {
 	useEffect(() => {
 		const container = containerRef.current;
 		if (container) {
-			model.renderInto(container, { input, config: applied, dark });
+			model.renderInto(container, { input, config: applied });
 		}
-	}, [model, input, applied, dark]);
+	}, [model, input, applied]);
 
 	// Size the score's scroll box to the gap above the player controls, once both exist.
 	// A disposer effect, not useResource: this really does acquire a ResizeObserver and a window
@@ -218,7 +215,6 @@ export default function App() {
 					{input != null && initialized && (
 						<Player
 							playerRef={playerRef}
-							dark={dark}
 							session={session}
 							instrument={model.instrument}
 							muted={muted}
@@ -339,18 +335,6 @@ export default function App() {
 										With only a single system, some controls (e.g. system
 										spacing and max system fill) won't have a visible effect.
 									</p>
-									<label
-										htmlFor="darkMode"
-										className="flex items-center gap-2 text-xs font-medium text-zinc-500"
-									>
-										<input
-											id="darkMode"
-											type="checkbox"
-											checked={dark}
-											onChange={(e) => model.setDark(e.target.checked)}
-										/>
-										Dark mode
-									</label>
 									<div className="flex flex-col gap-1.5">
 										<label
 											htmlFor="instrument"
@@ -594,14 +578,12 @@ export default function App() {
 							// vexml appends its managed canvas here; React manages only this div's
 							// attributes, never its children. vexml sizes the score to fit this container
 							// (scaling down when narrow, never past its engraved width) and centers it — no
-							// CSS needed here. In dark mode the page color is painted here (the score is
-							// re-engraved in light ink and shows through its transparent pixels).
+							// CSS needed here.
 							<div
 								ref={containerRef}
 								// invisible (not hidden) until initialized so the container keeps its
 								// width — the canvas fits against it and would fit against 0 if removed.
-								style={dark ? { backgroundColor: DARK_BG } : undefined}
-								className={`relative mx-auto w-full max-w-237.5 py-8 px-4 shadow-md ring-1 sm:py-16 ${initialized ? '' : 'invisible'} ${dark ? 'ring-zinc-700' : 'bg-white ring-zinc-200'}`}
+								className={`relative mx-auto w-full max-w-237.5 bg-white py-8 px-4 shadow-md ring-1 ring-zinc-200 sm:py-16 ${initialized ? '' : 'invisible'}`}
 							/>
 						)}
 						{(!initialized || debouncing) && (

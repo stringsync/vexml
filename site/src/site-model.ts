@@ -1,7 +1,6 @@
 import { type ConfigInput, render } from '@stringsync/vexml';
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
-import { DARK_INK, DARK_KEY } from './constants';
 import { DocumentSource, type Fixtures } from './document-source';
 import { InstrumentHolder } from './instrument/instrument-holder';
 import { RenderConfig } from './render-config';
@@ -33,20 +32,15 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	error: string | null = null;
 	/* False until the first render settles, one way or the other; drives the loading overlay. */
 	initialized = false;
-	dark: boolean;
 
 	private readonly disposer = new Disposer();
 	// Bumped per render request. A render that resolves after a newer one started is dropped, so a
 	// late score never leaks a canvas into a container a newer render already owns.
 	private generation = 0;
 
-	constructor(
-		fixtures: Fixtures,
-		private readonly storage: Storage,
-	) {
+	constructor(fixtures: Fixtures, storage: Storage) {
 		this.document = new DocumentSource(fixtures, storage);
 		this.instrument = new InstrumentHolder(storage);
-		this.dark = storage.getItem(DARK_KEY) === 'true';
 		this.disposer.use(this.config);
 		this.disposer.use(this.document);
 		this.disposer.use(this.instrument);
@@ -60,12 +54,6 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		}
 	}
 
-	setDark(dark: boolean): void {
-		this.dark = dark;
-		this.storage.setItem(DARK_KEY, String(dark));
-		this.dispatcher.dispatch('changed');
-	}
-
 	/*
 	 * Draw a document into `container`, replacing whatever was there. Safe to call on every change:
 	 * a render superseded before it resolves is discarded rather than mounted.
@@ -77,7 +65,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		container: HTMLDivElement,
 		opts: RenderIntoOptions,
 	): Promise<void> {
-		const { input, config, dark } = opts;
+		const { input, config } = opts;
 		if (input == null) {
 			return;
 		}
@@ -89,7 +77,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		this.dispatcher.dispatch('changed');
 		const start = performance.now();
 		try {
-			const score = await render(input, container, inkFor(config, dark));
+			const score = await render(input, container, config);
 			if (at !== this.generation) {
 				score.dispose();
 				return;
@@ -131,27 +119,4 @@ export interface RenderIntoOptions {
 	/* MusicXML text, or an .mxl Blob. Null renders nothing. */
 	input: string | Blob | null;
 	config: ConfigInput;
-	dark: boolean;
-}
-
-// Dark mode re-engraves the score in light ink rather than CSS-inverting a black engraving, so the
-// chosen font families survive and are just tinted. The dark page color is painted on the container
-// itself, so it shows through the score's transparent pixels with no flash.
-function inkFor(config: ConfigInput, dark: boolean): ConfigInput {
-	if (!dark) {
-		return config;
-	}
-	return {
-		...config,
-		fonts: {
-			notation: {
-				family: config.fonts?.notation?.family ?? 'Bravura',
-				color: DARK_INK,
-			},
-			text: {
-				family: config.fonts?.text?.family ?? 'Source Sans 3',
-				color: DARK_INK,
-			},
-		},
-	};
 }
