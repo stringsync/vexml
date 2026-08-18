@@ -18,6 +18,7 @@ import { ScoreReader } from './score-reader';
 import { ScoreRenderer } from './score-renderer';
 import { SequenceFactory } from './sequence-factory';
 import { SpannerBuilder } from './spanner-builder';
+import { SpillResolver } from './spill-resolver';
 
 /*
  * Render a MusicXML score into a container: parse the input (a MusicXML string or a compressed
@@ -68,7 +69,14 @@ export function render(
 		new DefaultFontLoader(),
 		new DefaultScoreParser(),
 		new LayoutPlanner(translator, reader, gaps),
-		new ScoreDrawer(resolved, translator, reader, new SpannerBuilder(), gaps),
+		new ScoreDrawer(
+			resolved,
+			translator,
+			reader,
+			new SpannerBuilder(),
+			gaps,
+			new SpillResolver(),
+		),
 		new ElementFactory(),
 		new SequenceFactory(reader, gaps),
 		gaps,

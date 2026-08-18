@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { STAVE_CLEARANCE } from './constants';
-import { spacedOffsets } from './score-drawer';
+import { SpillResolver } from './spill-resolver';
 import type { StaveSpill } from './spill-tracker';
 
 // Staff lines 40px below the stave's y and 40px tall — a plain 5-line notation stave.
@@ -21,10 +21,12 @@ function offsets(
 	planned: number[],
 	rows: Array<[number, StaveSpill]>,
 ): number[] | undefined {
-	return spacedOffsets(planned, new Map([[0, new Map(rows)]])).get(0);
+	return new SpillResolver()
+		.spacedOffsets(planned, new Map([[0, new Map(rows)]]))
+		.get(0);
 }
 
-describe('spacedOffsets', () => {
+describe('SpillResolver', () => {
 	it('leaves planned offsets alone when the music fits the planned gap', () => {
 		// Planned gap 120; the staves need 80 + 0 + 12 + 0 - 40 = 52.
 		expect(
@@ -112,7 +114,7 @@ describe('spacedOffsets', () => {
 	});
 
 	it('spaces each system from its own music', () => {
-		const resolved = spacedOffsets(
+		const resolved = new SpillResolver().spacedOffsets(
 			[0, 80],
 			new Map([
 				// System 0 is plain — its staves stay where they were planned.
@@ -135,5 +137,78 @@ describe('spacedOffsets', () => {
 		);
 		expect(resolved.get(0)).toEqual([0, 80]);
 		expect(resolved.get(1)).toEqual([0, 80 + 50 + STAVE_CLEARANCE + 60 - 40]);
+	});
+
+	// A pass report whose four redraw triggers are all quiet; tests flip one at a time.
+	const quietReport = {
+		observedStaveSpill: new Map([
+			[
+				0,
+				new Map([
+					[0, spill(0, 0)],
+					[1, spill(0, 0)],
+				]),
+			],
+		]),
+		observedOverflow: new Map<number, number>(),
+		lyricsStepped: false,
+		voltasLifted: false,
+	};
+
+	it('lets a quiet first pass stand', () => {
+		const revision = new SpillResolver().revise([0, 120], quietReport, 2);
+		expect(revision.needed).toBe(false);
+		expect(revision.grewBy).toBe(0);
+	});
+
+	it('asks for a redraw when a gap had to widen, reporting the growth', () => {
+		const revision = new SpillResolver().revise(
+			[0, 80],
+			{
+				...quietReport,
+				observedStaveSpill: new Map([
+					[
+						0,
+						new Map([
+							[0, spill(0, 50)],
+							[1, spill(60, 0)],
+						]),
+					],
+				]),
+			},
+			1,
+		);
+		expect(revision.needed).toBe(true);
+		expect(revision.grewBy).toBe(50 + STAVE_CLEARANCE + 60 - 40);
+	});
+
+	it('treats top overflow as a trigger only when a system sits above', () => {
+		const overflowing = {
+			...quietReport,
+			observedOverflow: new Map([[1, 30]]),
+		};
+		expect(new SpillResolver().revise([0, 120], overflowing, 1).needed).toBe(
+			false,
+		);
+		expect(new SpillResolver().revise([0, 120], overflowing, 2).needed).toBe(
+			true,
+		);
+	});
+
+	it('redraws for a stepped lyric verse or a climbed-through volta', () => {
+		expect(
+			new SpillResolver().revise(
+				[0, 120],
+				{ ...quietReport, lyricsStepped: true },
+				1,
+			).needed,
+		).toBe(true);
+		expect(
+			new SpillResolver().revise(
+				[0, 120],
+				{ ...quietReport, voltasLifted: true },
+				1,
+			).needed,
+		).toBe(true);
 	});
 });

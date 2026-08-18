@@ -37,7 +37,7 @@ export const SYSTEM_GAP = 30;
  *
  * A FLOOR, not the spacing: 100 leaves 6 staff spaces of air between the two staves, which
  * is about what a reference engraving gives a grand staff with nothing in the gap, and the
- * draw pass opens it further wherever the music needs it (see ScoreDrawer.spacedOffsets).
+ * draw pass opens it further wherever the music needs it (see SpillResolver.spacedOffsets).
  * It used to be the whole answer at 120, sized for music it couldn't see. Keep it clear of
  * INTER_PART_SPACING: the re-spacing pass tells a within-part gap from a between-part one
  * by its planned size, so the two must stay distinct numbers. */
@@ -49,7 +49,7 @@ export const INTER_PART_SPACING = 80;
 /** Clearance kept between what one stave's music reaches down to and what the next stave's
  * reaches up to. Both gaps above are the *planned* spacing, sized for ordinary music; when
  * the drawn notes spill past their staff lines far enough to close that gap, the draw pass
- * widens it so this much air survives between the two (see ScoreDrawer.spacedOffsets). */
+ * widens it so this much air survives between the two (see SpillResolver.spacedOffsets). */
 export const STAVE_CLEARANCE = 12;
 
 /** Width of one x column in a stave's spill profile. Spill is measured per column, and two

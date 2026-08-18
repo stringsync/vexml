@@ -84,7 +84,7 @@ export class SpillTracker {
 
 	/*
 	 * How far an above-stave annotation reached over its stave, so pass two opens the gap
-	 * to the stave above wide enough to hold it (see ScoreDrawer.spacedOffsets). Banding
+	 * to the stave above wide enough to hold it (see SpillResolver.spacedOffsets). Banding
 	 * the lift makes this converge: the reported rise is the stack height over this
 	 * stave's own music, which doesn't depend on how far apart the staves currently sit.
 	 */

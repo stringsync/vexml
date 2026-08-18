@@ -15,6 +15,7 @@ import { type RenderStage, ScoreRenderer } from './score-renderer';
 import { FakeScroller } from './scroller/fake-scroller';
 import { SequenceFactory } from './sequence-factory';
 import { SpannerBuilder } from './spanner-builder';
+import { SpillResolver } from './spill-resolver';
 
 // A headless stage: no DOM. The empty-parts path never touches container/base, so inert
 // placeholders are enough; the Host surface mirrors score.test.ts's fake.
@@ -79,7 +80,14 @@ export function renderer(overrides?: { minLastSystemFill?: number }) {
 		fontLoader,
 		parser,
 		new LayoutPlanner(translator, reader, gaps),
-		new ScoreDrawer(config, translator, reader, new SpannerBuilder(), gaps),
+		new ScoreDrawer(
+			config,
+			translator,
+			reader,
+			new SpannerBuilder(),
+			gaps,
+			new SpillResolver(),
+		),
 		new ElementFactory(),
 		new SequenceFactory(reader, gaps),
 		gaps,
