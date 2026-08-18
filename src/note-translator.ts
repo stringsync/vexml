@@ -674,7 +674,7 @@ function fingeringLabel(marks: Technical[]): string {
  * and the string-number ring. A chord's marks read as one COLUMN clear of the stave, in chord
  * order, which is how both MuseScore and OSMD engrave them.
  *
- * The column is positioned by the draw pass (DrawPass.pinTechnicals), the same arrangement
+ * The column is positioned by the draw pass (SystemFormatter.pinTechnicals), the same arrangement
  * lyrics use: an Annotation for the text drawing and the width it reserves, but its own
  * baseline. vexflow's own stacking can't do it — Annotation.format hands every mark on a note
  * LOW in the stave the same text line, so they print through each other, and its
@@ -1643,7 +1643,7 @@ export class NoteTranslator {
 	 * VexFlow draws a TabNote's fret digits — and the staff-line gap it clears behind them —
 	 * centered on the note's start x, but a StaveNote anchors its notehead's LEFT edge there
 	 * (the notehead's center sits half a glyph-width to the right). So a fret lines up under
-	 * the notehead's left edge, not its center. formatAndDrawSystem recenters by shifting the
+	 * the notehead's left edge, not its center. SystemFormatter.formatAndDraw recenters by shifting the
 	 * whole tab note area right by this; doing it there rather than via the fret's own xShift
 	 * keeps the cleared gap moving with the digit (clearRect ignores xShift). The width is a
 	 * font metric needing a live canvas, so probe it lazily off a throwaway StaveNote and

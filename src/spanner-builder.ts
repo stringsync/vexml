@@ -1140,7 +1140,10 @@ export class SpannerBuilder {
 	 * endpoint on the bulge side of its own noteheads, then raise the bezier control
 	 * points so the arc clears the most extreme note it spans.
 	 */
-	buildSlurs(chords: Chord[], byLead: Map<Note, StaveNote>): SlurCurve[] {
+	buildSlurs(
+		chords: Chord[],
+		byLead: ReadonlyMap<Note, StaveNote>,
+	): SlurCurve[] {
 		const slurs: SlurCurve[] = [];
 		const spans = slurSpans(chords);
 		chords.forEach((chord, i) => {
