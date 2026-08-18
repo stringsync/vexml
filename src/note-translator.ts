@@ -1057,7 +1057,7 @@ function addParentheses(staveNote: StaveNote, chord: Chord): void {
  * text off the note's lowest notehead, so a verse would rise and fall with the melody —
  * a ledger-line note drags its syllable well below the row and a high note tucks its
  * syllable up against the stave. Lyrics read as a line of text, so the draw pass pins one
- * baseline per stave (see DrawPass.pinLyrics) and this draws there instead.
+ * baseline per stave (see LyricPlacer.pin) and this draws there instead.
  *
  * Subclassing keeps everything else an Annotation gives: the static Annotation.format()
  * still runs (the subclass inherits the 'Annotation' modifier category), so a wide
@@ -1073,7 +1073,7 @@ export class LyricAnnotation extends Annotation {
 		 * a stave carrying several voices offsets each voice's rows past the ones the voices
 		 * before it used (see {@link shiftVerses}). */
 		public verseIndex: number,
-		/** Whether a melisma `<extend/>` line trails this syllable (drawn by pinLyrics). */
+		/** Whether a melisma `<extend/>` line trails this syllable (drawn by LyricPlacer). */
 		readonly extend = false,
 	) {
 		super(text);
@@ -1122,7 +1122,7 @@ export class LyricAnnotation extends Annotation {
  * joining it to the next one: "Al-" "le-" "lu-" "ia".
  * ponytail: the hyphen rides on the syllable instead of being drawn centered in the gap
  * between the two — a centered hyphen needs a spanner across notes (and systems). The
- * melisma <extend/> flag is passed through for DrawPass.pinLyrics to draw.
+ * melisma <extend/> flag is passed through for LyricPlacer.pin to draw.
  */
 function addLyrics(staveNote: StaveNote, lead: Note): void {
 	const verses = [...lead.lyrics].sort(

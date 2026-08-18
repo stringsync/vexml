@@ -69,8 +69,6 @@ import {
 	HARMONY_Y_OFFSET,
 	LABEL_FONT_SIZE,
 	LABEL_GAP,
-	LYRIC_FONT_SIZE,
-	LYRIC_LINE_HEIGHT,
 	LYRIC_NOTE_CLEARANCE,
 	LYRIC_Y_OFFSET,
 	MULTI_REST_PADDING,
@@ -107,6 +105,7 @@ import {
 	type RawNote,
 } from './geometry-collector';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
+import { LyricPlacer } from './lyric-placer';
 import { MetronomeGlyph, type TempoModulation } from './metronome-glyph';
 import {
 	ACCIDENTAL_CODES,
@@ -699,11 +698,8 @@ export class DrawPass {
 	// split into separate MusicXML parts must align the same as a single two-stave
 	// part. Built per part below, then formatted and drawn once after the part loop.
 	private systemPending: PendingStave[] = [];
-	// Verse baseline feedback, keyed by `<systemIndex>:<staveRow>`: how far below the bottom
-	// staff line this pass hung the row's lyrics, and whether the row's measure columns
-	// disagreed (see recordLyricDrop).
-	private observedLyricDrops = new Map<string, number>();
-	private lyricsStepped = false;
+	// Verse baselines: shared per stave row, measured this pass and re-pinned on the next.
+	private readonly lyricPlacer: LyricPlacer;
 
 	// How far this system's volta brackets have to rise off their default gap to clear the
 	// notes under them, measured this pass and applied on the next (see voltaLifts).
@@ -778,7 +774,6 @@ export class DrawPass {
 	// The score's <bracket>/<dashes> spans, drawn once at the end alongside the other spanners.
 	private readonly directionLineSpans: DirectionLineSpan[] = [];
 	// Measured on the previous pass and reserved on this one; empty on the first pass.
-	private readonly lyricDrops: Map<string, number>;
 	private readonly voltaLifts: Map<number, number>;
 
 	constructor(
@@ -797,7 +792,6 @@ export class DrawPass {
 		private readonly topOverflow: Map<number, number>,
 		opts: DrawPassOptions = {},
 	) {
-		this.lyricDrops = opts.lyricDrops ?? new Map();
 		this.voltaLifts = opts.voltaLifts ?? new Map();
 		const {
 			measureCount,
@@ -865,6 +859,13 @@ export class DrawPass {
 		this.systemContentBottom = this.systemTopY;
 		this.collisionResolver = new CollisionResolver(
 			new Rect(0, 0, width, scratchHeight),
+		);
+		this.lyricPlacer = new LyricPlacer(
+			translator,
+			context,
+			this.collisionResolver,
+			this.notationColor,
+			{ lyricDrops: opts.lyricDrops },
 		);
 		this.scratchViewport = new Rect(0, 0, width, scratchHeight);
 	}
@@ -2058,7 +2059,7 @@ export class DrawPass {
 		// a DROP below the bottom staff line — how far this column's lowest note pushes the
 		// verse past LYRIC_Y_OFFSET, so a note on ledger lines below the stave doesn't print
 		// through its own syllable. The column can only see its own measure, so the drop the
-		// rest of the system needs arrives from the previous pass (see observedLyricDrops);
+		// rest of the system needs arrives from the previous pass (see LyricPlacer);
 		// on the first pass each column still rides its own notes and the verse steps.
 		const lyricDrops = new Map<number, number>();
 		for (const p of pending) {
@@ -2077,7 +2078,7 @@ export class DrawPass {
 				);
 			}
 			lyricDrops.set(p.row, drop);
-			this.recordLyricDrop(p.row, drop);
+			this.lyricPlacer.recordDrop(this.systemIndex, p.row, drop);
 		}
 		for (const p of pending) {
 			if (p.isTab) {
@@ -2100,12 +2101,13 @@ export class DrawPass {
 				this.alignTabGraces(p.vexVoices, notationGraceWidths);
 			}
 			this.pinTechnicals(p);
-			this.pinLyrics(
-				p,
+			this.lyricPlacer.pin(
+				p.staveNotes,
+				p.row,
 				p.stave.getBottomLineY() +
 					Math.max(
 						lyricDrops.get(p.row) ?? LYRIC_Y_OFFSET,
-						this.lyricDrops.get(this.lyricRowKey(p.row)) ?? 0,
+						this.lyricPlacer.carriedDrop(this.systemIndex, p.row),
 					),
 			);
 			for (const vexVoice of p.vexVoices) {
@@ -2415,7 +2417,7 @@ export class DrawPass {
 	 * further out, which is the part vexflow's Annotation stacking gets wrong (see
 	 * TechnicalAnnotation): it hands every mark on a note low in the stave the same row.
 	 *
-	 * Called after format and before draw, like pinLyrics — the notes' x/y are final by then
+	 * Called after format and before draw, like LyricPlacer.pin — the notes' x/y are final by then
 	 * but nothing has rendered, so the marks' own bounding boxes aren't readable yet and the
 	 * column is measured off the note's glyphs alone (noteGlyphTop/noteBottom).
 	 */
@@ -2455,7 +2457,7 @@ export class DrawPass {
 						y += height;
 					}
 					mark.setBaselineY(y);
-					// Pin the ink the same way pinLyrics does — a mark drawn inside a colored
+					// Pin the ink the same way LyricPlacer.pin does — a mark drawn inside a colored
 					// notehead's style would otherwise take that notehead's color.
 					mark.setStyle({ fillStyle: this.notationColor });
 					const w = mark.getWidth();
@@ -2468,131 +2470,6 @@ export class DrawPass {
 						y -= height;
 					}
 				}
-			}
-		}
-	}
-
-	/*
-	 * Put every lyric syllable on one stave onto the shared baseline `lyricBaselines`
-	 * measured for its row, one line per verse. Left to vexflow each syllable would hang off
-	 * its own note (see LyricAnnotation), so the verse would rise and fall with the melody
-	 * instead of reading as a line of text. Called after format and before draw, so the
-	 * syllables land under where the notes actually ended up.
-	 *
-	 * Each pinned syllable is also registered as a collision obstacle, so anything the draw
-	 * pass places under the stave later (a placement="below" directive, a dynamics marking)
-	 * drops clear of the verse instead of printing through it. vexflow draws lyrics itself,
-	 * so this is the only point where their boxes are known.
-	 */
-	/** Key for one stave row of one system, the scope a verse's baseline is shared over. */
-	private lyricRowKey(row: number): string {
-		return `${this.systemIndex}:${row}`;
-	}
-
-	/*
-	 * Remember how far this measure column pushed its verse below the staff, and whether any
-	 * other column of the same row wanted a different drop. The max is what the next pass
-	 * pins every column of the row to; `lyricsStepped` is what tells the driver a second pass
-	 * is worth running (a row whose columns already agree redraws to the same pixels).
-	 */
-	private recordLyricDrop(row: number, drop: number): void {
-		const key = this.lyricRowKey(row);
-		const seen = this.observedLyricDrops.get(key);
-		if (seen !== undefined && seen !== drop) {
-			this.lyricsStepped = true;
-		}
-		this.observedLyricDrops.set(key, Math.max(seen ?? 0, drop));
-	}
-
-	private pinLyrics(p: PendingStave, baseline: number): void {
-		const lyricsOf = (note: StaveNote) =>
-			note
-				.getModifiers()
-				.filter((m): m is LyricAnnotation => m instanceof LyricAnnotation);
-		const lyricNotes = p.staveNotes
-			.map((note) => ({ note, lyrics: lyricsOf(note) }))
-			.filter(({ lyrics }) => lyrics.length > 0);
-		if (lyricNotes.length === 0) {
-			return;
-		}
-		for (const { note, lyrics } of lyricNotes) {
-			for (const lyric of lyrics) {
-				const y = baseline + lyric.verseIndex * LYRIC_LINE_HEIGHT;
-				lyric.setBaselineY(y);
-				// Pin the ink a syllable already draws in. vexflow runs a note's modifiers
-				// inside its notehead's own style, so an uncolored lyric under a note the
-				// score colored would otherwise come out in the notehead's color.
-				lyric.setStyle({ fillStyle: this.notationColor });
-				// LyricAnnotation.draw centers the syllable on the notehead and draws up from
-				// the baseline, so its box is one text height tall ending at that baseline.
-				const w = lyric.getWidth();
-				this.collisionResolver.add({
-					rect: new Rect(
-						note.getAbsoluteX() - w / 2,
-						y - LYRIC_FONT_SIZE,
-						w,
-						LYRIC_FONT_SIZE,
-					),
-					kind: 'annotation',
-					band: p.row,
-				});
-			}
-		}
-		this.drawMelismas(p, baseline, lyricsOf);
-	}
-
-	/*
-	 * Melisma extenders: a `<lyric><extend/>` draws a horizontal line on the verse's own row
-	 * from just past its syllable to the last note the syllable is held over — the note before
-	 * the next syllable in that same verse, or the stave's last note when none follows. Drawn
-	 * here rather than as a modifier because the line spans notes, and pinLyrics is the point
-	 * where every syllable's row and every note's x are final.
-	 *
-	 * ponytail: the line stops at the end of the stave, so a melisma that runs past a barline
-	 * or a system break draws only its first segment. Make it a real spanner (buildTies'
-	 * pairing in spanner-builder.ts is the model) if a fixture needs the continuation.
-	 */
-	private drawMelismas(
-		p: PendingStave,
-		baseline: number,
-		lyricsOf: (note: StaveNote) => LyricAnnotation[],
-	): void {
-		const notes = p.staveNotes;
-		for (const [i, note] of notes.entries()) {
-			for (const lyric of lyricsOf(note)) {
-				if (!lyric.extend) {
-					continue;
-				}
-				const next = notes.findIndex(
-					(n, j) =>
-						j > i && lyricsOf(n).some((l) => l.verseIndex === lyric.verseIndex),
-				);
-				const last = notes[(next === -1 ? notes.length : next) - 1];
-				if (!last || last === note) {
-					continue;
-				}
-				const y = baseline + lyric.verseIndex * LYRIC_LINE_HEIGHT;
-				const x1 = note.getAbsoluteX() + lyric.getWidth() / 2;
-				const x2 = last.getAbsoluteX() + this.translator.noteheadHalfWidth();
-				if (x2 <= x1) {
-					continue;
-				}
-				this.context.save();
-				this.context.setStrokeStyle(this.notationColor);
-				this.context.setLineWidth(1);
-				// Half-pixel offset so a 1px line lands on one device row instead of straddling
-				// two and coming out gray next to the black staff lines.
-				const crisp = Math.round(y) + 0.5;
-				this.context.beginPath();
-				this.context.moveTo(x1, crisp);
-				this.context.lineTo(x2, crisp);
-				this.context.stroke();
-				this.context.restore();
-				this.collisionResolver.add({
-					rect: new Rect(x1, y - 1, x2 - x1, 2),
-					kind: 'annotation',
-					band: p.row,
-				});
 			}
 		}
 	}
@@ -4035,8 +3912,8 @@ export class DrawPass {
 			pageBottom: this.pageBottom,
 			observedOverflow: this.spill.observedOverflow(),
 			observedStaveSpill: this.spill.observedStaveSpill(),
-			observedLyricDrops: this.observedLyricDrops,
-			lyricsStepped: this.lyricsStepped,
+			observedLyricDrops: this.lyricPlacer.observedDrops(),
+			lyricsStepped: this.lyricPlacer.stepped(),
 			observedVoltaLifts: this.observedVoltaLifts,
 			voltasLifted: [...this.observedVoltaLifts].some(
 				([system, lift]) => lift !== (this.voltaLifts.get(system) ?? 0),
