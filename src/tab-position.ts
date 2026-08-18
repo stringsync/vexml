@@ -2,8 +2,8 @@ import type { Note as MNote } from '@stringsync/mdom';
 import type { Decorations } from './decoration/decoration';
 import { Element, type Highlightable, stampGlyph, Toggle } from './element';
 import type { Rect } from './geometry';
+import type { NoteGlyph } from './geometry-collector';
 import type { Note } from './note';
-import type { NoteGlyph } from './score-drawer';
 import type { Viewport } from './viewport/viewport';
 
 /* A fret number on a tab string. The same note can render as both a Note (notehead) and a

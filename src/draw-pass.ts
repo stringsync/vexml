@@ -58,8 +58,6 @@ import {
 	DIRECTION_LINE_HOOK,
 	DIRECTION_LINE_TEXT_LINE,
 	DYNAMICS_FONT_SIZE,
-	FRET_HALF_H,
-	FRET_HALF_W,
 	GAP_LABEL_FONT_SIZE,
 	GRACE_GROUP_SPACING_STAVE,
 	HARMONY_ACCIDENTAL_FONT_SIZE,
@@ -77,7 +75,6 @@ import {
 	LYRIC_Y_OFFSET,
 	MULTI_REST_PADDING,
 	NAVIGATION_FONT_SIZE,
-	NOTEHEAD_HALF_H,
 	OTTAVA_TEXT_LINE,
 	PAGE_MARGIN_X,
 	PART_GROUP_STEP,
@@ -103,6 +100,12 @@ import {
 } from './constants';
 import type { Gaps } from './gaps';
 import { Rect } from './geometry';
+import {
+	GeometryCollector,
+	type RawChordDiagram,
+	type RawMeasure,
+	type RawNote,
+} from './geometry-collector';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
 import { MetronomeGlyph, type TempoModulation } from './metronome-glyph';
 import {
@@ -115,7 +118,6 @@ import {
 	type NoteTranslator,
 	TechnicalAnnotation,
 } from './note-translator';
-import type { RawChordDiagram, RawMeasure, RawNote } from './score-drawer';
 import type {
 	DirectionLineSpan,
 	LineEnd,
@@ -634,9 +636,7 @@ export class DrawPass {
 	private pageTop = Infinity;
 	// Hit-index geometry collected this pass, in scratch space; the caller shifts it into
 	// final score space once cropTop is known. Only the final pass's arrays are kept.
-	private readonly rawNotes: RawNote[] = [];
-	private readonly rawMeasures: RawMeasure[] = [];
-	private readonly rawChordDiagrams: RawChordDiagram[] = [];
+	private readonly geometry = new GeometryCollector();
 	private systemTopY: number;
 	private systemContentBottom: number;
 	private currentSystem = -1;
@@ -2761,109 +2761,12 @@ export class DrawPass {
 	private collectGeometry(m: number, contentTop: number): void {
 		for (const p of this.systemPending) {
 			if (p.isTab) {
-				const tabStave = p.stave as TabStave;
-				// Graces ride along here too (same fret capture), so a tab grace colors in step
-				// with its notation grace; they stay out of the pointer tree (hit.ts skips them).
-				for (const { note, chord } of [...p.tabChords, ...p.graceTabChords]) {
-					const x = note.getAbsoluteX();
-					// The drawn fret glyphs, parallel to getPositions() (one per struck string), so a
-					// decoration can replay the exact fret text vexflow drew — "<12>", "(2)", "✕" —
-					// in color. The tab analog of the notation path's note.noteHeads.
-					const positions = note.getPositions();
-					const fretEls = (
-						note as unknown as {
-							fretElement: {
-								getText(): string;
-								getFont(): string;
-								getWidth(): number;
-								getYShift(): number;
-							}[];
-						}
-					).fretElement;
-					for (const mnote of chord.notes) {
-						const string = mnote.string;
-						const fret = mnote.fret;
-						if (string === null || fret === null) {
-							continue;
-						}
-						const y = tabStave.getYForLine(string - 1);
-						// Match this string's drawn fret glyph (positions carry one entry per string).
-						const el =
-							fretEls[positions.findIndex((pos) => pos.str === string)];
-						this.rawNotes.push({
-							mnote,
-							rect: new Rect(
-								x - FRET_HALF_W,
-								y - FRET_HALF_H,
-								2 * FRET_HALF_W,
-								2 * FRET_HALF_H,
-							),
-							chord: chord.notes,
-							measureIndex: m,
-							tab: { string, fret },
-							// Replay vexflow's own fret glyph for recoloring, the tab analog of the
-							// notehead path: its left-anchored baseline x (drawPositions uses
-							// tabX = absoluteX - width/2) and baseline y (the string line plus the
-							// element's yShift, which is how TabNote vertically centers the digit).
-							// Drawn left/alphabetic, a colored fret overlays the engraved one exactly.
-							glyph: el
-								? {
-										text: el.getText(),
-										font: el.getFont(),
-										x: x - el.getWidth() / 2,
-										y: y + el.getYShift(),
-									}
-								: null,
-						});
-					}
-				}
+				this.geometry.collectTabNotes(m, p.stave as TabStave, [
+					...p.tabChords,
+					...p.graceTabChords,
+				]);
 			} else {
-				// Graces ride along: same notehead capture, so playback can sound and color
-				// them. They land in the hit index but not the pointer tree (hit.ts skips them).
-				for (const { note, chord } of [...p.noteChords, ...p.graceChords]) {
-					// The notehead glyph's true x-span (getAbsoluteX is the tick anchor, left of
-					// the notehead — centering on it puts decorations off the note). y per
-					// notehead comes from getYs; noteHeads is indexed in the same (chord.notes)
-					// order, so heads[i] is this note's glyph.
-					const headX = note.getNoteHeadBeginX();
-					const headWidth = note.getNoteHeadEndX() - headX;
-					const ys = note.getYs();
-					const heads = note.noteHeads;
-					chord.notes.forEach((mnote, i) => {
-						const y = ys[i];
-						if (y === undefined) {
-							return;
-						}
-						// Capture the exact stamp vexflow drew (text + font + baseline) so a
-						// decoration can replay it in color — see Decorations. Scratch space; the
-						// caller shifts y by cropTop into score space alongside the rect. Read x
-						// from the bounding box (this.x + xShift), not getX(): a NoteHead borrows
-						// its StaveNote's tick context, so the inherited Tickable.getX() throws.
-						// The baseline y is the notehead's staff y (ys[i]); noteheads carry no yShift.
-						const head = heads[i];
-						const glyph = head
-							? {
-									text: head.getText(),
-									font: head.getFont(),
-									x: head.getBoundingBox().getX(),
-									y,
-								}
-							: null;
-						this.rawNotes.push({
-							mnote,
-							rect: new Rect(
-								headX,
-								y - NOTEHEAD_HALF_H,
-								headWidth,
-								2 * NOTEHEAD_HALF_H,
-							),
-							chord: chord.notes,
-							measureIndex: m,
-							tab: null,
-							glyph,
-						});
-					});
-				}
+				this.geometry.collectStaveNotes(m, [...p.noteChords, ...p.graceChords]);
 			}
 		}
 		if (this.systemTop && this.systemBottom) {
@@ -2885,7 +2788,7 @@ export class DrawPass {
 				this.systemContentBottom,
 				connector?.bottom ?? -Infinity,
 			);
-			this.rawMeasures.push({
+			this.geometry.addMeasure({
 				rect: new Rect(left, top, right - left, Math.max(0, bottom - top)),
 				index: m,
 				number: this.parts[0]?.measures[m]?.number ?? String(m + 1),
@@ -3141,7 +3044,7 @@ export class DrawPass {
 				this.spill.growHighestTop(this.systemIndex, diagram.top);
 				// Emit the placed box for the element index (the whole drawn extent, title
 				// included), still in scratch space — the caller shifts it with the crop.
-				this.rawChordDiagrams.push({
+				this.geometry.addChordDiagram({
 					rect: new Rect(
 						placed.x,
 						diagram.top,
@@ -3959,20 +3862,7 @@ export class DrawPass {
 		// for clipped content here.
 		this.warnEscapes();
 
-		// Grow each measure box up to the topmost above-stave text decoration (chord symbol, words)
-		// in its system, so the measure's bounding box — and the playback cursor and auto-scroll that
-		// ride on it — cover those extras instead of clipping them. Chord diagrams are excluded (they
-		// don't feed systemDecorationTop), so the cursor bar stops at the stave, not the fret box.
-		for (const [i, measure] of this.rawMeasures.entries()) {
-			const top = this.spill.decorationTopOf(measure.systemIndex);
-			const { rect } = measure;
-			if (top !== undefined && top < rect.y) {
-				this.rawMeasures[i] = {
-					...measure,
-					rect: new Rect(rect.x, top, rect.w, rect.bottom - top),
-				};
-			}
-		}
+		this.geometry.applyDecorationTops(this.spill);
 
 		// Ties and slurs are resolved over the whole score now that every note is
 		// placed, so a span can cross a barline (its endpoints sit in different
@@ -4151,9 +4041,9 @@ export class DrawPass {
 			voltasLifted: [...this.observedVoltaLifts].some(
 				([system, lift]) => lift !== (this.voltaLifts.get(system) ?? 0),
 			),
-			rawNotes: this.rawNotes,
-			rawMeasures: this.rawMeasures,
-			rawChordDiagrams: this.rawChordDiagrams,
+			rawNotes: this.geometry.notes(),
+			rawMeasures: this.geometry.measures(),
+			rawChordDiagrams: this.geometry.chordDiagrams(),
 		};
 	}
 

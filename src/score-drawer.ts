@@ -1,6 +1,5 @@
-import type { Harmony, Note as MNote, Score } from '@stringsync/mdom';
+import type { Score } from '@stringsync/mdom';
 import { Renderer } from 'vexflow';
-import type { ChordFrame } from './chord-diagram-glyph';
 import type { Config } from './config';
 import {
 	LEDGER_HEADROOM,
@@ -11,55 +10,16 @@ import {
 import { DrawPass, type DrawPassOptions } from './draw-pass';
 import type { Gaps } from './gaps';
 import { Rect } from './geometry';
+import type {
+	RawChordDiagram,
+	RawMeasure,
+	RawNote,
+} from './geometry-collector';
 import type { ScoreLayout } from './layout-planner';
 import type { NoteTranslator } from './note-translator';
 import type { ScoreReader } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
 import type { StaveSpill } from './spill-tracker';
-
-/* A note's engraved glyph, captured so a decoration can re-stamp it in color on an overlay: the
- * SMuFL text, the exact CSS font vexflow drew it with, and its baseline position in score space.
- * Replaying vexflow's own fillText reproduces the notehead precisely — hollow notes stay hollow. */
-export interface NoteGlyph {
-	readonly text: string;
-	readonly font: string;
-	readonly x: number;
-	readonly y: number;
-}
-
-/* A notehead or fret the draw pass laid out, in score space. `tab` is set when this is a tab
- * fret rendering (the note's string/fret, plus the fret as drawn and its font so a decoration can
- * recolor the digit); null for a notation notehead. `chord` lists every mdom note sharing this
- * note's onset so chordmates resolve. mnote stays internal. */
-export interface RawNote {
-	mnote: MNote;
-	rect: Rect;
-	chord: MNote[];
-	measureIndex: number;
-	tab: { string: number; fret: number } | null;
-	/* The engraved glyph for recoloring — a notehead, or a tab fret; null for a rest. */
-	glyph: NoteGlyph | null;
-}
-
-export interface RawMeasure {
-	rect: Rect;
-	index: number;
-	/* The MusicXML measure number (a string — handles pickups, "X1" etc.). */
-	number: string;
-	/* The system (line) this measure column was laid out on. */
-	systemIndex: number;
-}
-
-/* A chord diagram (fret box) the draw pass placed, in score space. The rect spans the whole
- * drawn extent (title included). */
-export interface RawChordDiagram {
-	rect: Rect;
-	/* The <harmony> that produced this diagram. */
-	harmonySource: Harmony;
-	measureIndex: number;
-	frame: ChordFrame;
-	title: string | null;
-}
 
 /* Everything the draw pass emits for the index, in score space (crop already applied). */
 export interface RawGeometry {

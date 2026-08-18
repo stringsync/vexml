@@ -3,8 +3,9 @@ import { MDOMParser } from '@stringsync/mdom';
 import { FakeDecoration } from './decoration/fake-decoration';
 import { ElementFactory } from './element-factory';
 import { Rect } from './geometry';
+import type { RawNote } from './geometry-collector';
 import type { Note } from './note';
-import type { RawGeometry, RawNote } from './score-drawer';
+import type { RawGeometry } from './score-drawer';
 import type { TabPosition } from './tab-position';
 import { FakeViewport } from './viewport/fake-viewport';
 

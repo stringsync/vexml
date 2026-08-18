@@ -8,8 +8,8 @@ import {
 	Toggle,
 } from './element';
 import type { Rect } from './geometry';
+import type { NoteGlyph } from './geometry-collector';
 import type { Measure } from './measure';
-import type { NoteGlyph } from './score-drawer';
 import type { TabPosition } from './tab-position';
 import type { Viewport } from './viewport/viewport';
 

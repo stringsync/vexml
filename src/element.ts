@@ -6,7 +6,7 @@ import type {
 } from '@stringsync/mdom';
 import type { Decoratable, Decoration } from './decoration/decoration';
 import type { Rect } from './geometry';
-import type { NoteGlyph } from './score-drawer';
+import type { NoteGlyph } from './geometry-collector';
 import type { Viewport } from './viewport/viewport';
 
 /*

@@ -43,6 +43,7 @@ export type {
 	ScoreScrollEvent,
 } from './events';
 export { Rect } from './geometry';
+export type { NoteGlyph } from './geometry-collector';
 export type { Layer, LayerKind } from './layer/layer';
 export type { Listenable } from './listenable/listenable';
 export { Measure } from './measure';
@@ -51,7 +52,6 @@ export { Note } from './note';
 export { Part } from './part';
 export { render } from './render';
 export { type GapInfo, Score } from './score';
-export type { NoteGlyph } from './score-drawer';
 export type { Scroller, ScrollerOptions } from './scroller/scroller';
 export { Sequence, type Step } from './sequence';
 export { System } from './system';

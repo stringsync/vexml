@@ -1,5 +1,5 @@
 import type { Rect } from '../geometry';
-import type { NoteGlyph } from '../score-drawer';
+import type { NoteGlyph } from '../geometry-collector';
 import type { Decoratable } from './decoration';
 
 export const HALO = 'fill:arc:rgba(41, 98, 255, 0.35)';
