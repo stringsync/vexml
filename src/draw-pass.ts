@@ -46,15 +46,13 @@ import {
 import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
 import { type CollisionKind, CollisionResolver } from './collision-resolver';
 import type { Config, Gap, MeasureNumbering } from './config';
+import { type ConnectorColumn, ConnectorDrawer } from './connector-drawer';
 import {
-	BRACE_LEFT_OVERHANG,
-	BRACKET_GLYPH_OVERHANG,
 	BRACKET_X_SHIFT,
 	CHORD_DIAGRAM_GAP,
 	CHORD_DIAGRAM_HEIGHT,
 	CHORD_DIAGRAM_PADDING,
 	CHORD_DIAGRAM_WIDTH,
-	CONNECTOR_VERTICAL_OVERHANG,
 	DIRECTION_LINE_HOOK,
 	DIRECTION_LINE_TEXT_LINE,
 	DYNAMICS_FONT_SIZE,
@@ -75,7 +73,6 @@ import {
 	NAVIGATION_FONT_SIZE,
 	OTTAVA_TEXT_LINE,
 	PAGE_MARGIN_X,
-	PART_GROUP_STEP,
 	PEDAL_BOTTOM_MARGIN,
 	PEDAL_BOTTOM_TEXT_LINE,
 	PEDAL_INK_RISE,
@@ -423,43 +420,6 @@ const NO_DECORATION: BarlineDecoration = {
 	volta: null,
 };
 
-/*
- * The stroke pattern of each <bar-style> vexflow has no type for, as [offset, width] pairs
- * measured from the barline's x — the same geometry vexflow's own Barline uses, where a thin
- * bar is 1px at x and a thick one is 3px at x-2, so a custom style sits flush with the plain
- * dividers around it. `dash` turns the stroke into a broken line ([on, off] lengths).
- *
- * 'tick' and 'short' are the abbreviated dividers: both are single thin strokes that cover
- * only part of the stave height, so they carry a `span` in staff-space units measured down
- * from the top line — a tick straddles the top line, a short one fills the middle two spaces.
- */
-const CUSTOM_BAR_STYLES: Record<
-	string,
-	{
-		bars: Array<[offset: number, width: number]>;
-		dash?: [number, number];
-		span?: [from: number, to: number];
-	}
-> = {
-	dotted: { bars: [[0, 1]], dash: [1, 3] },
-	dashed: { bars: [[0, 1]], dash: [4, 4] },
-	heavy: { bars: [[-2, 3]] },
-	'heavy-light': {
-		bars: [
-			[-5, 3],
-			[0, 1],
-		],
-	},
-	'heavy-heavy': {
-		bars: [
-			[-6, 3],
-			[-2, 3],
-		],
-	},
-	tick: { bars: [[0, 1]], span: [-0.5, 0.5] },
-	short: { bars: [[0, 1]], span: [1, 3] },
-};
-
 /* "1" -> "1.", "1,2" -> "1., 2." — the printed form of an `<ending>`'s number list. */
 function voltaLabel(number: string): string {
 	return number
@@ -580,7 +540,6 @@ export class DrawPass {
 	private readonly softmaxFactor: number;
 	private readonly systemGap: number;
 	private readonly labelIndent: number;
-	private readonly partLabelIndent: number;
 	private readonly measureNumbering: MeasureNumbering;
 	private readonly showTabSlideText: boolean;
 	// When false, tab staves are dropped — iterate visibleStaffNumbers, not staveCount.
@@ -764,9 +723,10 @@ export class DrawPass {
 	private partStaves: Array<{ top: Stave; bottom: Stave } | undefined> = [];
 	// The <part-group> spans from the <part-list>, outermost first. Fixed for the score.
 	private readonly partGroups: PartGroup[];
-	// Part boundaries a barline must not run across (<group-barline>no</group-barline>).
-	// Empty for every score that doesn't ask, which is nearly all of them.
-	private readonly barlineBreaks: Set<number>;
+	// The vertical furniture joining staves: braces/brackets and part-group connectors at a
+	// system start, barline runs across parts, custom/repeat barlines. Fed the measure
+	// loop's locals through connectorColumn().
+	private readonly connectorDrawer: ConnectorDrawer;
 	// The score's <octave-shift> spans, and the per-note octave offset they imply. Fixed for
 	// the score; both are filled in the constructor.
 	private readonly octaveShiftSpans: OctaveShiftSpan[] = [];
@@ -813,7 +773,6 @@ export class DrawPass {
 		this.softmaxFactor = softmaxFactor;
 		this.systemGap = systemGap;
 		this.labelIndent = labelIndent;
-		this.partLabelIndent = partLabelIndent;
 		const { measureNumbering, showTabSlideText } = config;
 		this.measureNumbering = measureNumbering;
 		this.showTabSlideText = showTabSlideText;
@@ -832,12 +791,24 @@ export class DrawPass {
 		// written as two parts, and it's bracketed as one (see partsPairTabWithNotation), so
 		// its barline runs through the pair too — the barline run has to agree with what the
 		// connector groups, or the bracket says "one instrument" while the gap says "two".
-		this.barlineBreaks = this.reader.partsPairTabWithNotation(this.parts, {
+		const barlineBreaks = this.reader.partsPairTabWithNotation(this.parts, {
 			showTabs: this.showTabs,
 			showNotation: this.showNotation,
 		})
 			? new Set<number>()
 			: this.reader.barlineBreaks(this.score);
+		this.connectorDrawer = new ConnectorDrawer(context, reader, {
+			parts: this.parts,
+			partGroups: this.partGroups,
+			barlineBreaks,
+			visibility: { showTabs: this.showTabs, showNotation: this.showNotation },
+			totalStaves: this.totalStaves,
+			labelIndent: this.labelIndent,
+			partLabelIndent,
+			labelFont,
+			notationColor: this.notationColor,
+			textColor: this.textColor,
+		});
 		// <octave-shift> spans, resolved up front: every note under one draws an octave (or
 		// two, or three) off its sounding pitch, so buildNotes needs the answer per note
 		// before it builds anything, and the finish pass draws the brackets over them.
@@ -1185,7 +1156,7 @@ export class DrawPass {
 		this.begRepeatX = alignBegModifiers(this.columnStaves);
 		for (const stave of this.columnStaves) {
 			stave.setContext(this.context).draw();
-			this.drawCustomBarline(stave);
+			this.connectorDrawer.drawCustomBarline(stave, this.connectorColumn());
 		}
 		// The consolidated multi-bar rests, over the staves that just landed: the thick
 		// horizontal bar with its measure count centered above. Drawn straight onto the stave
@@ -1240,7 +1211,25 @@ export class DrawPass {
 			}
 		}
 		this.drawAnnotations(m);
-		this.drawConnectors();
+		this.connectorDrawer.drawConnectors(this.connectorColumn());
+	}
+
+	/* The measure loop's locals the connector drawer reads, snapshotted at the call —
+	 * see ConnectorColumn for what each field means. */
+	private connectorColumn(): ConnectorColumn {
+		return {
+			measureX: this.measureX,
+			systemIndex: this.systemIndex,
+			isSystemStart: this.isSystemStart,
+			isLastMeasure: this.isLastMeasure,
+			barStyle: this.barStyle,
+			repeatEnd: this.decoration.repeatEnd,
+			repeatBoth: this.repeatBoth,
+			begRepeatX: this.begRepeatX,
+			systemTop: this.systemTop,
+			systemBottom: this.systemBottom,
+			partStaves: this.partStaves,
+		};
 	}
 
 	private beginSystem(): void {
@@ -2144,7 +2133,7 @@ export class DrawPass {
 			// The mid-measure dividers vexflow drew nothing for: their BarNote reserved the
 			// width and now has a formatted x, so paint the real stroke over it.
 			for (const { note, style } of p.midBars) {
-				this.paintBarStyle(p.stave, note.getAbsoluteX(), style);
+				this.connectorDrawer.paintBarStyle(p.stave, note.getAbsoluteX(), style);
 			}
 			for (const beam of p.beams) {
 				beam.setContext(this.context).draw();
@@ -2653,7 +2642,9 @@ export class DrawPass {
 			// and bottom. Otherwise a high note or the bracket clips out of the measure's box —
 			// and the playback cursor that rides it. contentTop is Infinity when the measure has
 			// no notes, so it never shrinks the box.
-			const connector = this.connectorExtent();
+			const connector = this.connectorDrawer.connectorExtent(
+				this.connectorColumn(),
+			);
 			const left = Math.min(this.measureX, connector?.left ?? Infinity);
 			const right = this.measureX + this.measureWidth;
 			const top = Math.min(
@@ -2672,59 +2663,6 @@ export class DrawPass {
 				systemIndex: this.systemIndex,
 			});
 		}
-	}
-
-	/*
-	 * The extent of the stave connector drawn at a system start (a bracket or brace joining a
-	 * part's staves, or a notation+tab pair across parts), so the system-start measure box can
-	 * grow to contain it. vexflow draws a bracket just left of the stave (BRACKET_X_SHIFT),
-	 * insetting its bar/curl glyphs a little further and overhanging the curls past the top and
-	 * bottom staff lines; a brace reaches further left but stays within the staff lines
-	 * vertically. Returns null away from a system start, or when the only connector is the plain
-	 * left line (which sits on measureX — already the box's left edge).
-	 */
-	private connectorExtent(): {
-		left: number;
-		top: number;
-		bottom: number;
-	} | null {
-		if (!this.isSystemStart || !this.systemTop || !this.systemBottom) {
-			return null;
-		}
-		let bracket = this.reader.partsPairTabWithNotation(this.parts, {
-			showTabs: this.showTabs,
-			showNotation: this.showNotation,
-		});
-		let brace = false;
-		for (const part of this.parts) {
-			if (
-				this.reader.visibleStaffNumbers(part, {
-					showTabs: this.showTabs,
-					showNotation: this.showNotation,
-				}).length <= 1
-			) {
-				continue;
-			}
-			const symbol = this.reader.partSymbol(part, {
-				showTabs: this.showTabs,
-				showNotation: this.showNotation,
-			});
-			bracket ||= symbol === 'bracket';
-			brace ||= symbol === 'brace';
-		}
-		const top = this.systemTop.getYForLine(0);
-		const bottom = this.systemBottom.getBottomLineY();
-		if (bracket) {
-			return {
-				left: this.measureX - BRACKET_X_SHIFT - BRACKET_GLYPH_OVERHANG,
-				top: top - CONNECTOR_VERTICAL_OVERHANG,
-				bottom: bottom + CONNECTOR_VERTICAL_OVERHANG,
-			};
-		}
-		if (brace) {
-			return { left: this.measureX - BRACE_LEFT_OVERHANG, top, bottom };
-		}
-		return null;
 	}
 
 	/*
@@ -3463,259 +3401,6 @@ export class DrawPass {
 			);
 		}
 		this.context.restore();
-	}
-
-	/*
-	 * Draw the `<part-group>` symbols at a system start: one connector per group, from its
-	 * first member part's top stave down to its last member's bottom stave. Nested groups
-	 * step further left of the system so an inner symbol doesn't print over its outer one —
-	 * the same "the connector's x comes from its top stave" nudge the notation+tab bracket
-	 * uses, just repeated per depth.
-	 *
-	 * The nudge is restored right after each draw, so nothing downstream sees a moved stave.
-	 */
-	private drawPartGroupConnectors(): void {
-		const maxDepth = Math.max(0, ...this.partGroups.map((g) => g.depth));
-		for (const group of this.partGroups) {
-			const top = this.partStaves[group.fromPart]?.top;
-			const bottom = this.partStaves[group.toPart]?.bottom;
-			if (!top || !bottom) {
-				continue;
-			}
-			// The innermost group hugs the system; each level out steps further left. Depth
-			// counts inward, so invert it.
-			top.setX(
-				this.measureX -
-					BRACKET_X_SHIFT -
-					PART_GROUP_STEP * (maxDepth - group.depth),
-			);
-			new StaveConnector(top, bottom)
-				.setType(group.symbol === 'line' ? 'singleLeft' : group.symbol)
-				.setContext(this.context)
-				.draw();
-			top.setX(this.measureX);
-		}
-	}
-
-	/*
-	 * Print each `<part-group>`'s `<group-name>` at the first system's start, in the column of
-	 * the left indent that sits OUTSIDE the part labels (see ScoreLayout.partLabelIndent) and
-	 * vertically centered on the parts the group spans — the section heading a bracket in an
-	 * orchestral score carries ("Oboe through Clarinet" over its three staves).
-	 *
-	 * Right-aligned like the part labels, so with several groups every name ends at the same x.
-	 * Only drawn with showPartLabels on; the indent it needs is only reserved then.
-	 */
-	private drawPartGroupNames(): void {
-		if (this.systemIndex !== 0 || this.labelIndent <= this.partLabelIndent) {
-			return;
-		}
-		this.context.save();
-		this.context.setFont(this.labelFont, LABEL_FONT_SIZE);
-		this.context.setFillStyle(this.textColor);
-		for (const group of this.partGroups) {
-			const top = this.partStaves[group.fromPart]?.top;
-			const bottom = this.partStaves[group.toPart]?.bottom;
-			if (!group.name || !top || !bottom) {
-				continue;
-			}
-			const width = this.context.measureText(group.name).width;
-			// Centered on the staff lines the group spans, the same measure (and the same
-			// +1.5 baseline nudge) a part label uses.
-			const cy = (top.getYForLine(0) + bottom.getBottomLineY()) / 2;
-			this.context.fillText(
-				group.name,
-				this.measureX - this.partLabelIndent - LABEL_GAP - width,
-				cy + 1.5,
-			);
-		}
-		this.context.restore();
-	}
-
-	/*
-	 * Join the whole system across all parts with a shared left line at the
-	 * system start, and a closing line at the system end.
-	 */
-	private drawConnectors(): void {
-		if (this.systemTop && this.systemBottom && this.totalStaves > 1) {
-			if (this.isSystemStart) {
-				// Every multi-stave system gets a plain left line closing the staves' left
-				// edge. A notation+tab pair split across separate parts also gets a bracket
-				// (the cross-part analog of the single-part bracket), drawn just outside it.
-				new StaveConnector(this.systemTop, this.systemBottom)
-					.setType('singleLeft')
-					.setContext(this.context)
-					.draw();
-				if (
-					this.reader.partsPairTabWithNotation(this.parts, {
-						showTabs: this.showTabs,
-						showNotation: this.showNotation,
-					})
-				) {
-					// The bracket's x comes entirely from its top stave; nudge that 4px left
-					// so the bracket sits just outside the system line with a small gap, then
-					// restore.
-					this.systemTop.setX(this.measureX - BRACKET_X_SHIFT);
-					new StaveConnector(this.systemTop, this.systemBottom)
-						.setType('bracket')
-						.setContext(this.context)
-						.draw();
-					this.systemTop.setX(this.measureX);
-				}
-				this.drawPartGroupConnectors();
-				this.drawPartGroupNames();
-			}
-			// A repeat's bars run the full height of the system like any other barline, but its
-			// dots belong to each stave — and no connector type draws dots. So each stave draws
-			// the whole sign itself and a bold-double connector retraces just the bars: vexflow
-			// gives it the same geometry it gives a repeat barline, so it lands exactly over the
-			// per-stave bars and fills the gaps between staves.
-			if (this.begRepeatX !== null) {
-				this.drawRepeatConnector(
-					'boldDoubleLeft',
-					this.begRepeatX - this.systemTop.getX(),
-				);
-			}
-			// Every measure's end line gets a connector joining the part's staves, so
-			// internal barlines are tied across staves and not just drawn per-stave.
-			// The piece's final measure gets a bold thin-thick connector to match its
-			// end barline; all other measure ends get a plain single line.
-			if (this.decoration.repeatEnd) {
-				this.drawRepeatConnector('boldDoubleRight');
-				// A back-to-back sign closes and reopens on the same line: the reopening half
-				// sits at the same x, so its connector shifts out to the measure's right edge.
-				if (this.repeatBoth) {
-					this.drawRepeatConnector('boldDoubleLeft', this.systemTop.getWidth());
-				}
-				return;
-			}
-			// ponytail: on a MULTI-stave system only light-light and light-heavy change the
-			// connector — StaveConnector's own vocabulary is thin / thinDouble / boldDoubleRight,
-			// with no dotted, dashed or heavy member, so the exotic styles fall back to the plain
-			// line there. Single-stave scores (where these styles actually show up) get the full
-			// vocabulary via drawCustomBarline; widen this if a multi-stave fixture needs it.
-			const type =
-				this.barStyle === 'light-light'
-					? 'thinDouble'
-					: this.barStyle === 'light-heavy' || this.isLastMeasure
-						? 'boldDoubleRight'
-						: 'singleRight';
-			for (const run of this.barlineRuns()) {
-				new StaveConnector(run.top, run.bottom)
-					.setType(type)
-					.setContext(this.context)
-					.draw();
-			}
-		}
-	}
-
-	/*
-	 * The vertical runs a measure's barline connector is drawn in — one per unbroken stretch of
-	 * parts (see barlineBreaks), which by default means one run per part. A run always spans
-	 * whole parts: a part's own staves are joined by its barline, which is what the brace on a
-	 * grand staff means. An ungrouped single-part system has no breaks and yields one run.
-	 */
-	private barlineRuns(): Array<{ top: Stave; bottom: Stave }> {
-		const systemTop = this.systemTop;
-		const systemBottom = this.systemBottom;
-		if (!systemTop || !systemBottom) {
-			return [];
-		}
-		if (this.barlineBreaks.size === 0) {
-			return [{ top: systemTop, bottom: systemBottom }];
-		}
-		const runs: Array<{ top: Stave; bottom: Stave }> = [];
-		let top: Stave | undefined;
-		let bottom: Stave | undefined;
-		for (const [partIndex, staves] of this.partStaves.entries()) {
-			// A part with no measure in this column has no staves; it can't close a run, and
-			// leaving the open one running past it matches what the single-connector path did.
-			if (staves) {
-				top ??= staves.top;
-				bottom = staves.bottom;
-			}
-			if (this.barlineBreaks.has(partIndex) && top && bottom) {
-				runs.push({ top, bottom });
-				top = undefined;
-				bottom = undefined;
-			}
-		}
-		if (top && bottom) {
-			runs.push({ top, bottom });
-		}
-		// A run of one stave draws nothing useful (a connector needs two), but the stave's own
-		// end barline already covers it — so the empty case is correct, not a gap.
-		return runs;
-	}
-
-	/*
-	 * Paint this measure's end barline for the <bar-style> values vexflow has no Barline type
-	 * for (see CUSTOM_BAR_STYLES). buildStave left the stave's end bar as NONE for these, so
-	 * this is the only line drawn there, laid down right after the stave so it sits under the
-	 * notes like any other barline. A repeat sign at the same edge wins and is already drawn,
-	 * so it suppresses this.
-	 */
-	private drawCustomBarline(stave: Stave): void {
-		if (this.decoration.repeatEnd || this.repeatBoth || !this.barStyle) {
-			return;
-		}
-		this.paintBarStyle(stave, stave.getX() + stave.getWidth(), this.barStyle);
-	}
-
-	/* Paint one <bar-style> vexflow has no Barline type for, as a vertical stroke at `x` on
-	 * `stave` (see CUSTOM_BAR_STYLES). A style vexflow does draw is a no-op here — it was
-	 * already drawn with the stave, or with the mid-measure BarNote standing in its place. */
-	private paintBarStyle(stave: Stave, x: number, barStyle: string): void {
-		const style = CUSTOM_BAR_STYLES[barStyle];
-		if (!style) {
-			return;
-		}
-		const spacing = stave.getSpacingBetweenLines();
-		const topY = stave.getTopLineTopY();
-		// A `span` is measured in staff spaces down from the top line; without one the bar
-		// runs the full stave height, the way every vexflow barline does.
-		const [from, to] = style.span ?? [0, 0];
-		const y = style.span ? topY + from * spacing : topY;
-		const height = style.span
-			? (to - from) * spacing
-			: stave.getBottomLineBottomY() - topY;
-		this.context.save();
-		this.context.setFillStyle(this.notationColor);
-		for (const [offset, width] of style.bars) {
-			if (style.dash) {
-				// fillRect can't dash, so walk the stroke in [on, off] runs. The last run is
-				// clipped to the bar's height rather than overshooting past the bottom line.
-				const [on, off] = style.dash;
-				for (let dy = 0; dy < height; dy += on + off) {
-					this.context.fillRect(
-						x + offset,
-						y + dy,
-						width,
-						Math.min(on, height - dy),
-					);
-				}
-			} else {
-				this.context.fillRect(x + offset, y, width, height);
-			}
-		}
-		this.context.restore();
-	}
-
-	/* One half of a repeat sign carried down the system. `xShift` moves a left-sided connector
-	 * off the stave's left edge — an opening repeat prints after the clef and signatures, and a
-	 * back-to-back one prints at the measure's right edge. */
-	private drawRepeatConnector(
-		type: 'boldDoubleLeft' | 'boldDoubleRight',
-		xShift = 0,
-	): void {
-		if (!this.systemTop || !this.systemBottom) {
-			return;
-		}
-		new StaveConnector(this.systemTop, this.systemBottom)
-			.setType(type)
-			.setXShift(xShift)
-			.setContext(this.context)
-			.draw();
 	}
 
 	/*
