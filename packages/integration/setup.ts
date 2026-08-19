@@ -23,7 +23,7 @@ if (process.env.I_AM_RUNNING_TESTS_USING_VEX_TEST !== '1') {
 	// process.exit, not throw: bun catches a preload throw and runs tests anyway.
 	console.error(
 		'\nRun tests with `vex test`, not `bun test` directly.\n' +
-			'Bare bun test diffs host pixels against the Docker baselines. See cli/test.ts.\n',
+			'Bare bun test diffs host pixels against the Docker baselines. See packages/vex/test.ts.\n',
 	);
 	process.exit(1);
 }

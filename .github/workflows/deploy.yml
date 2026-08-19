@@ -1,4 +1,4 @@
-# Builds the site/ playground and deploys it to GitHub Pages (vexml.dev).
+# Builds the packages/site playground and deploys it to GitHub Pages (vexml.dev).
 # Pages source must be set to "GitHub Actions" in repo settings.
 name: deploy
 
