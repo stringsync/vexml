@@ -22,9 +22,9 @@ export type MidClefSpec = {
 };
 
 /*
- * A stave's signature — its clef, key and time — translated from what MusicXML says into what
- * vexflow draws. StaveBuilder engraves these, while the layout and draw passes compare the
- * specs across measures to tell a signature that actually changed from one merely restated.
+ * An mdom Clef, Key and Time into the specs vexflow draws a stave's signature from.
+ * StaveBuilder engraves these, while the layout and draw passes compare the specs across
+ * measures to tell a signature that actually changed from one merely restated.
  */
 export class SignatureTranslator {
 	// VexFlow keys the tonic note for major but wants an 'm' suffix for minor

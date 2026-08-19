@@ -46,11 +46,11 @@ const STEP_SEMITONES: Record<string, number> = {
 type FretElement = Element & { fontWeight: string };
 
 /*
- * One voice of a tablature staff as vexflow tickables: a TabNote per struck chord, sized and
- * styled for the fret digits, with the rests and held notes tab convention leaves unprinted
- * reserved as invisible time.
+ * One voice's mdom Chords into the vexflow tickables that draw them on a tablature staff. A
+ * TabNote per struck chord, sized and styled for the fret digits, with the rests and held
+ * notes tab convention leaves unprinted reserved as invisible time.
  *
- * Separate from ChordTranslator because almost nothing carries over — a tab note has no clef,
+ * Separate from ChordTranslator because almost nothing carries over: a tab note has no clef,
  * key, accidental or notehead, and its digits are restyled through vexflow internals the
  * notation path never touches.
  */

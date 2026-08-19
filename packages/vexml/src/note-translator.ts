@@ -52,10 +52,11 @@ export interface VoiceTickablesOptions {
 }
 
 /*
- * One voice's mdom chords as the vexflow tickables that draw them: a StaveNote per chord in
- * onset order, the zero-duration BarNotes and ClefNotes a mid-measure barline or clef change
- * puts between them, and invisible ghosts holding the time no chord covers. ChordTranslator
- * builds the notes themselves; this decides where each one lands and what goes between.
+ * One voice's mdom Chords into the vexflow tickables that draw them. A StaveNote per chord
+ * in onset order, the zero-duration BarNotes and ClefNotes a mid-measure barline or clef
+ * change puts between them, and invisible ghosts holding the time no chord covers.
+ * ChordTranslator builds the notes themselves; this decides where each one lands and what
+ * goes between.
  *
  * Its other methods are the vexflow plumbing that comes with those tickables: wrapping them
  * in a voice, and the font metric and modifier lookups their callers need. One instance per

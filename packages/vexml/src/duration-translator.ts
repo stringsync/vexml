@@ -39,9 +39,9 @@ const GHOST_DURATIONS: [code: string, beats: number][] = [
 ];
 
 /*
- * How long a note lasts, in the terms vexflow wants: a duration code for a note that draws,
- * and a run of invisible ghosts for time that passes without one. Every tickable builder —
- * notation, tablature, and the voice assembler over both — dates its output through this.
+ * An mdom Note's length into the terms vexflow wants: a duration code for a note that draws,
+ * and a run of invisible GhostNotes for time that passes without one. Every tickable builder
+ * (notation, tablature, and the voice assembler over both) dates its output through this.
  */
 export class DurationTranslator {
 	/**

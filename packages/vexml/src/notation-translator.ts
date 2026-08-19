@@ -221,10 +221,10 @@ class NonArpeggioBracket extends Stroke {
 }
 
 /*
- * Everything MusicXML hangs off a note that isn't the note itself: its <articulations>,
- * <ornaments>, <technical> marks, fermata, arpeggio — and its <lyric> verses, which are a
- * sibling of <notations> in the file but the same kind of thing here, a modifier attached to
- * a built StaveNote.
+ * An mdom Chord's marks into the vexflow modifiers that hang off the StaveNote built from
+ * it: its <articulations>, <ornaments>, <technical> marks, fermata, arpeggio, and its
+ * <lyric> verses, which are a sibling of <notations> in the file but the same kind of thing
+ * here.
  *
  * Kept apart from ChordTranslator, which builds the note these decorate, because none of it
  * touches the notehead: the note is finished before any of this lands on it.
