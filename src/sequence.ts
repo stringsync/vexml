@@ -1,6 +1,7 @@
-import { BAR_WIDTH, DEFAULT_TEMPO_BPM } from './constants';
+import { BAR_WIDTH } from './constants';
 import { Rect } from './geometry';
 import type { Note } from './note';
+import type { TempoMap } from './tempo-map';
 
 /*
  * The playback timeline: the score unrolled into a linear sequence of steps in playback order, with
@@ -87,56 +88,6 @@ export interface CursorTransition {
 }
 
 /* A quarter-note-beats <-> ms segment: `[startBeat, endBeat)` plays at `bpm` quarter notes/min. */
-export type TempoSegment = { startBeat: number; endBeat: number; bpm: number };
-
-/**
- * Quarter-note beats -> milliseconds across tempo segments. Folds the elapsed time of every segment
- * the beat spans, plus the partial of the segment it lands in. Segments are contiguous and ordered;
- * a beat past the last segment extrapolates at the last segment's rate.
- */
-// Internal to the sequence/factory pair: drive it through Sequence in tests, so the segments
-// under test are the ones the factory really builds.
-export function beatsToMs(
-	beats: number,
-	segments: readonly TempoSegment[],
-): number {
-	const last = segments.at(-1);
-	if (!last) {
-		return (beats / DEFAULT_TEMPO_BPM) * 60000;
-	}
-	let ms = 0;
-	for (const seg of segments) {
-		if (beats <= seg.startBeat) {
-			break;
-		}
-		const upto = Math.min(beats, seg.endBeat);
-		ms += ((upto - seg.startBeat) / seg.bpm) * 60000;
-	}
-	if (beats > last.endBeat) {
-		ms += ((beats - last.endBeat) / last.bpm) * 60000;
-	}
-	return ms;
-}
-
-/** Milliseconds -> quarter-note beats: the monotonic inverse of {@link beatsToMs}. */
-export function msToBeats(
-	ms: number,
-	segments: readonly TempoSegment[],
-): number {
-	const last = segments.at(-1);
-	if (!last) {
-		return (ms / 60000) * DEFAULT_TEMPO_BPM;
-	}
-	let elapsed = 0;
-	for (const seg of segments) {
-		const segMs = ((seg.endBeat - seg.startBeat) / seg.bpm) * 60000;
-		if (ms <= elapsed + segMs) {
-			return seg.startBeat + ((ms - elapsed) / 60000) * seg.bpm;
-		}
-		elapsed += segMs;
-	}
-	return last.endBeat + ((ms - elapsed) / 60000) * last.bpm;
-}
 
 /*
  * Partition the notes active at a destination step into attacks vs. sustains relative to a source
@@ -188,7 +139,7 @@ export class Sequence {
 
 	constructor(
 		private readonly steps: Step[],
-		private readonly segments: readonly TempoSegment[],
+		private readonly tempo: TempoMap,
 		private readonly durationBeats: number,
 		private readonly measureCount: number,
 		private readonly tiedFrom: ReadonlyMap<Note, Note>,
@@ -219,15 +170,15 @@ export class Sequence {
 	}
 
 	getDurationMs(): number {
-		return beatsToMs(this.durationBeats, this.segments);
+		return this.tempo.msAt(this.durationBeats);
 	}
 
 	beatsToMs(beats: number): number {
-		return beatsToMs(beats, this.segments);
+		return this.tempo.msAt(beats);
 	}
 
 	msToBeats(ms: number): number {
-		return msToBeats(ms, this.segments);
+		return this.tempo.beatsAt(ms);
 	}
 
 	/* The step active at `beat` (the last whose startBeat <= beat), or null when empty / before the

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { Rect } from './geometry';
 import type { Note } from './note';
-import { Sequence, type Step, type TempoSegment } from './sequence';
+import { Sequence, type Step } from './sequence';
+import { TempoMap } from './tempo-map';
 
 // Identity tokens — the sequence only uses Note for identity (active sets / tie keys).
 function fakeNote(label: string): Note {
@@ -12,11 +13,6 @@ const A = fakeNote('a');
 const B = fakeNote('b');
 const C = fakeNote('c');
 const D = fakeNote('d');
-
-// A Sequence with just a tempo map, to drive the beats<->ms conversions.
-function tempoOnly(segments: TempoSegment[]): Sequence {
-	return new Sequence([], segments, 0, 0, new Map(), new Map(), new Map());
-}
 
 // A Sequence whose steps carry the given active sets (one step per set, one beat each), to drive
 // classify() through the public surface.
@@ -38,7 +34,7 @@ function withActive(
 	}));
 	return new Sequence(
 		steps,
-		[{ startBeat: 0, endBeat: active.length, bpm: 120 }],
+		new TempoMap([{ startBeat: 0, endBeat: active.length, bpm: 120 }]),
 		active.length,
 		1,
 		tiedFrom,
@@ -48,24 +44,6 @@ function withActive(
 }
 
 describe('Sequence', () => {
-	it('assumes 120 bpm when the score declares no tempo', () => {
-		const seq = tempoOnly([]);
-		expect(seq.beatsToMs(4)).toBeCloseTo(2000);
-		expect(seq.msToBeats(2000)).toBeCloseTo(4);
-	});
-
-	it('honors a mid-piece tempo change, and converts back to the beat it started from', () => {
-		const seq = tempoOnly([
-			{ startBeat: 0, endBeat: 4, bpm: 120 }, // 500 ms / beat
-			{ startBeat: 4, endBeat: 8, bpm: 60 }, // 1000 ms / beat
-		]);
-		expect(seq.beatsToMs(4)).toBeCloseTo(2000);
-		expect(seq.beatsToMs(6)).toBeCloseTo(4000);
-		expect(seq.beatsToMs(8)).toBeCloseTo(6000);
-		expect(seq.msToBeats(4000)).toBeCloseTo(6);
-		expect(seq.msToBeats(seq.beatsToMs(6.5))).toBeCloseTo(6.5);
-	});
-
 	it('counts every note as started or stopped when two steps share none', () => {
 		const seq = withActive([
 			[A, B],

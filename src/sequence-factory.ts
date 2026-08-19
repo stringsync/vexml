@@ -6,15 +6,15 @@ import type { Note } from './note';
 import type { RawGeometry } from './score-drawer';
 import type { ScoreReader, Swing } from './score-reader';
 import {
-	beatsToMs,
 	type Jump,
 	type MeasureInfo,
 	Sequence,
 	type SequenceInput,
 	type SequenceNote,
 	type Step,
-	type TempoSegment,
 } from './sequence';
+import { SwingWarp } from './swing-warp';
+import { TempoMap, type TempoSegment } from './tempo-map';
 
 /*
  * Builds the playback timeline: bridges the parsed document (onsets, meter, tempo, repeats, ties)
@@ -304,53 +304,6 @@ function resetNestedState(
 	}
 }
 
-/**
- * One measure's swing as a warp of its beat axis, given the swing in force, the measure's played
- * length and its meter. Identity when nothing is swinging.
- *
- * Each pair of swung notes spans `2 * unit` beats; the warp stretches the on-beat half to
- * `first / (first + second)` of that span and squeezes the off-beat half into what's left. The
- * pair boundaries are fixed points, so a measure keeps its length and only the off-beats move —
- * which means the same function warps a note's onset, its end, and the measure's own length
- * without any of them drifting apart.
- *
- * The grid is phased off the notated downbeat rather than off the measure's first beat. A full
- * measure starts on a boundary, but a pickup starts part-way through a pair, and without the
- * shift its off-beat eighth would be read as an on-beat and played LONG instead of short —
- * backwards, and audible on the very first note of any swung tune with an anacrusis.
- *
- * Exempt notes (see {@link Note.isSwingExempt}) skip the warp entirely and keep their written
- * beats. That stays consistent with their swung neighbors because the pair boundaries are fixed
- * points: a triplet filling a beat still starts and ends where the warp leaves that beat, and
- * only its interior stays even.
- */
-export function swingWarp(
-	swing: Swing | null,
-	playedBeats: number,
-	meterBeats: number,
-): (beat: number) => number {
-	if (!swing || swing.first === swing.second) {
-		return (beat) => beat;
-	}
-	const span = 2 * swing.unit;
-	const onBeatSpan = (swing.first / (swing.first + swing.second)) * span;
-	// How far into a swung pair this measure's first beat sits. A full measure starts on a pair
-	// boundary; a pickup is short by exactly the beats the meter says are missing.
-	const phase =
-		meterBeats > playedBeats ? (meterBeats - playedBeats) % span : 0;
-	const at = (beat: number): number => {
-		const pair = Math.floor(beat / span);
-		const into = beat - pair * span;
-		const warped =
-			into <= swing.unit
-				? (into / swing.unit) * onBeatSpan
-				: onBeatSpan + ((into - swing.unit) / swing.unit) * (span - onBeatSpan);
-		return pair * span + warped;
-	};
-	const origin = at(phase);
-	return (beat) => at(beat + phase) - origin;
-}
-
 // MusicXML <beat-unit> (a note type) -> quarter notes, so a metronome mark normalizes to quarter BPM.
 const QUARTERS_PER_UNIT: Record<string, number> = {
 	whole: 4,
@@ -580,6 +533,8 @@ export class SequenceFactory {
 			});
 		}
 
+		// Every rate change is in by now, so the map is complete and can date the steps below.
+		const tempo = new TempoMap(segments);
 		const startBeats = [...onsets.keys()].sort((a, b) => a - b);
 		// Place each seeded end along the glide the cursor was already making between the surrounding
 		// noteheads, so splitting a step leaves the cursor's path unchanged — only the active set
@@ -647,8 +602,8 @@ export class SequenceFactory {
 				measureIndex: onset.measureIndex,
 				startBeat,
 				endBeat,
-				startMs: beatsToMs(startBeat, segments),
-				endMs: beatsToMs(endBeat, segments),
+				startMs: tempo.msAt(startBeat),
+				endMs: tempo.msAt(endBeat),
 				x,
 				glideToX,
 				systemRect: onset.systemRect,
@@ -666,7 +621,7 @@ export class SequenceFactory {
 
 		return new Sequence(
 			steps,
-			segments,
+			tempo,
 			totalBeats,
 			input.measures.length,
 			tiedFrom,
@@ -692,7 +647,7 @@ export class SequenceFactory {
 		// Swing warps the beat axis per measure; identity everywhere no <sound><swing> is in force.
 		const swings = this.swingWarps(parts);
 		const swung = (index: number, beat: number): number =>
-			swings[index]?.(beat) ?? beat;
+			swings[index]?.at(beat) ?? beat;
 		const measures: MeasureInfo[] = [];
 		for (let i = 0; i < measureCount; i++) {
 			const m0 = parts[0]?.measures[i];
@@ -760,18 +715,17 @@ export class SequenceFactory {
 	 * in force. A <sound><swing> carries forward from the measure that declares it until another
 	 * one changes it, like tempo, and is read from the first part: swing is a performance
 	 * instruction for the whole score, the same way repeats and endings are. */
-	private swingWarps(parts: Part[]): Array<(beat: number) => number> {
+	private swingWarps(parts: Part[]): SwingWarp[] {
 		const measures = parts[0]?.measures ?? [];
-		const warps: Array<(beat: number) => number> = [];
+		const warps: SwingWarp[] = [];
 		let swing: Swing | null = null;
 		for (const [index, measure] of measures.entries()) {
 			swing = this.reader.swingOf(measure) ?? swing;
 			warps.push(
-				swingWarp(
-					swing,
-					this.measureBeats(parts, index),
-					this.reader.meterBeats(measure.getTime()),
-				),
+				new SwingWarp(swing, {
+					playedBeats: this.measureBeats(parts, index),
+					meterBeats: this.reader.meterBeats(measure.getTime()),
+				}),
 			);
 		}
 		return warps;
