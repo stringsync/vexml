@@ -40,26 +40,6 @@ export type TempoMark = {
  */
 export type Swing = { first: number; second: number; unit: number };
 
-/**
- * One side of a metric modulation, as the drawing side wants it. Beams are counted rather
- * than tracked as a run: a 'begin'/'continue' marker means that beam level carries on to the
- * NEXT note, so counting them gives the beams to draw in the gap, while an 'end'/'backward
- * hook' marker only says this note is beamed at all.
- */
-function modulationNotesOf(notes: MetronomeNote[]): ModulationNote[] {
-	return notes.map((note) => ({
-		type: note.type,
-		dots: note.dots,
-		beamed: note.beams.length > 0,
-		beamsToNext: note.beams.filter(
-			(beam) => beam === 'begin' || beam === 'continue',
-		).length,
-		tuplet: note.tuplet
-			? { actual: note.tuplet.actual, type: note.tuplet.type }
-			: null,
-	}));
-}
-
 /*
  * One voice as ONE staff draws it (see ScoreReader.staffVoices). `chords` is the voice
  * restricted to the notes that sit on this staff; `beamChords` is the voice's full,
@@ -74,19 +54,6 @@ export type StaffVoice = {
 
 /** Which side of the staff a `<direction>` prints on. */
 export type Placement = 'above' | 'below';
-
-/**
- * A `<direction>`'s placement attribute. MusicXML leaves it optional and the default is
- * renderer's choice; vexml keeps 'above' as the default so an unmarked directive draws
- * where it always has. Callers that engrave BELOW by convention (dynamics, wedges) pass
- * their own default rather than reading it from here.
- */
-function placementOf(
-	direction: Direction,
-	fallback: Placement = 'above',
-): Placement {
-	return direction.placement ?? fallback;
-}
 
 /*
  * SMuFL gives each dynamic LETTER its own glyph (dynamicPiano U+E520 … dynamicNiente
@@ -103,12 +70,6 @@ const DYNAMIC_GLYPHS: Record<string, string> = {
 	z: '\uE525', // dynamicZ
 	n: '\uE526', // dynamicNiente
 };
-
-/** True when every letter of a marking has a SMuFL glyph, so it can engrave as music
- * rather than as text — false for an <other-dynamics> like "abc-ffz". */
-function isDynamicSpelling(text: string): boolean {
-	return [...text].every((ch) => ch in DYNAMIC_GLYPHS);
-}
 
 // A <direction><direction-type><pedal> spanner marker, bound to the lead note it
 // anchors. `line` carries the MusicXML line="yes" flag (bracket pedal vs. the
@@ -180,18 +141,6 @@ export const LINE_TYPE_DASH: Record<string, number[] | null> = {
 // nothing (no sign), so plain roots stay bare.
 const HARMONY_ALTER: Record<string, string> = { '1': '♯', '-1': '♭', '0': '♮' };
 
-/*
- * Swap the ASCII accidentals a <kind text="…"> suffix carries for an extension (e.g.
- * "7(b9#11)") for the real Unicode signs ("7(♭9♯11)"), so they match the root's ♭/♯
- * and pick up drawHarmony's smaller accidental sizing. An accidental in an extension
- * always sits before its scale-degree number, so the digit lookahead avoids touching
- * any letter that just happens to be a "b" (none of the suffix words use one, but the
- * lookahead keeps it unambiguous).
- */
-function harmonyExtensionSigns(kind: string): string {
-	return kind.replace(/b(?=\d)/g, '♭').replace(/#(?=\d)/g, '♯');
-}
-
 // Fallback suffix per <kind> value, for the exporters that omit the text attribute —
 // without it a D power chord prints as a bare "D", which reads as a major triad.
 // An empty string is the right answer for 'major' and 'none' (the bare root).
@@ -252,131 +201,60 @@ const FIGURE_SIGN: Record<string, string> = {
 };
 
 /*
- * A <harmony>'s printed chord symbol, e.g. "G7", "C", "F♯m": the <root-step> plus
- * any <root-alter> sign, then the <kind text="…"> suffix MusicXML carries for
- * exactly this (a major triad's text is empty, so it prints the bare root), falling
- * back to the kind's conventional suffix when the exporter omits the attribute. A
- * <bass> (slash chord) appends "/<bass-step><bass-alter>", e.g. "E♭/B♭".
- * ponytail: <degree> alterations (an added 9th, a flat 5) are ignored — they only
- * refine a suffix the kind already names. Fold them in if a fixture needs "C5(add9)".
- */
-function harmonyText(harmony: Harmony): string {
-	const root = harmony.root;
-	const step = root?.step ?? '';
-	const alter = root ? (HARMONY_ALTER[root.alter ?? ''] ?? '') : '';
-	const kindEl = harmony.kind;
-	const kind = harmonyExtensionSigns(
-		kindEl?.text ?? (kindEl ? (HARMONY_KIND_SUFFIX[kindEl.value] ?? '') : ''),
-	);
-	const bass = harmony.bass;
-	const bassText = bass?.step
-		? `/${bass.step}${HARMONY_ALTER[bass.alter ?? ''] ?? ''}`
-		: '';
-	return step + alter + kind + bassText;
-}
-
-/*
- * The chord-diagram (<frame>) carried by a <harmony>, parsed into the ChordDiagramGlyph
- * spec. MusicXML <fret>s are absolute, so they're shifted to be relative to
- * <first-fret> (the top displayed fret line, drawn as the position label). Strings
- * with no <frame-note> are muted ('x'); fret 0 is an open string. A <barre> spans
- * from its `start` frame-note's string to its `stop` frame-note's string, at the
- * shared (relative) fret. Returns null when the harmony carries no <frame>.
- * MusicXML numbers strings high-to-low (1 = highest), matching the ChordDiagramGlyph's
- * left-to-right (string 1 rightmost) convention.
- */
-function frameOf(harmony: Harmony): ChordFrame | null {
-	const frame = harmony.frame;
-	if (!frame) {
-		return null;
-	}
-	const numStrings = frame.strings;
-	const frameNotes = frame.frameNotes;
-
-	// string -> absolute fret (0 = open).
-	const absFret = new Map<number, number>();
-	for (const fn of frameNotes) {
-		absFret.set(fn.string, fn.fret);
-	}
-	const fretted = [...absFret.values()].filter((f) => f > 0);
-
-	// <first-fret> is the absolute fret of the box's top line. Lead sheets often omit it, so
-	// derive it: a chord with no open strings whose lowest fretted note is past the nut
-	// starts the box at that fret instead of drawing a tall, mostly-empty box down from the
-	// nut. Open strings pin the box to the nut (firstFret 1).
-	const hasOpen = [...absFret.values()].includes(0);
-	const firstFret =
-		frame.firstFret ??
-		(fretted.length > 0 && !hasOpen ? Math.min(...fretted) : 1);
-	const toRelative = (abs: number) => (abs === 0 ? 0 : abs - firstFret + 1);
-
-	const played = new Map<number, number>(); // string -> relative fret
-	const barreStart = new Map<number, number>(); // relative fret -> from string
-	const barres: ChordFrame['barres'] = [];
-	for (const fn of frameNotes) {
-		const relFret = toRelative(fn.fret);
-		played.set(fn.string, relFret);
-		if (fn.barre === 'start') {
-			barreStart.set(relFret, fn.string);
-		} else if (fn.barre === 'stop') {
-			const from = barreStart.get(relFret);
-			if (from !== undefined) {
-				barres?.push({ fromString: from, toString: fn.string, fret: relFret });
-			}
-		}
-	}
-
-	// Position label, for movable shapes only (box not at the nut). Its number is the fret of
-	// the lowest-sounding fretted string (the highest played string number), drawn beside
-	// that note's row rather than at the box top — guitarists finger from the lowest string
-	// up, so the number marks where the hand sits. The box layout still keys off firstFret
-	// (the lowest fret), so the dots stay compact regardless of where the label lands.
-	let position = firstFret;
-	let positionText = 0;
-	if (firstFret > 1 && fretted.length > 0) {
-		const lowString = Math.max(
-			...[...absFret].filter(([, f]) => f > 0).map(([s]) => s),
-		);
-		const lowFret = absFret.get(lowString) as number;
-		position = lowFret;
-		positionText = lowFret - firstFret;
-	}
-
-	const chord: ChordFrame['chord'] = [];
-	for (let s = 1; s <= numStrings; s += 1) {
-		chord.push([s, played.has(s) ? (played.get(s) as number) : 'x']);
-	}
-	return { chord, position, positionText, barres };
-}
-
-/*
- * The <multiple-rest> count every staff of a measure agrees on, or null when they disagree (or
- * when there is none). Collapsing removes the whole measure COLUMN, so a run declared on only
- * some of a part's staves must not collapse — the others' music would be swallowed with it.
- *
- * A <measure-style> with no `number` applies to every staff, so an ordinary multirest agrees
- * trivially; only an explicit per-staff disagreement trips this.
- * ponytail: no fixture covers that case — no score in tmp/ writes one, and both hands of a
- * piano rest together. It's here because the failure it prevents is deleting played music.
- */
-function multiRestCountOf(measure: Measure | undefined): number | null {
-	if (!measure) {
-		return null;
-	}
-	const count = measure.getMultiRestCount('1');
-	for (let staff = 2; staff <= measure.staveCount; staff++) {
-		if (measure.getMultiRestCount(String(staff)) !== count) {
-			return null;
-		}
-	}
-	return count;
-}
-
-/*
  * Reads score semantics straight off the mdom: staff voice selection, meter lengths,
  * and the direction/harmony markers a measure carries. Stateless — the layout
  * (measuring) and draw passes must read identically, so the predicates live here.
  */
+
+/* Which kinds of stave a render shows, from Config.showTabs/showNotation. Both are asked
+ * together everywhere a part's stave rows are derived, so they travel as one value. */
+export interface StaveVisibility {
+	showTabs: boolean;
+	showNotation: boolean;
+}
+
+/** A `<part-group>` span: the run of parts it brackets, and the connector to draw. */
+export type PartGroup = {
+	/** Index into the rendered `parts` array of the group's first and last part. */
+	fromPart: number;
+	toPart: number;
+	symbol: 'brace' | 'bracket' | 'line';
+	/** Nesting depth — 0 is outermost, and each level draws further left of the system. */
+	depth: number;
+	/** The group's `<group-name>`, printed left of its symbol; null when it declares none. */
+	name: string | null;
+};
+
+export type MeasureRepeat = {
+	/** A left `<repeat direction="forward"/>`: the measure opens a repeat block. */
+	repeatBegin: boolean;
+	/** A right `<repeat direction="backward"/>`: the measure closes one. */
+	repeatEnd: boolean;
+	/** How many times a backward repeat plays the block; null when there is no repeat end. */
+	repeatTimes: number | null;
+	/** The ending (volta) run covering this measure, or null when it's outside one. */
+	ending: MeasureEnding | null;
+};
+
+export type MeasureEnding = {
+	/** The raw `<ending number>` — a list or range like `"1"`, `"1,2"`, `"1-3"`. */
+	number: string;
+	/** Whether the run starts here (its bracket's left hook). */
+	first: boolean;
+	/** Whether the run ends here (its bracket's right hook, and where playback jumps). */
+	last: boolean;
+	/** The bracket stays open on the right, with no down hook. */
+	open: boolean;
+};
+
+type BarlineRead = {
+	repeatBegin: boolean;
+	repeatEnd: boolean;
+	repeatTimes: number | null;
+	started: string | null;
+	closed: 'stop' | 'discontinue' | null;
+};
+
 export class ScoreReader {
 	/** A marking respelled in SMuFL dynamic glyphs, so it engraves as music rather than as
 	 * text. Callers check the `glyph` flag first; an unmapped character passes through
@@ -577,11 +455,13 @@ export class ScoreReader {
 			if (hidden.has(m)) {
 				continue;
 			}
-			const count = multiRestCountOf(parts[0]?.measures[m]);
+			const count = this.multiRestCountOf(parts[0]?.measures[m]);
 			if (
 				!count ||
 				count < 2 ||
-				!parts.every((part) => multiRestCountOf(part.measures[m]) === count)
+				!parts.every(
+					(part) => this.multiRestCountOf(part.measures[m]) === count,
+				)
 			) {
 				continue;
 			}
@@ -672,8 +552,8 @@ export class ScoreReader {
 				if (!relation) {
 					continue;
 				}
-				const left = modulationNotesOf(relation.left);
-				const right = modulationNotesOf(relation.right);
+				const left = this.modulationNotesOf(relation.left);
+				const right = this.modulationNotesOf(relation.right);
 				if (left.length === 0 || right.length === 0) {
 					continue;
 				}
@@ -750,7 +630,7 @@ export class ScoreReader {
 		return measure.directions.flatMap((d) => {
 			const staffNumber = d.staff;
 			const lead = d.nextNote;
-			const placement = placementOf(d);
+			const placement = this.placementOf(d);
 			return d.words
 				.filter(Boolean)
 				.map((text) => ({ text, staffNumber, lead, placement }));
@@ -779,13 +659,13 @@ export class ScoreReader {
 		return measure.directions.flatMap((d) => {
 			const staffNumber = d.staff;
 			const lead = d.nextNote;
-			const placement = placementOf(d, 'below');
+			const placement = this.placementOf(d, 'below');
 			return d.dynamics
 				.flatMap((dynamics) => dynamics.marks)
 				.filter(Boolean)
 				.map((text) => ({
 					text,
-					glyph: isDynamicSpelling(text),
+					glyph: this.isDynamicSpelling(text),
 					staffNumber,
 					lead,
 					placement,
@@ -922,7 +802,7 @@ export class ScoreReader {
 					type,
 					number: wedge.number,
 					crescendo: opener === 'crescendo',
-					placement: placementOf(direction, 'below'),
+					placement: this.placementOf(direction, 'below'),
 				});
 			}
 		}
@@ -1064,7 +944,7 @@ export class ScoreReader {
 					}
 					open.set(key, {
 						from,
-						above: placementOf(direction) === 'above',
+						above: this.placementOf(direction) === 'above',
 						dash: spec.dash,
 						startEnd: spec.lineEnd,
 					});
@@ -1103,8 +983,8 @@ export class ScoreReader {
 			if (!lead) {
 				continue;
 			}
-			const text = harmonyText(harmony);
-			const frame = frameOf(harmony);
+			const text = this.harmonyText(harmony);
+			const frame = this.frameOf(harmony);
 			if (!text && !frame) {
 				continue;
 			}
@@ -1166,7 +1046,7 @@ export class ScoreReader {
 	 * stable across a part, so the first measure that declares either settles it. */
 	isTabStaff(part: Part, staffNumber: string): boolean {
 		for (const measure of part.measures) {
-			if (hasStaffTuning(measure, staffNumber)) {
+			if (this.hasStaffTuning(measure, staffNumber)) {
 				return true;
 			}
 			const clef = measure.getClef(staffNumber);
@@ -1290,7 +1170,7 @@ export class ScoreReader {
 	partGroups(score: Score): PartGroup[] {
 		return score.partGroups
 			.flatMap((group) => {
-				const symbol = groupSymbol(group.symbol);
+				const symbol = this.groupSymbol(group.symbol);
 				return symbol && group.toPartIndex > group.fromPartIndex
 					? [
 							{
@@ -1343,7 +1223,7 @@ export class ScoreReader {
 	 * one-measure endings.
 	 */
 	measureRepeats(measures: readonly Measure[]): MeasureRepeat[] {
-		const read = measures.map(readBarlines);
+		const read = measures.map((measure) => this.readBarlines(measure));
 		const out: MeasureRepeat[] = [];
 		let open: string | null = null;
 		for (const [i, r] of read.entries()) {
@@ -1379,114 +1259,243 @@ export class ScoreReader {
 		}
 		return out;
 	}
-}
 
-/* Which kinds of stave a render shows, from Config.showTabs/showNotation. Both are asked
- * together everywhere a part's stave rows are derived, so they travel as one value. */
-export interface StaveVisibility {
-	showTabs: boolean;
-	showNotation: boolean;
-}
+	/**
+	 * One side of a metric modulation, as the drawing side wants it. Beams are counted rather
+	 * than tracked as a run: a 'begin'/'continue' marker means that beam level carries on to the
+	 * NEXT note, so counting them gives the beams to draw in the gap, while an 'end'/'backward
+	 * hook' marker only says this note is beamed at all.
+	 */
+	private modulationNotesOf(notes: MetronomeNote[]): ModulationNote[] {
+		return notes.map((note) => ({
+			type: note.type,
+			dots: note.dots,
+			beamed: note.beams.length > 0,
+			beamsToNext: note.beams.filter(
+				(beam) => beam === 'begin' || beam === 'continue',
+			).length,
+			tuplet: note.tuplet
+				? { actual: note.tuplet.actual, type: note.tuplet.type }
+				: null,
+		}));
+	}
 
-/** A `<part-group>` span: the run of parts it brackets, and the connector to draw. */
-export type PartGroup = {
-	/** Index into the rendered `parts` array of the group's first and last part. */
-	fromPart: number;
-	toPart: number;
-	symbol: 'brace' | 'bracket' | 'line';
-	/** Nesting depth — 0 is outermost, and each level draws further left of the system. */
-	depth: number;
-	/** The group's `<group-name>`, printed left of its symbol; null when it declares none. */
-	name: string | null;
-};
+	/**
+	 * A `<direction>`'s placement attribute. MusicXML leaves it optional and the default is
+	 * renderer's choice; vexml keeps 'above' as the default so an unmarked directive draws
+	 * where it always has. Callers that engrave BELOW by convention (dynamics, wedges) pass
+	 * their own default rather than reading it from here.
+	 */
+	private placementOf(
+		direction: Direction,
+		fallback: Placement = 'above',
+	): Placement {
+		return direction.placement ?? fallback;
+	}
 
-/** True when `<staff-details>` gives this staff both string tunings and an explicit
- * `<staff-lines>` — the MusicXML signal for tablature that doesn't depend on the clef.
- *
- * Tunings alone are not enough: Guitar Pro copies a guitar's six `<staff-tuning>`s onto
- * the *notation* staff of a notation+tab part (and onto unrelated parts sharing the
- * instrument), where they mean nothing. A real tab staff always sizes itself with
- * `<staff-lines>`, so requiring both keeps those spurious tunings from turning notation
- * staves into tab. StaffDetails is what makes this askable: Measure.getStaveLines applies
- * the 5-line default, which erases the difference between declared and absent. */
-function hasStaffTuning(measure: Measure, staffNumber: string): boolean {
-	const details = measure.getStaffDetails(staffNumber);
-	return (
-		!!details && details.staffTunings.length > 0 && details.staffLines !== null
-	);
-}
+	/** True when every letter of a marking has a SMuFL glyph, so it can engrave as music
+	 * rather than as text — false for an <other-dynamics> like "abc-ffz". */
+	private isDynamicSpelling(text: string): boolean {
+		return [...text].every((ch) => ch in DYNAMIC_GLYPHS);
+	}
 
-/** MusicXML `<group-symbol>` -> the connector vexml draws. null means "draw nothing". */
-function groupSymbol(
-	symbol: PartGroupSpan['symbol'],
-): PartGroup['symbol'] | null {
-	switch (symbol) {
-		case 'brace':
-			return 'brace';
-		case 'bracket':
-		// vexflow has no squared-bracket connector; a bracket is the nearest reading.
-		case 'square':
-			return 'bracket';
-		case 'line':
-			return 'line';
-		default:
+	/*
+	 * Swap the ASCII accidentals a <kind text="…"> suffix carries for an extension (e.g.
+	 * "7(b9#11)") for the real Unicode signs ("7(♭9♯11)"), so they match the root's ♭/♯
+	 * and pick up drawHarmony's smaller accidental sizing. An accidental in an extension
+	 * always sits before its scale-degree number, so the digit lookahead avoids touching
+	 * any letter that just happens to be a "b" (none of the suffix words use one, but the
+	 * lookahead keeps it unambiguous).
+	 */
+	private harmonyExtensionSigns(kind: string): string {
+		return kind.replace(/b(?=\d)/g, '♭').replace(/#(?=\d)/g, '♯');
+	}
+
+	/*
+	 * A <harmony>'s printed chord symbol, e.g. "G7", "C", "F♯m": the <root-step> plus
+	 * any <root-alter> sign, then the <kind text="…"> suffix MusicXML carries for
+	 * exactly this (a major triad's text is empty, so it prints the bare root), falling
+	 * back to the kind's conventional suffix when the exporter omits the attribute. A
+	 * <bass> (slash chord) appends "/<bass-step><bass-alter>", e.g. "E♭/B♭".
+	 * ponytail: <degree> alterations (an added 9th, a flat 5) are ignored — they only
+	 * refine a suffix the kind already names. Fold them in if a fixture needs "C5(add9)".
+	 */
+	private harmonyText(harmony: Harmony): string {
+		const root = harmony.root;
+		const step = root?.step ?? '';
+		const alter = root ? (HARMONY_ALTER[root.alter ?? ''] ?? '') : '';
+		const kindEl = harmony.kind;
+		const kind = this.harmonyExtensionSigns(
+			kindEl?.text ?? (kindEl ? (HARMONY_KIND_SUFFIX[kindEl.value] ?? '') : ''),
+		);
+		const bass = harmony.bass;
+		const bassText = bass?.step
+			? `/${bass.step}${HARMONY_ALTER[bass.alter ?? ''] ?? ''}`
+			: '';
+		return step + alter + kind + bassText;
+	}
+
+	/*
+	 * The chord-diagram (<frame>) carried by a <harmony>, parsed into the ChordDiagramGlyph
+	 * spec. MusicXML <fret>s are absolute, so they're shifted to be relative to
+	 * <first-fret> (the top displayed fret line, drawn as the position label). Strings
+	 * with no <frame-note> are muted ('x'); fret 0 is an open string. A <barre> spans
+	 * from its `start` frame-note's string to its `stop` frame-note's string, at the
+	 * shared (relative) fret. Returns null when the harmony carries no <frame>.
+	 * MusicXML numbers strings high-to-low (1 = highest), matching the ChordDiagramGlyph's
+	 * left-to-right (string 1 rightmost) convention.
+	 */
+	private frameOf(harmony: Harmony): ChordFrame | null {
+		const frame = harmony.frame;
+		if (!frame) {
 			return null;
-	}
-}
-
-export type MeasureRepeat = {
-	/** A left `<repeat direction="forward"/>`: the measure opens a repeat block. */
-	repeatBegin: boolean;
-	/** A right `<repeat direction="backward"/>`: the measure closes one. */
-	repeatEnd: boolean;
-	/** How many times a backward repeat plays the block; null when there is no repeat end. */
-	repeatTimes: number | null;
-	/** The ending (volta) run covering this measure, or null when it's outside one. */
-	ending: MeasureEnding | null;
-};
-
-export type MeasureEnding = {
-	/** The raw `<ending number>` — a list or range like `"1"`, `"1,2"`, `"1-3"`. */
-	number: string;
-	/** Whether the run starts here (its bracket's left hook). */
-	first: boolean;
-	/** Whether the run ends here (its bracket's right hook, and where playback jumps). */
-	last: boolean;
-	/** The bracket stays open on the right, with no down hook. */
-	open: boolean;
-};
-
-type BarlineRead = {
-	repeatBegin: boolean;
-	repeatEnd: boolean;
-	repeatTimes: number | null;
-	started: string | null;
-	closed: 'stop' | 'discontinue' | null;
-};
-
-/* One measure's `<barline>`s flattened: MusicXML allows several (a left repeat and a right one),
- * and the edge each sits on is already implied by its repeat direction and ending type. */
-function readBarlines(measure: Measure): BarlineRead {
-	const read: BarlineRead = {
-		repeatBegin: false,
-		repeatEnd: false,
-		repeatTimes: null,
-		started: null,
-		closed: null,
-	};
-	for (const barline of measure.barlines) {
-		if (barline.repeat === 'forward') {
-			read.repeatBegin = true;
-		} else if (barline.repeat === 'backward') {
-			read.repeatEnd = true;
-			read.repeatTimes = barline.repeatTimes;
 		}
-		const ending = barline.ending;
-		if (ending?.type === 'start') {
-			read.started = ending.number;
-		} else if (ending) {
-			read.closed = ending.type;
+		const numStrings = frame.strings;
+		const frameNotes = frame.frameNotes;
+
+		// string -> absolute fret (0 = open).
+		const absFret = new Map<number, number>();
+		for (const fn of frameNotes) {
+			absFret.set(fn.string, fn.fret);
+		}
+		const fretted = [...absFret.values()].filter((f) => f > 0);
+
+		// <first-fret> is the absolute fret of the box's top line. Lead sheets often omit it, so
+		// derive it: a chord with no open strings whose lowest fretted note is past the nut
+		// starts the box at that fret instead of drawing a tall, mostly-empty box down from the
+		// nut. Open strings pin the box to the nut (firstFret 1).
+		const hasOpen = [...absFret.values()].includes(0);
+		const firstFret =
+			frame.firstFret ??
+			(fretted.length > 0 && !hasOpen ? Math.min(...fretted) : 1);
+		const toRelative = (abs: number) => (abs === 0 ? 0 : abs - firstFret + 1);
+
+		const played = new Map<number, number>(); // string -> relative fret
+		const barreStart = new Map<number, number>(); // relative fret -> from string
+		const barres: ChordFrame['barres'] = [];
+		for (const fn of frameNotes) {
+			const relFret = toRelative(fn.fret);
+			played.set(fn.string, relFret);
+			if (fn.barre === 'start') {
+				barreStart.set(relFret, fn.string);
+			} else if (fn.barre === 'stop') {
+				const from = barreStart.get(relFret);
+				if (from !== undefined) {
+					barres?.push({
+						fromString: from,
+						toString: fn.string,
+						fret: relFret,
+					});
+				}
+			}
+		}
+
+		// Position label, for movable shapes only (box not at the nut). Its number is the fret of
+		// the lowest-sounding fretted string (the highest played string number), drawn beside
+		// that note's row rather than at the box top — guitarists finger from the lowest string
+		// up, so the number marks where the hand sits. The box layout still keys off firstFret
+		// (the lowest fret), so the dots stay compact regardless of where the label lands.
+		let position = firstFret;
+		let positionText = 0;
+		if (firstFret > 1 && fretted.length > 0) {
+			const lowString = Math.max(
+				...[...absFret].filter(([, f]) => f > 0).map(([s]) => s),
+			);
+			const lowFret = absFret.get(lowString) as number;
+			position = lowFret;
+			positionText = lowFret - firstFret;
+		}
+
+		const chord: ChordFrame['chord'] = [];
+		for (let s = 1; s <= numStrings; s += 1) {
+			chord.push([s, played.has(s) ? (played.get(s) as number) : 'x']);
+		}
+		return { chord, position, positionText, barres };
+	}
+
+	/*
+	 * The <multiple-rest> count every staff of a measure agrees on, or null when they disagree (or
+	 * when there is none). Collapsing removes the whole measure COLUMN, so a run declared on only
+	 * some of a part's staves must not collapse — the others' music would be swallowed with it.
+	 *
+	 * A <measure-style> with no `number` applies to every staff, so an ordinary multirest agrees
+	 * trivially; only an explicit per-staff disagreement trips this.
+	 * ponytail: no fixture covers that case — no score in tmp/ writes one, and both hands of a
+	 * piano rest together. It's here because the failure it prevents is deleting played music.
+	 */
+	private multiRestCountOf(measure: Measure | undefined): number | null {
+		if (!measure) {
+			return null;
+		}
+		const count = measure.getMultiRestCount('1');
+		for (let staff = 2; staff <= measure.staveCount; staff++) {
+			if (measure.getMultiRestCount(String(staff)) !== count) {
+				return null;
+			}
+		}
+		return count;
+	}
+
+	/** True when `<staff-details>` gives this staff both string tunings and an explicit
+	 * `<staff-lines>` — the MusicXML signal for tablature that doesn't depend on the clef.
+	 *
+	 * Tunings alone are not enough: Guitar Pro copies a guitar's six `<staff-tuning>`s onto
+	 * the *notation* staff of a notation+tab part (and onto unrelated parts sharing the
+	 * instrument), where they mean nothing. A real tab staff always sizes itself with
+	 * `<staff-lines>`, so requiring both keeps those spurious tunings from turning notation
+	 * staves into tab. StaffDetails is what makes this askable: Measure.getStaveLines applies
+	 * the 5-line default, which erases the difference between declared and absent. */
+	private hasStaffTuning(measure: Measure, staffNumber: string): boolean {
+		const details = measure.getStaffDetails(staffNumber);
+		return (
+			!!details &&
+			details.staffTunings.length > 0 &&
+			details.staffLines !== null
+		);
+	}
+
+	/** MusicXML `<group-symbol>` -> the connector vexml draws. null means "draw nothing". */
+	private groupSymbol(
+		symbol: PartGroupSpan['symbol'],
+	): PartGroup['symbol'] | null {
+		switch (symbol) {
+			case 'brace':
+				return 'brace';
+			case 'bracket':
+			// vexflow has no squared-bracket connector; a bracket is the nearest reading.
+			case 'square':
+				return 'bracket';
+			case 'line':
+				return 'line';
+			default:
+				return null;
 		}
 	}
-	return read;
+
+	/* One measure's `<barline>`s flattened: MusicXML allows several (a left repeat and a right one),
+	 * and the edge each sits on is already implied by its repeat direction and ending type. */
+	private readBarlines(measure: Measure): BarlineRead {
+		const read: BarlineRead = {
+			repeatBegin: false,
+			repeatEnd: false,
+			repeatTimes: null,
+			started: null,
+			closed: null,
+		};
+		for (const barline of measure.barlines) {
+			if (barline.repeat === 'forward') {
+				read.repeatBegin = true;
+			} else if (barline.repeat === 'backward') {
+				read.repeatEnd = true;
+				read.repeatTimes = barline.repeatTimes;
+			}
+			const ending = barline.ending;
+			if (ending?.type === 'start') {
+				read.started = ending.number;
+			} else if (ending) {
+				read.closed = ending.type;
+			}
+		}
+		return read;
+	}
 }
