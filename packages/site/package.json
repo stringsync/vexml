@@ -1,0 +1,22 @@
+{
+	"name": "@vexml/site",
+	"version": "1.2.4",
+	"private": true,
+	"type": "module",
+	"dependencies": {
+		"@stringsync/vexml": "workspace:*",
+		"@webappwiz/react": "0.0.1",
+		"react": "^19.2.7",
+		"react-dom": "^19.2.7",
+		"smplr": "^1.0.0",
+		"webappwiz": "0.0.1"
+	},
+	"devDependencies": {
+		"@tailwindcss/vite": "^4.3.1",
+		"@types/react": "^19.2.17",
+		"@types/react-dom": "^19.2.3",
+		"@vitejs/plugin-react": "^6.0.3",
+		"tailwindcss": "^4.3.1",
+		"vite": "^8.1.0"
+	}
+}

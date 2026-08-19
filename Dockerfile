@@ -23,6 +23,7 @@ WORKDIR /app
 # until a manifest actually changes.
 COPY package.json bun.lock ./
 COPY packages/vexml/package.json packages/vexml/
+COPY packages/site/package.json packages/site/
 RUN bun install --frozen-lockfile
 
 COPY . .

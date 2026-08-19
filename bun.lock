@@ -7,14 +7,9 @@
       "devDependencies": {
         "@biomejs/biome": "2.5.1",
         "@coderline/alphatab": "^1.8.4",
-        "@tailwindcss/vite": "^4.3.1",
         "@types/bun": "latest",
         "@types/pngjs": "^6.0.5",
-        "@types/react": "^19.2.17",
-        "@types/react-dom": "^19.2.3",
-        "@vitejs/plugin-react": "^6.0.3",
         "@webappwiz/arbor": "0.0.1",
-        "@webappwiz/react": "0.0.1",
         "canvas": "^3.2.3",
         "chalk": "5.6.2",
         "commander": "15.0.0",
@@ -22,14 +17,29 @@
         "pixelmatch": "^7.2.0",
         "playwright": "^1.61.1",
         "pngjs": "^7.0.0",
-        "react": "^19.2.7",
-        "react-dom": "^19.2.7",
-        "smplr": "^1.0.0",
-        "tailwindcss": "^4.3.1",
-        "vite": "^8.1.0",
       },
       "peerDependencies": {
         "typescript": "^5",
+      },
+    },
+    "packages/site": {
+      "name": "@vexml/site",
+      "version": "1.2.4",
+      "dependencies": {
+        "@stringsync/vexml": "workspace:*",
+        "@webappwiz/react": "0.0.1",
+        "react": "^19.2.7",
+        "react-dom": "^19.2.7",
+        "smplr": "^1.0.0",
+        "webappwiz": "0.0.1",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.3.1",
+        "@types/react": "^19.2.17",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^6.0.3",
+        "tailwindcss": "^4.3.1",
+        "vite": "^8.1.0",
       },
     },
     "packages/vexml": {
@@ -169,6 +179,8 @@
     "@types/react-dom": ["@types/react-dom@19.2.3", "", { "peerDependencies": { "@types/react": "^19.2.0" } }, "sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ=="],
 
     "@types/vexflow": ["@types/vexflow@1.2.42", "", {}, "sha512-bj3If1sm1FYJN0tJMV2BJNrwoeQ6xfrTt+rbmFvUytyxUhklLlW79MR4uwQ+upzrNJLVy012TnC7oZqSpEglSw=="],
+
+    "@vexml/site": ["@vexml/site@workspace:packages/site"],
 
     "@vitejs/plugin-react": ["@vitejs/plugin-react@6.0.3", "", { "dependencies": { "@rolldown/pluginutils": "^1.0.1" }, "peerDependencies": { "@rolldown/plugin-babel": "^0.1.7 || ^0.2.0", "babel-plugin-react-compiler": "^1.0.0", "vite": "^8.0.0" }, "optionalPeers": ["@rolldown/plugin-babel", "babel-plugin-react-compiler"] }, "sha512-vmFvco5/QuC2f9Oj+wTk0+9XeDFkHxSamwZKYc7MxYwKICfvUvlMhqKI0VuICPltGqh1neqBKDvO4kes1ya8vg=="],
 

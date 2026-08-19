@@ -1,5 +1,5 @@
 node_modules
-site/dist
+packages/site/dist
 .zed
 tests/integration/__diffs__/
 .DS_Store
