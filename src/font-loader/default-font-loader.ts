@@ -1,11 +1,7 @@
 import { VexFlow } from 'vexflow';
-import {
-	DEFAULT_FONT_CONFIG,
-	type FontConfig,
-	type FontOverride,
-} from '../config';
+import type { FontConfig, FontOverride } from '../config';
+import { FontFamilies } from './font-families';
 import type { FontLoader } from './font-loader';
-import { sanitizeFontValue } from './sanitize-font-value';
 
 // DOM-derived dedup: injected <style>/<link> elements are tagged with data attributes
 // (data-vexml-font-face="family|url", data-vexml-google-fonts) and checked before
@@ -20,7 +16,7 @@ export class DefaultFontLoader implements FontLoader {
 		container: HTMLElement,
 		config?: FontConfig,
 	): { notation: string; text: string } {
-		const { notation, text } = resolveFamilies(config);
+		const { notation, text } = new FontFamilies(config);
 		if (typeof document === 'undefined') {
 			return { notation, text }; // SSR guard
 		}
@@ -88,11 +84,11 @@ export class DefaultFontLoader implements FontLoader {
 		url: string,
 		display: 'block' | 'swap',
 	): void {
-		family = sanitizeFontValue(family);
-		url = sanitizeFontValue(url);
+		family = FontFamilies.sanitize(family);
+		url = FontFamilies.sanitize(url);
 		const key = `${family}|${url}`;
 		// Dedup via the data-vexml-font-face marker on the injected <style>. The key is safe
-		// to embed in the attribute selector: sanitizeFontValue already stripped quotes and
+		// to embed in the attribute selector: FontFamilies.sanitize already stripped quotes and
 		// backslashes.
 		if (document.head.querySelector(`style[data-vexml-font-face="${key}"]`)) {
 			return;
@@ -128,19 +124,4 @@ export class DefaultFontLoader implements FontLoader {
 			`'${textFamily}', sans-serif`,
 		);
 	}
-}
-
-// The pure name-resolution logic shared by both loaders: the family-name fallbacks
-// from DEFAULT_FONT_CONFIG, sanitized once.
-export function resolveFamilies(config?: FontConfig): {
-	notation: string;
-	text: string;
-} {
-	const notation = sanitizeFontValue(
-		config?.notation?.family ?? DEFAULT_FONT_CONFIG.notation.family,
-	);
-	const text = sanitizeFontValue(
-		config?.text?.family ?? DEFAULT_FONT_CONFIG.text.family,
-	);
-	return { notation, text };
 }

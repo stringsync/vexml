@@ -1,5 +1,5 @@
 import type { FontConfig } from '../config';
-import { resolveFamilies } from './default-font-loader';
+import { FontFamilies } from './font-families';
 import type { FontLoader } from './font-loader';
 
 /** Resolves the family names without touching the DOM or VexFlow — for callers that
@@ -9,6 +9,6 @@ export class NoopFontLoader implements FontLoader {
 		_container: HTMLElement,
 		config?: FontConfig,
 	): { notation: string; text: string } {
-		return resolveFamilies(config);
+		return new FontFamilies(config);
 	}
 }
