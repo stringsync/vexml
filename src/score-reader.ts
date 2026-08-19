@@ -1122,7 +1122,7 @@ export class ScoreReader {
 	 * The beat a measure's voices run out to: the latest onset+duration across them.
 	 * Voices that end before this (e.g. one silent on the final beat via <forward>)
 	 * are padded out to it so every voice spans the same range — see the trailing
-	 * fill in vexflowVoiceTickables.
+	 * fill in voiceTickables.
 	 */
 	endBeatOf(voices: { chords: Chord[] }[]): number {
 		let end = 0;

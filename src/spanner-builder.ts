@@ -45,7 +45,7 @@ import {
 	TUPLET_NESTING_EXTRA_GAP,
 } from './constants';
 import { Rect } from './geometry';
-import { NoteheadArticulation } from './note-translator';
+import { NoteheadArticulation } from './notation-translator';
 
 import { LINE_TYPE_DASH, type PedalMark, type WedgeMark } from './score-reader';
 

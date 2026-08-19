@@ -40,29 +40,41 @@ Two files cut across the draw stage and are worth knowing before anything else:
 - `score-reader.ts` — the only place that answers *what does the MusicXML say*
   (clefs, keys, times, tunings, part groups, repeats, directions, endings).
   Nothing else should be reading mdom attributes directly.
-- `note-translator.ts` — one mdom chord to vexflow objects: noteheads,
-  accidentals, stems, rests, ties' anchors, articulations, ornaments, tab
-  frets, bends. If a single note looks wrong, it is usually here.
+- The translators — one mdom chord to vexflow objects. If a single note looks
+  wrong, it is one of these:
+  - `chord-translator.ts` — the StaveNote itself: keys, noteheads,
+    accidentals, dots, stems.
+  - `notation-translator.ts` — what hangs off it: articulations, ornaments,
+    technical marks, fermatas, arpeggios, lyrics.
+  - `tab-translator.ts` — the tablature half: fret positions and styling,
+    bends, tab graces.
+  - `note-translator.ts` — a whole voice of tickables: onsets, ghost padding,
+    grace groups, mid-measure dividers and clef changes.
+  - `signature-translator.ts` (clef/key/time specs),
+    `barline-translator.ts` (repeat dots, voltas, mid-measure dividers),
+    `duration-translator.ts` (duration codes, ghost fills) and
+    `note-reader.ts` (the note attributes they all branch on) are the small
+    shared pieces underneath.
 
 ## Staves, measures, and the frame
 
-- **Stave, clef, key signature, time signature** — `stave-builder.ts`, `score-reader.ts`
-- **Mid-measure clef changes, mid-measure barlines** — `score-reader.ts` (`midClefsOf`, `midBarlinesOf`), `note-translator.ts`, `layout-planner.ts`
-- **Barlines, repeat signs, volta (ending) brackets** — `stave-builder.ts`, `connector-drawer.ts`, `score-reader.ts`
+- **Stave, clef, key signature, time signature** — `stave-builder.ts`, `signature-translator.ts`, `score-reader.ts`
+- **Mid-measure clef changes, mid-measure barlines** — `score-reader.ts` (`midClefsOf`, `midBarlinesOf`), `note-translator.ts`, `signature-translator.ts`, `barline-translator.ts`, `layout-planner.ts`
+- **Barlines, repeat signs, volta (ending) brackets** — `barline-translator.ts`, `stave-builder.ts`, `connector-drawer.ts`, `score-reader.ts`
 - **Measure numbers** — `stave-builder.ts` (`showsMeasureNumber`)
 - **Multi-measure rests** — `stave-builder.ts` (`drawMultiRest`), `layout-planner.ts`
 - **Braces, brackets, part-group connectors, part names** — `connector-drawer.ts`, `score-reader.ts`
-- **Percussion staves, unpitched notes** — `stave-builder.ts`, `note-translator.ts`
+- **Percussion staves, unpitched notes** — `stave-builder.ts`, `chord-translator.ts`
 - **Transposing parts** — `stave-builder.ts`, `system-formatter.ts`
 
 ## Notes and voices
 
-- **Noteheads, accidentals, stems, flags, rests, dots, ledger lines** — `note-translator.ts`
+- **Noteheads, accidentals, stems, flags, rests, dots, ledger lines** — `chord-translator.ts`
 - **Voices on one stave, stem direction, voice-level layout** — `voice-builder.ts`
 - **Beams, tuplets, grace notes** — `voice-builder.ts` (grouping), `spanner-builder.ts` (construction), `system-formatter.ts` (grace spacing)
 - **Cross-staff notes and beams** — `voice-builder.ts`
-- **Articulations, fermatas, ornaments, trills, tremolos, arpeggios, harmonics** — `note-translator.ts`
-- **Invisible notes (`print-object="no"`), note colors** — `note-translator.ts`
+- **Articulations, fermatas, ornaments, trills, tremolos, arpeggios, harmonics** — `notation-translator.ts`
+- **Invisible notes (`print-object="no"`), note colors** — `chord-translator.ts`
 - **Formatting a measure column: note x, note extents, alignment** — `system-formatter.ts`
 
 ## Horizontal spacing (how wide a measure is, where a note sits in it)
@@ -112,12 +124,12 @@ Two files cut across the draw stage and are worth knowing before anything else:
 - **Chord symbols (`<harmony>`)** — `direction-placer.ts`
 - **Chord diagrams (fret boxes)** — `chord-diagram-glyph.ts` (drawing), `direction-placer.ts` (placement), `chord-diagram.ts` (the element)
 - **Lyrics, verses, melisma lines** — `lyric-placer.ts`, `lyric-mark/`
-- **Fingerings, string numbers, other technical marks** — `technical-mark/`, `note-translator.ts`, `system-formatter.ts` (stacking)
+- **Fingerings, string numbers, other technical marks** — `technical-mark/`, `notation-translator.ts`, `system-formatter.ts` (stacking)
 
 ## Tablature
 
 - **Tab staves, tunings, whether a part is tab** — `score-reader.ts`, `stave-builder.ts`
-- **Fret numbers, tab stems, bends** — `note-translator.ts`, `voice-builder.ts`
+- **Fret numbers, tab stems, bends** — `tab-translator.ts`, `voice-builder.ts`
 - **Tab note geometry for the hit index** — `geometry-collector.ts`
 - **The `TabPosition` a caller gets back** — `tab-position.ts`
 

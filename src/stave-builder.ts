@@ -8,6 +8,7 @@ import {
 	StaveModifierPosition,
 	TabStave,
 } from 'vexflow';
+import { BAR_STYLE_TYPES, type BarlineDecoration } from './barline-translator';
 import type { CollisionResolver } from './collision-resolver';
 import type { Gap, MeasureNumbering } from './config';
 import {
@@ -17,12 +18,8 @@ import {
 } from './constants';
 import type { Gaps } from './gaps';
 import { Rect } from './geometry';
-import {
-	BAR_STYLE_TYPES,
-	type BarlineDecoration,
-	type NoteTranslator,
-} from './note-translator';
 import type { PartGroup, ScoreReader, StaveVisibility } from './score-reader';
+import type { SignatureTranslator } from './signature-translator';
 import type { SpillTracker } from './spill-tracker';
 
 /*
@@ -168,7 +165,7 @@ export class StaveBuilder {
 	private readonly multiRests: ReadonlyMap<number, number>;
 
 	constructor(
-		private readonly translator: NoteTranslator,
+		private readonly signatures: SignatureTranslator,
 		private readonly reader: ScoreReader,
 		private readonly context: RenderContext,
 		private readonly collisionResolver: CollisionResolver,
@@ -339,13 +336,13 @@ export class StaveBuilder {
 		const keyChanged =
 			this.reader.keyIdentity(key) !== this.reader.keyIdentity(prevKey);
 		const clefName = clef
-			? this.translator.vexflowClef(clef.sign, clef.line)
+			? this.signatures.vexflowClef(clef.sign, clef.line)
 			: 'treble';
 		// A <key> spelled out accidental by accidental (<key-step>/<key-alter>), which vexflow's
 		// own KeySignature can't take a spec for; empty for an ordinary <fifths> key. The
 		// positions depend on the clef, so this is read per stave.
 		const customKey =
-			key && !isTab ? this.translator.customKeyAccidentals(key, clefName) : [];
+			key && !isTab ? this.signatures.customKeyAccidentals(key, clefName) : [];
 		// The key being replaced, so vexflow can print the naturals that cancel it — the
 		// only thing a change TO C major has to draw, and without it M2 of
 		// transpose_change looked like no change happened at all. vexflow applies the
@@ -355,7 +352,7 @@ export class StaveBuilder {
 		// A non-traditional key has no spec to cancel with, either side of the change.
 		const cancelKeySpec =
 			keyChanged && prevKey?.rootNote && customKey.length === 0
-				? this.translator.vexflowKeySpec(prevKey)
+				? this.signatures.vexflowKeySpec(prevKey)
 				: undefined;
 		const addKeySignature = () => {
 			if (customKey.length > 0) {
@@ -367,7 +364,7 @@ export class StaveBuilder {
 				);
 			} else if (key?.rootNote) {
 				stave.addKeySignature(
-					this.translator.vexflowKeySpec(key),
+					this.signatures.vexflowKeySpec(key),
 					cancelKeySpec,
 				);
 			}
@@ -377,8 +374,8 @@ export class StaveBuilder {
 		// been announced, so restating it here would draw the same glyph twice.
 		const clefChanged =
 			m > 0 &&
-			this.translator.vexflowClefSpec(clef) !==
-				this.translator.vexflowClefSpec(
+			this.signatures.vexflowClefSpec(clef) !==
+				this.signatures.vexflowClefSpec(
 					this.reader.clefAtEndOf(prevMeasure, staffNumber),
 				);
 
@@ -400,7 +397,7 @@ export class StaveBuilder {
 				stave.addClef(
 					clefName,
 					undefined,
-					this.translator.vexflowClefAnnotation(clef?.octaveChange ?? null),
+					this.signatures.vexflowClefAnnotation(clef?.octaveChange ?? null),
 				);
 			}
 			// Tab staves carry no key signature.
@@ -410,9 +407,9 @@ export class StaveBuilder {
 		} else {
 			if (clef && clefChanged && !isTab) {
 				stave.addClef(
-					this.translator.vexflowClef(clef.sign, clef.line),
+					this.signatures.vexflowClef(clef.sign, clef.line),
 					'small',
-					this.translator.vexflowClefAnnotation(clef.octaveChange),
+					this.signatures.vexflowClefAnnotation(clef.octaveChange),
 				);
 			}
 			if (keyChanged && !isTab) {
@@ -433,9 +430,9 @@ export class StaveBuilder {
 		// guessing at the music.
 		const time = measure.getTime(staffNumber);
 		const timeSpec =
-			this.translator.timeSignatureSpec(time) ??
+			this.signatures.timeSignatureSpec(time) ??
 			(m === 0 && !time ? '4/4' : null);
-		const prevTimeSpec = this.translator.timeSignatureSpec(
+		const prevTimeSpec = this.signatures.timeSignatureSpec(
 			prevMeasure?.getTime(staffNumber) ?? null,
 		);
 		if (timeSpec && !isTab && (m === 0 || timeSpec !== prevTimeSpec)) {

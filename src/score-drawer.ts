@@ -1,5 +1,7 @@
 import type { Score } from '@stringsync/mdom';
 import { Renderer } from 'vexflow';
+import type { BarlineTranslator } from './barline-translator';
+import type { ChordTranslator } from './chord-translator';
 import type { Config } from './config';
 import {
 	LEDGER_HEADROOM,
@@ -17,8 +19,10 @@ import type {
 import type { ScoreLayout } from './layout-planner';
 import type { NoteTranslator } from './note-translator';
 import type { ScoreReader } from './score-reader';
+import type { SignatureTranslator } from './signature-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillResolver } from './spill-resolver';
+import type { TabTranslator } from './tab-translator';
 
 /* Everything the draw pass emits for the index, in score space (crop already applied). */
 export interface RawGeometry {
@@ -37,6 +41,10 @@ export class ScoreDrawer {
 	constructor(
 		private config: Config,
 		private translator: NoteTranslator,
+		private chords: ChordTranslator,
+		private tab: TabTranslator,
+		private signatures: SignatureTranslator,
+		private barlines: BarlineTranslator,
 		private reader: ScoreReader,
 		private spanners: SpannerBuilder,
 		private gaps: Gaps,
@@ -107,6 +115,10 @@ export class ScoreDrawer {
 		) =>
 			new DrawPass(
 				this.translator,
+				this.chords,
+				this.tab,
+				this.signatures,
+				this.barlines,
 				this.reader,
 				this.spanners,
 				this.config,

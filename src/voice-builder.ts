@@ -9,15 +9,14 @@ import {
 	type TabNote,
 	type TabStave,
 } from 'vexflow';
+import { BAR_STYLE_TYPES } from './barline-translator';
 import { isLyricMark } from './lyric-mark/lyric-mark';
-import {
-	BAR_STYLE_TYPES,
-	type MidClefSpec,
-	type NoteTranslator,
-} from './note-translator';
+import type { NoteTranslator } from './note-translator';
 import type { ScoreReader, StaffVoice } from './score-reader';
+import type { MidClefSpec } from './signature-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import type { PendingStave } from './system-formatter';
+import type { TabTranslator } from './tab-translator';
 
 /* The measure context one call to VoiceBuilder.buildNotes lays its notes out in. Every one
  * of these is absent from a measure that says nothing about it, so each defaults to the
@@ -74,6 +73,7 @@ export class VoiceBuilder {
 
 	constructor(
 		private readonly translator: NoteTranslator,
+		private readonly tab: TabTranslator,
 		private readonly reader: ScoreReader,
 		private readonly spanners: SpannerBuilder,
 		opts: VoiceBuilderOptions,
@@ -146,7 +146,7 @@ export class VoiceBuilder {
 			for (const chord of chords) {
 				chordByLead.set(chord.lead, chord);
 			}
-			const tickables = this.translator.vexflowVoiceTickables(chords, clef, {
+			const tickables = this.translator.voiceTickables(chords, clef, {
 				endBeat,
 				record: (lead, note) => {
 					this.byLead.set(lead, note);
@@ -371,25 +371,21 @@ export class VoiceBuilder {
 				chordByLead.set(chord.lead, chord);
 			}
 			return this.translator.softVoice(
-				this.translator.vexflowTabTickables(
-					chords,
-					tuning,
-					(lead, tickable) => {
-						byTabTickable.set(lead, tickable);
-						if (tickable instanceof GhostNote) {
-							return;
-						}
-						const tabNote = tickable as TabNote;
-						this.byTabLead.set(lead, tabNote);
-						const chord = chordByLead.get(lead);
-						if (chord) {
-							(lead.isGrace ? graceTabChords : tabChords).push({
-								note: tabNote,
-								chord,
-							});
-						}
-					},
-				),
+				this.tab.tickables(chords, tuning, (lead, tickable) => {
+					byTabTickable.set(lead, tickable);
+					if (tickable instanceof GhostNote) {
+						return;
+					}
+					const tabNote = tickable as TabNote;
+					this.byTabLead.set(lead, tabNote);
+					const chord = chordByLead.get(lead);
+					if (chord) {
+						(lead.isGrace ? graceTabChords : tabChords).push({
+							note: tabNote,
+							chord,
+						});
+					}
+				}),
 				this.softmaxFactor,
 			);
 		});

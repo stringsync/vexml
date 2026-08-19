@@ -4,8 +4,8 @@ import { CollisionResolver } from './collision-resolver';
 import type { MeasureNumbering } from './config';
 import { Gaps } from './gaps';
 import { Rect } from './geometry';
-import { NoteTranslator } from './note-translator';
 import { ScoreReader } from './score-reader';
+import { SignatureTranslator } from './signature-translator';
 import { SpillTracker } from './spill-tracker';
 import { StaveBuilder } from './stave-builder';
 
@@ -14,7 +14,7 @@ describe('StaveBuilder', () => {
 	// score answers for it. Nothing below draws.
 	const builder = (measureNumbering: MeasureNumbering) =>
 		new StaveBuilder(
-			new NoteTranslator(),
+			new SignatureTranslator(),
 			new ScoreReader(),
 			{} as RenderContext,
 			new CollisionResolver(new Rect(0, 0, 1000, 1000)),

@@ -10,13 +10,11 @@ import {
 	type TabStave,
 } from 'vexflow';
 import { FakeLyricMark } from './lyric-mark/fake-lyric-mark';
-import type {
-	NoteTranslator,
-	VexflowVoiceTickablesOptions,
-} from './note-translator';
+import type { NoteTranslator, VoiceTickablesOptions } from './note-translator';
 import type { ScoreReader, StaffVoice } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
 import type { PendingStave } from './system-formatter';
+import type { TabTranslator } from './tab-translator';
 import { type BuildNotesOptions, VoiceBuilder } from './voice-builder';
 
 describe('VoiceBuilder', () => {
@@ -62,7 +60,7 @@ describe('VoiceBuilder', () => {
 	type TickablesCall = {
 		chords: Chord[];
 		clef: string;
-		opts: VexflowVoiceTickablesOptions;
+		opts: VoiceTickablesOptions;
 	};
 
 	// The translator surface buildNotes drives. The default per-voice behavior mirrors
@@ -74,10 +72,10 @@ describe('VoiceBuilder', () => {
 		const calls: TickablesCall[] = [];
 		return {
 			calls,
-			vexflowVoiceTickables(
+			voiceTickables(
 				chords: Chord[],
 				clef: string,
-				opts: VexflowVoiceTickablesOptions,
+				opts: VoiceTickablesOptions,
 			) {
 				const call = { chords, clef, opts };
 				calls.push(call);
@@ -131,6 +129,7 @@ describe('VoiceBuilder', () => {
 	const makeBuilder = (
 		overrides: {
 			translator?: unknown;
+			tab?: unknown;
 			spanners?: unknown;
 			endBeat?: number;
 			octaveShiftByNote?: Map<Note, number>;
@@ -140,6 +139,7 @@ describe('VoiceBuilder', () => {
 	) =>
 		new VoiceBuilder(
 			(overrides.translator ?? fakeTranslator()) as NoteTranslator,
+			(overrides.tab ?? {}) as TabTranslator,
 			{ endBeatOf: () => overrides.endBeat ?? 0 } as unknown as ScoreReader,
 			(overrides.spanners ?? fakeSpanners()) as unknown as SpannerBuilder,
 			{
@@ -442,8 +442,8 @@ describe('VoiceBuilder', () => {
 		const byTabLead = new Map<Note, TabNote>();
 		const spanners = fakeSpanners();
 		const tuning = [64, 59, 55];
-		const translator = {
-			vexflowTabTickables: (
+		const tab = {
+			tickables: (
 				chords: Chord[],
 				gotTuning: number[] | null,
 				record?: (l: Note, tickable: unknown) => void,
@@ -455,14 +455,10 @@ describe('VoiceBuilder', () => {
 					return tickable;
 				});
 			},
-			softVoice: (tickables: unknown[], softmaxFactor: number) => ({
-				tickables,
-				softmaxFactor,
-			}),
 		};
 		const voice = staffVoice([chordOf(rest), chordOf(struck), chordOf(grace)]);
 		const pending = makeBuilder({
-			translator,
+			tab,
 			spanners,
 			byTabLead,
 		}).buildTabNotes({} as TabStave, 2, [voice], tuning);

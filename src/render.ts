@@ -1,3 +1,5 @@
+import { BarlineTranslator } from './barline-translator';
+import { ChordTranslator } from './chord-translator';
 import {
 	type Config,
 	type ConfigInput,
@@ -5,11 +7,14 @@ import {
 	DEFAULT_STANDARD_LAYOUT,
 	type Layout,
 } from './config';
+import { DurationTranslator } from './duration-translator';
 import { ElementFactory } from './element-factory';
 import { DefaultFontLoader } from './font-loader/default-font-loader';
 import { Gaps } from './gaps';
 import { Stage } from './host/stage';
 import { LayoutPlanner } from './layout-planner';
+import { NotationTranslator } from './notation-translator';
+import { NoteReader } from './note-reader';
 import { NoteTranslator } from './note-translator';
 import type { Score } from './score';
 import { ScoreDrawer } from './score-drawer';
@@ -17,8 +22,10 @@ import { DefaultScoreParser } from './score-parser/default-score-parser';
 import { ScoreReader } from './score-reader';
 import { ScoreRenderer } from './score-renderer';
 import { SequenceFactory } from './sequence-factory';
+import { SignatureTranslator } from './signature-translator';
 import { SpannerBuilder } from './spanner-builder';
 import { SpillResolver } from './spill-resolver';
+import { TabTranslator } from './tab-translator';
 
 /*
  * Render a MusicXML score into a container: parse the input (a MusicXML string or a compressed
@@ -58,9 +65,19 @@ export function render(
 		backgroundColor: resolved.backgroundColor,
 		fit,
 	});
+	const notes = new NoteReader();
+	const durations = new DurationTranslator();
+	const barlines = new BarlineTranslator();
+	const signatures = new SignatureTranslator();
+	const tab = new TabTranslator(notes, durations, resolved.tabStemPlacement);
+	const chords = new ChordTranslator(
+		notes,
+		durations,
+		new NotationTranslator(),
+	);
 	// ONE translator instance shared by layout and draw: both must build identical vexflow
 	// voices for the measured widths to match the drawn ones.
-	const translator = new NoteTranslator(resolved.tabStemPlacement);
+	const translator = new NoteTranslator(chords, durations, barlines);
 	const reader = new ScoreReader();
 	const gaps = new Gaps(resolved.gaps);
 	return new ScoreRenderer(
@@ -68,10 +85,14 @@ export function render(
 		stage,
 		new DefaultFontLoader(),
 		new DefaultScoreParser(),
-		new LayoutPlanner(translator, reader, gaps),
+		new LayoutPlanner(translator, tab, signatures, reader, gaps),
 		new ScoreDrawer(
 			resolved,
 			translator,
+			chords,
+			tab,
+			signatures,
+			barlines,
 			reader,
 			new SpannerBuilder(),
 			gaps,

@@ -9,6 +9,12 @@ import {
 	type TabNote,
 	type TabStave,
 } from 'vexflow';
+import {
+	type BarlineDecoration,
+	type BarlineTranslator,
+	NO_DECORATION,
+} from './barline-translator';
+import type { ChordTranslator } from './chord-translator';
 import { CollisionResolver } from './collision-resolver';
 import type { Config, Gap } from './config';
 import { type ConnectorColumn, ConnectorDrawer } from './connector-drawer';
@@ -38,17 +44,14 @@ import {
 } from './geometry-collector';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
 import { LyricPlacer } from './lyric-placer';
-import {
-	type BarlineDecoration,
-	NO_DECORATION,
-	type NoteTranslator,
-} from './note-translator';
+import type { NoteTranslator } from './note-translator';
 import type {
 	DirectionLineSpan,
 	OctaveShiftSpan,
 	PartGroup,
 	ScoreReader,
 } from './score-reader';
+import type { SignatureTranslator } from './signature-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import { SpannerResolver } from './spanner-resolver';
 import { SpillTracker, type StaveSpill } from './spill-tracker';
@@ -58,6 +61,7 @@ import {
 	type PendingStave,
 	SystemFormatter,
 } from './system-formatter';
+import type { TabTranslator } from './tab-translator';
 import { VoiceBuilder } from './voice-builder';
 
 /* What a redraw carries over from the pass before it. Both are empty on a first pass, which
@@ -239,7 +243,11 @@ export class DrawPass {
 	private readonly voltaLifts: Map<number, number>;
 
 	constructor(
-		private readonly translator: NoteTranslator,
+		readonly translator: NoteTranslator,
+		chords: ChordTranslator,
+		tab: TabTranslator,
+		private readonly signatures: SignatureTranslator,
+		barlines: BarlineTranslator,
 		private readonly reader: ScoreReader,
 		readonly spanners: SpannerBuilder,
 		config: Config,
@@ -318,7 +326,7 @@ export class DrawPass {
 			directionLineSpans.push(...this.reader.directionLinesOf(part));
 		}
 		// Read from the first part — a repeat or volta boundary applies across the system.
-		this.decorations = translator.barlineDecorations(
+		this.decorations = barlines.decorations(
 			reader.measureRepeats(this.parts[0]?.measures ?? []),
 		);
 		this.systemTopY = layout.top + topSlack;
@@ -327,7 +335,7 @@ export class DrawPass {
 			new Rect(0, 0, width, scratchHeight),
 		);
 		this.staveBuilder = new StaveBuilder(
-			translator,
+			this.signatures,
 			reader,
 			context,
 			this.collisionResolver,
@@ -355,7 +363,7 @@ export class DrawPass {
 			this.notationColor,
 			{ lyricDrops: opts.lyricDrops },
 		);
-		this.voiceBuilder = new VoiceBuilder(translator, reader, spanners, {
+		this.voiceBuilder = new VoiceBuilder(translator, tab, reader, spanners, {
 			softmaxFactor: this.softmaxFactor,
 			octaveShiftByNote: this.octaveShiftByNote,
 			byLead: this.byLead,
@@ -364,6 +372,7 @@ export class DrawPass {
 		this.systemFormatter = new SystemFormatter(
 			context,
 			translator,
+			chords,
 			spanners,
 			this.connectorDrawer,
 			this.lyricPlacer,
@@ -944,14 +953,14 @@ export class DrawPass {
 		} else if (voices.length > 0) {
 			const clef = measure.getClef(staffNumber);
 			const clefName = clef
-				? this.translator.vexflowClef(clef.sign, clef.line)
+				? this.signatures.vexflowClef(clef.sign, clef.line)
 				: 'treble';
 			this.pendingStaves.push(
 				this.voiceBuilder.buildNotes(stave, this.staveRow, voices, clefName, {
 					meterFloor: this.reader.meterFloor(measure, staffNumber),
 					clefOctaveShift: clef?.octaveChange ?? 0,
 					barlines: this.reader.midBarlinesOf(measure),
-					midClefs: this.translator.midClefSpecs(
+					midClefs: this.signatures.midClefSpecs(
 						this.reader.midClefsOf(measure, staffNumber),
 					),
 				}),

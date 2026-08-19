@@ -29,8 +29,10 @@ import {
 	WORDS_CHAR_WIDTH,
 } from './constants';
 import type { Gaps } from './gaps';
-import type { MidClefSpec, NoteTranslator } from './note-translator';
+import type { NoteTranslator } from './note-translator';
 import type { ScoreReader, StaffVoice } from './score-reader';
+import type { MidClefSpec, SignatureTranslator } from './signature-translator';
+import type { TabTranslator } from './tab-translator';
 
 /** A measure's placed box within its system. */
 export type MeasureBox = {
@@ -110,6 +112,8 @@ type StaveSpec = {
 export class LayoutPlanner {
 	constructor(
 		private readonly translator: NoteTranslator,
+		private readonly tab: TabTranslator,
+		private readonly signatures: SignatureTranslator,
 		private readonly reader: ScoreReader,
 		private readonly configuredGaps: Gaps,
 	) {}
@@ -238,8 +242,8 @@ export class LayoutPlanner {
 			// Tab voices build TabNotes (no ghost padding), matching drawTabNotes.
 			const perVoice = voices.map((voice, voiceIndex) =>
 				isTab
-					? this.translator.vexflowTabTickables(voice.chords, tuning)
-					: this.translator.vexflowVoiceTickables(voice.chords, clef, {
+					? this.tab.tickables(voice.chords, tuning)
+					: this.translator.voiceTickables(voice.chords, clef, {
 							endBeat,
 							// Matches buildNotes: the dividers and clef glyphs ride on the first
 							// voice only, but the clef changes re-aim every voice's notes.
@@ -522,13 +526,13 @@ export class LayoutPlanner {
 						staves.push({
 							voices,
 							clef: clef
-								? this.translator.vexflowClef(clef.sign, clef.line)
+								? this.signatures.vexflowClef(clef.sign, clef.line)
 								: 'treble',
 							meterFloor: this.reader.meterFloor(measure, staffNumber),
 							isTab: this.reader.isTabStaff(part, staffNumber),
 							tuning: this.reader.stringTuning(part, staffNumber),
 							barlines: this.reader.midBarlinesOf(measure),
-							midClefs: this.translator.midClefSpecs(
+							midClefs: this.signatures.midClefSpecs(
 								this.reader.midClefsOf(measure, staffNumber),
 							),
 						});
@@ -600,10 +604,10 @@ export class LayoutPlanner {
 				this.reader.visibleStaffNumbers(part, { showTabs, showNotation }).some(
 					(staffNumber) =>
 						!this.reader.isTabStaff(part, staffNumber) &&
-						this.translator.vexflowClefSpec(
+						this.signatures.vexflowClefSpec(
 							part.measures[m]?.getClef(staffNumber) ?? null,
 						) !==
-							this.translator.vexflowClefSpec(
+							this.signatures.vexflowClefSpec(
 								// End of the previous measure, matching buildStave: a change
 								// stated inside it is not restated at this barline.
 								this.reader.clefAtEndOf(part.measures[m - 1], staffNumber),

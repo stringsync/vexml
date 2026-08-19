@@ -1,18 +1,25 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
+import { BarlineTranslator } from './barline-translator';
+import { ChordTranslator } from './chord-translator';
 import { DEFAULT_CONFIG, type FontConfig } from './config';
+import { DurationTranslator } from './duration-translator';
 import { ElementFactory } from './element-factory';
 import { NoopFontLoader } from './font-loader/noop-font-loader';
 import { Gaps } from './gaps';
 import { FakeHost } from './host/fake-host';
 import { LayoutPlanner } from './layout-planner';
+import { NotationTranslator } from './notation-translator';
+import { NoteReader } from './note-reader';
 import { NoteTranslator } from './note-translator';
 import { ScoreDrawer } from './score-drawer';
 import { FakeScoreParser } from './score-parser/fake-score-parser';
 import { ScoreReader } from './score-reader';
 import { type RenderStage, ScoreRenderer } from './score-renderer';
 import { SequenceFactory } from './sequence-factory';
+import { SignatureTranslator } from './signature-translator';
 import { SpannerBuilder } from './spanner-builder';
 import { SpillResolver } from './spill-resolver';
+import { TabTranslator } from './tab-translator';
 
 // A headless stage: the Host fake plus the two DOM nodes RenderStage adds. The empty-parts path
 // never touches container/base, so inert placeholders are enough — and any layout or draw attempt
@@ -49,7 +56,17 @@ describe('ScoreRenderer', () => {
 	// renderer is built per test rather than in beforeEach.
 	const renderer = (overrides?: { minLastSystemFill?: number }) => {
 		const config = { ...DEFAULT_CONFIG, ...overrides };
-		const translator = new NoteTranslator();
+		const notes = new NoteReader();
+		const durations = new DurationTranslator();
+		const barlines = new BarlineTranslator();
+		const signatures = new SignatureTranslator();
+		const tab = new TabTranslator(notes, durations);
+		const chords = new ChordTranslator(
+			notes,
+			durations,
+			new NotationTranslator(),
+		);
+		const translator = new NoteTranslator(chords, durations, barlines);
 		const reader = new ScoreReader();
 		const gaps = new Gaps([]);
 		return new ScoreRenderer(
@@ -57,10 +74,14 @@ describe('ScoreRenderer', () => {
 			stage,
 			fontLoader,
 			parser,
-			new LayoutPlanner(translator, reader, gaps),
+			new LayoutPlanner(translator, tab, signatures, reader, gaps),
 			new ScoreDrawer(
 				config,
 				translator,
+				chords,
+				tab,
+				signatures,
+				barlines,
 				reader,
 				new SpannerBuilder(),
 				gaps,

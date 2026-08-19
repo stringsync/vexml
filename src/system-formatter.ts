@@ -20,6 +20,7 @@ import {
 	Vibrato,
 	type Voice,
 } from 'vexflow';
+import type { ChordTranslator } from './chord-translator';
 import type { CollisionResolver } from './collision-resolver';
 import type { ConnectorDrawer } from './connector-drawer';
 import {
@@ -155,6 +156,7 @@ export class SystemFormatter {
 	constructor(
 		private readonly context: RenderContext,
 		private readonly translator: NoteTranslator,
+		private readonly chords: ChordTranslator,
 		private readonly spanners: SpannerBuilder,
 		private readonly connectorDrawer: ConnectorDrawer,
 		private readonly lyricPlacer: LyricPlacer,
@@ -375,7 +377,7 @@ export class SystemFormatter {
 			// The score's own per-element colors (<note color>, <notehead color>, <stem color>)
 			// go on last so they win over the configured notation ink above.
 			for (const { note, chord } of [...p.noteChords, ...p.graceChords]) {
-				this.translator.applyNoteColors(note, chord);
+				this.chords.applyNoteColors(note, chord);
 			}
 			for (const vexVoice of p.vexVoices) {
 				vexVoice.draw(this.context, p.stave);

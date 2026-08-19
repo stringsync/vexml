@@ -9,6 +9,7 @@ import {
 	TimeSignature,
 	type Voice,
 } from 'vexflow';
+import type { ChordTranslator } from './chord-translator';
 import { CollisionResolver } from './collision-resolver';
 import type { ConnectorDrawer } from './connector-drawer';
 import { Rect } from './geometry';
@@ -24,6 +25,7 @@ describe('SystemFormatter', () => {
 		new SystemFormatter(
 			{} as unknown as RenderContext,
 			{ noteheadHalfWidth: () => 5 } as unknown as NoteTranslator,
+			{} as unknown as ChordTranslator,
 			{} as unknown as SpannerBuilder,
 			{} as unknown as ConnectorDrawer,
 			{} as unknown as LyricPlacer,
