@@ -24,6 +24,7 @@ WORKDIR /app
 COPY package.json bun.lock ./
 COPY packages/vexml/package.json packages/vexml/
 COPY packages/site/package.json packages/site/
+COPY packages/integration/package.json packages/integration/
 RUN bun install --frozen-lockfile
 
 COPY . .

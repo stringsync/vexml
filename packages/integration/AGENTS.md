@@ -1,11 +1,11 @@
-# tests/testing
+# packages/integration
 
-Shared harness for the browser-based integration tests. Preloaded once per `bun test` run
+The browser-based integration tests and the harness they share. Preloaded once per `bun test` run
 (via bun's preload; runs must go through `vex test`, which sets the sentinel env var and
 renders in the pinned Docker image — that image is the source of pixel determinism).
 
 - **serve.ts** — a Bun server for the app (`/`) and corpus files (`/data/:file`, from
-  `tests/integration/__data__`).
+  `__data__/`).
 - **setup.ts** — one shared browser + server for the whole run, a `toMatchScreenshot`
   matcher (pixel-diffs a PNG against `__screenshots__/`, writes diffs to `__diffs__/`,
   regenerates baselines under `UPDATE_SCREENSHOTS=1`), and a **page pool**.

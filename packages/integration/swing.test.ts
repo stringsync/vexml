@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { renderTest } from '../testing/harness';
+import { renderTest } from './harness';
 
 describe('swing', () => {
 	/*

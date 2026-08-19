@@ -1,0 +1,20 @@
+{
+	"name": "@vexml/integration",
+	"version": "1.2.4",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./serve": "./serve.ts"
+	},
+	"dependencies": {
+		"@stringsync/vexml": "workspace:*"
+	},
+	"devDependencies": {
+		"@types/pngjs": "^6.0.5",
+		"canvas": "^3.2.3",
+		"chalk": "5.6.2",
+		"pixelmatch": "^7.2.0",
+		"playwright": "^1.61.1",
+		"pngjs": "^7.0.0"
+	}
+}

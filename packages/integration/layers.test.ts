@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { renderTest } from '../testing/harness';
+import { renderTest } from './harness';
 
 describe('layers', () => {
 	// Custom layers, end to end in a real browser: a content layer spans the engraved score (score

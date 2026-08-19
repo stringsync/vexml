@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { render } from '../testing/harness';
-import { testCase } from '../testing/test-case';
+import { render } from './harness';
+import { testCase } from './test-case';
 
 /*
  * Every case here is a hand-cut fixture proving one thing, ordered by increasing rendering

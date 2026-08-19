@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { renderTest } from '../testing/harness';
+import { renderTest } from './harness';
 
 describe('cursor', () => {
 	// A playback cursor end to end, the way a caller reaches it: render, add a cursor, attach the

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { renderTest } from '../testing/harness';
+import { renderTest } from './harness';
 
 // Measure box bounds, end to end: render a bracketed notation+tab guitar part with a run of
 // high ledger-line notes and a chord diagram, draw a debug rect around every measure box, and

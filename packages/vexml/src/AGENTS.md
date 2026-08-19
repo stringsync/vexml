@@ -12,7 +12,7 @@ that draws it.
 Files not named here are test fakes (`fake-*.ts`) or the public surface
 (`index.ts`, `config.ts`, `constants.ts`). `Rect` and the hit-index `QuadTree`
 come from `webappwiz/geometry`, not this repo. Every feature has a fixture in
-`tests/integration/render.test.ts`, named for the concept.
+`packages/integration/render.test.ts`, named for the concept.
 
 ## The pipeline
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Note, TabPosition } from '@stringsync/vexml';
-import { renderTest } from '../testing/harness';
+import { renderTest } from './harness';
 
 // Decorations end to end, the way a caller actually reaches them: render, hover to hit-test the
 // targets, toggle a decoration, and screenshot the composite (base engraving + the decoration

@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
+import { serve } from '@vexml/integration/serve';
 import { chromium } from 'playwright';
-import { serve } from '../tests/testing/serve';
 import { run } from './run';
 
 // Same browser-render path as the test harness, but fed an arbitrary file

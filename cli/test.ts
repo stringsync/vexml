@@ -34,7 +34,7 @@ async function testDocker(testArgs: string[], opts: TestOptions) {
 		'-e',
 		'I_AM_RUNNING_TESTS_USING_VEX_TEST=1',
 		'-v',
-		`${cwd}/tests:/app/tests`,
+		`${cwd}/packages/integration:/app/packages/integration`,
 	];
 	if (opts.update) {
 		args.push('-e', 'UPDATE_SCREENSHOTS=1');

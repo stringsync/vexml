@@ -3,7 +3,7 @@ import type { RenderContext } from 'vexflow';
 import { ChordDiagramGlyph } from './chord-diagram-glyph';
 
 // Smoke tests only: these exercise the options branches and assert draw() doesn't
-// throw. Tests of the actual visual output live in tests/integration/.
+// throw. Tests of the actual visual output live in packages/integration/.
 
 describe('ChordDiagramGlyph', () => {
 	// A no-op RenderContext; measureText returns a plausible width so the centering math runs.

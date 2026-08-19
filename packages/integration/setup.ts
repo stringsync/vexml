@@ -177,11 +177,8 @@ function composite(
 	return canvas.toBuffer('image/png');
 }
 
-const SCREENSHOTS_DIR = path.resolve(
-	import.meta.dir,
-	'../integration/__screenshots__',
-);
-const DIFF_DIR = path.resolve(import.meta.dir, '../integration/__diffs__');
+const SCREENSHOTS_DIR = path.resolve(import.meta.dir, './__screenshots__');
+const DIFF_DIR = path.resolve(import.meta.dir, './__diffs__');
 const ROOT = path.resolve(import.meta.dir, '../..');
 const UPDATE = process.env.UPDATE_SCREENSHOTS === '1';
 

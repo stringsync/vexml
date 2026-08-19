@@ -11,18 +11,18 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
 
 **Important:** Use the `vex test` commands shown below, plus selective `vex test <name> --update` only after reviewing the screenshot output.
 
-1. First, check whether an existing test in `tests/integration/` already covers the use case.
-   - Inspect the relevant integration case definitions and existing files under `tests/integration/__data__/`.
+1. First, check whether an existing test in `packages/integration/` already covers the use case.
+   - Inspect the relevant integration case definitions and existing files under `packages/integration/__data__/`.
    - Reuse or extend an existing case when that is the least surprising option.
 
-2. If the use case is not already covered, add it to `tests/integration/__data__/` — preferably as a new measure inside the existing fixture for that category rather than as a brand-new file.
+2. If the use case is not already covered, add it to `packages/integration/__data__/` — preferably as a new measure inside the existing fixture for that category rather than as a brand-new file.
 
    **Starting from a real-world score? Slice it down first.** When the case comes from a bug report against a large file rather than from scratch, do not hand-extract the measure and do not paste in the whole score. Use `vex slice` to cut the reproducing measures out:
 
    ```sh
-   vex slice --input big-score.musicxml --measures 47 --output tests/integration/__data__/scratch.musicxml
-   vex validate --input tests/integration/__data__/scratch.musicxml
-   vex render --input tests/integration/__data__/scratch.musicxml
+   vex slice --input big-score.musicxml --measures 47 --output packages/integration/__data__/scratch.musicxml
+   vex validate --input packages/integration/__data__/scratch.musicxml
+   vex render --input packages/integration/__data__/scratch.musicxml
    ```
 
    `-m` takes a print-page style list (`1,3-5,8`), matched against the printed `<measure number>` label. The slice carries forward the signatures in effect where it starts — divisions, key, time, clef, staves, staff-details, part-symbol, transpose — so the opening measure renders correctly standalone. Notes:
@@ -35,8 +35,8 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    **Bundle by category; treat each measure as a pseudo unit test.** A category fixture (e.g. `key.musicxml`, `time.musicxml`, `note.musicxml`, `slur.musicxml`) is one MusicXML document whose measures each isolate one variant of that category's behavior — the way a unit-test file holds many small cases. The measure is the unit of isolation, not the file. For example, `key.musicxml` proves a sharp key, a flat key, a mid-system key change, and a no-redraw continuation across M1-M3; `slur.musicxml` walks nine slur scenarios across nine measures. When adding a new variant of an already-covered category, append a measure to that category's fixture (and a `M<n>:` bullet to its comment) instead of creating a near-duplicate file. When you find existing same-category fixtures that each test one variant (e.g. `key_sharps` + `key_flats` + `key_change`), consolidate them into one.
 
    - **When bundling does NOT apply:** some things are fixed for a whole document and can't vary per measure — the `<part-list>` and each part's stave configuration (stave count, tab string count, braces). Those stay as separate `category_variant.musicxml` files. This is why `structure_*` (different part-lists) and `clef_*` (single stave vs grand staff vs 4-/6-line tab) are not bundled: each needs a different part/stave structure, not just a different measure. Rule of thumb: bundle what varies per measure (keys, meters, note/rest/accidental/articulation/beam/slur/tie/tuplet variants, voices); keep separate what needs a different part or stave layout.
-   - Name a fixture that covers a whole category `category.musicxml` (e.g. `key`, `time`, `note`, `slur`). Use `category_variant.musicxml` only when different part/stave structures force more than one file in that category (e.g. `clef_tab_4_string`, `structure_grand_staff`). Categories: `structure`, `clef`, `key`, `time`, `note`, `rest`, `accidental`, `measures`, …; match the existing files in `tests/integration/__data__/`.
-   - Register it in `tests/integration/render.test.ts` by adding `testCase('<filename>.musicxml', '<filename>.png')` to the `TEST_CASES` array. Pass any non-default `Config` as the third argument.
+   - Name a fixture that covers a whole category `category.musicxml` (e.g. `key`, `time`, `note`, `slur`). Use `category_variant.musicxml` only when different part/stave structures force more than one file in that category (e.g. `clef_tab_4_string`, `structure_grand_staff`). Categories: `structure`, `clef`, `key`, `time`, `note`, `rest`, `accidental`, `measures`, …; match the existing files in `packages/integration/__data__/`.
+   - Register it in `packages/integration/render.test.ts` by adding `testCase('<filename>.musicxml', '<filename>.png')` to the `TEST_CASES` array. Pass any non-default `Config` as the third argument.
    - Keep `TEST_CASES` ordered by increasing rendering complexity. A `render` implementer should be able to build a correct renderer progressively by going through the tests in array order: basic structure before clefs, clefs before key/time signatures, simple notes/rests before accidentals, measures, beams, chords, ties/slurs, tuplets, articulations, voices, system layout, and broad stress cases. Insert new cases where they fit this progression; the array order is the only ordering — there is no numeric prefix. A bundled category fixture sits in its category's slot; let its most complex measure set the position.
    - Above each `testCase(...)` declaration, write a detailed comment describing what the screenshot should render: the clefs, staves, notes, and any distinctive notation or layout (positions, accidentals, beams, slurs, ledger lines, system breaks, …). Describe what is actually drawn so the comment alone tells a reader what to expect without opening the PNG. Match the descriptive style of the surrounding cases.
    - For cases spanning more than one measure, split the comment by measure for readability. Start with a one-line lead describing the global setup (stave/clef/time signature and any wrap behavior), then add one bulleted line per measure using a stable `M<n>:` marker (`M2-3:` for a span). Wrap continuation lines so they align under the bullet text. For multi-voice cases, use inline `V<n>` markers (e.g. `V1`, `V2`) inside each measure bullet. This keeps the comment scannable for humans and greppable for tools, with each `M<n>` mapping directly to a `<measure number="n">` in the fixture. Example:
@@ -113,7 +113,7 @@ Always run this checklist before accepting or updating a screenshot baseline. An
 When the checklist leaves you genuinely unsure what the *correct* engraving is — not whether vexml matches its own baseline, but what a competent engraver would draw — get a second opinion:
 
 ```sh
-vex slice --input tests/integration/__data__/slur.musicxml --measures 4 --output /tmp/one.musicxml
+vex slice --input packages/integration/__data__/slur.musicxml --measures 4 --output /tmp/one.musicxml
 vex render --muse --input /tmp/one.musicxml --output /tmp/musescore.png
 vex render --osmd --input /tmp/one.musicxml --output /tmp/osmd.png
 vex render --alpha --input /tmp/one.musicxml --output /tmp/alphatab.png
@@ -139,7 +139,7 @@ Then read the PNGs and compare the one detail in question. Rules, in order of ho
    vex test <name> --update
    ```
 
-   Where `<name>` is the test title — the screenshot filename passed as the second argument to `testCase()` in `tests/integration/render.test.ts` (helper in `tests/testing/test-case.ts`), e.g. `clef_treble.png`. The pattern matches by prefix, so `clef_treble` also matches.
+   Where `<name>` is the test title — the screenshot filename passed as the second argument to `testCase()` in `packages/integration/render.test.ts` (helper in `packages/integration/test-case.ts`), e.g. `clef_treble.png`. The pattern matches by prefix, so `clef_treble` also matches.
 
 9. Validate that there are no regressions.
    - Run `vex test` again after the selective baseline update.
@@ -151,7 +151,7 @@ Then read the PNGs and compare the one detail in question. Rules, in order of ho
 
 ## Describing Screenshot Diffs
 
-Whenever you need to verbalize a screenshot difference — a regression diff artifact in `tests/integration/__diffs__`, or a comparison of vexml's current render against a golden-standard image the user provided (common for new test cases) — inspect the original image path(s) directly and describe the difference in plain language.
+Whenever you need to verbalize a screenshot difference — a regression diff artifact in `packages/integration/__diffs__`, or a comparison of vexml's current render against a golden-standard image the user provided (common for new test cases) — inspect the original image path(s) directly and describe the difference in plain language.
 
 Do **not** create transformed derivatives for diff work unless there is no other practical way to understand the artifact. Prefer the original screenshot or diff artifact. For a `__diffs__` artifact, remember that the image has old / diff / new vertical sections. For a golden-standard comparison, keep clear which image is the vexml render and which is the golden image.
 
@@ -163,7 +163,7 @@ This work is visual, and the user is reviewing an engraving decision they cannot
 ![](/tmp/lyrics.png)
 ```
 
-- **Use an absolute path.** Renders you made with `vex render --output` are the natural thing to show; a baseline under `tests/integration/__screenshots__/` can be embedded directly.
+- **Use an absolute path.** Renders you made with `vex render --output` are the natural thing to show; a baseline under `packages/integration/__screenshots__/` can be embedded directly.
 - **Render to `/tmp`, not the repo.** A `vex render` with no `--output` drops a timestamped PNG in the working directory that then shows up in `git status`. Passing `--output /tmp/<name>.png` keeps the repo clean and means there is nothing to delete afterwards (the project rule about deleting screenshots exists for exactly this).
 - **Show the whole page for the overall result, a crop for a detail.** If the point is a few pixels of spacing or one glyph's placement, a full-page PNG at render scale is too small to see it — crop to the region and upscale, e.g.
 

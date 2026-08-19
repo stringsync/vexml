@@ -1,7 +1,7 @@
 node_modules
 packages/site/dist
 .zed
-tests/integration/__diffs__/
+packages/integration/__diffs__/
 .DS_Store
 .playwright-mcp
 

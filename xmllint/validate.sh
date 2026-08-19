@@ -13,7 +13,7 @@ image="vexml-xmllint"
 if [ "$#" -gt 0 ]; then
 	files=("$@")
 else
-	files=("$repo"/tests/integration/__data__/*.musicxml)
+	files=("$repo"/packages/integration/__data__/*.musicxml)
 fi
 
 # Paths must be relative to the repo root so they resolve inside the Docker mount.

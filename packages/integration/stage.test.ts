@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { renderTest } from '../testing/harness';
+import { renderTest } from './harness';
 
 describe('stage', () => {
 	// Re-rendering into the same container must not lose the scroll-box styling. The keep-old-until-

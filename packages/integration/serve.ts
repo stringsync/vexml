@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import index from './index.html';
 
-const DATA_DIR = path.resolve(import.meta.dir, '../integration/__data__');
+const DATA_DIR = path.resolve(import.meta.dir, './__data__');
 
 /* How many ports past `from` to try before giving up. Enough for a handful of concurrent
  * runs (a test suite, a `vex render`, a stale server) without scanning forever. */
