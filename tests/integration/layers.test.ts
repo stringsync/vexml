@@ -29,7 +29,7 @@ describe('layers', () => {
 					// Shrink the container and wait for the resize to propagate to the viewport layer.
 					let resizes = 0;
 					const settled = new Promise<void>((resolve) => {
-						score.addEventListener('resize', () => {
+						score.events.on('resize', () => {
 							resizes++;
 							if (
 								parseFloat(viewport.ctx.canvas.style.width) ===

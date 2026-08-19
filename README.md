@@ -82,7 +82,7 @@ const score = await render(musicXML, element);
 
 let previous = null;
 
-score.addEventListener('pointermove', (e) => {
+score.events.on('pointermove', (e) => {
   const current = e.target?.type === 'note'
     ? e.target
     : null;
@@ -93,6 +93,8 @@ score.addEventListener('pointermove', (e) => {
   }
 });
 ```
+
+`on` hands back a function that unsubscribes; call it when you're done listening.
 
 ## Using custom fonts
 

@@ -25,7 +25,7 @@ async function decorate(mode: 'color' | 'halo', file: string): Promise<Buffer> {
 				// Hover the whole canvas to collect every decoratable target under the pointer
 				// (noteheads and tab frets), deduped by identity.
 				const targets = new Set<Note | TabPosition>();
-				score.addEventListener('pointermove', (e) => {
+				score.events.on('pointermove', (e) => {
 					if (e.target?.type === 'note' || e.target?.type === 'tab-position') {
 						targets.add(e.target as Note | TabPosition);
 					}

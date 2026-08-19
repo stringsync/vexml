@@ -10,9 +10,9 @@ decided — it is faster than grepping, because the vocabulary of the score
 commit. A map that lies costs more than no map. `CLAUDE.md` is a symlink to
 this file, so both agents read the same thing.
 
-Files not named here are either infrastructure (`geometry.ts`, `quadtree.ts`,
-`listenable/`), test harnesses (`*-harness.ts`, `*-fixture.ts`, `fake-*.ts`),
-or the public surface (`index.ts`, `config.ts`, `constants.ts`).
+Files not named here are either infrastructure (`geometry.ts`, `quadtree.ts`),
+test harnesses (`*-harness.ts`, `*-fixture.ts`, `fake-*.ts`), or the public
+surface (`index.ts`, `config.ts`, `constants.ts`).
 
 To see any of this rendered, `tests/integration/render.test.ts` has a hand-cut
 fixture per feature, named for the concept (`stave_spacing_dynamic`,

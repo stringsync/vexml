@@ -1,11 +1,10 @@
 import { Disposer, disposables, type Resource } from 'webappwiz/disposable';
+import { Dispatcher, type Eventful } from 'webappwiz/events';
 import type { CursorHost } from './cursor-host/cursor-host';
 import type { CursorView } from './cursor-view/cursor-view';
 import type { Bounded } from './decoration/decoration';
 import type { CursorChangeEvent, CursorEventMap } from './events';
 import { Rect } from './geometry';
-import { EventTarget } from './listenable/event-target';
-import type { Listenable } from './listenable/listenable';
 import type { Note } from './note';
 import type { Scroller, ScrollerOptions } from './scroller/scroller';
 import type { Sequence } from './sequence';
@@ -33,8 +32,9 @@ class CursorPosition implements Bounded {
 	}
 }
 
-export class CursorController implements Listenable<CursorEventMap>, Resource {
-	private readonly target = new EventTarget<CursorEventMap>();
+export class CursorController implements Eventful<CursorEventMap>, Resource {
+	private readonly dispatcher = new Dispatcher<CursorEventMap>();
+	readonly events = this.dispatcher.events;
 	// The sync/follow subscriptions, released on dispose; the views still attached at dispose are
 	// disposed with the cursor (a detached one is the caller's again).
 	private readonly subscriptions = new Disposer();
@@ -54,11 +54,11 @@ export class CursorController implements Listenable<CursorEventMap>, Resource {
 		private readonly scroller: Scroller & { cancel(): void },
 	) {
 		this.lastVisible = this.isFullyVisible();
-		const onViewport = () => this.checkVisibility();
-		this.host.addEventListener('viewportchange', onViewport);
-		this.subscriptions.defer(() =>
-			this.host.removeEventListener('viewportchange', onViewport),
+		this.subscriptions.defer(
+			this.host.events.on('viewportchange', () => this.checkVisibility()),
 		);
+		// One host is made per cursor, so its page subscriptions end with this cursor.
+		this.subscriptions.use(this.host);
 	}
 
 	/* Snap to the next tickable in playback order; a no-op on the last one. */
@@ -151,11 +151,13 @@ export class CursorController implements Listenable<CursorEventMap>, Resource {
 	 * Resource detaches without disposing the view (the caller gets it back); this cursor's own
 	 * dispose() disposes whatever is still attached. */
 	sync(view: CursorView): Resource {
-		const listener = (e: CursorChangeEvent) => view.render(e);
-		this.target.addEventListener('change', listener);
+		const unlisten = this.dispatcher.events.on(
+			'change',
+			(e: CursorChangeEvent) => view.render(e),
+		);
 		this.views.add(view);
 		const detach = disposables.callback(() => {
-			this.target.removeEventListener('change', listener);
+			unlisten();
 			this.views.delete(view);
 		});
 		this.subscriptions.use(detach);
@@ -173,9 +175,8 @@ export class CursorController implements Listenable<CursorEventMap>, Resource {
 				target.scrollIntoView(this.barRect());
 			}
 		};
-		this.target.addEventListener('change', listener);
-		const unfollow = disposables.callback(() =>
-			this.target.removeEventListener('change', listener),
+		const unfollow = disposables.callback(
+			this.dispatcher.events.on('change', listener),
 		);
 		this.subscriptions.use(unfollow);
 		listener();
@@ -194,20 +195,6 @@ export class CursorController implements Listenable<CursorEventMap>, Resource {
 		this.scroller.cancel();
 	}
 
-	addEventListener<K extends keyof CursorEventMap>(
-		type: K,
-		listener: (event: CursorEventMap[K]) => void,
-	): void {
-		this.target.addEventListener(type, listener);
-	}
-
-	removeEventListener<K extends keyof CursorEventMap>(
-		type: K,
-		listener: (event: CursorEventMap[K]) => void,
-	): void {
-		this.target.removeEventListener(type, listener);
-	}
-
 	dispose(): void {
 		if (this.disposed) {
 			return;
@@ -221,7 +208,8 @@ export class CursorController implements Listenable<CursorEventMap>, Resource {
 			view.dispose();
 		}
 		this.views.clear();
-		this.target.dispatchEvent('dispose', undefined);
+		this.dispatcher.dispatch('dispose');
+		this.dispatcher.dispose();
 	}
 
 	private barRect(): Rect {
@@ -250,7 +238,7 @@ export class CursorController implements Listenable<CursorEventMap>, Resource {
 	}
 
 	private emit(from: number): void {
-		this.target.dispatchEvent('change', this.snapshot(from));
+		this.dispatcher.dispatch('change', this.snapshot(from));
 		this.checkVisibility();
 	}
 
@@ -264,7 +252,7 @@ export class CursorController implements Listenable<CursorEventMap>, Resource {
 		const fullyVisible = this.isFullyVisible();
 		if (fullyVisible !== this.lastVisible) {
 			this.lastVisible = fullyVisible;
-			this.target.dispatchEvent('visibility', { fullyVisible });
+			this.dispatcher.dispatch('visibility', { fullyVisible });
 		}
 	}
 }

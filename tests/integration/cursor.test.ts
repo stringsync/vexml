@@ -35,7 +35,7 @@ describe('cursor', () => {
 				fn: (score) => {
 					const cursor = score.createCursor();
 					cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
-					cursor.addEventListener('change', (e) => {
+					cursor.events.on('change', (e) => {
 						for (const n of e.highlighted) {
 							n.color.on('#155dfc');
 						}
@@ -77,7 +77,7 @@ describe('cursor', () => {
 					const cursor = score.createCursor();
 					const found: Array<{ pitch: string | null; x: number; w: number }> =
 						[];
-					cursor.addEventListener('change', (e) => {
+					cursor.events.on('change', (e) => {
 						for (const n of e.started) {
 							for (const g of n.getGraceNotes()) {
 								found.push({ pitch: g.getPitch(), x: g.rect.x, w: g.rect.w });
@@ -112,7 +112,7 @@ describe('cursor', () => {
 				fn: (score) => {
 					const cursor = score.createCursor();
 					const found: Array<{ hasFret: boolean; x: number; w: number }> = [];
-					cursor.addEventListener('change', (e) => {
+					cursor.events.on('change', (e) => {
 						for (const n of e.started) {
 							for (const g of n.getGraceNotes()) {
 								found.push({

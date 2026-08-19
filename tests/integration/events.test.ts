@@ -18,7 +18,7 @@ describe('events', () => {
 
 					const types = new Set<string>();
 					const points: Array<{ x: number; y: number }> = [];
-					score.addEventListener('pointerdown', (e) => {
+					score.events.on('pointerdown', (e) => {
 						if (e.target) {
 							types.add(e.target.type);
 						}

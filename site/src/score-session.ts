@@ -1,13 +1,7 @@
-import type {
-	CursorController,
-	CursorEventMap,
-	Element,
-	Score,
-	ScoreEventMap,
-} from '@stringsync/vexml';
+import type { CursorController, Element, Score } from '@stringsync/vexml';
 import { Note, TabPosition } from '@stringsync/vexml';
 import { Disposer, disposables, type Resource } from 'webappwiz/disposable';
-import { Dispatcher, type Eventful } from 'webappwiz/events';
+import { Dispatcher, type Eventful, type Events } from 'webappwiz/events';
 import { ACTIVE_COLOR, GRACE_MS, HALO_COLOR, HOVER_COLOR } from './constants';
 import { describe } from './format';
 import type { Instrument } from './instrument/instrument';
@@ -76,12 +70,12 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		// of the scroll box (by moving, or the user scrolling it away), bring it back.
 		this.cursor = score.createCursor();
 		this.disposer.use(this.cursor.sync(score.createPlayhead()));
-		this.onCursor('visibility', (e) => {
+		this.watch(this.cursor.events, 'visibility', (e) => {
 			if (!e.fullyVisible && this.playing) {
 				this.cursor.scrollIntoView();
 			}
 		});
-		this.onCursor('change', (e) => {
+		this.watch(this.cursor.events, 'change', (e) => {
 			this.timeMs = e.timeMs;
 			this.paint(e.highlighted);
 			// Release stopped notes, then attack started ones (only while playing, so seeking and
@@ -98,11 +92,11 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.dispatcher.dispatch('changed');
 		});
 
-		this.onScore('hover', (e) => {
+		this.watch(this.score.events, 'hover', (e) => {
 			this.hovered = e.target;
 			this.apply();
 		});
-		this.onScore('click', (e) => {
+		this.watch(this.score.events, 'click', (e) => {
 			// Only notes and frets are pinnable; clicking a measure or empty space unpins.
 			const target =
 				e.target instanceof Note || e.target instanceof TabPosition
@@ -112,8 +106,8 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.apply();
 		});
 		// Click or drag anywhere on the score scrubs the cursor to that position's time.
-		this.onScore('pointerdown', (e) => this.seekTo(e.point));
-		this.onScore('pointermove', (e) => {
+		this.watch(this.score.events, 'pointerdown', (e) => this.seekTo(e.point));
+		this.watch(this.score.events, 'pointermove', (e) => {
 			// buttons === 1 means the primary button is held, so this continues the scrub during a
 			// drag and ignores a plain hover: no manual drag-state flag needed.
 			if (e.native.buttons === 1) {
@@ -123,7 +117,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		});
 		// Finishing a scrub-drag: if the cursor landed off-screen, bring it into view (the
 		// playing-gated visibility listener above stays quiet while paused).
-		this.onScore('pointerup', () => this.follow());
+		this.watch(this.score.events, 'pointerup', () => this.follow());
 
 		this.paint(this.cursor.getHighlightedElements());
 	}
@@ -339,30 +333,22 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.dispatcher.dispatch('changed');
 	}
 
+	// Subscribe for the session's lifetime, releasing on dispose. One helper serves both sources
+	// now that Events is generic in its map: TypeScript infers the payload type from the source
+	// and the event name.
+	private watch<M extends Record<string, unknown>, K extends keyof M>(
+		events: Events<M>,
+		type: K,
+		listener: (event: M[K]) => void,
+	): void {
+		this.disposer.defer(events.on(type, listener));
+	}
+
 	private clearHighlight(): void {
 		this.halo?.halo.off();
 		this.halo?.color.off();
 		this.halo = null;
 		this.container.style.cursor = '';
 		this.tooltip = null;
-	}
-
-	// Subscribe to the cursor for the session's lifetime, releasing on dispose. Typed per source
-	// rather than generically: vexml's Listenable is generic in its event map, which TypeScript
-	// cannot infer through, so one helper for both would erase the payload types.
-	private onCursor<K extends keyof CursorEventMap>(
-		type: K,
-		listener: (event: CursorEventMap[K]) => void,
-	): void {
-		this.cursor.addEventListener(type, listener);
-		this.disposer.defer(() => this.cursor.removeEventListener(type, listener));
-	}
-
-	private onScore<K extends keyof ScoreEventMap>(
-		type: K,
-		listener: (event: ScoreEventMap[K]) => void,
-	): void {
-		this.score.addEventListener(type, listener);
-		this.disposer.defer(() => this.score.removeEventListener(type, listener));
 	}
 }

@@ -25,7 +25,7 @@ describe('Score', () => {
 		const { host, index, score } = fixture(target);
 		const seen: Array<{ type: string; x: number; y: number; native: Event }> =
 			[];
-		score.addEventListener('pointermove', (e) =>
+		score.events.on('pointermove', (e) =>
 			seen.push({
 				type: e.target?.type ?? 'none',
 				x: e.point.x,
@@ -50,25 +50,31 @@ describe('Score', () => {
 
 	it('the source is detached when the last listener leaves', () => {
 		const { host, index, score } = fixture(null);
-		const listener = () => {};
-		score.addEventListener('pointermove', listener);
+		const unlisten = score.events.on('pointermove', () => {});
 		host.events.dispatchEvent(new FakePointerEvent('pointermove', 1, 1));
-		score.removeEventListener('pointermove', listener);
+		unlisten();
 		host.events.dispatchEvent(new FakePointerEvent('pointermove', 2, 2));
 		// Only the dispatch made while subscribed reached the hit tester.
 		expect(index.probes).toEqual([{ x: 1, y: 1 }]);
 	});
 
+	it('a once listener releases the source when it fires', () => {
+		const { host, index, score } = fixture(null);
+		score.events.on('pointermove', () => {}, { once: true });
+		host.events.dispatchEvent(new FakePointerEvent('pointermove', 1, 1));
+		host.events.dispatchEvent(new FakePointerEvent('pointermove', 2, 2));
+		// The listener unsubscribed itself, so the second dispatch never reached the hit tester.
+		expect(index.probes).toEqual([{ x: 1, y: 1 }]);
+	});
+
 	it('the source stays bound until every listener for the type is removed', () => {
 		const { host, index, score } = fixture(null);
-		const a = () => {};
-		const b = () => {};
-		score.addEventListener('pointermove', a);
-		score.addEventListener('pointermove', b);
-		score.removeEventListener('pointermove', a);
+		const a = score.events.on('pointermove', () => {});
+		const b = score.events.on('pointermove', () => {});
+		a();
 		host.events.dispatchEvent(new FakePointerEvent('pointermove', 5, 5));
 		expect(index.probes).toEqual([{ x: 5, y: 5 }]); // still bound for b
-		score.removeEventListener('pointermove', b);
+		b();
 		host.events.dispatchEvent(new FakePointerEvent('pointermove', 6, 6));
 		expect(index.probes).toEqual([{ x: 5, y: 5 }]); // now detached
 	});
@@ -77,9 +83,7 @@ describe('Score', () => {
 		const { host, score } = fixture(null);
 		host.scroll = { left: 12, top: 34 };
 		const seen: Array<{ left: number; top: number }> = [];
-		score.addEventListener('scroll', (e) =>
-			seen.push({ left: e.left, top: e.top }),
-		);
+		score.events.on('scroll', (e) => seen.push({ left: e.left, top: e.top }));
 		host.events.dispatchEvent(new Event('scroll'));
 		expect(seen).toEqual([{ left: 12, top: 34 }]);
 	});
@@ -104,8 +108,7 @@ describe('Score', () => {
 		);
 
 		const seen: Array<Element | null> = [];
-		const listener = (e: { target: Element | null }) => seen.push(e.target);
-		score.addEventListener('hover', listener);
+		const unlisten = score.events.on('hover', (e) => seen.push(e.target));
 
 		host.events.dispatchEvent(new FakePointerEvent('pointermove', 5, 5)); // enter target
 		host.events.dispatchEvent(new FakePointerEvent('pointermove', 6, 6)); // same target, quiet
@@ -115,7 +118,7 @@ describe('Score', () => {
 		host.scrollListener?.();
 		expect(seen).toEqual([target, null]);
 
-		score.removeEventListener('hover', listener);
+		unlisten();
 		expect(host.scrollListener).toBeNull(); // window-scroll subscription released
 	});
 
@@ -126,7 +129,7 @@ describe('Score', () => {
 
 		const seen: Array<{ width: number; height: number }> = [];
 		let layersResizedAtEmit = -1;
-		score.addEventListener('resize', (e) => {
+		score.events.on('resize', (e) => {
 			layersResizedAtEmit = host.relayoutLayersCalls;
 			seen.push({ width: e.width, height: e.height });
 		});
@@ -140,7 +143,7 @@ describe('Score', () => {
 	it('a base-only change (same container size) relayouts without re-emitting resize', () => {
 		const { host, score } = fixture(null);
 		const seen: Array<{ width: number; height: number }> = [];
-		score.addEventListener('resize', (e) =>
+		score.events.on('resize', (e) =>
 			seen.push({ width: e.width, height: e.height }),
 		);
 
@@ -261,8 +264,8 @@ describe('Score', () => {
 	it('detaches every listener and tears down its decorations and host when disposed', () => {
 		const target = measureBox(new Rect(0, 0, 10, 10));
 		const { host, index, decorations, score } = fixture(target);
-		score.addEventListener('pointermove', () => {});
-		score.addEventListener('resize', () => {});
+		score.events.on('pointermove', () => {});
+		score.events.on('resize', () => {});
 		decorations.color.set(target, '#ff0000');
 
 		score.dispose();

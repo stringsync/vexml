@@ -35,7 +35,7 @@ export interface ScoreResizeEvent {
 }
 
 /* The events a Score dispatches, keyed by name. Pointer events hit-test; scroll/resize don't. */
-export interface ScoreEventMap {
+export type ScoreEventMap = {
 	pointermove: PointerTargetEvent;
 	pointerdown: PointerTargetEvent;
 	pointerup: PointerTargetEvent;
@@ -43,7 +43,7 @@ export interface ScoreEventMap {
 	hover: HoverEvent;
 	scroll: ScoreScrollEvent;
 	resize: ScoreResizeEvent;
-}
+};
 
 /* What changed entering the current cursor position. `started` are (re)attacks (a re-struck pitch
  * shows in both `started` and `stopped`); `sustained` are notes held or tied through (do not
@@ -75,8 +75,8 @@ export interface CursorVisibilityEvent {
 /* The events a CursorController dispatches, keyed by name. `dispose` fires once, as the cursor
  * is disposed, so whoever is holding it can let go. Payload-free: the cursor that fired it is
  * the one you subscribed to. */
-export interface CursorEventMap {
+export type CursorEventMap = {
 	change: CursorChangeEvent;
 	visibility: CursorVisibilityEvent;
 	dispose: undefined;
-}
+};

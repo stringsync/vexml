@@ -1,4 +1,5 @@
 import type { Resource } from 'webappwiz/disposable';
+import { Dispatcher, type Eventful, type Events } from 'webappwiz/events';
 import { CursorController } from './cursor-controller';
 import { CursorHostAdapter } from './cursor-host/cursor-host-adapter';
 import { Playhead, type PlayheadOptions } from './cursor-view/playhead';
@@ -7,8 +8,6 @@ import type { ElementIndex } from './element-index';
 import type { ScoreEventMap } from './events';
 import type { Host } from './host/host';
 import type { Layer, LayerKind } from './layer/layer';
-import { EventTarget } from './listenable/event-target';
-import type { Listenable } from './listenable/listenable';
 import { MeasureBox } from './measure-box';
 import { Note } from './note';
 import type { Part } from './part';
@@ -40,8 +39,39 @@ export interface GapInfo {
  * is observed from construction instead — it also resizes viewport layers, which must happen even
  * with no resize subscriber.
  */
-export class Score implements Listenable<ScoreEventMap> {
-	private readonly target = new EventTarget<ScoreEventMap>();
+export class Score implements Eventful<ScoreEventMap> {
+	private readonly dispatcher = new Dispatcher<ScoreEventMap>();
+	// Live subscriptions per event type, so the DOM sources below can be bound on the first one
+	// and released on the last. Counted here because a dispatcher doesn't report its listeners.
+	private readonly listening = new Map<keyof ScoreEventMap, number>();
+
+	/* Subscribe to what happens to the score. Each event's DOM source is attached on its first
+	 * listener and released with its last, so an unwatched score does no hit-testing: `on` hands
+	 * back the unlisten that ends it. */
+	readonly events: Events<ScoreEventMap> = {
+		on: (type, listener, opts) => {
+			const release = this.retain(type);
+			const unlisten = this.dispatcher.events.on(
+				type,
+				// A `once` listener unsubscribes itself when it fires, so its source is released
+				// there rather than waiting for an unlisten the caller has no reason to call.
+				opts?.once
+					? (event) => {
+							release();
+							listener(event);
+						}
+					: listener,
+				opts,
+			);
+			return () => {
+				unlisten();
+				release();
+			};
+		},
+		// A universal listener hears whatever the per-type subscribers have bound, and binds
+		// nothing itself: it is for watching a score someone else is already driving.
+		all: (listener, opts) => this.dispatcher.events.all(listener, opts),
+	};
 	// The live DOM listeners backing each Score event, so unbind can remove the exact references.
 	// Most events map to one DOM listener; hover maps to several (move/down/leave). Resize isn't
 	// here — it's a ResizeObserver, set up once below.
@@ -92,7 +122,7 @@ export class Score implements Listenable<ScoreEventMap> {
 			this.lastResize = size;
 			// Suspend scrolling for the duration of the resize burst; it resumes once the size settles.
 			this.scroller.suspendForResize();
-			this.target.dispatchEvent('resize', size);
+			this.dispatcher.dispatch('resize', size);
 		});
 	}
 
@@ -128,7 +158,7 @@ export class Score implements Listenable<ScoreEventMap> {
 		);
 		// The cursor announces its own disposal, so the score can let go without the cursor
 		// having to know who is holding it.
-		cursor.addEventListener('dispose', () => this.cursors.delete(cursor));
+		cursor.events.on('dispose', () => this.cursors.delete(cursor));
 		this.cursors.add(cursor);
 		return cursor;
 	}
@@ -239,27 +269,6 @@ export class Score implements Listenable<ScoreEventMap> {
 		return null;
 	}
 
-	addEventListener<K extends keyof ScoreEventMap>(
-		type: K,
-		listener: (event: ScoreEventMap[K]) => void,
-	): void {
-		const first = this.target.count(type) === 0;
-		this.target.addEventListener(type, listener);
-		if (first) {
-			this.bind(type);
-		}
-	}
-
-	removeEventListener<K extends keyof ScoreEventMap>(
-		type: K,
-		listener: (event: ScoreEventMap[K]) => void,
-	): void {
-		this.target.removeEventListener(type, listener);
-		if (this.target.count(type) === 0) {
-			this.unbind(type);
-		}
-	}
-
 	dispose(): void {
 		for (const cursor of [...this.cursors]) {
 			cursor.dispose();
@@ -275,7 +284,31 @@ export class Score implements Listenable<ScoreEventMap> {
 		this.scrollObserver = null;
 		this.resizeObserver.dispose();
 		this.decorations.dispose();
+		this.dispatcher.dispose();
 		this.host.dispose();
+	}
+
+	// Count a new subscriber to a type, binding its source if it's the first, and hand back the
+	// matching release. The release is guarded because it can be reached twice (a caller keeping
+	// its unlisten around, or a `once` listener that already fired), and the count must move once.
+	private retain(type: keyof ScoreEventMap): () => void {
+		const count = this.listening.get(type) ?? 0;
+		this.listening.set(type, count + 1);
+		if (count === 0) {
+			this.bind(type);
+		}
+		let released = false;
+		return () => {
+			if (released) {
+				return;
+			}
+			released = true;
+			const left = (this.listening.get(type) ?? 1) - 1;
+			this.listening.set(type, left);
+			if (left === 0) {
+				this.unbind(type);
+			}
+		};
 	}
 
 	// Attach the underlying source for a Score event on its first subscriber. Pointer events
@@ -288,7 +321,7 @@ export class Score implements Listenable<ScoreEventMap> {
 				return;
 			case 'scroll': {
 				this.listen(type, 'scroll', (native) => {
-					this.target.dispatchEvent('scroll', { ...this.host.scroll, native });
+					this.dispatcher.dispatch('scroll', { ...this.host.scroll, native });
 				});
 				return;
 			}
@@ -321,7 +354,7 @@ export class Score implements Listenable<ScoreEventMap> {
 						pointer.clientX,
 						pointer.clientY,
 					);
-					this.target.dispatchEvent(type, {
+					this.dispatcher.dispatch(type, {
 						target: this.elements.at(point),
 						point,
 						native: pointer,
@@ -373,7 +406,7 @@ export class Score implements Listenable<ScoreEventMap> {
 		const target = point ? this.elements.at(point) : null;
 		if (target !== this.hovered) {
 			this.hovered = target;
-			this.target.dispatchEvent('hover', { target, point });
+			this.dispatcher.dispatch('hover', { target, point });
 		}
 	}
 }

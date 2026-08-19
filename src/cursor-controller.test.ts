@@ -56,7 +56,7 @@ describe('CursorController', () => {
 	it('a mid-step seek interpolates the bar position', () => {
 		const cursor = controller();
 		const events: CursorChangeEvent[] = [];
-		cursor.addEventListener('change', (e) => events.push(e));
+		cursor.events.on('change', (e) => events.push(e));
 		cursor.seekMs(250); // halfway through step 0 (beat 0.5), bar glides x 10 -> 20
 		const last = events.at(-1);
 		expect(last?.index).toBe(0);
@@ -70,7 +70,7 @@ describe('CursorController', () => {
 	it('change reports note deltas: a retrigger is stop(prev) + start(next)', () => {
 		const cursor = controller();
 		const events: CursorChangeEvent[] = [];
-		cursor.addEventListener('change', (e) => events.push(e));
+		cursor.events.on('change', (e) => events.push(e));
 		cursor.next(); // 0 -> 1
 		expect(events).toHaveLength(1);
 		const e = events[0];
@@ -85,10 +85,11 @@ describe('CursorController', () => {
 	it('stops delivering to a listener that has been removed', () => {
 		const cursor = controller();
 		const seen: number[] = [];
-		const listener = (e: CursorChangeEvent) => seen.push(e.index);
-		cursor.addEventListener('change', listener);
+		const unlisten = cursor.events.on('change', (e: CursorChangeEvent) =>
+			seen.push(e.index),
+		);
 		cursor.next();
-		cursor.removeEventListener('change', listener);
+		unlisten();
 		cursor.next();
 		expect(seen).toEqual([1]);
 	});
@@ -153,7 +154,7 @@ describe('CursorController', () => {
 		const host = new FakeCursorHost(); // vp covers every bar (x 10..40, width 1)
 		const cursor = controller({ host });
 		const seen: boolean[] = [];
-		cursor.addEventListener('visibility', (e) => seen.push(e.fullyVisible));
+		cursor.events.on('visibility', (e) => seen.push(e.fullyVisible));
 
 		// Narrow the viewport to x [0, 25]: bars at x 10 and 20 fit, 30 and 40 don't. The cursor sits at
 		// x 10, so this isn't a transition.
@@ -171,12 +172,20 @@ describe('CursorController', () => {
 		expect(seen).toEqual([false, true]);
 	});
 
+	it('disposes the host it was given, releasing its page subscriptions', () => {
+		const host = new FakeCursorHost();
+		const cursor = controller({ host });
+		expect(host.disposed).toBe(false);
+		cursor.dispose();
+		expect(host.disposed).toBe(true);
+	});
+
 	it('stops moving and emitting once disposed, announcing it exactly once', () => {
 		let disposes = 0;
 		const cursor = controller();
 		const seen: number[] = [];
-		cursor.addEventListener('dispose', () => disposes++);
-		cursor.addEventListener('change', (e) => seen.push(e.index));
+		cursor.events.on('dispose', () => disposes++);
+		cursor.events.on('change', (e) => seen.push(e.index));
 		cursor.dispose();
 		cursor.dispose();
 		cursor.next();
