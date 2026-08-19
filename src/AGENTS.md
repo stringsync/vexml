@@ -113,8 +113,8 @@ Two files cut across the draw stage and are worth knowing before anything else:
 
 ## Spanners (things that connect two notes)
 
-- **Ties, slurs** — `spanner-builder.ts`, `spanner-resolver.ts`, `curve-shape.ts` (the arcs themselves)
-- **Hammer-ons, pull-offs, slides, glissandos** — `spanner-builder.ts`, `spanner-resolver.ts`, `slide-shape.ts` (the lines themselves)
+- **Ties, slurs** — `spanner-builder.ts`, `spanner-resolver.ts`, `curve/` (the arcs themselves)
+- **Hammer-ons, pull-offs, slides, glissandos** — `spanner-builder.ts`, `spanner-resolver.ts`, `slide/` (the lines themselves)
 - **Ottava (8va) brackets, pedal lines, hairpins/wedges, bracket-and-dashes lines** — `spanner-resolver.ts`, `score-reader.ts`, `hairpin.ts` (the wedge glyph)
 
 ## Text and marks around the stave
