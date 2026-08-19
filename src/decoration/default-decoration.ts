@@ -1,3 +1,4 @@
+import type { Resource } from 'webappwiz/disposable';
 import type { DecorationStyle } from '../decoration-style/decoration-style';
 import { Rect } from '../geometry';
 import type { Layer } from '../layer/layer';
@@ -15,7 +16,7 @@ import type { Decoratable, Decoration } from './decoration';
  * the region so nothing outside it is double-painted. The layer is created lazily on the first
  * decoration, so an undecorated score never allocates an overlay.
  */
-export class DefaultDecoration implements Decoration {
+export class DefaultDecoration implements Decoration, Resource {
 	private readonly active = new Map<Decoratable, string>();
 	private layer: Layer | null = null;
 

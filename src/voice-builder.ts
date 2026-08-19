@@ -19,6 +19,23 @@ import type { ScoreReader, StaffVoice } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
 import type { PendingStave } from './system-formatter';
 
+/* The measure context one call to VoiceBuilder.buildNotes lays its notes out in. Every one
+ * of these is absent from a measure that says nothing about it, so each defaults to the
+ * quiet case: no meter to pad out to, a clef at sounding pitch, and no mid-measure
+ * dividers or clef changes. */
+export interface BuildNotesOptions {
+	/** Pad the voices with ghost notes out to this beat, so an underfull measure still
+	 * reserves the trailing space the meter asks for. */
+	meterFloor?: number;
+	/** How far the stave's clef draws its notes from their sounding pitch (a treble-8
+	 * clef's octave down), before any <octave-shift> on top. */
+	clefOctaveShift?: number;
+	/** Mid-measure dividers (see ScoreReader.midBarlinesOf), drawn on the first voice. */
+	barlines?: { beat: number; style: string }[];
+	/** Mid-measure clef changes (see ScoreReader.midClefsOf), which re-aim every later note. */
+	midClefs?: MidClefSpec[];
+}
+
 export interface VoiceBuilderOptions {
 	/** The formatter's proportional-spacing exponent, shared with the layout's width
 	 * planning so measures format at the width they were planned for. */
@@ -86,11 +103,14 @@ export class VoiceBuilder {
 		row: number,
 		voices: StaffVoice[],
 		clef: string,
-		meterFloor: number,
-		clefOctaveShift: number,
-		barlines: { beat: number; style: string }[],
-		midClefs: MidClefSpec[],
+		opts: BuildNotesOptions = {},
 	): PendingStave {
+		const {
+			meterFloor = 0,
+			clefOctaveShift = 0,
+			barlines = [],
+			midClefs = [],
+		} = opts;
 		// How far off its sounding pitch each note is drawn: the clef's own octave change,
 		// plus any <octave-shift> (8va/8vb) covering that note.
 		const octaveShiftOf = (lead: Note) =>

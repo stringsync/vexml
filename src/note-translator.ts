@@ -1272,6 +1272,11 @@ export interface VexflowVoiceTickablesOptions {
 	endBeat?: number;
 	/* Called with each lead note and the StaveNote built for it, as they are built, so a
 	 * caller can index them. */
+	// rule-ignore objects-over-callbacks: this fires DURING the call, handing back what the
+	// call is building, and one NoteTranslator is shared by the layout pass and the draw pass
+	// (their measured and drawn widths have to match). An Events surface on it would deliver
+	// the layout pass's notes to the draw pass's listener and back, which is the bug this
+	// per-call collector cannot have.
 	record?: (lead: Note, staveNote: StaveNote) => void;
 	/* Per-note octave shift, since a mid-measure clef change can vary it note by note
 	 * rather than it being one value for the stave. */
@@ -1506,6 +1511,9 @@ export class NoteTranslator {
 	vexflowTabTickables(
 		chords: Chord[],
 		tuning: number[] | null,
+		// rule-ignore objects-over-callbacks: the notation path's `record` and this one are the
+		// same collector, scoped to the one call for the same reason — see
+		// VexflowVoiceTickablesOptions.record.
 		record?: (lead: Note, tickable: StemmableNote) => void,
 	): StemmableNote[] {
 		const tickables: StemmableNote[] = [];

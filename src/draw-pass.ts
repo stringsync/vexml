@@ -951,18 +951,14 @@ export class DrawPass {
 				? this.translator.vexflowClef(clef.sign, clef.line)
 				: 'treble';
 			this.pendingStaves.push(
-				this.voiceBuilder.buildNotes(
-					stave,
-					this.staveRow,
-					voices,
-					clefName,
-					this.reader.meterFloor(measure, staffNumber),
-					clef?.octaveChange ?? 0,
-					this.reader.midBarlinesOf(measure),
-					this.translator.midClefSpecs(
+				this.voiceBuilder.buildNotes(stave, this.staveRow, voices, clefName, {
+					meterFloor: this.reader.meterFloor(measure, staffNumber),
+					clefOctaveShift: clef?.octaveChange ?? 0,
+					barlines: this.reader.midBarlinesOf(measure),
+					midClefs: this.translator.midClefSpecs(
 						this.reader.midClefsOf(measure, staffNumber),
 					),
-				),
+				}),
 			);
 			for (const voice of voices) {
 				this.spannerResolver.addChords(voice.chords);

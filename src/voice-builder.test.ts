@@ -17,7 +17,7 @@ import type {
 import type { ScoreReader, StaffVoice } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
 import type { PendingStave } from './system-formatter';
-import { VoiceBuilder } from './voice-builder';
+import { type BuildNotesOptions, VoiceBuilder } from './voice-builder';
 
 describe('VoiceBuilder', () => {
 	// The lead-note surface the builder reads: registry keys, tie/grace/chord-member
@@ -154,18 +154,8 @@ describe('VoiceBuilder', () => {
 	const buildNotes = (
 		builder: VoiceBuilder,
 		voices: StaffVoice[],
-		over: { meterFloor?: number; clefOctaveShift?: number } = {},
-	) =>
-		builder.buildNotes(
-			stave,
-			3,
-			voices,
-			'treble',
-			over.meterFloor ?? 0,
-			over.clefOctaveShift ?? 0,
-			[],
-			[],
-		);
+		opts: BuildNotesOptions = {},
+	) => builder.buildNotes(stave, 3, voices, 'treble', opts);
 
 	it('records each built note into the shared registry and the pending stave', () => {
 		const plain = lead();
@@ -239,10 +229,7 @@ describe('VoiceBuilder', () => {
 			0,
 			[staffVoice([]), staffVoice([])],
 			'treble',
-			0,
-			0,
-			barlines,
-			midClefs,
+			{ barlines, midClefs },
 		);
 		const [first, second] = translator.calls;
 		expect(first?.opts.barlines).toBe(barlines);
@@ -262,13 +249,12 @@ describe('VoiceBuilder', () => {
 			0,
 			[staffVoice([])],
 			'treble',
-			0,
-			0,
-			[
-				{ beat: 1, style: 'dashed' },
-				{ beat: 2, style: 'light-light' },
-			],
-			[],
+			{
+				barlines: [
+					{ beat: 1, style: 'dashed' },
+					{ beat: 2, style: 'light-light' },
+				],
+			},
 		);
 		expect(pending.midBars).toEqual([{ note: custom, style: 'dashed' }]);
 	});

@@ -7,3 +7,6 @@ tests/integration/__diffs__/
 
 # a release under way; the last artifact to land deletes it
 RELEASE
+
+# wiz cli scratch (per-run judge accounting)
+.wiz/
