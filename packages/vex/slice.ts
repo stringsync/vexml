@@ -1,5 +1,6 @@
-import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, extname, isAbsolute, resolve } from 'node:path';
+import type { Logger } from 'webappwiz/log';
+import type { Fs } from 'webappwiz/system';
 import { MeasureSlicer } from './lib/measure-slicer';
 
 export interface SliceOptions {
@@ -11,6 +12,8 @@ export interface SliceOptions {
 	/* Where the user ran `vex`; index.ts chdir'd to the repo root, so relative
 	 * paths resolve against this. */
 	cwd: string;
+	log: Logger;
+	fs: Fs;
 }
 
 export async function slice(opts: SliceOptions) {
@@ -20,17 +23,12 @@ export async function slice(opts: SliceOptions) {
 	const stem = basename(input, extname(input));
 	const output = at(opts.output ?? `${stem}.slice.musicxml`);
 
-	let sliced: string;
-	try {
-		sliced = new MeasureSlicer(opts.measures).slice(
-			readFileSync(input, 'utf8'),
-		);
-	} catch (e) {
-		// A bad -m is user error, not a crash; no stack trace.
-		console.error(`vex slice: ${e instanceof Error ? e.message : e}`);
-		process.exit(1);
-	}
+	// A bad --measures throws, which the cli reports as one line and no stack
+	// trace: user error, not a crash.
+	const sliced = new MeasureSlicer(opts.measures).slice(
+		await opts.fs.read(input),
+	);
 
-	writeFileSync(output, sliced);
-	console.log(`wrote ${output}`);
+	await opts.fs.write(output, sliced);
+	opts.log.info(`wrote ${output}`);
 }

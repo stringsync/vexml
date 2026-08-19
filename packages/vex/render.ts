@@ -2,7 +2,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { serve } from '@vexml/integration/serve';
 import { chromium } from 'playwright';
-import { run } from './run';
+import type { Logger } from 'webappwiz/log';
+import type { Fs, Ps } from 'webappwiz/system';
 
 // Same browser-render path as the test harness, but fed an arbitrary file
 // instead of a corpus fixture. VexFlow needs the DOM, so there's no headless
@@ -15,6 +16,9 @@ export async function render(opts: {
 	osmd?: boolean;
 	alpha?: boolean;
 	cwd: string;
+	log: Logger;
+	fs: Fs;
+	ps: Ps;
 }) {
 	// index.ts chdir'd to the repo root, so resolve user paths against their cwd.
 	const at = (p: string) => (isAbsolute(p) ? p : resolve(opts.cwd, p));
@@ -23,7 +27,14 @@ export async function render(opts: {
 	// is unclear. Shares nothing with the browser path but "MusicXML in, PNG out".
 	if (opts.muse) {
 		const output = at(opts.output ?? `musescore ${timestamp()}.png`);
-		await run('./packages/vex/musescore/render.sh', [at(opts.input), output]);
+		const { exitCode } = await opts.ps.spawn([
+			'./packages/vex/musescore/render.sh',
+			at(opts.input),
+			output,
+		]);
+		if (exitCode !== 0) {
+			throw new Error('musescore render failed');
+		}
 		return;
 	}
 
@@ -31,7 +42,7 @@ export async function render(opts: {
 	// on glyphs and disagrees on layout — the complement to MuseScore's opinion.
 	if (opts.osmd) {
 		const output = at(opts.output ?? `osmd ${timestamp()}.png`);
-		await renderWithOsmd(readFileSync(at(opts.input), 'utf8'), output);
+		await renderWithOsmd(await opts.fs.read(at(opts.input)), output, opts.log);
 		return;
 	}
 
@@ -39,11 +50,15 @@ export async function render(opts: {
 	// MuseScore — useful for guitar tab, where it's the strongest of the three.
 	if (opts.alpha) {
 		const output = at(opts.output ?? `alphatab ${timestamp()}.png`);
-		await renderWithAlphaTab(readFileSync(at(opts.input), 'utf8'), output);
+		await renderWithAlphaTab(
+			await opts.fs.read(at(opts.input)),
+			output,
+			opts.log,
+		);
 		return;
 	}
 
-	const musicXML = readFileSync(at(opts.input), 'utf8');
+	const musicXML = await opts.fs.read(at(opts.input));
 	const output = at(opts.output ?? `vexml ${timestamp()}.png`);
 	// Passed straight to window.render as a Partial<Config>; render fills the rest
 	// from DEFAULT_CONFIG, so this knows nothing about config's shape.
@@ -68,8 +83,9 @@ export async function render(opts: {
 			{ musicXML, config },
 		);
 		const buf = await page.locator('#screenshot').screenshot();
+		// Fs is text-only, so a PNG goes out through node:fs.
 		writeFileSync(output, buf);
-		console.log(`wrote ${output}`);
+		opts.log.info(`wrote ${output}`);
 	} finally {
 		await browser.close();
 		server.stop(true);
@@ -78,7 +94,7 @@ export async function render(opts: {
 
 // OSMD is a browser library, so this needs a page but no server: the UMD build
 // goes straight in from node_modules and draws SVG into a fixed-width div.
-async function renderWithOsmd(musicXML: string, output: string) {
+async function renderWithOsmd(musicXML: string, output: string, log: Logger) {
 	type OsmdWindow = {
 		opensheetmusicdisplay: {
 			OpenSheetMusicDisplay: new (
@@ -107,7 +123,7 @@ async function renderWithOsmd(musicXML: string, output: string) {
 			osmd.render();
 		}, musicXML);
 		writeFileSync(output, await page.locator('#osmd').screenshot());
-		console.log(`wrote ${output}`);
+		log.info(`wrote ${output}`);
 	} finally {
 		await browser.close();
 	}
@@ -116,7 +132,11 @@ async function renderWithOsmd(musicXML: string, output: string) {
 // Like OSMD, a browser library driven from a blank page. Unlike OSMD, it draws
 // with its own Bravura webfont, which it fetches by URL — so the font goes in
 // as a data URL rather than standing up a server just to serve one file.
-async function renderWithAlphaTab(musicXML: string, output: string) {
+async function renderWithAlphaTab(
+	musicXML: string,
+	output: string,
+	log: Logger,
+) {
 	type AlphaTabWindow = {
 		alphaTab: {
 			AlphaTabApi: new (
@@ -130,6 +150,7 @@ async function renderWithAlphaTab(musicXML: string, output: string) {
 		};
 	};
 
+	// Binary, so node:fs rather than Fs.
 	const font = readFileSync(
 		'./node_modules/@coderline/alphatab/dist/font/Bravura.woff2',
 	).toBase64();
@@ -173,7 +194,7 @@ async function renderWithAlphaTab(musicXML: string, output: string) {
 			{ musicXML: Buffer.from(musicXML).toBase64(), font },
 		);
 		writeFileSync(output, await page.locator('#alphatab').screenshot());
-		console.log(`wrote ${output}`);
+		log.info(`wrote ${output}`);
 	} finally {
 		await browser.close();
 	}

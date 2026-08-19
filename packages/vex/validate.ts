@@ -1,11 +1,12 @@
 import { isAbsolute, resolve } from 'node:path';
-import { run } from './run';
+import type { Ps } from 'webappwiz/system';
 
 export interface ValidateOptions {
 	input: string;
 	/* Where the user ran `vex`; index.ts chdir'd to the repo root, so relative
 	 * input paths resolve against this. */
 	cwd: string;
+	ps: Ps;
 }
 
 export async function validate(opts: ValidateOptions) {
@@ -13,5 +14,11 @@ export async function validate(opts: ValidateOptions) {
 	const at = isAbsolute(opts.input)
 		? opts.input
 		: resolve(opts.cwd, opts.input);
-	await run('./packages/vex/xmllint/validate.sh', [at]);
+	const { exitCode } = await opts.ps.spawn([
+		'./packages/vex/xmllint/validate.sh',
+		at,
+	]);
+	if (exitCode !== 0) {
+		throw new Error('validation failed');
+	}
 }
