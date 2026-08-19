@@ -1,8 +1,7 @@
 ---
 name: arbor
 description: Use the @webappwiz/arbor CLI to land your work on trunk, or a base branch given as an argument, from an isolated git worktree without pull requests. Read this before making any code change in an arbor repository, since it decides where the work happens, and whenever you need to add, claim, merge, remove, list, show, locate, or escalate a task.
-argument-hint: "[base-branch]"
-version: 0.0.0
+version: 0.0.2
 ---
 
 # Using arbor
