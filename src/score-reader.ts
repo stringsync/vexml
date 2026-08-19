@@ -812,19 +812,18 @@ export class ScoreReader {
 					}
 					// <octave-shift size> is an interval (8, 15, 22), i.e. 1, 2 or 3 octaves.
 					const octaves = Math.max(1, Math.round((opened.size - 1) / 7));
+					// "8va"/"8vb" for one octave; two or three take the -ma/-mb suffixes.
+					let suffix: string;
+					if (octaves === 1) {
+						suffix = opened.down ? 'va' : 'vb';
+					} else {
+						suffix = opened.down ? 'ma' : 'mb';
+					}
 					spans.push({
 						notes: notes.slice(first, last + 1),
 						octaves: opened.down ? octaves : -octaves,
-						// "8va"/"8vb" for one octave; two or three take the -ma/-mb suffixes.
 						label: String(opened.size),
-						suffix:
-							octaves === 1
-								? opened.down
-									? 'va'
-									: 'vb'
-								: opened.down
-									? 'ma'
-									: 'mb',
+						suffix,
 						above: opened.down,
 					});
 				}

@@ -148,7 +148,12 @@ export class Note extends Element implements Highlightable, Playable {
 		alter: number;
 	}): string {
 		const n = Math.round(p.alter);
-		const accidental = n > 0 ? '#'.repeat(n) : n < 0 ? 'b'.repeat(-n) : '';
+		let accidental = '';
+		if (n > 0) {
+			accidental = '#'.repeat(n);
+		} else if (n < 0) {
+			accidental = 'b'.repeat(-n);
+		}
 		return `${p.step}${accidental}/${p.octave}`;
 	}
 }

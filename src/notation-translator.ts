@@ -450,12 +450,12 @@ export class NotationTranslator {
 			return;
 		}
 		const direction = arpeggiate.direction;
-		const type =
-			direction === 'up'
-				? Stroke.Type.ROLL_DOWN
-				: direction === 'down'
-					? Stroke.Type.ROLL_UP
-					: Stroke.Type.ARPEGGIO_DIRECTIONLESS;
+		let type = Stroke.Type.ARPEGGIO_DIRECTIONLESS;
+		if (direction === 'up') {
+			type = Stroke.Type.ROLL_DOWN;
+		} else if (direction === 'down') {
+			type = Stroke.Type.ROLL_UP;
+		}
 		staveNote.addModifier(new Stroke(type), 0);
 	}
 

@@ -832,9 +832,14 @@ export class DirectionPlacer {
 		);
 		this.context.setFillStyle(style.color ?? this.textColor);
 		const w = this.context.measureText(text).width;
+		let alignOffset = 0;
+		if (style.align === 'center') {
+			alignOffset = w / 2;
+		} else if (style.align === 'right') {
+			alignOffset = w;
+		}
 		const natural = new Rect(
-			anchorX -
-				(style.align === 'center' ? w / 2 : style.align === 'right' ? w : 0),
+			anchorX - alignOffset,
 			below ? baseY : baseY - style.size,
 			w,
 			style.size,

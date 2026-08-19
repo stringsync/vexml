@@ -4,15 +4,12 @@ import type { ScoreParser } from './score-parser';
 export class DefaultScoreParser implements ScoreParser {
 	async parse(input: string | Blob): Promise<MDocument> {
 		const parser = new MDOMParser();
-		const mdoc =
-			typeof input === 'string'
-				? parser.parseFromString(input)
-				: input instanceof Blob
-					? await parser.parseFromBlob(input)
-					: null;
-		if (mdoc === null) {
-			throw new TypeError('render: input is not a string or Blob');
+		if (typeof input === 'string') {
+			return parser.parseFromString(input);
 		}
-		return mdoc;
+		if (input instanceof Blob) {
+			return parser.parseFromBlob(input);
+		}
+		throw new TypeError('render: input is not a string or Blob');
 	}
 }

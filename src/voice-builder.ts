@@ -127,8 +127,12 @@ export class VoiceBuilder {
 		// write <stem>s separate voices). A lone voice keeps position-based auto-stems.
 		// ponytail: 3+ voices all stem down after the first; alternate up/down if a
 		// real 3-voice-per-stave score ever shows up.
-		const stemFor = (index: number): 'up' | 'down' | undefined =>
-			voices.length > 1 ? (index === 0 ? 'up' : 'down') : undefined;
+		const stemFor = (index: number): 'up' | 'down' | undefined => {
+			if (voices.length <= 1) {
+				return undefined;
+			}
+			return index === 0 ? 'up' : 'down';
+		};
 		// A mid-measure divider belongs to the measure, not to a voice, so it goes in the
 		// first voice only — a second copy in each of the others would draw the same line
 		// again at the same x.

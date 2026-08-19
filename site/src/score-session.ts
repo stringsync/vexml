@@ -298,12 +298,12 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	// Resolve the pinned-or-hovered target into the lit halo, the cursor shape and the tooltip.
 	private apply(): void {
 		const target = this.pinned ?? this.hovered;
-		const note =
-			target instanceof Note
-				? target
-				: target instanceof TabPosition
-					? target.getNote()
-					: null;
+		let note: Note | null = null;
+		if (target instanceof Note) {
+			note = target;
+		} else if (target instanceof TabPosition) {
+			note = target.getNote();
+		}
 		if (note !== this.halo) {
 			const prev = this.halo;
 			this.halo = note;

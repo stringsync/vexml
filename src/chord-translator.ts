@@ -439,13 +439,13 @@ export class ChordTranslator {
 				return;
 			}
 			const filled = note.notehead?.filled ?? null;
-			noteHeads[i]?.setText(
-				filled === null
-					? byDuration
-					: filled
-						? SLASH_GLYPH_FILLED
-						: SLASH_GLYPH_OPEN,
-			);
+			let text = byDuration;
+			if (filled === true) {
+				text = SLASH_GLYPH_FILLED;
+			} else if (filled === false) {
+				text = SLASH_GLYPH_OPEN;
+			}
+			noteHeads[i]?.setText(text);
 		});
 	}
 }

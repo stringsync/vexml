@@ -231,13 +231,13 @@ export class StaveBuilder {
 		// retraces just the bars across the system.
 		const repeatBegin =
 			column.decoration.repeatBegin && !column.suppressBegRepeat;
-		stave.setBegBarType(
-			repeatBegin
-				? Barline.type.REPEAT_BEGIN
-				: isTab && this.totalStaves === 1 && column.isSystemStart
-					? Barline.type.SINGLE
-					: Barline.type.NONE,
-		);
+		let begBarType = Barline.type.NONE;
+		if (repeatBegin) {
+			begBarType = Barline.type.REPEAT_BEGIN;
+		} else if (isTab && this.totalStaves === 1 && column.isSystemStart) {
+			begBarType = Barline.type.SINGLE;
+		}
+		stave.setBegBarType(begBarType);
 		// A <bar-style> vexflow has no type for is set to NONE here and painted by
 		// drawCustomBarline once the stave is on the canvas; 'none' is genuinely no line, so
 		// it takes NONE and no repaint. A repeat sign outranks any bar style — MusicXML puts
@@ -245,19 +245,19 @@ export class StaveBuilder {
 		const styled = column.barStyle
 			? BAR_STYLE_TYPES[column.barStyle]
 			: undefined;
-		stave.setEndBarType(
-			column.repeatBoth
-				? Barline.type.REPEAT_BOTH
-				: column.decoration.repeatEnd
-					? Barline.type.REPEAT_END
-					: this.totalStaves > 1
-						? Barline.type.NONE
-						: column.barStyle
-							? (styled ?? Barline.type.NONE)
-							: column.isLastMeasure
-								? Barline.type.END
-								: Barline.type.SINGLE,
-		);
+		let endBarType = Barline.type.SINGLE;
+		if (column.repeatBoth) {
+			endBarType = Barline.type.REPEAT_BOTH;
+		} else if (column.decoration.repeatEnd) {
+			endBarType = Barline.type.REPEAT_END;
+		} else if (this.totalStaves > 1) {
+			endBarType = Barline.type.NONE;
+		} else if (column.barStyle) {
+			endBarType = styled ?? Barline.type.NONE;
+		} else if (column.isLastMeasure) {
+			endBarType = Barline.type.END;
+		}
+		stave.setEndBarType(endBarType);
 		// The volta (ending) bracket rides above the top stave of the system only — it labels
 		// the passage, not each instrument. Registered as an obstacle after the draw below so
 		// chord symbols and words in the same measure lift clear of it.

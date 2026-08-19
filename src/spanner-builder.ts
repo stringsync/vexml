@@ -365,8 +365,10 @@ export class SpannerBuilder {
 					// (+1). Otherwise vexflow defaults every tie to the stem direction, so a
 					// stem-up chord's top notes would tuck underneath instead of over. Single
 					// notes keep that default (a tie opposite the lone stem).
-					const direction =
-						heads > 1 ? (from.index >= (heads - 1) / 2 ? -1 : 1) : null;
+					let direction: number | null = null;
+					if (heads > 1) {
+						direction = from.index >= (heads - 1) / 2 ? -1 : 1;
+					}
 
 					const specs = this.tieSpecs(
 						from.staveNote,
@@ -763,20 +765,23 @@ export class SpannerBuilder {
 				// its ends are a stave apart, so a "below" bow has to duck under the beam and
 				// then dive most of a stave to reach the far end, which reads as a spike rather
 				// than a slur. Above, the same span is one arc riding over the run.
-				const bulgeUp = isGrace
-					? false
-					: crossStave
-						? true
-						: slur.placement === 'above'
-							? true
-							: slur.placement === 'below'
-								? false
-								: // Stems disagreeing across the slur put it above the notes
-									// (Gould): a bow from a stem-up note to a stem-down one has no
-									// notehead side to follow, and below it has to dive under the
-									// whole run to reach the far end.
-									from.getStemDirection() !== to.getStemDirection() ||
-									from.getStemDirection() !== 1;
+				let bulgeUp: boolean;
+				if (isGrace) {
+					bulgeUp = false;
+				} else if (crossStave) {
+					bulgeUp = true;
+				} else if (slur.placement === 'above') {
+					bulgeUp = true;
+				} else if (slur.placement === 'below') {
+					bulgeUp = false;
+				} else {
+					// Stems disagreeing across the slur put it above the notes (Gould): a bow
+					// from a stem-up note to a stem-down one has no notehead side to follow,
+					// and below it has to dive under the whole run to reach the far end.
+					bulgeUp =
+						from.getStemDirection() !== to.getStemDirection() ||
+						from.getStemDirection() !== 1;
+				}
 
 				// Anchor each endpoint on the bulge side of its own note: NEAR_TOP (the stem
 				// tip) when that stem points toward the bulge, else NEAR_HEAD (the outer
@@ -923,12 +928,15 @@ export class SpannerBuilder {
 				// the run it climbs through sits above its chord for most of the span by
 				// construction — no bow gets over that, and solving for it domes the arc across
 				// the hand it's leaving. The endpoints alone shape it.
-				const clearanceOf = (spanNotes: StaveNote[]) =>
-					crossStave
-						? []
-						: isGrace
-							? spanNotes
-							: spanNotes.filter((n) => n !== from && n !== to);
+				const clearanceOf = (spanNotes: StaveNote[]): StaveNote[] => {
+					if (crossStave) {
+						return [];
+					}
+					if (isGrace) {
+						return spanNotes;
+					}
+					return spanNotes.filter((n) => n !== from && n !== to);
+				};
 				const shapeFor = (
 					spanNotes: StaveNote[],
 					xL: number,

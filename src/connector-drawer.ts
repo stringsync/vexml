@@ -1,5 +1,10 @@
 import type { Part } from '@stringsync/mdom';
-import { type RenderContext, type Stave, StaveConnector } from 'vexflow';
+import {
+	type RenderContext,
+	type Stave,
+	StaveConnector,
+	type StaveConnectorType,
+} from 'vexflow';
 import {
 	BRACE_LEFT_OVERHANG,
 	BRACKET_GLYPH_OVERHANG,
@@ -197,12 +202,12 @@ export class ConnectorDrawer {
 			// with no dotted, dashed or heavy member, so the exotic styles fall back to the plain
 			// line there. Single-stave scores (where these styles actually show up) get the full
 			// vocabulary via drawCustomBarline; widen this if a multi-stave fixture needs it.
-			const type =
-				column.barStyle === 'light-light'
-					? 'thinDouble'
-					: column.barStyle === 'light-heavy' || column.isLastMeasure
-						? 'boldDoubleRight'
-						: 'singleRight';
+			let type: StaveConnectorType = 'singleRight';
+			if (column.barStyle === 'light-light') {
+				type = 'thinDouble';
+			} else if (column.barStyle === 'light-heavy' || column.isLastMeasure) {
+				type = 'boldDoubleRight';
+			}
 			for (const run of this.barlineRuns(column)) {
 				new StaveConnector(run.top, run.bottom)
 					.setType(type)
