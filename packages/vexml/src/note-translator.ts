@@ -52,15 +52,15 @@ export interface VoiceTickablesOptions {
 }
 
 /*
- * One voice of a notation staff as vexflow tickables — the notation counterpart of
- * TabTranslator. ChordTranslator builds each note; this is what decides where that note
- * lands in the measure and what sits between the notes: the mid-measure dividers and clef
- * changes, and invisible ghosts across the time no chord covers.
+ * One voice's mdom chords as the vexflow tickables that draw them: a StaveNote per chord in
+ * onset order, the zero-duration BarNotes and ClefNotes a mid-measure barline or clef change
+ * puts between them, and invisible ghosts holding the time no chord covers. ChordTranslator
+ * builds the notes themselves; this decides where each one lands and what goes between.
  *
- * Its other methods are the vexflow plumbing that comes with those tickables — wrapping them
+ * Its other methods are the vexflow plumbing that comes with those tickables: wrapping them
  * in a voice, and the font metric and modifier lookups their callers need. One instance per
- * render, shared by the layout (measuring) pass and the draw pass so both build their voices
- * — and probe that metric — identically.
+ * render, shared by the layout (measuring) pass and the draw pass, so both build their
+ * voices (and probe that metric) identically.
  */
 export class NoteTranslator {
 	constructor(
@@ -70,14 +70,14 @@ export class NoteTranslator {
 	) {}
 
 	/*
-	 * One voice's tickables, in onset order. A voice placed by <backup>/<forward> needn't
-	 * start at beat 0, be contiguous, or run to the measure's end, so the chords' own
-	 * measureBeats — not document order — decide where each note lands, keeping it aligned
-	 * with the other voices on the stave. GhostNotes hold the beats that leaves uncovered:
-	 * before the first chord, between chords, and after the last one up to `opts.endBeat`.
-	 * Without that trailing fill, a voice that stops early lets the formatter cram the other
-	 * voices' later notes against its last note. See VoiceTickablesOptions for what the rest
-	 * of the settings do.
+	 * One voice's chords as tickables, in onset order. A voice placed by <backup>/<forward>
+	 * needn't start at beat 0, be contiguous, or run to the measure's end, so each note lands
+	 * at its chord's own measureBeat rather than where document order would put it, keeping it
+	 * aligned with the other voices on the stave. GhostNotes hold the beats that leaves
+	 * uncovered: before the first chord, between chords, and after the last one up to
+	 * `opts.endBeat`. Without that trailing fill, a voice that stops early lets the formatter
+	 * cram the other voices' later notes against its last note. See VoiceTickablesOptions for
+	 * what the rest of the settings do.
 	 */
 	voiceTickables(
 		chords: Chord[],
