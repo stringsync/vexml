@@ -14,5 +14,5 @@ export async function fix(opts: FixOptions) {
 	]);
 	await run('bunx', ['tsc', '--noEmit']);
 	console.log('tsc: Compilation successful.');
-	await run('./xmllint/validate.sh', []);
+	await run('./packages/vex/xmllint/validate.sh', []);
 }

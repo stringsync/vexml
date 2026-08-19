@@ -6,12 +6,8 @@
       "name": "@stringsync/vexml",
       "devDependencies": {
         "@biomejs/biome": "2.5.1",
-        "@coderline/alphatab": "^1.8.4",
         "@types/bun": "latest",
         "@webappwiz/arbor": "0.0.1",
-        "commander": "15.0.0",
-        "opensheetmusicdisplay": "^2.1.1",
-        "playwright": "^1.61.1",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -50,6 +46,23 @@
         "@vitejs/plugin-react": "^6.0.3",
         "tailwindcss": "^4.3.1",
         "vite": "^8.1.0",
+      },
+    },
+    "packages/vex": {
+      "name": "@vexml/vex",
+      "version": "1.2.4",
+      "bin": {
+        "vex": "./index.ts",
+      },
+      "dependencies": {
+        "@stringsync/mdom": "0.2.4",
+        "@vexml/integration": "workspace:*",
+        "webappwiz": "0.0.1",
+      },
+      "devDependencies": {
+        "@coderline/alphatab": "^1.8.4",
+        "opensheetmusicdisplay": "^2.1.1",
+        "playwright": "^1.61.1",
       },
     },
     "packages/vexml": {
@@ -194,6 +207,8 @@
 
     "@vexml/site": ["@vexml/site@workspace:packages/site"],
 
+    "@vexml/vex": ["@vexml/vex@workspace:packages/vex"],
+
     "@vitejs/plugin-react": ["@vitejs/plugin-react@6.0.3", "", { "dependencies": { "@rolldown/pluginutils": "^1.0.1" }, "peerDependencies": { "@rolldown/plugin-babel": "^0.1.7 || ^0.2.0", "babel-plugin-react-compiler": "^1.0.0", "vite": "^8.0.0" }, "optionalPeers": ["@rolldown/plugin-babel", "babel-plugin-react-compiler"] }, "sha512-vmFvco5/QuC2f9Oj+wTk0+9XeDFkHxSamwZKYc7MxYwKICfvUvlMhqKI0VuICPltGqh1neqBKDvO4kes1ya8vg=="],
 
     "@webappwiz/arbor": ["@webappwiz/arbor@0.0.1", "", { "dependencies": { "webappwiz": "^0.0.1" }, "bin": { "arbor": "index.js" } }, "sha512-YZzgE1m+0Z8dp872GGtODIj7P8QOAjsKPD6J2Fm4sG4mVFAyjsAJLKQHc8oSj8RLl/OB/Cj40D7RnZHKcH1xqg=="],
@@ -219,8 +234,6 @@
     "chalk": ["chalk@5.6.2", "", {}, "sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA=="],
 
     "chownr": ["chownr@1.1.4", "", {}, "sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg=="],
-
-    "commander": ["commander@15.0.0", "", {}, "sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg=="],
 
     "core-util-is": ["core-util-is@1.0.3", "", {}, "sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ=="],
 

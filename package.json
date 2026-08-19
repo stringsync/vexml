@@ -8,12 +8,8 @@
 	],
 	"devDependencies": {
 		"@biomejs/biome": "2.5.1",
-		"@coderline/alphatab": "^1.8.4",
 		"@types/bun": "latest",
-		"@webappwiz/arbor": "0.0.1",
-		"commander": "15.0.0",
-		"opensheetmusicdisplay": "^2.1.1",
-		"playwright": "^1.61.1"
+		"@webappwiz/arbor": "0.0.1"
 	},
 	"peerDependencies": {
 		"typescript": "^5"

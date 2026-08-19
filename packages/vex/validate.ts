@@ -13,5 +13,5 @@ export async function validate(opts: ValidateOptions) {
 	const at = isAbsolute(opts.input)
 		? opts.input
 		: resolve(opts.cwd, opts.input);
-	await run('./xmllint/validate.sh', [at]);
+	await run('./packages/vex/xmllint/validate.sh', [at]);
 }

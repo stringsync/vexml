@@ -23,7 +23,7 @@ export async function render(opts: {
 	// is unclear. Shares nothing with the browser path but "MusicXML in, PNG out".
 	if (opts.muse) {
 		const output = at(opts.output ?? `musescore ${timestamp()}.png`);
-		await run('./musescore/render.sh', [at(opts.input), output]);
+		await run('./packages/vex/musescore/render.sh', [at(opts.input), output]);
 		return;
 	}
 

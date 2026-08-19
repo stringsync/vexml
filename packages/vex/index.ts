@@ -9,9 +9,11 @@ import { slice } from './slice';
 import { test } from './test';
 import { validate } from './validate';
 
-// Where the user actually ran `vex`, before we chdir to the repo root below.
+// Where the user actually ran `vex`, before we chdir below. Every command
+// underneath resolves from the repo root, not this package: the shell scripts,
+// the docker build context and the hoisted node_modules all live up there.
 const invocationDir = process.cwd();
-process.chdir(`${import.meta.dir}/..`);
+process.chdir(`${import.meta.dir}/../..`);
 
 const flag = { default: false };
 

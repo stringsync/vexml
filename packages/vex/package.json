@@ -1,0 +1,20 @@
+{
+	"name": "@vexml/vex",
+	"version": "1.2.4",
+	"private": true,
+	"type": "module",
+	"module": "index.ts",
+	"bin": {
+		"vex": "./index.ts"
+	},
+	"dependencies": {
+		"@stringsync/mdom": "0.2.4",
+		"@vexml/integration": "workspace:*",
+		"webappwiz": "0.0.1"
+	},
+	"devDependencies": {
+		"@coderline/alphatab": "^1.8.4",
+		"opensheetmusicdisplay": "^2.1.1",
+		"playwright": "^1.61.1"
+	}
+}

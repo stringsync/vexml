@@ -5,8 +5,8 @@
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo="$(cd "$here/.." && pwd)"
-schema="xmllint/schema/musicxml.xsd"   # relative to repo root (== Docker /work)
+repo="$(cd "$here/../../.." && pwd)"
+schema="packages/vex/xmllint/schema/musicxml.xsd" # relative to repo root (== Docker /work)
 image="vexml-xmllint"
 
 # Files: args as given, else default to the integration fixtures glob.

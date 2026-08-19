@@ -25,6 +25,7 @@ COPY package.json bun.lock ./
 COPY packages/vexml/package.json packages/vexml/
 COPY packages/site/package.json packages/site/
 COPY packages/integration/package.json packages/integration/
+COPY packages/vex/package.json packages/vex/
 RUN bun install --frozen-lockfile
 
 COPY . .
