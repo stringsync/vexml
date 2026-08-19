@@ -191,7 +191,7 @@ export type BarlineDecoration = {
 };
 
 /*
- * Every measure's barline decorations, mapped from the shared repeat structure (src/repeats.ts,
+ * Every measure's barline decorations, mapped from the shared repeat structure (ScoreReader.measureRepeats,
  * which playback reads too). An ending run's bracket opens with a left hook (BEGIN), continues
  * hookless (MID), and closes with a right hook (END) — BEGIN_END when the run is one measure.
  * A `discontinue` close leaves the bracket open on the right, so it keeps the hookless form.

@@ -65,14 +65,14 @@ const TEST_CASES = [
 	//   <group-barline>no</group-barline> — the end barline STOPS between P3 and P4, so this
 	//   pair reads as two separate instruments despite sharing a bracket.
 	// - "Square" (P5-6): drawn as a bracket. vexflow has no squared-bracket connector, so
-	//   'square' falls back to the nearest reading (see groupSymbol in engraving/staves.ts).
+	//   'square' falls back to the nearest reading (see partGroups in src/score-reader.ts).
 	//   It declares no <group-barline>, which reads as common barlines, so unlike the pair
 	//   above its end barline runs through — the two brackets look alike, their barlines don't.
 	// - "Line" (P7-8): a plain vertical line, no curls, and another 'no' breaking the barline
 	//   between P7 and P8.
 	// The barlines also break BETWEEN the groups: a barline joins parts only where a
 	// <part-group> asks it to, and stops at every other part boundary. See barlineBreaks in
-	// engraving/staves.ts.
+	// src/score-reader.ts.
 	testCase(
 		'structure_part_group_symbols.musicxml',
 		'structure_part_group_symbols.png',
@@ -994,7 +994,7 @@ const TEST_CASES = [
 	// The playback expansion is asserted separately in cursor.test.ts: M3-M6 are four consecutive
 	// ending measures with no plain measure between them, so the numbering restarting at 1 on M5
 	// is the only thing that separates the two volta groups (see ScoreReader-side endingFirstPass
-	// and the pre-scan in src/playback/sequence-factory.ts).
+	// and the pre-scan in src/sequence-factory.ts).
 	// See also lilypond_45e-Repeats-Nested-Alternatives.xml.
 	testCase('repeats_nested.musicxml', 'repeats_nested.png'),
 
@@ -1198,7 +1198,7 @@ const TEST_CASES = [
 	// - M2: "dashed" — the same arc broken into even dashes.
 	// - M3: "dotted" — the same arc as a run of dots.
 	// - M4: "wavy" — falls back to solid, so M4 is drawn identically to M1 rather than
-	//   the slur being dropped (see LINE_TYPE_DASH in src/engraving/score-reader.ts).
+	//   the slur being dropped (see LINE_TYPE_DASH in src/score-reader.ts).
 	// ponytail: the <slur> bezier/orientation attributes (bezier-x/y, orientation) are
 	// still ignored — vexml computes its own control points to clear the spanned notes,
 	// which an exporter's absolute offsets would fight rather than improve.
@@ -1224,7 +1224,7 @@ const TEST_CASES = [
 	// from the first bass notehead up to the treble one, and BOTH measures bow above it — a
 	// cross-stave slur overrides <slur placement> the way a grace slur does, because a
 	// "below" bow would have to duck under the beam and then dive most of a stave to reach
-	// its far end (see crossStave in src/engraving/spanner-builder.ts).
+	// its far end (see crossStave in src/spanner-builder.ts).
 	// - M1: placement="above" — C#3, B3, C#4 (bass) into E#4 (treble).
 	// - M2: placement="below" — D3, B3, D4 (bass) into F#4 (treble), drawn like M1.
 	// Reduced from Schumann's "Dichterliebe" measures 4-5, whose piano runs this figure in
@@ -1430,7 +1430,7 @@ const TEST_CASES = [
 	//   <staff-tuning> this fixture declares (standard guitar). An open dyad (strings 3/2,
 	//   frets 0/0) whose third member is a bare E3, then a lone bare E3. Each bare note lands
 	//   on the highest string that reaches it — "2" on string 4, not "0" on string 1 (see
-	//   derivePosition in src/engraving/note-translator.ts). The chord's derived "2" stacks
+	//   derivePosition in src/note-translator.ts). The chord's derived "2" stacks
 	//   directly under the two explicit "0"s on the next line down.
 	testCase('tab_chord.musicxml', 'tab_chord.png'),
 
@@ -1827,7 +1827,7 @@ const TEST_CASES = [
 
 	// The <kind> vocabulary, one kind per note: four measures of four C4 quarters, each with a
 	// <harmony> above spelling the kind's conventional suffix (HARMONY_KIND_SUFFIX in
-	// src/engraving/score-reader.ts) and a lyric below naming the kind, so the two can be read
+	// src/score-reader.ts) and a lyric below naming the kind, so the two can be read
 	// against each other without opening the fixture. harmony.musicxml only exercises major,
 	// dominant, minor and power, so this is what pins the rest of that table against a typo.
 	// - M1: C, Cm, C+, Cdim (major, minor, augmented, diminished).
@@ -2450,7 +2450,7 @@ const TEST_CASES = [
 	// across the treble stave from measure 1 into measure 2, leaves three stems standing with no
 	// noteheads shooting off the top of the image, and inflates the first system's height enough
 	// to leave a 385px blank band beneath it — every other system here gaps by ~85-130px.
-	// See the recent cross-staff beam work in engraving/. Fix, then
+	// See the recent cross-staff beam work in src/. Fix, then
 	// `vex test score_joplin_elite_syncopations --update`.
 	// Joplin, "Elite Syncopations": 88 measures of piano, with repeats and numbered endings.
 	testCase(

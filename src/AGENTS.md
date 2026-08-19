@@ -14,6 +14,10 @@ Files not named here are either infrastructure (`geometry.ts`, `quadtree.ts`,
 `listenable/`), test harnesses (`*-harness.ts`, `*-fixture.ts`, `fake-*.ts`),
 or the public surface (`index.ts`, `config.ts`, `constants.ts`).
 
+To see any of this rendered, `tests/integration/render.test.ts` has a hand-cut
+fixture per feature, named for the concept (`stave_spacing_dynamic`,
+`tab_bends`, `slur_cross_staff`) and commented with what it is proving.
+
 ## The pipeline
 
 `render()` in `render.ts` is the composition root: it constructs every class
@@ -43,22 +47,57 @@ Two files cut across the draw stage and are worth knowing before anything else:
 ## Staves, measures, and the frame
 
 - **Stave, clef, key signature, time signature** — `stave-builder.ts`, `score-reader.ts`
+- **Mid-measure clef changes, mid-measure barlines** — `score-reader.ts` (`midClefsOf`, `midBarlinesOf`), `note-translator.ts`, `layout-planner.ts`
 - **Barlines, repeat signs, volta (ending) brackets** — `stave-builder.ts`, `connector-drawer.ts`, `score-reader.ts`
 - **Measure numbers** — `stave-builder.ts` (`showsMeasureNumber`)
 - **Multi-measure rests** — `stave-builder.ts` (`drawMultiRest`), `layout-planner.ts`
 - **Braces, brackets, part-group connectors, part names** — `connector-drawer.ts`, `score-reader.ts`
-- **Measure widths, system breaks, where a stave sits** — `layout-planner.ts`
-- **Stave spacing when the music outgrows it, redraw decision** — `spill-tracker.ts`, `spill-resolver.ts`
-- **Page size, top/bottom crop, the scratch canvas** — `score-drawer.ts`
+- **Percussion staves, unpitched notes** — `stave-builder.ts`, `note-translator.ts`
+- **Transposing parts** — `stave-builder.ts`, `system-formatter.ts`
 
 ## Notes and voices
 
-- **Noteheads, accidentals, stems, flags, rests, dots** — `note-translator.ts`
+- **Noteheads, accidentals, stems, flags, rests, dots, ledger lines** — `note-translator.ts`
 - **Voices on one stave, stem direction, voice-level layout** — `voice-builder.ts`
 - **Beams, tuplets, grace notes** — `voice-builder.ts` (grouping), `spanner-builder.ts` (construction), `system-formatter.ts` (grace spacing)
+- **Cross-staff notes and beams** — `voice-builder.ts`
+- **Articulations, fermatas, ornaments, trills, tremolos, arpeggios, harmonics** — `note-translator.ts`
+- **Invisible notes (`print-object="no"`), note colors** — `note-translator.ts`
 - **Formatting a measure column: note x, note extents, alignment** — `system-formatter.ts`
-- **Articulations, fermatas, ornaments, trills, tremolos, arpeggios** — `note-translator.ts`
-- **Cross-stave beaming** — `voice-builder.ts`
+
+## Horizontal spacing (how wide a measure is, where a note sits in it)
+
+- **Intra-voice note spacing — the curve that makes a denser measure wider and a
+  longer note take more room than a short one, sub-linearly** —
+  `layout-planner.ts` (`noteLogWidth`, `measureNoteArea`), `constants.ts`
+  (`BASE_VOICE_WIDTH`, `LOG_SPACING_RATIO`, `MIN_LOG_FACTOR`), `config.ts`
+  (`noteSpacing`, `softmaxFactor`)
+- **A measure's two widths: the `ideal` the curve wants and the `min` below
+  which notes collide** — `layout-planner.ts` (`measureNoteArea`)
+- **Where the notes actually land, justified into the planned box at draw time** —
+  `system-formatter.ts` (`formatAndDraw`), `note-translator.ts` (`softVoice`)
+- **Room reserved at a measure's left for clef/key/time/repeat** — `layout-planner.ts`, `constants.ts` (`LEAD_*`)
+- **Room held open for a words directive that would overrun the barline** — `layout-planner.ts` (`trailingWordsPad`, `leadingWordsPad`)
+- **Grace-note room** — `layout-planner.ts` (`graceWidthOf`), `system-formatter.ts` (`closeGraceGaps`)
+- **Minimum tab note spacing, minimum multi-rest width** — `layout-planner.ts`, `constants.ts`
+- **Squaring opening repeats and time signatures across a system's staves** — `system-formatter.ts` (`alignBegModifiers`)
+
+## System and page layout (vertical, and across the line)
+
+- **Breaking measures into systems: greedy packing, then evening out a lopsided
+  pair** — `layout-planner.ts` (`evenOutSystems`)
+- **A break the document forced (`<print new-system="yes">`)** — `layout-planner.ts` (read straight off the mdom measure), `config.ts` (`honorSystemBreaks`)
+- **Justifying a complete system to full width; leaving the last one short** — `layout-planner.ts`, `config.ts` (`minLastSystemFill`)
+- **A document line too wide for the page: wrap / allow / widen** — `layout-planner.ts`, `config.ts` (`overflow`)
+- **Panoramic (one endless system) vs standard layout** — `layout-planner.ts`, `config.ts`, `scroller/scroll-controller.ts`
+- **The label columns reserved left of the first system** — `layout-planner.ts` (`labelIndent`, `partLabelIndent`), `connector-drawer.ts`
+- **Stave offsets within a system: the gap inside a part vs between two parts** — `layout-planner.ts`, `constants.ts` (`INTRA_PART_SPACING`, `INTER_PART_SPACING`)
+- **Widening a stave gap the music outgrows — measured per x column, per
+  system, so one dense bar doesn't spread the whole score** — `spill-tracker.ts`, `spill-resolver.ts`
+- **The gap between stacked systems, and notes rising above a system's top stave** — `spill-tracker.ts`, `spill-resolver.ts`, `constants.ts` (`SYSTEM_GAP`)
+- **Why there are two draw passes at all** — `score-drawer.ts` (the driver), `spill-resolver.ts` (the redraw decision)
+- **Page margins, ledger headroom, the final crop and blit** — `score-drawer.ts`, `constants.ts`
+- **Keeping two marks from printing through each other** — `collision-resolver.ts`
 
 ## Spanners (things that connect two notes)
 
@@ -68,13 +107,12 @@ Two files cut across the draw stage and are worth knowing before anything else:
 
 ## Text and marks around the stave
 
-- **Dynamics, words directions, rehearsal marks, segno/coda, figured bass** — `direction-placer.ts`, `score-reader.ts`
+- **Dynamics, words directions, rehearsal marks, segno/coda navigation, figured bass** — `direction-placer.ts`, `score-reader.ts`
 - **Tempo marks and metronome marks** — `direction-placer.ts`, `metronome-glyph.ts` (the note-group form)
 - **Chord symbols (`<harmony>`)** — `direction-placer.ts`
 - **Chord diagrams (fret boxes)** — `chord-diagram-glyph.ts` (drawing), `direction-placer.ts` (placement), `chord-diagram.ts` (the element)
 - **Lyrics, verses, melisma lines** — `lyric-placer.ts`, `lyric-mark/`
 - **Fingerings, string numbers, other technical marks** — `technical-mark/`, `note-translator.ts`, `system-formatter.ts` (stacking)
-- **Anything nudging to avoid an overlap** — `collision-resolver.ts`
 
 ## Tablature
 
@@ -82,6 +120,13 @@ Two files cut across the draw stage and are worth knowing before anything else:
 - **Fret numbers, tab stems, bends** — `note-translator.ts`, `voice-builder.ts`
 - **Tab note geometry for the hit index** — `geometry-collector.ts`
 - **The `TabPosition` a caller gets back** — `tab-position.ts`
+
+## Reading the document
+
+- **Divisions, ticks, beats, pickup measures, `<senza-misura>`** — `score-reader.ts` (`meterBeats`)
+- **Repeat structure, endings, how many passes** — `score-reader.ts` (`measureRepeats`, `endingPasses`)
+- **Directions routed to the right staff** — `score-reader.ts`
+- **Silent gap measures the caller asked for** — `gaps.ts`
 
 ## Interaction and playback
 

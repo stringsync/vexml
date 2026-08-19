@@ -384,7 +384,7 @@ const QUARTERS_PER_UNIT: Record<string, number> = {
 };
 
 /* The repeat/volta jumps for every measure, mapped from the shared repeat structure
- * (src/repeats.ts, which the renderer reads too). An ending supersedes a co-located backward
+ * (ScoreReader.measureRepeats, which the renderer reads too). An ending supersedes a co-located backward
  * repeat — the iterator drives the back-jump off the ending instead. */
 function jumpsByMeasure(
 	reader: ScoreReader,
