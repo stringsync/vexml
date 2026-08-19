@@ -52,8 +52,7 @@ Two files cut across the draw stage and are worth knowing before anything else:
     grace groups, mid-measure dividers and clef changes.
   - `signature-translator.ts` (clef/key/time specs),
     `barline-translator.ts` (repeat dots, voltas, mid-measure dividers),
-    `duration-translator.ts` (duration codes, ghost fills) and
-    `note-reader.ts` (the note attributes they all branch on) are the small
+    `duration-translator.ts` (duration codes, ghost fills) are the small
     shared pieces underneath.
 
 ## Staves, measures, and the frame

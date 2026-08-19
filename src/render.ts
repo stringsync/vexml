@@ -14,7 +14,6 @@ import { Gaps } from './gaps';
 import { Stage } from './host/stage';
 import { LayoutPlanner } from './layout-planner';
 import { NotationTranslator } from './notation-translator';
-import { NoteReader } from './note-reader';
 import { NoteTranslator } from './note-translator';
 import type { Score } from './score';
 import { ScoreDrawer } from './score-drawer';
@@ -65,16 +64,11 @@ export function render(
 		backgroundColor: resolved.backgroundColor,
 		fit,
 	});
-	const notes = new NoteReader();
 	const durations = new DurationTranslator();
 	const barlines = new BarlineTranslator();
 	const signatures = new SignatureTranslator();
-	const tab = new TabTranslator(notes, durations, resolved.tabStemPlacement);
-	const chords = new ChordTranslator(
-		notes,
-		durations,
-		new NotationTranslator(),
-	);
+	const tab = new TabTranslator(durations, resolved.tabStemPlacement);
+	const chords = new ChordTranslator(durations, new NotationTranslator());
 	// ONE translator instance shared by layout and draw: both must build identical vexflow
 	// voices for the measured widths to match the drawn ones.
 	const translator = new NoteTranslator(chords, durations, barlines);

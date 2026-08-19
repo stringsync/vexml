@@ -18,7 +18,6 @@ import {
 	TAB_GRACE_SPACING,
 } from './constants';
 import type { DurationTranslator } from './duration-translator';
-import type { NoteReader } from './note-reader';
 
 /*
  * Where a note sits on the fretboard when `<technical>` doesn't say. Some exporters give a
@@ -57,11 +56,15 @@ type FretElement = Element & { fontWeight: string };
  */
 export class TabTranslator {
 	constructor(
-		private readonly notes: NoteReader,
 		private readonly durations: DurationTranslator,
 		// Whether/where TabNotes are built with stems (and flags). See Config.tabStemPlacement.
 		private readonly tabStemPlacement: TabStemPlacement = 'none',
 	) {}
+
+	/* The held tail of a tie: the string isn't re-struck, so guitar tab omits its fret. */
+	private isHeld(note: Chord['notes'][number]): boolean {
+		return note.ties.some((tie) => tie.tieType === 'stop');
+	}
 
 	/*
 	 * A tab voice's tickables: one TabNote per non-rest chord, in onset order. Grace
@@ -101,7 +104,7 @@ export class TabTranslator {
 			// omits every fret. Reserve its time with invisible ghosts (keeping the tab
 			// aligned with the notation stave, which still draws the tied noteheads) rather
 			// than printing the held frets.
-			if (chord.notes.every((note) => this.notes.isTieStop(note))) {
+			if (chord.notes.every((note) => this.isHeld(note))) {
 				if (chord.lead.timeModification) {
 					// A held note inside a tuplet: reserve it as ONE duration-coded ghost and
 					// `record` it, so buildTuplets rescales this lone tickable with the tuplet —
@@ -209,14 +212,14 @@ export class TabTranslator {
 			// A dead note (<notehead>x</notehead>) prints "X" on its string instead of a fret;
 			// a harmonic angle-brackets its fret. vexflow renders the fret string verbatim.
 			let fretText: string | number = fret;
-			if (this.notes.isXNotehead(note)) {
+			if (note.notehead?.value === 'x') {
 				// A dingbat "✕" (U+2715), not an ASCII "X": the notation font (Bravura) draws an
 				// ornate glyph for "X" and would win the CSS font fallthrough, but it lacks this
 				// dingbat, so the fret falls through to the plain text font like the fret digits do.
 				fretText = '✕';
-			} else if (this.notes.isHarmonic(note)) {
+			} else if (note.isHarmonic) {
 				fretText = `<${fret}>`;
-			} else if (this.notes.isParenthesized(note)) {
+			} else if (note.notehead?.parentheses) {
 				// A ghost/optional fret reads as "(2)". vexflow renders the fret string verbatim.
 				fretText = `(${fret})`;
 			}
@@ -225,7 +228,7 @@ export class TabTranslator {
 				fret: fretText,
 			};
 		};
-		const struck = chord.notes.filter((note) => !this.notes.isTieStop(note));
+		const struck = chord.notes.filter((note) => !this.isHeld(note));
 		return (struck.length > 0 ? struck : chord.notes).map(toPosition);
 	}
 

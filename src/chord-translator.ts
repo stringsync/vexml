@@ -11,7 +11,6 @@ import {
 } from 'vexflow';
 import type { DurationTranslator } from './duration-translator';
 import type { NotationTranslator } from './notation-translator';
-import type { NoteReader } from './note-reader';
 
 /*
  * MusicXML <accidental> glyph name -> vexflow accidental code. The natural-sharp and
@@ -150,10 +149,14 @@ interface VexflowChordOptions {
  */
 export class ChordTranslator {
 	constructor(
-		private readonly notes: NoteReader,
 		private readonly durations: DurationTranslator,
 		private readonly notations: NotationTranslator,
 	) {}
+
+	/* The held tail of a tie: the note sounds on, but nothing about it is struck again. */
+	private isHeld(note: Chord['notes'][number]): boolean {
+		return note.ties.some((tie) => tie.tieType === 'stop');
+	}
 
 	/*
 	 * Build a vexflow StaveNote for one chord (a lead note plus any <chord/> members;
@@ -288,7 +291,7 @@ export class ChordTranslator {
 		if (!key) {
 			return 'b/4';
 		}
-		if (this.notes.isHarmonic(note)) {
+		if (note.isHarmonic) {
 			return `${key}/H`;
 		}
 		const notehead = note.notehead;
@@ -339,7 +342,9 @@ export class ChordTranslator {
 	 */
 	private addAccidentals(staveNote: StaveNote, chord: Chord): void {
 		chord.notes.forEach((note, i) => {
-			if (this.notes.isXNotehead(note) || this.notes.isTieStop(note)) {
+			// A dead note prints no pitch, and a tied-into one isn't re-struck, so neither
+			// carries an accidental.
+			if (note.notehead?.value === 'x' || this.isHeld(note)) {
 				return;
 			}
 			const printed = note.accidental;
@@ -373,7 +378,7 @@ export class ChordTranslator {
 	 */
 	private addParentheses(staveNote: StaveNote, chord: Chord): void {
 		chord.notes.forEach((note, i) => {
-			if (this.notes.isParenthesized(note)) {
+			if (note.notehead?.parentheses) {
 				staveNote.addModifier(new Parenthesis(Modifier.Position.LEFT), i);
 				staveNote.addModifier(new Parenthesis(Modifier.Position.RIGHT), i);
 			}
@@ -430,7 +435,7 @@ export class ChordTranslator {
 			SLASH_GLYPHS[this.durations.code(chord.lead)] ?? SLASH_GLYPH_FILLED;
 		const noteHeads = staveNote.noteHeads;
 		chord.notes.forEach((note, i) => {
-			if (!this.notes.isSlashNotehead(note)) {
+			if (note.notehead?.value !== 'slash') {
 				return;
 			}
 			const filled = note.notehead?.filled ?? null;

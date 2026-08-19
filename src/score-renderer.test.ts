@@ -9,7 +9,6 @@ import { Gaps } from './gaps';
 import { FakeHost } from './host/fake-host';
 import { LayoutPlanner } from './layout-planner';
 import { NotationTranslator } from './notation-translator';
-import { NoteReader } from './note-reader';
 import { NoteTranslator } from './note-translator';
 import { ScoreDrawer } from './score-drawer';
 import { FakeScoreParser } from './score-parser/fake-score-parser';
@@ -56,16 +55,11 @@ describe('ScoreRenderer', () => {
 	// renderer is built per test rather than in beforeEach.
 	const renderer = (overrides?: { minLastSystemFill?: number }) => {
 		const config = { ...DEFAULT_CONFIG, ...overrides };
-		const notes = new NoteReader();
 		const durations = new DurationTranslator();
 		const barlines = new BarlineTranslator();
 		const signatures = new SignatureTranslator();
-		const tab = new TabTranslator(notes, durations);
-		const chords = new ChordTranslator(
-			notes,
-			durations,
-			new NotationTranslator(),
-		);
+		const tab = new TabTranslator(durations);
+		const chords = new ChordTranslator(durations, new NotationTranslator());
 		const translator = new NoteTranslator(chords, durations, barlines);
 		const reader = new ScoreReader();
 		const gaps = new Gaps([]);
