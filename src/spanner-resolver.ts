@@ -18,6 +18,7 @@ import {
 } from './constants';
 import type { DirectionPlacer } from './direction-placer';
 import { Rect } from './geometry';
+import type { Hairpin } from './hairpin';
 import type { NoteTranslator } from './note-translator';
 import type {
 	DirectionLineSpan,
@@ -25,7 +26,7 @@ import type {
 	PedalMark,
 	WedgeMark,
 } from './score-reader';
-import type { Hairpin, SpannerBuilder } from './spanner-builder';
+import type { SpannerBuilder } from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
 
 /*

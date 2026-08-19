@@ -4,9 +4,10 @@ import type { RenderContext, Stave, StaveNote, TabNote } from 'vexflow';
 import { WORDS_NOTE_CLEARANCE } from './constants';
 import type { DirectionLineTask, DirectionPlacer } from './direction-placer';
 import { Rect } from './geometry';
+import type { Hairpin } from './hairpin';
 import type { NoteTranslator } from './note-translator';
 import type { DirectionLineSpan, PedalMark, WedgeMark } from './score-reader';
-import type { Hairpin, SpannerBuilder } from './spanner-builder';
+import type { SpannerBuilder } from './spanner-builder';
 import {
 	SpannerResolver,
 	type SpannerResolverOptions,

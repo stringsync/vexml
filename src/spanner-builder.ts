@@ -3,9 +3,7 @@ import {
 	Beam,
 	Curve,
 	type CurveOptions,
-	Modifier,
 	PedalMarking,
-	type RenderContext,
 	type Stave,
 	type StaveNote,
 	StaveTie,
@@ -15,17 +13,10 @@ import {
 	TabSlide,
 	type TieNotes,
 	Tuplet,
-	type Note as VexNote,
 	VibratoBracket,
 } from 'vexflow';
 import {
-	HAIRPIN_HEIGHT,
-	HAIRPIN_STAVE_GAP,
 	SINGLE_SLIDE_GAP,
-	SINGLE_SLIDE_LEN,
-	SINGLE_SLIDE_RISE,
-	SLIDE_MIN_SLANT,
-	SLIDE_PADDING,
 	SLUR_END_ZONE,
 	SLUR_GRACE_ANCHOR,
 	SLUR_GRACE_CP_Y,
@@ -37,27 +28,23 @@ import {
 	SLUR_STEM_TIP_SLANT,
 	SLUR_WIDTH_FACTOR,
 	SLUR_Y_SHIFT,
-	TAB_CURVE_CP_Y,
-	TAB_CURVE_FULL_WIDTH,
-	TAB_CURVE_LINE_CLEARANCE,
-	TAB_CURVE_RISE,
-	TAB_CURVE_Y_SHIFT,
 	TUPLET_NESTING_EXTRA_GAP,
 } from './constants';
-import { Rect } from './geometry';
+import {
+	CrispCurve,
+	CURVE_THICKNESS,
+	HeadCurve,
+	TabCurve,
+} from './curve-shape';
+import { Hairpin } from './hairpin';
 import { NoteheadArticulation } from './notation-translator';
-
 import { LINE_TYPE_DASH, type PedalMark, type WedgeMark } from './score-reader';
-
-/* The offset of the second bezier pass that gives a solid slur its lens shape, so the ink
- * reaches this far past the arc's midpoint. Larger than vexflow's default 2 because CrispCurve
- * drops the stroke that used to widen the shape — the lens alone is only 0.75 of this deep. */
-const CURVE_THICKNESS = 4;
-
-/* The height of the band vexflow's TabNote clears around a fret digit to punch a hole in the
- * string line it sits on (tabnote.ts drawPositions clears y-3 by 6). TabSlideLine reuses it to
- * erase the stretch of line a slide runs along. */
-const TAB_LINE_CLEAR_HEIGHT = 6;
+import {
+	CrispTabSlide,
+	NotationSlide,
+	SingleSlide,
+	TabSlideLine,
+} from './slide-shape';
 
 /*
  * A built slur, with the vertical extent it will be drawn at. A slur is not movable — it's
@@ -81,440 +68,6 @@ export type SlurCurve = {
 };
 
 /*
- * A standard-notation slide/glissando line, tilted by the slide direction: it runs from just
- * clear of the start notehead into the target notehead, rising for an up-slide and falling for
- * a down-slide. The tilt is
- * floored at SLIDE_MIN_SLANT so a near-unison slide still reads instead of going flat (and a
- * chord's near-equal slides stay ~parallel like the tab), and capped to the horizontal run so
- * a wide interval over a short grace-to-main gap doesn't spike near-vertical. (vexflow's
- * StaveLine can't do either — it just connects the heads flatly.) Drawn like the other
- * spanners via setContext().draw().
- */
-class NotationSlide {
-	private context?: RenderContext;
-	constructor(
-		private readonly from: StaveNote,
-		private readonly fromIndex: number,
-		private readonly to: StaveNote,
-		private readonly toIndex: number,
-	) {}
-	setContext(context: RenderContext): this {
-		this.context = context;
-		return this;
-	}
-	draw(): void {
-		const ctx = this.context;
-		if (!ctx) {
-			return;
-		}
-		// getModifierStartXY(...).y is each note's notehead Y (ys[index]). Start the line clear
-		// of the start notehead's outer edge plus a gap (its center plus half its glyph width
-		// plus 2*SLIDE_PADDING — the extra clears its stem so the line doesn't look like it grows
-		// out of the note), and end it just into the target notehead (its center minus
-		// SLIDE_PADDING) so the slide reads as running into the note. The start note is always
-		// left of the target, so x1 < x2 holds.
-		const startY = this.from.getModifierStartXY(
-			Modifier.Position.RIGHT,
-			this.fromIndex,
-		).y;
-		const endY = this.to.getModifierStartXY(
-			Modifier.Position.LEFT,
-			this.toIndex,
-		).y;
-		const x1 =
-			this.from.getAbsoluteX() +
-			this.from.getGlyphWidth() / 2 +
-			2 * SLIDE_PADDING;
-		const x2 = this.to.getAbsoluteX() - SLIDE_PADDING;
-		const width = Math.max(x2 - x1, 1);
-		// Rise from the start head to the target head; the target lower (larger y) is a
-		// down-slide. Floor the tilt so a near-unison slide still reads, but cap it to the
-		// horizontal width so a wide interval over a short grace-to-main run doesn't spike
-		// near-vertical. A true unison defaults to a down tilt.
-		const rise = endY - startY;
-		const sign = rise < 0 ? -1 : 1;
-		const dy =
-			sign * Math.min(Math.max(Math.abs(rise), SLIDE_MIN_SLANT), width);
-		ctx.beginPath();
-		ctx.moveTo(x1, startY);
-		ctx.lineTo(x2, startY + dy);
-		ctx.stroke();
-	}
-}
-
-/*
- * A slide into or out of a single note, where the other end is indeterminate (an unpaired
- * <slide>/<glissando> — a stop with no start, or a start with no stop). There's no partner
- * notehead, so it draws a short "/" tick beside the head instead of a line between two: a
- * slide-in ('in') sits just left of the head and rises up into it; a slide-out ('out') sits
- * just right and rises up out of it. Works for both a StaveNote (notation) and a TabNote (tab)
- * — both expose getAbsoluteX/getGlyphWidth/getModifierStartXY. Drawn via setContext().draw()
- * like the other spanners. (vexflow's TabSlide/StaveTie render a partial only by running the
- * line to the stave edge, which is right for a system-break wrap but not a mid-measure gesture.)
- */
-class SingleSlide {
-	private context?: RenderContext;
-	constructor(
-		private readonly note: StaveNote | TabNote,
-		private readonly index: number,
-		private readonly kind: 'in' | 'out',
-		// Extra gap between the note glyph and the near (head-touching) end of the tick, on top
-		// of SLIDE_PADDING. The default padding hugs a notehead well, but a bare tab fret digit
-		// wants more air, so callers widen it per case.
-		private readonly extraPad = 0,
-	) {}
-	setContext(context: RenderContext): this {
-		this.context = context;
-		return this;
-	}
-	draw(): void {
-		const ctx = this.context;
-		if (!ctx) {
-			return;
-		}
-		const side =
-			this.kind === 'in' ? Modifier.Position.LEFT : Modifier.Position.RIGHT;
-		const y = this.note.getModifierStartXY(side, this.index).y;
-		const half = this.note.getGlyphWidth() / 2;
-		const pad = SLIDE_PADDING + this.extraPad;
-		// The end touching the notehead sits at its Y; the far end drops SINGLE_SLIDE_RISE so the
-		// tick always leans up-right ("/"), like the tab "/8" slide-in in the reference image. A
-		// slide-in tucks just left of the head (running up into it); a slide-out just right.
-		const near = this.note.getAbsoluteX();
-		const [x1, y1, x2, y2] =
-			this.kind === 'in'
-				? [
-						near - half - pad - SINGLE_SLIDE_LEN,
-						y + SINGLE_SLIDE_RISE,
-						near - half - pad,
-						y,
-					]
-				: [
-						near + half + pad,
-						y,
-						near + half + pad + SINGLE_SLIDE_LEN,
-						y - SINGLE_SLIDE_RISE,
-					];
-		ctx.beginPath();
-		ctx.moveTo(x1, y1);
-		ctx.lineTo(x2, y2);
-		ctx.stroke();
-	}
-}
-
-/*
- * vexflow's TabSlide strokes its two-point line with a closePath() in between (tabslide.ts
- * renderTie), which walks the segment back to where it started — so the rasterizer strokes it
- * twice and the two antialiased passes composite into a line that reads fat and blurry next to
- * the pixel-crisp string lines. Same geometry, stroked once.
- */
-class CrispTabSlide extends TabSlide {
-	override renderTie(params: {
-		direction: number;
-		firstX: number;
-		lastX: number;
-		firstYs: number[];
-		lastYs: number[];
-	}): void {
-		const ctx = this.checkContext();
-		for (const index of this.getNotes().firstIndexes ?? []) {
-			const y = params.firstYs[index];
-			if (typeof y !== 'number' || Number.isNaN(y)) {
-				continue;
-			}
-			// vexflow's geometry: the line pivots on the first note's string y (plus the
-			// half-pixel renderOptions.yShift its constructor sets), rising 3px on each side of
-			// it for a slide up and falling for a slide down.
-			const slideY = y + this.renderOptions.yShift;
-			ctx.beginPath();
-			ctx.moveTo(params.firstX, slideY + 3 * params.direction);
-			ctx.lineTo(params.lastX, slideY - 3 * params.direction);
-			ctx.stroke();
-		}
-		this.setRendered();
-	}
-}
-
-/*
- * A tab slide, plus the erasure of the string line it runs along. vexflow draws a TabStave's
- * string lines edge to edge and the slide's diagonal on top of them, so the two frets end up
- * joined by a straight line *and* a slanted one, which reads as two gestures instead of one.
- * Clearing the line between the frets first — the same trick TabNote uses to punch a hole for
- * its fret digit — leaves just the slide. Tab only: a notation glissando runs through the gaps
- * between staff lines, not along one, so it has nothing to erase.
- */
-class TabSlideLine {
-	private context?: RenderContext;
-	constructor(private readonly slide: TabSlide) {}
-	setContext(context: RenderContext): this {
-		this.context = context;
-		this.slide.setContext(context);
-		return this;
-	}
-	draw(): void {
-		const ctx = this.context;
-		if (!ctx) {
-			return;
-		}
-		const x = this.slide.getFirstX();
-		const width = this.slide.getLastX() - x;
-		const ys = this.slide.getFirstYs();
-		// vexflow slants the slide around the *first* note's string y (tabslide.ts renderTie
-		// ignores lastYs), so that line is the only one it can double up on. A non-positive
-		// width means the two ends aren't on the same system — nothing sensible to erase.
-		if (width > 0) {
-			for (const index of this.slide.getNotes().firstIndexes ?? []) {
-				const y = ys[index];
-				if (typeof y === 'number') {
-					ctx.clearRect(
-						x,
-						y - TAB_LINE_CLEAR_HEIGHT / 2,
-						width,
-						TAB_LINE_CLEAR_HEIGHT,
-					);
-				}
-			}
-		}
-		this.slide.draw();
-	}
-}
-
-/*
- * A crescendo/diminuendo hairpin between two notes, drawn at a fixed gap from the staff on
- * the side its <wedge> placement names. vexflow's own StaveHairpin derives its y from the
- * stave box and a pair of hardcoded 20/30px constants that, for an ABOVE hairpin, land the
- * wedge inside the staff — the offset needed to correct it is more code (and more coupling
- * to those constants) than the three lines the shape actually is. Drawn via
- * setContext().draw() like the other spanners.
- */
-export class Hairpin {
-	private context?: RenderContext;
-	constructor(
-		private readonly from: StaveNote,
-		private readonly to: StaveNote,
-		private readonly crescendo: boolean,
-		private readonly placement: 'above' | 'below',
-	) {}
-	/*
-	 * Extra distance from the staff, set by the caller when the fixed gap would put the wedge
-	 * through something already drawn there (a slur bowing the same way). Signed in the
-	 * direction the hairpin sits: positive is further from the staff.
-	 */
-	private offset = 0;
-	setContext(context: RenderContext): this {
-		this.context = context;
-		return this;
-	}
-	setOffset(offset: number): this {
-		this.offset = offset;
-		return this;
-	}
-	get stave(): Stave {
-		return this.from.checkStave();
-	}
-	get above(): boolean {
-		return this.placement === 'above';
-	}
-	/** The band the wedge occupies, for the caller's page crop and clearance check. */
-	get bounds(): { top: number; bottom: number } {
-		const stave = this.stave;
-		const top =
-			this.placement === 'above'
-				? stave.getYForLine(0) -
-					HAIRPIN_STAVE_GAP -
-					HAIRPIN_HEIGHT -
-					this.offset
-				: stave.getBottomLineY() + HAIRPIN_STAVE_GAP + this.offset;
-		return { top, bottom: top + HAIRPIN_HEIGHT };
-	}
-	/** The box the wedge is drawn in — the band above, over the notes it spans. */
-	get rect(): Rect {
-		const { top, bottom } = this.bounds;
-		const x1 = this.from.getAbsoluteX();
-		const x2 = this.to.getAbsoluteX();
-		return new Rect(Math.min(x1, x2), top, Math.abs(x2 - x1), bottom - top);
-	}
-	draw(): void {
-		const ctx = this.context;
-		if (!ctx) {
-			return;
-		}
-		const { top, bottom } = this.bounds;
-		const mid = (top + bottom) / 2;
-		// The wedge spans notehead to notehead. A crescendo opens rightward (its point sits
-		// at the first note), a diminuendo closes rightward (its point sits at the last).
-		const x1 = this.from.getAbsoluteX();
-		const x2 = this.to.getAbsoluteX();
-		const [pointX, mouthX] = this.crescendo ? [x1, x2] : [x2, x1];
-		ctx.beginPath();
-		ctx.moveTo(mouthX, top);
-		ctx.lineTo(pointX, mid);
-		ctx.lineTo(mouthX, bottom);
-		ctx.stroke();
-	}
-}
-
-/*
- * A curve painted once instead of twice. vexflow strokes the outline of the lens shape AND
- * then fills it (curve.ts renderCurve). Canvas composites the two passes independently, so
- * along every edge the antialiased stroke and the antialiased fill each contribute partial
- * coverage that never adds up to solid: the arc reads soft, with a lighter seam running
- * inside it. Filling alone gives a crisp edge — at CURVE_THICKNESS, which is raised to make
- * up for the stroke that no longer widens the shape. Every curve vexml draws goes through
- * this, so slurs and tab arcs stay the same weight.
- */
-class CrispCurve extends Curve {
-	constructor(
-		from: VexNote | undefined,
-		to: VexNote | undefined,
-		options: CurveOptions,
-	) {
-		super(from, to, { ...options, thickness: CURVE_THICKNESS });
-	}
-
-	override renderCurve(params: {
-		firstX: number;
-		lastX: number;
-		firstY: number;
-		lastY: number;
-		direction: number;
-	}): void {
-		// A dashed curve is a single stroked bezier with no fill (vexflow skips both the
-		// second pass and the fill), so there's no seam to fix and no ink without the stroke.
-		if (this.getStyle()?.lineDash) {
-			super.renderCurve(params);
-			return;
-		}
-		const ctx = this.checkContext();
-		ctx.save();
-		ctx.setStrokeStyle('rgba(0,0,0,0)');
-		super.renderCurve(params);
-		ctx.restore();
-	}
-}
-
-/*
- * A slur whose endpoints are pinned to explicit Ys. vexflow's Curve can only anchor an
- * end at getStemExtents(): NEAR_TOP is the stem tip, NEAR_HEAD the notehead *opposite*
- * the stem. On a stem-down chord neither names the notehead a bow should touch —
- * NEAR_HEAD lands on the chord's topmost note (so a grace slur shoots up over the
- * chord's accidentals as a near-straight diagonal instead of bowing under it) and
- * NEAR_TOP lands below the beam. Take the endpoint Ys as given; the X, the bezier and
- * the fill still come from vexflow.
- */
-class HeadCurve extends CrispCurve {
-	constructor(
-		from: StaveNote | undefined,
-		to: StaveNote | undefined,
-		options: CurveOptions,
-		private readonly fromY: number,
-		private readonly toY: number,
-	) {
-		super(from, to, options);
-	}
-
-	override draw(): boolean {
-		this.checkContext();
-		this.setRendered();
-		const { from, to } = this;
-		// One of the two is always set (Curve's constructor rejects neither), so this
-		// picks the stave of whichever end exists on a system-break half-curve.
-		const stave = (from ?? to)?.checkStave();
-		if (!stave) {
-			return false;
-		}
-		this.renderCurve({
-			firstX: from ? from.getTieRightX() : stave.getTieStartX(),
-			lastX: to ? to.getTieLeftX() : stave.getTieEndX(),
-			firstY: this.fromY,
-			lastY: this.toY,
-			direction: this.renderOptions.openingDirection === 'down' ? -1 : 1,
-		});
-		return true;
-	}
-}
-
-/*
- * A tab hammer-on/pull-off arc drawn with the SLUR renderer instead of the tie one. vexflow
- * has two, and they do not draw the same bow: Curve.renderCurve is a cubic bezier whose
- * control points sit a quarter and three quarters along the span, offset by cps.y, with the
- * ends lifted yShift off the notes; StaveTie.renderTie (which TabTie extends) is a pair of
- * quadratics pinned to the span's midpoint, whose apex is only cp/2 off the notes. So the tab
- * arc came out flatter, and hugging the fret digits, next to the slur the notation stave draws
- * over the same two notes. This is the adapter: same endpoints TabTie would use (getYs()[index]
- * per shared string), shape and fill from Curve, so both staves bow alike. TabTie's "H"/"P"
- * label is dropped along with it — a player reads the gesture off the arc and the fret motion.
- */
-class TabCurve extends CrispCurve {
-	constructor(
-		private readonly notes: TieNotes,
-		private readonly firstIndex: number,
-		private readonly lastIndex: number,
-	) {
-		super(notes.firstNote ?? undefined, notes.lastNote ?? undefined, {
-			yShift: TAB_CURVE_Y_SHIFT,
-			cps: [
-				{ x: 0, y: TAB_CURVE_CP_Y },
-				{ x: 0, y: TAB_CURVE_CP_Y },
-			],
-		});
-	}
-
-	override draw(): boolean {
-		this.checkContext();
-		this.setRendered();
-		const { firstNote, lastNote } = this.notes;
-		// A wrapped arc has only one end (tieSpecs splits it in two); it bows out to the edge
-		// of the stave it does have, level with the note it does have.
-		const anchor = firstNote ?? lastNote;
-		const stave = anchor?.checkStave();
-		if (!anchor || !stave) {
-			return false;
-		}
-		const firstY = (firstNote ?? anchor).getYs()[this.firstIndex];
-		const lastY = (lastNote ?? anchor).getYs()[this.lastIndex];
-		if (typeof firstY !== 'number' || typeof lastY !== 'number') {
-			return false;
-		}
-		const firstX = firstNote ? firstNote.getTieRightX() : stave.getTieStartX();
-		const lastX = lastNote ? lastNote.getTieLeftX() : stave.getTieEndX();
-		// Keep the bow in proportion to its span. A grace note hammering into the note beside
-		// it, or the stub half of a wrapped arc, spans a few pixels — at the full lift that
-		// draws as a tall narrow spike instead of an arc. (The slurs cap on the same idea with
-		// SLUR_MAX_ASPECT.) Done at draw time because the span in pixels isn't known until the
-		// notes are placed.
-		//
-		// And keep it under the string line above. An arc on an inner string only has that
-		// gap to live in; at the full lift it climbs past the line and bows over the frets of
-		// the string above, so a chord hammering two strings at once draws two arcs that each
-		// read as belonging to the other one's pair. A note on the top line has the open space
-		// above the stave and keeps the full bow.
-		const spacing = stave.getSpacingBetweenLines();
-		const onTopLine = Math.min(firstY, lastY) - spacing < stave.getYForLine(0);
-		const rise = TAB_CURVE_RISE;
-		const scale = Math.min(
-			1,
-			Math.abs(lastX - firstX) / TAB_CURVE_FULL_WIDTH,
-			onTopLine ? 1 : (spacing - TAB_CURVE_LINE_CLEARANCE) / rise,
-		);
-		this.renderOptions.yShift = TAB_CURVE_Y_SHIFT * scale;
-		this.renderOptions.cps = [
-			{ x: 0, y: TAB_CURVE_CP_Y * scale },
-			{ x: 0, y: TAB_CURVE_CP_Y * scale },
-		];
-		this.renderCurve({
-			firstX,
-			lastX,
-			firstY,
-			lastY,
-			// Tab hammer-ons/pull-offs always bow above the frets (TabTie hard-codes -1 too).
-			direction: -1,
-		});
-		return true;
-	}
-}
-
-/*
  * How a <tuplet> start marker asks to be PRINTED, which MusicXML keeps separate from the
  * <time-modification> that compresses the durations: <tuplet-actual>/<tuplet-normal> give the
  * printed pair their own numbers (a "7:5" label over a 3:2 compression), show-number="both"
@@ -534,14 +87,24 @@ type TupletDisplay = {
 	bracketed: boolean | null;
 };
 
-function tupletDisplay(marker: MTuplet): TupletDisplay {
-	return {
-		numNotes: marker.actual?.number ?? null,
-		notesOccupied: marker.normal?.number ?? null,
-		ratioed: marker.showNumber === 'both',
-		bracketed: marker.bracket,
-	};
-}
+/*
+ * The slur-like connectors starting/stopping on a note: its <slur> markers plus any
+ * <hammer-on>/<pull-off> in <technical>. In standard notation a hammer-on/pull-off IS
+ * just a slur curve (the "H"/"P" label is a tab-only convention), so buildSlurs draws
+ * them the same way — including grace-to-main graces. A technique a real <slur> already
+ * covers is dropped, so an exporter that emits both doesn't double the arc: either the
+ * slur reaches the same partner, or (`spans`) one slur arcs over both of the technique's
+ * ends. The second case is a legato run written as one long <slur> plus a hammer-on/pull-off
+ * per adjacent pair — the run gets its one arc, not that arc plus a bump over every pair.
+ */
+type SlurConnector = {
+	slurType: string;
+	partner: { note: Note } | null;
+	placement: string | null;
+	/* The canvas dash array from <slur line-type>, or null for a solid curve. A
+	 * hammer-on/pull-off has no line-type, so it is always solid. */
+	dash: number[] | null;
+};
 
 export class SpannerBuilder {
 	/*
@@ -712,7 +275,7 @@ export class SpannerBuilder {
 						depth,
 						maxDepth: depth,
 						placement: tuplet.placement,
-						display: tupletDisplay(tuplet),
+						display: this.tupletDisplay(tuplet),
 					});
 					continue;
 				}
@@ -796,7 +359,7 @@ export class SpannerBuilder {
 					// notehead.
 					const partnerNote =
 						(tie.partner &&
-							samePitchMember(note, chordOf.get(tie.partner.note))) ??
+							this.samePitchMember(note, chordOf.get(tie.partner.note))) ??
 						tie.partner?.note;
 					const to = partnerNote && placement.get(partnerNote);
 					if (tie.tieType !== 'start' || !from || !to) {
@@ -810,7 +373,7 @@ export class SpannerBuilder {
 					const direction =
 						heads > 1 ? (from.index >= (heads - 1) / 2 ? -1 : 1) : null;
 
-					const specs = tieSpecs(
+					const specs = this.tieSpecs(
 						from.staveNote,
 						to.staveNote,
 						[from.index],
@@ -840,13 +403,13 @@ export class SpannerBuilder {
 	 */
 	buildHammerPulls(chords: Chord[], byTabLead: Map<Note, TabNote>): TabCurve[] {
 		const ties: TabCurve[] = [];
-		const spans = slurSpans(chords);
+		const spans = this.slurSpans(chords);
 		for (const chord of chords) {
 			const firstNote = byTabLead.get(chord.lead);
 			if (!firstNote) {
 				continue;
 			}
-			for (const slur of slurConnectors(chord.lead, spans)) {
+			for (const slur of this.slurConnectors(chord.lead, spans)) {
 				if (slur.slurType !== 'start') {
 					continue;
 				}
@@ -857,8 +420,16 @@ export class SpannerBuilder {
 				if (!partner || !lastNote) {
 					continue;
 				}
-				const { firstIndexes, lastIndexes } = pairByString(firstNote, lastNote);
-				const specs = tieSpecs(firstNote, lastNote, firstIndexes, lastIndexes);
+				const { firstIndexes, lastIndexes } = this.pairByString(
+					firstNote,
+					lastNote,
+				);
+				const specs = this.tieSpecs(
+					firstNote,
+					lastNote,
+					firstIndexes,
+					lastIndexes,
+				);
 				for (const notes of specs) {
 					// One arc per shared string: a two-string chord hammering into another draws
 					// two. (TabTie took the whole index list and looped internally; a Curve is a
@@ -1127,7 +698,7 @@ export class SpannerBuilder {
 				}
 				pedals.push({
 					marking,
-					notes: pedalSpan(chords, byLead, from.note, staveNote),
+					notes: this.pedalSpan(chords, byLead, from.note, staveNote),
 				});
 			}
 		}
@@ -1145,11 +716,11 @@ export class SpannerBuilder {
 		byLead: ReadonlyMap<Note, StaveNote>,
 	): SlurCurve[] {
 		const slurs: SlurCurve[] = [];
-		const spans = slurSpans(chords);
+		const spans = this.slurSpans(chords);
 		chords.forEach((chord, i) => {
 			const from = byLead.get(chord.lead);
 			const isGrace = chord.lead.isGrace;
-			for (const slur of slurConnectors(chord.lead, spans)) {
+			for (const slur of this.slurConnectors(chord.lead, spans)) {
 				if (slur.slurType !== 'start' || !slur.partner || !from) {
 					continue;
 				}
@@ -1301,7 +872,7 @@ export class SpannerBuilder {
 						const y = anchorY(n);
 						return { top: y, bottom: y };
 					}
-					return noteExtents(n);
+					return this.noteExtents(n);
 				};
 				// A grace-to-main curve hugs directly under the two noteheads with a small
 				// tight bow instead of the fuller slur arc (see the SLUR_GRACE_* constants).
@@ -1547,201 +1118,192 @@ export class SpannerBuilder {
 		});
 		return slurs;
 	}
-}
 
-/*
- * The vexflow TieNotes spec(s) for a tie/slur from firstNote to lastNote on the given
- * notehead/position indexes. Normally one spec spanning both notes; but when the stop note
- * wraps onto a later system its stave sits lower on the page (greater Y), so a single tie
- * would draw as one long diagonal across the page — split it into two partial ties, one
- * bowing off the right edge of the start note's stave ("tie to nothing") and one bowing in
- * from the left edge of the stop note's ("tie from nothing"). vexflow renders a tie given
- * only a firstNote (or only a lastNote) exactly so. Shared by buildTies and buildHammerPulls.
- * Y, not X: a tie whose start note is the first in its system shares the stop note's left X
- * but not its row, so an X-compare would miss the wrap and draw the diagonal.
- * ponytail: the y-compare assumes the two ends share a system row when not wrapped (true for
- * a single-stave pitch continuation or a fretted line); a cross-staff tie on one system would
- * misfire as a wrap.
- */
-/*
- * Every note a pedal covers: its two endpoints plus everything drawn between them, kept
- * to the endpoints' own stave row. vexflow anchors the pedal's y to each note's stave, so
- * a note on another row (a grand staff's other hand) sits in somebody else's band and
- * can't clash with this one. Same-row measures share a y, which is what identifies the row.
- */
-function pedalSpan(
-	chords: Chord[],
-	byLead: Map<Note, StaveNote>,
-	from: StaveNote,
-	to: StaveNote,
-): StaveNote[] {
-	const i = chords.findIndex((c) => byLead.get(c.lead) === from);
-	const j = chords.findIndex((c) => byLead.get(c.lead) === to);
-	if (i < 0 || j < i) {
-		return [from, to];
-	}
-	const y = from.getStave()?.getY();
-	return chords
-		.slice(i, j + 1)
-		.map((c) => byLead.get(c.lead))
-		.filter((n): n is StaveNote => !!n && n.getStave()?.getY() === y);
-}
-
-/*
- * The position indexes a hammer-on/pull-off arc connects: each string played by both
- * notes, paired up. A hammer-on runs along one string, so a two-string chord hammering
- * into another draws one arc per shared string. Positions with no counterpart drop out —
- * that's how an arpeggiated chord hammering into a single note stays drawable: the two
- * lists have to stay the same length to pair up. Falls back to the lead position on both sides
- * when the two share no string at all (a slur across strings isn't really a hammer-on,
- * but it still has to draw something).
- */
-function pairByString(
-	firstNote: TabNote,
-	lastNote: TabNote,
-): { firstIndexes: number[]; lastIndexes: number[] } {
-	const lastPositions = lastNote.getPositions();
-	const firstIndexes: number[] = [];
-	const lastIndexes: number[] = [];
-	firstNote.getPositions().forEach((position, i) => {
-		const j = lastPositions.findIndex((other) => other.str === position.str);
-		if (j >= 0) {
-			firstIndexes.push(i);
-			lastIndexes.push(j);
+	/*
+	 * The vexflow TieNotes spec(s) for a tie/slur from firstNote to lastNote on the given
+	 * notehead/position indexes. Normally one spec spanning both notes; but when the stop note
+	 * wraps onto a later system its stave sits lower on the page (greater Y), so a single tie
+	 * would draw as one long diagonal across the page — split it into two partial ties, one
+	 * bowing off the right edge of the start note's stave ("tie to nothing") and one bowing in
+	 * from the left edge of the stop note's ("tie from nothing"). vexflow renders a tie given
+	 * only a firstNote (or only a lastNote) exactly so. Shared by buildTies and buildHammerPulls.
+	 * Y, not X: a tie whose start note is the first in its system shares the stop note's left X
+	 * but not its row, so an X-compare would miss the wrap and draw the diagonal.
+	 * ponytail: the y-compare assumes the two ends share a system row when not wrapped (true for
+	 * a single-stave pitch continuation or a fretted line); a cross-staff tie on one system would
+	 * misfire as a wrap.
+	 */
+	/*
+	 * Every note a pedal covers: its two endpoints plus everything drawn between them, kept
+	 * to the endpoints' own stave row. vexflow anchors the pedal's y to each note's stave, so
+	 * a note on another row (a grand staff's other hand) sits in somebody else's band and
+	 * can't clash with this one. Same-row measures share a y, which is what identifies the row.
+	 */
+	private pedalSpan(
+		chords: Chord[],
+		byLead: Map<Note, StaveNote>,
+		from: StaveNote,
+		to: StaveNote,
+	): StaveNote[] {
+		const i = chords.findIndex((c) => byLead.get(c.lead) === from);
+		const j = chords.findIndex((c) => byLead.get(c.lead) === to);
+		if (i < 0 || j < i) {
+			return [from, to];
 		}
-	});
-	return firstIndexes.length > 0
-		? { firstIndexes, lastIndexes }
-		: { firstIndexes: [0], lastIndexes: [0] };
-}
-
-function tieSpecs(
-	firstNote: StaveNote | TabNote,
-	lastNote: StaveNote | TabNote,
-	firstIndexes: number[],
-	lastIndexes: number[],
-): TieNotes[] {
-	const wraps =
-		(lastNote.getStave()?.getY() ?? 0) > (firstNote.getStave()?.getY() ?? 0);
-	return wraps
-		? [
-				{ firstNote, firstIndexes, lastIndexes: firstIndexes },
-				{ lastNote, firstIndexes: lastIndexes, lastIndexes },
-			]
-		: [{ firstNote, lastNote, firstIndexes, lastIndexes }];
-}
-
-/*
- * The member of `chord` whose pitch matches `note` (a tie's two ends are always the
- * same pitch), or null when there's no chord or no match.
- */
-function samePitchMember(note: Note, chord: Chord | undefined): Note | null {
-	const p = note.pitch;
-	if (!chord || !p) {
-		return null;
+		const y = from.getStave()?.getY();
+		return chords
+			.slice(i, j + 1)
+			.map((c) => byLead.get(c.lead))
+			.filter((n): n is StaveNote => !!n && n.getStave()?.getY() === y);
 	}
-	return (
-		chord.notes.find(
-			(n) =>
-				n.pitch?.step === p.step &&
-				n.pitch?.octave === p.octave &&
-				n.pitch?.alter === p.alter,
-		) ?? null
-	);
-}
 
-/*
- * The slur-like connectors starting/stopping on a note: its <slur> markers plus any
- * <hammer-on>/<pull-off> in <technical>. In standard notation a hammer-on/pull-off IS
- * just a slur curve (the "H"/"P" label is a tab-only convention), so buildSlurs draws
- * them the same way — including grace-to-main graces. A technique a real <slur> already
- * covers is dropped, so an exporter that emits both doesn't double the arc: either the
- * slur reaches the same partner, or (`spans`) one slur arcs over both of the technique's
- * ends. The second case is a legato run written as one long <slur> plus a hammer-on/pull-off
- * per adjacent pair — the run gets its one arc, not that arc plus a bump over every pair.
- */
-type SlurConnector = {
-	slurType: string;
-	partner: { note: Note } | null;
-	placement: string | null;
-	/* The canvas dash array from <slur line-type>, or null for a solid curve. A
-	 * hammer-on/pull-off has no line-type, so it is always solid. */
-	dash: number[] | null;
-};
-function slurConnectors(
-	note: Note,
-	spans: Array<Set<Note>> = [],
-): SlurConnector[] {
-	const slurTargets = new Set(note.slurs.map((s) => s.partner?.note ?? null));
-	const techniques: SlurConnector[] = [
-		...note.hammerOns.map((h) => ({
-			slurType: h.hammerOnType,
-			partner: h.partner,
-			placement: null,
-			dash: null,
-		})),
-		...note.pullOffs.map((p) => ({
-			slurType: p.pullOffType,
-			partner: p.partner,
-			placement: null,
-			dash: null,
-		})),
-	].filter((t) => {
-		const partner = t.partner?.note ?? null;
-		return (
-			!slurTargets.has(partner) &&
-			!spans.some((span) => span.has(note) && !!partner && span.has(partner))
-		);
-	});
-	return [
-		...note.slurs.map((s) => {
-			const partner = s.partner?.note ?? null;
-			return {
-				slurType: s.slurType,
-				partner: partner && { note: partner },
-				placement: s.placement,
-				dash: LINE_TYPE_DASH[s.lineType ?? 'solid'] ?? null,
-			};
-		}),
-		...techniques,
-	];
-}
-
-/*
- * Every note each resolved <slur> arcs over, one set per slur. Used by slurConnectors to
- * spot a hammer-on/pull-off the slur already covers. Only leads carry slurs here, and a
- * span whose partner isn't a lead (or runs backwards) has no notes to cover, so it drops out.
- */
-function slurSpans(chords: Chord[]): Array<Set<Note>> {
-	const leads = chords.map((chord) => chord.lead);
-	const index = new Map(leads.map((note, i) => [note, i]));
-	const spans: Array<Set<Note>> = [];
-	leads.forEach((note, i) => {
-		for (const slur of note.slurs) {
-			const j =
-				slur.slurType === 'start' && slur.partner
-					? (index.get(slur.partner.note) ?? -1)
-					: -1;
-			if (j > i) {
-				spans.push(new Set(leads.slice(i, j + 1)));
+	/*
+	 * The position indexes a hammer-on/pull-off arc connects: each string played by both
+	 * notes, paired up. A hammer-on runs along one string, so a two-string chord hammering
+	 * into another draws one arc per shared string. Positions with no counterpart drop out —
+	 * that's how an arpeggiated chord hammering into a single note stays drawable: the two
+	 * lists have to stay the same length to pair up. Falls back to the lead position on both sides
+	 * when the two share no string at all (a slur across strings isn't really a hammer-on,
+	 * but it still has to draw something).
+	 */
+	private pairByString(
+		firstNote: TabNote,
+		lastNote: TabNote,
+	): { firstIndexes: number[]; lastIndexes: number[] } {
+		const lastPositions = lastNote.getPositions();
+		const firstIndexes: number[] = [];
+		const lastIndexes: number[] = [];
+		firstNote.getPositions().forEach((position, i) => {
+			const j = lastPositions.findIndex((other) => other.str === position.str);
+			if (j >= 0) {
+				firstIndexes.push(i);
+				lastIndexes.push(j);
 			}
-		}
-	});
-	return spans;
-}
-
-/*
- * The highest (smallest y) and lowest (largest y) drawn point of a note,
- * covering both its noteheads and, when present, its stem tip.
- */
-function noteExtents(note: StaveNote): { top: number; bottom: number } {
-	const { yTop, yBottom } = note.getNoteHeadBounds();
-	let top = yTop;
-	let bottom = yBottom;
-	if (note.hasStem()) {
-		const { topY, baseY } = note.getStemExtents();
-		top = Math.min(top, topY, baseY);
-		bottom = Math.max(bottom, topY, baseY);
+		});
+		return firstIndexes.length > 0
+			? { firstIndexes, lastIndexes }
+			: { firstIndexes: [0], lastIndexes: [0] };
 	}
-	return { top, bottom };
+
+	private tieSpecs(
+		firstNote: StaveNote | TabNote,
+		lastNote: StaveNote | TabNote,
+		firstIndexes: number[],
+		lastIndexes: number[],
+	): TieNotes[] {
+		const wraps =
+			(lastNote.getStave()?.getY() ?? 0) > (firstNote.getStave()?.getY() ?? 0);
+		return wraps
+			? [
+					{ firstNote, firstIndexes, lastIndexes: firstIndexes },
+					{ lastNote, firstIndexes: lastIndexes, lastIndexes },
+				]
+			: [{ firstNote, lastNote, firstIndexes, lastIndexes }];
+	}
+
+	/*
+	 * The member of `chord` whose pitch matches `note` (a tie's two ends are always the
+	 * same pitch), or null when there's no chord or no match.
+	 */
+	private samePitchMember(note: Note, chord: Chord | undefined): Note | null {
+		const p = note.pitch;
+		if (!chord || !p) {
+			return null;
+		}
+		return (
+			chord.notes.find(
+				(n) =>
+					n.pitch?.step === p.step &&
+					n.pitch?.octave === p.octave &&
+					n.pitch?.alter === p.alter,
+			) ?? null
+		);
+	}
+
+	private slurConnectors(
+		note: Note,
+		spans: Array<Set<Note>> = [],
+	): SlurConnector[] {
+		const slurTargets = new Set(note.slurs.map((s) => s.partner?.note ?? null));
+		const techniques: SlurConnector[] = [
+			...note.hammerOns.map((h) => ({
+				slurType: h.hammerOnType,
+				partner: h.partner,
+				placement: null,
+				dash: null,
+			})),
+			...note.pullOffs.map((p) => ({
+				slurType: p.pullOffType,
+				partner: p.partner,
+				placement: null,
+				dash: null,
+			})),
+		].filter((t) => {
+			const partner = t.partner?.note ?? null;
+			return (
+				!slurTargets.has(partner) &&
+				!spans.some((span) => span.has(note) && !!partner && span.has(partner))
+			);
+		});
+		return [
+			...note.slurs.map((s) => {
+				const partner = s.partner?.note ?? null;
+				return {
+					slurType: s.slurType,
+					partner: partner && { note: partner },
+					placement: s.placement,
+					dash: LINE_TYPE_DASH[s.lineType ?? 'solid'] ?? null,
+				};
+			}),
+			...techniques,
+		];
+	}
+
+	/*
+	 * Every note each resolved <slur> arcs over, one set per slur. Used by slurConnectors to
+	 * spot a hammer-on/pull-off the slur already covers. Only leads carry slurs here, and a
+	 * span whose partner isn't a lead (or runs backwards) has no notes to cover, so it drops out.
+	 */
+	private slurSpans(chords: Chord[]): Array<Set<Note>> {
+		const leads = chords.map((chord) => chord.lead);
+		const index = new Map(leads.map((note, i) => [note, i]));
+		const spans: Array<Set<Note>> = [];
+		leads.forEach((note, i) => {
+			for (const slur of note.slurs) {
+				const j =
+					slur.slurType === 'start' && slur.partner
+						? (index.get(slur.partner.note) ?? -1)
+						: -1;
+				if (j > i) {
+					spans.push(new Set(leads.slice(i, j + 1)));
+				}
+			}
+		});
+		return spans;
+	}
+
+	/*
+	 * The highest (smallest y) and lowest (largest y) drawn point of a note,
+	 * covering both its noteheads and, when present, its stem tip.
+	 */
+	private noteExtents(note: StaveNote): { top: number; bottom: number } {
+		const { yTop, yBottom } = note.getNoteHeadBounds();
+		let top = yTop;
+		let bottom = yBottom;
+		if (note.hasStem()) {
+			const { topY, baseY } = note.getStemExtents();
+			top = Math.min(top, topY, baseY);
+			bottom = Math.max(bottom, topY, baseY);
+		}
+		return { top, bottom };
+	}
+
+	private tupletDisplay(marker: MTuplet): TupletDisplay {
+		return {
+			numNotes: marker.actual?.number ?? null,
+			notesOccupied: marker.normal?.number ?? null,
+			ratioed: marker.showNumber === 'both',
+			bracketed: marker.bracket,
+		};
+	}
 }
