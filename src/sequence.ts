@@ -89,49 +89,12 @@ export interface CursorTransition {
 
 /* A quarter-note-beats <-> ms segment: `[startBeat, endBeat)` plays at `bpm` quarter notes/min. */
 
-/*
- * Partition the notes active at a destination step into attacks vs. sustains relative to a source
- * step, and the notes released. Pure set algebra over identities. A note is sustained when it was
- * already ringing (same identity) or is tied in from a note that was; otherwise it's a (re)attack.
- * A source note is released unless it's tied into a destination note (then it keeps ringing).
- */
-function classifyTransition<T>(
-	prevActive: readonly T[] | null,
-	nextActive: readonly T[],
-	tiedFrom: ReadonlyMap<T, T>,
-): { started: T[]; sustained: T[]; stopped: T[] } {
-	const prev = new Set(prevActive ?? []);
-	const next = new Set(nextActive);
-	const started: T[] = [];
-	const sustained: T[] = [];
-	const tiedOut = new Set<T>();
-
-	for (const n of nextActive) {
-		const from = tiedFrom.get(n);
-		if (prev.has(n)) {
-			sustained.push(n);
-		} else if (from !== undefined && prev.has(from)) {
-			sustained.push(n);
-			tiedOut.add(from);
-		} else {
-			started.push(n);
-		}
-	}
-
-	const stopped: T[] = [];
-	for (const p of prevActive ?? []) {
-		if (!next.has(p) && !tiedOut.has(p)) {
-			stopped.push(p);
-		}
-	}
-	return { started, sustained, stopped };
-}
-
 /**
  * The built timeline: ordered steps, the tempo map, and lookups. Constructed by SequenceFactory;
  * the CursorController walks it (step/seek/interpolate) and the Score queries it (duration,
  * position->time).
  */
+
 export class Sequence {
 	// Undirected tie graph (built in the constructor from tiedFrom), so getHighlighted can light a
 	// whole tie chain in both directions while any of it is sounding.
@@ -276,7 +239,7 @@ export class Sequence {
 	classify(from: number | null, to: number): CursorTransition {
 		const prev = from === null ? null : (this.steps[from]?.active ?? null);
 		const next = this.steps[to]?.active ?? [];
-		return classifyTransition(prev, next, this.tiedFrom);
+		return this.classifyTransition(prev, next, this.tiedFrom);
 	}
 
 	/* Notes to visually highlight at a step: its active set expanded across ties in both directions,
@@ -326,5 +289,43 @@ export class Sequence {
 			end++;
 		}
 		return { start, end };
+	}
+
+	/*
+	 * Partition the notes active at a destination step into attacks vs. sustains relative to a source
+	 * step, and the notes released. Pure set algebra over identities. A note is sustained when it was
+	 * already ringing (same identity) or is tied in from a note that was; otherwise it's a (re)attack.
+	 * A source note is released unless it's tied into a destination note (then it keeps ringing).
+	 */
+	private classifyTransition<T>(
+		prevActive: readonly T[] | null,
+		nextActive: readonly T[],
+		tiedFrom: ReadonlyMap<T, T>,
+	): { started: T[]; sustained: T[]; stopped: T[] } {
+		const prev = new Set(prevActive ?? []);
+		const next = new Set(nextActive);
+		const started: T[] = [];
+		const sustained: T[] = [];
+		const tiedOut = new Set<T>();
+
+		for (const n of nextActive) {
+			const from = tiedFrom.get(n);
+			if (prev.has(n)) {
+				sustained.push(n);
+			} else if (from !== undefined && prev.has(from)) {
+				sustained.push(n);
+				tiedOut.add(from);
+			} else {
+				started.push(n);
+			}
+		}
+
+		const stopped: T[] = [];
+		for (const p of prevActive ?? []) {
+			if (!next.has(p) && !tiedOut.has(p)) {
+				stopped.push(p);
+			}
+		}
+		return { started, sustained, stopped };
 	}
 }

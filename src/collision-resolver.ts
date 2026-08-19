@@ -74,7 +74,11 @@ export class CollisionResolver {
 			if (!overlap) {
 				continue;
 			}
-			out.push({ other, overlap, mtv: mtvOf(candidate, other.rect, overlap) });
+			out.push({
+				other,
+				overlap,
+				mtv: this.mtvOf(candidate, other.rect, overlap),
+			});
 		}
 		return out;
 	}
@@ -209,14 +213,14 @@ export class CollisionResolver {
 		}
 		return out;
 	}
-}
 
-/* Smallest push to separate `a` from `b`: along whichever axis they overlap least, away
- * from `b`'s center. */
-function mtvOf(a: Rect, b: Rect, overlap: Rect): Collision['mtv'] {
-	const signX = a.x + a.w / 2 < b.x + b.w / 2 ? -1 : 1;
-	const signY = a.y + a.h / 2 < b.y + b.h / 2 ? -1 : 1;
-	return overlap.w <= overlap.h
-		? { axis: 'x', dx: signX * overlap.w, dy: 0 }
-		: { axis: 'y', dx: 0, dy: signY * overlap.h };
+	/* Smallest push to separate `a` from `b`: along whichever axis they overlap least, away
+	 * from `b`'s center. */
+	private mtvOf(a: Rect, b: Rect, overlap: Rect): Collision['mtv'] {
+		const signX = a.x + a.w / 2 < b.x + b.w / 2 ? -1 : 1;
+		const signY = a.y + a.h / 2 < b.y + b.h / 2 ? -1 : 1;
+		return overlap.w <= overlap.h
+			? { axis: 'x', dx: signX * overlap.w, dy: 0 }
+			: { axis: 'y', dx: 0, dy: signY * overlap.h };
+	}
 }

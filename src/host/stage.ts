@@ -7,30 +7,6 @@ import { ScrollController } from '../scroller/scroll-controller';
 import type { Viewport } from '../viewport/viewport';
 import type { Host } from './host';
 
-/* The managed canvas's default on-screen size, injected once per document. Both rules are wrapped
- * in `:where()` so they carry zero specificity: a caller's own `.vexml-canvas { … }` overrides them
- * with no `!important`. The per-score intrinsic dimensions ride on the --vexml-width/height custom
- * properties the drawer sets.
- *
- * Base rule: render the score at its intrinsic size — what a hand-placed canvas would show, so
- * output stays byte-identical. `.vexml-fit` (added when the layout should scale to fit its
- * container — see Stage) then caps the canvas at the container width and lets its height follow via
- * the exact score aspect ratio (--vexml-aspect, not the rounded bitmap ratio), so a narrow viewport
- * shrinks the score to fit while a wide one lands on a pixel-identical box (the score<->client scale
- * stays exactly 1) and never blows it up past its engraved resolution. The canvas stays `inline`
- * throughout (no `display` set), so `text-align: center` on the container centers it. */
-function ensureCanvasStyles(): void {
-	if (document.head.querySelector('style[data-vexml-canvas-style]')) {
-		return;
-	}
-	const style = document.createElement('style');
-	style.setAttribute('data-vexml-canvas-style', '');
-	style.textContent =
-		':where(.vexml-canvas){width:var(--vexml-width);height:var(--vexml-height)}' +
-		':where(.vexml-canvas.vexml-fit){max-width:100%;height:auto;aspect-ratio:var(--vexml-aspect)}';
-	document.head.appendChild(style);
-}
-
 /* The caller's container options from config. A set height/width cap turns the container into a
  * scroll box on that axis; null leaves the axis to size to its content. backgroundColor paints the
  * container behind the score. `fit` scales the score down to fit the container width (never up past
@@ -57,6 +33,7 @@ export interface ScrollBox {
  * its CSS-pixel space with the origin at its top-left. Reading the live rect each call means page
  * scroll and any CSS scaling of the canvas are handled for free.
  */
+
 export class Stage implements Viewport, Host, ScrollHost {
 	// At most one Stage owns a container's styles at a time. A re-render can mount the new Stage
 	// before disposing the old (to avoid a blank flash), leaving two bound to one container; the
@@ -138,7 +115,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 		this.base.className = scroll.fit
 			? 'vexml-canvas vexml-fit'
 			: 'vexml-canvas';
-		ensureCanvasStyles();
+		this.ensureCanvasStyles();
 		container.appendChild(this.base);
 	}
 
@@ -377,5 +354,29 @@ export class Stage implements Viewport, Host, ScrollHost {
 		const w = intrinsic.width || r.width || 1;
 		const h = intrinsic.height || r.height || 1;
 		return { left: r.left, top: r.top, sx: r.width / w, sy: r.height / h };
+	}
+
+	/* The managed canvas's default on-screen size, injected once per document. Both rules are wrapped
+	 * in `:where()` so they carry zero specificity: a caller's own `.vexml-canvas { … }` overrides them
+	 * with no `!important`. The per-score intrinsic dimensions ride on the --vexml-width/height custom
+	 * properties the drawer sets.
+	 *
+	 * Base rule: render the score at its intrinsic size — what a hand-placed canvas would show, so
+	 * output stays byte-identical. `.vexml-fit` (added when the layout should scale to fit its
+	 * container — see Stage) then caps the canvas at the container width and lets its height follow via
+	 * the exact score aspect ratio (--vexml-aspect, not the rounded bitmap ratio), so a narrow viewport
+	 * shrinks the score to fit while a wide one lands on a pixel-identical box (the score<->client scale
+	 * stays exactly 1) and never blows it up past its engraved resolution. The canvas stays `inline`
+	 * throughout (no `display` set), so `text-align: center` on the container centers it. */
+	private ensureCanvasStyles(): void {
+		if (document.head.querySelector('style[data-vexml-canvas-style]')) {
+			return;
+		}
+		const style = document.createElement('style');
+		style.setAttribute('data-vexml-canvas-style', '');
+		style.textContent =
+			':where(.vexml-canvas){width:var(--vexml-width);height:var(--vexml-height)}' +
+			':where(.vexml-canvas.vexml-fit){max-width:100%;height:auto;aspect-ratio:var(--vexml-aspect)}';
+		document.head.appendChild(style);
 	}
 }

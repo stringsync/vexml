@@ -20,17 +20,6 @@ export interface TabLookup {
 	get(mnote: MNote): TabPosition | undefined;
 }
 
-/* MusicXML <pitch> -> vexflow key string, e.g. {step:'B', alter:-1, octave:3} -> "Bb/3". */
-function pitchToKey(p: {
-	step: string;
-	octave: number;
-	alter: number;
-}): string {
-	const n = Math.round(p.alter);
-	const accidental = n > 0 ? '#'.repeat(n) : n < 0 ? 'b'.repeat(-n) : '';
-	return `${p.step}${accidental}/${p.octave}`;
-}
-
 /* The dependencies a Note needs. Cross-links resolve through the lookups (see NoteLookup), so
  * construction stays single-phase despite the mutual references. */
 export interface NoteDeps {
@@ -83,7 +72,7 @@ export class Note extends Element implements Highlightable, Playable {
 	/* The sounding pitch as a vexflow key ("E/4"), or null for a rest. */
 	getPitch(): string | null {
 		const pitch = this.deps.mnote.pitch;
-		return pitch ? pitchToKey(pitch) : null;
+		return pitch ? this.pitchToKey(pitch) : null;
 	}
 
 	/* Duration in quarter-note beats; 0 for a grace note (which steals time — see isGrace). */
@@ -150,5 +139,16 @@ export class Note extends Element implements Highlightable, Playable {
 
 	getTabPosition(): TabPosition | null {
 		return this.deps.tabs.get(this.deps.mnote) ?? null;
+	}
+
+	/* MusicXML <pitch> -> vexflow key string, e.g. {step:'B', alter:-1, octave:3} -> "Bb/3". */
+	private pitchToKey(p: {
+		step: string;
+		octave: number;
+		alter: number;
+	}): string {
+		const n = Math.round(p.alter);
+		const accidental = n > 0 ? '#'.repeat(n) : n < 0 ? 'b'.repeat(-n) : '';
+		return `${p.step}${accidental}/${p.octave}`;
 	}
 }

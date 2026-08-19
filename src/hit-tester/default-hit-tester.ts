@@ -3,19 +3,9 @@ import { Rect } from '../geometry';
 import type { QuadTree } from '../quadtree';
 import type { HitTester } from './hit-tester';
 
-// Topmost-first: a foreground glyph (note/fret) before the measure it sits on, and within a tier
-// the tighter (smaller-area) box first — the ordering hitTest picks its single winner from.
-function byPriority(a: Element, b: Element): number {
-	const fa = a.type !== 'measure';
-	const fb = b.type !== 'measure';
-	if (fa !== fb) {
-		return fa ? -1 : 1;
-	}
-	return a.rect.w * a.rect.h - b.rect.w * b.rect.h;
-}
-
 /* The production HitTester over the renderer's QuadTree (its collision broad-phase doubles as
  * the index — elements have boxes, so they're valid items). */
+
 export class DefaultHitTester implements HitTester {
 	constructor(private readonly tree: QuadTree<Element>) {}
 
@@ -47,7 +37,7 @@ export class DefaultHitTester implements HitTester {
 
 	hitTestAll(point: { x: number; y: number }): Element[] {
 		const probe = new Rect(point.x, point.y, 1, 1);
-		return this.tree.query(probe).sort(byPriority);
+		return this.tree.query(probe).sort((a, b) => this.byPriority(a, b));
 	}
 
 	hitTestWithin(rect: Rect): Element[] {
@@ -55,6 +45,17 @@ export class DefaultHitTester implements HitTester {
 		return this.tree
 			.query(rect)
 			.filter((t) => rect.contains(t.rect))
-			.sort(byPriority);
+			.sort((a, b) => this.byPriority(a, b));
+	}
+
+	// Topmost-first: a foreground glyph (note/fret) before the measure it sits on, and within a tier
+	// the tighter (smaller-area) box first — the ordering hitTest picks its single winner from.
+	private byPriority(a: Element, b: Element): number {
+		const fa = a.type !== 'measure';
+		const fb = b.type !== 'measure';
+		if (fa !== fb) {
+			return fa ? -1 : 1;
+		}
+		return a.rect.w * a.rect.h - b.rect.w * b.rect.h;
 	}
 }

@@ -80,28 +80,6 @@ export type PendingStave = {
 	midBars: Array<{ note: BarNote; style: string }>;
 };
 
-/* Push every modifier in `group` out to the rightmost x any of them reached. */
-function squareUp(group: StaveModifier[]): number | null {
-	if (group.length < 2) {
-		return group[0]?.getX() ?? null;
-	}
-	const x = Math.max(...group.map((modifier) => modifier.getX()));
-	for (const modifier of group) {
-		modifier.setX(x);
-	}
-	return x;
-}
-
-/*
- * The GraceNoteGroup attached to a note (the small notes drawn just left of it), if any.
- */
-function graceGroupOf(
-	translator: NoteTranslator,
-	note: { getModifiers(): { getCategory(): string }[] },
-): GraceNoteGroup | undefined {
-	return translator.findModifier<GraceNoteGroup>(note, GraceNoteGroup.CATEGORY);
-}
-
 /* The measure loop's locals the system formatter reads, snapshotted at the call. */
 export interface FormatColumn {
 	/** Which system the column belongs to — the band its lyric-drop and spill
@@ -147,6 +125,7 @@ export interface SystemFormatterOptions {
  * bend/vibrato stretching, and the collision obstacles for everything just drawn. One
  * instance lives and dies with its DrawPass.
  */
+
 export class SystemFormatter {
 	private readonly softmaxFactor: number;
 	private readonly notationColor: string;
@@ -207,8 +186,8 @@ export class SystemFormatter {
 				}
 			}
 		}
-		squareUp(timeSignatures);
-		return repeats.length > 0 ? squareUp(repeats) : null;
+		this.squareUp(timeSignatures);
+		return repeats.length > 0 ? this.squareUp(repeats) : null;
 	}
 
 	/*
@@ -287,7 +266,7 @@ export class SystemFormatter {
 			}
 			for (const vexVoice of p.vexVoices) {
 				for (const note of vexVoice.getTickables() as StaveNote[]) {
-					const group = graceGroupOf(this.translator, note);
+					const group = this.graceGroupOf(this.translator, note);
 					if (group) {
 						notationGraceWidths.set(note.getTickContext(), group.getWidth());
 					}
@@ -832,7 +811,7 @@ export class SystemFormatter {
 	): void {
 		for (const voice of voices) {
 			for (const note of voice.getTickables() as TabNote[]) {
-				const group = graceGroupOf(this.translator, note);
+				const group = this.graceGroupOf(this.translator, note);
 				if (!group) {
 					continue;
 				}
@@ -864,6 +843,31 @@ export class SystemFormatter {
 			p.row,
 			p.stave,
 			rect,
+		);
+	}
+
+	/* Push every modifier in `group` out to the rightmost x any of them reached. */
+	private squareUp(group: StaveModifier[]): number | null {
+		if (group.length < 2) {
+			return group[0]?.getX() ?? null;
+		}
+		const x = Math.max(...group.map((modifier) => modifier.getX()));
+		for (const modifier of group) {
+			modifier.setX(x);
+		}
+		return x;
+	}
+
+	/*
+	 * The GraceNoteGroup attached to a note (the small notes drawn just left of it), if any.
+	 */
+	private graceGroupOf(
+		translator: NoteTranslator,
+		note: { getModifiers(): { getCategory(): string }[] },
+	): GraceNoteGroup | undefined {
+		return translator.findModifier<GraceNoteGroup>(
+			note,
+			GraceNoteGroup.CATEGORY,
 		);
 	}
 }

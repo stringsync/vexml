@@ -40,6 +40,7 @@ export interface PassRevision {
  * part spacing rather than as room made for the symbol. Different planned sizes stay
  * independent, so a grand staff's inner gap doesn't drag the gaps around it open with it.
  */
+
 export class SpillResolver {
 	/*
 	 * Weigh a first pass: re-spaced offsets plus whether any of the four redraw triggers
@@ -116,7 +117,7 @@ export class SpillResolver {
 			const needed =
 				above && below
 					? above.lineBottom +
-						worstColumn(above.drop, below.rise) +
+						this.worstColumn(above.drop, below.rise) +
 						STAVE_CLEARANCE -
 						below.lineTop
 					: plannedGap;
@@ -135,30 +136,30 @@ export class SpillResolver {
 		}
 		return offsets;
 	}
-}
 
-/*
- * How far two staves' content reaches into the gap between them, at the worst single x.
- * `drop` is the upper stave's profile below its bottom line, `rise` the lower stave's above
- * its top line, both columned by SPILL_COLUMN.
- *
- * Summed per column, not overall: the whole point is that a deep stem hanging over an empty
- * patch of the stave below costs nothing. Taking the two maxima independently would size
- * every gap for a collision that never happens — the run beamed low in bar 3 against the
- * chord reaching high in bar 9. Columns absent from a map contribute 0, so a lone extreme
- * still gets its own clearance and a gap with nothing in it comes out at 0 (the caller
- * floors that at the planned spacing).
- */
-function worstColumn(
-	drop: ReadonlyMap<number, number>,
-	rise: ReadonlyMap<number, number>,
-): number {
-	let worst = 0;
-	for (const [column, px] of drop) {
-		worst = Math.max(worst, px + (rise.get(column) ?? 0));
+	/*
+	 * How far two staves' content reaches into the gap between them, at the worst single x.
+	 * `drop` is the upper stave's profile below its bottom line, `rise` the lower stave's above
+	 * its top line, both columned by SPILL_COLUMN.
+	 *
+	 * Summed per column, not overall: the whole point is that a deep stem hanging over an empty
+	 * patch of the stave below costs nothing. Taking the two maxima independently would size
+	 * every gap for a collision that never happens — the run beamed low in bar 3 against the
+	 * chord reaching high in bar 9. Columns absent from a map contribute 0, so a lone extreme
+	 * still gets its own clearance and a gap with nothing in it comes out at 0 (the caller
+	 * floors that at the planned spacing).
+	 */
+	private worstColumn(
+		drop: ReadonlyMap<number, number>,
+		rise: ReadonlyMap<number, number>,
+	): number {
+		let worst = 0;
+		for (const [column, px] of drop) {
+			worst = Math.max(worst, px + (rise.get(column) ?? 0));
+		}
+		for (const [column, px] of rise) {
+			worst = Math.max(worst, px + (drop.get(column) ?? 0));
+		}
+		return worst;
 	}
-	for (const [column, px] of rise) {
-		worst = Math.max(worst, px + (drop.get(column) ?? 0));
-	}
-	return worst;
 }
