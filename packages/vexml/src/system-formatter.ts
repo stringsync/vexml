@@ -33,10 +33,10 @@ import {
 	TIE_APEX_RISE,
 } from './constants';
 import type { LyricPlacer } from './lyric-placer';
-import type { NoteTranslator } from './note-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
 import { isTechnicalMark } from './technical-mark';
+import type { VoiceTranslator } from './voice-translator';
 
 // One stave's notes, built but not yet formatted or drawn. A part's staves are
 // formatted together (see formatAndDraw) so notes at the same tick line up
@@ -134,7 +134,7 @@ export class SystemFormatter {
 
 	constructor(
 		private readonly context: RenderContext,
-		private readonly translator: NoteTranslator,
+		private readonly translator: VoiceTranslator,
 		private readonly chords: ChordTranslator,
 		private readonly spanners: SpannerBuilder,
 		private readonly connectorDrawer: ConnectorDrawer,
@@ -862,7 +862,7 @@ export class SystemFormatter {
 	 * The GraceNoteGroup attached to a note (the small notes drawn just left of it), if any.
 	 */
 	private graceGroupOf(
-		translator: NoteTranslator,
+		translator: VoiceTranslator,
 		note: { getModifiers(): { getCategory(): string }[] },
 	): GraceNoteGroup | undefined {
 		return translator.findModifier<GraceNoteGroup>(

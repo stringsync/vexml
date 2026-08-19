@@ -22,7 +22,7 @@ export type VoiceTickable = StemmableNote | BarNote | ClefNote;
 /* The duration codes that draw a flag, and so can carry a beam instead. */
 const FLAGGED_DURATIONS = new Set(['8', '16', '32', '64', '128']);
 
-/* The settings NoteTranslator.voiceTickables applies to one voice. */
+/* The settings VoiceTranslator.tickables applies to one voice. */
 export interface VoiceTickablesOptions {
 	/* Pad the voice with ghost notes out to this beat, so an underfull measure still
 	 * reserves the trailing space the meter asks for. */
@@ -30,7 +30,7 @@ export interface VoiceTickablesOptions {
 	/* Called with each lead note and the StaveNote built for it, as they are built, so a
 	 * caller can index them. */
 	// rule-ignore objects-over-callbacks: this fires DURING the call, handing back what the
-	// call is building, and one NoteTranslator is shared by the layout pass and the draw pass
+	// call is building, and one VoiceTranslator is shared by the layout pass and the draw pass
 	// (their measured and drawn widths have to match). An Events surface on it would deliver
 	// the layout pass's notes to the draw pass's listener and back, which is the bug this
 	// per-call collector cannot have.
@@ -52,7 +52,7 @@ export interface VoiceTickablesOptions {
 }
 
 /*
- * Translates one voice's mdom chords into the vexflow tickables that draw them: a StaveNote per
+ * Translates one voice's mdom chords to the vexflow tickables that draw them: a StaveNote per
  * chord in onset order, the zero-duration BarNotes and ClefNotes a mid-measure barline or clef
  * change puts between them, and invisible ghosts holding the time no chord covers.
  * ChordTranslator builds the notes themselves; this decides where each one lands and what goes
@@ -63,7 +63,7 @@ export interface VoiceTickablesOptions {
  * render, shared by the layout (measuring) pass and the draw pass, so both build their
  * voices (and probe that metric) identically.
  */
-export class NoteTranslator {
+export class VoiceTranslator {
 	constructor(
 		private readonly chords: ChordTranslator,
 		private readonly durations: DurationTranslator,
@@ -80,7 +80,7 @@ export class NoteTranslator {
 	 * cram the other voices' later notes against its last note. See VoiceTickablesOptions for
 	 * what the rest of the settings do.
 	 */
-	voiceTickables(
+	tickables(
 		chords: Chord[],
 		clef: string,
 		opts: VoiceTickablesOptions = {},

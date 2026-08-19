@@ -1430,7 +1430,7 @@ const TEST_CASES = [
 	//   <staff-tuning> this fixture declares (standard guitar). An open dyad (strings 3/2,
 	//   frets 0/0) whose third member is a bare E3, then a lone bare E3. Each bare note lands
 	//   on the highest string that reaches it — "2" on string 4, not "0" on string 1 (see
-	//   derivePosition in src/note-translator.ts). The chord's derived "2" stacks
+	//   derivePosition in src/voice-translator.ts). The chord's derived "2" stacks
 	//   directly under the two explicit "0"s on the next line down.
 	testCase('tab_chord.musicxml', 'tab_chord.png'),
 

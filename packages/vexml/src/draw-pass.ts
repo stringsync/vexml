@@ -44,7 +44,6 @@ import {
 } from './geometry-collector';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
 import { LyricPlacer } from './lyric-placer';
-import type { NoteTranslator } from './note-translator';
 import type {
 	DirectionLineSpan,
 	OctaveShiftSpan,
@@ -62,8 +61,9 @@ import {
 	type PendingStave,
 	SystemFormatter,
 } from './system-formatter';
-import type { TabTranslator } from './tab-translator';
+import type { TabVoiceTranslator } from './tab-voice-translator';
 import { VoiceBuilder } from './voice-builder';
+import type { VoiceTranslator } from './voice-translator';
 
 /* What a redraw carries over from the pass before it. Both are empty on a first pass, which
  * is what measures them. */
@@ -244,9 +244,9 @@ export class DrawPass {
 	private readonly voltaLifts: Map<number, number>;
 
 	constructor(
-		readonly translator: NoteTranslator,
+		readonly translator: VoiceTranslator,
 		chords: ChordTranslator,
-		tab: TabTranslator,
+		tab: TabVoiceTranslator,
 		private readonly signatures: SignatureTranslator,
 		private readonly staves: StavePlan,
 		barlines: BarlineTranslator,

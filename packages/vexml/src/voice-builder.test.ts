@@ -10,12 +10,15 @@ import {
 	type TabStave,
 } from 'vexflow';
 import { FakeLyricMark } from './fake-lyric-mark';
-import type { NoteTranslator, VoiceTickablesOptions } from './note-translator';
 import type { ScoreReader, StaffVoice } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
 import type { PendingStave } from './system-formatter';
-import type { TabTranslator } from './tab-translator';
+import type { TabVoiceTranslator } from './tab-voice-translator';
 import { type BuildNotesOptions, VoiceBuilder } from './voice-builder';
+import type {
+	VoiceTickablesOptions,
+	VoiceTranslator,
+} from './voice-translator';
 
 describe('VoiceBuilder', () => {
 	// The lead-note surface the builder reads: registry keys, tie/grace/chord-member
@@ -72,11 +75,7 @@ describe('VoiceBuilder', () => {
 		const calls: TickablesCall[] = [];
 		return {
 			calls,
-			voiceTickables(
-				chords: Chord[],
-				clef: string,
-				opts: VoiceTickablesOptions,
-			) {
+			tickables(chords: Chord[], clef: string, opts: VoiceTickablesOptions) {
 				const call = { chords, clef, opts };
 				calls.push(call);
 				if (tickablesFor) {
@@ -138,8 +137,8 @@ describe('VoiceBuilder', () => {
 		} = {},
 	) =>
 		new VoiceBuilder(
-			(overrides.translator ?? fakeTranslator()) as NoteTranslator,
-			(overrides.tab ?? {}) as TabTranslator,
+			(overrides.translator ?? fakeTranslator()) as VoiceTranslator,
+			(overrides.tab ?? {}) as TabVoiceTranslator,
 			{ endBeatOf: () => overrides.endBeat ?? 0 } as unknown as ScoreReader,
 			(overrides.spanners ?? fakeSpanners()) as unknown as SpannerBuilder,
 			{

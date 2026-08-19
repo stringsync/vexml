@@ -5,7 +5,7 @@ import { CollisionResolver } from './collision-resolver';
 import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT } from './constants';
 import { FakeLyricMark } from './fake-lyric-mark';
 import { LyricPlacer } from './lyric-placer';
-import type { NoteTranslator } from './note-translator';
+import type { VoiceTranslator } from './voice-translator';
 
 describe('LyricPlacer', () => {
 	const note = (x: number, modifiers: unknown[]) =>
@@ -35,7 +35,7 @@ describe('LyricPlacer', () => {
 		const resolver = new CollisionResolver(new Rect(0, 0, 2000, 2000));
 		const translator = {
 			noteheadHalfWidth: () => 6,
-		} as unknown as NoteTranslator;
+		} as unknown as VoiceTranslator;
 		const placer = new LyricPlacer(translator, context, resolver, '#123456', {
 			lyricDrops: opts.lyricDrops,
 		});

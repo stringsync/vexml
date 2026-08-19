@@ -17,13 +17,13 @@ import type {
 	RawNote,
 } from './geometry-collector';
 import type { ScoreLayout } from './layout-planner';
-import type { NoteTranslator } from './note-translator';
 import type { ScoreReader } from './score-reader';
 import type { SignatureTranslator } from './signature-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillResolver } from './spill-resolver';
 import type { StavePlan } from './stave-plan';
-import type { TabTranslator } from './tab-translator';
+import type { TabVoiceTranslator } from './tab-voice-translator';
+import type { VoiceTranslator } from './voice-translator';
 
 /* Everything the draw pass emits for the index, in score space (crop already applied). */
 export interface RawGeometry {
@@ -41,9 +41,9 @@ export interface RawGeometry {
 export class ScoreDrawer {
 	constructor(
 		private config: Config,
-		private translator: NoteTranslator,
+		private translator: VoiceTranslator,
 		private chords: ChordTranslator,
-		private tab: TabTranslator,
+		private tab: TabVoiceTranslator,
 		private signatures: SignatureTranslator,
 		private staves: StavePlan,
 		private barlines: BarlineTranslator,

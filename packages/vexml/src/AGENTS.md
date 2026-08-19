@@ -42,8 +42,8 @@ Two rules cut across the draw stage:
     accidentals, dots, stems.
   - `notation-translator.ts` — what hangs off it: articulations, ornaments,
     technical marks, fermatas, arpeggios, lyrics.
-  - `tab-translator.ts` — fret positions and styling, bends, tab graces.
-  - `note-translator.ts` — a whole voice of tickables: onsets, ghost padding,
+  - `tab-voice-translator.ts` — fret positions and styling, bends, tab graces.
+  - `voice-translator.ts` — a whole voice of tickables: onsets, ghost padding,
     grace groups, mid-measure dividers and clef changes.
   - `signature-translator.ts` (clef/key/time specs), `barline-translator.ts`
     (repeat dots, voltas, mid-measure dividers), `duration-translator.ts`
@@ -52,7 +52,7 @@ Two rules cut across the draw stage:
 ## Staves, measures, and the frame
 
 - **Stave, clef, key signature, time signature** — `stave-builder.ts`, `signature-translator.ts`, `custom-key-signature.ts`, `score-reader.ts`
-- **Mid-measure clef changes, mid-measure barlines** — `score-reader.ts` (`midClefsOf`, `midBarlinesOf`), `note-translator.ts`, `signature-translator.ts`, `barline-translator.ts`, `layout-planner.ts`
+- **Mid-measure clef changes, mid-measure barlines** — `score-reader.ts` (`midClefsOf`, `midBarlinesOf`), `voice-translator.ts`, `signature-translator.ts`, `barline-translator.ts`, `layout-planner.ts`
 - **Barlines, repeat signs, volta (ending) brackets** — `barline-translator.ts`, `stave-builder.ts`, `connector-drawer.ts`, `score-reader.ts`
 - **Measure numbers** — `stave-builder.ts` (`showsMeasureNumber`)
 - **Multi-measure rests** — `stave-builder.ts` (`drawMultiRest`), `layout-planner.ts`
@@ -74,7 +74,7 @@ Two rules cut across the draw stage:
 
 - **Intra-voice note spacing: denser measure wider, longer note more room, sub-linearly** — `layout-planner.ts` (`noteLogWidth`, `measureNoteArea`), `constants.ts` (`BASE_VOICE_WIDTH`, `LOG_SPACING_RATIO`, `MIN_LOG_FACTOR`), `config.ts` (`noteSpacing`, `softmaxFactor`)
 - **A measure's two widths: the `ideal` the curve wants, the `min` below which notes collide** — `layout-planner.ts` (`measureNoteArea`)
-- **Where notes actually land, justified into the planned box at draw time** — `system-formatter.ts` (`formatAndDraw`), `note-translator.ts` (`softVoice`)
+- **Where notes actually land, justified into the planned box at draw time** — `system-formatter.ts` (`formatAndDraw`), `voice-translator.ts` (`softVoice`)
 - **Room reserved at a measure's left for clef/key/time/repeat** — `layout-planner.ts`, `constants.ts` (`LEAD_*`)
 - **Room held open for a words directive overrunning the barline** — `layout-planner.ts` (`trailingWordsPad`, `leadingWordsPad`)
 - **Grace-note room** — `layout-planner.ts` (`graceWidthOf`), `system-formatter.ts` (`closeGraceGaps`)
@@ -147,7 +147,7 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 ## Tablature
 
 - **Tab staves, tunings, whether a part is tab** — `score-reader.ts`, `stave-builder.ts`
-- **Fret numbers, tab stems, bends** — `tab-translator.ts`, `voice-builder.ts`, `stave-plan.ts` (which staves are tab)
+- **Fret numbers, tab stems, bends** — `tab-voice-translator.ts`, `voice-builder.ts`, `stave-plan.ts` (which staves are tab)
 - **Tab note geometry for the hit index** — `geometry-collector.ts`
 - **The `TabPosition` a caller gets back** — `tab-position.ts`
 

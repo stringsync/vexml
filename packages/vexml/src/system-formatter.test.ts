@@ -15,16 +15,16 @@ import { CollisionResolver } from './collision-resolver';
 import type { ConnectorDrawer } from './connector-drawer';
 import { FakeTechnicalMark } from './fake-technical-mark';
 import type { LyricPlacer } from './lyric-placer';
-import type { NoteTranslator } from './note-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import { SpillTracker } from './spill-tracker';
 import { SystemFormatter } from './system-formatter';
+import type { VoiceTranslator } from './voice-translator';
 
 describe('SystemFormatter', () => {
 	const makeFormatter = () =>
 		new SystemFormatter(
 			{} as unknown as RenderContext,
-			{ noteheadHalfWidth: () => 5 } as unknown as NoteTranslator,
+			{ noteheadHalfWidth: () => 5 } as unknown as VoiceTranslator,
 			{} as unknown as ChordTranslator,
 			{} as unknown as SpannerBuilder,
 			{} as unknown as ConnectorDrawer,

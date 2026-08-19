@@ -3,7 +3,7 @@ import { Rect } from 'webappwiz/geometry';
 import type { CollisionResolver } from './collision-resolver';
 import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT } from './constants';
 import { isLyricMark, type LyricMark } from './lyric-mark';
-import type { NoteTranslator } from './note-translator';
+import type { VoiceTranslator } from './voice-translator';
 
 export interface LyricPlacerOptions {
 	/* Per lyric row (keyed `<systemIndex>:<staveRow>`), how far to drop it so it clears the
@@ -27,7 +27,7 @@ export class LyricPlacer {
 	private lyricsStepped = false;
 
 	constructor(
-		private readonly translator: NoteTranslator,
+		private readonly translator: VoiceTranslator,
 		private readonly context: RenderContext,
 		private readonly collisionResolver: CollisionResolver,
 		private readonly notationColor: string,

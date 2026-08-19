@@ -37,7 +37,7 @@ export const NO_DECORATION: BarlineDecoration = {
 };
 
 /*
- * Translates mdom measure repeats into the decorations a `<barline>` draws: the repeat dots and
+ * Translates mdom measure repeats to the decorations a `<barline>` draws: the repeat dots and
  * volta brackets at a measure's edges, plus the vexflow BarNote a mid-measure one puts between
  * two notes.
  */

@@ -5,7 +5,6 @@ import { Rect } from 'webappwiz/geometry';
 import { WORDS_NOTE_CLEARANCE } from './constants';
 import type { DirectionLineTask, DirectionPlacer } from './direction-placer';
 import type { Hairpin } from './hairpin';
-import type { NoteTranslator } from './note-translator';
 import type { DirectionLineSpan, PedalMark, WedgeMark } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
 import {
@@ -13,6 +12,7 @@ import {
 	type SpannerResolverOptions,
 } from './spanner-resolver';
 import { SpillTracker } from './spill-tracker';
+import type { VoiceTranslator } from './voice-translator';
 
 describe('SpannerResolver', () => {
 	// A drawable the builder fakes hand back: setContext(...).draw() logs its label, which
@@ -78,7 +78,7 @@ describe('SpannerResolver', () => {
 		const resolver = new SpannerResolver(
 			{} as unknown as RenderContext,
 			builder(spanners),
-			{ noteheadHalfWidth: () => 5 } as unknown as NoteTranslator,
+			{ noteheadHalfWidth: () => 5 } as unknown as VoiceTranslator,
 			spill,
 			{
 				drawDirectionLines: (tasks: readonly DirectionLineTask[]) =>

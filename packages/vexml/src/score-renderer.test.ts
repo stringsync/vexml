@@ -10,7 +10,6 @@ import { Gaps } from './gaps';
 import { LayoutPlanner } from './layout-planner';
 import { NoopFontLoader } from './noop-font-loader';
 import { NotationTranslator } from './notation-translator';
-import { NoteTranslator } from './note-translator';
 import { ScoreDrawer } from './score-drawer';
 import { ScoreReader } from './score-reader';
 import { type RenderStage, ScoreRenderer } from './score-renderer';
@@ -19,7 +18,8 @@ import { SignatureTranslator } from './signature-translator';
 import { SpannerBuilder } from './spanner-builder';
 import { SpillResolver } from './spill-resolver';
 import { StavePlan } from './stave-plan';
-import { TabTranslator } from './tab-translator';
+import { TabVoiceTranslator } from './tab-voice-translator';
+import { VoiceTranslator } from './voice-translator';
 
 // A headless stage: the Host fake plus the two DOM nodes RenderStage adds. The empty-parts path
 // never touches container/base, so inert placeholders are enough — and any layout or draw attempt
@@ -60,9 +60,9 @@ describe('ScoreRenderer', () => {
 		const barlines = new BarlineTranslator();
 		const signatures = new SignatureTranslator();
 		const staves = new StavePlan({ showTabs: true, showNotation: true });
-		const tab = new TabTranslator(durations);
+		const tab = new TabVoiceTranslator(durations);
 		const chords = new ChordTranslator(durations, new NotationTranslator());
-		const translator = new NoteTranslator(chords, durations, barlines);
+		const translator = new VoiceTranslator(chords, durations, barlines);
 		const reader = new ScoreReader();
 		const gaps = new Gaps([]);
 		return new ScoreRenderer(

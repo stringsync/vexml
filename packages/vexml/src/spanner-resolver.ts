@@ -19,7 +19,6 @@ import {
 } from './constants';
 import type { DirectionPlacer } from './direction-placer';
 import type { Hairpin } from './hairpin';
-import type { NoteTranslator } from './note-translator';
 import type {
 	DirectionLineSpan,
 	OctaveShiftSpan,
@@ -28,6 +27,7 @@ import type {
 } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
+import type { VoiceTranslator } from './voice-translator';
 
 /*
  * The whole-pass endpoint registries handed to resolve(), snapshotted once every note is
@@ -105,7 +105,7 @@ export class SpannerResolver {
 	constructor(
 		private readonly context: RenderContext,
 		private readonly spanners: SpannerBuilder,
-		private readonly translator: NoteTranslator,
+		private readonly translator: VoiceTranslator,
 		private readonly spill: SpillTracker,
 		private readonly directionPlacer: DirectionPlacer,
 		private readonly reporter: SpannerReporter,

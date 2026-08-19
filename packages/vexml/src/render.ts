@@ -14,7 +14,6 @@ import { ElementFactory } from './element-factory';
 import { Gaps } from './gaps';
 import { LayoutPlanner } from './layout-planner';
 import { NotationTranslator } from './notation-translator';
-import { NoteTranslator } from './note-translator';
 import type { Score } from './score';
 import { ScoreDrawer } from './score-drawer';
 import { ScoreReader } from './score-reader';
@@ -25,7 +24,8 @@ import { SpannerBuilder } from './spanner-builder';
 import { SpillResolver } from './spill-resolver';
 import { Stage } from './stage';
 import { StavePlan } from './stave-plan';
-import { TabTranslator } from './tab-translator';
+import { TabVoiceTranslator } from './tab-voice-translator';
+import { VoiceTranslator } from './voice-translator';
 
 /*
  * Render a MusicXML score into a container: parse the input (a MusicXML string or a compressed
@@ -73,11 +73,11 @@ export function render(
 		showTabs: resolved.showTabs,
 		showNotation: resolved.showNotation,
 	});
-	const tab = new TabTranslator(durations, resolved.tabStemPlacement);
+	const tab = new TabVoiceTranslator(durations, resolved.tabStemPlacement);
 	const chords = new ChordTranslator(durations, new NotationTranslator());
 	// ONE translator instance shared by layout and draw: both must build identical vexflow
 	// voices for the measured widths to match the drawn ones.
-	const translator = new NoteTranslator(chords, durations, barlines);
+	const translator = new VoiceTranslator(chords, durations, barlines);
 	const reader = new ScoreReader();
 	const gaps = new Gaps(resolved.gaps);
 	return new ScoreRenderer(

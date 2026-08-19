@@ -29,11 +29,11 @@ import {
 	WORDS_CHAR_WIDTH,
 } from './constants';
 import type { Gaps } from './gaps';
-import type { NoteTranslator } from './note-translator';
 import type { ScoreReader, StaffVoice } from './score-reader';
 import type { MidClefSpec, SignatureTranslator } from './signature-translator';
 import type { StavePlan } from './stave-plan';
-import type { TabTranslator } from './tab-translator';
+import type { TabVoiceTranslator } from './tab-voice-translator';
+import type { VoiceTranslator } from './voice-translator';
 
 /** A measure's placed box within its system. */
 export type MeasureBox = {
@@ -112,8 +112,8 @@ type StaveSpec = {
 
 export class LayoutPlanner {
 	constructor(
-		private readonly translator: NoteTranslator,
-		private readonly tab: TabTranslator,
+		private readonly translator: VoiceTranslator,
+		private readonly tab: TabVoiceTranslator,
 		private readonly signatures: SignatureTranslator,
 		private readonly staves: StavePlan,
 		private readonly reader: ScoreReader,
@@ -245,7 +245,7 @@ export class LayoutPlanner {
 			const perVoice = voices.map((voice, voiceIndex) =>
 				isTab
 					? this.tab.tickables(voice.chords, tuning)
-					: this.translator.voiceTickables(voice.chords, clef, {
+					: this.translator.tickables(voice.chords, clef, {
 							endBeat,
 							// Matches buildNotes: the dividers and clef glyphs ride on the first
 							// voice only, but the clef changes re-aim every voice's notes.

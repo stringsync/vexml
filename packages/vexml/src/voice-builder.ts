@@ -11,12 +11,12 @@ import {
 } from 'vexflow';
 import { BAR_STYLE_TYPES } from './barline-translator';
 import { isLyricMark } from './lyric-mark';
-import type { NoteTranslator } from './note-translator';
 import type { ScoreReader, StaffVoice } from './score-reader';
 import type { MidClefSpec } from './signature-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import type { PendingStave } from './system-formatter';
-import type { TabTranslator } from './tab-translator';
+import type { TabVoiceTranslator } from './tab-voice-translator';
+import type { VoiceTranslator } from './voice-translator';
 
 /* The measure context one call to VoiceBuilder.buildNotes lays its notes out in. Every one
  * of these is absent from a measure that says nothing about it, so each defaults to the
@@ -51,7 +51,7 @@ export interface VoiceBuilderOptions {
 }
 
 /*
- * Translates one staff's mdom voices into vexflow voices ready for formatting: the
+ * Translates one staff's mdom voices to vexflow voices ready for formatting: the
  * notation path (buildNotes), the tablature path (buildTabNotes), and the cross-staff
  * beam construction over a part's pending staves (buildPartBeams). Each build returns
  * the PendingStave record the driver queues for the system's shared format pass, and
@@ -72,8 +72,8 @@ export class VoiceBuilder {
 	private readonly crossStave = new Set<StaveNote>();
 
 	constructor(
-		private readonly translator: NoteTranslator,
-		private readonly tab: TabTranslator,
+		private readonly translator: VoiceTranslator,
+		private readonly tab: TabVoiceTranslator,
 		private readonly reader: ScoreReader,
 		private readonly spanners: SpannerBuilder,
 		opts: VoiceBuilderOptions,
@@ -150,7 +150,7 @@ export class VoiceBuilder {
 			for (const chord of chords) {
 				chordByLead.set(chord.lead, chord);
 			}
-			const tickables = this.translator.voiceTickables(chords, clef, {
+			const tickables = this.translator.tickables(chords, clef, {
 				endBeat,
 				record: (lead, note) => {
 					this.byLead.set(lead, note);

@@ -46,7 +46,7 @@ const STEP_SEMITONES: Record<string, number> = {
 type FretElement = Element & { fontWeight: string };
 
 /*
- * Translates one voice's mdom chords into the vexflow tickables that draw them on a tablature
+ * Translates one voice's mdom chords to the vexflow tickables that draw them on a tablature
  * staff: a TabNote per struck chord, sized and styled for the fret digits, with the rests and
  * held notes tab convention leaves unprinted reserved as invisible time.
  *
@@ -54,7 +54,7 @@ type FretElement = Element & { fontWeight: string };
  * key, accidental or notehead, and its digits are restyled through vexflow internals the
  * notation path never touches.
  */
-export class TabTranslator {
+export class TabVoiceTranslator {
 	constructor(
 		private readonly durations: DurationTranslator,
 		// Whether/where TabNotes are built with stems (and flags). See Config.tabStemPlacement.
@@ -68,7 +68,7 @@ export class TabTranslator {
 
 	/*
 	 * A tab voice's tickables: one TabNote per non-rest chord, in onset order. Grace
-	 * chords steal no time, so like voiceTickables they're held aside and
+	 * chords steal no time, so like VoiceTranslator.tickables they're held aside and
 	 * attached to the next real note as a GraceNoteGroup modifier (drawn just left of
 	 * it). A rest reserves its duration with invisible GhostNotes rather than a drawn
 	 * rest glyph (tab convention omits rests) — without that reserved time, a tab note

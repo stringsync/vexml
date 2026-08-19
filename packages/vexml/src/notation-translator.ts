@@ -155,7 +155,7 @@ const ORNAMENT_TYPES: Record<string, string> = {
  * <harmonic> is deliberately absent: vexml already engraves it as a diamond notehead (see
  * isHarmonic, pinned by harmonic.musicxml), so drawing the "o" as well would mark it twice.
  * The tab-only members of <technical> — <bend>, <other-technical>, <string>/<fret> — belong
- * to TabTranslator; the two that carry text (<fingering>, <pluck>) and
+ * to TabVoiceTranslator; the two that carry text (<fingering>, <pluck>) and
  * <string> on a notation stave are handled by {@link addTechnicals} instead.
  */
 const TECHNICAL_CODES: Record<string, string> = {
@@ -221,7 +221,7 @@ class NonArpeggioBracket extends Stroke {
 }
 
 /*
- * Translates an mdom chord's marks into the vexflow modifiers that hang off the StaveNote built
+ * Translates an mdom chord's marks to the vexflow modifiers that hang off the StaveNote built
  * from it: its <articulations>, <ornaments>, <technical> marks, fermata, arpeggio, and its
  * <lyric> verses, which are a sibling of <notations> in the file but the same kind of thing
  * here.

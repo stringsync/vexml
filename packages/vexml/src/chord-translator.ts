@@ -143,7 +143,7 @@ interface VexflowChordOptions {
 }
 
 /*
- * Translates one mdom chord (a lead note plus any <chord/> members) into the vexflow StaveNote
+ * Translates one mdom chord (a lead note plus any <chord/> members) to the vexflow StaveNote
  * that draws it: its keys, noteheads, accidentals, dots, stem, and (in a later pass, once the
  * beams are settled) its colors. What hangs OFF the note once it exists (articulations,
  * ornaments, lyrics) is NotationTranslator's half.
@@ -163,7 +163,7 @@ export class ChordTranslator {
 	 * Build a vexflow StaveNote for one chord (a lead note plus any <chord/> members;
 	 * a single note is a one-member chord). Rests render as a centered rest glyph;
 	 * grace notes (no <duration>) become small GraceNotes — slashed for an
-	 * acciaccatura — which voiceTickables groups onto their host note; pitched
+	 * acciaccatura — which VoiceTranslator.tickables groups onto their host note; pitched
 	 * notes stack their keys and carry each member's printed accidental, dots, stem
 	 * direction, and articulations.
 	 */
@@ -199,7 +199,7 @@ export class ChordTranslator {
 				// that clef.
 				clef: restKey ? clef : undefined,
 				// A whole rest alone in a measure is a full-measure rest: engraving convention
-				// centers it horizontally (the formatter does the centering, see voiceTickables).
+				// centers it horizontally (the formatter does the centering, see VoiceTranslator.tickables).
 				alignCenter,
 			});
 			this.addDots(rest, lead);
