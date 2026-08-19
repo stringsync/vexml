@@ -32,7 +32,7 @@ stages in order.
 | Layout | Measure widths, system breaks, stave offsets — no drawing | `layout-planner.ts` |
 | Draw | Two passes over the canvas; everything engraved happens here | `score-drawer.ts`, `draw-pass.ts` + the collaborators below |
 | Elements | Raw geometry to the wrappers a caller hit-tests | `element-factory.ts`, `element-index.ts` |
-| Playback | The timeline: beats to ms, repeats unrolled, swing applied | `sequence-factory.ts`, `sequence.ts` |
+| Playback | The timeline: beats to ms, repeats unrolled, swing applied | `sequence-factory.ts`, `measure-sequence-iterator.ts`, `sequence.ts` |
 | Result | What `render()` hands back | `score.ts` |
 
 Two files cut across the draw stage and are worth knowing before anything else:
@@ -145,7 +145,7 @@ Two files cut across the draw stage and are worth knowing before anything else:
 - **What a caller gets from a hit test** — `element.ts`, `element-index.ts`, `note.ts`, `measure.ts`, `measure-box.ts`, `voice.ts`, `part.ts`, `system.ts`
 - **Turning a pointer position into an element** — `hit-tester/`, `quadtree.ts`
 - **Coloring, highlighting, halos** — `decoration/`, `decoration-style/`
-- **Playback timeline, repeats unrolled, swing** — `sequence-factory.ts`, `sequence.ts`
+- **Playback timeline, repeats unrolled, swing** — `sequence-factory.ts`, `sequence.ts`, `measure-sequence-iterator.ts` (repeat/volta expansion), `tempo-map.ts`, `swing-warp.ts`
 - **The moving cursor** — `cursor-controller.ts`, `cursor-view/`, `cursor-host/`
 - **Scrolling and the visible window** — `scroller/`, `viewport/`
 - **The DOM the score lives in (container, canvas, overlay layers)** — `host/`, `layer/`, `layer-host/`, `scroll-host/`

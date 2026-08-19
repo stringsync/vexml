@@ -2,6 +2,7 @@ import type { Measure, Note as MNote, Part } from '@stringsync/mdom';
 import { DEFAULT_TEMPO_BPM } from './constants';
 import type { Gaps } from './gaps';
 import { Rect } from './geometry';
+import { MeasureSequenceIterator } from './measure-sequence-iterator';
 import type { Note } from './note';
 import type { RawGeometry } from './score-drawer';
 import type { ScoreReader, Swing } from './score-reader';
@@ -16,294 +17,6 @@ import {
 import { SwingWarp } from './swing-warp';
 import { TempoMap, type TempoSegment } from './tempo-map';
 
-/*
- * Builds the playback timeline: bridges the parsed document (onsets, meter, tempo, repeats, ties)
- * and the engraved geometry (note x, system boxes) into `SequenceInput`, then assembles the
- * `Sequence` from it — expanding repeats/voltas into playback order via MeasureSequenceIterator.
- * `createFromInput` is public so tests drive the assembly through the pure data seam.
- */
-
-/**
- * Iterates measure indices in playback order, expanding repeats and voltas: iterate it to get the
- * order a player would visit the measures in, with repeated stretches appearing as often as they
- * are played.
- */
-export class MeasureSequenceIterator implements Iterable<number> {
-	constructor(
-		private readonly measures: ReadonlyArray<{ index: number; jumps: Jump[] }>,
-	) {}
-
-	// Two phases: a pre-scan pairs `repeatend`s with their `repeatstart`s and groups
-	// `repeatending` runs into voltas, then a linear walk back-jumps and skips exhausted
-	// endings.
-	[Symbol.iterator](): Iterator<number> {
-		return computeSequence(this.measures)[Symbol.iterator]();
-	}
-}
-
-type RepeatEnd = { measureIndex: number; startIndex: number; times: number };
-type VoltaEnding = {
-	/* The measure range the ending covers; playback jumps from `endIndex`, not from every one. */
-	startIndex: number;
-	endIndex: number;
-	times: number;
-	/* The ending's own `<ending number>`, as its first pass — see Jump. Only used to spot the
-	 * restart that separates one volta group from the next. */
-	number: number;
-	startPass: number;
-	endPass: number;
-};
-type Volta = {
-	startIndex: number;
-	endings: VoltaEnding[];
-	totalPasses: number;
-};
-type Structure = {
-	repeatEndsByMeasure: Map<number, RepeatEnd>;
-	voltas: Volta[];
-	endingByMeasure: Map<number, { volta: Volta; ending: VoltaEnding }>;
-};
-
-function computeSequence(
-	measures: ReadonlyArray<{ index: number; jumps: Jump[] }>,
-): number[] {
-	return walk(measures, analyzeStructure(measures));
-}
-
-function findJump<K extends Jump['type']>(
-	jumps: Jump[],
-	type: K,
-): Extract<Jump, { type: K }> | undefined {
-	return jumps.find(
-		(jump): jump is Extract<Jump, { type: K }> => jump.type === type,
-	);
-}
-
-function analyzeStructure(
-	measures: ReadonlyArray<{ index: number; jumps: Jump[] }>,
-): Structure {
-	const repeatEndsByMeasure = new Map<number, RepeatEnd>();
-	const voltas: Volta[] = [];
-	const endingByMeasure = new Map<
-		number,
-		{ volta: Volta; ending: VoltaEnding }
-	>();
-
-	const startStack: number[] = [];
-	let currentVolta: Volta | null = null;
-	// The ending still being extended, i.e. one whose `last` measure hasn't been reached.
-	let currentEnding: VoltaEnding | null = null;
-
-	/* Finish the open volta group: its repeat block is done, so drop the block's start off the
-	 * stack and leave the enclosing one (if any) exposed for the next group. */
-	const closeVolta = (): void => {
-		currentEnding = null;
-		if (
-			currentVolta !== null &&
-			startStack.at(-1) === currentVolta.startIndex
-		) {
-			startStack.pop();
-		}
-		currentVolta = null;
-	};
-
-	for (const [i, measure] of measures.entries()) {
-		for (const jump of measure.jumps) {
-			if (jump.type === 'repeatstart') {
-				startStack.push(i);
-			}
-		}
-
-		const endingJump = findJump(measure.jumps, 'repeatending');
-		if (endingJump) {
-			// Nested blocks put two volta groups back to back with no plain measure between them,
-			// so "the group ends at the first measure carrying no ending" can't see the seam. The
-			// numbering does: endings within one group climb (1., 2., 3.), so a run whose number
-			// doesn't is the enclosing block's first ending, not another of this block's.
-			const previous = currentVolta?.endings.at(-1);
-			if (
-				currentEnding === null &&
-				previous !== undefined &&
-				endingJump.number <= previous.number
-			) {
-				closeVolta();
-			}
-			if (currentVolta === null) {
-				currentVolta = {
-					startIndex: startStack.at(-1) ?? 0,
-					endings: [],
-					totalPasses: 0,
-				};
-				voltas.push(currentVolta);
-			}
-			let ending: VoltaEnding | null = currentEnding;
-			if (ending === null) {
-				ending = {
-					startIndex: i,
-					endIndex: i,
-					times: endingJump.times,
-					number: endingJump.number,
-					startPass: 0,
-					endPass: 0,
-				};
-				currentVolta.endings.push(ending);
-			} else {
-				ending.endIndex = i;
-			}
-			currentEnding = endingJump.last ? null : ending;
-			endingByMeasure.set(i, { volta: currentVolta, ending });
-			// A `repeatend` co-located with a `repeatending` is intentionally dropped.
-			continue;
-		}
-
-		if (currentVolta !== null) {
-			closeVolta();
-		}
-
-		const endJump = findJump(measure.jumps, 'repeatend');
-		if (endJump) {
-			const startIndex = startStack.pop() ?? 0;
-			repeatEndsByMeasure.set(i, {
-				measureIndex: i,
-				startIndex,
-				times: endJump.times,
-			});
-		}
-	}
-
-	// Close any volta that runs to the end of the score.
-	if (currentVolta !== null && startStack.at(-1) === currentVolta.startIndex) {
-		startStack.pop();
-	}
-
-	for (const volta of voltas) {
-		// A `repeatending` with `times: 0` on the LAST ending is the standard "discontinue" volta: it
-		// plays once on the final pass with no back-jump. Treat it as `times: 1` for pass ranges.
-		const last = volta.endings.at(-1);
-		let pass = 1;
-		for (const ending of volta.endings) {
-			const effective =
-				ending === last && ending.times === 0 ? 1 : ending.times;
-			ending.startPass = pass;
-			ending.endPass = pass + effective - 1;
-			pass += effective;
-		}
-		const sum = pass - 1;
-		// A single-ending volta whose ending has a back-jump needs an implicit final pass for the
-		// run-past-the-now-exhausted-ending step. Other shapes exit on their final ending naturally.
-		const needsImplicitFinalPass =
-			volta.endings.length === 1 && last !== undefined && last.times > 0;
-		volta.totalPasses = needsImplicitFinalPass ? sum + 1 : sum;
-	}
-
-	return { repeatEndsByMeasure, voltas, endingByMeasure };
-}
-
-function walk(
-	measures: ReadonlyArray<{ index: number; jumps: Jump[] }>,
-	structure: Structure,
-): number[] {
-	const result: number[] = [];
-	const remainingBackJumps = new Map<number, number>();
-	const voltaPass = new Map<Volta, number>();
-
-	let i = 0;
-	while (i < measures.length) {
-		const measure = measures[i];
-		if (!measure) {
-			break;
-		}
-
-		const endingHit = structure.endingByMeasure.get(i);
-		if (endingHit) {
-			const pass = voltaPass.get(endingHit.volta) ?? 1;
-			if (
-				pass < endingHit.ending.startPass ||
-				pass > endingHit.ending.endPass
-			) {
-				i++;
-				continue;
-			}
-		}
-
-		result.push(measure.index);
-
-		if (endingHit) {
-			const { volta, ending } = endingHit;
-			// Mid-run: the ending spans more measures, so keep playing before deciding.
-			if (i < ending.endIndex) {
-				i++;
-				continue;
-			}
-			const nextPass = (voltaPass.get(volta) ?? 1) + 1;
-			if (nextPass > volta.totalPasses) {
-				voltaPass.delete(volta);
-				i++;
-			} else {
-				voltaPass.set(volta, nextPass);
-				resetNestedState(
-					structure,
-					remainingBackJumps,
-					voltaPass,
-					volta.startIndex,
-					i,
-				);
-				i = volta.startIndex;
-			}
-			continue;
-		}
-
-		const repeatEnd = structure.repeatEndsByMeasure.get(i);
-		if (repeatEnd) {
-			if (repeatEnd.times === 0) {
-				i++;
-				continue;
-			}
-			const remaining = remainingBackJumps.get(i) ?? repeatEnd.times;
-			if (remaining > 0) {
-				remainingBackJumps.set(i, remaining - 1);
-				resetNestedState(
-					structure,
-					remainingBackJumps,
-					voltaPass,
-					repeatEnd.startIndex,
-					i,
-				);
-				i = repeatEnd.startIndex;
-			} else {
-				remainingBackJumps.delete(i);
-				i++;
-			}
-			continue;
-		}
-
-		i++;
-	}
-
-	return result;
-}
-
-/* Reset repeat-ends and voltas nested strictly inside a range being jumped back over, so their
- * counters re-initialize on the next pass through the outer block. */
-function resetNestedState(
-	structure: Structure,
-	remainingBackJumps: Map<number, number>,
-	voltaPass: Map<Volta, number>,
-	startIndex: number,
-	endIndex: number,
-): void {
-	for (const measureIndex of structure.repeatEndsByMeasure.keys()) {
-		if (measureIndex > startIndex && measureIndex < endIndex) {
-			remainingBackJumps.delete(measureIndex);
-		}
-	}
-	for (const volta of structure.voltas) {
-		if (volta.startIndex > startIndex && volta.startIndex < endIndex) {
-			voltaPass.delete(volta);
-		}
-	}
-}
-
 // MusicXML <beat-unit> (a note type) -> quarter notes, so a metronome mark normalizes to quarter BPM.
 const QUARTERS_PER_UNIT: Record<string, number> = {
 	whole: 4,
@@ -315,84 +28,14 @@ const QUARTERS_PER_UNIT: Record<string, number> = {
 	'64th': 0.0625,
 	'128th': 0.03125,
 };
-
-/* The repeat/volta jumps for every measure, mapped from the shared repeat structure
- * (ScoreReader.measureRepeats, which the renderer reads too). An ending supersedes a co-located backward
- * repeat — the iterator drives the back-jump off the ending instead. */
-function jumpsByMeasure(
-	reader: ScoreReader,
-	measures: readonly Measure[],
-): Jump[][] {
-	return reader
-		.measureRepeats(measures)
-		.map(({ repeatBegin, repeatEnd, repeatTimes, ending }) => {
-			const jumps: Jump[] = [];
-			if (repeatBegin) {
-				jumps.push({ type: 'repeatstart' });
-			}
-			if (ending) {
-				jumps.push({
-					type: 'repeatending',
-					times: reader.endingPasses(ending.number),
-					last: ending.last,
-					number: reader.endingFirstPass(ending.number),
-				});
-			} else if (repeatEnd) {
-				jumps.push({
-					type: 'repeatend',
-					times: Math.max(0, (repeatTimes ?? 2) - 1),
-				});
-			}
-			return jumps;
-		});
-}
-
-/* Two notes at the same pitch (a tie's two ends always match). */
-function samePitch(a: MNote, b: MNote): boolean {
-	return (
-		!!a.pitch &&
-		!!b.pitch &&
-		a.pitch.step === b.pitch.step &&
-		a.pitch.octave === b.pitch.octave &&
-		a.pitch.alter === b.pitch.alter
-	);
-}
-
-/* The note a tied note continues from (the start side of a tie ending here), or null. mdom pairs a
- * chord's ties by their shared <tied> number, so tie.partner lands on some member of the right chord
- * but not necessarily the matching pitch; re-resolve to the same-pitch member (as the renderer does),
- * so a tied chord links member-to-member instead of collapsing onto one note. */
-function tiedFromOf(
-	mnote: MNote,
-	notesByMnote: ReadonlyMap<MNote, Note>,
-	chordSiblings: ReadonlyMap<MNote, readonly MNote[]>,
-): Note | null {
-	for (const tie of mnote.ties) {
-		if (tie.tieType !== 'stop') {
-			continue;
-		}
-		const partner = tie.partner?.note;
-		if (!partner) {
-			continue;
-		}
-		const member =
-			(chordSiblings.get(partner) ?? [partner]).find((n) =>
-				samePitch(n, mnote),
-			) ?? partner;
-		const target = notesByMnote.get(member);
-		if (target) {
-			return target;
-		}
-	}
-	return null;
-}
-
-/* A note's endBeat (measure start + onset + duration) and the next onset's startBeat (measure start
- * + onset) are two float paths to the same instant, and they disagree by ~1 ULP for non-dyadic
- * durations like triplets — enough to keep a note active one step too long. 1e-6 beats is ~1µs at
- * ♩=60, far below any real duration. */
 const BEAT_EPSILON = 1e-6;
 
+/*
+ * Builds the playback timeline: bridges the parsed document (onsets, meter, tempo, repeats, ties)
+ * and the engraved geometry (note x, system boxes) into `SequenceInput`, then assembles the
+ * `Sequence` from it — expanding repeats/voltas into playback order via MeasureSequenceIterator.
+ * `createFromInput` is public so tests drive the assembly through the pure data seam.
+ */
 export class SequenceFactory {
 	constructor(
 		private readonly reader: ScoreReader,
@@ -643,7 +286,7 @@ export class SequenceFactory {
 		const gaps = this.gaps.byMeasureIndex();
 		const measureCount = parts[0]?.measures.length ?? 0;
 		// Repeats and endings apply across the system, so they're read from the first part.
-		const jumps = jumpsByMeasure(this.reader, parts[0]?.measures ?? []);
+		const jumps = this.jumpsByMeasure(parts[0]?.measures ?? []);
 		// Swing warps the beat axis per measure; identity everywhere no <sound><swing> is in force.
 		const swings = this.swingWarps(parts);
 		const swung = (index: number, beat: number): number =>
@@ -704,7 +347,7 @@ export class SequenceFactory {
 				measureBeat: onset,
 				beats: warp(measureBeat + beats) - onset,
 				x: rn.rect.x,
-				tiedFrom: tiedFromOf(rn.mnote, notesByMnote, chordSiblings),
+				tiedFrom: this.tiedFromOf(rn.mnote, notesByMnote, chordSiblings),
 			});
 		}
 
@@ -760,5 +403,74 @@ export class SequenceFactory {
 			return maxEnd;
 		}
 		return this.reader.meterBeats(parts[0]?.measures[index]?.getTime() ?? null);
+	}
+
+	/* The repeat/volta jumps for every measure, mapped from the shared repeat structure
+	 * (ScoreReader.measureRepeats, which the renderer reads too). An ending supersedes a co-located backward
+	 * repeat — the iterator drives the back-jump off the ending instead. */
+	private jumpsByMeasure(measures: readonly Measure[]): Jump[][] {
+		const reader = this.reader;
+		return reader
+			.measureRepeats(measures)
+			.map(({ repeatBegin, repeatEnd, repeatTimes, ending }) => {
+				const jumps: Jump[] = [];
+				if (repeatBegin) {
+					jumps.push({ type: 'repeatstart' });
+				}
+				if (ending) {
+					jumps.push({
+						type: 'repeatending',
+						times: reader.endingPasses(ending.number),
+						last: ending.last,
+						number: reader.endingFirstPass(ending.number),
+					});
+				} else if (repeatEnd) {
+					jumps.push({
+						type: 'repeatend',
+						times: Math.max(0, (repeatTimes ?? 2) - 1),
+					});
+				}
+				return jumps;
+			});
+	}
+
+	/* Two notes at the same pitch (a tie's two ends always match). */
+	private samePitch(a: MNote, b: MNote): boolean {
+		return (
+			!!a.pitch &&
+			!!b.pitch &&
+			a.pitch.step === b.pitch.step &&
+			a.pitch.octave === b.pitch.octave &&
+			a.pitch.alter === b.pitch.alter
+		);
+	}
+
+	/* The note a tied note continues from (the start side of a tie ending here), or null. mdom pairs a
+	 * chord's ties by their shared <tied> number, so tie.partner lands on some member of the right chord
+	 * but not necessarily the matching pitch; re-resolve to the same-pitch member (as the renderer
+	 * does), so a tied chord links member-to-member instead of collapsing onto one note. */
+	private tiedFromOf(
+		mnote: MNote,
+		notesByMnote: ReadonlyMap<MNote, Note>,
+		chordSiblings: ReadonlyMap<MNote, readonly MNote[]>,
+	): Note | null {
+		for (const tie of mnote.ties) {
+			if (tie.tieType !== 'stop') {
+				continue;
+			}
+			const partner = tie.partner?.note;
+			if (!partner) {
+				continue;
+			}
+			const member =
+				(chordSiblings.get(partner) ?? [partner]).find((n) =>
+					this.samePitch(n, mnote),
+				) ?? partner;
+			const target = notesByMnote.get(member);
+			if (target) {
+				return target;
+			}
+		}
+		return null;
 	}
 }

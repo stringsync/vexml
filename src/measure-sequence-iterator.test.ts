@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
+import { MeasureSequenceIterator } from './measure-sequence-iterator';
 import type { Jump } from './sequence';
-import { MeasureSequenceIterator } from './sequence-factory';
 
 // ── MeasureSequenceIterator (ported from legacy vexml) ──
 
