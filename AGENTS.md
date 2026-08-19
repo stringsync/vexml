@@ -1,3 +1,7 @@
+Read `src/AGENTS.md` before hunting through `src/`: it maps each piece of notation
+(slur, volta, lyric, fret) to the files that decide it. Keep it current — a file added,
+moved, or renamed under `src/` updates the map in the same commit.
+
 After making code changes:
 
 - `vex fix` typecheck, format, and lint the project.
