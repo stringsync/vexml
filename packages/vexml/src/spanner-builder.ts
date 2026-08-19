@@ -30,16 +30,16 @@ import {
 	SLUR_Y_SHIFT,
 	TUPLET_NESTING_EXTRA_GAP,
 } from './constants';
-import { CrispCurve, CURVE_THICKNESS } from './curve/crisp-curve';
-import { HeadCurve } from './curve/head-curve';
-import { TabCurve } from './curve/tab-curve';
+import { CrispCurve, CURVE_THICKNESS } from './crisp-curve';
+import { CrispTabSlide } from './crisp-tab-slide';
 import { Hairpin } from './hairpin';
+import { HeadCurve } from './head-curve';
+import { NotationSlide } from './notation-slide';
 import { NoteheadArticulation } from './notation-translator';
 import { LINE_TYPE_DASH, type PedalMark, type WedgeMark } from './score-reader';
-import { CrispTabSlide } from './slide/crisp-tab-slide';
-import { NotationSlide } from './slide/notation-slide';
-import { SingleSlide } from './slide/single-slide';
-import { TabSlideLine } from './slide/tab-slide-line';
+import { SingleSlide } from './single-slide';
+import { TabCurve } from './tab-curve';
+import { TabSlideLine } from './tab-slide-line';
 
 /*
  * A built slur, with the vertical extent it will be drawn at. A slur is not movable — it's

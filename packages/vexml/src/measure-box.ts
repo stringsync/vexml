@@ -3,7 +3,7 @@ import type { Rect } from 'webappwiz/geometry';
 import { Element } from './element';
 import type { Measure } from './measure';
 import type { System } from './system';
-import type { Viewport } from './viewport/viewport';
+import type { Viewport } from './viewport';
 
 /* A measure column's box — the full-width strip across all parts at one measure index, and the
  * background element hit when a pointer lands on staff space (not a note). Purely layout: the

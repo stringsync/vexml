@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'bun:test';
 import { MDOMParser } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
-import { FakeDecorations } from './decoration/fake-decorations';
 import { ElementFactory } from './element-factory';
+import { FakeDecorations } from './fake-decorations';
+import { FakeViewport } from './fake-viewport';
 import type { RawNote } from './geometry-collector';
 import type { Note } from './note';
 import type { RawGeometry } from './score-drawer';
 import type { TabPosition } from './tab-position';
-import { FakeViewport } from './viewport/fake-viewport';
 
 const XML = `<?xml version="1.0"?>
 <score-partwise version="4.0">

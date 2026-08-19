@@ -9,11 +9,11 @@ import {
 	Tremolo,
 } from 'vexflow';
 import { ACCIDENTAL_CODES } from './chord-translator';
-import { LyricAnnotation } from './lyric-mark/lyric-annotation';
+import { LyricAnnotation } from './lyric-annotation';
 import {
 	FingeringAnnotation,
 	StringNumberAnnotation,
-} from './technical-mark/technical-annotation';
+} from './technical-annotation';
 
 /*
  * MusicXML <articulations> name -> the notehead-side mark it draws: a vexflow articulation

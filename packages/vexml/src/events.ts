@@ -1,4 +1,4 @@
-import type { Bounded } from './decoration/decoration';
+import type { Bounded } from './decoration';
 import type { Element } from './element';
 import type { Note } from './note';
 

@@ -1,9 +1,9 @@
 import type { Harmony } from '@stringsync/mdom';
 import type { Rect } from 'webappwiz/geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
-import type { Decorations } from './decoration/decoration';
+import type { Decorations } from './decoration';
 import { Element, type Highlightable, Toggle } from './element';
-import type { Viewport } from './viewport/viewport';
+import type { Viewport } from './viewport';
 
 /* A rendered chord diagram (the fret box a <harmony> with a <frame> draws above the stave).
  * Decorations use the base ellipse/halo fallback — there's no single glyph to restamp. Not in the

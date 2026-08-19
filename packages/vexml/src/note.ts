@@ -1,11 +1,11 @@
 import type { Note as MNote } from '@stringsync/mdom';
 import type { Rect } from 'webappwiz/geometry';
-import type { Decorations } from './decoration/decoration';
+import type { Decorations } from './decoration';
 import { Element, type Highlightable, type Playable, Toggle } from './element';
 import type { NoteGlyph } from './geometry-collector';
 import type { Measure } from './measure';
 import type { TabPosition } from './tab-position';
-import type { Viewport } from './viewport/viewport';
+import type { Viewport } from './viewport';
 
 /*
  * Resolves an mdom note to the wrapper built for it. The elements reference one another (a note

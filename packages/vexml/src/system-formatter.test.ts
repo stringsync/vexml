@@ -13,12 +13,12 @@ import { Rect } from 'webappwiz/geometry';
 import type { ChordTranslator } from './chord-translator';
 import { CollisionResolver } from './collision-resolver';
 import type { ConnectorDrawer } from './connector-drawer';
+import { FakeTechnicalMark } from './fake-technical-mark';
 import type { LyricPlacer } from './lyric-placer';
 import type { NoteTranslator } from './note-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import { SpillTracker } from './spill-tracker';
 import { SystemFormatter } from './system-formatter';
-import { FakeTechnicalMark } from './technical-mark/fake-technical-mark';
 
 describe('SystemFormatter', () => {
 	const makeFormatter = () =>

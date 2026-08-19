@@ -5,9 +5,9 @@ import type {
 	Part as MPart,
 } from '@stringsync/mdom';
 import type { Rect } from 'webappwiz/geometry';
-import type { Decoratable, Decoration } from './decoration/decoration';
+import type { Decoratable, Decoration } from './decoration';
 import type { NoteGlyph } from './geometry-collector';
-import type { Viewport } from './viewport/viewport';
+import type { Viewport } from './viewport';
 
 /*
  * The interaction model: vexml-owned objects a caller gets from hit-testing a rendered score.

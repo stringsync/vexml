@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { DefaultScoreParser } from './score-parser/default-score-parser';
+import { DefaultScoreParser } from './default-score-parser';
 import { ScoreReader } from './score-reader';
 
 /* A one-part score whose measures carry exactly the given <barline>s (and a note, so the

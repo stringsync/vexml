@@ -2,10 +2,10 @@ import { describe, expect, it } from 'bun:test';
 import { MDOMParser } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
 import { isHighlightable, isPlayable } from './element';
+import { FakeViewport } from './fake-viewport';
 import type { Measure } from './measure';
 import { MeasureBox } from './measure-box';
 import { System } from './system';
-import { FakeViewport } from './viewport/fake-viewport';
 
 const XML = `<?xml version="1.0"?>
 <score-partwise version="4.0">

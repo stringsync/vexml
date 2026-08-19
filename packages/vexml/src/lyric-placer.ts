@@ -2,7 +2,7 @@ import type { RenderContext, StaveNote } from 'vexflow';
 import { Rect } from 'webappwiz/geometry';
 import type { CollisionResolver } from './collision-resolver';
 import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT } from './constants';
-import { isLyricMark, type LyricMark } from './lyric-mark/lyric-mark';
+import { isLyricMark, type LyricMark } from './lyric-mark';
 import type { NoteTranslator } from './note-translator';
 
 export interface LyricPlacerOptions {

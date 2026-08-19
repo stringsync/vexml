@@ -1,20 +1,20 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { Rect } from 'webappwiz/geometry';
-import { DefaultDecorations } from './decoration/default-decorations';
+import { DefaultDecorations } from './default-decorations';
 import type { Element } from './element';
 import { ElementIndex } from './element-index';
+import { FakeHitTester } from './fake-hit-tester';
+import { FakeHost } from './fake-host';
+import type { FakeLayer } from './fake-layer';
+import { FakeViewport } from './fake-viewport';
 import { Gaps } from './gaps';
-import { FakeHitTester } from './hit-tester/fake-hit-tester';
-import type { HitTester } from './hit-tester/hit-tester';
-import { FakeHost } from './host/fake-host';
-import type { FakeLayer } from './layer/fake-layer';
+import type { HitTester } from './hit-tester';
 import { MeasureBox } from './measure-box';
 import type { Note } from './note';
 import { Score } from './score';
 import { ScoreReader } from './score-reader';
 import { SequenceFactory } from './sequence-factory';
 import { System } from './system';
-import { FakeViewport } from './viewport/fake-viewport';
 
 /* An empty timeline: these tests exercise events/layers/hover, not playback. */
 const EMPTY_SEQUENCE = new SequenceFactory(

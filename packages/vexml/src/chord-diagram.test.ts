@@ -3,9 +3,9 @@ import { MDOMParser } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
 import { ChordDiagram } from './chord-diagram';
 import type { ChordFrame } from './chord-diagram-glyph';
-import { FakeDecorations } from './decoration/fake-decorations';
 import { isHighlightable, isPlayable } from './element';
-import { FakeViewport } from './viewport/fake-viewport';
+import { FakeDecorations } from './fake-decorations';
+import { FakeViewport } from './fake-viewport';
 
 const XML = `<?xml version="1.0"?>
 <score-partwise version="4.0">

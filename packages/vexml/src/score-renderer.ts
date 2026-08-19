@@ -1,15 +1,15 @@
 import { Rect } from 'webappwiz/geometry';
 import type { Config } from './config';
-import { DefaultDecorations } from './decoration/default-decorations';
+import { DefaultDecorations } from './default-decorations';
 import type { ElementFactory } from './element-factory';
-import type { FontLoader } from './font-loader/font-loader';
+import type { FontLoader } from './font-loader';
 import type { Gaps } from './gaps';
-import type { Host } from './host/host';
+import type { Host } from './host';
 import type { LayoutPlanner } from './layout-planner';
 import { type GapInfo, Score } from './score';
 import type { RawGeometry, ScoreDrawer } from './score-drawer';
-import type { ScoreParser } from './score-parser/score-parser';
-import type { Scroller } from './scroller/scroller';
+import type { ScoreParser } from './score-parser';
+import type { Scroller } from './scroller';
 import type { SequenceFactory } from './sequence-factory';
 
 const EMPTY_GEOMETRY: RawGeometry = {

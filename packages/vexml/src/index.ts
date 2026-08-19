@@ -18,12 +18,8 @@ export type {
 	SystemOverflow,
 } from './config';
 export { CursorController } from './cursor-controller';
-export type { CursorView } from './cursor-view/cursor-view';
-export {
-	Playhead,
-	type PlayheadOptions,
-} from './cursor-view/playhead';
-export type { Bounded } from './decoration/decoration';
+export type { CursorView } from './cursor-view';
+export type { Bounded } from './decoration';
 export {
 	Element,
 	type Highlightable,
@@ -44,14 +40,18 @@ export type {
 	ScoreScrollEvent,
 } from './events';
 export type { NoteGlyph } from './geometry-collector';
-export type { Layer, LayerKind } from './layer/layer';
+export type { Layer, LayerKind } from './layer';
 export { Measure } from './measure';
 export { MeasureBox } from './measure-box';
 export { Note } from './note';
 export { Part } from './part';
+export {
+	Playhead,
+	type PlayheadOptions,
+} from './playhead';
 export { render } from './render';
 export { type GapInfo, Score } from './score';
-export type { Scroller, ScrollerOptions } from './scroller/scroller';
+export type { Scroller, ScrollerOptions } from './scroller';
 export { Sequence, type Step } from './sequence';
 export { System } from './system';
 export { TabPosition } from './tab-position';

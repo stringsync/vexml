@@ -21,8 +21,8 @@ come from `webappwiz/geometry`, not this repo. Every feature has a fixture in
 
 | Stage | Does | Files |
 | --- | --- | --- |
-| Fonts | Loads Bravura + text face as CSS vars | `font-loader/` |
-| Parse | MusicXML text to an mdom document | `score-parser/` |
+| Fonts | Loads Bravura + text face as CSS vars | `font-loader.ts`, `default-font-loader.ts` |
+| Parse | MusicXML text to an mdom document | `score-parser.ts`, `default-score-parser.ts` |
 | Gaps | Inserts the caller's silent measures | `gaps.ts` |
 | Layout | Measure widths, system breaks, stave offsets — no drawing | `layout-planner.ts` |
 | Draw | Two passes over the canvas; everything engraved | `score-drawer.ts`, `draw-pass.ts` + collaborators below |
@@ -87,7 +87,7 @@ Two rules cut across the draw stage:
 - **A break the document forced (`<print new-system="yes">`)** — `layout-planner.ts` (read off the mdom measure), `config.ts` (`honorSystemBreaks`)
 - **Justifying a complete system to full width; last one left short** — `layout-planner.ts`, `config.ts` (`minLastSystemFill`)
 - **A document line too wide for the page: wrap / allow / widen** — `layout-planner.ts`, `config.ts` (`overflow`)
-- **Panoramic (one endless system) vs standard layout** — `layout-planner.ts`, `config.ts`, `scroller/scroll-controller.ts`
+- **Panoramic (one endless system) vs standard layout** — `layout-planner.ts`, `config.ts`, `scroll-controller.ts`
 - **Label columns reserved left of the first system** — `layout-planner.ts` (`labelIndent`, `partLabelIndent`), `connector-drawer.ts`
 - **Stave offsets within a system: gap inside a part vs between parts** — `layout-planner.ts`, `constants.ts` (`INTRA_PART_SPACING`, `INTER_PART_SPACING`)
 - **Widening a stave gap the music outgrows — per x column, per system** — `spill-tracker.ts`, `spill-resolver.ts`
@@ -98,8 +98,8 @@ Two rules cut across the draw stage:
 
 ## Spanners (things that connect two notes)
 
-- **Ties, slurs** — `spanner-builder.ts`, `spanner-resolver.ts`, `curve/` (the arcs)
-- **Hammer-ons, pull-offs, slides, glissandos** — `spanner-builder.ts`, `spanner-resolver.ts`, `slide/` (the lines)
+- **Ties, slurs** — `spanner-builder.ts`, `spanner-resolver.ts`, `crisp-curve.ts`, `head-curve.ts`, `tab-curve.ts` (the arcs)
+- **Hammer-ons, pull-offs, slides, glissandos** — `spanner-builder.ts`, `spanner-resolver.ts`, `notation-slide.ts`, `single-slide.ts`, `crisp-tab-slide.ts`, `tab-slide-line.ts` (the lines)
 - **Ottava (8va) brackets, pedal lines, hairpins/wedges, bracket-and-dashes lines** — `spanner-resolver.ts`, `score-reader.ts`, `hairpin.ts` (the wedge glyph)
 
 ## Text and marks around the stave
@@ -108,8 +108,8 @@ Two rules cut across the draw stage:
 - **Tempo and metronome marks** — `direction-placer.ts`, `metronome-glyph.ts` (the note-group form)
 - **Chord symbols (`<harmony>`)** — `direction-placer.ts`
 - **Chord diagrams (fret boxes)** — `chord-diagram-glyph.ts` (drawing), `direction-placer.ts` (placement), `chord-diagram.ts` (the element)
-- **Lyrics, verses, melisma lines** — `lyric-placer.ts`, `lyric-mark/`
-- **Fingerings, string numbers, other technical marks** — `technical-mark/`, `notation-translator.ts`, `system-formatter.ts` (stacking)
+- **Lyrics, verses, melisma lines** — `lyric-placer.ts`, `lyric-mark.ts`, `lyric-annotation.ts`
+- **Fingerings, string numbers, other technical marks** — `technical-mark.ts`, `technical-annotation.ts`, `notation-translator.ts`, `system-formatter.ts` (stacking)
 
 ## Collisions and nudges
 
@@ -161,18 +161,19 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 ## Interaction and playback
 
 - **What a caller gets from a hit test** — `element.ts`, `element-index.ts`, `note.ts`, `measure.ts`, `measure-box.ts`, `voice.ts`, `part.ts`, `system.ts`
-- **Pointer position to element** — `hit-tester/`, `element-index.ts`
-- **Coloring, highlighting, halos** — `decoration/`, `decoration-style/`
+- **Pointer position to element** — `hit-tester.ts`, `default-hit-tester.ts`, `element-index.ts`
+- **Coloring, highlighting, halos** — `decoration.ts`, `default-decoration.ts`, `default-decorations.ts`, `decoration-style.ts`, `color-style.ts`, `halo-style.ts`
 - **Playback timeline, repeats unrolled, swing** — `sequence-factory.ts`, `sequence.ts`, `measure-sequence-iterator.ts` (repeat/volta expansion), `tempo-map.ts`, `swing-warp.ts`
-- **The moving cursor** — `cursor-controller.ts`, `cursor-view/`, `cursor-host/`
-- **Scrolling and the visible window** — `scroller/`, `viewport/`
-- **The DOM the score lives in (container, canvas, overlays)** — `host/`, `layer/`, `layer-host/`, `scroll-host/`
+- **The moving cursor** — `cursor-controller.ts`, `cursor-view.ts`, `playhead.ts`, `cursor-host.ts`, `cursor-host-adapter.ts`
+- **Scrolling and the visible window** — `scroller.ts`, `scroll-controller.ts`, `viewport.ts`
+- **The DOM the score lives in (container, canvas, overlays)** — `host.ts`, `stage.ts`, `layer.ts`, `managed-layer.ts`, `recording-context.ts`, `layer-host.ts`, `scroll-host.ts`
 
 ## Conventions
 
-- One concept per file, named after the class it exports; classes sit flat in
-  `src/`, and an interface with implementations gets a directory named after
-  it (`font-loader/`, `lyric-mark/`), fakes included.
+- One concept per file, named after the class it exports. Every file sits
+  flat in `src/` — no subdirectories. An interface and its implementations are
+  siblings (`font-loader.ts`, `default-font-loader.ts`, `noop-font-loader.ts`),
+  fakes included.
 - The draw pass owns no shared blackboard: `draw-pass.ts` constructs each
   collaborator per pass and snapshots per-column data into it.
 - Rendering is verified by screenshot: `vex test` diffs every fixture. A

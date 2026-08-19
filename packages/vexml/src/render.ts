@@ -7,23 +7,23 @@ import {
 	DEFAULT_STANDARD_LAYOUT,
 	type Layout,
 } from './config';
+import { DefaultFontLoader } from './default-font-loader';
+import { DefaultScoreParser } from './default-score-parser';
 import { DurationTranslator } from './duration-translator';
 import { ElementFactory } from './element-factory';
-import { DefaultFontLoader } from './font-loader/default-font-loader';
 import { Gaps } from './gaps';
-import { Stage } from './host/stage';
 import { LayoutPlanner } from './layout-planner';
 import { NotationTranslator } from './notation-translator';
 import { NoteTranslator } from './note-translator';
 import type { Score } from './score';
 import { ScoreDrawer } from './score-drawer';
-import { DefaultScoreParser } from './score-parser/default-score-parser';
 import { ScoreReader } from './score-reader';
 import { ScoreRenderer } from './score-renderer';
 import { SequenceFactory } from './sequence-factory';
 import { SignatureTranslator } from './signature-translator';
 import { SpannerBuilder } from './spanner-builder';
 import { SpillResolver } from './spill-resolver';
+import { Stage } from './stage';
 import { StavePlan } from './stave-plan';
 import { TabTranslator } from './tab-translator';
 

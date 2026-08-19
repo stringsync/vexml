@@ -1,10 +1,10 @@
 import type { Note as MNote } from '@stringsync/mdom';
 import type { Rect } from 'webappwiz/geometry';
-import type { Decorations } from './decoration/decoration';
+import type { Decorations } from './decoration';
 import { Element, type Highlightable, Toggle } from './element';
 import type { NoteGlyph } from './geometry-collector';
 import type { Note } from './note';
-import type { Viewport } from './viewport/viewport';
+import type { Viewport } from './viewport';
 
 /* A fret number on a tab string. The same note can render as both a Note (notehead) and a
  * TabPosition (fret); they cross-reference via Note.getTabPosition() / TabPosition.getNote(). */

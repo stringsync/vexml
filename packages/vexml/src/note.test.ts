@@ -6,16 +6,16 @@ import {
 	type Part as MPart,
 } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
-import { FakeDecorations } from './decoration/fake-decorations';
 import { isHighlightable, isPlayable } from './element';
+import { FakeDecorations } from './fake-decorations';
+import { FakeViewport } from './fake-viewport';
 import { Measure } from './measure';
 import { MeasureBox } from './measure-box';
 import { Note } from './note';
 import { Part } from './part';
 import { System } from './system';
 import type { TabPosition } from './tab-position';
-import { FakeViewport } from './viewport/fake-viewport';
-import type { Viewport } from './viewport/viewport';
+import type { Viewport } from './viewport';
 
 const XML = `<?xml version="1.0"?>
 <score-partwise version="4.0">

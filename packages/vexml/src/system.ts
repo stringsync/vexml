@@ -2,7 +2,7 @@ import type { Measure as MMeasure } from '@stringsync/mdom';
 import type { Rect } from 'webappwiz/geometry';
 import { Element } from './element';
 import type { MeasureBox } from './measure-box';
-import type { Viewport } from './viewport/viewport';
+import type { Viewport } from './viewport';
 
 /* A system: one line of music, the measure columns laid out on it. Layout-only — it answers
  * "where on the page" (its rect unions its columns), never "what's in the music"; content is

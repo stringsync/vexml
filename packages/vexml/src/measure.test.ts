@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it } from 'bun:test';
 import type { Measure as MMeasure } from '@stringsync/mdom';
 import { MDOMParser } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
+import { FakeViewport } from './fake-viewport';
 import { Measure } from './measure';
 import { MeasureBox } from './measure-box';
 import { Part } from './part';
 import { System } from './system';
-import { FakeViewport } from './viewport/fake-viewport';
 
 /* A one-part, one-measure, one-note score: the smallest thing that still builds a real Measure. */
 const XML = `<?xml version="1.0"?>

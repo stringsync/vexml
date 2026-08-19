@@ -5,10 +5,10 @@ import type {
 } from '@stringsync/mdom';
 import { QuadTree, Rect } from 'webappwiz/geometry';
 import { ChordDiagram } from './chord-diagram';
-import type { Decorations } from './decoration/decoration';
+import type { Decorations } from './decoration';
+import { DefaultHitTester } from './default-hit-tester';
 import type { Element } from './element';
 import { ElementIndex } from './element-index';
-import { DefaultHitTester } from './hit-tester/default-hit-tester';
 import { Measure } from './measure';
 import { MeasureBox } from './measure-box';
 import { Note } from './note';
@@ -16,7 +16,7 @@ import { Part } from './part';
 import type { RawGeometry } from './score-drawer';
 import { System } from './system';
 import { TabPosition } from './tab-position';
-import type { Viewport } from './viewport/viewport';
+import type { Viewport } from './viewport';
 import { Voice } from './voice';
 
 /*

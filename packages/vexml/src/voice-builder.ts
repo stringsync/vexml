@@ -10,7 +10,7 @@ import {
 	type TabStave,
 } from 'vexflow';
 import { BAR_STYLE_TYPES } from './barline-translator';
-import { isLyricMark } from './lyric-mark/lyric-mark';
+import { isLyricMark } from './lyric-mark';
 import type { NoteTranslator } from './note-translator';
 import type { ScoreReader, StaffVoice } from './score-reader';
 import type { MidClefSpec } from './signature-translator';

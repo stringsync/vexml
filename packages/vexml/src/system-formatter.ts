@@ -36,7 +36,7 @@ import type { LyricPlacer } from './lyric-placer';
 import type { NoteTranslator } from './note-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
-import { isTechnicalMark } from './technical-mark/technical-mark';
+import { isTechnicalMark } from './technical-mark';
 
 // One stave's notes, built but not yet formatted or drawn. A part's staves are
 // formatted together (see formatAndDraw) so notes at the same tick line up

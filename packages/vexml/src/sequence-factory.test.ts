@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { Rect } from 'webappwiz/geometry';
+import { DefaultScoreParser } from './default-score-parser';
 import { Gaps } from './gaps';
 import type { Note } from './note';
-import { DefaultScoreParser } from './score-parser/default-score-parser';
 import { ScoreReader } from './score-reader';
 import type { MeasureInfo, SequenceInput, SequenceNote } from './sequence';
 import { SequenceFactory } from './sequence-factory';

@@ -9,7 +9,7 @@ import {
 	type TabNote,
 	type TabStave,
 } from 'vexflow';
-import { FakeLyricMark } from './lyric-mark/fake-lyric-mark';
+import { FakeLyricMark } from './fake-lyric-mark';
 import type { NoteTranslator, VoiceTickablesOptions } from './note-translator';
 import type { ScoreReader, StaffVoice } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
