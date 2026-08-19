@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { DefaultScoreParser } from './score-parser/default-score-parser';
 import { ScoreReader } from './score-reader';
-import { nth, parseMeasures } from './score-reader-harness';
 
 /* A one-part score whose measures carry exactly the given <barline>s (and a note, so the
  * measure is well-formed). Each entry is the raw inner XML of that measure's barlines. */
@@ -19,6 +18,25 @@ function scoreOf(...barlines: string[]): string {
 	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
 	<part id="P1">${measures}</part>
 </score-partwise>`;
+}
+
+/* A one-part 4/4 measure of quarter notes, prefixed with the directions under test: what the
+ * tempo, swing and modulation readers are asked about. */
+async function measureOf(prefix: string) {
+	const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
+<score-partwise version="4.0">
+	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+	<part id="P1"><measure number="1">
+		<attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+		${prefix}
+		${'<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>'.repeat(4)}
+	</measure></part>
+</score-partwise>`);
+	const [measure] = mdoc.score.parts[0]?.measures ?? [];
+	if (!measure) {
+		throw new Error('fixture parsed no measures');
+	}
+	return measure;
 }
 
 async function repeatsOf(xml: string) {
@@ -46,7 +64,7 @@ describe('ScoreReader', () => {
 	const metronome = (inner: string, attrs = '') =>
 		`<direction><direction-type><metronome ${attrs}>${inner}</metronome></direction-type></direction>`;
 	const markOf = async (inner: string, attrs = '') =>
-		reader.tempoOf(nth(await parseMeasures(metronome(inner, attrs)), 0));
+		reader.tempoOf(await measureOf(metronome(inner, attrs)));
 
 	it('counts the <beat-unit-dot/> markers trailing a beat unit', async () => {
 		const mark = await markOf(
@@ -97,9 +115,7 @@ describe('ScoreReader', () => {
 	 * all, so only a <sound><swing> makes playback actually swing.
 	 */
 	const swingOf = async (inner: string) =>
-		reader.swingOf(
-			nth(await parseMeasures(`<sound><swing>${inner}</swing></sound>`), 0),
-		);
+		reader.swingOf(await measureOf(`<sound><swing>${inner}</swing></sound>`));
 
 	it('reads the ratio, defaulting the swung unit to eighths', async () => {
 		expect(await swingOf('<first>2</first><second>1</second>')).toEqual({
@@ -125,31 +141,25 @@ describe('ScoreReader', () => {
 	});
 
 	it('is null with no <swing>, so the swing in force carries forward', async () => {
-		const m = nth(await parseMeasures('<sound tempo="60"/>'), 0);
+		const m = await measureOf('<sound tempo="60"/>');
 		expect(reader.swingOf(m)).toBeNull();
 	});
 
 	it('finds a <swing> nested in a <direction>, not just a bare measure child', async () => {
-		const m = nth(
-			await parseMeasures(
-				'<direction><direction-type><words>Swing</words></direction-type>' +
-					'<sound><swing><first>2</first><second>1</second></swing></sound></direction>',
-			),
-			0,
+		const m = await measureOf(
+			'<direction><direction-type><words>Swing</words></direction-type>' +
+				'<sound><swing><first>2</first><second>1</second></swing></sound></direction>',
 		);
 		expect(reader.swingOf(m)).toMatchObject({ first: 2, second: 1 });
 	});
 
 	it('does not swing off the <metronome> figure alone — that is notation, not timing', async () => {
-		const m = nth(
-			await parseMeasures(
-				'<direction><direction-type><metronome>' +
-					'<metronome-note><metronome-type>eighth</metronome-type></metronome-note>' +
-					'<metronome-relation>equals</metronome-relation>' +
-					'<metronome-note><metronome-type>quarter</metronome-type></metronome-note>' +
-					'</metronome></direction-type></direction>',
-			),
-			0,
+		const m = await measureOf(
+			'<direction><direction-type><metronome>' +
+				'<metronome-note><metronome-type>eighth</metronome-type></metronome-note>' +
+				'<metronome-relation>equals</metronome-relation>' +
+				'<metronome-note><metronome-type>quarter</metronome-type></metronome-note>' +
+				'</metronome></direction-type></direction>',
 		);
 		expect(reader.swingOf(m)).toBeNull();
 	});
@@ -173,11 +183,8 @@ describe('ScoreReader', () => {
 		'<normal-notes>2</normal-notes></metronome-tuplet></metronome-note>';
 	const modulationOf = async (inner: string, attrs = '') =>
 		reader.modulationOf(
-			nth(
-				await parseMeasures(
-					`<direction><direction-type><metronome ${attrs}>${inner}</metronome></direction-type></direction>`,
-				),
-				0,
+			await measureOf(
+				`<direction><direction-type><metronome ${attrs}>${inner}</metronome></direction-type></direction>`,
 			),
 		);
 
@@ -222,12 +229,9 @@ describe('ScoreReader', () => {
 	});
 
 	it('reads both marks of one <direction>, each through its own accessor', async () => {
-		const m = nth(
-			await parseMeasures(
-				'<direction><direction-type><metronome><beat-unit>quarter</beat-unit>' +
-					`<per-minute>60</per-minute></metronome></direction-type><direction-type><metronome>${SWING}</metronome></direction-type></direction>`,
-			),
-			0,
+		const m = await measureOf(
+			'<direction><direction-type><metronome><beat-unit>quarter</beat-unit>' +
+				`<per-minute>60</per-minute></metronome></direction-type><direction-type><metronome>${SWING}</metronome></direction-type></direction>`,
 		);
 		// The rate is no longer shadowed by the note-form metronome sitting next to it, and the
 		// note form is no longer lost behind the rate: the two print side by side.

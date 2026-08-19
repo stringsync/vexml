@@ -1,28 +1,89 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { DefaultDecorations } from './decoration/default-decorations';
 import type { Element } from './element';
+import { ElementIndex } from './element-index';
 import { Gaps } from './gaps';
 import { Rect } from './geometry';
 import { FakeHitTester } from './hit-tester/fake-hit-tester';
 import type { HitTester } from './hit-tester/hit-tester';
 import { FakeHost } from './host/fake-host';
 import type { FakeLayer } from './layer/fake-layer';
+import { MeasureBox } from './measure-box';
 import type { Note } from './note';
 import { Score } from './score';
-import {
-	EMPTY_SEQUENCE,
-	elementIndex,
-	FakePointerEvent,
-	fixture,
-	measureBox,
-} from './score-harness';
 import { ScoreReader } from './score-reader';
 import { SequenceFactory } from './sequence-factory';
+import { System } from './system';
+import { FakeViewport } from './viewport/fake-viewport';
+
+/* An empty timeline: these tests exercise events/layers/hover, not playback. */
+const EMPTY_SEQUENCE = new SequenceFactory(
+	new ScoreReader(),
+	new Gaps([]),
+).createFromInput({ measures: [], notes: [] });
+
+const viewport = new FakeViewport();
+
+// Wrap a HitTester into the ElementIndex Score takes; these tests don't enumerate.
+function elementIndex(hitTester: HitTester): ElementIndex {
+	return new ElementIndex(
+		hitTester,
+		new Map(),
+		new Map(),
+		new Map(),
+		[],
+		[],
+		[],
+	);
+}
+
+// A bare hit-target measure box: an empty system, no per-part measures.
+function measureBox(rect: Rect): MeasureBox {
+	return new MeasureBox(
+		rect,
+		viewport,
+		'1',
+		0,
+		[],
+		new System(rect, viewport, 0, []),
+		[],
+	);
+}
+
+// A bare EventTarget has no DOM tree, so a synthetic Event with the coords the handler reads is
+// enough to drive a pointer event through.
+class FakePointerEvent extends Event {
+	constructor(
+		type: string,
+		readonly clientX: number,
+		readonly clientY: number,
+	) {
+		super(type);
+	}
+}
 
 describe('Score', () => {
+	let host: FakeHost;
+	let index: FakeHitTester;
+	let decorations: DefaultDecorations;
+	let score: Score;
+
+	beforeEach(() => {
+		host = new FakeHost();
+		index = new FakeHitTester();
+		decorations = new DefaultDecorations(host);
+		score = new Score(
+			host,
+			elementIndex(index),
+			decorations,
+			EMPTY_SEQUENCE,
+			host.scroller,
+		);
+	});
+
 	it('a pointer event hit-tests the point and emits target, score-space point, and native', () => {
 		const target = measureBox(new Rect(0, 0, 10, 10));
-		const { host, index, score } = fixture(target);
+		index.result = target;
 		const seen: Array<{ type: string; x: number; y: number; native: Event }> =
 			[];
 		score.events.on('pointermove', (e) =>
@@ -43,13 +104,11 @@ describe('Score', () => {
 	});
 
 	it('listeners are bound lazily: no subscriber means no hit-testing', () => {
-		const { host, index } = fixture(null);
 		host.events.dispatchEvent(new FakePointerEvent('pointermove', 1, 2));
 		expect(index.probes).toHaveLength(0);
 	});
 
 	it('the source is detached when the last listener leaves', () => {
-		const { host, index, score } = fixture(null);
 		const unlisten = score.events.on('pointermove', () => {});
 		host.events.dispatchEvent(new FakePointerEvent('pointermove', 1, 1));
 		unlisten();
@@ -59,7 +118,6 @@ describe('Score', () => {
 	});
 
 	it('a once listener releases the source when it fires', () => {
-		const { host, index, score } = fixture(null);
 		score.events.on('pointermove', () => {}, { once: true });
 		host.events.dispatchEvent(new FakePointerEvent('pointermove', 1, 1));
 		host.events.dispatchEvent(new FakePointerEvent('pointermove', 2, 2));
@@ -68,7 +126,6 @@ describe('Score', () => {
 	});
 
 	it('the source stays bound until every listener for the type is removed', () => {
-		const { host, index, score } = fixture(null);
 		const a = score.events.on('pointermove', () => {});
 		const b = score.events.on('pointermove', () => {});
 		a();
@@ -80,7 +137,6 @@ describe('Score', () => {
 	});
 
 	it('scroll events carry the offset', () => {
-		const { host, score } = fixture(null);
 		host.scroll = { left: 12, top: 34 };
 		const seen: Array<{ left: number; top: number }> = [];
 		score.events.on('scroll', (e) => seen.push({ left: e.left, top: e.top }));
@@ -123,7 +179,6 @@ describe('Score', () => {
 	});
 
 	it('resize is observed from construction and re-fits viewport layers before emitting', () => {
-		const { host, score } = fixture(null);
 		// Observed eagerly (it also drives viewport-layer sizing), not lazily on first subscriber.
 		expect(host.resizeListener).not.toBeNull();
 
@@ -141,7 +196,6 @@ describe('Score', () => {
 	});
 
 	it('a base-only change (same container size) relayouts without re-emitting resize', () => {
-		const { host, score } = fixture(null);
 		const seen: Array<{ width: number; height: number }> = [];
 		score.events.on('resize', (e) =>
 			seen.push({ width: e.width, height: e.height }),
@@ -160,7 +214,6 @@ describe('Score', () => {
 	});
 
 	it('gets a layer from the host at the requested z-index, and rejects a non-integer one', () => {
-		const { host, score } = fixture(null);
 		const layer = score.addLayer('content');
 		expect(host.created).toHaveLength(1);
 		expect(host.created[0]).toBe(layer as FakeLayer);
@@ -171,7 +224,6 @@ describe('Score', () => {
 	});
 
 	it('gives a new playhead a content layer of its own to draw on', () => {
-		const { host, score } = fixture(null);
 		score.createPlayhead();
 		expect(host.created).toHaveLength(1);
 		expect(host.created[0]?.kind).toBe('content');
@@ -263,7 +315,7 @@ describe('Score', () => {
 
 	it('detaches every listener and tears down its decorations and host when disposed', () => {
 		const target = measureBox(new Rect(0, 0, 10, 10));
-		const { host, index, decorations, score } = fixture(target);
+		index.result = target;
 		score.events.on('pointermove', () => {});
 		score.events.on('resize', () => {});
 		decorations.color.set(target, '#ff0000');

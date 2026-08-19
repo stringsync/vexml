@@ -1,10 +1,70 @@
 import { describe, expect, it } from 'bun:test';
 import { Gaps } from './gaps';
+import { Rect } from './geometry';
+import type { Note } from './note';
+import { DefaultScoreParser } from './score-parser/default-score-parser';
 import { ScoreReader } from './score-reader';
-import { metronomeDir, nth, parseMeasures } from './score-reader-harness';
-import type { MeasureInfo, SequenceNote } from './sequence';
+import type { MeasureInfo, SequenceInput, SequenceNote } from './sequence';
 import { SequenceFactory } from './sequence-factory';
-import { build, fakeNote, quarter, SYS } from './sequence-factory-harness';
+
+// Identity tokens: the sequence only ever compares notes, so nothing else about them is read.
+const fakeNote = (label: string) => ({ label }) as unknown as Note;
+const SYS = new Rect(0, 0, 1000, 100);
+
+const quarter = (
+	note: Note,
+	measureIndex: number,
+	measureBeat: number,
+	x: number,
+): SequenceNote => ({
+	note,
+	measureIndex,
+	measureBeat,
+	beats: 1,
+	x,
+	tiedFrom: null,
+});
+
+const metronomeDir = (bpm: number, sound?: number) =>
+	`<direction><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${bpm}</per-minute></metronome></direction-type>${
+		sound === undefined ? '' : `<sound tempo="${sound}"/>`
+	}</direction>`;
+
+/* A one-part score of 4/4 measures of quarter notes, each prefixed with the directions under
+ * test: what the tempo readers are asked about. */
+async function measuresOf(...prefixes: string[]) {
+	const body = prefixes
+		.map((prefix, i) => {
+			const attrs =
+				i === 0
+					? '<attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>'
+					: '';
+			const notes =
+				'<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>'.repeat(
+					4,
+				);
+			return `<measure number="${i + 1}">${attrs}${prefix}${notes}</measure>`;
+		})
+		.join('');
+	const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
+<score-partwise version="4.0">
+	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+	<part id="P1">${body}</part>
+</score-partwise>`);
+	return mdoc.score.parts[0]?.measures ?? [];
+}
+
+async function measureOf(prefix: string) {
+	const [measure] = await measuresOf(prefix);
+	if (!measure) {
+		throw new Error('fixture parsed no measures');
+	}
+	return measure;
+}
+
+// createFromInput never touches the reader (only create() does), so a real stateless one is fine.
+const build = (input: SequenceInput) =>
+	new SequenceFactory(new ScoreReader(), new Gaps([])).createFromInput(input);
 
 describe('SequenceFactory', () => {
 	it('assembly: two 4/4 measures of quarters → 8 steps with correct beats/ms', () => {
@@ -319,29 +379,29 @@ describe('SequenceFactory', () => {
 	const reader = new ScoreReader();
 
 	it('metronome wins over a co-located <sound tempo>', async () => {
-		const m = nth(await parseMeasures(metronomeDir(60, 120)), 0);
+		const m = await measureOf(metronomeDir(60, 120));
 		expect(reader.playbackTempoOf(m)?.bpm).toBe(60);
 	});
 
 	it('<sound tempo> alone drives playback and engraves no metronome', async () => {
-		const m = nth(await parseMeasures('<sound tempo="60"/>'), 0);
+		const m = await measureOf('<sound tempo="60"/>');
 		expect(reader.playbackTempoOf(m)?.bpm).toBe(60);
 		expect(reader.tempoOf(m)).toBeNull(); // the visual path draws nothing
 	});
 
 	it('a mid-piece metronome change retempos from that measure on', async () => {
-		const parsed = await parseMeasures(metronomeDir(60), metronomeDir(120));
-		expect(reader.playbackTempoOf(nth(parsed, 0))?.bpm).toBe(60);
-		expect(reader.playbackTempoOf(nth(parsed, 1))?.bpm).toBe(120);
+		const parsed = await measuresOf(metronomeDir(60), metronomeDir(120));
+		expect(parsed.map((m) => reader.playbackTempoOf(m)?.bpm)).toEqual([
+			60, 120,
+		]);
 	});
 
 	it('a mid-piece <sound tempo> change retempos and engraves no marks', async () => {
-		const parsed = await parseMeasures(
+		const parsed = await measuresOf(
 			'<sound tempo="60"/>',
 			'<sound tempo="120"/>',
 		);
-		expect(reader.tempoOf(nth(parsed, 0))).toBeNull();
-		expect(reader.tempoOf(nth(parsed, 1))).toBeNull();
+		expect(parsed.map((m) => reader.tempoOf(m))).toEqual([null, null]);
 
 		const measures: MeasureInfo[] = parsed.map((m, index) => ({
 			index,
