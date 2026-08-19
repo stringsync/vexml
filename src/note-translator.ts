@@ -1,4 +1,12 @@
-import type { Chord, Clef, Lyric, Note, Technical } from '@stringsync/mdom';
+import type {
+	Chord,
+	Clef,
+	Key,
+	Lyric,
+	Note,
+	Technical,
+	Time,
+} from '@stringsync/mdom';
 import {
 	Accidental,
 	Annotation,
@@ -24,6 +32,7 @@ import {
 	Tremolo,
 	Vibrato,
 	Voice,
+	Volta,
 } from 'vexflow';
 import type { TabStemPlacement } from './config';
 import {
@@ -34,6 +43,7 @@ import {
 	TAB_GRACE_SPACING,
 } from './constants';
 import { LyricAnnotation } from './lyric-mark/lyric-annotation';
+import type { MeasureEnding, MeasureRepeat } from './score-reader';
 import {
 	FingeringAnnotation,
 	StringNumberAnnotation,
@@ -340,20 +350,6 @@ export type MidClefSpec = {
 	annotation: string | undefined;
 };
 
-/**
- * A vexflow BarNote for a mid-measure `<barline>`: a zero-duration tickable the formatter
- * places between the notes it divides, so the measure widens to hold it instead of the line
- * landing on a notehead. A style vexflow can't draw becomes an invisible bar of the same
- * width, painted over by the draw pass (see DrawPass.paintBarStyle).
- */
-export function midBarNote(style: string): BarNote {
-	const type = BAR_STYLE_TYPES[style];
-	if (type === undefined) {
-		return new BarNote(Barline.type.NONE).setWidth(CUSTOM_MID_BAR_WIDTH);
-	}
-	return new BarNote(type);
-}
-
 /* The duration codes that draw a flag, and so can carry a beam instead. */
 const FLAGGED_DURATIONS = new Set(['8', '16', '32', '64', '128']);
 
@@ -369,42 +365,6 @@ function beamsGraceGroup(graces: ReadonlyArray<{ lead: Note }>): boolean {
 		graces.length > 1 &&
 		graces.every((g) => FLAGGED_DURATIONS.has(durationCode(g.lead)))
 	);
-}
-
-/*
- * The MusicXML color attributes a note carries, laid over the configured notation ink:
- * <note color> covers everything the note draws, while <notehead color> and <stem color>
- * each name one piece and win over it.
- *
- * Called from the draw pass rather than at build time because it has to run after the
- * beams: joining a note into a Beam resets its stem direction, and vexflow rebuilds that
- * note's noteheads from scratch when it does, dropping any style set before.
- * ponytail: <beam color> and <lyric color> are ignored — a beam and a syllable each draw
- * from their own element, so they'd need their own pass. No fixture asks for them yet.
- */
-export function applyNoteColors(staveNote: StaveNote, chord: Chord): void {
-	const lead = chord.lead;
-	const noteColor = lead.color;
-	if (noteColor) {
-		staveNote.setStyle({ fillStyle: noteColor, strokeStyle: noteColor });
-		staveNote.setLedgerLineStyle({ strokeStyle: noteColor });
-	}
-	chord.notes.forEach((note, index) => {
-		const color = note.notehead?.color ?? note.color;
-		if (color) {
-			staveNote.noteHeads[index]?.setStyle({
-				fillStyle: color,
-				strokeStyle: color,
-			});
-		}
-	});
-	// The stem takes its color directly: vexflow's Metrics hand every Stem a hardcoded
-	// strokeStyle, so it never inherits the note's ink (see the draw pass, which restyles
-	// stems for the same reason).
-	const stemColor = lead.stemColor ?? noteColor;
-	if (stemColor) {
-		staveNote.getStem()?.setStyle({ strokeStyle: stemColor });
-	}
 }
 
 function addDots(staveNote: StaveNote, note: Note): void {
@@ -1314,9 +1274,235 @@ export interface VexflowVoiceTickablesOptions {
  * (measuring) pass and the draw pass share it so both build their notes — and probe
  * font metrics — identically.
  */
+// MusicXML <key-alter> semitones -> the vexflow accidental code, for a signature written
+// without <fifths>. A <key-accidental> naming the glyph outright wins over this (see
+// customKeyAccidentals); this is the fallback every exporter can be counted on to imply.
+const KEY_ALTER_CODES: Record<string, string> = {
+	'-2': 'bb',
+	'-1': 'b',
+	'0': 'n',
+	'1': '#',
+	'2': '##',
+};
+
+/*
+ * The staff line a key-signature accidental on `step` sits at, in the coordinates
+ * KeySignature draws in (0 = top line, +1 per line downward). `octave` pins it outright —
+ * MusicXML's <key-octave>. Without one, the accidental takes the highest position that still
+ * lands on the stave, which is where the traditional signatures put every flat and most
+ * sharps, so an unpinned custom signature reads like an ordinary one.
+ *
+ * The position comes from a throwaway StaveNote rather than a hand-rolled clef table: vexflow
+ * already resolves step/octave against every clef it knows. Its key props count lines
+ * bottom-up from below the stave, which is why the flip is `5 -` and not `4 -`: a note drawn
+ * at key-prop line L lands on Stave.getYForNote(L), and that is getYForLine(5 - L).
+ * ponytail: the flip assumes a 5-line stave. A non-traditional signature on a reduced stave
+ * would sit as if the missing lines were there; no fixture has one.
+ */
+function keySignatureLine(
+	step: string,
+	octave: number | null,
+	clef: string,
+): number {
+	const lineOf = (o: number) =>
+		5 -
+		(new StaveNote({
+			keys: [`${step.toLowerCase()}/${o}`],
+			duration: 'w',
+			clef,
+		}).getKeyProps()[0]?.line ?? 2);
+	if (octave !== null) {
+		return lineOf(octave);
+	}
+	const onStave = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+		.map(lineOf)
+		.filter((line) => line >= 0 && line <= 4);
+	// Highest on the stave = the smallest line number. Every step has one in every clef, so
+	// the middle-line fallback is unreachable in practice.
+	return onStave.length > 0 ? Math.min(...onStave) : 2;
+}
+
+// What a measure's <barline>s ask the renderer to draw at its edges: repeat dots (as a vexflow
+// Barline type) and the volta bracket over it (as a vexflow Volta type + its printed label).
+export type BarlineDecoration = {
+	repeatBegin: boolean;
+	repeatEnd: boolean;
+	/** The printed "Nx" label of a repeat played more than twice, or null. A plain backward
+	 * repeat means two passes and is drawn by its dots alone. */
+	repeatTimesLabel: string | null;
+	volta: { type: number; label: string } | null;
+};
+
+export const NO_DECORATION: BarlineDecoration = {
+	repeatBegin: false,
+	repeatEnd: false,
+	repeatTimesLabel: null,
+	volta: null,
+};
+
+function voltaType(ending: MeasureEnding): number {
+	const hooked = ending.last && !ending.open;
+	if (ending.first) {
+		return hooked ? Volta.type.BEGIN_END : Volta.type.BEGIN;
+	}
+	return hooked ? Volta.type.END : Volta.type.MID;
+}
+
+/* "1" -> "1.", "1,2" -> "1., 2." — the printed form of an `<ending>`'s number list. */
+function voltaLabel(number: string): string {
+	return number
+		.split(',')
+		.map((part) => `${part.trim()}.`)
+		.join(' ');
+}
+
 export class NoteTranslator {
 	// Whether/where TabNotes are built with stems (and flags). See Config.tabStemPlacement.
 	constructor(private readonly tabStemPlacement: TabStemPlacement = 'none') {}
+
+	/**
+	 * Each measure's barline decorations, translated from the repeat rows ScoreReader.measureRepeats
+	 * reads (playback reads the same rows). An ending run's bracket opens with a left hook (BEGIN),
+	 * continues hookless (MID), and closes with a right hook (END) — BEGIN_END when the run is one
+	 * measure. A `discontinue` close leaves the bracket open on the right, so it keeps the hookless
+	 * form.
+	 */
+	barlineDecorations(repeats: readonly MeasureRepeat[]): BarlineDecoration[] {
+		return repeats.map(({ repeatBegin, repeatEnd, repeatTimes, ending }) => ({
+			repeatBegin,
+			repeatEnd,
+			// <repeat times> counts the total passes, and two is what a repeat sign already
+			// says, so only three or more is worth printing.
+			repeatTimesLabel:
+				repeatEnd && repeatTimes && repeatTimes > 2 ? `${repeatTimes}x` : null,
+			volta: ending && {
+				type: voltaType(ending),
+				label: voltaLabel(ending.number),
+			},
+		}));
+	}
+
+	// VexFlow keys the tonic note for major but wants an 'm' suffix for minor
+	// ('Am', 'G#m'); the bare minor tonic ('G#') is rejected as a bad key spec.
+	vexflowKeySpec(key: Key): string {
+		return key.mode === 'minor' ? `${key.rootNote}m` : `${key.rootNote}`;
+	}
+
+	/*
+	 * MusicXML <time> -> vexflow time-signature spec: 'C' (common), 'C|' (cut), or
+	 * "beats/beat-type". null when there's nothing drawable. Doubles as the equality
+	 * key for detecting a mid-piece meter change.
+	 */
+	timeSignatureSpec(time: Time | null): string | null {
+		if (time?.symbol === 'common') {
+			return 'C';
+		}
+		if (time?.symbol === 'cut') {
+			return 'C|';
+		}
+		// symbol="single-number" prints the beat count alone. vexflow reads a spec with no '/'
+		// as a lone numerator and centers it vertically between the two signature lines.
+		if (time?.symbol === 'single-number' && time.beats) {
+			return time.beats;
+		}
+		if (time?.beats && time?.beatType) {
+			return `${time.beats}/${time.beatType}`;
+		}
+		return null;
+	}
+
+	/*
+	 * A <key>'s non-traditional accidentals — the <key-step>/<key-alter>(/<key-accidental>)
+	 * triples MusicXML writes instead of <fifths> — as the glyph list a CustomKeySignature draws,
+	 * in the order given rather than in circle-of-fifths order. Empty when the key is an ordinary
+	 * <fifths> one (or carries nothing at all), which is the signal to use the plain key spec.
+	 */
+	customKeyAccidentals(
+		key: Key,
+		clef: string,
+	): Array<{ type: string; line: number }> {
+		const out: Array<{ type: string; line: number }> = [];
+		for (const alteration of key.alterations) {
+			const named = alteration.accidental;
+			const type =
+				(named ? ACCIDENTAL_CODES[named] : undefined) ??
+				KEY_ALTER_CODES[String(alteration.alter)];
+			if (!type) {
+				continue;
+			}
+			out.push({
+				type,
+				line: keySignatureLine(alteration.step, alteration.octave, clef),
+			});
+		}
+		return out;
+	}
+
+	/**
+	 * A vexflow BarNote for a mid-measure `<barline>`: a zero-duration tickable the formatter
+	 * places between the notes it divides, so the measure widens to hold it instead of the line
+	 * landing on a notehead. A style vexflow can't draw becomes an invisible bar of the same
+	 * width, painted over by the draw pass (see DrawPass.paintBarStyle).
+	 */
+	midBarNote(style: string): BarNote {
+		const type = BAR_STYLE_TYPES[style];
+		if (type === undefined) {
+			return new BarNote(Barline.type.NONE).setWidth(CUSTOM_MID_BAR_WIDTH);
+		}
+		return new BarNote(type);
+	}
+
+	/*
+	 * The MusicXML color attributes a note carries, laid over the configured notation ink:
+	 * <note color> covers everything the note draws, while <notehead color> and <stem color>
+	 * each name one piece and win over it.
+	 *
+	 * Called from the draw pass rather than at build time because it has to run after the
+	 * beams: joining a note into a Beam resets its stem direction, and vexflow rebuilds that
+	 * note's noteheads from scratch when it does, dropping any style set before.
+	 * ponytail: <beam color> and <lyric color> are ignored — a beam and a syllable each draw
+	 * from their own element, so they'd need their own pass. No fixture asks for them yet.
+	 */
+	applyNoteColors(staveNote: StaveNote, chord: Chord): void {
+		const lead = chord.lead;
+		const noteColor = lead.color;
+		if (noteColor) {
+			staveNote.setStyle({ fillStyle: noteColor, strokeStyle: noteColor });
+			staveNote.setLedgerLineStyle({ strokeStyle: noteColor });
+		}
+		chord.notes.forEach((note, index) => {
+			const color = note.notehead?.color ?? note.color;
+			if (color) {
+				staveNote.noteHeads[index]?.setStyle({
+					fillStyle: color,
+					strokeStyle: color,
+				});
+			}
+		});
+		// The stem takes its color directly: vexflow's Metrics hand every Stem a hardcoded
+		// strokeStyle, so it never inherits the note's ink (see the draw pass, which restyles
+		// stems for the same reason).
+		const stemColor = lead.stemColor ?? noteColor;
+		if (stemColor) {
+			staveNote.getStem()?.setStyle({ strokeStyle: stemColor });
+		}
+	}
+
+	/*
+	 * Find a note's first attached modifier of a given vexflow category (a GraceNoteGroup,
+	 * Bend, Vibrato, …), or undefined. vexflow types getModifiers() loosely, so the find needs
+	 * a cast; centralizing it keeps that one unsafe cast in a single auditable place instead of
+	 * hand-copied at each call site — including across modules, since layout can't import draw
+	 * and its graceWidthOf would otherwise re-roll the same find.
+	 */
+	findModifier<T extends Modifier>(
+		note: { getModifiers(): { getCategory(): string }[] },
+		category: string,
+	): T | undefined {
+		return note.getModifiers().find((m) => m.getCategory() === category) as
+			| T
+			| undefined;
+	}
 
 	/*
 	 * MusicXML <clef> sign + line -> vexflow clef name. Covers the common signs;
@@ -1643,7 +1829,7 @@ export class NoteTranslator {
 				bar && bar.beat <= upTo + EPSILON;
 				bar = barlines[nextBarline]
 			) {
-				tickables.push(midBarNote(bar.style));
+				tickables.push(this.midBarNote(bar.style));
 				nextBarline++;
 			}
 		};
@@ -1764,20 +1950,4 @@ export class NoteTranslator {
 			.setSoftmaxFactor(softmaxFactor)
 			.addTickables(tickables);
 	}
-}
-
-/*
- * Find a note's first attached modifier of a given vexflow category (a GraceNoteGroup,
- * Bend, Vibrato, …), or undefined. vexflow types getModifiers() loosely, so the find needs
- * a cast; centralizing it keeps that one unsafe cast in a single auditable place instead of
- * hand-copied at each call site — including across modules, since layout can't import draw
- * and its graceWidthOf would otherwise re-roll the same find.
- */
-export function findModifier<T extends Modifier>(
-	note: { getModifiers(): { getCategory(): string }[] },
-	category: string,
-): T | undefined {
-	return note.getModifiers().find((m) => m.getCategory() === category) as
-		| T
-		| undefined;
 }

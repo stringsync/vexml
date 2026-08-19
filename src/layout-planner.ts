@@ -29,11 +29,7 @@ import {
 	WORDS_CHAR_WIDTH,
 } from './constants';
 import type { Gaps } from './gaps';
-import {
-	findModifier,
-	type MidClefSpec,
-	type NoteTranslator,
-} from './note-translator';
+import type { MidClefSpec, NoteTranslator } from './note-translator';
 import type { ScoreReader, StaffVoice } from './score-reader';
 
 /** A measure's placed box within its system. */
@@ -137,7 +133,10 @@ export class LayoutPlanner {
 	private graceWidthOf(t: {
 		getModifiers(): { getCategory(): string }[];
 	}): number {
-		const group = findModifier<GraceNoteGroup>(t, GraceNoteGroup.CATEGORY);
+		const group = this.translator.findModifier<GraceNoteGroup>(
+			t,
+			GraceNoteGroup.CATEGORY,
+		);
 		return group ? group.getWidth() + GRACE_SPACING : 0;
 	}
 

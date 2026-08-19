@@ -32,11 +32,7 @@ import {
 } from './constants';
 import { Rect } from './geometry';
 import type { LyricPlacer } from './lyric-placer';
-import {
-	applyNoteColors,
-	findModifier,
-	type NoteTranslator,
-} from './note-translator';
+import type { NoteTranslator } from './note-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
 import { isTechnicalMark } from './technical-mark/technical-mark';
@@ -138,10 +134,11 @@ export function alignBegModifiers(staves: readonly Stave[]): number | null {
 /*
  * The GraceNoteGroup attached to a note (the small notes drawn just left of it), if any.
  */
-function graceGroupOf(note: {
-	getModifiers(): { getCategory(): string }[];
-}): GraceNoteGroup | undefined {
-	return findModifier<GraceNoteGroup>(note, GraceNoteGroup.CATEGORY);
+function graceGroupOf(
+	translator: NoteTranslator,
+	note: { getModifiers(): { getCategory(): string }[] },
+): GraceNoteGroup | undefined {
+	return translator.findModifier<GraceNoteGroup>(note, GraceNoteGroup.CATEGORY);
 }
 
 /* The measure loop's locals the system formatter reads, snapshotted at the call. */
@@ -288,7 +285,7 @@ export class SystemFormatter {
 			}
 			for (const vexVoice of p.vexVoices) {
 				for (const note of vexVoice.getTickables() as StaveNote[]) {
-					const group = graceGroupOf(note);
+					const group = graceGroupOf(this.translator, note);
 					if (group) {
 						notationGraceWidths.set(note.getTickContext(), group.getWidth());
 					}
@@ -378,7 +375,7 @@ export class SystemFormatter {
 			// The score's own per-element colors (<note color>, <notehead color>, <stem color>)
 			// go on last so they win over the configured notation ink above.
 			for (const { note, chord } of [...p.noteChords, ...p.graceChords]) {
-				applyNoteColors(note, chord);
+				this.translator.applyNoteColors(note, chord);
 			}
 			for (const vexVoice of p.vexVoices) {
 				vexVoice.draw(this.context, p.stave);
@@ -507,7 +504,7 @@ export class SystemFormatter {
 	 * stretchBends, which is also what sets the leg widths this reads.
 	 */
 	private tabBendRect(stave: Stave, note: TabNote): Rect | null {
-		const bend = findModifier<Bend>(note, Bend.CATEGORY);
+		const bend = this.translator.findModifier<Bend>(note, Bend.CATEGORY);
 		if (!bend) {
 			return null;
 		}
@@ -763,7 +760,7 @@ export class SystemFormatter {
 		for (const voice of voices) {
 			const tickables = voice.getTickables() as TabNote[];
 			tickables.forEach((note, i) => {
-				const bend = findModifier<Bend>(note, Bend.CATEGORY);
+				const bend = this.translator.findModifier<Bend>(note, Bend.CATEGORY);
 				if (!bend) {
 					return;
 				}
@@ -801,7 +798,10 @@ export class SystemFormatter {
 		for (const voice of voices) {
 			const tickables = voice.getTickables() as TabNote[];
 			tickables.forEach((note, i) => {
-				const vibrato = findModifier<Vibrato>(note, Vibrato.CATEGORY);
+				const vibrato = this.translator.findModifier<Vibrato>(
+					note,
+					Vibrato.CATEGORY,
+				);
 				if (!vibrato) {
 					return;
 				}
@@ -830,7 +830,7 @@ export class SystemFormatter {
 	): void {
 		for (const voice of voices) {
 			for (const note of voice.getTickables() as TabNote[]) {
-				const group = graceGroupOf(note);
+				const group = graceGroupOf(this.translator, note);
 				if (!group) {
 					continue;
 				}

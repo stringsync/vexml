@@ -1,4 +1,4 @@
-import type { Key, Measure, Part, Time } from '@stringsync/mdom';
+import type { Measure, Part } from '@stringsync/mdom';
 import {
 	Barline,
 	KeySignature,
@@ -6,9 +6,7 @@ import {
 	type RenderContext,
 	Stave,
 	StaveModifierPosition,
-	StaveNote,
 	TabStave,
-	Volta,
 } from 'vexflow';
 import type { CollisionResolver } from './collision-resolver';
 import type { Gap, MeasureNumbering } from './config';
@@ -20,23 +18,12 @@ import {
 import type { Gaps } from './gaps';
 import { Rect } from './geometry';
 import {
-	ACCIDENTAL_CODES,
 	BAR_STYLE_TYPES,
+	type BarlineDecoration,
 	type NoteTranslator,
 } from './note-translator';
-import type {
-	MeasureEnding,
-	PartGroup,
-	ScoreReader,
-	StaveVisibility,
-} from './score-reader';
+import type { PartGroup, ScoreReader, StaveVisibility } from './score-reader';
 import type { SpillTracker } from './spill-tracker';
-
-// VexFlow keys the tonic note for major but wants an 'm' suffix for minor
-// ('Am', 'G#m'); the bare minor tonic ('G#') is rejected as a bad key spec.
-export function vexflowKeySpec(key: Key): string {
-	return key.mode === 'minor' ? `${key.rootNote}m` : `${key.rootNote}`;
-}
 
 /*
  * A key signature spelled out accidental by accidental, for a <key> written with
@@ -79,164 +66,6 @@ class CustomKeySignature extends KeySignature {
 		this.calculateDimensions();
 		this.formatted = true;
 	}
-}
-
-// MusicXML <key-alter> semitones -> the vexflow accidental code, for a signature written
-// without <fifths>. A <key-accidental> naming the glyph outright wins over this (see
-// customKeyAccidentals); this is the fallback every exporter can be counted on to imply.
-const KEY_ALTER_CODES: Record<string, string> = {
-	'-2': 'bb',
-	'-1': 'b',
-	'0': 'n',
-	'1': '#',
-	'2': '##',
-};
-
-/*
- * The staff line a key-signature accidental on `step` sits at, in the coordinates
- * KeySignature draws in (0 = top line, +1 per line downward). `octave` pins it outright —
- * MusicXML's <key-octave>. Without one, the accidental takes the highest position that still
- * lands on the stave, which is where the traditional signatures put every flat and most
- * sharps, so an unpinned custom signature reads like an ordinary one.
- *
- * The position comes from a throwaway StaveNote rather than a hand-rolled clef table: vexflow
- * already resolves step/octave against every clef it knows. Its key props count lines
- * bottom-up from below the stave, which is why the flip is `5 -` and not `4 -`: a note drawn
- * at key-prop line L lands on Stave.getYForNote(L), and that is getYForLine(5 - L).
- * ponytail: the flip assumes a 5-line stave. A non-traditional signature on a reduced stave
- * would sit as if the missing lines were there; no fixture has one.
- */
-function keySignatureLine(
-	step: string,
-	octave: number | null,
-	clef: string,
-): number {
-	const lineOf = (o: number) =>
-		5 -
-		(new StaveNote({
-			keys: [`${step.toLowerCase()}/${o}`],
-			duration: 'w',
-			clef,
-		}).getKeyProps()[0]?.line ?? 2);
-	if (octave !== null) {
-		return lineOf(octave);
-	}
-	const onStave = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-		.map(lineOf)
-		.filter((line) => line >= 0 && line <= 4);
-	// Highest on the stave = the smallest line number. Every step has one in every clef, so
-	// the middle-line fallback is unreachable in practice.
-	return onStave.length > 0 ? Math.min(...onStave) : 2;
-}
-
-/*
- * A <key>'s non-traditional accidentals — the <key-step>/<key-alter>(/<key-accidental>)
- * triples MusicXML writes instead of <fifths> — as the glyph list a CustomKeySignature draws,
- * in the order given rather than in circle-of-fifths order. Empty when the key is an ordinary
- * <fifths> one (or carries nothing at all), which is the signal to use the plain key spec.
- */
-export function customKeyAccidentals(
-	key: Key,
-	clef: string,
-): Array<{ type: string; line: number }> {
-	const out: Array<{ type: string; line: number }> = [];
-	for (const alteration of key.alterations) {
-		const named = alteration.accidental;
-		const type =
-			(named ? ACCIDENTAL_CODES[named] : undefined) ??
-			KEY_ALTER_CODES[String(alteration.alter)];
-		if (!type) {
-			continue;
-		}
-		out.push({
-			type,
-			line: keySignatureLine(alteration.step, alteration.octave, clef),
-		});
-	}
-	return out;
-}
-
-/*
- * MusicXML <time> -> vexflow time-signature spec: 'C' (common), 'C|' (cut), or
- * "beats/beat-type". null when there's nothing drawable. Doubles as the equality
- * key for detecting a mid-piece meter change.
- */
-export function timeSignatureSpec(time: Time | null): string | null {
-	if (time?.symbol === 'common') {
-		return 'C';
-	}
-	if (time?.symbol === 'cut') {
-		return 'C|';
-	}
-	// symbol="single-number" prints the beat count alone. vexflow reads a spec with no '/'
-	// as a lone numerator and centers it vertically between the two signature lines.
-	if (time?.symbol === 'single-number' && time.beats) {
-		return time.beats;
-	}
-	if (time?.beats && time?.beatType) {
-		return `${time.beats}/${time.beatType}`;
-	}
-	return null;
-}
-
-// What a measure's <barline>s ask the renderer to draw at its edges: repeat dots (as a vexflow
-// Barline type) and the volta bracket over it (as a vexflow Volta type + its printed label).
-export type BarlineDecoration = {
-	repeatBegin: boolean;
-	repeatEnd: boolean;
-	/** The printed "Nx" label of a repeat played more than twice, or null. A plain backward
-	 * repeat means two passes and is drawn by its dots alone. */
-	repeatTimesLabel: string | null;
-	volta: { type: number; label: string } | null;
-};
-
-/*
- * Every measure's barline decorations, mapped from the shared repeat structure (ScoreReader.measureRepeats,
- * which playback reads too). An ending run's bracket opens with a left hook (BEGIN), continues
- * hookless (MID), and closes with a right hook (END) — BEGIN_END when the run is one measure.
- * A `discontinue` close leaves the bracket open on the right, so it keeps the hookless form.
- */
-export function barlineDecorations(
-	reader: ScoreReader,
-	measures: readonly Measure[],
-): BarlineDecoration[] {
-	return reader
-		.measureRepeats(measures)
-		.map(({ repeatBegin, repeatEnd, repeatTimes, ending }) => ({
-			repeatBegin,
-			repeatEnd,
-			// <repeat times> counts the total passes, and two is what a repeat sign already
-			// says, so only three or more is worth printing.
-			repeatTimesLabel:
-				repeatEnd && repeatTimes && repeatTimes > 2 ? `${repeatTimes}x` : null,
-			volta: ending && {
-				type: voltaType(ending),
-				label: voltaLabel(ending.number),
-			},
-		}));
-}
-
-function voltaType(ending: MeasureEnding): number {
-	const hooked = ending.last && !ending.open;
-	if (ending.first) {
-		return hooked ? Volta.type.BEGIN_END : Volta.type.BEGIN;
-	}
-	return hooked ? Volta.type.END : Volta.type.MID;
-}
-
-export const NO_DECORATION: BarlineDecoration = {
-	repeatBegin: false,
-	repeatEnd: false,
-	repeatTimesLabel: null,
-	volta: null,
-};
-
-/* "1" -> "1.", "1,2" -> "1., 2." — the printed form of an `<ending>`'s number list. */
-function voltaLabel(number: string): string {
-	return number
-		.split(',')
-		.map((part) => `${part.trim()}.`)
-		.join(' ');
 }
 
 /*
@@ -519,7 +348,8 @@ export class StaveBuilder {
 		// A <key> spelled out accidental by accidental (<key-step>/<key-alter>), which vexflow's
 		// own KeySignature can't take a spec for; empty for an ordinary <fifths> key. The
 		// positions depend on the clef, so this is read per stave.
-		const customKey = key && !isTab ? customKeyAccidentals(key, clefName) : [];
+		const customKey =
+			key && !isTab ? this.translator.customKeyAccidentals(key, clefName) : [];
 		// The key being replaced, so vexflow can print the naturals that cancel it — the
 		// only thing a change TO C major has to draw, and without it M2 of
 		// transpose_change looked like no change happened at all. vexflow applies the
@@ -529,7 +359,7 @@ export class StaveBuilder {
 		// A non-traditional key has no spec to cancel with, either side of the change.
 		const cancelKeySpec =
 			keyChanged && prevKey?.rootNote && customKey.length === 0
-				? vexflowKeySpec(prevKey)
+				? this.translator.vexflowKeySpec(prevKey)
 				: undefined;
 		const addKeySignature = () => {
 			if (customKey.length > 0) {
@@ -540,7 +370,10 @@ export class StaveBuilder {
 					StaveModifierPosition.BEGIN,
 				);
 			} else if (key?.rootNote) {
-				stave.addKeySignature(vexflowKeySpec(key), cancelKeySpec);
+				stave.addKeySignature(
+					this.translator.vexflowKeySpec(key),
+					cancelKeySpec,
+				);
 			}
 		};
 		// Against the clef in effect at the END of the previous measure, not at its start: a
@@ -604,8 +437,9 @@ export class StaveBuilder {
 		// guessing at the music.
 		const time = measure.getTime(staffNumber);
 		const timeSpec =
-			timeSignatureSpec(time) ?? (m === 0 && !time ? '4/4' : null);
-		const prevTimeSpec = timeSignatureSpec(
+			this.translator.timeSignatureSpec(time) ??
+			(m === 0 && !time ? '4/4' : null);
+		const prevTimeSpec = this.translator.timeSignatureSpec(
 			prevMeasure?.getTime(staffNumber) ?? null,
 		);
 		if (timeSpec && !isTab && (m === 0 || timeSpec !== prevTimeSpec)) {

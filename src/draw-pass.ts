@@ -38,7 +38,11 @@ import {
 } from './geometry-collector';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
 import { LyricPlacer } from './lyric-placer';
-import type { NoteTranslator } from './note-translator';
+import {
+	type BarlineDecoration,
+	NO_DECORATION,
+	type NoteTranslator,
+} from './note-translator';
 import type {
 	DirectionLineSpan,
 	OctaveShiftSpan,
@@ -48,13 +52,7 @@ import type {
 import type { SpannerBuilder } from './spanner-builder';
 import { SpannerResolver } from './spanner-resolver';
 import { SpillTracker, type StaveSpill } from './spill-tracker';
-import {
-	type BarlineDecoration,
-	barlineDecorations,
-	NO_DECORATION,
-	StaveBuilder,
-	type StaveColumn,
-} from './stave-builder';
+import { StaveBuilder, type StaveColumn } from './stave-builder';
 import {
 	alignBegModifiers,
 	type FormatColumn,
@@ -321,9 +319,8 @@ export class DrawPass {
 			directionLineSpans.push(...this.reader.directionLinesOf(part));
 		}
 		// Read from the first part — a repeat or volta boundary applies across the system.
-		this.decorations = barlineDecorations(
-			reader,
-			this.parts[0]?.measures ?? [],
+		this.decorations = translator.barlineDecorations(
+			reader.measureRepeats(this.parts[0]?.measures ?? []),
 		);
 		this.systemTopY = layout.top + topSlack;
 		this.systemContentBottom = this.systemTopY;
