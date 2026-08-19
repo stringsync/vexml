@@ -52,7 +52,7 @@ import type { SpillTracker } from './spill-tracker';
 
 // Above-stave text (chord symbols, words) clears notes, ties, and other placed text, but NOT
 // chord diagrams — a diagram deliberately draws on top of any text it shares a spot with. All
-// nudge logic funnels through the CollisionResolver; see docs/collision-audit.md.
+// nudge logic funnels through the CollisionResolver; see AGENTS.md, "Collisions and nudges".
 const TEXT_CLEAR_KINDS: CollisionKind[] = ['note', 'tie', 'annotation'];
 
 // A dynamic that sets a sustained LEVEL rather than accenting one note: any run of p's or
@@ -905,7 +905,9 @@ export class DirectionPlacer {
 	 * Drawn straight on the context rather than as a vexflow element: TextBracket, the nearest
 	 * thing vexflow has, hooks only its stop end and only downward, so it can draw none of the
 	 * five bracket forms MusicXML spells out. Placement is vexflow's own above/below-stave text
-	 * line, the same fixed anchor the ottava brackets use (see docs/collision-audit.md).
+	 * line: they are drawn in the finish pass, after the per-system collision index has been
+	 * cleared, so they take that fixed anchor instead of resolving (see AGENTS.md,
+	 * "Collisions and nudges").
 	 * ponytail: 'arrow' draws the same tick 'down' does — an arrowhead needs its own path and no
 	 * fixture asks for one.
 	 */

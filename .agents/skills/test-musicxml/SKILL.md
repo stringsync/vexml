@@ -78,7 +78,7 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
      logic. Not everything is movable — noteheads, stems, and ties are obstacles, not nudge
      targets. Fixed structural placement (page margins, part spacing, bracket offsets,
      widget-internal geometry) is exempt — it is deterministic, not clash resolution. See
-     `docs/collision-audit.md` for what is and isn't in scope.
+     `src/AGENTS.md` ("Collisions and nudges") for what is and isn't in scope.
 
 6. Run the test command again:
 

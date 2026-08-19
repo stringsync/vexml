@@ -18,7 +18,7 @@ import { FAR } from './constants';
  * chord symbol sideways off the note it labels.
  *
  * ANY new "move this so it clears that" logic should go through here — do not add new bespoke
- * magic-offset clearance code. See docs/collision-audit.md.
+ * magic-offset clearance code. See the "Collisions and nudges" section of AGENTS.md.
  */
 
 export type CollisionKind = 'note' | 'tie' | 'annotation' | 'diagram';

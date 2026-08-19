@@ -110,7 +110,7 @@ Two files cut across the draw stage and are worth knowing before anything else:
 - **The gap between stacked systems, and notes rising above a system's top stave** — `spill-tracker.ts`, `spill-resolver.ts`, `constants.ts` (`SYSTEM_GAP`)
 - **Why there are two draw passes at all** — `score-drawer.ts` (the driver), `spill-resolver.ts` (the redraw decision)
 - **Page margins, ledger headroom, the final crop and blit** — `score-drawer.ts`, `constants.ts`
-- **Keeping two marks from printing through each other** — `collision-resolver.ts`
+- **Keeping two marks from printing through each other** — `collision-resolver.ts`, and the section on it below
 
 ## Spanners (things that connect two notes)
 
@@ -126,6 +126,44 @@ Two files cut across the draw stage and are worth knowing before anything else:
 - **Chord diagrams (fret boxes)** — `chord-diagram-glyph.ts` (drawing), `direction-placer.ts` (placement), `chord-diagram.ts` (the element)
 - **Lyrics, verses, melisma lines** — `lyric-placer.ts`, `lyric-mark/`
 - **Fingerings, string numbers, other technical marks** — `technical-mark/`, `notation-translator.ts`, `system-formatter.ts` (stacking)
+
+## Collisions and nudges
+
+`collision-resolver.ts` is the one mechanism for "move this so it clears that".
+**Any new clearance logic goes through it** — no new bespoke magic offsets.
+
+Per element: compute its natural `Rect`, resolve it against everything already
+placed (`liftClear` / `dropClear` up or down out of its x-column, `pushRightOf`
+along a row, `nudgeInsideX` back inside the page), draw it there, then `add` the
+placed rect so later elements avoid it in turn. Things that cannot yield are
+registered but never moved. `kinds` narrows which obstacles count; `band` scopes
+to one stave row, so a lower part's text stacks over its own music instead of
+climbing over the part above. The index is built per system in `draw-pass.ts`
+and cleared at each system start; `escaping()` reports what the canvas would
+clip (`warnEscapes`).
+
+| Moves | To clear | Where |
+| --- | --- | --- |
+| Chord symbols, words, rehearsal marks, tempo marks | notes, ties, slur bows, lyrics, technical marks, volta brackets, other placed text (a `placement="below"` words drops instead of lifting) | `direction-placer.ts` |
+| Chord diagrams | lift off the notes, push right of the previous diagram, lift again where it landed, then pull inside the page edge | `direction-placer.ts` |
+| Hairpins, pedal lines, ottava brackets | slur bows and beam-extended stem tips, via a resolver scoped to their own stave — the shared index is per system and these resolve after it | `spanner-resolver.ts` |
+
+Registered as obstacles: noteheads/stem tips, tie apexes, tab bend arcs, slur
+bows, technical marks (`system-formatter.ts`); lyrics and melisma lines
+(`lyric-placer.ts`); volta brackets — including the next measure's, a column
+early, so a symbol overrunning the barline sees it — and measure numbers
+(`stave-builder.ts`).
+
+Deliberately NOT collisions, do not "migrate" them: deterministic engraving
+placement (page margins, the `LEAD_*` reservations, part labels and brackets,
+chord-diagram internals, tab centering, slur control points). Two clash
+mechanisms also stay outside the resolver because they move a whole row rather
+than one element clear of another: stave/system spill (`spill-tracker.ts`,
+`spill-resolver.ts`), and the volta bracket's lift, which is measured in one
+draw pass and applied in the next (`draw-pass.ts`, `observedVoltaLifts`) because
+the bracket is drawn with the stave, before the notes are formatted.
+`<bracket>`/`<dashes>` spans take vexflow's fixed text line — they are drawn in
+the finish pass, after the index is cleared.
 
 ## Tablature
 

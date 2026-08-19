@@ -131,7 +131,7 @@ export class DrawPass {
 	// chord symbols/words/diagrams). The above-stave annotations query it to nudge clear of
 	// obstacles, and chord diagrams use it to space apart across a barline (replacing an old
 	// running-cursor). Reset at each system start (x/y restart) — see the system-change
-	// block. ALL nudge logic funnels through here; see docs/collision-audit.md.
+	// block. ALL nudge logic funnels through here; see AGENTS.md, "Collisions and nudges".
 	private readonly collisionResolver: CollisionResolver;
 	// The drawable region of the scratch canvas. Anything escaping it is in "no-man's land"
 	// and gets clipped, so warn — the slack that prevents this (LEDGER_HEADROOM/topSlack)
