@@ -144,8 +144,9 @@ interface VexflowChordOptions {
 
 /*
  * One mdom chord — a lead note plus any <chord/> members — as the vexflow StaveNote that
- * draws it: its keys, noteheads, accidentals, dots and stem. What hangs OFF the note once
- * it exists (articulations, ornaments, lyrics) is NotationTranslator's half.
+ * draws it: its keys, noteheads, accidentals, dots, stem, and (in a later pass, once the
+ * beams are settled) its colors. What hangs OFF the note once it exists (articulations,
+ * ornaments, lyrics) is NotationTranslator's half.
  */
 export class ChordTranslator {
 	constructor(
