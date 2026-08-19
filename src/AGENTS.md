@@ -1,8 +1,9 @@
 # What controls what
 
-Where each piece of notation is decided. When something looks wrong on the
-page, start here, not with grep: the score's vocabulary (slur, volta, hairpin,
-fingering) rarely matches the identifier that draws it.
+This file maps music notation to the source files that render it. When
+something looks wrong on the page, start here, not with grep: the score's
+vocabulary (slur, volta, hairpin, fingering) rarely matches the identifier
+that draws it.
 
 **Keep this file current.** A file added, moved, renamed, or deleted under
 `src/`, or a concept moved between files, updates this map in the same commit.
