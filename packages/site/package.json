@@ -5,11 +5,11 @@
 	"type": "module",
 	"dependencies": {
 		"@stringsync/vexml": "workspace:*",
-		"@webappwiz/react": "0.0.1",
+		"@webappwiz/react": "0.0.3",
 		"react": "^19.2.7",
 		"react-dom": "^19.2.7",
 		"smplr": "^1.0.0",
-		"webappwiz": "0.0.1"
+		"webappwiz": "0.0.3"
 	},
 	"devDependencies": {
 		"@tailwindcss/vite": "^4.3.1",

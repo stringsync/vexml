@@ -7,7 +7,7 @@
       "devDependencies": {
         "@biomejs/biome": "2.5.1",
         "@types/bun": "latest",
-        "@webappwiz/arbor": "0.0.1",
+        "@webappwiz/arbor": "0.0.3",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -33,11 +33,11 @@
       "version": "1.2.4",
       "dependencies": {
         "@stringsync/vexml": "workspace:*",
-        "@webappwiz/react": "0.0.1",
+        "@webappwiz/react": "0.0.3",
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
         "smplr": "^1.0.0",
-        "webappwiz": "0.0.1",
+        "webappwiz": "0.0.3",
       },
       "devDependencies": {
         "@tailwindcss/vite": "^4.3.1",
@@ -57,7 +57,7 @@
       "dependencies": {
         "@stringsync/mdom": "0.2.4",
         "@vexml/integration": "workspace:*",
-        "webappwiz": "0.0.1",
+        "webappwiz": "0.0.3",
       },
       "devDependencies": {
         "@coderline/alphatab": "^1.8.4",
@@ -71,7 +71,7 @@
       "dependencies": {
         "@stringsync/mdom": "0.2.4",
         "vexflow": "5.0.0",
-        "webappwiz": "0.0.1",
+        "webappwiz": "0.0.3",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -211,9 +211,9 @@
 
     "@vitejs/plugin-react": ["@vitejs/plugin-react@6.0.3", "", { "dependencies": { "@rolldown/pluginutils": "^1.0.1" }, "peerDependencies": { "@rolldown/plugin-babel": "^0.1.7 || ^0.2.0", "babel-plugin-react-compiler": "^1.0.0", "vite": "^8.0.0" }, "optionalPeers": ["@rolldown/plugin-babel", "babel-plugin-react-compiler"] }, "sha512-vmFvco5/QuC2f9Oj+wTk0+9XeDFkHxSamwZKYc7MxYwKICfvUvlMhqKI0VuICPltGqh1neqBKDvO4kes1ya8vg=="],
 
-    "@webappwiz/arbor": ["@webappwiz/arbor@0.0.1", "", { "dependencies": { "webappwiz": "^0.0.1" }, "bin": { "arbor": "index.js" } }, "sha512-YZzgE1m+0Z8dp872GGtODIj7P8QOAjsKPD6J2Fm4sG4mVFAyjsAJLKQHc8oSj8RLl/OB/Cj40D7RnZHKcH1xqg=="],
+    "@webappwiz/arbor": ["@webappwiz/arbor@0.0.3", "", { "dependencies": { "webappwiz": "^0.0.3" }, "bin": { "arbor": "index.js" } }, "sha512-DOuRCh/JSbFwGuL/yxPaGCdTq6uLx3jUCG0a9YwLoyXT6CGF4rNlXOTzSeVFIwN8tQYOUVbUOfBuiVd7zq33JQ=="],
 
-    "@webappwiz/react": ["@webappwiz/react@0.0.1", "", { "dependencies": { "webappwiz": "^0.0.1" }, "peerDependencies": { "react": "^19" } }, "sha512-XHCxyFJ1tJY+efLoeS6x/AL+vRqmJ76vyPSF0zMFIyrgO7QQFkrM9MiGrF4PSkPBASjcSjO0QJkTE81wfDyATw=="],
+    "@webappwiz/react": ["@webappwiz/react@0.0.3", "", { "dependencies": { "webappwiz": "^0.0.3" }, "peerDependencies": { "react": "^19" } }, "sha512-M+25faKnBCENYO+74Ple+gl5kvYiJR1UlZqz249z5/9xVozjn+QQyXoqkqQT8oMYXJracz1dcaEW7mAGMBfalA=="],
 
     "abbrev": ["abbrev@4.0.0", "", {}, "sha512-a1wflyaL0tHtJSmLSOVybYhy22vRih4eduhhrkcjgrWGnRfrZtovJ2FRjxuTtkkj47O/baf0R86QU5OuYpz8fA=="],
 
@@ -433,7 +433,7 @@
 
     "vite": ["vite@8.1.0", "", { "dependencies": { "lightningcss": "^1.32.0", "picomatch": "^4.0.4", "postcss": "^8.5.15", "rolldown": "~1.1.2", "tinyglobby": "^0.2.17" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^20.19.0 || >=22.12.0", "@vitejs/devtools": "^0.3.0", "esbuild": "^0.27.0 || ^0.28.0", "jiti": ">=1.21.0", "less": "^4.0.0", "sass": "^1.70.0", "sass-embedded": "^1.70.0", "stylus": ">=0.54.8", "sugarss": "^5.0.0", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "@vitejs/devtools", "esbuild", "jiti", "less", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-BuJcQK/56NQTWDGn4ABea3q4SSBdNPWwNZKTkkUpcMPnLoquSYH8llRtSUIgoL1KSCpHt5eghLShn50mH36y7Q=="],
 
-    "webappwiz": ["webappwiz@0.0.1", "", { "dependencies": { "@standard-schema/spec": "^1.1.0" } }, "sha512-MR1f4293RTud7AEatyUEpV3df7xuNPkE4ez5EwFnixXK7loK5aJbKyhDsa88i1RQLxz/IDpd4GMXA22uwFmj+g=="],
+    "webappwiz": ["webappwiz@0.0.3", "", { "dependencies": { "@standard-schema/spec": "^1.1.0" } }, "sha512-jQEh05pWIjI6c5ZcePPNYmcCxfpwNp0COSwQ9E3MiDn4XyWig1Tx7mayCE/H0PVstdGISzyaJYddqQcZDLrhog=="],
 
     "which": ["which@6.0.1", "", { "dependencies": { "isexe": "^4.0.0" }, "bin": { "node-which": "bin/which.js" } }, "sha512-oGLe46MIrCRqX7ytPUf66EAYvdeMIZYn3WaocqqKZAxrBpkqHfL/qvTyJ/bTk5+AqHCjXmrv3CEWgy368zhRUg=="],
 

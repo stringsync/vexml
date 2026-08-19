@@ -10,7 +10,7 @@
 	"dependencies": {
 		"@stringsync/mdom": "0.2.4",
 		"@vexml/integration": "workspace:*",
-		"webappwiz": "0.0.1"
+		"webappwiz": "0.0.3"
 	},
 	"devDependencies": {
 		"@coderline/alphatab": "^1.8.4",
