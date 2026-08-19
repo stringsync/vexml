@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, extname, isAbsolute, resolve } from 'node:path';
-import { MeasureSlicer } from './measure-slicer';
+import { MeasureSlicer } from './lib/measure-slicer';
 
 export interface SliceOptions {
 	input: string;
