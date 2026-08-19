@@ -1,61 +1,52 @@
 # What controls what
 
-A map from a piece of music notation to the files that decide how it comes out.
-Start here when you know what looks wrong on the page but not where it is
-decided — it is faster than grepping, because the vocabulary of the score
-(slur, volta, hairpin, fingering) rarely matches the identifier that draws it.
+A map from a piece of notation (slur, volta, hairpin, fingering) to the files
+that decide how it comes out. Start here, not with grep: the score's
+vocabulary rarely matches the identifier that draws it.
 
-**Keep this file current.** When you add, move, rename, or delete a file in
-`src/`, or move a concept from one file to another, update the map in the same
-commit. A map that lies costs more than no map. `CLAUDE.md` is a symlink to
-this file, so both agents read the same thing.
+**Keep this file current.** A file added, moved, renamed, or deleted under
+`src/`, or a concept moved between files, updates this map in the same commit.
+`CLAUDE.md` is a symlink to this file.
 
-Files not named here are either test fakes (`fake-*.ts`) or the public surface
-(`index.ts`, `config.ts`, `constants.ts`). `Rect` and the `QuadTree` behind the
-hit index come from `webappwiz/geometry`, not from this repo.
-
-To see any of this rendered, `tests/integration/render.test.ts` has a hand-cut
-fixture per feature, named for the concept (`stave_spacing_dynamic`,
-`tab_bends`, `slur_cross_staff`) and commented with what it is proving.
+Files not named here are test fakes (`fake-*.ts`) or the public surface
+(`index.ts`, `config.ts`, `constants.ts`). `Rect` and the hit-index `QuadTree`
+come from `webappwiz/geometry`, not this repo. Every feature has a fixture in
+`tests/integration/render.test.ts`, named for the concept.
 
 ## The pipeline
 
-`render()` in `render.ts` is the composition root: it constructs every class
-below and hands them to `ScoreRenderer` (`score-renderer.ts`), which runs the
-stages in order.
+`render()` in `render.ts` is the composition root; `ScoreRenderer`
+(`score-renderer.ts`) runs the stages in order.
 
 | Stage | Does | Files |
 | --- | --- | --- |
-| Fonts | Loads Bravura + the text face, publishes them as CSS vars | `font-loader/` |
+| Fonts | Loads Bravura + text face as CSS vars | `font-loader/` |
 | Parse | MusicXML text to an mdom document | `score-parser/` |
-| Gaps | Inserts the caller's silent measures into the parsed parts | `gaps.ts` |
+| Gaps | Inserts the caller's silent measures | `gaps.ts` |
 | Layout | Measure widths, system breaks, stave offsets — no drawing | `layout-planner.ts` |
-| Draw | Two passes over the canvas; everything engraved happens here | `score-drawer.ts`, `draw-pass.ts` + the collaborators below |
-| Elements | Raw geometry to the wrappers a caller hit-tests | `element-factory.ts`, `element-index.ts` |
-| Playback | The timeline: beats to ms, repeats unrolled, swing applied | `sequence-factory.ts`, `measure-sequence-iterator.ts`, `sequence.ts` |
+| Draw | Two passes over the canvas; everything engraved | `score-drawer.ts`, `draw-pass.ts` + collaborators below |
+| Elements | Raw geometry to hit-testable wrappers | `element-factory.ts`, `element-index.ts` |
+| Playback | Beats to ms, repeats unrolled, swing applied | `sequence-factory.ts`, `measure-sequence-iterator.ts`, `sequence.ts` |
 | Result | What `render()` hands back | `score.ts` |
 
-Two files cut across the draw stage and are worth knowing before anything else:
+Two rules cut across the draw stage:
 
-- `score-reader.ts` — the only place that answers *what does the MusicXML say*
-  (clefs, keys, times, part groups, repeats, directions, endings). Nothing else
-  should be reading mdom attributes directly. Questions that need the caller's
-  config as well as the document are NOT reads and live next door:
-  `stave-plan.ts` answers which staves a part shows and which are tablature.
-- The translators — one mdom chord to vexflow objects. If a single note looks
-  wrong, it is one of these:
+- `score-reader.ts` is the only place that reads mdom attributes (clefs, keys,
+  times, part groups, repeats, directions, endings) — nothing else reads the
+  document directly. Questions that also need the caller's config live in
+  `stave-plan.ts` (which staves a part shows, which are tablature).
+- The translators turn one mdom chord into vexflow objects. A single wrong
+  note is one of these:
   - `chord-translator.ts` — the StaveNote itself: keys, noteheads,
     accidentals, dots, stems.
   - `notation-translator.ts` — what hangs off it: articulations, ornaments,
     technical marks, fermatas, arpeggios, lyrics.
-  - `tab-translator.ts` — the tablature half: fret positions and styling,
-    bends, tab graces.
+  - `tab-translator.ts` — fret positions and styling, bends, tab graces.
   - `note-translator.ts` — a whole voice of tickables: onsets, ghost padding,
     grace groups, mid-measure dividers and clef changes.
-  - `signature-translator.ts` (clef/key/time specs),
-    `barline-translator.ts` (repeat dots, voltas, mid-measure dividers),
-    `duration-translator.ts` (duration codes, ghost fills) are the small
-    shared pieces underneath.
+  - `signature-translator.ts` (clef/key/time specs), `barline-translator.ts`
+    (repeat dots, voltas, mid-measure dividers), `duration-translator.ts`
+    (duration codes, ghost fills) are the shared pieces underneath.
 
 ## Staves, measures, and the frame
 
@@ -80,48 +71,40 @@ Two files cut across the draw stage and are worth knowing before anything else:
 
 ## Horizontal spacing (how wide a measure is, where a note sits in it)
 
-- **Intra-voice note spacing — the curve that makes a denser measure wider and a
-  longer note take more room than a short one, sub-linearly** —
-  `layout-planner.ts` (`noteLogWidth`, `measureNoteArea`), `constants.ts`
-  (`BASE_VOICE_WIDTH`, `LOG_SPACING_RATIO`, `MIN_LOG_FACTOR`), `config.ts`
-  (`noteSpacing`, `softmaxFactor`)
-- **A measure's two widths: the `ideal` the curve wants and the `min` below
-  which notes collide** — `layout-planner.ts` (`measureNoteArea`)
-- **Where the notes actually land, justified into the planned box at draw time** —
-  `system-formatter.ts` (`formatAndDraw`), `note-translator.ts` (`softVoice`)
+- **Intra-voice note spacing: denser measure wider, longer note more room, sub-linearly** — `layout-planner.ts` (`noteLogWidth`, `measureNoteArea`), `constants.ts` (`BASE_VOICE_WIDTH`, `LOG_SPACING_RATIO`, `MIN_LOG_FACTOR`), `config.ts` (`noteSpacing`, `softmaxFactor`)
+- **A measure's two widths: the `ideal` the curve wants, the `min` below which notes collide** — `layout-planner.ts` (`measureNoteArea`)
+- **Where notes actually land, justified into the planned box at draw time** — `system-formatter.ts` (`formatAndDraw`), `note-translator.ts` (`softVoice`)
 - **Room reserved at a measure's left for clef/key/time/repeat** — `layout-planner.ts`, `constants.ts` (`LEAD_*`)
-- **Room held open for a words directive that would overrun the barline** — `layout-planner.ts` (`trailingWordsPad`, `leadingWordsPad`)
+- **Room held open for a words directive overrunning the barline** — `layout-planner.ts` (`trailingWordsPad`, `leadingWordsPad`)
 - **Grace-note room** — `layout-planner.ts` (`graceWidthOf`), `system-formatter.ts` (`closeGraceGaps`)
 - **Minimum tab note spacing, minimum multi-rest width** — `layout-planner.ts`, `constants.ts`
 - **Squaring opening repeats and time signatures across a system's staves** — `system-formatter.ts` (`alignBegModifiers`)
 
 ## System and page layout (vertical, and across the line)
 
-- **Breaking measures into systems: greedy packing, then evening out a lopsided
-  pair** — `layout-planner.ts` (`evenOutSystems`)
-- **A break the document forced (`<print new-system="yes">`)** — `layout-planner.ts` (read straight off the mdom measure), `config.ts` (`honorSystemBreaks`)
-- **Justifying a complete system to full width; leaving the last one short** — `layout-planner.ts`, `config.ts` (`minLastSystemFill`)
+- **Breaking measures into systems: greedy packing, then evening a lopsided pair** — `layout-planner.ts` (`evenOutSystems`)
+- **A break the document forced (`<print new-system="yes">`)** — `layout-planner.ts` (read off the mdom measure), `config.ts` (`honorSystemBreaks`)
+- **Justifying a complete system to full width; last one left short** — `layout-planner.ts`, `config.ts` (`minLastSystemFill`)
 - **A document line too wide for the page: wrap / allow / widen** — `layout-planner.ts`, `config.ts` (`overflow`)
 - **Panoramic (one endless system) vs standard layout** — `layout-planner.ts`, `config.ts`, `scroller/scroll-controller.ts`
-- **The label columns reserved left of the first system** — `layout-planner.ts` (`labelIndent`, `partLabelIndent`), `connector-drawer.ts`
-- **Stave offsets within a system: the gap inside a part vs between two parts** — `layout-planner.ts`, `constants.ts` (`INTRA_PART_SPACING`, `INTER_PART_SPACING`)
-- **Widening a stave gap the music outgrows — measured per x column, per
-  system, so one dense bar doesn't spread the whole score** — `spill-tracker.ts`, `spill-resolver.ts`
-- **The gap between stacked systems, and notes rising above a system's top stave** — `spill-tracker.ts`, `spill-resolver.ts`, `constants.ts` (`SYSTEM_GAP`)
-- **Why there are two draw passes at all** — `score-drawer.ts` (the driver), `spill-resolver.ts` (the redraw decision)
+- **Label columns reserved left of the first system** — `layout-planner.ts` (`labelIndent`, `partLabelIndent`), `connector-drawer.ts`
+- **Stave offsets within a system: gap inside a part vs between parts** — `layout-planner.ts`, `constants.ts` (`INTRA_PART_SPACING`, `INTER_PART_SPACING`)
+- **Widening a stave gap the music outgrows — per x column, per system** — `spill-tracker.ts`, `spill-resolver.ts`
+- **Gap between stacked systems; notes rising above a system's top stave** — `spill-tracker.ts`, `spill-resolver.ts`, `constants.ts` (`SYSTEM_GAP`)
+- **Why there are two draw passes** — `score-drawer.ts` (driver), `spill-resolver.ts` (the redraw decision)
 - **Page margins, ledger headroom, the final crop and blit** — `score-drawer.ts`, `constants.ts`
-- **Keeping two marks from printing through each other** — `collision-resolver.ts`, and the section on it below
+- **Keeping two marks from printing through each other** — `collision-resolver.ts` (section below)
 
 ## Spanners (things that connect two notes)
 
-- **Ties, slurs** — `spanner-builder.ts`, `spanner-resolver.ts`, `curve/` (the arcs themselves)
-- **Hammer-ons, pull-offs, slides, glissandos** — `spanner-builder.ts`, `spanner-resolver.ts`, `slide/` (the lines themselves)
+- **Ties, slurs** — `spanner-builder.ts`, `spanner-resolver.ts`, `curve/` (the arcs)
+- **Hammer-ons, pull-offs, slides, glissandos** — `spanner-builder.ts`, `spanner-resolver.ts`, `slide/` (the lines)
 - **Ottava (8va) brackets, pedal lines, hairpins/wedges, bracket-and-dashes lines** — `spanner-resolver.ts`, `score-reader.ts`, `hairpin.ts` (the wedge glyph)
 
 ## Text and marks around the stave
 
-- **Dynamics, words directions, rehearsal marks, segno/coda navigation, figured bass** — `direction-placer.ts`, `score-reader.ts`, `dynamic-glyphs.ts`
-- **Tempo marks and metronome marks** — `direction-placer.ts`, `metronome-glyph.ts` (the note-group form)
+- **Dynamics, words directions, rehearsal marks, segno/coda, figured bass** — `direction-placer.ts`, `score-reader.ts`, `dynamic-glyphs.ts`
+- **Tempo and metronome marks** — `direction-placer.ts`, `metronome-glyph.ts` (the note-group form)
 - **Chord symbols (`<harmony>`)** — `direction-placer.ts`
 - **Chord diagrams (fret boxes)** — `chord-diagram-glyph.ts` (drawing), `direction-placer.ts` (placement), `chord-diagram.ts` (the element)
 - **Lyrics, verses, melisma lines** — `lyric-placer.ts`, `lyric-mark/`
@@ -129,41 +112,36 @@ Two files cut across the draw stage and are worth knowing before anything else:
 
 ## Collisions and nudges
 
-`collision-resolver.ts` is the one mechanism for "move this so it clears that".
-**Any new clearance logic goes through it** — no new bespoke magic offsets.
+`collision-resolver.ts` is the one mechanism for "move this so it clears
+that". **Any new clearance logic goes through it** — no new bespoke magic
+offsets.
 
 Per element: compute its natural `Rect`, resolve it against everything already
-placed (`liftClear` / `dropClear` up or down out of its x-column, `pushRightOf`
-along a row, `nudgeInsideX` back inside the page), draw it there, then `add` the
-placed rect so later elements avoid it in turn. Things that cannot yield are
-registered but never moved. `kinds` narrows which obstacles count; `band` scopes
-to one stave row, so a lower part's text stacks over its own music instead of
-climbing over the part above. The index is built per system in `draw-pass.ts`
-and cleared at each system start; `escaping()` reports what the canvas would
-clip (`warnEscapes`).
+placed (`liftClear`/`dropClear`, `pushRightOf`, `nudgeInsideX`), draw it
+there, then `add` the placed rect. `kinds` narrows which obstacles count;
+`band` scopes to one stave row. The index is built per system in
+`draw-pass.ts`; `escaping()` reports what the canvas would clip
+(`warnEscapes`).
 
 | Moves | To clear | Where |
 | --- | --- | --- |
-| Chord symbols, words, rehearsal marks, tempo marks | notes, ties, slur bows, lyrics, technical marks, volta brackets, other placed text (a `placement="below"` words drops instead of lifting) | `direction-placer.ts` |
-| Chord diagrams | lift off the notes, push right of the previous diagram, lift again where it landed, then pull inside the page edge | `direction-placer.ts` |
-| Hairpins, pedal lines, ottava brackets | slur bows and beam-extended stem tips, via a resolver scoped to their own stave — the shared index is per system and these resolve after it | `spanner-resolver.ts` |
+| Chord symbols, words, rehearsal marks, tempo marks | notes, ties, slur bows, lyrics, technical marks, volta brackets, other placed text (`placement="below"` words drop instead of lifting) | `direction-placer.ts` |
+| Chord diagrams | lift off notes, push right of the previous diagram, lift again, pull inside the page edge | `direction-placer.ts` |
+| Hairpins, pedal lines, ottava brackets | slur bows and beam-extended stem tips, via a resolver scoped to their own stave (they resolve after the per-system index) | `spanner-resolver.ts` |
 
 Registered as obstacles: noteheads/stem tips, tie apexes, tab bend arcs, slur
 bows, technical marks (`system-formatter.ts`); lyrics and melisma lines
 (`lyric-placer.ts`); volta brackets — including the next measure's, a column
-early, so a symbol overrunning the barline sees it — and measure numbers
-(`stave-builder.ts`).
+early — and measure numbers (`stave-builder.ts`).
 
 Deliberately NOT collisions, do not "migrate" them: deterministic engraving
-placement (page margins, the `LEAD_*` reservations, part labels and brackets,
-chord-diagram internals, tab centering, slur control points). Two clash
-mechanisms also stay outside the resolver because they move a whole row rather
-than one element clear of another: stave/system spill (`spill-tracker.ts`,
-`spill-resolver.ts`), and the volta bracket's lift, which is measured in one
-draw pass and applied in the next (`draw-pass.ts`, `observedVoltaLifts`) because
-the bracket is drawn with the stave, before the notes are formatted.
-`<bracket>`/`<dashes>` spans take vexflow's fixed text line — they are drawn in
-the finish pass, after the index is cleared.
+placement (page margins, `LEAD_*` reservations, part labels and brackets,
+chord-diagram internals, tab centering, slur control points); stave/system
+spill (`spill-tracker.ts`, `spill-resolver.ts`), which moves a whole row; and
+the volta bracket's lift, measured in one draw pass and applied in the next
+(`draw-pass.ts`, `observedVoltaLifts`) because the bracket draws with the
+stave, before the notes are formatted. `<bracket>`/`<dashes>` spans take
+vexflow's fixed text line — drawn in the finish pass, after the index clears.
 
 ## Tablature
 
@@ -182,20 +160,20 @@ the finish pass, after the index is cleared.
 ## Interaction and playback
 
 - **What a caller gets from a hit test** — `element.ts`, `element-index.ts`, `note.ts`, `measure.ts`, `measure-box.ts`, `voice.ts`, `part.ts`, `system.ts`
-- **Turning a pointer position into an element** — `hit-tester/`, `element-index.ts` (the QuadTree itself is `webappwiz/geometry`)
+- **Pointer position to element** — `hit-tester/`, `element-index.ts`
 - **Coloring, highlighting, halos** — `decoration/`, `decoration-style/`
 - **Playback timeline, repeats unrolled, swing** — `sequence-factory.ts`, `sequence.ts`, `measure-sequence-iterator.ts` (repeat/volta expansion), `tempo-map.ts`, `swing-warp.ts`
 - **The moving cursor** — `cursor-controller.ts`, `cursor-view/`, `cursor-host/`
 - **Scrolling and the visible window** — `scroller/`, `viewport/`
-- **The DOM the score lives in (container, canvas, overlay layers)** — `host/`, `layer/`, `layer-host/`, `scroll-host/`
+- **The DOM the score lives in (container, canvas, overlays)** — `host/`, `layer/`, `layer-host/`, `scroll-host/`
 
 ## Conventions
 
-- One concept per file, named after the class it exports; the classes sit flat
-  in `src/`, and an interface with implementations gets a directory named after
+- One concept per file, named after the class it exports; classes sit flat in
+  `src/`, and an interface with implementations gets a directory named after
   it (`font-loader/`, `lyric-mark/`), fakes included.
-- The draw pass owns no shared blackboard: `draw-pass.ts` is a driver that
-  constructs each collaborator per pass and snapshots per-column data into it.
-- Rendering is verified by screenshot: `vex test` renders every fixture and
-  diffs it. A refactor that changes no pixels should report "no screenshot
-  changes", and any change that does is a decision to make deliberately.
+- The draw pass owns no shared blackboard: `draw-pass.ts` constructs each
+  collaborator per pass and snapshots per-column data into it.
+- Rendering is verified by screenshot: `vex test` diffs every fixture. A
+  refactor that changes no pixels should report "no screenshot changes"; any
+  change that does is a deliberate decision.
