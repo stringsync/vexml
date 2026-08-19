@@ -202,7 +202,7 @@ Then:
 
 ```sh
 vex dev                     # run the playground site
-vex render -i song.musicxml # render a MusicXML file to a png
+vex render --input song.musicxml # render a MusicXML file to a png
 ```
 
 Don't want it on your `PATH`? Run it directly with `./bin/vex <command>`.

@@ -9,7 +9,7 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
 
 ## Workflow
 
-**Important:** Use the `vex test` commands shown below, plus selective `vex test --update <name>` only after reviewing the screenshot output.
+**Important:** Use the `vex test` commands shown below, plus selective `vex test <name> --update` only after reviewing the screenshot output.
 
 1. First, check whether an existing test in `tests/integration/` already covers the use case.
    - Inspect the relevant integration case definitions and existing files under `tests/integration/__data__/`.
@@ -20,9 +20,9 @@ Use this skill when adding or updating a `vexml` MusicXML rendering test case, e
    **Starting from a real-world score? Slice it down first.** When the case comes from a bug report against a large file rather than from scratch, do not hand-extract the measure and do not paste in the whole score. Use `vex slice` to cut the reproducing measures out:
 
    ```sh
-   vex slice -i big-score.musicxml -m 47 -o tests/integration/__data__/scratch.musicxml
-   vex validate -i tests/integration/__data__/scratch.musicxml
-   vex render -i tests/integration/__data__/scratch.musicxml
+   vex slice --input big-score.musicxml --measures 47 --output tests/integration/__data__/scratch.musicxml
+   vex validate --input tests/integration/__data__/scratch.musicxml
+   vex render --input tests/integration/__data__/scratch.musicxml
    ```
 
    `-m` takes a print-page style list (`1,3-5,8`), matched against the printed `<measure number>` label. The slice carries forward the signatures in effect where it starts — divisions, key, time, clef, staves, staff-details, part-symbol, transpose — so the opening measure renders correctly standalone. Notes:
@@ -113,11 +113,11 @@ Always run this checklist before accepting or updating a screenshot baseline. An
 When the checklist leaves you genuinely unsure what the *correct* engraving is — not whether vexml matches its own baseline, but what a competent engraver would draw — get a second opinion:
 
 ```sh
-vex slice -i tests/integration/__data__/slur.musicxml -m 4 -o /tmp/one.musicxml
-vex render --muse -i /tmp/one.musicxml -o /tmp/musescore.png
-vex render --osmd -i /tmp/one.musicxml -o /tmp/osmd.png
-vex render --alpha -i /tmp/one.musicxml -o /tmp/alphatab.png
-vex render -i /tmp/one.musicxml -o /tmp/vexml.png
+vex slice --input tests/integration/__data__/slur.musicxml --measures 4 --output /tmp/one.musicxml
+vex render --muse --input /tmp/one.musicxml --output /tmp/musescore.png
+vex render --osmd --input /tmp/one.musicxml --output /tmp/osmd.png
+vex render --alpha --input /tmp/one.musicxml --output /tmp/alphatab.png
+vex render --input /tmp/one.musicxml --output /tmp/vexml.png
 ```
 
 Three references, and they disagree with each other as often as with vexml. MuseScore is a full notation editor with the strongest engraving of the four. OSMD (OpenSheetMusicDisplay) is the closer cousin — another MusicXML-in, VexFlow-out renderer — so it is the better read on "did we parse this right", and it needs no Docker, so it is also the faster one to reach for. alphaTab is the tab specialist: reach for it on guitar fixtures, where it engraves tablature better than the other two. Any one alone is enough for most questions; when they agree with each other and not with vexml, that is a stronger signal.
@@ -136,7 +136,7 @@ Then read the PNGs and compare the one detail in question. Rules, in order of ho
 8. If the target render passes the screenshot review checklist, update only that baseline:
 
    ```sh
-   vex test --update <name>
+   vex test <name> --update
    ```
 
    Where `<name>` is the test title — the screenshot filename passed as the second argument to `testCase()` in `tests/integration/render.test.ts` (helper in `tests/testing/test-case.ts`), e.g. `clef_treble.png`. The pattern matches by prefix, so `clef_treble` also matches.
@@ -163,8 +163,8 @@ This work is visual, and the user is reviewing an engraving decision they cannot
 ![](/tmp/lyrics.png)
 ```
 
-- **Use an absolute path.** Renders you made with `vex render -o` are the natural thing to show; a baseline under `tests/integration/__screenshots__/` can be embedded directly.
-- **Render to `/tmp`, not the repo.** A `vex render` with no `-o` drops a timestamped PNG in the working directory that then shows up in `git status`. Passing `-o /tmp/<name>.png` keeps the repo clean and means there is nothing to delete afterwards (the project rule about deleting screenshots exists for exactly this).
+- **Use an absolute path.** Renders you made with `vex render --output` are the natural thing to show; a baseline under `tests/integration/__screenshots__/` can be embedded directly.
+- **Render to `/tmp`, not the repo.** A `vex render` with no `--output` drops a timestamped PNG in the working directory that then shows up in `git status`. Passing `--output /tmp/<name>.png` keeps the repo clean and means there is nothing to delete afterwards (the project rule about deleting screenshots exists for exactly this).
 - **Show the whole page for the overall result, a crop for a detail.** If the point is a few pixels of spacing or one glyph's placement, a full-page PNG at render scale is too small to see it — crop to the region and upscale, e.g.
 
   ```sh
