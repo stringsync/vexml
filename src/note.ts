@@ -1,12 +1,6 @@
 import type { Note as MNote } from '@stringsync/mdom';
 import type { Decorations } from './decoration/decoration';
-import {
-	Element,
-	type Highlightable,
-	type Playable,
-	stampGlyph,
-	Toggle,
-} from './element';
+import { Element, type Highlightable, type Playable, Toggle } from './element';
 import type { Rect } from './geometry';
 import type { NoteGlyph } from './geometry-collector';
 import type { Measure } from './measure';
@@ -82,7 +76,7 @@ export class Note extends Element implements Highlightable, Playable {
 	 * a phantom ellipse blip where there's no notehead. */
 	override drawColor(ctx: CanvasRenderingContext2D, color: string): void {
 		if (this.deps.glyph) {
-			stampGlyph(ctx, this.deps.glyph, color);
+			this.stampGlyph(ctx, this.deps.glyph, color);
 		}
 	}
 

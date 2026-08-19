@@ -69,29 +69,6 @@ class CustomKeySignature extends KeySignature {
 }
 
 /*
- * Whether measure at 0-based `index` (system-start or not) shows its number under
- * the given mode. 'every-N' numbers every Nth measure plus every system start.
- */
-export function showsMeasureNumber(
-	mode: MeasureNumbering,
-	index: number,
-	isSystemStart: boolean,
-): boolean {
-	switch (mode) {
-		case 'none':
-			return false;
-		case 'system':
-			return isSystemStart;
-		case 'every':
-			return true;
-		case 'every-2':
-			return isSystemStart || index % 2 === 0;
-		case 'every-3':
-			return isSystemStart || index % 3 === 0;
-	}
-}
-
-/*
  * One measure column's stave inputs, snapshotted from the measure loop at each build:
  * where the column sits, which stave row is being placed, and the barline/repeat state
  * resolved for its measure.
@@ -213,6 +190,25 @@ export class StaveBuilder {
 		// notes, and the measures it swallows have no box (the layout planner dropped them), so
 		// the measure loop skips them without any extra guard here.
 		this.multiRests = this.reader.multiRestsOf(this.parts).leads;
+	}
+
+	/**
+	 * Whether the measure at 0-based `index` (system-start or not) shows its number under the
+	 * configured mode. 'every-N' numbers every Nth measure plus every system start.
+	 */
+	showsMeasureNumber(index: number, isSystemStart: boolean): boolean {
+		switch (this.measureNumbering) {
+			case 'none':
+				return false;
+			case 'system':
+				return isSystemStart;
+			case 'every':
+				return true;
+			case 'every-2':
+				return isSystemStart || index % 2 === 0;
+			case 'every-3':
+				return isSystemStart || index % 3 === 0;
+		}
 	}
 
 	/*
@@ -449,8 +445,7 @@ export class StaveBuilder {
 		// A gap is non-musical, so it never shows a measure number (its neighbors keep
 		// their own printed numbers — insertion shifts indexes, not labels).
 		const showNumber =
-			!this.gaps.has(m) &&
-			showsMeasureNumber(this.measureNumbering, m, column.isSystemStart);
+			!this.gaps.has(m) && this.showsMeasureNumber(m, column.isSystemStart);
 		// A bracket (drawn below) has a top curl that sits where vexflow's
 		// setMeasure centers the measure number, so the number gets occluded — true
 		// for a multi-stave part's own bracket, for the system bracket of a

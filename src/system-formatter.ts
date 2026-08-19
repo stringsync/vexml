@@ -92,46 +92,6 @@ function squareUp(group: StaveModifier[]): number | null {
 }
 
 /*
- * Square up the opening repeat sign and the time signature across a measure's staves, and
- * return the repeat's x (null when the measure opens with none).
- *
- * Both belong to the MEASURE rather than to one stave, so they should read as one vertical
- * column — but vexflow lays each stave's begin modifiers out on its own, so they shear apart
- * whenever the glyphs ahead of them differ in width: a treble clef plus a time signature is
- * wider than a bare "TAB" glyph, and a grand staff can carry a different key per stave
- * (staves_different_keys), or a key on one stave and none on another (transpose). The widest
- * stave wins and the rest are pushed out to match.
- *
- * The clef and key are deliberately NOT squared up, which is where this parts company with
- * vexflow's own Stave.formatBegModifiers: a key signature is engraved flush after its own
- * clef, so those already sit where they belong, and equalizing them would pad every
- * multi-stave system's opening for nothing. The note start is unified separately, in
- * formatAndDraw.
- *
- * One pass for both, because Stave.format() reassigns every modifier's x — running two
- * alignments in sequence would have the second one's format() undo the first.
- */
-export function alignBegModifiers(staves: readonly Stave[]): number | null {
-	const repeats: StaveModifier[] = [];
-	const timeSignatures: StaveModifier[] = [];
-	for (const stave of staves) {
-		stave.format(); // modifier x isn't assigned until the stave lays itself out
-		for (const modifier of stave.getModifiers(StaveModifierPosition.BEGIN)) {
-			if (
-				modifier instanceof Barline &&
-				modifier.getType() === Barline.type.REPEAT_BEGIN
-			) {
-				repeats.push(modifier);
-			} else if (modifier.getCategory() === TimeSignature.CATEGORY) {
-				timeSignatures.push(modifier);
-			}
-		}
-	}
-	squareUp(timeSignatures);
-	return repeats.length > 0 ? squareUp(repeats) : null;
-}
-
-/*
  * The GraceNoteGroup attached to a note (the small notes drawn just left of it), if any.
  */
 function graceGroupOf(
@@ -207,6 +167,46 @@ export class SystemFormatter {
 		this.notationColor = opts.notationColor;
 		this.byLead = opts.byLead;
 		this.crossStaveNotes = opts.crossStaveNotes;
+	}
+
+	/*
+	 * Square up the opening repeat sign and the time signature across a measure's staves, and
+	 * return the repeat's x (null when the measure opens with none).
+	 *
+	 * Both belong to the MEASURE rather than to one stave, so they should read as one vertical
+	 * column — but vexflow lays each stave's begin modifiers out on its own, so they shear apart
+	 * whenever the glyphs ahead of them differ in width: a treble clef plus a time signature is
+	 * wider than a bare "TAB" glyph, and a grand staff can carry a different key per stave
+	 * (staves_different_keys), or a key on one stave and none on another (transpose). The widest
+	 * stave wins and the rest are pushed out to match.
+	 *
+	 * The clef and key are deliberately NOT squared up, which is where this parts company with
+	 * vexflow's own Stave.formatBegModifiers: a key signature is engraved flush after its own
+	 * clef, so those already sit where they belong, and equalizing them would pad every
+	 * multi-stave system's opening for nothing. The note start is unified separately, in
+	 * formatAndDraw.
+	 *
+	 * One pass for both, because Stave.format() reassigns every modifier's x — running two
+	 * alignments in sequence would have the second one's format() undo the first.
+	 */
+	alignBegModifiers(staves: readonly Stave[]): number | null {
+		const repeats: StaveModifier[] = [];
+		const timeSignatures: StaveModifier[] = [];
+		for (const stave of staves) {
+			stave.format(); // modifier x isn't assigned until the stave lays itself out
+			for (const modifier of stave.getModifiers(StaveModifierPosition.BEGIN)) {
+				if (
+					modifier instanceof Barline &&
+					modifier.getType() === Barline.type.REPEAT_BEGIN
+				) {
+					repeats.push(modifier);
+				} else if (modifier.getCategory() === TimeSignature.CATEGORY) {
+					timeSignatures.push(modifier);
+				}
+			}
+		}
+		squareUp(timeSignatures);
+		return repeats.length > 0 ? squareUp(repeats) : null;
 	}
 
 	/*

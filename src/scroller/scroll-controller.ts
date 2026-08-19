@@ -73,7 +73,7 @@ export class ScrollController implements Scroller {
 			right: scroll.left + size.width,
 			bottom: scroll.top + size.height,
 		};
-		const offset = scrollOffsetFor(target, view);
+		const offset = this.scrollOffsetFor(target, view);
 		const behavior = opts?.behavior;
 		if (behavior === 'smooth' || behavior === 'auto') {
 			this.smoothScrollTo(offset);
@@ -150,35 +150,40 @@ export class ScrollController implements Scroller {
 			this.resizeSettleTimer = null;
 		}
 	}
+
+	/*
+	 * The scroll offset that brings `target` into `view`, both in the container's scroll-content
+	 * coordinates. Horizontal is minimal: if the target's near edge is off the near side, align to it; if
+	 * its far edge is off the far side, scroll just enough to show it; otherwise leave it. So scrolling a
+	 * horizontally-off-screen bar in a panoramic score never disturbs the vertical position. Vertical
+	 * pins the target's top to the viewport top (scrollTo clamps to the max scroll height near the end of
+	 * the content). Pure — the DOM application lives in scrollIntoView.
+	 */
+	private scrollOffsetFor(
+		target: Box,
+		view: Box,
+	): { left: number; top: number } {
+		const axis = (
+			tLo: number,
+			tHi: number,
+			vLo: number,
+			vHi: number,
+		): number => {
+			if (tLo < vLo) {
+				return tLo;
+			}
+			if (tHi > vHi) {
+				return vLo + (tHi - vHi);
+			}
+			return vLo;
+		};
+		return {
+			left: axis(target.left, target.right, view.left, view.right),
+			// Leave breathing room above the target instead of pinning it flush to the top. scrollTo
+			// clamps negatives to 0.
+			top: target.top - SCROLL_TOP_PADDING_PX,
+		};
+	}
 }
 
 type Box = { left: number; top: number; right: number; bottom: number };
-
-/*
- * The scroll offset that brings `target` into `view`, both in the container's scroll-content
- * coordinates. Horizontal is minimal: if the target's near edge is off the near side, align to it; if
- * its far edge is off the far side, scroll just enough to show it; otherwise leave it. So scrolling a
- * horizontally-off-screen bar in a panoramic score never disturbs the vertical position. Vertical
- * pins the target's top to the viewport top (scrollTo clamps to the max scroll height near the end of
- * the content). Pure — the DOM application lives in ScrollController.scrollIntoView.
- */
-export function scrollOffsetFor(
-	target: Box,
-	view: Box,
-): { left: number; top: number } {
-	const axis = (tLo: number, tHi: number, vLo: number, vHi: number): number => {
-		if (tLo < vLo) {
-			return tLo;
-		}
-		if (tHi > vHi) {
-			return vLo + (tHi - vHi);
-		}
-		return vLo;
-	};
-	return {
-		left: axis(target.left, target.right, view.left, view.right),
-		// Leave breathing room above the target instead of pinning it flush to the top. scrollTo
-		// clamps negatives to 0.
-		top: target.top - SCROLL_TOP_PADDING_PX,
-	};
-}

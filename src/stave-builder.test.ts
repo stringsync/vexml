@@ -1,25 +1,58 @@
 import { describe, expect, it } from 'bun:test';
-import { showsMeasureNumber } from './stave-builder';
+import type { RenderContext } from 'vexflow';
+import { CollisionResolver } from './collision-resolver';
+import type { MeasureNumbering } from './config';
+import { Gaps } from './gaps';
+import { Rect } from './geometry';
+import { NoteTranslator } from './note-translator';
+import { ScoreReader } from './score-reader';
+import { SpillTracker } from './spill-tracker';
+import { StaveBuilder } from './stave-builder';
 
 describe('StaveBuilder', () => {
+	// Measure numbering is decided from the configured mode alone, so a builder over an empty
+	// score answers for it. Nothing below draws.
+	const builder = (measureNumbering: MeasureNumbering) =>
+		new StaveBuilder(
+			new NoteTranslator(),
+			new ScoreReader(),
+			{} as RenderContext,
+			new CollisionResolver(new Rect(0, 0, 1000, 1000)),
+			new SpillTracker(),
+			new Gaps([]),
+			{
+				parts: [],
+				partGroups: [],
+				visibility: { showTabs: true, showNotation: true },
+				totalStaves: 1,
+				measureNumbering,
+				textColor: '#000000',
+				staveOffsets: [0],
+				systemStaveOffsets: undefined,
+				voltaLifts: new Map(),
+			},
+		);
+
 	it('shows no measure numbers under none', () => {
-		expect(showsMeasureNumber('none', 0, true)).toBe(false);
+		expect(builder('none').showsMeasureNumber(0, true)).toBe(false);
 	});
 
 	it('numbers only system starts under system', () => {
-		expect(showsMeasureNumber('system', 3, true)).toBe(true);
-		expect(showsMeasureNumber('system', 3, false)).toBe(false);
+		expect(builder('system').showsMeasureNumber(3, true)).toBe(true);
+		expect(builder('system').showsMeasureNumber(3, false)).toBe(false);
 	});
 
 	it('numbers every measure under every', () => {
-		expect(showsMeasureNumber('every', 3, false)).toBe(true);
+		expect(builder('every').showsMeasureNumber(3, false)).toBe(true);
 	});
 
 	it('numbers every Nth measure plus system starts under every-N', () => {
-		expect(showsMeasureNumber('every-2', 2, false)).toBe(true);
-		expect(showsMeasureNumber('every-2', 3, false)).toBe(false);
-		expect(showsMeasureNumber('every-2', 3, true)).toBe(true);
-		expect(showsMeasureNumber('every-3', 3, false)).toBe(true);
-		expect(showsMeasureNumber('every-3', 4, false)).toBe(false);
+		const two = builder('every-2');
+		expect(two.showsMeasureNumber(2, false)).toBe(true);
+		expect(two.showsMeasureNumber(3, false)).toBe(false);
+		expect(two.showsMeasureNumber(3, true)).toBe(true);
+		const three = builder('every-3');
+		expect(three.showsMeasureNumber(3, false)).toBe(true);
+		expect(three.showsMeasureNumber(4, false)).toBe(false);
 	});
 });

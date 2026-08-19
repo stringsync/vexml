@@ -29,26 +29,6 @@ export interface SpillStave {
 }
 
 /*
- * Record `extent` px of spill against every x column `rect` covers, keeping the worst per
- * column. Nothing is stored for a non-positive extent — content that stays inside its own
- * staff lines has nothing for a neighbour to clear, and an absent column reads as 0.
- */
-export function bandSpill(
-	columns: Map<number, number>,
-	rect: Rect,
-	extent: number,
-): void {
-	const first = Math.floor(rect.x / SPILL_COLUMN);
-	const last = Math.floor(rect.right / SPILL_COLUMN);
-	if (extent <= 0 || !Number.isFinite(first) || !Number.isFinite(last)) {
-		return;
-	}
-	for (let column = first; column <= last; column++) {
-		columns.set(column, Math.max(columns.get(column) ?? 0, extent));
-	}
-}
-
-/*
  * The vertical measurements one draw pass takes so the next can make room: per stave row,
  * how far content spilled past its staff lines (opening the stave gaps); per system, how
  * far content rose above the system's own top (reserving headroom against the system
@@ -78,8 +58,8 @@ export class SpillTracker {
 		rect: Rect,
 	): void {
 		const spill = this.spillOf(system, row, stave);
-		bandSpill(spill.rise, rect, stave.getYForLine(0) - rect.y);
-		bandSpill(spill.drop, rect, rect.bottom - stave.getBottomLineY());
+		this.bandSpill(spill.rise, rect, stave.getYForLine(0) - rect.y);
+		this.bandSpill(spill.drop, rect, rect.bottom - stave.getBottomLineY());
 	}
 
 	/*
@@ -90,7 +70,7 @@ export class SpillTracker {
 	 */
 	recordRise(system: number, row: number, stave: SpillStave, rect: Rect): void {
 		const spill = this.spillOf(system, row, stave);
-		bandSpill(spill.rise, rect, stave.getYForLine(0) - rect.y);
+		this.bandSpill(spill.rise, rect, stave.getYForLine(0) - rect.y);
 	}
 
 	/* The below-stave mirror of {@link recordRise}: how far a below-stave annotation (a
@@ -98,7 +78,7 @@ export class SpillTracker {
 	 * the gap to the stave BELOW wide enough to hold it. */
 	recordDrop(system: number, row: number, stave: SpillStave, rect: Rect): void {
 		const spill = this.spillOf(system, row, stave);
-		bandSpill(spill.drop, rect, rect.bottom - stave.getBottomLineY());
+		this.bandSpill(spill.drop, rect, rect.bottom - stave.getBottomLineY());
 	}
 
 	/* Seed a row's spill record even when nothing is drawn on it, so the re-spacing pass
@@ -173,5 +153,25 @@ export class SpillTracker {
 			rows.set(row, spill);
 		}
 		return spill;
+	}
+
+	/*
+	 * Record `extent` px of spill against every x column `rect` covers, keeping the worst per
+	 * column. Nothing is stored for a non-positive extent — content that stays inside its own
+	 * staff lines has nothing for a neighbour to clear, and an absent column reads as 0.
+	 */
+	private bandSpill(
+		columns: Map<number, number>,
+		rect: Rect,
+		extent: number,
+	): void {
+		const first = Math.floor(rect.x / SPILL_COLUMN);
+		const last = Math.floor(rect.right / SPILL_COLUMN);
+		if (extent <= 0 || !Number.isFinite(first) || !Number.isFinite(last)) {
+			return;
+		}
+		for (let column = first; column <= last; column++) {
+			columns.set(column, Math.max(columns.get(column) ?? 0, extent));
+		}
 	}
 }

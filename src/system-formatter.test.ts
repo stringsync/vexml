@@ -16,7 +16,7 @@ import type { LyricPlacer } from './lyric-placer';
 import type { NoteTranslator } from './note-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import { SpillTracker } from './spill-tracker';
-import { alignBegModifiers, SystemFormatter } from './system-formatter';
+import { SystemFormatter } from './system-formatter';
 import { FakeTechnicalMark } from './technical-mark/fake-technical-mark';
 
 describe('SystemFormatter', () => {
@@ -187,7 +187,7 @@ describe('SystemFormatter', () => {
 	it('squares repeats and time signatures to their own widest x and returns the repeat x', () => {
 		const repeats = [_repeat(10), _repeat(25)];
 		const sigs = [timeSig(30), timeSig(22)];
-		const x = alignBegModifiers([
+		const x = makeFormatter().alignBegModifiers([
 			fakeStave([repeats[0], sigs[0]]),
 			fakeStave([repeats[1], sigs[1]]),
 		]);
@@ -199,7 +199,7 @@ describe('SystemFormatter', () => {
 	it('returns null and leaves a lone time signature alone without an opening repeat', () => {
 		const sig = timeSig(30);
 		// A plain barline is not an opening repeat, so it grouped nothing.
-		const x = alignBegModifiers([
+		const x = makeFormatter().alignBegModifiers([
 			fakeStave([_repeat(10, Barline.type.SINGLE), sig]),
 		]);
 		expect(x).toBeNull();

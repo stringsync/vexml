@@ -62,23 +62,6 @@ export class Toggle {
 	}
 }
 
-/* Replay a captured glyph (a notehead or a tab fret) recolored on the overlay: vexflow's own
- * text, font, and left/alphabetic baseline, exactly as it engraved it, so the color stamp
- * overlays the original precisely instead of being centered by a different rule. */
-export function stampGlyph(
-	ctx: CanvasRenderingContext2D,
-	glyph: NoteGlyph,
-	color: string,
-): void {
-	ctx.save();
-	ctx.fillStyle = color;
-	ctx.font = glyph.font;
-	ctx.textAlign = 'left';
-	ctx.textBaseline = 'alphabetic';
-	ctx.fillText(glyph.text, glyph.x, glyph.y);
-	ctx.restore();
-}
-
 /* Shared base for every element: the score-space rect (mapped to the page on demand through the
  * Viewport), the `type` discriminant, and provenance back to the mutable mdom nodes that caused
  * it. The default color is a filled ellipse over the box — the fallback for an element with no
@@ -116,5 +99,22 @@ export abstract class Element implements Decoratable {
 
 	getBoundingClientRect(): DOMRect {
 		return this.viewport.clientRectOf(this.rect);
+	}
+
+	/* Replay a captured glyph (a notehead or a tab fret) recolored on the overlay: vexflow's own
+	 * text, font, and left/alphabetic baseline, exactly as it engraved it, so the color stamp
+	 * overlays the original precisely instead of being centered by a different rule. */
+	protected stampGlyph(
+		ctx: CanvasRenderingContext2D,
+		glyph: NoteGlyph,
+		color: string,
+	): void {
+		ctx.save();
+		ctx.fillStyle = color;
+		ctx.font = glyph.font;
+		ctx.textAlign = 'left';
+		ctx.textBaseline = 'alphabetic';
+		ctx.fillText(glyph.text, glyph.x, glyph.y);
+		ctx.restore();
 	}
 }

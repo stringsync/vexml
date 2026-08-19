@@ -6,9 +6,9 @@ import { ScrollController } from './scroll-controller';
 // Longer than SCROLL_DURATION_MS (350) so an in-flight tween has fully landed.
 const settle = () => new Promise((r) => setTimeout(r, 500));
 
-// Every target below is a narrow rect at x=0, which is always visible horizontally (left stays 0),
-// so the offsets are all vertical: top lands at the rect's y minus the 16px of headroom
-// scrollOffsetFor leaves above it.
+// Unless a test says otherwise, the target is a narrow rect at x=0, always visible horizontally
+// (left stays 0), so the offsets are all vertical: top lands at the rect's y minus the 16px of
+// headroom the controller leaves above it.
 describe('ScrollController', () => {
 	let host: FakeScrollHost;
 	let scroller: ScrollController;
@@ -21,6 +21,17 @@ describe('ScrollController', () => {
 	it('passes the axis-resolved offset straight through on an instant scroll', () => {
 		scroller.scrollIntoView(new Rect(150, 10, 10, 10));
 		expect(host.calls).toEqual([{ left: 60, top: -6, behavior: undefined }]);
+	});
+
+	it('leaves x alone when the target is already visible horizontally', () => {
+		scroller.scrollIntoView(new Rect(50, 50, 10, 10));
+		expect(host.last()).toEqual({ left: 0, top: 34, behavior: undefined });
+	});
+
+	it('scrolls x back to the near edge when the target is off to the left', () => {
+		host.scroll = { left: 50, top: 0 };
+		scroller.scrollIntoView(new Rect(20, 10, 10, 10));
+		expect(host.last()).toEqual({ left: 20, top: -6, behavior: undefined });
 	});
 
 	it('tweens over several instant frames and lands exactly on the target', async () => {

@@ -1,6 +1,6 @@
 import type { Note as MNote } from '@stringsync/mdom';
 import type { Decorations } from './decoration/decoration';
-import { Element, type Highlightable, stampGlyph, Toggle } from './element';
+import { Element, type Highlightable, Toggle } from './element';
 import type { Rect } from './geometry';
 import type { NoteGlyph } from './geometry-collector';
 import type { Note } from './note';
@@ -46,7 +46,7 @@ export class TabPosition extends Element implements Highlightable {
 	 * to recolor — draw nothing rather than stamping a phantom ellipse blip on an empty string. */
 	override drawColor(ctx: CanvasRenderingContext2D, color: string): void {
 		if (this.opts.glyph) {
-			stampGlyph(ctx, this.opts.glyph, color);
+			this.stampGlyph(ctx, this.opts.glyph, color);
 		}
 	}
 

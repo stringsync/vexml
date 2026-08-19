@@ -54,7 +54,6 @@ import { SpannerResolver } from './spanner-resolver';
 import { SpillTracker, type StaveSpill } from './spill-tracker';
 import { StaveBuilder, type StaveColumn } from './stave-builder';
 import {
-	alignBegModifiers,
 	type FormatColumn,
 	type PendingStave,
 	SystemFormatter,
@@ -735,7 +734,7 @@ export class DrawPass {
 		// The whole column exists now, so the modifiers that belong to the measure rather
 		// than to one stave — the opening repeat, the time signature — can be squared up
 		// across its staves before any of them is committed to the canvas.
-		this.begRepeatX = alignBegModifiers(this.columnStaves);
+		this.begRepeatX = this.systemFormatter.alignBegModifiers(this.columnStaves);
 		for (const stave of this.columnStaves) {
 			stave.setContext(this.context).draw();
 			this.connectorDrawer.drawCustomBarline(stave, this.connectorColumn());
@@ -901,7 +900,7 @@ export class DrawPass {
 		);
 		const { stave } = built;
 		// Queued, not drawn: the column's staves are drawn together once they all exist, so a
-		// repeat sign can be aligned across them first (see alignBegModifiers).
+		// repeat sign can be aligned across them first (see SystemFormatter.alignBegModifiers).
 		this.columnStaves.push(stave);
 		if (built.volta) {
 			this.columnVoltaBase = built.volta.base;
