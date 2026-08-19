@@ -38,6 +38,7 @@ import {
 	WORDS_NOTE_CLEARANCE,
 	WORDS_Y_OFFSET,
 } from './constants';
+import { DynamicGlyphs } from './dynamic-glyphs';
 import type { GeometryCollector } from './geometry-collector';
 import { MetronomeGlyph, type TempoModulation } from './metronome-glyph';
 import type {
@@ -220,6 +221,10 @@ export class DirectionPlacer {
 		{ text: string; measure: number }
 	>();
 
+	// The one dependency this builds rather than takes: it is a pure spelling table with no
+	// state, and nothing about a render varies it.
+	private readonly dynamics = new DynamicGlyphs();
+
 	constructor(
 		private readonly context: RenderContext,
 		private readonly reader: ScoreReader,
@@ -297,7 +302,7 @@ export class DirectionPlacer {
 		for (const d of column.dynamics) {
 			const placed = this.drawWords(
 				d.stave,
-				d.glyph ? this.reader.dynamicGlyphs(d.text) : d.text,
+				d.glyph ? this.dynamics.spell(d.text) : d.text,
 				d.anchor,
 				d.placement,
 				d.glyph

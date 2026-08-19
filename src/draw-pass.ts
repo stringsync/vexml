@@ -56,6 +56,7 @@ import type { SpannerBuilder } from './spanner-builder';
 import { SpannerResolver } from './spanner-resolver';
 import { SpillTracker, type StaveSpill } from './spill-tracker';
 import { StaveBuilder, type StaveColumn } from './stave-builder';
+import type { StavePlan } from './stave-plan';
 import {
 	type FormatColumn,
 	type PendingStave,
@@ -247,6 +248,7 @@ export class DrawPass {
 		chords: ChordTranslator,
 		tab: TabTranslator,
 		private readonly signatures: SignatureTranslator,
+		private readonly staves: StavePlan,
 		barlines: BarlineTranslator,
 		private readonly reader: ScoreReader,
 		readonly spanners: SpannerBuilder,
@@ -293,17 +295,13 @@ export class DrawPass {
 		// written as two parts, and it's bracketed as one (see partsPairTabWithNotation), so
 		// its barline runs through the pair too — the barline run has to agree with what the
 		// connector groups, or the bracket says "one instrument" while the gap says "two".
-		const barlineBreaks = this.reader.partsPairTabWithNotation(this.parts, {
-			showTabs: this.showTabs,
-			showNotation: this.showNotation,
-		})
+		const barlineBreaks = this.staves.partsPairTabWithNotation(this.parts)
 			? new Set<number>()
 			: this.reader.barlineBreaks(this.score);
-		this.connectorDrawer = new ConnectorDrawer(context, reader, {
+		this.connectorDrawer = new ConnectorDrawer(context, reader, this.staves, {
 			parts: this.parts,
 			partGroups: this.partGroups,
 			barlineBreaks,
-			visibility: { showTabs: this.showTabs, showNotation: this.showNotation },
 			totalStaves: this.totalStaves,
 			labelIndent: this.labelIndent,
 			partLabelIndent,
@@ -337,6 +335,7 @@ export class DrawPass {
 		this.staveBuilder = new StaveBuilder(
 			this.signatures,
 			reader,
+			this.staves,
 			context,
 			this.collisionResolver,
 			this.spill,
@@ -344,10 +343,6 @@ export class DrawPass {
 			{
 				parts: this.parts,
 				partGroups: this.partGroups,
-				visibility: {
-					showTabs: this.showTabs,
-					showNotation: this.showNotation,
-				},
 				totalStaves: this.totalStaves,
 				measureNumbering,
 				textColor: this.textColor,
@@ -536,10 +531,7 @@ export class DrawPass {
 			// The staves this part actually renders: with showTabs/showNotation off, its
 			// tab/notation staves are dropped. staveRow indexes into staveOffsets, which the
 			// layout planner built from this same visible set, so the two stay aligned.
-			const staves = this.reader.visibleStaffNumbers(part, {
-				showTabs: this.showTabs,
-				showNotation: this.showNotation,
-			});
+			const staves = this.staves.visibleNumbers(part);
 			const measure = part.measures[m];
 			if (!measure) {
 				this.staveRow += staves.length;
@@ -685,10 +677,7 @@ export class DrawPass {
 			// A part's own staves are joined at each system start by the symbol named in
 			// <part-symbol> (brace by default; bracket for guitar notation+tab pairs).
 			// 'none' suppresses the connector entirely.
-			const symbol = this.reader.partSymbol(part, {
-				showTabs: this.showTabs,
-				showNotation: this.showNotation,
-			});
+			const symbol = this.staves.symbolOf(part);
 			if (
 				partTop &&
 				partBottom &&
@@ -944,7 +933,7 @@ export class DrawPass {
 					stave as TabStave,
 					this.staveRow,
 					voices,
-					this.reader.stringTuning(part, staffNumber),
+					this.staves.tuningOf(part, staffNumber),
 				),
 			);
 			for (const voice of voices) {

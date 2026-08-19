@@ -8,6 +8,7 @@ import { ScoreReader } from './score-reader';
 import { SignatureTranslator } from './signature-translator';
 import { SpillTracker } from './spill-tracker';
 import { StaveBuilder } from './stave-builder';
+import { StavePlan } from './stave-plan';
 
 describe('StaveBuilder', () => {
 	// Measure numbering is decided from the configured mode alone, so a builder over an empty
@@ -16,6 +17,7 @@ describe('StaveBuilder', () => {
 		new StaveBuilder(
 			new SignatureTranslator(),
 			new ScoreReader(),
+			new StavePlan({ showTabs: true, showNotation: true }),
 			{} as RenderContext,
 			new CollisionResolver(new Rect(0, 0, 1000, 1000)),
 			new SpillTracker(),
@@ -23,7 +25,6 @@ describe('StaveBuilder', () => {
 			{
 				parts: [],
 				partGroups: [],
-				visibility: { showTabs: true, showNotation: true },
 				totalStaves: 1,
 				measureNumbering,
 				textColor: '#000000',

@@ -18,9 +18,10 @@ import {
 } from './constants';
 import { CustomKeySignature } from './custom-key-signature';
 import type { Gaps } from './gaps';
-import type { PartGroup, ScoreReader, StaveVisibility } from './score-reader';
+import type { PartGroup, ScoreReader } from './score-reader';
 import type { SignatureTranslator } from './signature-translator';
 import type { SpillTracker } from './spill-tracker';
+import type { StavePlan } from './stave-plan';
 
 /*
  * One measure column's stave inputs, snapshotted from the measure loop at each build:
@@ -79,9 +80,6 @@ export interface StaveBuilderOptions {
 	parts: Part[];
 	/** The <part-group> spans from the <part-list>, outermost first. Fixed for the score. */
 	partGroups: PartGroup[];
-	/** Which kinds of stave the render shows, forwarded to every reader query so the
-	 * staves agree with the rows actually drawn. */
-	visibility: StaveVisibility;
 	totalStaves: number;
 	/** When to print measure numbers above the staff. */
 	measureNumbering: MeasureNumbering;
@@ -107,7 +105,6 @@ export interface StaveBuilderOptions {
 export class StaveBuilder {
 	private readonly parts: Part[];
 	private readonly partGroups: PartGroup[];
-	private readonly visibility: StaveVisibility;
 	private readonly totalStaves: number;
 	private readonly measureNumbering: MeasureNumbering;
 	private readonly textColor: string;
@@ -124,6 +121,7 @@ export class StaveBuilder {
 	constructor(
 		private readonly signatures: SignatureTranslator,
 		private readonly reader: ScoreReader,
+		private readonly staves: StavePlan,
 		private readonly context: RenderContext,
 		private readonly collisionResolver: CollisionResolver,
 		private readonly spill: SpillTracker,
@@ -132,7 +130,6 @@ export class StaveBuilder {
 	) {
 		this.parts = opts.parts;
 		this.partGroups = opts.partGroups;
-		this.visibility = opts.visibility;
 		this.totalStaves = opts.totalStaves;
 		this.measureNumbering = opts.measureNumbering;
 		this.textColor = opts.textColor;
@@ -188,7 +185,7 @@ export class StaveBuilder {
 
 		// A TAB clef draws on a TabStave whose line count matches the
 		// instrument's strings (<staff-lines>: 6 for guitar, 4 for bass).
-		const isTab = this.reader.isTabStaff(part, staffNumber);
+		const isTab = this.staves.isTab(part, staffNumber);
 		const tabLines = isTab ? measure.getStaveLines(staffNumber) : 0;
 		const staveLines = measure.getStaveLines(staffNumber);
 		// Half the lines a reduced stave drops come off the top. The whole part of that says
@@ -411,9 +408,8 @@ export class StaveBuilder {
 		// (measureNumbered), on the top stave.
 		const numberOccluded =
 			column.isSystemStart &&
-			((visibleCount > 1 &&
-				this.reader.partSymbol(part, this.visibility) === 'bracket') ||
-				this.reader.partsPairTabWithNotation(this.parts, this.visibility) ||
+			((visibleCount > 1 && this.staves.symbolOf(part) === 'bracket') ||
+				this.staves.partsPairTabWithNotation(this.parts) ||
 				this.partGroups.some(
 					(group) => group.symbol === 'bracket' && group.fromPart === 0,
 				));

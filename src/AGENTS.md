@@ -38,8 +38,10 @@ stages in order.
 Two files cut across the draw stage and are worth knowing before anything else:
 
 - `score-reader.ts` — the only place that answers *what does the MusicXML say*
-  (clefs, keys, times, tunings, part groups, repeats, directions, endings).
-  Nothing else should be reading mdom attributes directly.
+  (clefs, keys, times, part groups, repeats, directions, endings). Nothing else
+  should be reading mdom attributes directly. Questions that need the caller's
+  config as well as the document are NOT reads and live next door:
+  `stave-plan.ts` answers which staves a part shows and which are tablature.
 - The translators — one mdom chord to vexflow objects. If a single note looks
   wrong, it is one of these:
   - `chord-translator.ts` — the StaveNote itself: keys, noteheads,
@@ -57,7 +59,7 @@ Two files cut across the draw stage and are worth knowing before anything else:
 
 ## Staves, measures, and the frame
 
-- **Stave, clef, key signature, time signature** — `stave-builder.ts`, `signature-translator.ts`, `score-reader.ts`
+- **Stave, clef, key signature, time signature** — `stave-builder.ts`, `signature-translator.ts`, `custom-key-signature.ts`, `score-reader.ts`
 - **Mid-measure clef changes, mid-measure barlines** — `score-reader.ts` (`midClefsOf`, `midBarlinesOf`), `note-translator.ts`, `signature-translator.ts`, `barline-translator.ts`, `layout-planner.ts`
 - **Barlines, repeat signs, volta (ending) brackets** — `barline-translator.ts`, `stave-builder.ts`, `connector-drawer.ts`, `score-reader.ts`
 - **Measure numbers** — `stave-builder.ts` (`showsMeasureNumber`)
@@ -118,7 +120,7 @@ Two files cut across the draw stage and are worth knowing before anything else:
 
 ## Text and marks around the stave
 
-- **Dynamics, words directions, rehearsal marks, segno/coda navigation, figured bass** — `direction-placer.ts`, `score-reader.ts`
+- **Dynamics, words directions, rehearsal marks, segno/coda navigation, figured bass** — `direction-placer.ts`, `score-reader.ts`, `dynamic-glyphs.ts`
 - **Tempo marks and metronome marks** — `direction-placer.ts`, `metronome-glyph.ts` (the note-group form)
 - **Chord symbols (`<harmony>`)** — `direction-placer.ts`
 - **Chord diagrams (fret boxes)** — `chord-diagram-glyph.ts` (drawing), `direction-placer.ts` (placement), `chord-diagram.ts` (the element)
@@ -128,7 +130,7 @@ Two files cut across the draw stage and are worth knowing before anything else:
 ## Tablature
 
 - **Tab staves, tunings, whether a part is tab** — `score-reader.ts`, `stave-builder.ts`
-- **Fret numbers, tab stems, bends** — `tab-translator.ts`, `voice-builder.ts`
+- **Fret numbers, tab stems, bends** — `tab-translator.ts`, `voice-builder.ts`, `stave-plan.ts` (which staves are tab)
 - **Tab note geometry for the hit index** — `geometry-collector.ts`
 - **The `TabPosition` a caller gets back** — `tab-position.ts`
 

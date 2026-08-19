@@ -13,6 +13,7 @@ import {
 	CONNECTOR_VERTICAL_OVERHANG,
 } from './constants';
 import type { ScoreReader } from './score-reader';
+import type { StavePlan } from './stave-plan';
 
 describe('ConnectorDrawer', () => {
 	type FillRect = { x: number; y: number; w: number; h: number };
@@ -58,7 +59,7 @@ describe('ConnectorDrawer', () => {
 
 	const makeDrawer = (
 		overrides: Partial<ConnectorDrawerOptions> = {},
-		reader: Partial<ScoreReader> = {},
+		staves: Partial<StavePlan> = {},
 	) => {
 		// Captures every filled bar so a custom barline's strokes are assertable.
 		const rects: FillRect[] = [];
@@ -72,12 +73,12 @@ describe('ConnectorDrawer', () => {
 		} as unknown as RenderContext;
 		const drawer = new ConnectorDrawer(
 			context,
-			reader as unknown as ScoreReader,
+			{} as unknown as ScoreReader,
+			staves as unknown as StavePlan,
 			{
 				parts: [],
 				partGroups: [],
 				barlineBreaks: new Set(),
-				visibility: { showTabs: true, showNotation: true },
 				totalStaves: 2,
 				labelIndent: 0,
 				partLabelIndent: 0,
@@ -232,8 +233,8 @@ describe('ConnectorDrawer', () => {
 			{ parts: [{} as Part] },
 			{
 				partsPairTabWithNotation: () => false,
-				visibleStaffNumbers: () => ['1', '2'],
-				partSymbol: () => 'brace',
+				visibleNumbers: () => ['1', '2'],
+				symbolOf: () => 'brace',
 			},
 		);
 		const extent = drawer.connectorExtent(
@@ -257,8 +258,8 @@ describe('ConnectorDrawer', () => {
 			{ parts: [{} as Part] },
 			{
 				partsPairTabWithNotation: () => false,
-				visibleStaffNumbers: () => ['1'],
-				partSymbol: () => 'brace',
+				visibleNumbers: () => ['1'],
+				symbolOf: () => 'brace',
 			},
 		);
 		expect(

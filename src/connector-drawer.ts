@@ -9,7 +9,8 @@ import {
 	LABEL_GAP,
 	PART_GROUP_STEP,
 } from './constants';
-import type { PartGroup, ScoreReader, StaveVisibility } from './score-reader';
+import type { PartGroup, ScoreReader } from './score-reader';
+import type { StavePlan } from './stave-plan';
 
 /*
  * The stroke pattern of each <bar-style> vexflow has no type for, as [offset, width] pairs
@@ -89,7 +90,6 @@ export interface ConnectorDrawerOptions {
 	barlineBreaks: ReadonlySet<number>;
 	/** Which kinds of stave the render shows, forwarded to every reader query so the
 	 * connectors agree with the stave rows actually drawn. */
-	visibility: StaveVisibility;
 	totalStaves: number;
 	/** The first system's reserved left indents (see ScoreLayout): the whole label column,
 	 * and the inner band the part labels print in — group names go outside that. */
@@ -110,7 +110,6 @@ export class ConnectorDrawer {
 	private readonly parts: Part[];
 	private readonly partGroups: PartGroup[];
 	private readonly barlineBreaks: ReadonlySet<number>;
-	private readonly visibility: StaveVisibility;
 	private readonly totalStaves: number;
 	private readonly labelIndent: number;
 	private readonly partLabelIndent: number;
@@ -120,13 +119,13 @@ export class ConnectorDrawer {
 
 	constructor(
 		private readonly context: RenderContext,
-		private readonly reader: ScoreReader,
+		readonly _reader: ScoreReader,
+		private readonly staves: StavePlan,
 		opts: ConnectorDrawerOptions,
 	) {
 		this.parts = opts.parts;
 		this.partGroups = opts.partGroups;
 		this.barlineBreaks = opts.barlineBreaks;
-		this.visibility = opts.visibility;
 		this.totalStaves = opts.totalStaves;
 		this.labelIndent = opts.labelIndent;
 		this.partLabelIndent = opts.partLabelIndent;
@@ -150,7 +149,7 @@ export class ConnectorDrawer {
 					.setType('singleLeft')
 					.setContext(this.context)
 					.draw();
-				if (this.reader.partsPairTabWithNotation(this.parts, this.visibility)) {
+				if (this.staves.partsPairTabWithNotation(this.parts)) {
 					// The bracket's x comes entirely from its top stave; nudge that 4px left
 					// so the bracket sits just outside the system line with a small gap, then
 					// restore.
@@ -322,16 +321,13 @@ export class ConnectorDrawer {
 		if (!column.isSystemStart || !column.systemTop || !column.systemBottom) {
 			return null;
 		}
-		let bracket = this.reader.partsPairTabWithNotation(
-			this.parts,
-			this.visibility,
-		);
+		let bracket = this.staves.partsPairTabWithNotation(this.parts);
 		let brace = false;
 		for (const part of this.parts) {
-			if (this.reader.visibleStaffNumbers(part, this.visibility).length <= 1) {
+			if (this.staves.visibleNumbers(part).length <= 1) {
 				continue;
 			}
-			const symbol = this.reader.partSymbol(part, this.visibility);
+			const symbol = this.staves.symbolOf(part);
 			bracket ||= symbol === 'bracket';
 			brace ||= symbol === 'brace';
 		}

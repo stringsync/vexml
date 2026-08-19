@@ -32,6 +32,7 @@ import type { Gaps } from './gaps';
 import type { NoteTranslator } from './note-translator';
 import type { ScoreReader, StaffVoice } from './score-reader';
 import type { MidClefSpec, SignatureTranslator } from './signature-translator';
+import type { StavePlan } from './stave-plan';
 import type { TabTranslator } from './tab-translator';
 
 /** A measure's placed box within its system. */
@@ -114,6 +115,7 @@ export class LayoutPlanner {
 		private readonly translator: NoteTranslator,
 		private readonly tab: TabTranslator,
 		private readonly signatures: SignatureTranslator,
+		private readonly staves: StavePlan,
 		private readonly reader: ScoreReader,
 		private readonly configuredGaps: Gaps,
 	) {}
@@ -364,7 +366,7 @@ export class LayoutPlanner {
 				if (lead && (lead.measureBeat ?? 0) > firstOnset + EPSILON) {
 					continue;
 				}
-				if (!this.reader.isTabStaff(part, staffNumber)) {
+				if (!this.staves.isTab(part, staffNumber)) {
 					continue;
 				}
 				pad = Math.max(pad, (text.length * WORDS_CHAR_WIDTH) / 2);
@@ -417,15 +419,10 @@ export class LayoutPlanner {
 			1,
 			...parts.map((part) => part.measures.length),
 		);
-		// With showTabs/showNotation off, staves of the hidden kind are dropped everywhere —
-		// layout must iterate the same visible staves the draw pass does so offsets and
-		// totalStaves stay aligned.
-		const { showTabs, showNotation } = config;
+		// Every stave count here goes through the StavePlan, so layout iterates the same
+		// visible staves the draw pass does and their offsets stay aligned.
 		const totalStaves = parts.reduce(
-			(sum, part) =>
-				sum +
-				this.reader.visibleStaffNumbers(part, { showTabs, showNotation })
-					.length,
+			(sum, part) => sum + this.staves.visibleNumbers(part).length,
 			0,
 		);
 		// Precompute each stave's y-offset within a system: a within-part gap after
@@ -433,15 +430,12 @@ export class LayoutPlanner {
 		const staveOffsets: number[] = [];
 		let offset = 0;
 		for (const part of parts) {
-			const staves = this.reader.visibleStaffNumbers(part, {
-				showTabs,
-				showNotation,
-			});
+			const staves = this.staves.visibleNumbers(part);
 			// The wider within-part gap exists so a connector-joined group reads as one
 			// instrument. A part whose staves carry no connector (two tab staves, an
 			// explicit <part-symbol>none) isn't such a group, so its staves sit at the
 			// same even pitch as the parts around them.
-			const intra = this.reader.partSymbol(part, { showTabs, showNotation })
+			const intra = this.staves.symbolOf(part)
 				? INTRA_PART_SPACING
 				: INTER_PART_SPACING;
 			staves.forEach((_, s) => {
@@ -516,10 +510,7 @@ export class LayoutPlanner {
 				if (!measure) {
 					continue;
 				}
-				for (const staffNumber of this.reader.visibleStaffNumbers(part, {
-					showTabs,
-					showNotation,
-				})) {
+				for (const staffNumber of this.staves.visibleNumbers(part)) {
 					const clef = measure.getClef(staffNumber);
 					const voices = this.reader.staffVoices(measure.voices, staffNumber);
 					if (voices.length > 0) {
@@ -529,8 +520,8 @@ export class LayoutPlanner {
 								? this.signatures.vexflowClef(clef.sign, clef.line)
 								: 'treble',
 							meterFloor: this.reader.meterFloor(measure, staffNumber),
-							isTab: this.reader.isTabStaff(part, staffNumber),
-							tuning: this.reader.stringTuning(part, staffNumber),
+							isTab: this.staves.isTab(part, staffNumber),
+							tuning: this.staves.tuningOf(part, staffNumber),
 							barlines: this.reader.midBarlinesOf(measure),
 							midClefs: this.signatures.midClefSpecs(
 								this.reader.midClefsOf(measure, staffNumber),
@@ -582,8 +573,8 @@ export class LayoutPlanner {
 			// (staves_different_keys), so a part whose first stave is in C still needs the
 			// key's width budgeted when its second stave is not.
 			const hasKey = parts.some((part) =>
-				this.reader
-					.visibleStaffNumbers(part, { showTabs, showNotation })
+				this.staves
+					.visibleNumbers(part)
 					.some(
 						(staffNumber) =>
 							this.reader.keyIdentity(
@@ -601,9 +592,9 @@ export class LayoutPlanner {
 		const clefChangesAt = (m: number) =>
 			m > 0 &&
 			parts.some((part) =>
-				this.reader.visibleStaffNumbers(part, { showTabs, showNotation }).some(
+				this.staves.visibleNumbers(part).some(
 					(staffNumber) =>
-						!this.reader.isTabStaff(part, staffNumber) &&
+						!this.staves.isTab(part, staffNumber) &&
 						this.signatures.vexflowClefSpec(
 							part.measures[m]?.getClef(staffNumber) ?? null,
 						) !==

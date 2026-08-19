@@ -18,6 +18,7 @@ import { SequenceFactory } from './sequence-factory';
 import { SignatureTranslator } from './signature-translator';
 import { SpannerBuilder } from './spanner-builder';
 import { SpillResolver } from './spill-resolver';
+import { StavePlan } from './stave-plan';
 import { TabTranslator } from './tab-translator';
 
 // A headless stage: the Host fake plus the two DOM nodes RenderStage adds. The empty-parts path
@@ -58,6 +59,7 @@ describe('ScoreRenderer', () => {
 		const durations = new DurationTranslator();
 		const barlines = new BarlineTranslator();
 		const signatures = new SignatureTranslator();
+		const staves = new StavePlan({ showTabs: true, showNotation: true });
 		const tab = new TabTranslator(durations);
 		const chords = new ChordTranslator(durations, new NotationTranslator());
 		const translator = new NoteTranslator(chords, durations, barlines);
@@ -68,13 +70,14 @@ describe('ScoreRenderer', () => {
 			stage,
 			fontLoader,
 			parser,
-			new LayoutPlanner(translator, tab, signatures, reader, gaps),
+			new LayoutPlanner(translator, tab, signatures, staves, reader, gaps),
 			new ScoreDrawer(
 				config,
 				translator,
 				chords,
 				tab,
 				signatures,
+				staves,
 				barlines,
 				reader,
 				new SpannerBuilder(),

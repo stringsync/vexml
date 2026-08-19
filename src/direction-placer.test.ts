@@ -21,6 +21,7 @@ import {
 	type DirectionLineTask,
 	DirectionPlacer,
 } from './direction-placer';
+import { DynamicGlyphs } from './dynamic-glyphs';
 import { GeometryCollector } from './geometry-collector';
 import { type DirectionLineSpan, ScoreReader } from './score-reader';
 import { SpillTracker } from './spill-tracker';
@@ -309,7 +310,7 @@ describe('DirectionPlacer', () => {
 				],
 			}),
 		);
-		const glyph = new ScoreReader().dynamicGlyphs('p');
+		const glyph = new DynamicGlyphs().spell('p');
 		expect(texts).toEqual([
 			{
 				text: glyph,

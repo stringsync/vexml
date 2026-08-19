@@ -22,6 +22,7 @@ import type { ScoreReader } from './score-reader';
 import type { SignatureTranslator } from './signature-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillResolver } from './spill-resolver';
+import type { StavePlan } from './stave-plan';
 import type { TabTranslator } from './tab-translator';
 
 /* Everything the draw pass emits for the index, in score space (crop already applied). */
@@ -44,6 +45,7 @@ export class ScoreDrawer {
 		private chords: ChordTranslator,
 		private tab: TabTranslator,
 		private signatures: SignatureTranslator,
+		private staves: StavePlan,
 		private barlines: BarlineTranslator,
 		private reader: ScoreReader,
 		private spanners: SpannerBuilder,
@@ -118,6 +120,7 @@ export class ScoreDrawer {
 				this.chords,
 				this.tab,
 				this.signatures,
+				this.staves,
 				this.barlines,
 				this.reader,
 				this.spanners,

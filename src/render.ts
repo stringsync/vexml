@@ -24,6 +24,7 @@ import { SequenceFactory } from './sequence-factory';
 import { SignatureTranslator } from './signature-translator';
 import { SpannerBuilder } from './spanner-builder';
 import { SpillResolver } from './spill-resolver';
+import { StavePlan } from './stave-plan';
 import { TabTranslator } from './tab-translator';
 
 /*
@@ -67,6 +68,10 @@ export function render(
 	const durations = new DurationTranslator();
 	const barlines = new BarlineTranslator();
 	const signatures = new SignatureTranslator();
+	const staves = new StavePlan({
+		showTabs: resolved.showTabs,
+		showNotation: resolved.showNotation,
+	});
 	const tab = new TabTranslator(durations, resolved.tabStemPlacement);
 	const chords = new ChordTranslator(durations, new NotationTranslator());
 	// ONE translator instance shared by layout and draw: both must build identical vexflow
@@ -79,13 +84,14 @@ export function render(
 		stage,
 		new DefaultFontLoader(),
 		new DefaultScoreParser(),
-		new LayoutPlanner(translator, tab, signatures, reader, gaps),
+		new LayoutPlanner(translator, tab, signatures, staves, reader, gaps),
 		new ScoreDrawer(
 			resolved,
 			translator,
 			chords,
 			tab,
 			signatures,
+			staves,
 			barlines,
 			reader,
 			new SpannerBuilder(),
