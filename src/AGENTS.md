@@ -1,8 +1,8 @@
 # What controls what
 
-A map from a piece of notation (slur, volta, hairpin, fingering) to the files
-that decide how it comes out. Start here, not with grep: the score's
-vocabulary rarely matches the identifier that draws it.
+Where each piece of notation is decided. When something looks wrong on the
+page, start here, not with grep: the score's vocabulary (slur, volta, hairpin,
+fingering) rarely matches the identifier that draws it.
 
 **Keep this file current.** A file added, moved, renamed, or deleted under
 `src/`, or a concept moved between files, updates this map in the same commit.
