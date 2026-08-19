@@ -118,7 +118,7 @@ describe('MeasureSlicer', () => {
 });
 
 /* The three cases below stay hand-written: mdom 0.2.4 has no writer for <staves>, and none
- * for a mid-measure <attributes> change. Convert them once it does — see MDOM-PROMPT.md. */
+ * for a mid-measure <attributes> change. Convert them once it does. */
 const DIVISIONS = '<divisions>1</divisions>';
 const NOTE =
 	'<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>';
