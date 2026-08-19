@@ -22,7 +22,7 @@ export type MidClefSpec = {
 };
 
 /*
- * An mdom Clef, Key and Time into the specs vexflow draws a stave's signature from.
+ * Translates an mdom clef, key and time into the specs vexflow draws a stave's signature from.
  * StaveBuilder engraves these, while the layout and draw passes compare the specs across
  * measures to tell a signature that actually changed from one merely restated.
  */

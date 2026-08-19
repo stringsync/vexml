@@ -221,8 +221,8 @@ class NonArpeggioBracket extends Stroke {
 }
 
 /*
- * An mdom Chord's marks into the vexflow modifiers that hang off the StaveNote built from
- * it: its <articulations>, <ornaments>, <technical> marks, fermata, arpeggio, and its
+ * Translates an mdom chord's marks into the vexflow modifiers that hang off the StaveNote built
+ * from it: its <articulations>, <ornaments>, <technical> marks, fermata, arpeggio, and its
  * <lyric> verses, which are a sibling of <notations> in the file but the same kind of thing
  * here.
  *
