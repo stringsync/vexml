@@ -1,5 +1,5 @@
 import { disposables, type Resource } from 'webappwiz/disposable';
-import type { Rect } from '../geometry';
+import type { Rect } from 'webappwiz/geometry';
 import type { Layer, LayerKind } from '../layer/layer';
 import { ManagedLayer } from '../layer/managed-layer';
 import type { ScrollHost } from '../scroll-host/scroll-host';

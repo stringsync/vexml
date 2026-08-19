@@ -1,5 +1,5 @@
+import { Rect } from 'webappwiz/geometry';
 import type { Decoratable } from '../decoration/decoration';
-import { Rect } from '../geometry';
 import type { DecorationStyle } from './decoration-style';
 
 /* How far a color stamp may reach past its target's rect: the glyph is replayed to overlay the

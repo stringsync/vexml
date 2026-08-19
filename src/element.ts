@@ -4,8 +4,8 @@ import type {
 	Note as MNote,
 	Part as MPart,
 } from '@stringsync/mdom';
+import type { Rect } from 'webappwiz/geometry';
 import type { Decoratable, Decoration } from './decoration/decoration';
-import type { Rect } from './geometry';
 import type { NoteGlyph } from './geometry-collector';
 import type { Viewport } from './viewport/viewport';
 

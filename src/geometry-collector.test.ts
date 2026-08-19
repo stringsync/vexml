@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import type { Chord } from '@stringsync/mdom';
 import { MDOMParser } from '@stringsync/mdom';
 import type { StaveNote, TabNote, TabStave } from 'vexflow';
-import { Rect } from './geometry';
+import { Rect } from 'webappwiz/geometry';
 import { GeometryCollector } from './geometry-collector';
 
 describe('GeometryCollector', () => {

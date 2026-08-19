@@ -1,6 +1,6 @@
 import type { RenderContext, Stave, StaveNote } from 'vexflow';
+import { Rect } from 'webappwiz/geometry';
 import { HAIRPIN_HEIGHT, HAIRPIN_STAVE_GAP } from './constants';
-import { Rect } from './geometry';
 
 /*
  * A crescendo/diminuendo hairpin between two notes, drawn at a fixed gap from the staff on

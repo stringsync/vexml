@@ -1,4 +1,4 @@
-import type { Rect } from '../geometry';
+import type { Rect } from 'webappwiz/geometry';
 
 /* Something with a known box. `rect` is in score space; getBoundingClientRect() maps it to the
  * page through the live scroll/zoom transform (mirrors DOM Element.getBoundingClientRect). */

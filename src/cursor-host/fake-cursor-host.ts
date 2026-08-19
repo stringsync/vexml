@@ -1,5 +1,5 @@
 import { Dispatcher } from 'webappwiz/events';
-import { Rect } from '../geometry';
+import { Rect } from 'webappwiz/geometry';
 import type { CursorHost, CursorHostEventMap } from './cursor-host';
 
 /* Fake fulfilling the CursorHost seam (preferred over mocks); score space maps 1:1 onto client

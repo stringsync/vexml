@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { MDOMParser } from '@stringsync/mdom';
+import { Rect } from 'webappwiz/geometry';
 import { FakeDecorations } from './decoration/fake-decorations';
 import { ElementFactory } from './element-factory';
-import { Rect } from './geometry';
 import type { RawNote } from './geometry-collector';
 import type { Note } from './note';
 import type { RawGeometry } from './score-drawer';

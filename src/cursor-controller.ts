@@ -1,10 +1,10 @@
 import { Disposer, disposables, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
+import { Rect } from 'webappwiz/geometry';
 import type { CursorHost } from './cursor-host/cursor-host';
 import type { CursorView } from './cursor-view/cursor-view';
 import type { Bounded } from './decoration/decoration';
 import type { CursorChangeEvent, CursorEventMap } from './events';
-import { Rect } from './geometry';
 import type { Note } from './note';
 import type { Scroller, ScrollerOptions } from './scroller/scroller';
 import type { Sequence } from './sequence';

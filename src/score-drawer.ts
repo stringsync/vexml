@@ -1,5 +1,6 @@
 import type { Score } from '@stringsync/mdom';
 import { Renderer } from 'vexflow';
+import { Rect } from 'webappwiz/geometry';
 import type { BarlineTranslator } from './barline-translator';
 import type { ChordTranslator } from './chord-translator';
 import type { Config } from './config';
@@ -10,7 +11,6 @@ import {
 } from './constants';
 import { DrawPass, type DrawPassOptions } from './draw-pass';
 import type { Gaps } from './gaps';
-import { Rect } from './geometry';
 import type {
 	RawChordDiagram,
 	RawMeasure,

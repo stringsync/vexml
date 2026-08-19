@@ -1,7 +1,7 @@
 import type { Note as MNote } from '@stringsync/mdom';
+import type { Rect } from 'webappwiz/geometry';
 import type { ChordDiagram } from './chord-diagram';
 import type { Element } from './element';
-import type { Rect } from './geometry';
 import type { HitTester } from './hit-tester/hit-tester';
 import type { MeasureBox } from './measure-box';
 import type { Note } from './note';

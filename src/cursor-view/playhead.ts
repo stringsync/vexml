@@ -1,6 +1,6 @@
+import { Rect } from 'webappwiz/geometry';
 import { CURSOR_COLOR, CURSOR_WIDTH_PX } from '../constants';
 import type { CursorChangeEvent } from '../events';
-import { Rect } from '../geometry';
 import type { Layer } from '../layer/layer';
 import type { CursorView } from './cursor-view';
 

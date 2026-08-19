@@ -7,6 +7,7 @@ import {
 	TabNote,
 	TickContext,
 } from 'vexflow';
+import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
 import {
 	DIRECTION_LINE_HOOK,
@@ -20,7 +21,6 @@ import {
 	type DirectionLineTask,
 	DirectionPlacer,
 } from './direction-placer';
-import { Rect } from './geometry';
 import { GeometryCollector } from './geometry-collector';
 import { type DirectionLineSpan, ScoreReader } from './score-reader';
 import { SpillTracker } from './spill-tracker';

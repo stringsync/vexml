@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { MDOMParser } from '@stringsync/mdom';
+import { Rect } from 'webappwiz/geometry';
 import { isHighlightable, isPlayable } from './element';
-import { Rect } from './geometry';
 import type { Measure } from './measure';
 import { MeasureBox } from './measure-box';
 import { System } from './system';

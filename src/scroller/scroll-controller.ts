@@ -1,3 +1,4 @@
+import type { Rect } from 'webappwiz/geometry';
 import {
 	MAX_SCROLL_SPEED_PX_PER_MS,
 	RESIZE_SETTLE_MS,
@@ -5,7 +6,6 @@ import {
 	SCROLL_FRAME_MS,
 	SCROLL_TOP_PADDING_PX,
 } from '../constants';
-import type { Rect } from '../geometry';
 import type { ScrollHost } from '../scroll-host/scroll-host';
 import type { Scroller, ScrollerOptions } from './scroller';
 

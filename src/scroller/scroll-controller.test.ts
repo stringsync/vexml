@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { Rect } from '../geometry';
+import { Rect } from 'webappwiz/geometry';
 import { FakeScrollHost } from '../scroll-host/fake-scroll-host';
 import { ScrollController } from './scroll-controller';
 

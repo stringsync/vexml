@@ -3,17 +3,16 @@ import type {
 	Note as MNote,
 	Part as MPart,
 } from '@stringsync/mdom';
+import { QuadTree, Rect } from 'webappwiz/geometry';
 import { ChordDiagram } from './chord-diagram';
 import type { Decorations } from './decoration/decoration';
 import type { Element } from './element';
 import { ElementIndex } from './element-index';
-import { Rect } from './geometry';
 import { DefaultHitTester } from './hit-tester/default-hit-tester';
 import { Measure } from './measure';
 import { MeasureBox } from './measure-box';
 import { Note } from './note';
 import { Part } from './part';
-import { QuadTree } from './quadtree';
 import type { RawGeometry } from './score-drawer';
 import { System } from './system';
 import { TabPosition } from './tab-position';
@@ -182,11 +181,11 @@ export class ElementFactory {
 			}
 			const target = tabByMnote.get(rn.mnote) ?? noteByMnote.get(rn.mnote);
 			if (target) {
-				tree.insert(target);
+				tree.insert(target, target.rect);
 			}
 		}
 		for (const box of boxes.values()) {
-			tree.insert(box);
+			tree.insert(box, box.rect);
 		}
 		// Systems stay out of the pointer tree: a system-wide target would sit under every
 		// staff-space point and add noise to allAt/within; boxes already cover the hit story.

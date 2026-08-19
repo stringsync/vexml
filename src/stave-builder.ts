@@ -8,6 +8,7 @@ import {
 	StaveModifierPosition,
 	TabStave,
 } from 'vexflow';
+import { Rect } from 'webappwiz/geometry';
 import { BAR_STYLE_TYPES, type BarlineDecoration } from './barline-translator';
 import type { CollisionResolver } from './collision-resolver';
 import type { Gap, MeasureNumbering } from './config';
@@ -17,7 +18,6 @@ import {
 	VOLTA_STAVE_GAP,
 } from './constants';
 import type { Gaps } from './gaps';
-import { Rect } from './geometry';
 import type { PartGroup, ScoreReader, StaveVisibility } from './score-reader';
 import type { SignatureTranslator } from './signature-translator';
 import type { SpillTracker } from './spill-tracker';

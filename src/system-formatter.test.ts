@@ -9,10 +9,10 @@ import {
 	TimeSignature,
 	type Voice,
 } from 'vexflow';
+import { Rect } from 'webappwiz/geometry';
 import type { ChordTranslator } from './chord-translator';
 import { CollisionResolver } from './collision-resolver';
 import type { ConnectorDrawer } from './connector-drawer';
-import { Rect } from './geometry';
 import type { LyricPlacer } from './lyric-placer';
 import type { NoteTranslator } from './note-translator';
 import type { SpannerBuilder } from './spanner-builder';

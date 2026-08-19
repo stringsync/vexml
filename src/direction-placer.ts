@@ -7,6 +7,7 @@ import {
 	StaveTempo,
 	TabNote,
 } from 'vexflow';
+import { Rect } from 'webappwiz/geometry';
 import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
 import type { CollisionKind, CollisionResolver } from './collision-resolver';
 import {
@@ -37,7 +38,6 @@ import {
 	WORDS_NOTE_CLEARANCE,
 	WORDS_Y_OFFSET,
 } from './constants';
-import { Rect } from './geometry';
 import type { GeometryCollector } from './geometry-collector';
 import { MetronomeGlyph, type TempoModulation } from './metronome-glyph';
 import type {

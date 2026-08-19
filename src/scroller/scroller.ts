@@ -1,4 +1,4 @@
-import type { Rect } from '../geometry';
+import type { Rect } from 'webappwiz/geometry';
 
 /* How a rect is brought into view. `behavior` matches the DOM's: 'smooth' tweens, 'instant'
  * jumps, 'auto' leaves it to the scroller (vexml's tweens it). */

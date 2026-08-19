@@ -1,7 +1,7 @@
 import type { Measure, Note as MNote, Part } from '@stringsync/mdom';
+import { Rect } from 'webappwiz/geometry';
 import { DEFAULT_TEMPO_BPM } from './constants';
 import type { Gaps } from './gaps';
-import { Rect } from './geometry';
 import { MeasureSequenceIterator } from './measure-sequence-iterator';
 import type { Note } from './note';
 import type { RawGeometry } from './score-drawer';

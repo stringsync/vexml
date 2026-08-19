@@ -1,6 +1,5 @@
+import { QuadTree, type QuadTreeOptions, Rect } from 'webappwiz/geometry';
 import { FAR } from './constants';
-import { Rect } from './geometry';
-import { QuadTree, type QuadTreeOptions } from './quadtree';
 
 /*
  * Generic collision detection + nudge resolution for the renderer.
@@ -53,17 +52,22 @@ export interface ClearOptions {
 
 export class CollisionResolver {
 	private readonly tree: QuadTree<Collidable>;
+	// Kept alongside the tree because `escaping` is a whole-set scan, and a quadtree only
+	// answers "what is near here". Registration goes through `add`, so the two cannot drift.
+	private readonly registered: Collidable[] = [];
 
 	constructor(bounds: Rect, opts: QuadTreeOptions = {}) {
 		this.tree = new QuadTree<Collidable>(bounds, opts);
 	}
 
 	add(c: Collidable): void {
-		this.tree.insert(c);
+		this.tree.insert(c, c.rect);
+		this.registered.push(c);
 	}
 
 	clear(): void {
 		this.tree.clear();
+		this.registered.length = 0;
 	}
 
 	/* Every registered obstacle the candidate strictly overlaps, with kind + overlap + MTV. */
@@ -192,8 +196,8 @@ export class CollisionResolver {
 	 */
 	escaping(viewport: Rect): { item: Collidable; edges: Edge[] }[] {
 		const out: { item: Collidable; edges: Edge[] }[] = [];
-		for (const item of this.tree.all()) {
-			if (viewport.contains(item.rect)) {
+		for (const item of this.registered) {
+			if (viewport.containsRect(item.rect)) {
 				continue;
 			}
 			const edges: Edge[] = [];

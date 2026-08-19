@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import type { Measure as MMeasure } from '@stringsync/mdom';
 import { MDOMParser } from '@stringsync/mdom';
-import { Rect } from './geometry';
+import { Rect } from 'webappwiz/geometry';
 import { Measure } from './measure';
 import { MeasureBox } from './measure-box';
 import { Part } from './part';

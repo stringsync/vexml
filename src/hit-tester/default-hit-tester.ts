@@ -1,6 +1,6 @@
+import type { QuadTree } from 'webappwiz/geometry';
+import { Rect } from 'webappwiz/geometry';
 import type { Element } from '../element';
-import { Rect } from '../geometry';
-import type { QuadTree } from '../quadtree';
 import type { HitTester } from './hit-tester';
 
 /* The production HitTester over the renderer's QuadTree (its collision broad-phase doubles as
@@ -44,7 +44,7 @@ export class DefaultHitTester implements HitTester {
 		// query is a broad phase (intersects); keep only elements fully inside the rect.
 		return this.tree
 			.query(rect)
-			.filter((t) => rect.contains(t.rect))
+			.filter((t) => rect.containsRect(t.rect))
 			.sort((a, b) => this.byPriority(a, b));
 	}
 

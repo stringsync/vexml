@@ -1,6 +1,6 @@
 import type { Resource } from 'webappwiz/disposable';
+import { Rect } from 'webappwiz/geometry';
 import type { DecorationStyle } from '../decoration-style/decoration-style';
-import { Rect } from '../geometry';
 import type { Layer } from '../layer/layer';
 import type { LayerHost } from '../layer-host/layer-host';
 import type { Decoratable, Decoration } from './decoration';

@@ -1,6 +1,6 @@
 import type { Measure as MMeasure } from '@stringsync/mdom';
+import type { Rect } from 'webappwiz/geometry';
 import { Element } from './element';
-import type { Rect } from './geometry';
 import type { Measure } from './measure';
 import type { System } from './system';
 import type { Viewport } from './viewport/viewport';

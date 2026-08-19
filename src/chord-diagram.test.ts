@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 import { MDOMParser } from '@stringsync/mdom';
+import { Rect } from 'webappwiz/geometry';
 import { ChordDiagram } from './chord-diagram';
 import type { ChordFrame } from './chord-diagram-glyph';
 import { FakeDecorations } from './decoration/fake-decorations';
 import { isHighlightable, isPlayable } from './element';
-import { Rect } from './geometry';
 import { FakeViewport } from './viewport/fake-viewport';
 
 const XML = `<?xml version="1.0"?>

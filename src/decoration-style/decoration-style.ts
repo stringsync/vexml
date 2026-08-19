@@ -1,5 +1,5 @@
+import type { Rect } from 'webappwiz/geometry';
 import type { Decoratable } from '../decoration/decoration';
-import type { Rect } from '../geometry';
 import type { LayerKind } from '../layer/layer';
 
 /*

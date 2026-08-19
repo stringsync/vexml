@@ -20,6 +20,7 @@ import {
 	Vibrato,
 	type Voice,
 } from 'vexflow';
+import { Rect } from 'webappwiz/geometry';
 import type { ChordTranslator } from './chord-translator';
 import type { CollisionResolver } from './collision-resolver';
 import type { ConnectorDrawer } from './connector-drawer';
@@ -31,7 +32,6 @@ import {
 	TECHNICAL_EDGE_GAP,
 	TIE_APEX_RISE,
 } from './constants';
-import { Rect } from './geometry';
 import type { LyricPlacer } from './lyric-placer';
 import type { NoteTranslator } from './note-translator';
 import type { SpannerBuilder } from './spanner-builder';

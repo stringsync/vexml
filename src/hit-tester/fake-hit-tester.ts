@@ -1,5 +1,5 @@
+import type { Rect } from 'webappwiz/geometry';
 import type { Element } from '../element';
-import type { Rect } from '../geometry';
 import type { HitTester } from './hit-tester';
 
 /* Fake fulfilling the HitTester seam (preferred over mocks); answers every query with whatever

@@ -1,5 +1,5 @@
+import type { Rect } from 'webappwiz/geometry';
 import type { Element } from '../element';
-import type { Rect } from '../geometry';
 
 /*
  * The hit index: a spatial map from a point in score space to the element under it. Built once

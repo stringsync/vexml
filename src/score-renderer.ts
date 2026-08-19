@@ -1,9 +1,9 @@
+import { Rect } from 'webappwiz/geometry';
 import type { Config } from './config';
 import { DefaultDecorations } from './decoration/default-decorations';
 import type { ElementFactory } from './element-factory';
 import type { FontLoader } from './font-loader/font-loader';
 import type { Gaps } from './gaps';
-import { Rect } from './geometry';
 import type { Host } from './host/host';
 import type { LayoutPlanner } from './layout-planner';
 import { type GapInfo, Score } from './score';

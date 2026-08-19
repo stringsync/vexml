@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { Rect } from './geometry';
+import { Rect } from 'webappwiz/geometry';
 import { type SpillStave, SpillTracker } from './spill-tracker';
 
 describe('SpillTracker', () => {

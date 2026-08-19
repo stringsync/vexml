@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
+import { Rect } from 'webappwiz/geometry';
 import { ColorStyle } from '../decoration-style/color-style';
 import { HaloStyle } from '../decoration-style/halo-style';
-import { Rect } from '../geometry';
 import { FakeLayerHost } from '../layer-host/fake-layer-host';
 import { DefaultDecoration } from './default-decoration';
 import { FakeDecoratable } from './fake-decoratable';

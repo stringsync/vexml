@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'bun:test';
 import type { RenderContext } from 'vexflow';
+import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
 import type { MeasureNumbering } from './config';
 import { Gaps } from './gaps';
-import { Rect } from './geometry';
 import { ScoreReader } from './score-reader';
 import { SignatureTranslator } from './signature-translator';
 import { SpillTracker } from './spill-tracker';

@@ -27,13 +27,13 @@ describe('measure box bounds', () => {
 						for (const measure of box.getMeasures()) {
 							for (const voice of measure.getVoices()) {
 								for (const note of voice.getNotes()) {
-									if (!r.contains(note.rect)) {
+									if (!r.containsRect(note.rect)) {
 										bad.push(
 											`note ${note.getPitch()} escapes measure ${box.getNumber()}`,
 										);
 									}
 									const tab = note.getTabPosition();
-									if (tab && !r.contains(tab.rect)) {
+									if (tab && !r.containsRect(tab.rect)) {
 										bad.push(
 											`fret ${tab.getFret()} escapes measure ${box.getNumber()}`,
 										);

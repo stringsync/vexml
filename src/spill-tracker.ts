@@ -1,5 +1,5 @@
+import type { Rect } from 'webappwiz/geometry';
 import { SPILL_COLUMN } from './constants';
-import type { Rect } from './geometry';
 
 /**
  * How far one stave row's drawn content spilled past its staff lines, plus where those

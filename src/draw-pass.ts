@@ -9,6 +9,7 @@ import {
 	type TabNote,
 	type TabStave,
 } from 'vexflow';
+import { Rect } from 'webappwiz/geometry';
 import {
 	type BarlineDecoration,
 	type BarlineTranslator,
@@ -35,7 +36,6 @@ import {
 	type WordsTask,
 } from './direction-placer';
 import type { Gaps } from './gaps';
-import { Rect } from './geometry';
 import {
 	GeometryCollector,
 	type RawChordDiagram,

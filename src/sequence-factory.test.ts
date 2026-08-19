@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
+import { Rect } from 'webappwiz/geometry';
 import { Gaps } from './gaps';
-import { Rect } from './geometry';
 import type { Note } from './note';
 import { DefaultScoreParser } from './score-parser/default-score-parser';
 import { ScoreReader } from './score-reader';

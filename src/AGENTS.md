@@ -10,9 +10,9 @@ decided — it is faster than grepping, because the vocabulary of the score
 commit. A map that lies costs more than no map. `CLAUDE.md` is a symlink to
 this file, so both agents read the same thing.
 
-Files not named here are either infrastructure (`geometry.ts`, `quadtree.ts`),
-test harnesses (`*-harness.ts`, `*-fixture.ts`, `fake-*.ts`), or the public
-surface (`index.ts`, `config.ts`, `constants.ts`).
+Files not named here are either test fakes (`fake-*.ts`) or the public surface
+(`index.ts`, `config.ts`, `constants.ts`). `Rect` and the `QuadTree` behind the
+hit index come from `webappwiz/geometry`, not from this repo.
 
 To see any of this rendered, `tests/integration/render.test.ts` has a hand-cut
 fixture per feature, named for the concept (`stave_spacing_dynamic`,
@@ -143,7 +143,7 @@ Two files cut across the draw stage and are worth knowing before anything else:
 ## Interaction and playback
 
 - **What a caller gets from a hit test** — `element.ts`, `element-index.ts`, `note.ts`, `measure.ts`, `measure-box.ts`, `voice.ts`, `part.ts`, `system.ts`
-- **Turning a pointer position into an element** — `hit-tester/`, `quadtree.ts`
+- **Turning a pointer position into an element** — `hit-tester/`, `element-index.ts` (the QuadTree itself is `webappwiz/geometry`)
 - **Coloring, highlighting, halos** — `decoration/`, `decoration-style/`
 - **Playback timeline, repeats unrolled, swing** — `sequence-factory.ts`, `sequence.ts`, `measure-sequence-iterator.ts` (repeat/volta expansion), `tempo-map.ts`, `swing-warp.ts`
 - **The moving cursor** — `cursor-controller.ts`, `cursor-view/`, `cursor-host/`

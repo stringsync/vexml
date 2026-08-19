@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import type { RenderContext, StaveNote } from 'vexflow';
+import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
 import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT } from './constants';
-import { Rect } from './geometry';
 import { FakeLyricMark } from './lyric-mark/fake-lyric-mark';
 import { LyricPlacer } from './lyric-placer';
 import type { NoteTranslator } from './note-translator';

@@ -8,6 +8,7 @@ import {
 	type TabNote,
 	TextBracket,
 } from 'vexflow';
+import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
 import {
 	OTTAVA_TEXT_LINE,
@@ -17,7 +18,6 @@ import {
 	WORDS_NOTE_CLEARANCE,
 } from './constants';
 import type { DirectionPlacer } from './direction-placer';
-import { Rect } from './geometry';
 import type { Hairpin } from './hairpin';
 import type { NoteTranslator } from './note-translator';
 import type {

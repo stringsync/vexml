@@ -1,4 +1,4 @@
-import type { Rect } from '../geometry';
+import type { Rect } from 'webappwiz/geometry';
 
 /*
  * The coordinate authority: converts between score space (where rects live) and client/page

@@ -1,6 +1,7 @@
-/* Re-exported so a caller can name what sync()/follow()/observe*() hand back without
- * depending on webappwiz directly. */
+/* Re-exported so a caller can name what sync()/follow()/observe*() hand back, and the
+ * boxes every element reports, without depending on webappwiz directly. */
 export type { Resource } from 'webappwiz/disposable';
+export { Rect } from 'webappwiz/geometry';
 export { ChordDiagram } from './chord-diagram';
 export type {
 	Config,
@@ -42,7 +43,6 @@ export type {
 	ScoreResizeEvent,
 	ScoreScrollEvent,
 } from './events';
-export { Rect } from './geometry';
 export type { NoteGlyph } from './geometry-collector';
 export type { Layer, LayerKind } from './layer/layer';
 export { Measure } from './measure';

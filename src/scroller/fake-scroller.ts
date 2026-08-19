@@ -1,4 +1,4 @@
-import type { Rect } from '../geometry';
+import type { Rect } from 'webappwiz/geometry';
 import type { Scroller } from './scroller';
 
 /* Fake fulfilling the Scroller seam (preferred over mocks); records what it was told, so tests

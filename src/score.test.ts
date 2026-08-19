@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
+import { Rect } from 'webappwiz/geometry';
 import { DefaultDecorations } from './decoration/default-decorations';
 import type { Element } from './element';
 import { ElementIndex } from './element-index';
 import { Gaps } from './gaps';
-import { Rect } from './geometry';
 import { FakeHitTester } from './hit-tester/fake-hit-tester';
 import type { HitTester } from './hit-tester/hit-tester';
 import { FakeHost } from './host/fake-host';

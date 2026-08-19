@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'bun:test';
 import type { Chord, Note } from '@stringsync/mdom';
 import type { RenderContext, Stave, StaveNote, TabNote } from 'vexflow';
+import { Rect } from 'webappwiz/geometry';
 import { WORDS_NOTE_CLEARANCE } from './constants';
 import type { DirectionLineTask, DirectionPlacer } from './direction-placer';
-import { Rect } from './geometry';
 import type { Hairpin } from './hairpin';
 import type { NoteTranslator } from './note-translator';
 import type { DirectionLineSpan, PedalMark, WedgeMark } from './score-reader';

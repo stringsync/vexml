@@ -1,5 +1,5 @@
+import { Rect } from 'webappwiz/geometry';
 import { BAR_WIDTH } from './constants';
-import { Rect } from './geometry';
 import type { Note } from './note';
 import type { TempoMap } from './tempo-map';
 

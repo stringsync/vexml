@@ -1,7 +1,7 @@
 import type { Note as MNote } from '@stringsync/mdom';
+import type { Rect } from 'webappwiz/geometry';
 import type { Decorations } from './decoration/decoration';
 import { Element, type Highlightable, type Playable, Toggle } from './element';
-import type { Rect } from './geometry';
 import type { NoteGlyph } from './geometry-collector';
 import type { Measure } from './measure';
 import type { TabPosition } from './tab-position';

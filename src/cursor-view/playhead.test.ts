@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
+import { Rect } from 'webappwiz/geometry';
 import type { CursorChangeEvent } from '../events';
-import { Rect } from '../geometry';
 import { FakeLayer } from '../layer/fake-layer';
 import { Playhead } from './playhead';
 

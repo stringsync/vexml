@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { Rect } from './geometry';
+import { Rect } from 'webappwiz/geometry';
 import type { Note } from './note';
 import { Sequence, type Step } from './sequence';
 import { TempoMap } from './tempo-map';

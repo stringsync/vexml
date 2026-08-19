@@ -1,8 +1,8 @@
 import type { Harmony } from '@stringsync/mdom';
+import type { Rect } from 'webappwiz/geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
 import type { Decorations } from './decoration/decoration';
 import { Element, type Highlightable, Toggle } from './element';
-import type { Rect } from './geometry';
 import type { Viewport } from './viewport/viewport';
 
 /* A rendered chord diagram (the fret box a <harmony> with a <frame> draws above the stave).

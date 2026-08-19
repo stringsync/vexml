@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
+import { Rect } from 'webappwiz/geometry';
 import { CursorController } from './cursor-controller';
 import { FakeCursorHost } from './cursor-host/fake-cursor-host';
 import { FakeCursorView } from './cursor-view/fake-cursor-view';
 import type { CursorChangeEvent } from './events';
 import { Gaps } from './gaps';
-import { Rect } from './geometry';
 import type { Note } from './note';
 import { ScoreReader } from './score-reader';
 import { FakeScroller } from './scroller/fake-scroller';

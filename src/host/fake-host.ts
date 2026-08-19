@@ -1,5 +1,5 @@
 import { disposables, type Resource } from 'webappwiz/disposable';
-import type { Rect } from '../geometry';
+import type { Rect } from 'webappwiz/geometry';
 import { FakeLayer } from '../layer/fake-layer';
 import type { Layer, LayerKind } from '../layer/layer';
 import { FakeScroller } from '../scroller/fake-scroller';

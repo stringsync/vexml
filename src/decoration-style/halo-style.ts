@@ -1,6 +1,6 @@
+import { Rect } from 'webappwiz/geometry';
 import { HALO_MARGIN } from '../constants';
 import type { Decoratable } from '../decoration/decoration';
-import { Rect } from '../geometry';
 import type { DecorationStyle } from './decoration-style';
 
 /* A circle centered on the element's box, a fixed margin larger than its half-extent, so it

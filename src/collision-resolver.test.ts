@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
+import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
-import { Rect } from './geometry';
 
 function detector(): CollisionResolver {
 	return new CollisionResolver(new Rect(-1000, -1000, 4000, 4000));
