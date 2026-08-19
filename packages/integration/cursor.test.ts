@@ -4,7 +4,7 @@ import { renderTest } from './harness';
 describe('cursor', () => {
 	// A playback cursor end to end, the way a caller reaches it: render, add a cursor, attach the
 	// built-in bar view, and seek. Proves the timeline builds from a real score and the bar lands on the
-	// engraving at the sought time. The timeline/cursor/view logic is unit-tested in src/*; this is the
+	// engraving at the sought time. The timeline/cursor/view logic is unit-tested in packages/vexml; this is the
 	// integration screenshot.
 	it.concurrent('a playback cursor draws its bar on the score at the sought time', async () => {
 		const { png } = await renderTest(

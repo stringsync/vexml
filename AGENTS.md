@@ -3,14 +3,14 @@ everything else exists to build or check it:
 
 | Package | What it is |
 | --- | --- |
-| `packages/vexml` | the library. Source sits flat in `packages/vexml/src` |
+| `packages/vexml` | the library. Source sits flat in `packages/vexml` |
 | `packages/vex` | the `vex` CLI below, plus the xmllint and MuseScore images it drives |
 | `packages/site` | the playground at https://vexml.dev |
 | `packages/integration` | visual-regression tests, their fixtures and their harness |
 
-Read `packages/vexml/src/AGENTS.md` before hunting through the library: it maps each piece
+Read `packages/vexml/AGENTS.md` before hunting through the library: it maps each piece
 of notation (slur, volta, lyric, fret) to the files that decide it. Keep it current — a
-file added, moved, or renamed under `src/` updates the map in the same commit.
+file added, moved, or renamed under `packages/vexml/` updates the map in the same commit.
 
 After making code changes:
 

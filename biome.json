@@ -18,18 +18,7 @@
 			"preset": "recommended",
 			"style": {
 				"useBlockStatements": "error",
-				"noNestedTernary": "error",
-				"noRestrictedImports": {
-					"level": "error",
-					"options": {
-						"patterns": [
-							{
-								"group": ["**/src", "**/src/**"],
-								"message": "Import the public API from '@stringsync/vexml' instead of reaching into src."
-							}
-						]
-					}
-				}
+				"noNestedTernary": "error"
 			}
 		}
 	},

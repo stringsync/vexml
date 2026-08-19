@@ -38,7 +38,7 @@ vex
 vex
 	.command('test')
 	.description(
-		'run unit (src) + integration (visual regression) tests; pattern filters by name',
+		'run unit (vexml) + integration (visual regression) tests; pattern filters by name',
 	)
 	// Positionals bind before flags, so this is `vex test <pattern> --update`.
 	.arg('pattern', t.optional(t.string()), {

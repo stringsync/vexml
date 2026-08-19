@@ -1,7 +1,7 @@
 import { basename, extname, isAbsolute, resolve } from 'node:path';
 import type { Logger } from 'webappwiz/log';
 import type { Fs } from 'webappwiz/system';
-import { MeasureSlicer } from './lib/measure-slicer';
+import { MeasureSlicer } from './measure-slicer';
 
 export interface SliceOptions {
 	input: string;

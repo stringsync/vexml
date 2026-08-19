@@ -6,7 +6,7 @@ vocabulary (slur, volta, hairpin, fingering) rarely matches the identifier
 that draws it.
 
 **Keep this file current.** A file added, moved, renamed, or deleted under
-`src/`, or a concept moved between files, updates this map in the same commit.
+this package, or a concept moved between files, updates this map in the same commit.
 `CLAUDE.md` is a symlink to this file.
 
 Files not named here are test fakes (`fake-*.ts`) or the public surface
@@ -171,7 +171,7 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 ## Conventions
 
 - One concept per file, named after the class it exports. Every file sits
-  flat in `src/` — no subdirectories. An interface and its implementations are
+  flat in the package root — no subdirectories. An interface and its implementations are
   siblings (`font-loader.ts`, `default-font-loader.ts`, `noop-font-loader.ts`),
   fakes included.
 - The draw pass owns no shared blackboard: `draw-pass.ts` constructs each

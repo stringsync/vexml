@@ -4,7 +4,7 @@ import { renderTest } from './harness';
 
 // Decorations end to end, the way a caller actually reaches them: render, hover to hit-test the
 // targets, toggle a decoration, and screenshot the composite (base engraving + the decoration
-// overlay). The drawing logic itself is unit-tested in src/decorations.test.ts; this proves it
+// overlay). The drawing logic itself is unit-tested in packages/vexml/decorations.test.ts; this proves it
 // lands on the score, aligned.
 //
 // Both noteheads (Note) and tab fret numbers (TabPosition) are decoratable, with their own

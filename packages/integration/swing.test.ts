@@ -4,7 +4,7 @@ import { renderTest } from './harness';
 describe('swing', () => {
 	/*
 	 * <sound><swing> end to end: parse, engrave, and read the built timeline back. The warp math
-	 * and the reader are unit-tested in src/; what this pins is the wiring in between,
+	 * and the reader are unit-tested in packages/vexml; what this pins is the wiring in between,
 	 * and specifically the pickup, whose phase depends on the measure resolving a real meter.
 	 *
 	 * The fixture is a one-eighth pickup plus six eighths in 3/4 at quarter=60 (1000ms a quarter),

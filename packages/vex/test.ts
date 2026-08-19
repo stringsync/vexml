@@ -18,7 +18,7 @@ export async function test(opts: TestOptions) {
 	if (await opts.fs.exists('/.dockerenv')) {
 		throw new Error('already running inside Docker');
 	}
-	// No dir: bun discovers every *.test.ts (unit in src/ + integration), skipping
+	// No dir: bun discovers every *.test.ts (unit in packages/vexml + integration), skipping
 	// node_modules. bun's -t filters tests by name.
 	const testArgs = opts.pattern ? ['-t', opts.pattern] : [];
 

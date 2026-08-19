@@ -65,14 +65,14 @@ const TEST_CASES = [
 	//   <group-barline>no</group-barline> — the end barline STOPS between P3 and P4, so this
 	//   pair reads as two separate instruments despite sharing a bracket.
 	// - "Square" (P5-6): drawn as a bracket. vexflow has no squared-bracket connector, so
-	//   'square' falls back to the nearest reading (see partGroups in src/score-reader.ts).
+	//   'square' falls back to the nearest reading (see partGroups in packages/vexml/score-reader.ts).
 	//   It declares no <group-barline>, which reads as common barlines, so unlike the pair
 	//   above its end barline runs through — the two brackets look alike, their barlines don't.
 	// - "Line" (P7-8): a plain vertical line, no curls, and another 'no' breaking the barline
 	//   between P7 and P8.
 	// The barlines also break BETWEEN the groups: a barline joins parts only where a
 	// <part-group> asks it to, and stops at every other part boundary. See barlineBreaks in
-	// src/score-reader.ts.
+	// packages/vexml/score-reader.ts.
 	testCase(
 		'structure_part_group_symbols.musicxml',
 		'structure_part_group_symbols.png',
@@ -108,7 +108,7 @@ const TEST_CASES = [
 
 	// Score-level header text (<work-title>, <movement-title>,
 	// <identification><creator>, <credit-words>) is deliberately NOT drawn, and has no
-	// reader in src/. vexml engraves staff notation; the page heading belongs to the host
+	// reader in vexml. vexml engraves staff notation; the page heading belongs to the host
 	// app, which already owns the surrounding page and its typography. Closed as won't-fix,
 	// not deferred — don't add a fixture for it.
 
@@ -994,7 +994,7 @@ const TEST_CASES = [
 	// The playback expansion is asserted separately in cursor.test.ts: M3-M6 are four consecutive
 	// ending measures with no plain measure between them, so the numbering restarting at 1 on M5
 	// is the only thing that separates the two volta groups (see ScoreReader-side endingFirstPass
-	// and the pre-scan in src/sequence-factory.ts).
+	// and the pre-scan in packages/vexml/sequence-factory.ts).
 	// See also lilypond_45e-Repeats-Nested-Alternatives.xml.
 	testCase('repeats_nested.musicxml', 'repeats_nested.png'),
 
@@ -1198,7 +1198,7 @@ const TEST_CASES = [
 	// - M2: "dashed" — the same arc broken into even dashes.
 	// - M3: "dotted" — the same arc as a run of dots.
 	// - M4: "wavy" — falls back to solid, so M4 is drawn identically to M1 rather than
-	//   the slur being dropped (see LINE_TYPE_DASH in src/score-reader.ts).
+	//   the slur being dropped (see LINE_TYPE_DASH in packages/vexml/score-reader.ts).
 	// ponytail: the <slur> bezier/orientation attributes (bezier-x/y, orientation) are
 	// still ignored — vexml computes its own control points to clear the spanned notes,
 	// which an exporter's absolute offsets would fight rather than improve.
@@ -1224,7 +1224,7 @@ const TEST_CASES = [
 	// from the first bass notehead up to the treble one, and BOTH measures bow above it — a
 	// cross-stave slur overrides <slur placement> the way a grace slur does, because a
 	// "below" bow would have to duck under the beam and then dive most of a stave to reach
-	// its far end (see crossStave in src/spanner-builder.ts).
+	// its far end (see crossStave in packages/vexml/spanner-builder.ts).
 	// - M1: placement="above" — C#3, B3, C#4 (bass) into E#4 (treble).
 	// - M2: placement="below" — D3, B3, D4 (bass) into F#4 (treble), drawn like M1.
 	// Reduced from Schumann's "Dichterliebe" measures 4-5, whose piano runs this figure in
@@ -1430,12 +1430,12 @@ const TEST_CASES = [
 	//   <staff-tuning> this fixture declares (standard guitar). An open dyad (strings 3/2,
 	//   frets 0/0) whose third member is a bare E3, then a lone bare E3. Each bare note lands
 	//   on the highest string that reaches it — "2" on string 4, not "0" on string 1 (see
-	//   derivePosition in src/voice-translator.ts). The chord's derived "2" stacks
+	//   derivePosition in packages/vexml/voice-translator.ts). The chord's derived "2" stacks
 	//   directly under the two explicit "0"s on the next line down.
 	testCase('tab_chord.musicxml', 'tab_chord.png'),
 
 	// 6-line TAB stave: natural harmonics drawn as the fret in angle brackets. A <harmonic>
-	// in <technical> wraps the fret in <> (src/notes.ts tabPositions); styleFrets bolds the
+	// in <technical> wraps the fret in <> (packages/vexml/notes.ts tabPositions); styleFrets bolds the
 	// digit but leaves the brackets thin/unbolded, so a harmonic reads as light "<>" around a
 	// bold fret. No <time>, so no time signature is drawn.
 	// - M1: single-note harmonics, one per beat — "<12>" on string 3 hard against the start
@@ -1449,7 +1449,7 @@ const TEST_CASES = [
 
 	// Notation stave over a 6-line TAB stave: X noteheads (<notehead>x</notehead>) for
 	// dead/muted notes. The notation stave draws a cross at each pitch (vexflow "/X2"); the tab
-	// stave prints "✕" in place of the fret on the matching string (src/notes.ts). No <time>, so
+	// stave prints "✕" in place of the fret on the matching string (packages/vexml/notes.ts). No <time>, so
 	// no time signature is drawn.
 	// - M1: four quarters, the notation pitch held at B4 (middle line, no ledger lines) so the
 	//   four crosses sit in a row at one height — only the glyph is under test there. The tab
@@ -1466,14 +1466,14 @@ const TEST_CASES = [
 	//   X notes carry real pitches (A3 dips to a ledger line below the staff).
 	// - M5: four B4 quarters, all with a printed <accidental>natural</accidental>, alternating
 	//   round / X / round / X notehead. The natural draws only on the two round noteheads; the
-	//   X (dead/muted, no definite pitch) noteheads suppress it (src/notes.ts addAccidentals).
+	//   X (dead/muted, no definite pitch) noteheads suppress it (packages/vexml/notes.ts addAccidentals).
 	//   The tab stave is unaffected (it never prints accidentals): fret "0" / "✕" / "0" / "✕".
 	testCase('notehead_x.musicxml', 'notehead_x.png'),
 
 	// Notation stave over a 6-line TAB stave: parenthesized noteheads
 	// (<notehead parentheses="yes">) for ghost/optional notes. The notation stave wraps each
 	// notehead in round brackets (vexflow Parenthesis modifier); the tab stave wraps the fret
-	// number in "()" on the matching string (src/notes.ts). No <time>, so no time signature is
+	// number in "()" on the matching string (packages/vexml/notes.ts). No <time>, so no time signature is
 	// drawn. A plain note sits between the parenthesized ones for contrast.
 	// - M1: a parenthesized B4 quarter (tab string 1, fret "(2)"), a plain B4 quarter (fret 5),
 	//   then a parenthesized G4/B4/D5 half-note chord — each notehead bracketed on the notation
@@ -1827,7 +1827,7 @@ const TEST_CASES = [
 
 	// The <kind> vocabulary, one kind per note: four measures of four C4 quarters, each with a
 	// <harmony> above spelling the kind's conventional suffix (HARMONY_KIND_SUFFIX in
-	// src/score-reader.ts) and a lyric below naming the kind, so the two can be read
+	// packages/vexml/score-reader.ts) and a lyric below naming the kind, so the two can be read
 	// against each other without opening the fixture. harmony.musicxml only exercises major,
 	// dominant, minor and power, so this is what pins the rest of that table against a typo.
 	// - M1: C, Cm, C+, Cdim (major, minor, augmented, diminished).
@@ -2043,7 +2043,7 @@ const TEST_CASES = [
 	// down. May wrap across systems.
 	// - M1: V1 a mixed quarter/eighth line spanning the whole measure; V2 silent on beats 1
 	//   and 4 via leading and trailing <forward> (no rests drawn). The silence is held open
-	//   by invisible ghost tickables (src/notes.ts), so V2 starts aligned on beat 2
+	//   by invisible ghost tickables (packages/vexml/notes.ts), so V2 starts aligned on beat 2
 	//   (G4 under V1's F5) and its last note (G4 on beat 3.5) keeps a full beat of space to
 	//   its right before V1's final C5 on beat 4.
 	// - M2: a full <backup> to the measure start — V1 a dotted half (D5, dot to its right)
@@ -2052,7 +2052,7 @@ const TEST_CASES = [
 	//   dotted-quarter F5 + eighth E5, a <forward> skipping beat 3, then a quarter D5. V2 a
 	//   quarter G4, a <forward> skipping beat 2, two beamed eighths (A4, G4), then a quarter
 	//   F4. The dotted notes carry their dotted duration in vexflow's tick count
-	//   (src/notes.ts passes `dots` to the StaveNote), so V1's beat-3 note stays
+	//   (packages/vexml/notes.ts passes `dots` to the StaveNote), so V1's beat-3 note stays
 	//   vertically aligned with V2's beat-3 note rather than drifting half a beat / a beat
 	//   early.
 	// - M4: same texture as M2 but with NO <stem> elements (e.g. a Soundslice export):
@@ -2339,7 +2339,7 @@ const TEST_CASES = [
 	// path holds up at realistic size. They are the broadest cases in the suite, so they sit
 	// last, and they are NOT diagnostic: a diff here says something moved somewhere, not what.
 	// Find the system that changed, then reproduce it in a focused fixture above before
-	// touching src/. Comments stay one line — the score is the description.
+	// touching vexml. Comments stay one line — the score is the description.
 	//
 	// Excluded: Gounod's Méditation (365 measures, 92MP) and Lee Actor's Prelude to a Tragedy
 	// (902 measures across 22 parts, 135MP). Both render, but diffing the latter needs ~1.6GB
@@ -2450,7 +2450,7 @@ const TEST_CASES = [
 	// across the treble stave from measure 1 into measure 2, leaves three stems standing with no
 	// noteheads shooting off the top of the image, and inflates the first system's height enough
 	// to leave a 385px blank band beneath it — every other system here gaps by ~85-130px.
-	// See the recent cross-staff beam work in src/. Fix, then
+	// See the recent cross-staff beam work in vexml. Fix, then
 	// `vex test score_joplin_elite_syncopations --update`.
 	// Joplin, "Elite Syncopations": 88 measures of piano, with repeats and numbered endings.
 	testCase(

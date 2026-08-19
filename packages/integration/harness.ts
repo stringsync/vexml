@@ -1,8 +1,8 @@
 import type { ConfigInput, Score } from '@stringsync/vexml';
 import { withPage } from './setup';
 
-// ponytail: mirrors src DEFAULT_WIDTH — the public API doesn't expose it, so tests
-// don't get privileged access. Bump if src's default reference width ever exceeds this.
+// ponytail: mirrors vexml's DEFAULT_WIDTH — the public API doesn't expose it, so tests
+// don't get privileged access. Bump if vexml's default reference width ever exceeds this.
 const DEFAULT_WIDTH = 900;
 
 // A fixture is laid out to its reference width (8.5in unless the test overrides it);
