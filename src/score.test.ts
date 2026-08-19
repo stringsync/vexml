@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { DefaultDecoration } from './decoration/default-decoration';
-import { ColorStyle } from './decoration-style/color-style';
+import { DefaultDecorations } from './decoration/default-decorations';
 import type { Element } from './element';
 import { Gaps } from './gaps';
 import { Rect } from './geometry';
@@ -99,7 +98,7 @@ describe('Score', () => {
 		const score = new Score(
 			host,
 			elementIndex(index),
-			[new DefaultDecoration(host, new ColorStyle())],
+			new DefaultDecorations(host),
 			EMPTY_SEQUENCE,
 			host.scroller,
 		);
@@ -181,7 +180,7 @@ describe('Score', () => {
 		const score = new Score(
 			host,
 			index,
-			[new DefaultDecoration(host, new ColorStyle())],
+			new DefaultDecorations(host),
 			EMPTY_SEQUENCE,
 			host.scroller,
 		);
@@ -227,7 +226,7 @@ describe('Score', () => {
 		const score = new Score(
 			host,
 			elementIndex(new FakeHitTester(target)),
-			[new DefaultDecoration(host, new ColorStyle())],
+			new DefaultDecorations(host),
 			sequence,
 			host.scroller,
 		);
@@ -252,7 +251,7 @@ describe('Score', () => {
 		const offScore = new Score(
 			host,
 			elementIndex(new FakeHitTester(null)),
-			[new DefaultDecoration(host, new ColorStyle())],
+			new DefaultDecorations(host),
 			sequence,
 			host.scroller,
 		);
@@ -261,16 +260,16 @@ describe('Score', () => {
 
 	it('detaches every listener and tears down its decorations and host when disposed', () => {
 		const target = measureBox(new Rect(0, 0, 10, 10));
-		const { host, index, decoration, score } = fixture(target);
+		const { host, index, decorations, score } = fixture(target);
 		score.addEventListener('pointermove', () => {});
 		score.addEventListener('resize', () => {});
-		decoration.set(target, '#ff0000');
+		decorations.color.set(target, '#ff0000');
 
 		score.dispose();
 
 		expect(host.disposed).toBe(true);
 		expect(host.resizeUnobserved).toBe(true);
-		expect(decoration.has(target)).toBe(false); // decoration.dispose() ran
+		expect(decorations.color.has(target)).toBe(false); // decorations.dispose() ran
 		host.events.dispatchEvent(new FakePointerEvent('pointermove', 9, 9));
 		expect(index.probes).toHaveLength(0); // pointer handler detached
 	});

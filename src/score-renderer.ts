@@ -1,7 +1,5 @@
 import type { Config } from './config';
-import { DefaultDecoration } from './decoration/default-decoration';
-import { ColorStyle } from './decoration-style/color-style';
-import { HaloStyle } from './decoration-style/halo-style';
+import { DefaultDecorations } from './decoration/default-decorations';
 import type { ElementFactory } from './element-factory';
 import type { FontLoader } from './font-loader/font-loader';
 import type { Gaps } from './gaps';
@@ -81,10 +79,7 @@ export class ScoreRenderer {
 		// The stage is the Viewport (score<->client transform) the elements map through, and the
 		// decorations are what their color/halo toggles delegate to (drawing on overlay layers the
 		// stage hands them). Both feed the factory, which links the elements and indexes them.
-		const decorations = {
-			color: new DefaultDecoration(this.stage, new ColorStyle()),
-			halo: new DefaultDecoration(this.stage, new HaloStyle()),
-		};
+		const decorations = new DefaultDecorations(this.stage);
 		const elements = this.elementFactory.build(
 			geometry,
 			parts,
@@ -117,7 +112,7 @@ export class ScoreRenderer {
 		return new Score(
 			this.stage,
 			elements,
-			[decorations.color, decorations.halo],
+			decorations,
 			sequence,
 			this.stage.scroller,
 			gaps,

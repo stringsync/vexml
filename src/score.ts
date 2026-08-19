@@ -64,7 +64,7 @@ export class Score implements Listenable<ScoreEventMap> {
 	constructor(
 		private readonly host: Host,
 		private readonly elements: ElementIndex,
-		private readonly decorations: readonly { dispose(): void }[],
+		private readonly decorations: Resource,
 		private readonly sequence: Sequence,
 		private readonly scroller: Scroller & {
 			cancel(): void;
@@ -274,9 +274,7 @@ export class Score implements Listenable<ScoreEventMap> {
 		this.scrollObserver?.dispose();
 		this.scrollObserver = null;
 		this.resizeObserver.dispose();
-		for (const decoration of this.decorations) {
-			decoration.dispose();
-		}
+		this.decorations.dispose();
 		this.host.dispose();
 	}
 

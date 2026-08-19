@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { MDOMParser, type Note as MNote } from '@stringsync/mdom';
-import { FakeDecoration } from './decoration/fake-decoration';
+import { FakeDecorations } from './decoration/fake-decorations';
 import { isHighlightable, isPlayable } from './element';
 import { Rect } from './geometry';
 import { measureFixture } from './measure-fixture';
@@ -44,10 +44,7 @@ function fixture() {
 	const mBb = must(chords[2]?.notes[0], 'Bb');
 
 	const viewport = new FakeViewport();
-	const decorations = {
-		color: new FakeDecoration(),
-		halo: new FakeDecoration(),
-	};
+	const decorations = new FakeDecorations();
 	const measure = measureFixture(mpart, mmeasure, viewport);
 
 	// The shared registries the wrappers resolve their cross-links through (a Map fulfills the
@@ -175,10 +172,7 @@ describe('Note', () => {
 		const [mF, mG, mA, mB] = mmeasure.notes;
 
 		const viewport = new FakeViewport();
-		const decorations = {
-			color: new FakeDecoration(),
-			halo: new FakeDecoration(),
-		};
+		const decorations = new FakeDecorations();
 		const measure = measureFixture(mpart, mmeasure, viewport);
 		const notesByMnote = new Map<MNote, Note>();
 		const build = (mnote: MNote) => {

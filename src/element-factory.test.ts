@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { MDOMParser } from '@stringsync/mdom';
-import { FakeDecoration } from './decoration/fake-decoration';
+import { FakeDecorations } from './decoration/fake-decorations';
 import { ElementFactory } from './element-factory';
 import { Rect } from './geometry';
 import type { RawNote } from './geometry-collector';
@@ -87,10 +87,12 @@ function build() {
 		],
 	};
 	return {
-		index: new ElementFactory().build(geometry, parts, new FakeViewport(), {
-			color: new FakeDecoration(),
-			halo: new FakeDecoration(),
-		}),
+		index: new ElementFactory().build(
+			geometry,
+			parts,
+			new FakeViewport(),
+			new FakeDecorations(),
+		),
 		mmeasure,
 		mC,
 		harmony,

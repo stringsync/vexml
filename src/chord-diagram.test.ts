@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { MDOMParser } from '@stringsync/mdom';
 import { ChordDiagram } from './chord-diagram';
 import type { ChordFrame } from './chord-diagram-glyph';
-import { FakeDecoration } from './decoration/fake-decoration';
+import { FakeDecorations } from './decoration/fake-decorations';
 import { isHighlightable, isPlayable } from './element';
 import { Rect } from './geometry';
 import { FakeViewport } from './viewport/fake-viewport';
@@ -32,10 +32,7 @@ function fixture() {
 			[3, 0],
 		],
 	};
-	const decorations = {
-		color: new FakeDecoration(),
-		halo: new FakeDecoration(),
-	};
+	const decorations = new FakeDecorations();
 	const diagram = new ChordDiagram(
 		new Rect(40, 5, 75, 90),
 		new FakeViewport(),

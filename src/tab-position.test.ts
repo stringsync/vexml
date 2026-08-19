@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { MDOMParser, type Note as MNote } from '@stringsync/mdom';
-import { FakeDecoration } from './decoration/fake-decoration';
+import { FakeDecorations } from './decoration/fake-decorations';
 import { isHighlightable, isPlayable } from './element';
 import { Rect } from './geometry';
 import { measureFixture } from './measure-fixture';
@@ -28,10 +28,7 @@ function fixture() {
 		throw new Error('fixture: missing note');
 	}
 	const viewport = new FakeViewport();
-	const decorations = {
-		color: new FakeDecoration(),
-		halo: new FakeDecoration(),
-	};
+	const decorations = new FakeDecorations();
 	const measure = measureFixture(mpart, mmeasure, viewport);
 	const notesByMnote = new Map<MNote, Note>();
 	const note = new Note({

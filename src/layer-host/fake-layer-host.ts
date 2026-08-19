@@ -26,4 +26,12 @@ export class FakeLayerHost implements LayerHost {
 	ops(kind: LayerKind): string[] {
 		return this.layer(kind)?.recording.ops ?? [];
 	}
+
+	/* What the latest repaint left on a kind's layer: the marks recorded since the last clear.
+	 * A decoration repaints by clearing a region and redrawing into it, so the whole op log
+	 * accumulates every intermediate state; this is the part still on screen. */
+	marks(kind: LayerKind): string[] {
+		const ops = this.ops(kind);
+		return ops.slice(ops.lastIndexOf('clear') + 1);
+	}
 }

@@ -1,5 +1,4 @@
-import { DefaultDecoration } from './decoration/default-decoration';
-import { ColorStyle } from './decoration-style/color-style';
+import { DefaultDecorations } from './decoration/default-decorations';
 import type { Element } from './element';
 import { ElementIndex } from './element-index';
 import { Gaps } from './gaps';
@@ -69,13 +68,13 @@ export const viewport: Viewport = {
 export function fixture(target: Element | null) {
 	const host = new FakeHost();
 	const index = new FakeHitTester(target);
-	const decoration = new DefaultDecoration(host, new ColorStyle());
+	const decorations = new DefaultDecorations(host);
 	const score = new Score(
 		host,
 		elementIndex(index),
-		[decoration],
+		decorations,
 		EMPTY_SEQUENCE,
 		host.scroller,
 	);
-	return { host, index, decoration, score };
+	return { host, index, decorations, score };
 }
