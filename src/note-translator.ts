@@ -28,20 +28,17 @@ import {
 import type { TabStemPlacement } from './config';
 import {
 	EPSILON,
-	FINGERING_FONT_SIZE,
 	GRACE_SPACING,
-	LYRIC_FONT_SIZE,
-	LYRIC_PADDING,
-	STRING_NUMBER_DIGIT_RISE,
-	STRING_NUMBER_FONT_SIZE,
-	STRING_NUMBER_RADIUS,
-	STRING_NUMBER_RING_WIDTH,
 	TAB_FRET_SCALE,
 	TAB_GRACE_SCALE,
 	TAB_GRACE_SPACING,
-	TECHNICAL_ROW_GAP,
 } from './constants';
+import { LyricAnnotation } from './lyric-mark/lyric-annotation';
 import { midiOf } from './score-reader';
+import {
+	FingeringAnnotation,
+	StringNumberAnnotation,
+} from './technical-mark/technical-annotation';
 
 // MusicXML <type> -> vexflow duration code; rests append 'r'.
 const DURATION_CODES: Record<string, string> = {
@@ -670,110 +667,6 @@ function fingeringLabel(marks: Technical[]): string {
 }
 
 /*
- * A <technical> mark that engraves as stacked text off the note — the fingering/pluck label
- * and the string-number ring. A chord's marks read as one COLUMN clear of the stave, in chord
- * order, which is how both MuseScore and OSMD engrave them.
- *
- * The column is positioned by the draw pass (SystemFormatter.pinTechnicals), the same arrangement
- * lyrics use: an Annotation for the text drawing and the width it reserves, but its own
- * baseline. vexflow's own stacking can't do it — Annotation.format hands every mark on a note
- * LOW in the stave the same text line, so they print through each other, and its
- * FretHandFinger/StringNumber each keep separate text-line accounting measured from their own
- * anchor, so two of them on one note collide too.
- */
-export abstract class TechnicalAnnotation extends Annotation {
-	protected baselineY = 0;
-
-	constructor(
-		text: string,
-		/** Which side of the stave this mark stacks on (<technical placement>). */
-		readonly below: boolean,
-	) {
-		super(text);
-		this.setVerticalJustification(
-			below
-				? Annotation.VerticalJustify.BOTTOM
-				: Annotation.VerticalJustify.TOP,
-		);
-	}
-
-	/** How much vertical room this mark claims in its column, ink plus air. */
-	abstract rowHeight(): number;
-
-	setBaselineY(y: number): void {
-		this.baselineY = y;
-	}
-
-	/** Where the text's own baseline goes — the row's bottom edge, unless a subclass draws
-	 * something around the text that it has to sit inside. */
-	protected textBaselineY(): number {
-		return this.baselineY;
-	}
-
-	override draw(): void {
-		const ctx = this.checkContext();
-		const note = this.checkAttachedNote();
-		this.setRendered();
-		// Center on the notehead, the same horizontal treatment a CENTER-justified
-		// Annotation gets; only the vertical placement is ours.
-		const start = note.getModifierStartXY(Modifier.Position.ABOVE, this.index);
-		this.x = start.x - this.getWidth() / 2;
-		this.y = this.textBaselineY();
-		this.renderText(ctx, 0, 0);
-	}
-}
-
-/* A <fingering>/<pluck> label. */
-class FingeringAnnotation extends TechnicalAnnotation {
-	constructor(text: string, below: boolean) {
-		super(text, below);
-		this.setFontSize(FINGERING_FONT_SIZE);
-	}
-
-	override rowHeight(): number {
-		return FINGERING_FONT_SIZE + TECHNICAL_ROW_GAP;
-	}
-}
-
-/* A <string> indicator: the string's number in a ring. */
-class StringNumberAnnotation extends TechnicalAnnotation {
-	constructor(number: string, below: boolean) {
-		super(number, below);
-		this.setFontSize(STRING_NUMBER_FONT_SIZE);
-	}
-
-	override rowHeight(): number {
-		return 2 * STRING_NUMBER_RADIUS + TECHNICAL_ROW_GAP;
-	}
-
-	/* The ring fills its whole row, so its center is one radius up from the row's bottom. */
-	private ringCenterY(): number {
-		return this.baselineY - STRING_NUMBER_RADIUS;
-	}
-
-	/* The digit sits inside the ring, not on the row's baseline. */
-	protected override textBaselineY(): number {
-		return this.ringCenterY() + STRING_NUMBER_DIGIT_RISE;
-	}
-
-	override draw(): void {
-		super.draw();
-		const ctx = this.checkContext();
-		ctx.beginPath();
-		ctx.arc(
-			this.getX() + this.getWidth() / 2,
-			this.ringCenterY(),
-			STRING_NUMBER_RADIUS,
-			0,
-			2 * Math.PI,
-			false,
-		);
-		ctx.setLineWidth(STRING_NUMBER_RING_WIDTH);
-		ctx.stroke();
-	}
-}
-
-/*
  * A note's <notations><technical> marks on a NOTATION stave (the tab side lives in
  * addTabModifiers): the bowing/tonguing/pizzicato glyphs, the <fingering>/<pluck> labels,
  * and the <string> indicator.
@@ -1050,68 +943,6 @@ function addParentheses(staveNote: StaveNote, chord: Chord): void {
 			staveNote.addModifier(new Parenthesis(Modifier.Position.RIGHT), i);
 		}
 	});
-}
-
-/*
- * A lyric syllable under the stave. vexflow's own BOTTOM-justified Annotation hangs its
- * text off the note's lowest notehead, so a verse would rise and fall with the melody —
- * a ledger-line note drags its syllable well below the row and a high note tucks its
- * syllable up against the stave. Lyrics read as a line of text, so the draw pass pins one
- * baseline per stave (see LyricPlacer.pin) and this draws there instead.
- *
- * Subclassing keeps everything else an Annotation gives: the static Annotation.format()
- * still runs (the subclass inherits the 'Annotation' modifier category), so a wide
- * syllable reserves its width in the layout pass, and the drawn text still lands in the
- * note's bounding box so the page grows to fit it.
- */
-export class LyricAnnotation extends Annotation {
-	private baselineY = 0;
-
-	constructor(
-		text: string,
-		/** 0-based verse index — which row under the stave this syllable sits on. Not readonly:
-		 * a stave carrying several voices offsets each voice's rows past the ones the voices
-		 * before it used (see {@link shiftVerses}). */
-		public verseIndex: number,
-		/** Whether a melisma `<extend/>` line trails this syllable (drawn by LyricPlacer). */
-		readonly extend = false,
-	) {
-		super(text);
-		this.setVerticalJustification(Annotation.VerticalJustify.BOTTOM);
-		this.setFontSize(LYRIC_FONT_SIZE);
-	}
-
-	setBaselineY(y: number): void {
-		this.baselineY = y;
-	}
-
-	/** Push this syllable `rows` rows further from the stave. Voices sharing a stave each
-	 * number their verses from 1, so without an offset per voice every voice's first verse
-	 * would land on the same row and overprint. */
-	shiftVerses(rows: number): void {
-		this.verseIndex += rows;
-	}
-
-	/*
-	 * The text width plus a word gap either side. Annotation.format reserves exactly the
-	 * text's own width, which leaves neighboring syllables touching once a measure is
-	 * squeezed to its minimum. The padding is symmetric, so it costs the centering nothing.
-	 */
-	override getWidth(): number {
-		return super.getWidth() + 2 * LYRIC_PADDING;
-	}
-
-	override draw(): void {
-		const ctx = this.checkContext();
-		const note = this.checkAttachedNote();
-		this.setRendered();
-		// Center the syllable on the notehead, the same horizontal treatment a CENTER-
-		// justified Annotation gets; only the vertical placement is ours.
-		const start = note.getModifierStartXY(Modifier.Position.ABOVE, this.index);
-		this.x = start.x - this.getWidth() / 2;
-		this.y = this.baselineY;
-		this.renderText(ctx, 0, 0);
-	}
 }
 
 /*

@@ -9,10 +9,10 @@ import {
 	type TabNote,
 	type TabStave,
 } from 'vexflow';
-import {
-	LyricAnnotation,
-	type NoteTranslator,
-	type VexflowVoiceTickablesOptions,
+import { FakeLyricMark } from './lyric-mark/fake-lyric-mark';
+import type {
+	NoteTranslator,
+	VexflowVoiceTickablesOptions,
 } from './note-translator';
 import type { ScoreReader, StaffVoice } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
@@ -54,15 +54,10 @@ describe('VoiceBuilder', () => {
 		return note as unknown as StaveNote & { stemDirections: number[] };
 	};
 
-	// Object.create keeps the instanceof checks happy without running vexflow's
-	// constructors (which want font machinery); own properties shadow everything read.
-	const barNote = () =>
-		Object.create(BarNote.prototype) as BarNote & { getModifiers(): unknown[] };
-	const ghostNote = () => Object.create(GhostNote.prototype) as GhostNote;
-	const lyric = (verseIndex: number) =>
-		Object.assign(Object.create(LyricAnnotation.prototype), {
-			verseIndex,
-		}) as LyricAnnotation;
+	// Real vexflow tickables: the builder groups them with instanceof, and a BarNote's
+	// identity is what the divider assertions follow.
+	const barNote = () => new BarNote();
+	const ghostNote = () => new GhostNote('q');
 
 	type TickablesCall = {
 		chords: Chord[];
@@ -279,8 +274,8 @@ describe('VoiceBuilder', () => {
 	});
 
 	it('stacks a later voice’s verses beneath the rows already used', () => {
-		const upper = lyric(1);
-		const low = lyric(0);
+		const upper = new FakeLyricMark(1);
+		const low = new FakeLyricMark(0);
 		const translator = fakeTranslator(({ opts, chords }, voiceIndex) =>
 			chords.map((chord) => {
 				const note = staveNote(voiceIndex === 0 ? [upper] : [low]);

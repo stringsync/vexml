@@ -2,7 +2,8 @@ import type { RenderContext, StaveNote } from 'vexflow';
 import type { CollisionResolver } from './collision-resolver';
 import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT } from './constants';
 import { Rect } from './geometry';
-import { LyricAnnotation, type NoteTranslator } from './note-translator';
+import { isLyricMark, type LyricMark } from './lyric-mark/lyric-mark';
+import type { NoteTranslator } from './note-translator';
 
 export interface LyricPlacerOptions {
 	/* Per lyric row (keyed `<systemIndex>:<staveRow>`), how far to drop it so it clears the
@@ -73,12 +74,8 @@ export class LyricPlacer {
 	 * draws lyrics itself, so this is the only point where their boxes are known.
 	 */
 	pin(notes: StaveNote[], row: number, baseline: number): void {
-		const lyricsOf = (note: StaveNote) =>
-			note
-				.getModifiers()
-				.filter((m): m is LyricAnnotation => m instanceof LyricAnnotation);
 		const lyricNotes = notes
-			.map((note) => ({ note, lyrics: lyricsOf(note) }))
+			.map((note) => ({ note, lyrics: this.lyricsOf(note) }))
 			.filter(({ lyrics }) => lyrics.length > 0);
 		if (lyricNotes.length === 0) {
 			return;
@@ -106,7 +103,7 @@ export class LyricPlacer {
 				});
 			}
 		}
-		this.drawMelismas(notes, row, baseline, lyricsOf);
+		this.drawMelismas(notes, row, baseline);
 	}
 
 	/*
@@ -124,16 +121,16 @@ export class LyricPlacer {
 		notes: StaveNote[],
 		row: number,
 		baseline: number,
-		lyricsOf: (note: StaveNote) => LyricAnnotation[],
 	): void {
 		for (const [i, note] of notes.entries()) {
-			for (const lyric of lyricsOf(note)) {
+			for (const lyric of this.lyricsOf(note)) {
 				if (!lyric.extend) {
 					continue;
 				}
 				const next = notes.findIndex(
 					(n, j) =>
-						j > i && lyricsOf(n).some((l) => l.verseIndex === lyric.verseIndex),
+						j > i &&
+						this.lyricsOf(n).some((l) => l.verseIndex === lyric.verseIndex),
 				);
 				const last = notes[(next === -1 ? notes.length : next) - 1];
 				if (!last || last === note) {
@@ -163,6 +160,11 @@ export class LyricPlacer {
 				});
 			}
 		}
+	}
+
+	/* The lyric syllables hanging off a note, in verse order. */
+	private lyricsOf(note: StaveNote): LyricMark[] {
+		return note.getModifiers().filter(isLyricMark);
 	}
 
 	/* Every row's drop (keyed `<systemIndex>:<staveRow>`), for the pass driver to re-pin with. */

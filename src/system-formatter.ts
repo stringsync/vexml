@@ -36,10 +36,10 @@ import {
 	applyNoteColors,
 	findModifier,
 	type NoteTranslator,
-	TechnicalAnnotation,
 } from './note-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
+import { isTechnicalMark } from './technical-mark/technical-mark';
 
 // One stave's notes, built but not yet formatted or drawn. A part's staves are
 // formatted together (see formatAndDraw) so notes at the same tick line up
@@ -585,7 +585,7 @@ export class SystemFormatter {
 		// page through the top of the column. Only above-side marks raise the top —
 		// below-side ones ride the note's own bounding box instead.
 		for (const mod of note.getModifiers()) {
-			if (mod instanceof TechnicalAnnotation) {
+			if (isTechnicalMark(mod)) {
 				if (!mod.below) {
 					top = Math.min(top, mod.getBoundingBox().getY());
 				}
@@ -666,11 +666,7 @@ export class SystemFormatter {
 	 */
 	private pinTechnicals(p: PendingStave): void {
 		for (const note of p.staveNotes) {
-			const marks = note
-				.getModifiers()
-				.filter(
-					(m): m is TechnicalAnnotation => m instanceof TechnicalAnnotation,
-				);
+			const marks = note.getModifiers().filter(isTechnicalMark);
 			if (marks.length === 0) {
 				continue;
 			}

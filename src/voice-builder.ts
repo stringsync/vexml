@@ -9,9 +9,9 @@ import {
 	type TabNote,
 	type TabStave,
 } from 'vexflow';
+import { isLyricMark } from './lyric-mark/lyric-mark';
 import {
 	BAR_STYLE_TYPES,
-	LyricAnnotation,
 	type MidClefSpec,
 	type NoteTranslator,
 } from './note-translator';
@@ -160,7 +160,7 @@ export class VoiceBuilder {
 				let rowsUsed = 0;
 				for (const tickable of tickables) {
 					for (const modifier of tickable.getModifiers()) {
-						if (modifier instanceof LyricAnnotation) {
+						if (isLyricMark(modifier)) {
 							rowsUsed = Math.max(rowsUsed, modifier.verseIndex + 1);
 							modifier.shiftVerses(verseOffset);
 						}

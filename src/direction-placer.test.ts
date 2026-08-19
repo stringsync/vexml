@@ -5,6 +5,7 @@ import {
 	type Stave,
 	type StaveNote,
 	TabNote,
+	TickContext,
 } from 'vexflow';
 import { CollisionResolver } from './collision-resolver';
 import {
@@ -48,12 +49,18 @@ describe('DirectionPlacer', () => {
 			getStave: () => anchorStave,
 		}) as unknown as StaveNote;
 
-	// Object.create keeps the placer's instanceof branch (tab text centers on its fret)
-	// without running vexflow's TabNote constructor; own properties shadow what it calls.
-	const tabNote = (x: number) =>
-		Object.assign(Object.create(TabNote.prototype), {
-			getAbsoluteX: () => x,
-		}) as TabNote;
+	// A real tab note, laid out at `x` by a tick context: the placer centers text over a
+	// tab anchor, and it tells one apart from a notation note by class.
+	const tabNote = (x: number) => {
+		const note = new TabNote({
+			positions: [{ str: 2, fret: '5' }],
+			duration: 'q',
+		});
+		const context = new TickContext();
+		context.addTickable(note);
+		context.setX(x);
+		return note.setTickContext(context);
+	};
 
 	const column = (
 		overrides: Partial<DirectionColumn> = {},

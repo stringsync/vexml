@@ -13,10 +13,11 @@ import { CollisionResolver } from './collision-resolver';
 import type { ConnectorDrawer } from './connector-drawer';
 import { Rect } from './geometry';
 import type { LyricPlacer } from './lyric-placer';
-import { type NoteTranslator, TechnicalAnnotation } from './note-translator';
+import type { NoteTranslator } from './note-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import { SpillTracker } from './spill-tracker';
 import { alignBegModifiers, SystemFormatter } from './system-formatter';
+import { FakeTechnicalMark } from './technical-mark/fake-technical-mark';
 
 describe('SystemFormatter', () => {
 	const makeFormatter = () =>
@@ -53,14 +54,6 @@ describe('SystemFormatter', () => {
 			getModifiers: () => opts.modifiers ?? [],
 		}) as unknown as StaveNote;
 
-	// Object.create keeps the instanceof filter happy without running vexflow's Annotation
-	// constructor (which wants font machinery); own properties shadow everything read.
-	const technical = (below: boolean, y: number) =>
-		Object.assign(Object.create(TechnicalAnnotation.prototype), {
-			below,
-			getBoundingBox: () => ({ getY: () => y }),
-		});
-
 	const articulation = (position: number, y: number) => ({
 		getCategory: () => 'Articulation',
 		getPosition: () => position,
@@ -88,7 +81,7 @@ describe('SystemFormatter', () => {
 			note({
 				modifiers: [
 					articulation(Modifier.Position.ABOVE, 25),
-					technical(false, 15),
+					new FakeTechnicalMark({ top: 15 }),
 				],
 			}),
 		);
@@ -100,7 +93,7 @@ describe('SystemFormatter', () => {
 			note({
 				modifiers: [
 					articulation(Modifier.Position.BELOW, 10),
-					technical(true, 90),
+					new FakeTechnicalMark({ below: true, top: 90 }),
 				],
 			}),
 		);
@@ -163,21 +156,13 @@ describe('SystemFormatter', () => {
 		expect(leading.spacing).toBe(4);
 	});
 
-	// A begin modifier the way alignBegModifiers sees one. The repeat rides Barline's
-	// prototype (the grouping is an instanceof check); the time signature is matched by
-	// category alone.
-	const repeat = (x: number, type = Barline.type.REPEAT_BEGIN) =>
-		Object.assign(Object.create(Barline.prototype), {
-			x,
-			getCategory: () => 'Barline',
-			getType: () => type,
-			getX(this: { x: number }) {
-				return this.x;
-			},
-			setX(this: { x: number }, next: number) {
-				this.x = next;
-			},
-		}) as Barline & { x: number };
+	// A real begin modifier: alignBegModifiers groups repeats by instanceof, and the time
+	// signature beside them by category alone (so that one stays a plain object).
+	const _repeat = (x: number, type = Barline.type.REPEAT_BEGIN) => {
+		const barline = new Barline(type);
+		barline.setX(x);
+		return barline;
+	};
 
 	const timeSig = (x: number) => {
 		const sig = {
@@ -200,14 +185,14 @@ describe('SystemFormatter', () => {
 		}) as unknown as Stave;
 
 	it('squares repeats and time signatures to their own widest x and returns the repeat x', () => {
-		const repeats = [repeat(10), repeat(25)];
+		const repeats = [_repeat(10), _repeat(25)];
 		const sigs = [timeSig(30), timeSig(22)];
 		const x = alignBegModifiers([
 			fakeStave([repeats[0], sigs[0]]),
 			fakeStave([repeats[1], sigs[1]]),
 		]);
 		expect(x).toBe(25);
-		expect(repeats.map((r) => r.x)).toEqual([25, 25]);
+		expect(repeats.map((r) => r.getX())).toEqual([25, 25]);
 		expect(sigs.map((s) => s.x)).toEqual([30, 30]);
 	});
 
@@ -215,7 +200,7 @@ describe('SystemFormatter', () => {
 		const sig = timeSig(30);
 		// A plain barline is not an opening repeat, so it grouped nothing.
 		const x = alignBegModifiers([
-			fakeStave([repeat(10, Barline.type.SINGLE), sig]),
+			fakeStave([_repeat(10, Barline.type.SINGLE), sig]),
 		]);
 		expect(x).toBeNull();
 		expect(sig.moved).toBe(false);

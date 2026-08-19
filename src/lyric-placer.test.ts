@@ -3,31 +3,11 @@ import type { RenderContext, StaveNote } from 'vexflow';
 import { CollisionResolver } from './collision-resolver';
 import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT } from './constants';
 import { Rect } from './geometry';
+import { FakeLyricMark } from './lyric-mark/fake-lyric-mark';
 import { LyricPlacer } from './lyric-placer';
-import { LyricAnnotation, type NoteTranslator } from './note-translator';
+import type { NoteTranslator } from './note-translator';
 
 describe('LyricPlacer', () => {
-	type FakeLyric = LyricAnnotation & { baseline?: number; fill?: string };
-
-	// Object.create keeps the placer's instanceof filter happy without running vexflow's
-	// Annotation constructor (which wants font machinery); own properties shadow everything
-	// the placer calls.
-	const lyric = (
-		verseIndex: number,
-		opts: { extend?: boolean; width?: number } = {},
-	): FakeLyric =>
-		Object.assign(Object.create(LyricAnnotation.prototype), {
-			verseIndex,
-			extend: opts.extend ?? false,
-			setBaselineY(this: FakeLyric, y: number) {
-				this.baseline = y;
-			},
-			setStyle(this: FakeLyric, style: { fillStyle?: string }) {
-				this.fill = style.fillStyle;
-			},
-			getWidth: () => opts.width ?? 20,
-		});
-
 	const note = (x: number, modifiers: unknown[]) =>
 		({
 			getAbsoluteX: () => x,
@@ -83,18 +63,18 @@ describe('LyricPlacer', () => {
 
 	it('pins each syllable one verse line below the baseline in the notation ink', () => {
 		const { placer } = makePlacer();
-		const v0 = lyric(0);
-		const v1 = lyric(1);
+		const v0 = new FakeLyricMark(0);
+		const v1 = new FakeLyricMark(1);
 		placer.pin([note(100, [v0, v1])], 3, 200);
-		expect(v0.baseline).toBe(200);
-		expect(v1.baseline).toBe(200 + LYRIC_LINE_HEIGHT);
-		expect(v0.fill).toBe('#123456');
-		expect(v1.fill).toBe('#123456');
+		expect(v0.baselineY).toBe(200);
+		expect(v1.baselineY).toBe(200 + LYRIC_LINE_HEIGHT);
+		expect(v0.fillStyle).toBe('#123456');
+		expect(v1.fillStyle).toBe('#123456');
 	});
 
 	it('registers each syllable as an annotation obstacle centered on its note', () => {
 		const { placer, obstacles } = makePlacer();
-		placer.pin([note(100, [lyric(0, { width: 20 })])], 3, 200);
+		placer.pin([note(100, [new FakeLyricMark(0, { width: 20 })])], 3, 200);
 		const [hit] = obstacles();
 		expect(hit?.other).toMatchObject({ kind: 'annotation', band: 3 });
 		expect(hit?.other.rect).toMatchObject({
@@ -114,9 +94,9 @@ describe('LyricPlacer', () => {
 	it('draws a melisma line up to the note before the next syllable in its verse', () => {
 		const { placer, lines } = makePlacer();
 		const notes = [
-			note(100, [lyric(0, { extend: true, width: 30 })]),
+			note(100, [new FakeLyricMark(0, { extend: true, width: 30 })]),
 			note(140, []),
-			note(180, [lyric(0)]),
+			note(180, [new FakeLyricMark(0)]),
 		];
 		placer.pin(notes, 0, 50);
 		// From half the syllable's width past its note to half a notehead past the held
@@ -127,7 +107,7 @@ describe('LyricPlacer', () => {
 	it('runs a melisma with no following syllable to the last note of the stave', () => {
 		const { placer, lines } = makePlacer();
 		const notes = [
-			note(100, [lyric(0, { extend: true, width: 30 })]),
+			note(100, [new FakeLyricMark(0, { extend: true, width: 30 })]),
 			note(180, []),
 		];
 		placer.pin(notes, 0, 50);
@@ -136,7 +116,7 @@ describe('LyricPlacer', () => {
 
 	it('skips a melisma whose syllable already sits on the held note', () => {
 		const { placer, lines } = makePlacer();
-		placer.pin([note(100, [lyric(0, { extend: true })])], 0, 50);
+		placer.pin([note(100, [new FakeLyricMark(0, { extend: true })])], 0, 50);
 		expect(lines).toHaveLength(0);
 	});
 });
