@@ -324,26 +324,11 @@ function resetNestedState(
  * shift its off-beat eighth would be read as an on-beat and played LONG instead of short —
  * backwards, and audible on the very first note of any swung tune with an anacrusis.
  *
- * Exempt notes (see {@link isSwingExempt}) skip the warp entirely and keep their written beats.
- * That stays consistent with their swung neighbors because the pair boundaries are fixed points:
- * a triplet filling a beat still starts and ends where the warp leaves that beat, and only its
- * interior stays even.
+ * Exempt notes (see {@link Note.isSwingExempt}) skip the warp entirely and keep their written
+ * beats. That stays consistent with their swung neighbors because the pair boundaries are fixed
+ * points: a triplet filling a beat still starts and ends where the warp leaves that beat, and
+ * only its interior stays even.
  */
-/**
- * Whether swing leaves this note alone. MusicXML exempts notes with no `<type>`, grace notes,
- * and — the one that matters in practice — notes whose sounding duration isn't the nominal one
- * for their type, i.e. anything carrying a `<time-modification>`.
- *
- * This is not a nicety. Arrangers of swung music routinely write the guitar or piano part as
- * explicit triplets rather than leaning on the swing marking, so a score can hold both notations
- * at once: plain eighths in the vocal line that must swing, and written-out triplets underneath
- * that must not be swung a SECOND time. Without this, those triplets come out as neither an even
- * triplet nor a swung pair.
- */
-export function isSwingExempt(note: MNote): boolean {
-	return note.isGrace || note.type === null || note.timeModification !== null;
-}
-
 export function swingWarp(
 	swing: Swing | null,
 	playedBeats: number,
@@ -759,7 +744,7 @@ export class SequenceFactory {
 			// Warp onset and end through the same function, then take the duration as the
 			// difference — a swung note's length falls out of where its neighbors land, so it
 			// can never drift out of step with them or with the measure's own length.
-			const warp = isSwingExempt(rn.mnote)
+			const warp = note.isSwingExempt()
 				? (beat: number) => beat
 				: (beat: number) => swung(rn.measureIndex, beat);
 			const onset = warp(measureBeat);

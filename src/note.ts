@@ -105,6 +105,24 @@ export class Note extends Element implements Highlightable, Playable {
 		return this.deps.mnote.isGrace;
 	}
 
+	/**
+	 * Whether swing leaves this note alone. MusicXML exempts notes with no `<type>`, grace notes,
+	 * and — the one that matters in practice — notes whose sounding duration isn't the nominal one
+	 * for their type, i.e. anything carrying a `<time-modification>`.
+	 *
+	 * This is not a nicety. Arrangers of swung music routinely write the guitar or piano part as
+	 * explicit triplets rather than leaning on the swing marking, so a score can hold both
+	 * notations at once: plain eighths in the vocal line that must swing, and written-out triplets
+	 * underneath that must not be swung a SECOND time. Without this, those triplets come out as
+	 * neither an even triplet nor a swung pair.
+	 */
+	isSwingExempt(): boolean {
+		const { mnote } = this.deps;
+		return (
+			mnote.isGrace || mnote.type === null || mnote.timeModification !== null
+		);
+	}
+
 	/* The grace notes ornamenting this note, in play order: the run of grace notes immediately
 	 * preceding it in the measure (grace notes steal no timeline time, so they never surface as a
 	 * cursor onset on their own). Empty for most notes; a caller can sound them just before this

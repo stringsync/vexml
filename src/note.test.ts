@@ -105,6 +105,34 @@ function fixture() {
 	return { viewport, decorations, measure, mC, noteC, noteE, noteRest, noteBb };
 }
 
+/* One Note built straight from the given <note> markup, for the predicates that read nothing but
+ * the note itself. */
+function noteOf(inner: string): Note {
+	const mdoc = new MDOMParser().parseFromString(`<?xml version="1.0"?>
+<score-partwise version="4.0">
+  <part-list><score-part id="P1"><part-name>M</part-name></score-part></part-list>
+  <part id="P1"><measure number="1">
+    <attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+    ${inner}
+  </measure></part>
+</score-partwise>`);
+	const mpart = must(mdoc.score.parts[0], 'part');
+	const mmeasure = must(mpart.measures[0], 'measure');
+	const mnote = must(mmeasure.notes[0], 'note');
+	const viewport = new FakeViewport();
+	return new Note({
+		mnote,
+		rect: new Rect(0, 0, 8, 8),
+		viewport,
+		decorations: new FakeDecorations(),
+		measure: bareMeasure(mpart, mmeasure, viewport),
+		chord: [mnote],
+		notes: new Map(),
+		tabs: new Map(),
+		glyph: null,
+	});
+}
+
 describe('Note', () => {
 	it('reports its sounding pitch as a vexflow key, or null for a rest', () => {
 		const { noteC, noteE, noteRest, noteBb } = fixture();
@@ -227,5 +255,41 @@ describe('Note', () => {
 		// A's graces are the two grace notes before it, in play order; B (a plain note) has none.
 		expect(noteA.getGraceNotes()).toEqual([graceF, graceG]);
 		expect(noteB.getGraceNotes()).toEqual([]);
+	});
+	// Swing exemption. A written-out triplet already carries the swing feel; swinging it again
+	// would put it on neither an even third of the beat nor a swung pair, which is the case that
+	// shows up in real arrangements where a swung vocal line sits over a triplet accompaniment.
+	const PITCH = '<pitch><step>C</step><octave>5</octave></pitch>';
+
+	it('swings an ordinary eighth', () => {
+		expect(
+			noteOf(
+				`<note>${PITCH}<duration>1</duration><type>eighth</type></note>`,
+			).isSwingExempt(),
+		).toBe(false);
+	});
+
+	it('exempts a note under a <time-modification>', () => {
+		expect(
+			noteOf(
+				`<note>${PITCH}<duration>1</duration><type>eighth</type>` +
+					'<time-modification><actual-notes>3</actual-notes>' +
+					'<normal-notes>2</normal-notes></time-modification></note>',
+			).isSwingExempt(),
+		).toBe(true);
+	});
+
+	it('exempts a grace note, which has no written duration to stretch', () => {
+		expect(
+			noteOf(
+				`<note><grace/>${PITCH}<type>eighth</type></note>`,
+			).isSwingExempt(),
+		).toBe(true);
+	});
+
+	it('exempts a note with no <type>, whose nominal duration is unknown', () => {
+		expect(
+			noteOf(`<note>${PITCH}<duration>1</duration></note>`).isSwingExempt(),
+		).toBe(true);
 	});
 });
