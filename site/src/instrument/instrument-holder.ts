@@ -2,9 +2,24 @@ import { disposables, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
 import { INSTRUMENT_KEY } from '../constants';
 import type { Instrument } from './instrument';
+import { INSTRUMENTS, OPENING_INSTRUMENT } from './instruments';
 import { PianoInstrument } from './piano-instrument';
 
 type InstrumentHolderEvents = { changed: undefined };
+
+/*
+ * The instrument to open with, from whatever the last visit stored.
+ *
+ * A name the menu no longer offers falls back to OPENING_INSTRUMENT: smplr fetches samples by
+ * name, so a stale one 404s and the site plays nothing at all, which looks exactly like broken
+ * audio. '' is the one to expect — the grand piano was stored that way before it had a value of
+ * its own.
+ */
+function openingName(stored: string | null): string {
+	return INSTRUMENTS.some((i) => i.value === stored) && stored
+		? stored
+		: OPENING_INSTRUMENT;
+}
 
 /*
  * The live synth voice, its persisted name, and the mute toggle.
@@ -26,7 +41,7 @@ export class InstrumentHolder
 	private instrument: Instrument;
 
 	constructor(private readonly storage: Storage) {
-		this.name = storage.getItem(INSTRUMENT_KEY) ?? 'marimba';
+		this.name = openingName(storage.getItem(INSTRUMENT_KEY));
 		this.instrument = new PianoInstrument(this.name);
 	}
 
