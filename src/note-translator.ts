@@ -34,7 +34,6 @@ import {
 	TAB_GRACE_SPACING,
 } from './constants';
 import { LyricAnnotation } from './lyric-mark/lyric-annotation';
-import { midiOf } from './score-reader';
 import {
 	FingeringAnnotation,
 	StringNumberAnnotation,
@@ -1052,6 +1051,22 @@ function addTabModifiers(tabNote: TabNote, lead: Note): void {
  * `tuning` is indexed by string - 1 (see stringTuning). An explicit `<string>` wins — only
  * its fret is derived — so a hand-fingered voicing keeps the string the editor chose.
  */
+/* Semitones above C for each MusicXML <step>. */
+const STEP_SEMITONES: Record<string, number> = {
+	C: 0,
+	D: 2,
+	E: 4,
+	F: 5,
+	G: 7,
+	A: 9,
+	B: 11,
+};
+
+/* MIDI number of a step/octave/alter, the common scale a pitch and a string's tuning compare on. */
+function midiOf(step: string, octave: number, alter = 0): number {
+	return (octave + 1) * 12 + (STEP_SEMITONES[step.toUpperCase()] ?? 0) + alter;
+}
+
 function derivePosition(
 	note: Chord['notes'][number],
 	tuning: number[],

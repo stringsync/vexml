@@ -22,8 +22,7 @@ import {
 } from './direction-placer';
 import { Rect } from './geometry';
 import { GeometryCollector } from './geometry-collector';
-import type { DirectionLineSpan, ScoreReader } from './score-reader';
-import { dynamicGlyphs } from './score-reader';
+import { type DirectionLineSpan, ScoreReader } from './score-reader';
 import { SpillTracker } from './spill-tracker';
 
 describe('DirectionPlacer', () => {
@@ -78,7 +77,10 @@ describe('DirectionPlacer', () => {
 		...overrides,
 	});
 
-	const makePlacer = (reader: Partial<ScoreReader> = {}) => {
+	// A real reader with the case's canned answers layered over it. The placer calls reader
+	// methods a given case says nothing about, so a bare object literal leaves holes.
+	const makePlacer = (overrides: Partial<ScoreReader> = {}) => {
+		const reader = Object.assign(new ScoreReader(), overrides);
 		// Captures every typed string with the ink it was typed in, and every stroked
 		// segment, so placements and direction-line paths are assertable.
 		const texts: Array<{ text: string; x: number; y: number; fill: string }> =
@@ -122,7 +124,7 @@ describe('DirectionPlacer', () => {
 		const spill = new SpillTracker();
 		const placer = new DirectionPlacer(
 			context,
-			reader as unknown as ScoreReader,
+			reader,
 			resolver,
 			new GeometryCollector(),
 			spill,
@@ -307,7 +309,7 @@ describe('DirectionPlacer', () => {
 				],
 			}),
 		);
-		const glyph = dynamicGlyphs('p');
+		const glyph = new ScoreReader().dynamicGlyphs('p');
 		expect(texts).toEqual([
 			{
 				text: glyph,

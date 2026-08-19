@@ -110,12 +110,6 @@ function isDynamicSpelling(text: string): boolean {
 	return [...text].every((ch) => ch in DYNAMIC_GLYPHS);
 }
 
-/** A marking respelled in SMuFL dynamic glyphs. Callers check {@link isDynamicSpelling}
- * (via the `glyph` flag) first; an unmapped character passes through unchanged. */
-export function dynamicGlyphs(text: string): string {
-	return [...text].map((ch) => DYNAMIC_GLYPHS[ch] ?? ch).join('');
-}
-
 // A <direction><direction-type><pedal> spanner marker, bound to the lead note it
 // anchors. `line` carries the MusicXML line="yes" flag (bracket pedal vs. the
 // default "Ped…*" text); it rides on every marker so the stop knows the style.
@@ -384,6 +378,39 @@ function multiRestCountOf(measure: Measure | undefined): number | null {
  * (measuring) and draw passes must read identically, so the predicates live here.
  */
 export class ScoreReader {
+	/** A marking respelled in SMuFL dynamic glyphs, so it engraves as music rather than as
+	 * text. Callers check the `glyph` flag first; an unmapped character passes through
+	 * unchanged. */
+	dynamicGlyphs(text: string): string {
+		return [...text].map((ch) => DYNAMIC_GLYPHS[ch] ?? ch).join('');
+	}
+
+	/** How many passes an ending covers, from its `<ending number>` ("1", "1,2", "1-3"). */
+	endingPasses(numberAttr: string | null): number {
+		if (!numberAttr) {
+			return 1;
+		}
+		let total = 0;
+		for (const part of numberAttr.split(',')) {
+			const range = part.trim().match(/^(\d+)\s*-\s*(\d+)$/);
+			if (range) {
+				total += Math.max(1, Number(range[2]) - Number(range[1]) + 1);
+			} else if (part.trim()) {
+				total += 1;
+			}
+		}
+		return Math.max(1, total);
+	}
+
+	/** The FIRST pass an ending covers ("1" -> 1, "2,3" -> 2, "3-4" -> 3). Playback compares
+	 * this across adjacent runs: a number that doesn't climb means the volta group restarted,
+	 * i.e. the new run belongs to an enclosing repeat block. Defaults to 1 for a malformed or
+	 * absent attribute, which reads as a restart and so errs toward splitting rather than
+	 * merging two unrelated groups. */
+	endingFirstPass(numberAttr: string | null): number {
+		return Number(numberAttr?.split(/[,-]/)[0]?.trim()) || 1;
+	}
+
 	/*
 	 * One staff's renderable content from a measure's voices — see {@link StaffVoice}.
 	 *
@@ -1389,21 +1416,6 @@ function hasStaffTuning(measure: Measure, staffNumber: string): boolean {
 	);
 }
 
-const STEP_SEMITONES: Record<string, number> = {
-	C: 0,
-	D: 2,
-	E: 4,
-	F: 5,
-	G: 7,
-	A: 9,
-	B: 11,
-};
-
-/** MIDI number of a step/octave/alter, the common scale tuning and pitches compare on. */
-export function midiOf(step: string, octave: number, alter = 0): number {
-	return (octave + 1) * 12 + (STEP_SEMITONES[step.toUpperCase()] ?? 0) + alter;
-}
-
 /** MusicXML `<group-symbol>` -> the connector vexml draws. null means "draw nothing". */
 function groupSymbol(
 	symbol: PartGroupSpan['symbol'],
@@ -1451,32 +1463,6 @@ type BarlineRead = {
 	started: string | null;
 	closed: 'stop' | 'discontinue' | null;
 };
-
-/* How many passes an ending covers, from its `<ending number>` ("1", "1,2", "1-3"). */
-export function endingPasses(numberAttr: string | null): number {
-	if (!numberAttr) {
-		return 1;
-	}
-	let total = 0;
-	for (const part of numberAttr.split(',')) {
-		const range = part.trim().match(/^(\d+)\s*-\s*(\d+)$/);
-		if (range) {
-			total += Math.max(1, Number(range[2]) - Number(range[1]) + 1);
-		} else if (part.trim()) {
-			total += 1;
-		}
-	}
-	return Math.max(1, total);
-}
-
-/* The FIRST pass an ending covers, from its `<ending number>` ("1" -> 1, "2,3" -> 2, "3-4" -> 3).
- * Playback compares this across adjacent runs: a number that doesn't climb means the volta group
- * restarted, i.e. the new run belongs to an enclosing repeat block. Defaults to 1 for a malformed
- * or absent attribute, which reads as a restart and so errs toward splitting rather than merging
- * two unrelated groups. */
-export function endingFirstPass(numberAttr: string | null): number {
-	return Number(numberAttr?.split(/[,-]/)[0]?.trim()) || 1;
-}
 
 /* One measure's `<barline>`s flattened: MusicXML allows several (a left repeat and a right one),
  * and the edge each sits on is already implied by its repeat direction and ending type. */

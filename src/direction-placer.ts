@@ -40,13 +40,12 @@ import {
 import { Rect } from './geometry';
 import type { GeometryCollector } from './geometry-collector';
 import { MetronomeGlyph, type TempoModulation } from './metronome-glyph';
-import {
-	type DirectionLineSpan,
-	dynamicGlyphs,
-	type LineEnd,
-	type Placement,
-	type ScoreReader,
-	type TempoMark,
+import type {
+	DirectionLineSpan,
+	LineEnd,
+	Placement,
+	ScoreReader,
+	TempoMark,
 } from './score-reader';
 import type { SpillTracker } from './spill-tracker';
 
@@ -298,7 +297,7 @@ export class DirectionPlacer {
 		for (const d of column.dynamics) {
 			const placed = this.drawWords(
 				d.stave,
-				d.glyph ? dynamicGlyphs(d.text) : d.text,
+				d.glyph ? this.reader.dynamicGlyphs(d.text) : d.text,
 				d.anchor,
 				d.placement,
 				d.glyph

@@ -4,12 +4,7 @@ import type { Gaps } from './gaps';
 import { Rect } from './geometry';
 import type { Note } from './note';
 import type { RawGeometry } from './score-drawer';
-import {
-	endingFirstPass,
-	endingPasses,
-	type ScoreReader,
-	type Swing,
-} from './score-reader';
+import type { ScoreReader, Swing } from './score-reader';
 import {
 	beatsToMs,
 	type Jump,
@@ -385,9 +380,9 @@ function jumpsByMeasure(
 			if (ending) {
 				jumps.push({
 					type: 'repeatending',
-					times: endingPasses(ending.number),
+					times: reader.endingPasses(ending.number),
 					last: ending.last,
-					number: endingFirstPass(ending.number),
+					number: reader.endingFirstPass(ending.number),
 				});
 			} else if (repeatEnd) {
 				jumps.push({
