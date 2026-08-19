@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Chord } from '@stringsync/mdom';
-import { MDOMParser } from '@stringsync/mdom';
+import { MDocument } from '@stringsync/mdom';
 import type { StaveNote, TabNote, TabStave } from 'vexflow';
 import { Rect } from 'webappwiz/geometry';
 import { GeometryCollector } from './geometry-collector';
@@ -9,20 +9,19 @@ describe('GeometryCollector', () => {
 	// A real two-note mdom chord (C4 carrying string 2 / fret 5, E4 with no tab technical),
 	// so the collector reads the same shapes the parser produces.
 	const chord = ((): Chord => {
-		const xml = `<?xml version="1.0"?>
-<score-partwise version="4.0">
-  <part-list><score-part id="P1"><part-name>M</part-name></score-part></part-list>
-  <part id="P1"><measure number="1"><attributes><divisions>1</divisions></attributes>
-  <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type><notations><technical><string>2</string><fret>5</fret></technical></notations></note>
-  <note><chord/><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
-  </measure></part>
-</score-partwise>`;
-		const found = new MDOMParser().parseFromString(xml).score.parts[0]
-			?.measures[0]?.voices[0]?.chords[0];
-		if (!found) {
-			throw new Error('probe chord failed to parse');
-		}
-		return found;
+		const built = MDocument.empty()
+			.score.addPart({ id: 'P1', name: 'M' })
+			.addMeasure()
+			.getOrCreateVoice('1')
+			.addChord(
+				[
+					{ step: 'C', octave: 4 },
+					{ step: 'E', octave: 4 },
+				],
+				{ type: 'quarter' },
+			);
+		built.notes[0]?.setStringFret({ string: 2, fret: 5 });
+		return built;
 	})();
 
 	const staveNote = (ys: (number | undefined)[]) =>

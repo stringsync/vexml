@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import {
-	MDOMParser,
+	MDocument,
 	type Measure as MMeasure,
 	type Note as MNote,
 	type Part as MPart,
@@ -16,17 +16,6 @@ import { Part } from './part';
 import { System } from './system';
 import { TabPosition } from './tab-position';
 import type { Viewport } from './viewport';
-
-const XML = `<?xml version="1.0"?>
-<score-partwise version="4.0">
-  <part-list><score-part id="P1"><part-name>M</part-name></score-part></part-list>
-  <part id="P1">
-    <measure number="1">
-      <attributes><divisions>1</divisions></attributes>
-      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
-    </measure>
-  </part>
-</score-partwise>`;
 
 /* Any Measure at all: Note stores one and hands it back, and nothing here reads it. Its
  * back-reference arrays stay empty — measure.test.ts is what covers the linking. */
@@ -48,14 +37,13 @@ function bareMeasure(
 	return new Measure(mmeasure, new Part(mpart, []), box, []);
 }
 
+/* One part, one measure, one note: the smallest score a TabPosition can point back at. */
 function fixture() {
-	const mdoc = new MDOMParser().parseFromString(XML);
-	const mpart = mdoc.score.parts[0];
-	const mmeasure = mpart?.measures[0];
-	const mnote = mmeasure?.notes[0];
-	if (!mpart || !mmeasure || !mnote) {
-		throw new Error('fixture: missing note');
-	}
+	const mpart = MDocument.empty().score.addPart({ id: 'P1', name: 'M' });
+	const mmeasure = mpart.addMeasure();
+	const mnote = mmeasure
+		.getOrCreateVoice('1')
+		.addNote({ step: 'C', octave: 4, type: 'quarter' });
 	const viewport = new FakeViewport();
 	const decorations = new FakeDecorations();
 	const measure = bareMeasure(mpart, mmeasure, viewport);

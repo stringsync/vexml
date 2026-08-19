@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import type { Measure as MMeasure } from '@stringsync/mdom';
-import { MDOMParser } from '@stringsync/mdom';
+import { MDocument } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
 import { FakeViewport } from './fake-viewport';
 import { Measure } from './measure';
@@ -9,27 +9,21 @@ import { Part } from './part';
 import { System } from './system';
 
 /* A one-part, one-measure, one-note score: the smallest thing that still builds a real Measure. */
-const XML = `<?xml version="1.0"?>
-<score-partwise version="4.0">
-  <part-list><score-part id="P1"><part-name>M</part-name></score-part></part-list>
-  <part id="P1">
-    <measure number="1">
-      <attributes><divisions>1</divisions></attributes>
-      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
-    </measure>
-  </part>
-</score-partwise>`;
+function fixture() {
+	const mpart = MDocument.empty().score.addPart({ id: 'P1', name: 'M' });
+	const mmeasure = mpart.addMeasure();
+	mmeasure
+		.getOrCreateVoice('1')
+		.addNote({ step: 'C', octave: 4, type: 'quarter' });
+	return { mpart, mmeasure };
+}
 
 describe('Measure', () => {
 	let measure: Measure;
 	let mmeasure: MMeasure;
 
 	beforeEach(() => {
-		const mpart = new MDOMParser().parseFromString(XML).score.parts[0];
-		const first = mpart?.measures[0];
-		if (!mpart || !first) {
-			throw new Error('fixture: missing measure');
-		}
+		const { mpart, mmeasure: first } = fixture();
 		mmeasure = first;
 
 		// The links run both ways, so each owner is built around the array it will later be

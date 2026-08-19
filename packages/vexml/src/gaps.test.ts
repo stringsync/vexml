@@ -1,46 +1,34 @@
 import { describe, expect, it } from 'bun:test';
-import { MDOMParser, type Part } from '@stringsync/mdom';
+import { MDocument, type Part } from '@stringsync/mdom';
 import type { Gap } from './config';
 import { Gaps } from './gaps';
 
 /* A two-part, two-measure score: the smallest thing a gap can be inserted into that still
  * has signatures to carry across the cut and a second part to keep in step. */
-const GAPS_XML = `<?xml version="1.0"?>
-<score-partwise version="4.0">
-  <part-list>
-    <score-part id="P1"><part-name>A</part-name></score-part>
-    <score-part id="P2"><part-name>B</part-name></score-part>
-  </part-list>
-  <part id="P1">
-    <measure number="1">
-      <attributes>
-        <divisions>1</divisions>
-        <key><fifths>2</fifths></key>
-        <time><beats>4</beats><beat-type>4</beat-type></time>
-        <clef><sign>G</sign><line>2</line></clef>
-      </attributes>
-      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
-    </measure>
-    <measure number="2">
-      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
-    </measure>
-  </part>
-  <part id="P2">
-    <measure number="1">
-      <attributes>
-        <divisions>1</divisions>
-        <clef><sign>F</sign><line>4</line></clef>
-      </attributes>
-      <note><pitch><step>C</step><octave>3</octave></pitch><duration>4</duration><type>whole</type></note>
-    </measure>
-    <measure number="2">
-      <note><pitch><step>C</step><octave>3</octave></pitch><duration>4</duration><type>whole</type></note>
-    </measure>
-  </part>
-</score-partwise>`;
-
 function parts(): Part[] {
-	return new MDOMParser().parseFromString(GAPS_XML).score.parts;
+	const score = MDocument.empty().score;
+
+	const treble = score.addPart({ id: 'P1', name: 'A' });
+	const first = treble.addMeasure();
+	first.setKey({ fifths: 2 });
+	first.setTime({ beats: 4, beatType: 4 });
+	first.setClef({ sign: 'G', line: 2 });
+	for (const measure of [first, treble.addMeasure()]) {
+		measure
+			.getOrCreateVoice('1')
+			.addNote({ step: 'C', octave: 5, type: 'whole' });
+	}
+
+	const bass = score.addPart({ id: 'P2', name: 'B' });
+	const bassFirst = bass.addMeasure();
+	bassFirst.setClef({ sign: 'F', line: 4 });
+	for (const measure of [bassFirst, bass.addMeasure()]) {
+		measure
+			.getOrCreateVoice('1')
+			.addNote({ step: 'C', octave: 3, type: 'whole' });
+	}
+
+	return score.parts;
 }
 
 const gap = (beforeMeasureIndex: number, durationMs = 1000): Gap => ({

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import {
+	MDOMParser,
 	MDocument,
 	type Measure,
-	MDOMParser,
 	MusicXMLSerializer,
 } from '@stringsync/mdom';
 import { MeasureSlicer, parseMeasureSpec } from './measure-slicer';

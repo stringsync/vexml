@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { MDOMParser } from '@stringsync/mdom';
+import { MDocument } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
 import { isHighlightable, isPlayable } from './element';
 import { FakeViewport } from './fake-viewport';
@@ -7,23 +7,14 @@ import type { Measure } from './measure';
 import { MeasureBox } from './measure-box';
 import { System } from './system';
 
-const XML = `<?xml version="1.0"?>
-<score-partwise version="4.0">
-  <part-list><score-part id="P1"><part-name>M</part-name></score-part></part-list>
-  <part id="P1">
-    <measure number="1">
-      <attributes><divisions>1</divisions></attributes>
-      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
-    </measure>
-  </part>
-</score-partwise>`;
-
+/* One part, one measure, one note: the smallest score a MeasureBox can point back at. */
 function fixture() {
-	const mdoc = new MDOMParser().parseFromString(XML);
-	const mmeasure = mdoc.score.parts[0]?.measures[0];
-	if (!mmeasure) {
-		throw new Error('fixture: missing measure');
-	}
+	const mmeasure = MDocument.empty()
+		.score.addPart({ id: 'P1', name: 'M' })
+		.addMeasure();
+	mmeasure
+		.getOrCreateVoice('1')
+		.addNote({ step: 'C', octave: 4, type: 'quarter' });
 	const viewport = new FakeViewport();
 	const rect = new Rect(0, 0, 200, 100);
 	const boxes: MeasureBox[] = [];
