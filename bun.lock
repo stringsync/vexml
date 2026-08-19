@@ -4,11 +4,6 @@
   "workspaces": {
     "": {
       "name": "@stringsync/vexml",
-      "dependencies": {
-        "@stringsync/mdom": "0.2.4",
-        "vexflow": "5.0.0",
-        "webappwiz": "0.0.1",
-      },
       "devDependencies": {
         "@biomejs/biome": "2.5.1",
         "@coderline/alphatab": "^1.8.4",
@@ -22,6 +17,7 @@
         "@webappwiz/react": "0.0.1",
         "canvas": "^3.2.3",
         "chalk": "5.6.2",
+        "commander": "15.0.0",
         "opensheetmusicdisplay": "^2.1.1",
         "pixelmatch": "^7.2.0",
         "playwright": "^1.61.1",
@@ -31,6 +27,18 @@
         "smplr": "^1.0.0",
         "tailwindcss": "^4.3.1",
         "vite": "^8.1.0",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
+    "packages/vexml": {
+      "name": "@stringsync/vexml",
+      "version": "1.2.4",
+      "dependencies": {
+        "@stringsync/mdom": "0.2.4",
+        "vexflow": "5.0.0",
+        "webappwiz": "0.0.1",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -116,6 +124,8 @@
 
     "@stringsync/mdom": ["@stringsync/mdom@0.2.4", "", { "dependencies": { "jszip": "^3.10.1", "xml-js": "^1.6.11" }, "bin": { "mdom": "cli/index.ts" } }, "sha512-BGLiuZxtDK3hJ18s/WbtjNWa07wYzZFQ/7c+YYqp2pcSlh8M4pyp1DRj/+8MhCh6WwZ9ev6PMjtpl0Zriqubxw=="],
 
+    "@stringsync/vexml": ["@stringsync/vexml@workspace:packages/vexml"],
+
     "@tailwindcss/node": ["@tailwindcss/node@4.3.1", "", { "dependencies": { "@jridgewell/remapping": "^2.3.5", "enhanced-resolve": "5.21.6", "jiti": "^2.7.0", "lightningcss": "1.32.0", "magic-string": "^0.30.21", "source-map-js": "^1.2.1", "tailwindcss": "4.3.1" } }, "sha512-6NDaqRoAMSXD1mr/RXu0HBvNE9a2n5tHPsxu9XHLws8o4Twes5rBM2205SUUiJ9goAtadrN6xTGX0UDEwp/N4A=="],
 
     "@tailwindcss/oxide": ["@tailwindcss/oxide@4.3.1", "", { "optionalDependencies": { "@tailwindcss/oxide-android-arm64": "4.3.1", "@tailwindcss/oxide-darwin-arm64": "4.3.1", "@tailwindcss/oxide-darwin-x64": "4.3.1", "@tailwindcss/oxide-freebsd-x64": "4.3.1", "@tailwindcss/oxide-linux-arm-gnueabihf": "4.3.1", "@tailwindcss/oxide-linux-arm64-gnu": "4.3.1", "@tailwindcss/oxide-linux-arm64-musl": "4.3.1", "@tailwindcss/oxide-linux-x64-gnu": "4.3.1", "@tailwindcss/oxide-linux-x64-musl": "4.3.1", "@tailwindcss/oxide-wasm32-wasi": "4.3.1", "@tailwindcss/oxide-win32-arm64-msvc": "4.3.1", "@tailwindcss/oxide-win32-x64-msvc": "4.3.1" } }, "sha512-yVPyo8RNkabVr3O2EhHEE0Rewu7YKzc1DhIqfL46LKveFrmu9XbDazNOJY7/GRuvw1h6u3utWnR29H/p5JPlgA=="],
@@ -185,6 +195,8 @@
     "chalk": ["chalk@5.6.2", "", {}, "sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA=="],
 
     "chownr": ["chownr@1.1.4", "", {}, "sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg=="],
+
+    "commander": ["commander@15.0.0", "", {}, "sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg=="],
 
     "core-util-is": ["core-util-is@1.0.3", "", {}, "sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ=="],
 

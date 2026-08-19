@@ -9,8 +9,8 @@ FROM mcr.microsoft.com/playwright:v1.61.1-jammy
 # wrong-but-stable layout, off by hundreds of px. A system font is available synchronously
 # at layout time, so renders are deterministic and the container needs no network. Copied
 # early (before the source) so this layer caches until the font files themselves change.
-COPY assets/fonts/Bravura.otf assets/fonts/SourceSans3-Light.ttf \
-	assets/fonts/SourceSans3-Regular.ttf assets/fonts/SourceSans3-SemiBold.ttf \
+COPY packages/vexml/assets/fonts/Bravura.otf packages/vexml/assets/fonts/SourceSans3-Light.ttf \
+	packages/vexml/assets/fonts/SourceSans3-Regular.ttf packages/vexml/assets/fonts/SourceSans3-SemiBold.ttf \
 	/usr/share/fonts/truetype/vexml/
 RUN fc-cache -f
 
@@ -18,7 +18,11 @@ RUN fc-cache -f
 COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 
 WORKDIR /app
+# bun resolves `workspace:*` from the manifests, so every package's package.json
+# has to land before the install — listed one by one to keep this layer cached
+# until a manifest actually changes.
 COPY package.json bun.lock ./
+COPY packages/vexml/package.json packages/vexml/
 RUN bun install --frozen-lockfile
 
 COPY . .
