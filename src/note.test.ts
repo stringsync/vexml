@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'bun:test';
-import { MDOMParser, type Note as MNote } from '@stringsync/mdom';
+import {
+	MDOMParser,
+	type Measure as MMeasure,
+	type Note as MNote,
+	type Part as MPart,
+} from '@stringsync/mdom';
 import { FakeDecorations } from './decoration/fake-decorations';
 import { isHighlightable, isPlayable } from './element';
 import { Rect } from './geometry';
-import { measureFixture } from './measure-fixture';
+import { Measure } from './measure';
+import { MeasureBox } from './measure-box';
 import { Note } from './note';
+import { Part } from './part';
+import { System } from './system';
 import type { TabPosition } from './tab-position';
 import { FakeViewport } from './viewport/fake-viewport';
+import type { Viewport } from './viewport/viewport';
 
 const XML = `<?xml version="1.0"?>
 <score-partwise version="4.0">
@@ -24,6 +33,26 @@ const XML = `<?xml version="1.0"?>
     </measure>
   </part>
 </score-partwise>`;
+
+/* Any Measure at all: Note stores one and hands it back, and nothing here reads it. Its
+ * back-reference arrays stay empty — measure.test.ts is what covers the linking. */
+function bareMeasure(
+	mpart: MPart,
+	mmeasure: MMeasure,
+	viewport: Viewport,
+): Measure {
+	const rect = new Rect(0, 0, 100, 50);
+	const box = new MeasureBox(
+		rect,
+		viewport,
+		mmeasure.number,
+		mmeasure.index,
+		[mmeasure],
+		new System(rect, viewport, 0, []),
+		[],
+	);
+	return new Measure(mmeasure, new Part(mpart, []), box, []);
+}
 
 function must<T>(value: T | undefined, what: string): T {
 	if (value === undefined) {
@@ -45,7 +74,7 @@ function fixture() {
 
 	const viewport = new FakeViewport();
 	const decorations = new FakeDecorations();
-	const measure = measureFixture(mpart, mmeasure, viewport);
+	const measure = bareMeasure(mpart, mmeasure, viewport);
 
 	// The shared registries the wrappers resolve their cross-links through (a Map fulfills the
 	// NoteLookup / TabLookup interfaces). Populated as each note is built.
@@ -173,7 +202,7 @@ describe('Note', () => {
 
 		const viewport = new FakeViewport();
 		const decorations = new FakeDecorations();
-		const measure = measureFixture(mpart, mmeasure, viewport);
+		const measure = bareMeasure(mpart, mmeasure, viewport);
 		const notesByMnote = new Map<MNote, Note>();
 		const build = (mnote: MNote) => {
 			const note = new Note({

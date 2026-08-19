@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import type { Measure as MMeasure } from '@stringsync/mdom';
 import { MDOMParser } from '@stringsync/mdom';
-import type { Measure } from './measure';
-import { measureFixture } from './measure-fixture';
+import { Rect } from './geometry';
+import { Measure } from './measure';
+import { MeasureBox } from './measure-box';
+import { Part } from './part';
+import { System } from './system';
 import { FakeViewport } from './viewport/fake-viewport';
 
 /* A one-part, one-measure, one-note score: the smallest thing that still builds a real Measure. */
@@ -28,7 +31,28 @@ describe('Measure', () => {
 			throw new Error('fixture: missing measure');
 		}
 		mmeasure = first;
-		measure = measureFixture(mpart, mmeasure, new FakeViewport());
+
+		// The links run both ways, so each owner is built around the array it will later be
+		// filled with: System <- MeasureBox <- Measure -> Part, then the measure pushed back in.
+		// That is what the tests below walk.
+		const viewport = new FakeViewport();
+		const rect = new Rect(0, 0, 100, 50);
+		const boxes: MeasureBox[] = [];
+		const boxMeasures: Measure[] = [];
+		const partMeasures: Measure[] = [];
+		const box = new MeasureBox(
+			rect,
+			viewport,
+			mmeasure.number,
+			mmeasure.index,
+			[mmeasure],
+			new System(rect, viewport, 0, boxes),
+			boxMeasures,
+		);
+		boxes.push(box);
+		measure = new Measure(mmeasure, new Part(mpart, partMeasures), box, []);
+		boxMeasures.push(measure);
+		partMeasures.push(measure);
 	});
 
 	it('exposes its printed number and stable index', () => {
