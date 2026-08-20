@@ -1,5 +1,4 @@
-import { disposables, type Resource } from 'webappwiz/disposable';
-import { Dispatcher } from 'webappwiz/events';
+import { Dispatcher, type Events } from 'webappwiz/events';
 import type { Rect } from 'webappwiz/geometry';
 import { FakeLayer } from './fake-layer';
 import { FakeScroller } from './fake-scroller';
@@ -12,15 +11,31 @@ import type { Layer, LayerKind } from './layer';
  * published package via package.json "files". */
 export class FakeHost implements Host {
 	private readonly dispatcher = new Dispatcher<HostEventMap>();
-	readonly events = this.dispatcher.events;
+	/* Live listeners per event type, so a test can assert a subscription was released — a
+	 * Dispatcher doesn't report its own. */
+	readonly listeners = new Map<keyof HostEventMap, number>();
+	readonly events: Events<HostEventMap> = {
+		on: (type, listener, opts) => {
+			this.count(type, 1);
+			const unlisten = this.dispatcher.events.on(type, listener, opts);
+			return () => {
+				this.count(type, -1);
+				unlisten();
+			};
+		},
+		all: (listener, opts) => this.dispatcher.events.all(listener, opts),
+	};
 	readonly dom = new EventTarget();
 	readonly created: FakeLayer[] = [];
 	readonly scroller = new FakeScroller();
 	scroll = { left: 0, top: 0 };
-	scrollListener: (() => void) | null = null;
 	relayoutLayersCalls = 0;
 	maxHeight: number | null = null;
 	disposed = false;
+
+	private count(type: keyof HostEventMap, delta: number): void {
+		this.listeners.set(type, (this.listeners.get(type) ?? 0) + delta);
+	}
 
 	toScoreSpace(clientX: number, clientY: number): { x: number; y: number } {
 		return { x: clientX, y: clientY };
@@ -31,11 +46,9 @@ export class FakeHost implements Host {
 		this.dispatcher.dispatch('resize', size);
 	}
 
-	observeScroll(onScroll: () => void): Resource {
-		this.scrollListener = onScroll;
-		return disposables.callback(() => {
-			this.scrollListener = null;
-		});
+	/* Test hook: fire a host scroll the way the real window listener would. */
+	scrolled(): void {
+		this.dispatcher.dispatch('scroll');
 	}
 
 	createLayer(kind: LayerKind, zIndex?: number): Layer {

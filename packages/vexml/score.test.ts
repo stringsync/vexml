@@ -171,11 +171,11 @@ describe('Score', () => {
 		expect(seen).toEqual([target]);
 
 		hit = null; // scroll slid the target away
-		host.scrollListener?.();
+		host.scrolled();
 		expect(seen).toEqual([target, null]);
 
 		unlisten();
-		expect(host.scrollListener).toBeNull(); // window-scroll subscription released
+		expect(host.listeners.get('scroll')).toBe(0); // host-scroll subscription released
 	});
 
 	it('resize is observed from construction and re-fits viewport layers before emitting', () => {

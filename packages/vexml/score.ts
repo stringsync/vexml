@@ -89,10 +89,10 @@ export class Score implements Eventful<ScoreEventMap> {
 	// relayouts without re-emitting. null until the first notification.
 	private lastResize: { width: number; height: number } | null = null;
 	// Hover state: the element last reported and the last pointer position (client coords) to
-	// re-hit-test on scroll. scrollObserver is hover's window-scroll subscription.
+	// re-hit-test on scroll. unlistenScroll releases hover's host-scroll subscription.
 	private hovered: Element | null = null;
 	private lastClient: { x: number; y: number } | null = null;
-	private scrollObserver: Resource | null = null;
+	private unlistenScroll: Unlisten | null = null;
 	// Live playback cursors, disposed with the score; each removes itself on its own dispose.
 	private readonly cursors = new Set<CursorController>();
 
@@ -285,8 +285,8 @@ export class Score implements Eventful<ScoreEventMap> {
 			}
 		}
 		this.bound.clear();
-		this.scrollObserver?.dispose();
-		this.scrollObserver = null;
+		this.unlistenScroll?.();
+		this.unlistenScroll = null;
 		this.unlistenResize();
 		this.decorations.dispose();
 		this.dispatcher.dispose();
@@ -347,7 +347,7 @@ export class Score implements Eventful<ScoreEventMap> {
 				};
 				this.listen(type, 'pointerleave', clear);
 				this.listen(type, 'pointercancel', clear);
-				this.scrollObserver = this.host.observeScroll(() =>
+				this.unlistenScroll = this.host.events.on('scroll', () =>
 					this.recomputeHover(),
 				);
 				return;
@@ -383,8 +383,8 @@ export class Score implements Eventful<ScoreEventMap> {
 			this.bound.delete(type);
 		}
 		if (type === 'hover') {
-			this.scrollObserver?.dispose();
-			this.scrollObserver = null;
+			this.unlistenScroll?.();
+			this.unlistenScroll = null;
 			this.hovered = null;
 			this.lastClient = null;
 		}

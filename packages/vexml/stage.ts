@@ -1,4 +1,3 @@
-import { disposables, type Resource } from 'webappwiz/disposable';
 import { Dispatcher } from 'webappwiz/events';
 import type { Rect } from 'webappwiz/geometry';
 import type { Host, HostEventMap } from './host';
@@ -47,6 +46,8 @@ export class Stage implements Viewport, Host, ScrollHost {
 	readonly events = this.dispatcher.events;
 	// Watches the container and the base canvas; created with the Stage, disconnected on dispose.
 	private readonly resizeObserver: ResizeObserver;
+	// The window scroll listener behind the `scroll` event, removed on dispose.
+	private readonly onWindowScroll = () => this.dispatcher.dispatch('scroll');
 	private readonly prevPosition: string;
 	private readonly prevIsolation: string;
 	// Inline styles this stage set on the container, with their prior values, restored on dispose.
@@ -143,6 +144,13 @@ export class Stage implements Viewport, Host, ScrollHost {
 		});
 		this.resizeObserver.observe(container);
 		this.resizeObserver.observe(this.base);
+
+		// Capture phase on window catches every scroll container (the score's own or any ancestor),
+		// since scroll events don't bubble. passive: we only read positions, never preventDefault.
+		window.addEventListener('scroll', this.onWindowScroll, {
+			capture: true,
+			passive: true,
+		});
 	}
 
 	// The cap is pure container CSS — the engraving doesn't depend on it — so this is a style write,
@@ -209,19 +217,6 @@ export class Stage implements Viewport, Host, ScrollHost {
 		this.container.scrollTo(options);
 	}
 
-	observeScroll(onScroll: () => void): Resource {
-		// Capture phase on window catches every scroll container (the score's own or any ancestor),
-		// since scroll events don't bubble. passive: we only read positions, never preventDefault.
-		const handler = () => onScroll();
-		window.addEventListener('scroll', handler, {
-			capture: true,
-			passive: true,
-		});
-		return disposables.callback(() =>
-			window.removeEventListener('scroll', handler, { capture: true }),
-		);
-	}
-
 	createLayer(kind: LayerKind, zIndex?: number): Layer {
 		const canvas = document.createElement('canvas');
 		// Overlay absolutely positioned within the (positioned) container. Purely visual: pointer
@@ -272,6 +267,9 @@ export class Stage implements Viewport, Host, ScrollHost {
 		}
 		this.disposed = true;
 		this.resizeObserver.disconnect();
+		window.removeEventListener('scroll', this.onWindowScroll, {
+			capture: true,
+		});
 		this.dispatcher.dispose();
 		this.scrollController?.dispose();
 		for (const layer of [...this.layers]) {

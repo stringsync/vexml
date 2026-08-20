@@ -6,14 +6,17 @@ import type { Viewport } from './viewport';
 
 /* What the host raises. `resize` fires whenever the container OR the base canvas changes size, and
  * carries the container's visible (client) box — see Stage for why both are watched and why the
- * container's box is what gets reported. */
+ * container's box is what gets reported. `scroll` fires on any scroll that slides the score within
+ * the viewport — the container's own, or any ancestor's. It's payload-free: read `scroll` or
+ * `viewportRect()` for where things ended up. */
 export type HostEventMap = {
 	resize: { width: number; height: number };
+	scroll: undefined;
 };
 
 /*
  * What a Score needs from its host: the score<-client transform (toScoreSpace), a raw event
- * source to bind pointer/scroll listeners on, the current scroll offset, resize notifications,
+ * source to bind pointer/scroll listeners on, the current scroll offset, resize/scroll notifications,
  * custom-layer creation/resizing, and teardown. Stage is the production implementer; a Score unit
  * test injects a FakeHost. Kept separate from Viewport (the targets' coordinate seam) so each
  * consumer depends only on what it uses, even though Stage satisfies both.
@@ -31,11 +34,6 @@ export interface Host
 	viewportRect(): DOMRect;
 	/* Scrolls a score-space rect into view (axis-aware); a cursor's follow()/scrollIntoView() use it. */
 	readonly scroller: Scroller;
-	/* Subscribe to any scroll that slides the score within the viewport — the container's own, or
-	 * any ancestor's (scroll doesn't bubble, so the real host listens on window in the capture
-	 * phase). Dispose the returned Resource to unsubscribe. Drives hover: content can move under a
-	 * stationary pointer with no pointer event. */
-	observeScroll(onScroll: () => void): Resource;
 	/* Re-sync every layer to the container's current geometry (called on resize). Viewport layers
 	 * are refit to the visible box (clearing them); content layers keep their score-resolution bitmap
 	 * (no clear) but re-track the base canvas's rendered box, so they stay aligned however the
