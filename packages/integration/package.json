@@ -4,7 +4,8 @@
 	"private": true,
 	"type": "module",
 	"exports": {
-		"./renderer": "./renderer.ts"
+		"./renderer": "./renderer.ts",
+		"./pool": "./pool.ts"
 	},
 	"dependencies": {
 		"@stringsync/vexml": "workspace:*"

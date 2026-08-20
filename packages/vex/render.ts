@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
-import { serve } from '@vexml/integration/renderer';
+import { serve } from '@vexml/integration/pool';
 import { chromium } from 'playwright';
 import type { Logger } from 'webappwiz/log';
 import type { Fs, Ps } from 'webappwiz/system';
