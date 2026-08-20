@@ -1,0 +1,193 @@
+import { afterAll, expect } from 'bun:test';
+import {
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from 'node:fs';
+import * as path from 'node:path';
+import { createCanvas, createImageData } from 'canvas';
+import chalk from 'chalk';
+import pixelmatch from 'pixelmatch';
+import { PNG } from 'pngjs';
+
+// The screenshot half of the tests: a `toMatchScreenshot` matcher that pixel-diffs a PNG
+// against its committed baseline in `__screenshots__/`, writes a side-by-side composite to
+// `__diffs__/` on mismatch, regenerates baselines under UPDATE_SCREENSHOTS=1, and prints an
+// added/updated/deleted report at the end of the run. Imported once by setup.ts (the
+// preload), so its afterAll cleanups scope to the whole run.
+
+// [old][diff][new] side by side, each captioned, returned as a PNG buffer.
+//
+// Side by side, not stacked: Cairo (under node-canvas) refuses a surface over 32767px on
+// either axis, and baselines are tall and narrow — a whole score runs to ~12,000px tall but
+// no baseline is wider than the 1598px of layout_panoramic. Stacking tripled the dimension
+// that was already large and threw on the score cases; laying the panels out along the
+// short axis triples ~1600px at worst. Aligning the panels horizontally also happens to be
+// the easier read for a tall score, since the same system lands at the same y in all three.
+function composite(
+	expected: PNG,
+	diff: PNG,
+	got: PNG,
+	w: number,
+	h: number,
+): Buffer {
+	const header = 32;
+	const canvas = createCanvas(w * 3, h + header);
+	const ctx = canvas.getContext('2d');
+	ctx.fillStyle = '#fff';
+	ctx.fillRect(0, 0, w * 3, header);
+	ctx.font = '24px sans-serif';
+	const panels: [string, PNG][] = [
+		['old', expected],
+		['diff', diff],
+		['new', got],
+	];
+	panels.forEach(([label, png], i) => {
+		ctx.fillStyle = '#000';
+		ctx.fillText(label, i * w + 4, 24);
+		const img = createImageData(w, h);
+		img.data.set(png.data);
+		ctx.putImageData(img, i * w, header);
+	});
+	return canvas.toBuffer('image/png');
+}
+
+const SCREENSHOTS_DIR = path.resolve(import.meta.dir, './__screenshots__');
+const DIFF_DIR = path.resolve(import.meta.dir, './__diffs__');
+const ROOT = path.resolve(import.meta.dir, '../..');
+const UPDATE = process.env.UPDATE_SCREENSHOTS === '1';
+
+// Every diff written this run; stale ones are whatever's left over in DIFF_DIR.
+const seenDiffs = new Set<string>();
+afterAll(() => {
+	if (!existsSync(DIFF_DIR)) {
+		return;
+	}
+	for (const f of readdirSync(DIFF_DIR)) {
+		if (f.endsWith('.png') && !seenDiffs.has(f)) {
+			rmSync(path.join(DIFF_DIR, f));
+			console.log(`removed stale diff ${f}`);
+		}
+	}
+	if (readdirSync(DIFF_DIR).length === 0) {
+		rmSync(DIFF_DIR, { recursive: true });
+	}
+});
+
+// Every baseline touched this run; orphans are whatever's left over in SCREENSHOTS_DIR.
+const seen = new Set<string>();
+
+// Baseline changes this run, for the end-of-run report.
+const added = new Set<string>();
+const updated = new Set<string>();
+const deleted = new Set<string>();
+
+if (process.env.CLEANUP_ORPHANED_SCREENSHOTS === '1') {
+	afterAll(() => {
+		if (existsSync(SCREENSHOTS_DIR)) {
+			for (const f of readdirSync(SCREENSHOTS_DIR)) {
+				if (f.endsWith('.png') && !seen.has(f)) {
+					rmSync(path.join(SCREENSHOTS_DIR, f));
+					deleted.add(f);
+				}
+			}
+		}
+	});
+}
+
+// Report registered last so it runs after the cleanup afterAll above.
+afterAll(() => {
+	let first = true;
+	const report = (
+		icon: string,
+		label: string,
+		set: Set<string>,
+		dir: string,
+	) => {
+		if (set.size === 0) {
+			return;
+		}
+		if (!first) {
+			console.log();
+		}
+		first = false;
+		console.log(`${icon} ${label} ${set.size} screenshot(s):`);
+		for (const f of [...set].sort()) {
+			console.log(`    ${path.relative(ROOT, path.join(dir, f))}`);
+		}
+	};
+	console.log(chalk.bold('\nScreenshot report'));
+	report(chalk.green('✓'), 'added', added, SCREENSHOTS_DIR);
+	report(chalk.yellow('↻'), 'updated', updated, SCREENSHOTS_DIR);
+	report(chalk.red('✗'), 'deleted', deleted, SCREENSHOTS_DIR);
+	report(chalk.magenta('Δ'), 'diffed', seenDiffs, DIFF_DIR);
+	if (added.size + updated.size + deleted.size === 0) {
+		console.log(`${chalk.green('✓')} no screenshot changes`);
+	}
+});
+
+expect.extend({
+	/** Diff a screenshot against its baseline; record when missing or UPDATE_SCREENSHOTS=1. */
+	toMatchScreenshot(received: unknown, filename: string) {
+		const buf = received as Buffer;
+		seen.add(filename);
+		const baseline = path.join(SCREENSHOTS_DIR, filename);
+
+		if (UPDATE || !existsSync(baseline)) {
+			if (!existsSync(baseline)) {
+				added.add(filename);
+			} else if (!buf.equals(readFileSync(baseline))) {
+				updated.add(filename);
+			}
+			mkdirSync(SCREENSHOTS_DIR, { recursive: true });
+			writeFileSync(baseline, buf);
+			return { pass: true, message: () => `wrote baseline ${filename}` };
+		}
+
+		const expected = PNG.sync.read(readFileSync(baseline));
+		const got = PNG.sync.read(buf);
+
+		if (got.width !== expected.width || got.height !== expected.height) {
+			return {
+				pass: false,
+				message: () =>
+					`${filename}: size ${got.width}x${got.height} != baseline ${expected.width}x${expected.height}`,
+			};
+		}
+
+		const diff = new PNG({ width: expected.width, height: expected.height });
+		const mismatch = pixelmatch(
+			expected.data,
+			got.data,
+			diff.data,
+			expected.width,
+			expected.height,
+			{ threshold: 0.01 },
+		);
+
+		if (mismatch > 0) {
+			seenDiffs.add(filename);
+			mkdirSync(DIFF_DIR, { recursive: true });
+			writeFileSync(
+				path.join(DIFF_DIR, filename),
+				composite(expected, diff, got, expected.width, expected.height),
+			);
+			return {
+				pass: false,
+				message: () =>
+					`${filename}: ${mismatch} pixels differ. Read this image to inspect: ${path.relative(ROOT, path.join(DIFF_DIR, filename))} (3 panels left-to-right: old, diff, new)`,
+			};
+		}
+
+		return { pass: true, message: () => `${filename} matches baseline` };
+	},
+});
+
+declare module 'bun:test' {
+	interface Matchers {
+		toMatchScreenshot(filename: string): void;
+	}
+}

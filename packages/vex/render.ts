@@ -1,11 +1,11 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
-import { serve } from '@vexml/integration/serve';
+import { serve } from '@vexml/integration/renderer';
 import { chromium } from 'playwright';
 import type { Logger } from 'webappwiz/log';
 import type { Fs, Ps } from 'webappwiz/system';
 
-// Same browser-render path as the test harness, but fed an arbitrary file
+// Same browser-render path as the integration tests, but fed an arbitrary file
 // instead of a corpus fixture. VexFlow needs the DOM, so there's no headless
 // shortcut — reuse the page that already exposes window.render.
 export async function render(opts: {

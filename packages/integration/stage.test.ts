@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { renderTest } from './harness';
+import { renderer } from './renderer';
 
 describe('stage', () => {
 	// Re-rendering into the same container must not lose the scroll-box styling. The keep-old-until-
@@ -7,7 +7,7 @@ describe('stage', () => {
 	// stomp the second's position/overflow (the LIFO restore bug). Drives two real render() calls and
 	// reads computed styles. A height cap makes the container a scroll box.
 	it.concurrent('keeps scroll-box styles when re-rendering into a live container', async () => {
-		const { result } = await renderTest(
+		const { result } = await renderer.render(
 			'structure_single_stave.musicxml',
 			{ height: 200 },
 			{
@@ -47,7 +47,7 @@ describe('stage', () => {
 	// it lets the container size to the score again, all without re-rendering (the canvas element is
 	// the same node before and after).
 	it.concurrent('caps and uncaps the container height without re-rendering', async () => {
-		const { result } = await renderTest(
+		const { result } = await renderer.render(
 			'structure_single_stave.musicxml',
 			{},
 			{
@@ -87,7 +87,7 @@ describe('stage', () => {
 	// scale it to their container with an ordinary `.vexml-canvas { width: 100% }` rule — no
 	// `!important`, because vexml's own default rule is wrapped in :where() (zero specificity).
 	it.concurrent('caller CSS scales the canvas to its container without !important', async () => {
-		const { result } = await renderTest(
+		const { result } = await renderer.render(
 			'structure_single_stave.musicxml',
 			{},
 			{
@@ -131,7 +131,7 @@ describe('stage', () => {
 	// shrinks to a narrow container preserving aspect, never grows past its engraved width, and is
 	// centered. This is the default; a caller who capped the width into a scroll box opts out.
 	it.concurrent('fits and centers the score in its container by default', async () => {
-		const { result } = await renderTest(
+		const { result } = await renderer.render(
 			'structure_single_stave.musicxml',
 			{},
 			{

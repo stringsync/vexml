@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { renderTest } from './harness';
+import { renderer } from './renderer';
 
 describe('cursor', () => {
 	// A playback cursor end to end, the way a caller reaches it: render, add a cursor, attach the
@@ -7,7 +7,7 @@ describe('cursor', () => {
 	// engraving at the sought time. The timeline/cursor/view logic is unit-tested in packages/vexml; this is the
 	// integration screenshot.
 	it.concurrent('a playback cursor draws its bar on the score at the sought time', async () => {
-		const { png } = await renderTest(
+		const { png } = await renderer.render(
 			'arpeggio.musicxml',
 			{},
 			{
@@ -28,18 +28,14 @@ describe('cursor', () => {
 	// the tied chord (strings 1 & 2), then color everything the cursor highlights: the drawn frets
 	// recolor, and the two number-less tied strings draw nothing (no filled-ellipse blip).
 	it.concurrent('a tied tab chord colors its drawn frets but not the number-less tied strings', async () => {
-		const { png } = await renderTest(
+		const { png } = await renderer.render(
 			'aloof_measure_2.musicxml',
 			{},
 			{
 				fn: (score) => {
 					const cursor = score.createCursor();
 					cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
-					cursor.events.on('change', (e) => {
-						for (const n of e.highlighted) {
-							n.color.on('#155dfc');
-						}
-					});
+					window.colorHighlightedOnChange(cursor, '#155dfc');
 					cursor.seekMs(score.getDurationMs() * 0.3);
 				},
 			},
@@ -51,7 +47,7 @@ describe('cursor', () => {
 	// reach up to it: the bar should span only the stave region — here a treble + 6-line TAB grand staff
 	// — as if the diagram weren't there. Seek 40% in (mid first measure) so the bar lands between notes.
 	it.concurrent('the playback bar spans the stave, not up to a chord diagram', async () => {
-		const { png } = await renderTest(
+		const { png } = await renderer.render(
 			'chord_diagram_tab.musicxml',
 			{},
 			{
@@ -66,84 +62,37 @@ describe('cursor', () => {
 	});
 
 	// Grace notes aren't tickables, so they never enter the timeline — but they must still be reachable
-	// as Note targets (with real engraved geometry) so the player can sound and light them. Walk the
-	// cursor over every onset and collect the grace notes attached to each started note.
+	// as Note targets (with real engraved geometry) so the player can sound and light them. graceNoteStats
+	// walks the cursor over every onset and aggregates the grace notes attached to each started note.
 	it.concurrent('grace notes resolve to targets with real geometry off their host onsets', async () => {
-		const { result: graces } = await renderTest(
+		const { result: graces } = await renderer.render(
 			'grace_notes.musicxml',
 			{},
-			{
-				fn: (score) => {
-					const cursor = score.createCursor();
-					const found: Array<{ pitch: string | null; x: number; w: number }> =
-						[];
-					cursor.events.on('change', (e) => {
-						for (const n of e.started) {
-							for (const g of n.getGraceNotes()) {
-								found.push({ pitch: g.getPitch(), x: g.rect.x, w: g.rect.w });
-							}
-						}
-					});
-					const duration = score.getDurationMs();
-					for (let t = 0; t <= duration; t += duration / 200) {
-						cursor.seekMs(t);
-					}
-					return found;
-				},
-			},
+			{ fn: (score) => window.graceNoteStats(score) },
 		);
 		// The fixture puts a grace before several notes; each must resolve with a sounding pitch and a
 		// real, non-degenerate notehead box (not the near-origin bogus group box).
-		expect(graces.length).toBeGreaterThan(0);
-		for (const g of graces) {
-			expect(g.pitch).not.toBeNull();
-			expect(g.w).toBeGreaterThan(0);
-			expect(g.x).toBeGreaterThan(10);
-		}
+		expect(graces.count).toBeGreaterThan(0);
+		expect(graces.missingPitch).toBe(0);
+		expect(graces.minW).toBeGreaterThan(0);
+		expect(graces.minX).toBeGreaterThan(10);
 	});
 
 	// A tab grace note must also be a real target so it colors in step with its notation grace: its
 	// fret (TabPosition) carries the engraved glyph the color overlay recolors.
 	it.concurrent('tab grace notes resolve to fret targets with real geometry', async () => {
-		const { result: graces } = await renderTest(
+		const { result: graces } = await renderer.render(
 			'tab_grace.musicxml',
 			{},
-			{
-				fn: (score) => {
-					const cursor = score.createCursor();
-					const found: Array<{ hasFret: boolean; x: number; w: number }> = [];
-					cursor.events.on('change', (e) => {
-						for (const n of e.started) {
-							for (const g of n.getGraceNotes()) {
-								found.push({
-									hasFret: g.getTabPosition() !== null,
-									x: g.rect.x,
-									w: g.rect.w,
-								});
-							}
-						}
-					});
-					const duration = score.getDurationMs();
-					for (let t = 0; t <= duration; t += duration / 200) {
-						cursor.seekMs(t);
-					}
-					return found;
-				},
-			},
+			{ fn: (score) => window.graceNoteStats(score) },
 		);
 		// Each grace resolves to a target whose fret glyph (TabPosition) is laid out at a real x.
-		expect(graces.length).toBeGreaterThan(0);
-		for (const g of graces) {
-			expect(g.hasFret).toBe(true);
-			expect(g.w).toBeGreaterThan(0);
-			expect(g.x).toBeGreaterThan(10);
-		}
+		expect(graces.count).toBeGreaterThan(0);
+		expect(graces.missingFret).toBe(0);
+		expect(graces.minW).toBeGreaterThan(0);
+		expect(graces.minX).toBeGreaterThan(10);
 	});
 
-	// A tied chord must light every member of the whole tie group while any of it sounds — mdom pairs
-	// a chord's ties by shared number, so the timeline re-resolves each to its same-pitch member. Seek
-	// into the 2nd (tied-to) chord; all four noteheads (both chords, C5 + E5 each) must be highlighted,
-	// and nothing once playback is done.
 	// A tie must not re-attack the note: the tied-to onset sustains the sounding pitch rather than
 	// re-striking it. Walk every step transition of a score that ties two half notes within a bar
 	// (M1), a whole note across the barline (M2->M3), and two half notes with a redundant accidental
@@ -151,27 +100,10 @@ describe('cursor', () => {
 	// the same pitch repeats WITHOUT a tie (M1's C5 into M2's fresh C5) is the control that DOES
 	// re-attack. Exercises the real parse -> tiedFrom resolution -> classify path end to end.
 	it.concurrent('a tie sustains the note instead of re-attacking it', async () => {
-		const { result } = await renderTest(
+		const { result } = await renderer.render(
 			'tie.musicxml',
 			{},
-			{
-				fn: (score) => {
-					const seq = score.getSequence();
-					const pitches = (
-						notes: ReadonlyArray<{ getPitch(): string | null }>,
-					) => notes.map((n) => n.getPitch()).sort();
-					const transitions = [];
-					for (let i = 1; i < seq.length; i++) {
-						const t = seq.classify(i - 1, i);
-						transitions.push({
-							started: pitches(t.started),
-							sustained: pitches(t.sustained),
-							stopped: pitches(t.stopped),
-						});
-					}
-					return { length: seq.length, transitions };
-				},
-			},
+			{ fn: (score) => window.sequenceTransitions(score) },
 		);
 
 		// Onsets: M1 C5, M1 C5 (tie stop), M2 C5, M3 C5 (tie stop), M4 F#5, M4 F#5 (tie stop).
@@ -190,8 +122,12 @@ describe('cursor', () => {
 		]);
 	});
 
+	// A tied chord must light every member of the whole tie group while any of it sounds — mdom pairs
+	// a chord's ties by shared number, so the timeline re-resolves each to its same-pitch member. Seek
+	// into the 2nd (tied-to) chord; all four noteheads (both chords, C5 + E5 each) must be highlighted,
+	// and nothing once playback is done.
 	it.concurrent('a tied chord highlights every member of the tie group', async () => {
-		const { result } = await renderTest(
+		const { result } = await renderer.render(
 			'tie_chord_dyad.musicxml',
 			{},
 			{
@@ -199,12 +135,12 @@ describe('cursor', () => {
 					const cursor = score.createCursor();
 					const dur = score.getDurationMs();
 					cursor.seekMs(dur * 0.75); // within the 2nd chord's step
-					const sounding = cursor
-						.getHighlightedElements()
-						.map((n) => n.getPitch())
-						.sort();
+					const sounding = window.highlightedPitches(cursor);
 					cursor.seekMs(dur); // done
-					return { sounding, whenDone: cursor.getHighlightedElements().length };
+					return {
+						sounding,
+						whenDone: window.highlightedPitches(cursor).length,
+					};
 				},
 			},
 		);
@@ -219,23 +155,16 @@ describe('cursor', () => {
 	// back-jump rather than jumping from its first measure, and that a three-ending block takes
 	// each ending once across three passes. One whole note per measure, so one step per measure.
 	it.concurrent('repeats and endings expand the playback order', async () => {
-		const { result } = await renderTest(
+		const { result } = await renderer.render(
 			'repeats.musicxml',
 			{},
 			{
-				fn: (score) => {
-					const seq = score.getSequence();
-					const order = [];
-					for (let i = 0; i < seq.length; i++) {
-						order.push(seq.getStep(i)?.measureIndex);
-					}
-					return {
-						order,
-						measureCount: seq.getMeasureCount(),
-						// A repeated measure's cursor lands on its first pass, not its last.
-						firstStepOfM2: seq.getFirstStepOfMeasure(1),
-					};
-				},
+				fn: (score) => ({
+					order: window.stepMeasureIndexes(score),
+					measureCount: score.getSequence().getMeasureCount(),
+					// A repeated measure's cursor lands on its first pass, not its last.
+					firstStepOfM2: score.getSequence().getFirstStepOfMeasure(1),
+				}),
 			},
 		);
 
@@ -261,19 +190,10 @@ describe('cursor', () => {
 	// promises something playback doesn't do. Five measures, one whole rest each, so one step per
 	// measure.
 	it.concurrent('a repeat with times="5" plays its block five times', async () => {
-		const { result } = await renderTest(
+		const { result } = await renderer.render(
 			'repeats_multiple_times.musicxml',
 			{},
-			{
-				fn: (score) => {
-					const seq = score.getSequence();
-					const order = [];
-					for (let i = 0; i < seq.length; i++) {
-						order.push(seq.getStep(i)?.measureIndex);
-					}
-					return order;
-				},
-			},
+			{ fn: (score) => window.stepMeasureIndexes(score) },
 		);
 
 		// M1, then |: M2 M3 :| five times over, then out to M4 M5.
@@ -286,19 +206,10 @@ describe('cursor', () => {
 	// one is the numbering restarting at 1 on M5 — read it as one four-ending group and the outer
 	// repeat never jumps back to M1. One whole note per measure, so one step per measure.
 	it.concurrent('a nested repeat block replays whole on each outer pass', async () => {
-		const { result } = await renderTest(
+		const { result } = await renderer.render(
 			'repeats_nested.musicxml',
 			{},
-			{
-				fn: (score) => {
-					const seq = score.getSequence();
-					const order = [];
-					for (let i = 0; i < seq.length; i++) {
-						order.push(seq.getStep(i)?.measureIndex);
-					}
-					return order;
-				},
-			},
+			{ fn: (score) => window.stepMeasureIndexes(score) },
 		);
 
 		// Outer pass 1: M1, then the inner block |: M2 :| — M3 (1st ending) back to M2, then M4
@@ -313,23 +224,10 @@ describe('cursor', () => {
 	// boundary there and the quarter used to ring until the next measure's onset. The end itself
 	// seeds a step: C5 releases at beat 1 while the whole note under it keeps sounding.
 	it.concurrent('a voice that ends before its measure does stops sounding there', async () => {
-		const { result } = await renderTest(
+		const { result } = await renderer.render(
 			'voice_short.musicxml',
 			{},
-			{
-				fn: (score) => {
-					const seq = score.getSequence();
-					const steps = [];
-					for (let i = 0; i < seq.length; i++) {
-						const step = seq.getStep(i);
-						steps.push({
-							startBeat: step?.startBeat,
-							active: (step?.active ?? []).map((n) => n.getPitch()).sort(),
-						});
-					}
-					return steps;
-				},
-			},
+			{ fn: (score) => window.stepBeats(score) },
 		);
 
 		expect(result).toEqual([

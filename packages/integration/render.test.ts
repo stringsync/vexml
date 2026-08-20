@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { render } from './harness';
-import { testCase } from './test-case';
+import { renderer } from './renderer';
 
 /*
  * Every case here is a hand-cut fixture proving one thing, ordered by increasing rendering
@@ -32,26 +31,46 @@ import { testCase } from './test-case';
  * (time_senza_misura), and neither default changes measure WIDTHS — an unmetered measure is
  * still sized by its own content (see ScoreReader.meterBeats).
  */
-const TEST_CASES = [
+
+describe('render', () => {
+	// Concurrent: each render borrows its own page from the pool (see renderer.ts), so
+	// bun runs up to POOL_SIZE of them in parallel across separate renderer processes.
+
 	// A single empty 5-line stave: staff lines, start and end barlines, a treble clef and a
 	// 4/4 signature, nothing else. None of the structure_* fixtures declares a <clef> or a
 	// <time>, so every stave in this group opens with those two defaults (see the note above).
-	testCase('structure_single_stave.musicxml', 'structure_single_stave.png'),
+	it.concurrent('renders structure_single_stave.png', async () => {
+		expect(
+			await renderer.screenshot('structure_single_stave.musicxml'),
+		).toMatchScreenshot('structure_single_stave.png');
+	});
 
 	// One part with two empty staves joined by a curly brace (grand staff), each opening with
 	// its own treble clef and 4/4 — both defaults apply per stave, as a real grand staff's
 	// printed clef and meter do.
-	testCase('structure_grand_staff.musicxml', 'structure_grand_staff.png'),
+	it.concurrent('renders structure_grand_staff.png', async () => {
+		expect(
+			await renderer.screenshot('structure_grand_staff.musicxml'),
+		).toMatchScreenshot('structure_grand_staff.png');
+	});
 
 	// Two separate single-stave parts stacked vertically, with no connecting brace. Ungrouped
 	// parts don't share barlines either, so the end barline is two separate segments — only
 	// the system's left line spans both staves.
-	testCase('structure_two_parts.musicxml', 'structure_two_parts.png'),
+	it.concurrent('renders structure_two_parts.png', async () => {
+		expect(
+			await renderer.screenshot('structure_two_parts.musicxml'),
+		).toMatchScreenshot('structure_two_parts.png');
+	});
 
 	// A single-stave part above a two-stave (braced) part — mixed stave counts. The braced
 	// part's own two staves share an end barline (that is what the brace means); the barline
 	// still stops at the boundary between the two parts.
-	testCase('structure_mixed_staves.musicxml', 'structure_mixed_staves.png'),
+	it.concurrent('renders structure_mixed_staves.png', async () => {
+		expect(
+			await renderer.screenshot('structure_mixed_staves.musicxml'),
+		).toMatchScreenshot('structure_mixed_staves.png');
+	});
 
 	// The four <group-symbol> values, each on its own FLAT (non-nested) <part-group>, so a
 	// symbol can be read without the nesting offsets of the case below. Eight single-stave
@@ -73,11 +92,13 @@ const TEST_CASES = [
 	// The barlines also break BETWEEN the groups: a barline joins parts only where a
 	// <part-group> asks it to, and stops at every other part boundary. See barlineBreaks in
 	// packages/vexml/score-reader.ts.
-	testCase(
-		'structure_part_group_symbols.musicxml',
-		'structure_part_group_symbols.png',
-		{ showPartLabels: true },
-	),
+	it.concurrent('renders structure_part_group_symbols.png', async () => {
+		expect(
+			await renderer.screenshot('structure_part_group_symbols.musicxml', {
+				showPartLabels: true,
+			}),
+		).toMatchScreenshot('structure_part_group_symbols.png');
+	});
 
 	// Five single-stave parts (one empty-ish measure each, a whole note in common time)
 	// joined by nested <part-group> spans read off the <part-list>. The system's own left
@@ -90,7 +111,11 @@ const TEST_CASES = [
 	// - Parts 1 and 5 belong to no group, so nothing but the system line touches them.
 	// Neither group declares a <group-barline>, which reads as common barlines, so the end
 	// barline runs through parts 2-4 and stops at the 1|2 and 4|5 boundaries.
-	testCase('structure_part_groups.musicxml', 'structure_part_groups.png'),
+	it.concurrent('renders structure_part_groups.png', async () => {
+		expect(
+			await renderer.screenshot('structure_part_groups.musicxml'),
+		).toMatchScreenshot('structure_part_groups.png');
+	});
 
 	// Two single-stave parts (treble over bass, one whole note each) inside a single
 	// <part-group> bracket that starts on the TOP part, with measureNumbering 'every' so both
@@ -100,11 +125,13 @@ const TEST_CASES = [
 	// measure — no connector there — so it keeps vexflow's centered placement, sitting lower
 	// and centered over its barline. The two numbers deliberately do not line up; that
 	// difference is the case.
-	testCase(
-		'structure_part_group_bracket_top.musicxml',
-		'structure_part_group_bracket_top.png',
-		{ measureNumbering: 'every' },
-	),
+	it.concurrent('renders structure_part_group_bracket_top.png', async () => {
+		expect(
+			await renderer.screenshot('structure_part_group_bracket_top.musicxml', {
+				measureNumbering: 'every',
+			}),
+		).toMatchScreenshot('structure_part_group_bracket_top.png');
+	});
 
 	// Score-level header text (<work-title>, <movement-title>,
 	// <identification><creator>, <credit-words>) is deliberately NOT drawn, and has no
@@ -133,29 +160,42 @@ const TEST_CASES = [
 	//   top stave, printing "D5" — a chord symbol resolves against a tab note when the
 	//   part has no notation stave, and the kind's conventional suffix fills in for the
 	//   missing text.
-	testCase('structure_tab_parts.musicxml', 'structure_tab_parts.png'),
+	it.concurrent('renders structure_tab_parts.png', async () => {
+		expect(
+			await renderer.screenshot('structure_tab_parts.musicxml'),
+		).toMatchScreenshot('structure_tab_parts.png');
+	});
 
-	testCase(
-		'structure_notation_and_tab_parts.musicxml',
-		'structure_notation_and_tab_parts.png',
-	),
+	it.concurrent('renders structure_notation_and_tab_parts.png', async () => {
+		expect(
+			await renderer.screenshot('structure_notation_and_tab_parts.musicxml'),
+		).toMatchScreenshot('structure_notation_and_tab_parts.png');
+	});
 
 	// A single-stave part above a two-stave (braced) part, each with its instrument
 	// name printed to the left of the first system (showPartLabels): "Violin"
 	// centered on the single top stave, "Piano" centered on the braced pair. All three
 	// staves open with a treble clef (the fixture declares none).
-	testCase('structure_part_labels.musicxml', 'structure_part_labels.png', {
-		showPartLabels: true,
-	}),
+	it.concurrent('renders structure_part_labels.png', async () => {
+		expect(
+			await renderer.screenshot('structure_part_labels.musicxml', {
+				showPartLabels: true,
+			}),
+		).toMatchScreenshot('structure_part_labels.png');
+	});
 
 	// Same two labelled parts as structure_part_labels, but with the text font
 	// overridden to Times New Roman (fonts.text). The two instrument names render in
 	// that family instead of the default Source Sans 3, proving the text FontConfig option
 	// flows through to the part labels (the text vexml draws in the margin).
-	testCase('structure_part_labels.musicxml', 'font_text.png', {
-		showPartLabels: true,
-		fonts: { text: { family: 'Times New Roman' } },
-	}),
+	it.concurrent('renders font_text.png', async () => {
+		expect(
+			await renderer.screenshot('structure_part_labels.musicxml', {
+				showPartLabels: true,
+				fonts: { text: { family: 'Times New Roman' } },
+			}),
+		).toMatchScreenshot('font_text.png');
+	});
 
 	// Custom colors over a "Melody" part on a light pink background. A deep-blue notation color
 	// recolors the engraved glyphs, a burnt-orange text color recolors the "Melody" part label
@@ -165,27 +205,39 @@ const TEST_CASES = [
 	//   staff, treble clef, and measure number all take the notation color.
 	// - M2: quarter notes above (A5, C6) and below (C4, A3) the staff, so their ledger lines also
 	//   take the notation color, not VexFlow's hardcoded gray.
-	testCase('colors.musicxml', 'colors.png', {
-		showPartLabels: true,
-		backgroundColor: '#fce4ec',
-		fonts: {
-			notation: { family: 'Bravura', color: '#1d4ed8' },
-			text: { family: 'Source Sans 3', color: '#c2410c' },
-		},
-	}),
+	it.concurrent('renders colors.png', async () => {
+		expect(
+			await renderer.screenshot('colors.musicxml', {
+				showPartLabels: true,
+				backgroundColor: '#fce4ec',
+				fonts: {
+					notation: { family: 'Bravura', color: '#1d4ed8' },
+					text: { family: 'Source Sans 3', color: '#c2410c' },
+				},
+			}),
+		).toMatchScreenshot('colors.png');
+	});
 
 	// Treble stave, 4/4, one measure (two quarters, two flagged eighths, a quarter
 	// rest, all on C5), engraved with VexFlow's Petaluma font instead of the default
 	// Bravura (fonts.notation). The notehead, stem flags, treble clef, and rest glyph
 	// all take Petaluma's rounder, hand-drawn shapes — proving the notation FontConfig
 	// option swaps the engraving font.
-	testCase('font_notation_petaluma.musicxml', 'font_notation_petaluma.png', {
-		fonts: { notation: { family: 'Petaluma' } },
-	}),
+	it.concurrent('renders font_notation_petaluma.png', async () => {
+		expect(
+			await renderer.screenshot('font_notation_petaluma.musicxml', {
+				fonts: { notation: { family: 'Petaluma' } },
+			}),
+		).toMatchScreenshot('font_notation_petaluma.png');
+	});
 
 	// A single empty stave with a treble (G) clef and the default 4/4 signature (the
 	// fixture declares neither).
-	testCase('clef_treble.musicxml', 'clef_treble.png'),
+	it.concurrent('renders clef_treble.png', async () => {
+		expect(await renderer.screenshot('clef_treble.musicxml')).toMatchScreenshot(
+			'clef_treble.png',
+		);
+	});
 
 	// A treble (G) clef carrying a <clef-octave-change> of -1 (treble-8vb, the guitar/tenor
 	// clef): a small "8" numeral hangs below the clef glyph, and the octave shift moves every
@@ -199,32 +251,56 @@ const TEST_CASES = [
 	//   x-notehead 16th two ledger lines below (written E3) beamed to a dotted eighth back
 	//   on the bottom line, beam below the staff, then a half rest. The voices stay clear
 	//   of each other; auto-stemming both voices down would slash V1's beams through V2.
-	testCase('clef_treble_octave.musicxml', 'clef_treble_octave.png'),
+	it.concurrent('renders clef_treble_octave.png', async () => {
+		expect(
+			await renderer.screenshot('clef_treble_octave.musicxml'),
+		).toMatchScreenshot('clef_treble_octave.png');
+	});
 
 	// Grand staff: treble clef on the upper stave, bass clef on the lower, joined by a
 	// brace, each stave taking the default 4/4 (the fixture states no <time>).
-	testCase('clef_treble_bass.musicxml', 'clef_treble_bass.png'),
+	it.concurrent('renders clef_treble_bass.png', async () => {
+		expect(
+			await renderer.screenshot('clef_treble_bass.musicxml'),
+		).toMatchScreenshot('clef_treble_bass.png');
+	});
 
 	// A 6-line tablature stave with a stacked "TAB" label at the left. With no
 	// other stave to connect to, the lone TAB stave draws its own begin barline.
-	testCase('clef_tab_6_string.musicxml', 'clef_tab_6_string.png'),
+	it.concurrent('renders clef_tab_6_string.png', async () => {
+		expect(
+			await renderer.screenshot('clef_tab_6_string.musicxml'),
+		).toMatchScreenshot('clef_tab_6_string.png');
+	});
 
 	// A 4-line tablature stave with a stacked "TAB" label at the left. With no
 	// other stave to connect to, the lone TAB stave draws its own begin barline.
-	testCase('clef_tab_4_string.musicxml', 'clef_tab_4_string.png'),
+	it.concurrent('renders clef_tab_4_string.png', async () => {
+		expect(
+			await renderer.screenshot('clef_tab_4_string.musicxml'),
+		).toMatchScreenshot('clef_tab_4_string.png');
+	});
 
 	// A 6-line tablature stave whose <clef> is an octave-down treble, not TAB — the stave
 	// is marked as tablature only by the six <staff-tuning>s in <staff-details>, which is
 	// how some exporters write guitar tab. It must still render as TAB: stacked "TAB"
 	// label, six lines, its own begin barline, and frets 0/1/3/5 on string 1 (an ascending
 	// E4/F4/G4/A4) drawn as numbers on the top line rather than noteheads on a treble staff.
-	testCase('clef_tab_staff_tuning.musicxml', 'clef_tab_staff_tuning.png'),
+	it.concurrent('renders clef_tab_staff_tuning.png', async () => {
+		expect(
+			await renderer.screenshot('clef_tab_staff_tuning.musicxml'),
+		).toMatchScreenshot('clef_tab_staff_tuning.png');
+	});
 
 	// A treble notation stave above a 6-line TAB stave, joined by a bracket (the
 	// notation+tab convention, applied automatically with no <part-symbol> declared).
 	// 3-sharp key and 4/4 time: both print on the notation stave only — the TAB stave
 	// shows neither key signature nor time signature, just its stacked "TAB" glyph.
-	testCase('clef_notation_and_tab.musicxml', 'clef_notation_and_tab.png'),
+	it.concurrent('renders clef_notation_and_tab.png', async () => {
+		expect(
+			await renderer.screenshot('clef_notation_and_tab.musicxml'),
+		).toMatchScreenshot('clef_notation_and_tab.png');
+	});
 
 	// The same notation-over-TAB pairing, but with the six <staff-tuning>s copied onto BOTH
 	// staves the way Guitar Pro exports them — on the treble notation staff they are noise,
@@ -233,20 +309,22 @@ const TEST_CASES = [
 	// TAB showing the same two notes as frets 0 and 5 on string 1. Tuning alone must not make
 	// a staff tablature — clef_tab_staff_tuning above is the case where it legitimately does,
 	// and it declares <staff-lines> too.
-	testCase(
-		'clef_notation_and_tab_tuned.musicxml',
-		'clef_notation_and_tab_tuned.png',
-	),
+	it.concurrent('renders clef_notation_and_tab_tuned.png', async () => {
+		expect(
+			await renderer.screenshot('clef_notation_and_tab_tuned.musicxml'),
+		).toMatchScreenshot('clef_notation_and_tab_tuned.png');
+	});
 
 	// Guitar: a treble notation stave over a 6-line TAB stave joined by a bracket, here
 	// stated explicitly via <part-symbol>bracket</part-symbol> (the same connector the
 	// pairing gets by default). 4/4, an ascending line on string 1 — notation E4/F4/G4/A4
 	// quarters sitting on the treble staff, with the matching TAB frets 0/1/3/5 below,
 	// proving the fret -> pitch mapping.
-	testCase(
-		'clef_notation_and_tab_bracket.musicxml',
-		'clef_notation_and_tab_bracket.png',
-	),
+	it.concurrent('renders clef_notation_and_tab_bracket.png', async () => {
+		expect(
+			await renderer.screenshot('clef_notation_and_tab_bracket.musicxml'),
+		).toMatchScreenshot('clef_notation_and_tab_bracket.png');
+	});
 
 	// One system, 4/4: a clef change in every measure, each redrawn at the measure's left
 	// edge at the smaller "change clef" size (the way key.musicxml M2 redraws a changed
@@ -260,7 +338,11 @@ const TEST_CASES = [
 	// - M5: percussion clef (the two vertical bars); the note takes its default position.
 	// - M6: treble clef with <clef-octave-change>-1 — the same G/2 glyph with a small "8"
 	//   under it, so the note draws where M1's did.
-	testCase('clef_c.musicxml', 'clef_c.png'),
+	it.concurrent('renders clef_c.png', async () => {
+		expect(await renderer.screenshot('clef_c.musicxml')).toMatchScreenshot(
+			'clef_c.png',
+		);
+	});
 
 	// Treble stave, 4/4: a clef change written INSIDE a measure rather than at its head, drawn
 	// as a small clef glyph inline between the notes it falls between. Every note in the
@@ -280,7 +362,11 @@ const TEST_CASES = [
 	// lilypond_42b-MultiVoice-MidMeasureClefChange.xml for the case that would need it.
 	// See also in_measure_clefs.xml, clef_end_measure.xml,
 	// end_measure_clefs_staffentry_bbox.xml.
-	testCase('clef_mid_measure.musicxml', 'clef_mid_measure.png'),
+	it.concurrent('renders clef_mid_measure.png', async () => {
+		expect(
+			await renderer.screenshot('clef_mid_measure.musicxml'),
+		).toMatchScreenshot('clef_mid_measure.png');
+	});
 
 	// A percussion stave, 4/4: <unpitched> notes, which carry no <pitch> at all. Their
 	// <display-step>/<display-octave> pair is a staff POSITION rather than a sounding note,
@@ -296,7 +382,11 @@ const TEST_CASES = [
 	// - M3: the two combined into a realistic drumset chord, struck twice: kick (E4, default
 	//   head), snare (C5, default head) and hi-hat (G5, x head) on one stem, each member
 	//   keeping its own row and its own glyph.
-	testCase('percussion_display_step.musicxml', 'percussion_display_step.png'),
+	it.concurrent('renders percussion_display_step.png', async () => {
+		expect(
+			await renderer.screenshot('percussion_display_step.musicxml'),
+		).toMatchScreenshot('percussion_display_step.png');
+	});
 
 	// Percussion on a REDUCED stave (lilypond_73a-Percussion M1-2): three single-stave parts
 	// bracketed together, over two measures of 4/4, with no key signature anywhere.
@@ -314,7 +404,11 @@ const TEST_CASES = [
 	//   vexml draws no ledger lines out to them: vexflow measures ledgers off a fixed
 	//   five-line frame, so a reduced stave never gets any. MuseScore does draw them here.
 	// See also drumset.xml, tutorial_percussion.xml.
-	testCase('clef_percussion.musicxml', 'clef_percussion.png'),
+	it.concurrent('renders clef_percussion.png', async () => {
+		expect(
+			await renderer.screenshot('clef_percussion.musicxml'),
+		).toMatchScreenshot('clef_percussion.png');
+	});
 
 	// <staff-details><staff-lines> on NON-tab staves: two single-stave parts joined by a
 	// bracket, neither declaring a clef or time signature — so each opens with the default
@@ -334,7 +428,11 @@ const TEST_CASES = [
 	// A count that changes MID-measure is still unsupported: vexml reads <attributes> at the
 	// measure start (the same limit clef_mid_measure works around above), so this fixture puts
 	// M3's change at the barline rather than after its first note, where lilypond_14a had it.
-	testCase('staff_details_lines.musicxml', 'staff_details_lines.png'),
+	it.concurrent('renders staff_details_lines.png', async () => {
+		expect(
+			await renderer.screenshot('staff_details_lines.musicxml'),
+		).toMatchScreenshot('staff_details_lines.png');
+	});
 
 	// One system, treble 4/4: key signatures and a mid-system key change. Each measure
 	// holds one C5 whole note.
@@ -347,7 +445,11 @@ const TEST_CASES = [
 	// - M4: changes to G# minor (5 sharps) — a minor key whose bare tonic 'G#' is not a
 	//   valid vexflow key spec, so it renders via the 'G#m' minor spec instead of throwing.
 	//   The flats flip back to sharps, so two naturals cancel them ahead of the five sharps.
-	testCase('key.musicxml', 'key.png'),
+	it.concurrent('renders key.png', async () => {
+		expect(await renderer.screenshot('key.musicxml')).toMatchScreenshot(
+			'key.png',
+		);
+	});
 
 	// Treble stave, common time: the church modes. Every <key> carries the same
 	// <fifths>2</fifths> under a different <mode>, and each quarter is a G4 whose lyric names
@@ -358,7 +460,11 @@ const TEST_CASES = [
 	// - M1: major, minor, ionian, dorian — the two sharps drawn once at the system start.
 	// - M2: phrygian, lydian, mixolydian, aeolian — no signature redrawn, the key is unchanged.
 	// - M3: locrian; wraps to a second system, which reprints the same two sharps.
-	testCase('key_modes.musicxml', 'key_modes.png'),
+	it.concurrent('renders key_modes.png', async () => {
+		expect(await renderer.screenshot('key_modes.musicxml')).toMatchScreenshot(
+			'key_modes.png',
+		);
+	});
 
 	// Treble stave, 2/4: non-traditional key signatures — <key-step>/<key-alter> pairs instead
 	// of <fifths>, which is how microtonal and modal-jazz scores notate one. The accidentals
@@ -380,7 +486,11 @@ const TEST_CASES = [
 	// grows the page crop for a signature that reaches far off the stave either; M2's spread is
 	// held by the ordinary page margins.
 	// See also lilypond_13d-KeySignatures-Microtones.xml.
-	testCase('key_non_traditional.musicxml', 'key_non_traditional.png'),
+	it.concurrent('renders key_non_traditional.png', async () => {
+		expect(
+			await renderer.screenshot('key_non_traditional.musicxml'),
+		).toMatchScreenshot('key_non_traditional.png');
+	});
 
 	// One system, treble: time signatures and mid-system meter changes.
 	// - M1: opens the system with a treble clef and common time (the "C" symbol = 4/4);
@@ -389,7 +499,11 @@ const TEST_CASES = [
 	//   signature is redrawn (the clef is NOT repeated); two C5 half notes.
 	// - M3: changes the meter to a numeric 3/4 (stacked numerals); three C5 quarters.
 	// - M4: continues in 3/4 with no time signature redrawn; three C5 quarters.
-	testCase('time.musicxml', 'time.png'),
+	it.concurrent('renders time.png', async () => {
+		expect(await renderer.screenshot('time.musicxml')).toMatchScreenshot(
+			'time.png',
+		);
+	});
 
 	// Treble stave: additive (compound) meters, whose numerator sums the groups the bar beats
 	// in. The terms are summed, not read as one number — "3+2" through Number() is NaN, which
@@ -402,14 +516,22 @@ const TEST_CASES = [
 	// - <time symbol="single-number"> is covered below; several pairs printed side by side
 	//   (2/4 + 3/8) is not — vexflow's TimeSignature reads only the first two '/'-separated
 	//   groups, so that form needs its own glyph work before a fixture is worth adding.
-	testCase('time_compound.musicxml', 'time_compound.png'),
+	it.concurrent('renders time_compound.png', async () => {
+		expect(
+			await renderer.screenshot('time_compound.musicxml'),
+		).toMatchScreenshot('time_compound.png');
+	});
 
 	// Treble stave, <time symbol="single-number">: three beamed eighths under a signature that
 	// prints the beat count alone — one large "3" centered between the lines the stacked
 	// numerals would occupy, with no "8" beneath it.
 	// ponytail: <time symbol="note"> and symbol="dotted-note" (the beat drawn as a note glyph)
 	// still fall through to the stacked fraction; no fixture reaches them.
-	testCase('time_single_number.musicxml', 'time_single_number.png'),
+	it.concurrent('renders time_single_number.png', async () => {
+		expect(
+			await renderer.screenshot('time_single_number.musicxml'),
+		).toMatchScreenshot('time_single_number.png');
+	});
 
 	// Treble stave, <senza-misura> (unmetered): three beamed eighths with NO time signature
 	// glyph at all, the clef running straight into the first note. The measure is sized from
@@ -417,7 +539,11 @@ const TEST_CASES = [
 	// blank meter: a score that simply OMITS <time> prints an assumed 4/4 instead (see
 	// clef_treble and the structure_* cases), so declaring "unmetered" and saying nothing are
 	// deliberately different renders.
-	testCase('time_senza_misura.musicxml', 'time_senza_misura.png'),
+	it.concurrent('renders time_senza_misura.png', async () => {
+		expect(
+			await renderer.screenshot('time_senza_misura.musicxml'),
+		).toMatchScreenshot('time_senza_misura.png');
+	});
 
 	// Treble stave, 4/4: single-note rendering — durations then stem direction.
 	// - M1: a whole note (C5).
@@ -431,7 +557,11 @@ const TEST_CASES = [
 	//   ascending E4 (bottom line) to D5, with no stems at all.
 	// - M6: eight C5 eighths with <stem>none</stem> — bare noteheads, no stems and no flags,
 	//   evenly spaced across the measure.
-	testCase('note.musicxml', 'note.png'),
+	it.concurrent('renders note.png', async () => {
+		expect(await renderer.screenshot('note.musicxml')).toMatchScreenshot(
+			'note.png',
+		);
+	});
 
 	// Treble stave, 4/4, all on C5: note density per measure (beat counts deliberately
 	// ignored). Each measure varies the number and kind of notes. Under the logarithmic
@@ -448,13 +578,21 @@ const TEST_CASES = [
 	// - M6: mixed kinds in one measure — quarter, two beamed eighths, four beamed
 	//   sixteenths, then a half. Trailing system, left unjustified at its natural width, so
 	//   the uneven within-measure spacing (wide quarter, then progressively tighter) shows.
-	testCase('note_density.musicxml', 'note_density.png'),
+	it.concurrent('renders note_density.png', async () => {
+		expect(
+			await renderer.screenshot('note_density.musicxml'),
+		).toMatchScreenshot('note_density.png');
+	});
 
 	// Treble stave, 4/4, all on C5: dotted-note variations.
 	// - M1: dotted-quarter + eighth pairs (single dots).
 	// - M2: double-dotted-quarter + sixteenth pairs (double dots).
 	// - M3: four beamed dotted-eighth + sixteenth pairs (dots inside beams).
-	testCase('dotted_notes.musicxml', 'dotted_notes.png'),
+	it.concurrent('renders dotted_notes.png', async () => {
+		expect(
+			await renderer.screenshot('dotted_notes.musicxml'),
+		).toMatchScreenshot('dotted_notes.png');
+	});
 
 	// Treble stave, 4/4: the rest counterpart of note.musicxml's durations.
 	// - M1: a whole rest, centered horizontally in the measure (full-measure-rest convention).
@@ -466,7 +604,11 @@ const TEST_CASES = [
 	//   Neither carries a display position, so both would sit on the centered line; the
 	//   voice offset splits them, V1's rest one line above center and V2's one line below.
 	//   The G4s are deliberately identical — only the rests' placement is under test.
-	testCase('rest.musicxml', 'rest.png'),
+	it.concurrent('renders rest.png', async () => {
+		expect(await renderer.screenshot('rest.musicxml')).toMatchScreenshot(
+			'rest.png',
+		);
+	});
 
 	// Treble stave, 5/4: five quarter rests, identical but for where they are displayed. The
 	// first carries a bare <rest/> and takes the default centered position; the other four add
@@ -476,7 +618,11 @@ const TEST_CASES = [
 	// Pinning a rest this way is how multi-voice writing pushes two voices' rests apart; see
 	// the rest-placement corpus in rest_positioning_*.xml for the realistic version (two
 	// voices, C clef, 8th/16th rests), which deserves its own case.
-	testCase('rest_pitched.musicxml', 'rest_pitched.png'),
+	it.concurrent('renders rest_pitched.png', async () => {
+		expect(
+			await renderer.screenshot('rest_pitched.musicxml'),
+		).toMatchScreenshot('rest_pitched.png');
+	});
 
 	// Treble stave, 4/4: <measure-style><multiple-rest>, the consolidated multi-bar rest. A run
 	// of N resting bars collapses into ONE wide measure holding a thick horizontal bar with
@@ -497,9 +643,13 @@ const TEST_CASES = [
 	// shearing the parts' columns apart.
 	// See also multiple_rest_measures.xml, auto_multirest.xml, and
 	// measure_numbers_xml_starting_at_3_with_multirest.xml.
-	testCase('rest_multi_measure.musicxml', 'rest_multi_measure.png', {
-		measureNumbering: 'every',
-	}),
+	it.concurrent('renders rest_multi_measure.png', async () => {
+		expect(
+			await renderer.screenshot('rest_multi_measure.musicxml', {
+				measureNumbering: 'every',
+			}),
+		).toMatchScreenshot('rest_multi_measure.png');
+	});
 
 	// Treble stave, 4/4: every measure is four quarter notes stacked on one staff position
 	// (C5, third space) so nothing but the accidental glyph left of the notehead varies.
@@ -513,7 +663,11 @@ const TEST_CASES = [
 	//   does not nest parentheses inside brackets. In every case only the accidental is
 	//   wrapped; the notehead is untouched (unlike notehead_parentheses.musicxml, which
 	//   brackets the head).
-	testCase('accidentals.musicxml', 'accidentals.png'),
+	it.concurrent('renders accidentals.png', async () => {
+		expect(await renderer.screenshot('accidentals.musicxml')).toMatchScreenshot(
+			'accidentals.png',
+		);
+	});
 
 	// Treble stave, common time: <divisions> changing partway through, which rescales
 	// <duration> from that point on. Each measure writes the same rhythm twice, once at each
@@ -521,7 +675,11 @@ const TEST_CASES = [
 	// - M1: four quarter notes, evenly spaced — the first two at divisions 1, the last two at
 	//   divisions 8.
 	// - M2: two half notes, evenly spaced — the first at divisions 8, the second at 38.
-	testCase('divisions_change.musicxml', 'divisions_change.png'),
+	it.concurrent('renders divisions_change.png', async () => {
+		expect(
+			await renderer.screenshot('divisions_change.musicxml'),
+		).toMatchScreenshot('divisions_change.png');
+	});
 
 	// Grand staff, 4/4: <note print-object="no">, the hidden spacer notes exporters use to
 	// hold a voice open. A hidden note keeps its tick (so the other voices stay aligned) but
@@ -540,7 +698,11 @@ const TEST_CASES = [
 	// ponytail: hiding is read off the chord's lead note, so a chord with a mix of hidden and
 	// visible members draws all of them, and print-object on a whole <staff>/<measure> is
 	// ignored. No fixture reaches either yet.
-	testCase('invisible_notes.musicxml', 'invisible_notes.png'),
+	it.concurrent('renders invisible_notes.png', async () => {
+		expect(
+			await renderer.screenshot('invisible_notes.musicxml'),
+		).toMatchScreenshot('invisible_notes.png');
+	});
 
 	// A colored Beethoven lied (color.xml M1-2): a vocal treble stave over a piano grand
 	// staff, 3/4 in three flats, with MusicXML's own color attribute on individual elements.
@@ -566,7 +728,11 @@ const TEST_CASES = [
 	// ponytail: <beam color> and <lyric color> are ignored (each draws from its own element,
 	// so each needs its own pass) — hence the black beam over the colored eighths in M2.
 	// See also auto_custom_coloring_entchen.xml.
-	testCase('note_color.musicxml', 'note_color.png'),
+	it.concurrent('renders note_color.png', async () => {
+		expect(await renderer.screenshot('note_color.musicxml')).toMatchScreenshot(
+			'note_color.png',
+		);
+	});
 
 	// Treble stave, 4/4: metronome marks from <direction><metronome>, drawn above the
 	// staff just right of the time signature ("<quarter note> = bpm").
@@ -577,7 +743,11 @@ const TEST_CASES = [
 	// - M3: quarter = 110 sharing a measure with an "Em" chord symbol, both anchored at the
 	//   same first note. The mark stacks above the symbol (chord symbol nearest the staff,
 	//   tempo on top) instead of the two printing on top of each other.
-	testCase('tempo.musicxml', 'tempo.png'),
+	it.concurrent('renders tempo.png', async () => {
+		expect(await renderer.screenshot('tempo.musicxml')).toMatchScreenshot(
+			'tempo.png',
+		);
+	});
 
 	// Treble stave, common time: the metronome-mark variants tempo.musicxml does not reach.
 	// Every measure is four plain C5 quarters carrying one <metronome> over its first note,
@@ -603,7 +773,11 @@ const TEST_CASES = [
 	// quarters rather than 150. That predates the dot (a plain "half = 100" was already read
 	// this way) and belongs with the playback tempo path, not here. The M4/M5 swing figure is
 	// notation only for the same reason — a <sound><swing> is what makes playback swing.
-	testCase('tempo_beat_unit_dot.musicxml', 'tempo_beat_unit_dot.png'),
+	it.concurrent('renders tempo_beat_unit_dot.png', async () => {
+		expect(
+			await renderer.screenshot('tempo_beat_unit_dot.musicxml'),
+		).toMatchScreenshot('tempo_beat_unit_dot.png');
+	});
 
 	// Treble stave, 4/4: a words direction from <direction><direction-type><words>, drawn
 	// in italics above the staff at the x of the note it precedes. Four boring quarters per
@@ -629,7 +803,11 @@ const TEST_CASES = [
 	//   text's default band, but the bow arcs up through it — so the text is lifted clear of
 	//   the CURVE, and the whole line prints above the arc rather than being struck through by
 	//   it. Cut from a real bass score (Bass-LP-05-Fretboard M9).
-	testCase('words.musicxml', 'words.png'),
+	it.concurrent('renders words.png', async () => {
+		expect(await renderer.screenshot('words.musicxml')).toMatchScreenshot(
+			'words.png',
+		);
+	});
 
 	// Treble stave, common time: the full <dynamics> vocabulary, one marking per C4 quarter,
 	// drawn as SMuFL glyphs (the bold-italic p/m/f/r/s/z forms, not ordinary text) BELOW the
@@ -656,7 +834,11 @@ const TEST_CASES = [
 	// - M11-12: a whole-measure rest, then a whole note carrying mf again. The restatement is
 	//   two measures past the last one, too far to read as an exporter repeating itself, so
 	//   this mf DOES print — a composer re-marking a level after a rest is a real reminder.
-	testCase('dynamics.musicxml', 'dynamics.png'),
+	it.concurrent('renders dynamics.png', async () => {
+		expect(await renderer.screenshot('dynamics.musicxml')).toMatchScreenshot(
+			'dynamics.png',
+		);
+	});
 
 	// Treble stave, 3/4: <wedge> hairpins, one per measure, each spanning the measure's three
 	// quarters at a fixed gap from the staff, running notehead to notehead from the start
@@ -675,7 +857,11 @@ const TEST_CASES = [
 	//   arc instead of crossing it.
 	// ponytail: a hairpin that wraps across a system break isn't split into two partials the
 	// way a tie or slur is; no fixture reaches that yet.
-	testCase('wedges.musicxml', 'wedges.png'),
+	it.concurrent('renders wedges.png', async () => {
+		expect(await renderer.screenshot('wedges.musicxml')).toMatchScreenshot(
+			'wedges.png',
+		);
+	});
 
 	// Treble stave, common time (lilypond_33d-Spanners-OctaveShifts M1): <octave-shift>, the
 	// 8va/8vb/15ma/15mb ottava brackets. This is a DIFFERENT feature from <clef-octave-change>,
@@ -701,7 +887,11 @@ const TEST_CASES = [
 	// none before it) is dropped, and a span that wraps onto a later system would draw one
 	// bracket running right-to-left rather than splitting the way buildTies splits a tie.
 	// See also octave_shift_simple_piano.xml.
-	testCase('octave_shift.musicxml', 'octave_shift.png'),
+	it.concurrent('renders octave_shift.png', async () => {
+		expect(
+			await renderer.screenshot('octave_shift.musicxml'),
+		).toMatchScreenshot('octave_shift.png');
+	});
 
 	// Treble stave, 3/4 (lilypond_33a-Spanners M10-15): the direction-type LINE spanners —
 	// <bracket>, the analysis/phrase bracket, and <dashes>, the line that trails a "cresc.".
@@ -722,7 +912,11 @@ const TEST_CASES = [
 	// ponytail: line-end="arrow" draws the same tick "down" does (an arrowhead needs its own
 	// path), line-type="wavy" falls back to solid, and a span wrapping onto a later system is
 	// dropped rather than split. None has a fixture.
-	testCase('direction_lines.musicxml', 'direction_lines.png'),
+	it.concurrent('renders direction_lines.png', async () => {
+		expect(
+			await renderer.screenshot('direction_lines.musicxml'),
+		).toMatchScreenshot('direction_lines.png');
+	});
 
 	// Navigation marks — <segno> and <coda> — on a real (braced) piano score in 4/4, five
 	// measures wrapping onto two systems: four quarters per measure on the treble staff over a
@@ -743,7 +937,11 @@ const TEST_CASES = [
 	// ponytail: a sign's own placement/offset attributes are ignored — it always prints at its
 	// measure's left edge, where a player scanning for "the sign" looks.
 	// See also stave_repetitions_coda_etc_positioning.xml for the placement stress version.
-	testCase('navigation.musicxml', 'navigation.png'),
+	it.concurrent('renders navigation.png', async () => {
+		expect(await renderer.screenshot('navigation.musicxml')).toMatchScreenshot(
+			'navigation.png',
+		);
+	});
 
 	// Treble stave, 4/4: <lyric> verses printed as text under the stave, centered on their
 	// note. Boring B4 quarters throughout except M5, so only the syllables vary.
@@ -757,7 +955,11 @@ const TEST_CASES = [
 	// - M5: one verse over notes at wildly different pitches (C4, A5, E3 on ledger lines,
 	//   C6 on ledger lines) — the syllables stay on a readable row under the stave instead
 	//   of following each notehead's height.
-	testCase('lyrics.musicxml', 'lyrics.png'),
+	it.concurrent('renders lyrics.png', async () => {
+		expect(await renderer.screenshot('lyrics.musicxml')).toMatchScreenshot(
+			'lyrics.png',
+		);
+	});
 
 	// Treble stave, common time: melismas — a syllable held over notes that carry no lyric of
 	// their own, with a <lyric><extend/> drawing the extender line. Every note is a quarter and
@@ -772,7 +974,11 @@ const TEST_CASES = [
 	// it and of any lower verse.
 	// ponytail: an extender stops at the end of its stave — a melisma crossing a barline or a
 	// system break draws only its first segment. See drawMelismas.
-	testCase('lyrics_melisma.musicxml', 'lyrics_melisma.png'),
+	it.concurrent('renders lyrics_melisma.png', async () => {
+		expect(
+			await renderer.screenshot('lyrics_melisma.musicxml'),
+		).toMatchScreenshot('lyrics_melisma.png');
+	});
 
 	// Treble stave, common time: <elision> — several syllables sung on one note, which is how
 	// Italian and French vocal writing sets a vowel run. Four C5 quarters, so only the text
@@ -781,7 +987,11 @@ const TEST_CASES = [
 	//   "d e" (two <text> runs joined by an empty <elision/>); "f g h" (three runs, two
 	//   elisions). The second and third must look the same — an empty <elision/> prints as a
 	//   space, so the two spellings of the same lyric render identically.
-	testCase('lyrics_elision.musicxml', 'lyrics_elision.png'),
+	it.concurrent('renders lyrics_elision.png', async () => {
+		expect(
+			await renderer.screenshot('lyrics_elision.musicxml'),
+		).toMatchScreenshot('lyrics_elision.png');
+	});
 
 	// Treble stave, 4/4: lyrics under a stave carrying TWO voices. Both voices number their
 	// verses from 1, so the row a syllable lands on is its verse index offset by the rows the
@@ -799,7 +1009,11 @@ const TEST_CASES = [
 	//   used, not voices.
 	// See also lilypond_61c-Lyrics-Pianostaff.xml (lyrics between the two staves of a grand
 	// staff) and lilypond_61e-Lyrics-Chords.xml.
-	testCase('lyrics_two_voices.musicxml', 'lyrics_two_voices.png'),
+	it.concurrent('renders lyrics_two_voices.png', async () => {
+		expect(
+			await renderer.screenshot('lyrics_two_voices.musicxml'),
+		).toMatchScreenshot('lyrics_two_voices.png');
+	});
 
 	// Treble stave, 4/4: section headers from <direction><direction-type><rehearsal>, drawn
 	// as boxed bold text at each measure's left edge, above everything else over the staff.
@@ -810,11 +1024,19 @@ const TEST_CASES = [
 	//   the box's default band, so the box is lifted clear of them.
 	// - M3: "Chorus" — a multi-character label, so the box widens to fit the text instead
 	//   of staying letter-sized.
-	testCase('rehearsal.musicxml', 'rehearsal.png'),
+	it.concurrent('renders rehearsal.png', async () => {
+		expect(await renderer.screenshot('rehearsal.musicxml')).toMatchScreenshot(
+			'rehearsal.png',
+		);
+	});
 
 	// Treble stave, 4/4: two measures split by a barline, each holding one whole note
 	// (C5, same pitch in both).
-	testCase('measures_two.musicxml', 'measures_two.png'),
+	it.concurrent('renders measures_two.png', async () => {
+		expect(
+			await renderer.screenshot('measures_two.musicxml'),
+		).toMatchScreenshot('measures_two.png');
+	});
 
 	// Grand staff (empty treble over empty bass), two measures. Because the system has
 	// multiple staves, the per-stave end barlines are suppressed and the dividing lines
@@ -824,13 +1046,21 @@ const TEST_CASES = [
 	// - M2: the piece's final measure closes with a bold thin-thick double line spanning
 	//   both staves (boldDoubleRight) rather than the plain single line drawn at every
 	//   other measure end.
-	testCase('measures_end_barline.musicxml', 'measures_end_barline.png'),
+	it.concurrent('renders measures_end_barline.png', async () => {
+		expect(
+			await renderer.screenshot('measures_end_barline.musicxml'),
+		).toMatchScreenshot('measures_end_barline.png');
+	});
 
 	// Treble stave, 4/4, two whole-note measures (C5 in both). M1 carries an explicit
 	// right <barline> with <bar-style>light-light</bar-style>, so the divider between M1
 	// and M2 renders as a thin double line instead of the default single line; M2 closes
 	// with the usual thin-thick end barline.
-	testCase('measures_light_light.musicxml', 'measures_light_light.png'),
+	it.concurrent('renders measures_light_light.png', async () => {
+		expect(
+			await renderer.screenshot('measures_light_light.musicxml'),
+		).toMatchScreenshot('measures_light_light.png');
+	});
 
 	// The whole non-repeat <bar-style> vocabulary, one value per measure. Treble stave in
 	// common time, twelve measures each holding a single whole rest, so the ONLY thing that
@@ -858,7 +1088,11 @@ const TEST_CASES = [
 	// that ties the barline across staves — StaveConnector has no dotted/dashed/heavy member.
 	// These styles are a single-stave idiom, so that gap is unexercised; see drawConnectors.
 	// See also bar_lines.xml.
-	testCase('barline_styles.musicxml', 'barline_styles.png'),
+	it.concurrent('renders barline_styles.png', async () => {
+		expect(
+			await renderer.screenshot('barline_styles.musicxml'),
+		).toMatchScreenshot('barline_styles.png');
+	});
 
 	// Treble stave, 4/4: a barline in the MIDDLE of a measure — <barline location="middle">,
 	// how a divider that falls off the measure edge is written. One measure of four quarters
@@ -873,7 +1107,11 @@ const TEST_CASES = [
 	// ponytail: it rides on the FIRST voice only — a second copy per voice would redraw the
 	// same line — and ScoreReader.midBarlinesOf binds it to the last note in document order
 	// rather than rewinding a <backup>, so a multi-voice measure could place it early.
-	testCase('barline_mid_measure.musicxml', 'barline_mid_measure.png'),
+	it.concurrent('renders barline_mid_measure.png', async () => {
+		expect(
+			await renderer.screenshot('barline_mid_measure.musicxml'),
+		).toMatchScreenshot('barline_mid_measure.png');
+	});
 
 	// Pickup (anacrusis) and incomplete measures — <measure implicit="yes">, which is short by
 	// declaration rather than underfull by accident, so it is sized to the music it holds
@@ -898,7 +1136,11 @@ const TEST_CASES = [
 	// See implicit_pickup_measure_width.xml (the OSMD bug report this fixes),
 	// pickup_measure_double_rhythm.xml, lilypond_46f-IncompleteMeasures.xml and
 	// lilypond_46e-PickupMeasure-SecondVoiceStartsLater.xml.
-	testCase('pickup_measure.musicxml', 'pickup_measure.png'),
+	it.concurrent('renders pickup_measure.png', async () => {
+		expect(
+			await renderer.screenshot('pickup_measure.musicxml'),
+		).toMatchScreenshot('pickup_measure.png');
+	});
 
 	// Treble stave, 4/4, one whole note per measure (M8 and M12-15 excepted): repeat barlines and
 	// volta brackets. M1-7 ascend C5 through B5; M8-11 restart at C5 and ascend to F5. The playback
@@ -942,7 +1184,11 @@ const TEST_CASES = [
 	//   to run on into), over the piece's thin-thick end barline.
 	// Every bracket on a system shares one height, so M9-11's brackets ride at M13/M15's level
 	// too — the second system's brackets are visibly higher than the first system's.
-	testCase('repeats.musicxml', 'repeats.png'),
+	it.concurrent('renders repeats.png', async () => {
+		expect(await renderer.screenshot('repeats.musicxml')).toMatchScreenshot(
+			'repeats.png',
+		);
+	});
 
 	// A treble stave over a 6-line TAB stave (bracketed, one part), 4/4, one whole note per
 	// measure on string 1: repeat barlines belong to the measure, not to a stave, so every
@@ -957,7 +1203,11 @@ const TEST_CASES = [
 	// - M3: reopens immediately, so the M2/M3 boundary prints one back-to-back sign — dots,
 	//   thin-thick-thin, dots — spanning both staves. Fret 5 / A4.
 	// - M4: fret 7 / B4, closing with a backward repeat instead of the usual end barline.
-	testCase('repeats_notation_and_tab.musicxml', 'repeats_notation_and_tab.png'),
+	it.concurrent('renders repeats_notation_and_tab.png', async () => {
+		expect(
+			await renderer.screenshot('repeats_notation_and_tab.musicxml'),
+		).toMatchScreenshot('repeats_notation_and_tab.png');
+	});
 
 	// Treble stave, common time: a repeat played more than twice — <repeat direction="backward"
 	// times="5"/>. Five measures of one whole rest each, so only the barlines and the label vary.
@@ -970,7 +1220,11 @@ const TEST_CASES = [
 	// A bare backward repeat (no `times`, or times="2") prints no label — the dots already say
 	// twice. The playback half of the same attribute is asserted in cursor.test.ts: the block
 	// expands to five passes, not two.
-	testCase('repeats_multiple_times.musicxml', 'repeats_multiple_times.png'),
+	it.concurrent('renders repeats_multiple_times.png', async () => {
+		expect(
+			await renderer.screenshot('repeats_multiple_times.musicxml'),
+		).toMatchScreenshot('repeats_multiple_times.png');
+	});
 
 	// Treble stave, common time: a repeat block NESTED inside another, each with its own pair
 	// of alternative endings. repeats.musicxml covers back-to-back blocks and up to three
@@ -996,7 +1250,11 @@ const TEST_CASES = [
 	// is the only thing that separates the two volta groups (see ScoreReader-side endingFirstPass
 	// and the pre-scan in packages/vexml/sequence-factory.ts).
 	// See also lilypond_45e-Repeats-Nested-Alternatives.xml.
-	testCase('repeats_nested.musicxml', 'repeats_nested.png'),
+	it.concurrent('renders repeats_nested.png', async () => {
+		expect(
+			await renderer.screenshot('repeats_nested.musicxml'),
+		).toMatchScreenshot('repeats_nested.png');
+	});
 
 	// Gap measures (config.gaps) inserted into the two-whole-note fixture. Four measure
 	// columns on one system: a leading labeled gap, then M1, then an unlabeled gap, then
@@ -1010,19 +1268,23 @@ const TEST_CASES = [
 	// - Gap 2: a narrower plain empty measure — no label, no fill, staff lines at full
 	//   strength, no clef/key/time restated.
 	// - M2 ("2"): the original second measure — whole note C5, thin-thick end barline.
-	testCase('measures_two.musicxml', 'measures_gap.png', {
-		measureNumbering: 'every',
-		gaps: [
-			{
-				beforeMeasureIndex: 0,
-				durationMs: 5000,
-				label: 'What are pitches?',
-				minWidth: 250,
-				style: { fill: 'rgba(255, 255, 255, 0.65)' },
-			},
-			{ beforeMeasureIndex: 1, durationMs: 2000 },
-		],
-	}),
+	it.concurrent('renders measures_gap.png', async () => {
+		expect(
+			await renderer.screenshot('measures_two.musicxml', {
+				measureNumbering: 'every',
+				gaps: [
+					{
+						beforeMeasureIndex: 0,
+						durationMs: 5000,
+						label: 'What are pitches?',
+						minWidth: 250,
+						style: { fill: 'rgba(255, 255, 255, 0.65)' },
+					},
+					{ beforeMeasureIndex: 1, durationMs: 2000 },
+				],
+			}),
+		).toMatchScreenshot('measures_gap.png');
+	});
 
 	// Beam variations across eleven 4/4 measures. Wraps across systems. A beam slants only
 	// when its run moves consistently one way (chords count both their outer voices) and
@@ -1049,19 +1311,31 @@ const TEST_CASES = [
 	// - M11: a FLAT beam over an octave-alternating run (A4 A5 G4 G5) then a half rest.
 	//   Stems point down to a beam below the stave; the low A4/G4 stems reach it at full
 	//   standard length rather than being pulled short by the group's average stem tip.
-	testCase('beam_variations.musicxml', 'beam_variations.png'),
+	it.concurrent('renders beam_variations.png', async () => {
+		expect(
+			await renderer.screenshot('beam_variations.musicxml'),
+		).toMatchScreenshot('beam_variations.png');
+	});
 
 	// Treble stave, 4/4: four quarter-note chords — a C5/E5/G5 triad, a C5/D5 second
 	// (offset noteheads), a C5/D5/E5 cluster, then a C5/E5/G5/A5 chord with a second
 	// (G5/A5) on top.
-	testCase('chord.musicxml', 'chord.png'),
+	it.concurrent('renders chord.png', async () => {
+		expect(await renderer.screenshot('chord.musicxml')).toMatchScreenshot(
+			'chord.png',
+		);
+	});
 
 	// Treble stave, 3/4: an ascending run of quarter notes covering every natural
 	// pitch from F3 (three ledger lines below the staff) up to E6 (three ledger lines
 	// above), three notes per measure across seven measures — ledger lines grow from
 	// three below, shrink to none on the staff, then grow to three above. Wraps across
 	// systems.
-	testCase('ledger_lines.musicxml', 'ledger_lines.png'),
+	it.concurrent('renders ledger_lines.png', async () => {
+		expect(
+			await renderer.screenshot('ledger_lines.musicxml'),
+		).toMatchScreenshot('ledger_lines.png');
+	});
 
 	// Treble stave, 4/4: ties on single notes (the tied-chord variants live in the
 	// tie_chord_* fixtures below).
@@ -1073,7 +1347,11 @@ const TEST_CASES = [
 	// - M4: two F#5 half notes tied; both notes declare a superfluous <accidental>sharp</accidental>
 	//   in the MusicXML, but only the tie-start note prints the sharp — the tied note carries the
 	//   accidental implicitly, so its glyph is suppressed.
-	testCase('tie.musicxml', 'tie.png'),
+	it.concurrent('renders tie.png', async () => {
+		expect(await renderer.screenshot('tie.musicxml')).toMatchScreenshot(
+			'tie.png',
+		);
+	});
 
 	// Treble stave, D major, 4/4: a three-note tie chain on F#4 — dotted-eighth -> quarter ->
 	// quarter — where the middle note carries both tie start and stop, so two arcs join end to
@@ -1085,32 +1363,56 @@ const TEST_CASES = [
 	// dotted eighth;
 	// beats 3-4 add a below-placed slur over a 16th run (F#4-G4) into a slashed grace E4 that
 	// slurs into the closing F#4 eighth.
-	testCase('tie_chain.musicxml', 'tie_chain.png'),
+	it.concurrent('renders tie_chain.png', async () => {
+		expect(await renderer.screenshot('tie_chain.musicxml')).toMatchScreenshot(
+			'tie_chain.png',
+		);
+	});
 
 	// Treble stave, 4/4, one measure: two stem-up half-note chords (C5/E5/G5) with all three
 	// members tied — the bottom member (C5) bows under (concave up) and the upper two (E5, G5)
 	// bow over (concave down), sandwiching the chord while the over-arcs clear the up-stems.
-	testCase('tie_chord_triad.musicxml', 'tie_chord_triad.png'),
+	it.concurrent('renders tie_chord_triad.png', async () => {
+		expect(
+			await renderer.screenshot('tie_chord_triad.musicxml'),
+		).toMatchScreenshot('tie_chord_triad.png');
+	});
 
 	// Treble stave, 4/4, one measure: a two-note chord (C5/E5) with both members tied — the
 	// lower bows under (concave up), the upper bows over (concave down), so the ties diverge
 	// from the chord center.
-	testCase('tie_chord_dyad.musicxml', 'tie_chord_dyad.png'),
+	it.concurrent('renders tie_chord_dyad.png', async () => {
+		expect(
+			await renderer.screenshot('tie_chord_dyad.musicxml'),
+		).toMatchScreenshot('tie_chord_dyad.png');
+	});
 
 	// Treble stave, 4/4, one measure: a four-note chord (C5/E5/G5/C6) with all members tied —
 	// the lower half (C5, E5) bows under and the upper half (G5, C6) bows over, a two-under /
 	// two-over split across a one-octave spread.
-	testCase('tie_chord_octave.musicxml', 'tie_chord_octave.png'),
+	it.concurrent('renders tie_chord_octave.png', async () => {
+		expect(
+			await renderer.screenshot('tie_chord_octave.musicxml'),
+		).toMatchScreenshot('tie_chord_octave.png');
+	});
 
 	// Treble stave, 4/4, one measure: spacing variant — a two-note second (C5/D5) with both
 	// members tied; the second offsets the noteheads across the stem, C5 bowing under and D5
 	// over.
-	testCase('tie_chord_second.musicxml', 'tie_chord_second.png'),
+	it.concurrent('renders tie_chord_second.png', async () => {
+		expect(
+			await renderer.screenshot('tie_chord_second.musicxml'),
+		).toMatchScreenshot('tie_chord_second.png');
+	});
 
 	// Treble stave, 4/4, one measure: spacing variant — a four-note cluster of stacked seconds
 	// (C5/D5/E5/F5) with all members tied; zig-zag offset noteheads, lower half under and upper
 	// half over.
-	testCase('tie_chord_cluster.musicxml', 'tie_chord_cluster.png'),
+	it.concurrent('renders tie_chord_cluster.png', async () => {
+		expect(
+			await renderer.screenshot('tie_chord_cluster.musicxml'),
+		).toMatchScreenshot('tie_chord_cluster.png');
+	});
 
 	// Treble, 4/4, narrowed to 360px so the system breaks between M1 and M2. A three-note
 	// chord (C5/E5/G5) is tied from M1's last beat into M2's first beat, straddling the
@@ -1121,22 +1423,38 @@ const TEST_CASES = [
 	//   the right edge of the stave into nothing ("tie to nothing").
 	// - M2 (system 2): the tied half chord + half rest; the three ties bow in from the left
 	//   edge of the stave into the chord ("tie from nothing").
-	testCase('tie_system_break.musicxml', 'tie_system_break.png', {
-		layout: { type: 'standard', referenceWidth: 360 },
-	}),
+	it.concurrent('renders tie_system_break.png', async () => {
+		expect(
+			await renderer.screenshot('tie_system_break.musicxml', {
+				layout: { type: 'standard', referenceWidth: 360 },
+			}),
+		).toMatchScreenshot('tie_system_break.png');
+	});
 
 	// Treble stave, 4/4: four quarters C5, D5, E5, F5 under one slur with no placement
 	// attribute (default). The stem-down notes push the slur above the noteheads.
-	testCase('slur_default.musicxml', 'slur_default.png'),
+	it.concurrent('renders slur_default.png', async () => {
+		expect(
+			await renderer.screenshot('slur_default.musicxml'),
+		).toMatchScreenshot('slur_default.png');
+	});
 
 	// Treble stave, 4/4: four quarters G5, A5, B5, A5 under one slur with explicit
 	// placement="above" — the slur arcs above the noteheads.
-	testCase('slur_above.musicxml', 'slur_above.png'),
+	it.concurrent('renders slur_above.png', async () => {
+		expect(await renderer.screenshot('slur_above.musicxml')).toMatchScreenshot(
+			'slur_above.png',
+		);
+	});
 
 	// Treble stave, 4/4: one slur beneath an ascending low line E4, F4, G4, A4. All
 	// notes sit below the middle line so their stems point up, and the slur bows below
 	// the noteheads (opposite side from the stems).
-	testCase('slur_stem_up.musicxml', 'slur_stem_up.png'),
+	it.concurrent('renders slur_stem_up.png', async () => {
+		expect(
+			await renderer.screenshot('slur_stem_up.musicxml'),
+		).toMatchScreenshot('slur_stem_up.png');
+	});
 
 	// Treble stave, 4/4: above-slurs whose two ends have opposing stem directions.
 	// - M1: one slur over a zig-zag line C5, G4, D5, A4 straddling the middle line, so the
@@ -1150,11 +1468,19 @@ const TEST_CASES = [
 	//   stem-down one (D5, B4). The start note is stem-up, which alone would bow the slur
 	//   underneath and make it dive under both beams; because the two ends disagree the
 	//   slur goes above instead, one arc over the beams from the E4 stem tip to the B4.
-	testCase('slur_mixed_stems.musicxml', 'slur_mixed_stems.png'),
+	it.concurrent('renders slur_mixed_stems.png', async () => {
+		expect(
+			await renderer.screenshot('slur_mixed_stems.musicxml'),
+		).toMatchScreenshot('slur_mixed_stems.png');
+	});
 
 	// Treble stave, 4/4: two half notes A5 and C4 slurred across a wide downward leap —
 	// the slur spans the measure between the distant noteheads.
-	testCase('slur_leap.musicxml', 'slur_leap.png'),
+	it.concurrent('renders slur_leap.png', async () => {
+		expect(await renderer.screenshot('slur_leap.musicxml')).toMatchScreenshot(
+			'slur_leap.png',
+		);
+	});
 
 	// Treble stave, 4/4: slurs over beamed runs. Both measures are stem-down eighths in two
 	// four-note beams, so the beam sits below and the slur arcs above the noteheads.
@@ -1164,18 +1490,30 @@ const TEST_CASES = [
 	//   D5. Those two G5s lie where the bow is pinned nearly flat against its endpoints, so
 	//   the arc cannot clear them by inflating; the slur's ends lift off their noteheads
 	//   instead and the whole curve passes above all eight heads. No notehead touches it.
-	testCase('slur_beamed.musicxml', 'slur_beamed.png'),
+	it.concurrent('renders slur_beamed.png', async () => {
+		expect(await renderer.screenshot('slur_beamed.musicxml')).toMatchScreenshot(
+			'slur_beamed.png',
+		);
+	});
 
 	// Treble stave, 4/4: four quarters carrying two separate two-note slurs (C5-D5 and
 	// E5-D5) using distinct slur numbers — two short independent arcs above.
-	testCase('slur_multiple.musicxml', 'slur_multiple.png'),
+	it.concurrent('renders slur_multiple.png', async () => {
+		expect(
+			await renderer.screenshot('slur_multiple.musicxml'),
+		).toMatchScreenshot('slur_multiple.png');
+	});
 
 	// Treble stave, 4/4: three chained slurs over E4, G4, E5, C5 — a slur below the
 	// first pair (E4-G4, both stem-up), a slur bridging note 2 to note 3 (G4 stem-up to
 	// E5 stem-down) above because its ends disagree, and a slur above the last pair
 	// (E5-C5, stem-down). Overlapping slurs use distinct numbers, so notes 2 and 3 each
 	// carry both a stop and a start.
-	testCase('slur_chained.musicxml', 'slur_chained.png'),
+	it.concurrent('renders slur_chained.png', async () => {
+		expect(
+			await renderer.screenshot('slur_chained.musicxml'),
+		).toMatchScreenshot('slur_chained.png');
+	});
 
 	// Treble, 4/4, narrowed to 350px so the system breaks between M1 and M2. A slur runs
 	// from M1's last note (F5) into M2's first note (G5), straddling the break. Like a
@@ -1185,9 +1523,13 @@ const TEST_CASES = [
 	//   the stave past F5 into nothing ("slur to nothing").
 	// - M2 (system 2): four descending quarters G5-D5; the slur bows in from the left edge
 	//   of the stave into G5 ("slur from nothing").
-	testCase('slur_system_break.musicxml', 'slur_system_break.png', {
-		layout: { type: 'standard', referenceWidth: 350 },
-	}),
+	it.concurrent('renders slur_system_break.png', async () => {
+		expect(
+			await renderer.screenshot('slur_system_break.musicxml', {
+				layout: { type: 'standard', referenceWidth: 350 },
+			}),
+		).toMatchScreenshot('slur_system_break.png');
+	});
 
 	// Treble stave, 4/4: <slur line-type>. Every measure is the same four stem-down
 	// quarters C5 D5 E5 F5 under one above-bowing slur, so only the stroke varies. A
@@ -1202,7 +1544,11 @@ const TEST_CASES = [
 	// ponytail: the <slur> bezier/orientation attributes (bezier-x/y, orientation) are
 	// still ignored — vexml computes its own control points to clear the spanned notes,
 	// which an exporter's absolute offsets would fight rather than improve.
-	testCase('slur_line_types.musicxml', 'slur_line_types.png'),
+	it.concurrent('renders slur_line_types.png', async () => {
+		expect(
+			await renderer.screenshot('slur_line_types.musicxml'),
+		).toMatchScreenshot('slur_line_types.png');
+	});
 
 	// Treble stave, 4/4, two voices: slurs paired across a <backup>, which makes document
 	// order disagree with playing order. Every slur here is number 1, the way exporters
@@ -1215,7 +1561,11 @@ const TEST_CASES = [
 	//   voice 1 above all four quarters (C5-F5), voice 2 below just the first two (E4-F4).
 	//   The two arcs are nested, not crossed: whichever voice a stop is in claims the start
 	//   from that same voice.
-	testCase('slur_backup_voices.musicxml', 'slur_backup_voices.png'),
+	it.concurrent('renders slur_backup_voices.png', async () => {
+		expect(
+			await renderer.screenshot('slur_backup_voices.musicxml'),
+		).toMatchScreenshot('slur_backup_voices.png');
+	});
 
 	// Piano grand staff, 2/4, 3 sharps: a slur spanning a cross-stave figure. Each measure is
 	// one voice of four 16ths whose first three sit on the bass stave and whose fourth jumps
@@ -1230,7 +1580,11 @@ const TEST_CASES = [
 	// Reduced from Schumann's "Dichterliebe" measures 4-5, whose piano runs this figure in
 	// nearly every bar; it used to draw as a long S-swoop sagging through the empty gap
 	// between the staves, identical for both placements.
-	testCase('slur_cross_stave.musicxml', 'slur_cross_stave.png'),
+	it.concurrent('renders slur_cross_stave.png', async () => {
+		expect(
+			await renderer.screenshot('slur_cross_stave.musicxml'),
+		).toMatchScreenshot('slur_cross_stave.png');
+	});
 
 	// Treble stave, 4/4: sustain pedals from <direction><direction-type><pedal>, drawn
 	// under the staff spanning four B4 quarters. The pedal goes down under the first
@@ -1243,7 +1597,11 @@ const TEST_CASES = [
 	//   and ledger lines hang down into the pedal's default band. The "Ped."/"*" glyphs are
 	//   dropped clear below them instead of printing through the notes; M1's pedal, over
 	//   mid-staff notes, stays at the default height as the control.
-	testCase('pedal.musicxml', 'pedal.png'),
+	it.concurrent('renders pedal.png', async () => {
+		expect(await renderer.screenshot('pedal.musicxml')).toMatchScreenshot(
+			'pedal.png',
+		);
+	});
 
 	// 6-line TAB stave, half notes: hammer-ons and pull-offs, both notated with plain
 	// <slur>s and both drawn as a plain arc — no "H"/"P" label, the fret motion says which
@@ -1279,7 +1637,11 @@ const TEST_CASES = [
 	//   arcs draw: 5 -> 7 in M11, then 5 -> 7 and 7 -> 5 in M12. The stray start has no
 	//   partner and draws nothing — it must not reach across the barline and swallow one of
 	//   M12's stops, which would leave a bow stretched over the whole measure.
-	testCase('tab_hammer_pull.musicxml', 'tab_hammer_pull.png'),
+	it.concurrent('renders tab_hammer_pull.png', async () => {
+		expect(
+			await renderer.screenshot('tab_hammer_pull.musicxml'),
+		).toMatchScreenshot('tab_hammer_pull.png');
+	});
 
 	// Same fixture at a narrow width that breaks the system between M3 and M4, where M3's
 	// target chord opens a pull-off slur that resolves on M4's downbeat. The split tie must
@@ -1287,9 +1649,13 @@ const TEST_CASES = [
 	// diagonal across the page gap. M4's two incoming halves are short (its chord sits right
 	// against the TAB clef), so read them as stubs over the "5/5", one per shared string.
 	// The width is load-bearing: at 320 and up M3 and M4 share a system and nothing splits.
-	testCase('tab_hammer_pull.musicxml', 'tab_hammer_pull_wrap.png', {
-		layout: { type: 'standard', referenceWidth: 300 },
-	}),
+	it.concurrent('renders tab_hammer_pull_wrap.png', async () => {
+		expect(
+			await renderer.screenshot('tab_hammer_pull.musicxml', {
+				layout: { type: 'standard', referenceWidth: 300 },
+			}),
+		).toMatchScreenshot('tab_hammer_pull_wrap.png');
+	});
 
 	// 6-line TAB stave, half notes: how ties vs slurs render in tab. A tie holds a string
 	// without re-striking it, so its held (tie-stop) fret is dropped; a slur changes fret
@@ -1302,7 +1668,11 @@ const TEST_CASES = [
 	// - M3: a lone tied note (string 1, fret 7). Every member is held, so the tab omits all
 	//   frets and leaves beat 2 blank — an invisible ghost note reserves the tick so the tab
 	//   stays aligned with the notation stave (see vexflowTabTickables).
-	testCase('tab_tie.musicxml', 'tab_tie.png'),
+	it.concurrent('renders tab_tie.png', async () => {
+		expect(await renderer.screenshot('tab_tie.musicxml')).toMatchScreenshot(
+			'tab_tie.png',
+		);
+	});
 
 	// 6-line TAB stave: grace notes (small fret numbers just left of their main note).
 	// No <time>, so no time signature is drawn.
@@ -1310,7 +1680,11 @@ const TEST_CASES = [
 	//   (frets 7, 9) before another fret-5 half note, all on string 3.
 	// - M2: a grace note slurred to its main note — a slur curves from the small grace
 	//   fret 7 to the fret-5 half note, both on string 3.
-	testCase('tab_grace.musicxml', 'tab_grace.png'),
+	it.concurrent('renders tab_grace.png', async () => {
+		expect(await renderer.screenshot('tab_grace.musicxml')).toMatchScreenshot(
+			'tab_grace.png',
+		);
+	});
 
 	// A notation stave (P1) stacked over a 6-line TAB stave (P2) as two separate parts,
 	// formatted together so same-tick notes align vertically. Each measure has a grace
@@ -1322,7 +1696,11 @@ const TEST_CASES = [
 	//   grace notehead, not under the accidental.
 	// - M2: the same layout without an accidental — a D5 grace ("7", string 2) before the
 	//   C5 whole note. Control: graces line up the same with or without the accidental.
-	testCase('tab_grace_notation_align.musicxml', 'tab_grace_notation_align.png'),
+	it.concurrent('renders tab_grace_notation_align.png', async () => {
+		expect(
+			await renderer.screenshot('tab_grace_notation_align.musicxml'),
+		).toMatchScreenshot('tab_grace_notation_align.png');
+	});
 
 	// A notation stave (P1) over a 6-line TAB stave (P2), key of Bb (-2), 4/4, formatted
 	// together. Like tab_grace_notation_align but the graces and the notes they precede are
@@ -1335,19 +1713,31 @@ const TEST_CASES = [
 	//   frets line up under the grace noteheads; the "3" frets under the main noteheads.
 	// - Beat 4: a slashed grace chord (E4 + Ab4-flat + Db5-flat; TAB "7/6/6" strings 5/4/3)
 	//   before a main chord (Eb4-flat + G4 + C5; TAB "6/5/5" strings 5/4/3). Same alignment.
-	testCase('tab_grace_chord_align.musicxml', 'tab_grace_chord_align.png'),
+	it.concurrent('renders tab_grace_chord_align.png', async () => {
+		expect(
+			await renderer.screenshot('tab_grace_chord_align.musicxml'),
+		).toMatchScreenshot('tab_grace_chord_align.png');
+	});
 
 	// 6-line TAB stave: slides drawn as diagonal TabSlide lines tilted by the fret motion.
 	// No <time>, so no time signature is drawn.
 	// - M1: a slide up (string 3, fret 5 -> 7) then a slide down (fret 9 -> 7); four
 	//   quarter notes. The "sl." labels are off by default (showTabSlideText).
-	testCase('tab_slide.musicxml', 'tab_slide.png'),
+	it.concurrent('renders tab_slide.png', async () => {
+		expect(await renderer.screenshot('tab_slide.musicxml')).toMatchScreenshot(
+			'tab_slide.png',
+		);
+	});
 
 	// Same fixture with showTabSlideText: true — the "sl." labels print above the slide
 	// lines.
-	testCase('tab_slide.musicxml', 'tab_slide_text.png', {
-		showTabSlideText: true,
-	}),
+	it.concurrent('renders tab_slide_text.png', async () => {
+		expect(
+			await renderer.screenshot('tab_slide.musicxml', {
+				showTabSlideText: true,
+			}),
+		).toMatchScreenshot('tab_slide_text.png');
+	});
 
 	// Notation stave over a 6-line TAB stave, 4/4: the same two slides on both staves, as
 	// voice 1 (pitched, staff 1) and voice 2 (fretted, string 3, staff 2).
@@ -1356,7 +1746,11 @@ const TEST_CASES = [
 	//   noteheads; the TAB stave draws a tilted line between the frets with the string
 	//   line erased under it, so each slide reads as one diagonal, not a diagonal
 	//   alongside a horizontal.
-	testCase('tab_slide_notation.musicxml', 'tab_slide_notation.png'),
+	it.concurrent('renders tab_slide_notation.png', async () => {
+		expect(
+			await renderer.screenshot('tab_slide_notation.musicxml'),
+		).toMatchScreenshot('tab_slide_notation.png');
+	});
 
 	// Notation stave over a 6-line TAB stave, 4/4: a slide INTO a note (an unpaired
 	// <slide type="stop">, indeterminate origin). A half rest then a half note B4 (beat 3),
@@ -1364,14 +1758,22 @@ const TEST_CASES = [
 	// - M1: the note has no partner to slide from, so instead of a line it draws a short
 	//   "/" tick rising up into the head on both staves — left of the notehead on the
 	//   notation stave, and left of the fret as "/8" on the TAB stave (string 2, fret 8).
-	testCase('slide_in.musicxml', 'slide_in.png'),
+	it.concurrent('renders slide_in.png', async () => {
+		expect(await renderer.screenshot('slide_in.musicxml')).toMatchScreenshot(
+			'slide_in.png',
+		);
+	});
 
 	// Notation stave over a 6-line TAB stave, 4/4: a slide OUT of a note (an unpaired
 	// <slide type="start">, indeterminate target). Same layout as slide_in — a half rest
 	// then a half note B4 (beat 3).
 	// - M1: the "/" tick sits on the RIGHT of the note instead, rising up out of it — right
 	//   of the notehead on the notation stave and right of the fret as "8/" on the TAB stave.
-	testCase('slide_out.musicxml', 'slide_out.png'),
+	it.concurrent('renders slide_out.png', async () => {
+		expect(await renderer.screenshot('slide_out.musicxml')).toMatchScreenshot(
+			'slide_out.png',
+		);
+	});
 
 	// 6-line TAB stave: bends, each drawn as an upward arrow + label. No <time>, so no
 	// time signature is drawn.
@@ -1380,12 +1782,20 @@ const TEST_CASES = [
 	// - M2: a bend-and-release on string 3 fret 7 (whole note) — an up-then-down arrow.
 	// - M3: M1's first bend with a "Slowly" words direction over it — the text sits above
 	//   the arrow and its "1" label, clear of both.
-	testCase('tab_bend.musicxml', 'tab_bend.png'),
+	it.concurrent('renders tab_bend.png', async () => {
+		expect(await renderer.screenshot('tab_bend.musicxml')).toMatchScreenshot(
+			'tab_bend.png',
+		);
+	});
 
 	// 6-line TAB stave: vibrato (wavy line) stretching to the next note or the bar's end,
 	// whichever comes first. No <time>, so no time signature is drawn.
 	// - M1: string 3 fret 7 runs up to the second note; fret 5 (last) runs to the bar's end.
-	testCase('tab_vibrato.musicxml', 'tab_vibrato.png'),
+	it.concurrent('renders tab_vibrato.png', async () => {
+		expect(await renderer.screenshot('tab_vibrato.musicxml')).toMatchScreenshot(
+			'tab_vibrato.png',
+		);
+	});
 
 	// 6-line TAB stave: text annotations above the frets via <other-technical>. No <time>,
 	// so no time signature is drawn.
@@ -1394,7 +1804,11 @@ const TEST_CASES = [
 	// - M2: a "Dm" words direction over a slurred quarter pair on string 1 (5 -> 7), then a
 	//   half rest. The arc bows up into the band the words park in, so "Dm" sits ABOVE the
 	//   arc's apex — the curve must not strike through the text.
-	testCase('tab_annotation.musicxml', 'tab_annotation.png'),
+	it.concurrent('renders tab_annotation.png', async () => {
+		expect(
+			await renderer.screenshot('tab_annotation.musicxml'),
+		).toMatchScreenshot('tab_annotation.png');
+	});
 
 	// A notation stave (P1) over a 6-line TAB stave (P2), 4/4, formatted together. Four C5
 	// quarters (string 2, fret 5), each with its own words direction on the TAB part, the
@@ -1412,7 +1826,11 @@ const TEST_CASES = [
 	//   it starts right of the repeat's bars instead of printing through the connector that
 	//   carries them up across the notation/TAB gap. Unjustified last system (see
 	//   system_break).
-	testCase('tab_words_align.musicxml', 'tab_words_align.png'),
+	it.concurrent('renders tab_words_align.png', async () => {
+		expect(
+			await renderer.screenshot('tab_words_align.musicxml'),
+		).toMatchScreenshot('tab_words_align.png');
+	});
 
 	// 6-line TAB stave, quarter-note tab chords. Each chord member carries its own
 	// string/fret; members after the first are <chord/>. No <time>, so no time
@@ -1432,7 +1850,11 @@ const TEST_CASES = [
 	//   on the highest string that reaches it — "2" on string 4, not "0" on string 1 (see
 	//   derivePosition in packages/vexml/voice-translator.ts). The chord's derived "2" stacks
 	//   directly under the two explicit "0"s on the next line down.
-	testCase('tab_chord.musicxml', 'tab_chord.png'),
+	it.concurrent('renders tab_chord.png', async () => {
+		expect(await renderer.screenshot('tab_chord.musicxml')).toMatchScreenshot(
+			'tab_chord.png',
+		);
+	});
 
 	// 6-line TAB stave: natural harmonics drawn as the fret in angle brackets. A <harmonic>
 	// in <technical> wraps the fret in <> (packages/vexml/notes.ts tabPositions); styleFrets bolds the
@@ -1445,7 +1867,11 @@ const TEST_CASES = [
 	//   stacked "<12>"), a 7th-fret dyad (strings 2/1, "<7>"), a mixed chord ("<12>" on string 3
 	//   over a plain "0" on string 1, so only the harmonic is bracketed), then a 5th-fret triad
 	//   (strings 3/2/1, single-digit "<5>"). Watch the stacked brackets for vertical clashing.
-	testCase('tab_harmonic.musicxml', 'tab_harmonic.png'),
+	it.concurrent('renders tab_harmonic.png', async () => {
+		expect(
+			await renderer.screenshot('tab_harmonic.musicxml'),
+		).toMatchScreenshot('tab_harmonic.png');
+	});
 
 	// Notation stave over a 6-line TAB stave: X noteheads (<notehead>x</notehead>) for
 	// dead/muted notes. The notation stave draws a cross at each pitch (vexflow "/X2"); the tab
@@ -1468,7 +1894,11 @@ const TEST_CASES = [
 	//   round / X / round / X notehead. The natural draws only on the two round noteheads; the
 	//   X (dead/muted, no definite pitch) noteheads suppress it (packages/vexml/notes.ts addAccidentals).
 	//   The tab stave is unaffected (it never prints accidentals): fret "0" / "✕" / "0" / "✕".
-	testCase('notehead_x.musicxml', 'notehead_x.png'),
+	it.concurrent('renders notehead_x.png', async () => {
+		expect(await renderer.screenshot('notehead_x.musicxml')).toMatchScreenshot(
+			'notehead_x.png',
+		);
+	});
 
 	// Notation stave over a 6-line TAB stave: parenthesized noteheads
 	// (<notehead parentheses="yes">) for ghost/optional notes. The notation stave wraps each
@@ -1478,7 +1908,11 @@ const TEST_CASES = [
 	// - M1: a parenthesized B4 quarter (tab string 1, fret "(2)"), a plain B4 quarter (fret 5),
 	//   then a parenthesized G4/B4/D5 half-note chord — each notehead bracketed on the notation
 	//   stave and each fret "(0)"/"(0)"/"(2)" bracketed on tab strings 3/2/1.
-	testCase('notehead_parentheses.musicxml', 'notehead_parentheses.png'),
+	it.concurrent('renders notehead_parentheses.png', async () => {
+		expect(
+			await renderer.screenshot('notehead_parentheses.musicxml'),
+		).toMatchScreenshot('notehead_parentheses.png');
+	});
 
 	// Treble stave, 4/4: slash noteheads (<notehead>slash</notehead>) — rhythm slashes with the
 	// oval head replaced by an oblique bar. Filled for quarter and shorter, open (outlined) for
@@ -1486,7 +1920,11 @@ const TEST_CASES = [
 	// - M1: four quarter slashes — filled bars with stems.
 	// - M2: two half slashes — open bars with stems.
 	// - M3: one whole slash — open bar, no stem.
-	testCase('notehead_slash.musicxml', 'notehead_slash.png'),
+	it.concurrent('renders notehead_slash.png', async () => {
+		expect(
+			await renderer.screenshot('notehead_slash.musicxml'),
+		).toMatchScreenshot('notehead_slash.png');
+	});
 
 	// Treble stave, 4/4: alternate notehead shapes drawn via vexflow's duration-aware key-suffix
 	// codes. All on B4 (middle line); each measure holds two quarters (filled) then a half (open)
@@ -1494,7 +1932,11 @@ const TEST_CASES = [
 	// - M1: diamond heads.
 	// - M2: point-up triangle heads.
 	// - M3: circle-x heads.
-	testCase('notehead_shapes.musicxml', 'notehead_shapes.png'),
+	it.concurrent('renders notehead_shapes.png', async () => {
+		expect(
+			await renderer.screenshot('notehead_shapes.musicxml'),
+		).toMatchScreenshot('notehead_shapes.png');
+	});
 
 	// Treble stave, common time: four <notehead> shapes and the `filled` attribute that
 	// overrides each one's default fill. Every measure holds four quarter notes on rising
@@ -1511,7 +1953,11 @@ const TEST_CASES = [
 	// ordinary oval — vexflow codes neither, so each needs a post-build glyph override like
 	// addSlashNoteheads. See also notehead_shapes.xml and
 	// lilypond_22b-Staff-Notestyles.xml.
-	testCase('notehead_shapes_extended.musicxml', 'notehead_shapes_extended.png'),
+	it.concurrent('renders notehead_shapes_extended.png', async () => {
+		expect(
+			await renderer.screenshot('notehead_shapes_extended.musicxml'),
+		).toMatchScreenshot('notehead_shapes_extended.png');
+	});
 
 	// Notation stave over a 6-line TAB stave, 4/4: the same line on both staves, proving a
 	// rest keeps the two staves aligned. The notation voice draws a quarter rest; the tab
@@ -1519,7 +1965,11 @@ const TEST_CASES = [
 	// - M1: quarter (E4 / fret 0), quarter rest, quarter (G4 / fret 3), quarter (A4 / fret
 	//   5). Each tab fret sits directly under its notehead, with an empty gap on the tab
 	//   stave under the rest — frets read 0, (gap), 3, 5.
-	testCase('tab_notation_rest.musicxml', 'tab_notation_rest.png'),
+	it.concurrent('renders tab_notation_rest.png', async () => {
+		expect(
+			await renderer.screenshot('tab_notation_rest.musicxml'),
+		).toMatchScreenshot('tab_notation_rest.png');
+	});
 
 	// Notation stave over a 6-line TAB stave, 4/4: the same ascending string-1 line on both
 	// staves (E4/fret0, F4/fret1, G4/fret3, A4/fret5), varying only the durations to exercise
@@ -1538,35 +1988,45 @@ const TEST_CASES = [
 	//   triplet's opening slot, so the two struck frets after it (G4/fret 3, A4/fret 5) stay
 	//   compressed under their triplet noteheads instead of drifting right under the following
 	//   quarter and rest.
-	testCase('tab_notation_durations.musicxml', 'tab_notation_durations.png'),
+	it.concurrent('renders tab_notation_durations.png', async () => {
+		expect(
+			await renderer.screenshot('tab_notation_durations.musicxml'),
+		).toMatchScreenshot('tab_notation_durations.png');
+	});
 
 	// Same fixture with tabStemPlacement: 'below' — the TAB stave now draws a rhythm stem (and a
 	// flag on the eighths/sixteenths) hanging below each fret instead of bare numbers, mirroring
 	// the notation stave's rhythm. Beams are still not drawn, so the triplet eighths in M3/M4
 	// show individual flags rather than a beam.
-	testCase(
-		'tab_notation_durations.musicxml',
-		'tab_notation_durations_stems_below.png',
-		{ tabStemPlacement: 'below' },
-	),
+	it.concurrent('renders tab_notation_durations_stems_below.png', async () => {
+		expect(
+			await renderer.screenshot('tab_notation_durations.musicxml', {
+				tabStemPlacement: 'below',
+			}),
+		).toMatchScreenshot('tab_notation_durations_stems_below.png');
+	});
 
 	// Same fixture with tabStemPlacement: 'above' — the stems and flags rise above each fret
 	// instead of hanging below, the mirror image of the 'below' case.
-	testCase(
-		'tab_notation_durations.musicxml',
-		'tab_notation_durations_stems_above.png',
-		{ tabStemPlacement: 'above' },
-	),
+	it.concurrent('renders tab_notation_durations_stems_above.png', async () => {
+		expect(
+			await renderer.screenshot('tab_notation_durations.musicxml', {
+				tabStemPlacement: 'above',
+			}),
+		).toMatchScreenshot('tab_notation_durations_stems_above.png');
+	});
 
 	// Same notation+tab fixture with showNotation: false — the treble notation stave (staff 1)
 	// is dropped and only the 6-line TAB stave renders: the ascending frets 0/1/3/5 in each
 	// measure's dotted/tuplet rhythm, with no notation stave above and no bracket (the pairing
 	// is gone). As a now-lone stave it gets its own begin barline at each system start.
-	testCase(
-		'tab_notation_durations.musicxml',
-		'tab_notation_durations_no_notation.png',
-		{ showNotation: false },
-	),
+	it.concurrent('renders tab_notation_durations_no_notation.png', async () => {
+		expect(
+			await renderer.screenshot('tab_notation_durations.musicxml', {
+				showNotation: false,
+			}),
+		).toMatchScreenshot('tab_notation_durations_no_notation.png');
+	});
 
 	// Same notation+tab fixture with showTabs: false — the mirror of the showNotation case:
 	// the 6-line TAB stave (staff 2) is dropped and only the treble notation stave renders,
@@ -1574,11 +2034,13 @@ const TEST_CASES = [
 	// pairing is gone). As a now-lone notation stave it keeps standard barlines (no explicit
 	// begin barline — that is a TAB-only quirk). Verified: the notation matches the top stave
 	// of tab_notation_durations.png exactly.
-	testCase(
-		'tab_notation_durations.musicxml',
-		'tab_notation_durations_no_tab.png',
-		{ showTabs: false },
-	),
+	it.concurrent('renders tab_notation_durations_no_tab.png', async () => {
+		expect(
+			await renderer.screenshot('tab_notation_durations.musicxml', {
+				showTabs: false,
+			}),
+		).toMatchScreenshot('tab_notation_durations_no_tab.png');
+	});
 
 	// Tuplets on C5. Every note here is stem-down with its beam under the noteheads, so each
 	// tuplet mark sits BELOW the stave on the beam/stem side, the engraving default.
@@ -1587,7 +2049,11 @@ const TEST_CASES = [
 	// - M2: a beamed sixteenth-note sextuplet ("6" — the count alone, not the "6:4" ratio
 	//   vexflow prints by default; MusicXML's default is show-number="actual"), a beamed
 	//   eighth-note triplet ("3"), then a half note.
-	testCase('tuplet_triplet.musicxml', 'tuplet_triplet.png'),
+	it.concurrent('renders tuplet_triplet.png', async () => {
+		expect(
+			await renderer.screenshot('tuplet_triplet.musicxml'),
+		).toMatchScreenshot('tuplet_triplet.png');
+	});
 
 	// A tuplet inside another tuplet. Treble, 2/4, nine stem-down B4 eighths beamed 2+5+2, so
 	// both brackets draw BELOW and only the nesting varies.
@@ -1601,7 +2067,11 @@ const TEST_CASES = [
 	// OSMD engraves the same two nested spans. MuseScore instead flattens the file into three
 	// side-by-side brackets ("3", "15", "3") off the <time-modification> alone, ignoring the
 	// <tuplet> spans — its own reading, not a second opinion on this one.
-	testCase('tuplet_nested.musicxml', 'tuplet_nested.png'),
+	it.concurrent('renders tuplet_nested.png', async () => {
+		expect(
+			await renderer.screenshot('tuplet_nested.musicxml'),
+		).toMatchScreenshot('tuplet_nested.png');
+	});
 
 	// Treble stave, common time: what a <tuplet> marker asks to be PRINTED, held apart from
 	// the <time-modification> that governs the durations — every measure here compresses 3:2
@@ -1620,7 +2090,11 @@ const TEST_CASES = [
 	// M3-M4 also ask for) is ignored — vexflow's Tuplet text is numerals only. See also
 	// lilypond_23b-Tuplets-Styles.xml, lilypond_23f-Tuplets-DurationButNoBracket.xml,
 	// and tuplet_placement.xml.
-	testCase('tuplet_display.musicxml', 'tuplet_display.png'),
+	it.concurrent('renders tuplet_display.png', async () => {
+		expect(
+			await renderer.screenshot('tuplet_display.musicxml'),
+		).toMatchScreenshot('tuplet_display.png');
+	});
 
 	// Treble stave, 4/4: staccato (dot), accent (>), tenuto (—), then staccatissimo
 	// (wedge) — only the articulation varies within a measure; the measure sets the
@@ -1629,7 +2103,11 @@ const TEST_CASES = [
 	// - M2: four E4 quarters (stems up) — articulations sit below the noteheads.
 	// - M3: a C5+G4 beamed eighth pair — the beam forces stems up (driven by the low
 	//   G4), so the C5's staccato sits below its notehead, not above the beam.
-	testCase('articulations.musicxml', 'articulations.png'),
+	it.concurrent('renders articulations.png', async () => {
+		expect(
+			await renderer.screenshot('articulations.musicxml'),
+		).toMatchScreenshot('articulations.png');
+	});
 
 	// Treble stave, 4/4 (lilypond_32a-Notations M3-6): the rest of the <articulations>
 	// vocabulary, beyond the five articulations.musicxml covers. Every note is the same C5
@@ -1653,7 +2131,11 @@ const TEST_CASES = [
 	// ponytail: an explicit placement="above|below" on an articulation is still ignored — the
 	// side always comes from the stem. See articulation_staccato_placement_above.xml and
 	// articulation_staccato_placement_below.xml; worth its own measure when it matters.
-	testCase('articulations_extended.musicxml', 'articulations_extended.png'),
+	it.concurrent('renders articulations_extended.png', async () => {
+		expect(
+			await renderer.screenshot('articulations_extended.musicxml'),
+		).toMatchScreenshot('articulations_extended.png');
+	});
 
 	// Treble stave, 4/4 (lilypond_32a-Notations M7-10): <notations><ornaments> on a notation
 	// stave. Every note is the same C5 quarter, and every note is labelled with a lyric naming
@@ -1674,7 +2156,11 @@ const TEST_CASES = [
 	// ponytail: an ornament's <accidental-mark> placement attribute is ignored — the first mark
 	// goes over the glyph and the second under it, which is how the pair conventionally reads.
 	// See also ornaments.xml and lilypond_33f-Trill-EndingOnGraceNote.xml.
-	testCase('ornaments.musicxml', 'ornaments.png'),
+	it.concurrent('renders ornaments.png', async () => {
+		expect(await renderer.screenshot('ornaments.musicxml')).toMatchScreenshot(
+			'ornaments.png',
+		);
+	});
 
 	// Treble stave, 3/4: <ornaments><tremolo> — the slashes through a stem — and the tuplets
 	// that carry them. Every note is an A4 or G4, so only the rhythm and the slashes vary.
@@ -1688,7 +2174,11 @@ const TEST_CASES = [
 	// ponytail: only the single-note form draws. The type="start"/"stop" bowed-tremolo pair
 	// (slashes BETWEEN two noteheads) needs a spanner — see the note in addOrnaments — and no
 	// fixture reaches it; see tremelo_two_bars.xml when one does.
-	testCase('tremolo.musicxml', 'tremolo.png'),
+	it.concurrent('renders tremolo.png', async () => {
+		expect(await renderer.screenshot('tremolo.musicxml')).toMatchScreenshot(
+			'tremolo.png',
+		);
+	});
 
 	// <notations><technical> on a NOTATION stave (the tab side of <technical> is covered by
 	// tab_bend, tab_hammer_pull, tab_harmonic and tab_annotation). Treble, 4/4, one C5-ish
@@ -1714,7 +2204,11 @@ const TEST_CASES = [
 	//   the beam sits above the stave, each carrying a down-bow. The eight brackets ride in a
 	//   row a full stave space clear of the beam; they must not rest on it (see
 	//   StaveArticulation).
-	testCase('technical_marks.musicxml', 'technical_marks.png'),
+	it.concurrent('renders technical_marks.png', async () => {
+		expect(
+			await renderer.screenshot('technical_marks.musicxml'),
+		).toMatchScreenshot('technical_marks.png');
+	});
 
 	// The realistic fingering case: <technical><fingering> on CHORDS across a grand staff,
 	// where the digits stack in chord order and stay clear of the noteheads and each other.
@@ -1725,7 +2219,11 @@ const TEST_CASES = [
 	//   placement="below", so the column mirrors under the stave reading 1-2-4 downward,
 	//   nearest-first again (1 on G2). Both columns clear the stave rather than sitting
 	//   beside the noteheads — the engraving MuseScore and OSMD both give this file.
-	testCase('fingering.musicxml', 'fingering.png'),
+	it.concurrent('renders fingering.png', async () => {
+		expect(await renderer.screenshot('fingering.musicxml')).toMatchScreenshot(
+			'fingering.png',
+		);
+	});
 
 	// <technical><string> on a notation stave: the string's number drawn in a ring, stacked
 	// in the same column as any fingering on that note and always OUTSIDE it. Treble 4/4,
@@ -1740,14 +2238,22 @@ const TEST_CASES = [
 	//   same on E4/G4/B4. The low chord is the case vexflow's own annotation stacking
 	//   collapses — every mark on a note low in the stave lands on one row — so it pins that
 	//   the column is built by the draw pass instead (DrawPass.pinTechnicals).
-	testCase('string_numbers.musicxml', 'string_numbers.png'),
+	it.concurrent('renders string_numbers.png', async () => {
+		expect(
+			await renderer.screenshot('string_numbers.musicxml'),
+		).toMatchScreenshot('string_numbers.png');
+	});
 
 	// Treble stave, 4/4: fermatas from <notations><fermata>, drawn as a held-note
 	// arc-over-dot above (or below) the note. Unlike articulations, a fermata's side is
 	// set by its type, not the stem direction.
 	// - M1: a normal fermata above a C5 whole note (default placement).
 	// - M2: an inverted fermata (type="inverted") below a C5 whole note.
-	testCase('fermata.musicxml', 'fermata.png'),
+	it.concurrent('renders fermata.png', async () => {
+		expect(await renderer.screenshot('fermata.musicxml')).toMatchScreenshot(
+			'fermata.png',
+		);
+	});
 
 	// Treble stave, 4/4: arpeggios from <notations><arpeggiate>, drawn as a wavy vertical
 	// line down the left side of a C5/E5/G5 whole-note chord (one chord per measure). The
@@ -1755,7 +2261,11 @@ const TEST_CASES = [
 	// - M1: undirected arpeggiate — a plain wiggle, no arrowhead.
 	// - M2: direction="up" — the wiggle with an arrowhead pointing up at the top.
 	// - M3: direction="down" — the wiggle with an arrowhead pointing down at the bottom.
-	testCase('arpeggio.musicxml', 'arpeggio.png'),
+	it.concurrent('renders arpeggio.png', async () => {
+		expect(await renderer.screenshot('arpeggio.musicxml')).toMatchScreenshot(
+			'arpeggio.png',
+		);
+	});
 
 	// Treble stave, 4/4: <notations><non-arpeggiate> — the square bracket marking a chord to
 	// be struck together, the explicit opposite of the wiggle arpeggio.musicxml covers. One
@@ -1768,7 +2278,11 @@ const TEST_CASES = [
 	//   is how MusicXML spells the span). It draws as a vertical spine with a right-pointing
 	//   hook at each end, overhanging the outer two noteheads by half a staff space the way
 	//   the wiggle does.
-	testCase('non_arpeggiate.musicxml', 'non_arpeggiate.png'),
+	it.concurrent('renders non_arpeggiate.png', async () => {
+		expect(
+			await renderer.screenshot('non_arpeggiate.musicxml'),
+		).toMatchScreenshot('non_arpeggiate.png');
+	});
 
 	// Treble stave, 4/4: chord symbols from <harmony>, each printed above the first
 	// note of its measure (four boring B4 quarters per measure so only the symbol
@@ -1815,7 +2329,11 @@ const TEST_CASES = [
 	//   LP-21-Jazz-I-G6-Day-1-04-Exercise-3 M3, where MuseScore draws it the same way.
 	//   ponytail: an above-stave tuplet bracket still isn't a collision obstacle, so a
 	//   stem-UP tuplet under a chord symbol would overprint. No fixture reaches that.
-	testCase('harmony.musicxml', 'harmony.png'),
+	it.concurrent('renders harmony.png', async () => {
+		expect(await renderer.screenshot('harmony.musicxml')).toMatchScreenshot(
+			'harmony.png',
+		);
+	});
 
 	// Treble stave, 4/4: a chord symbol over a note that carries a grace note. The grace
 	// note's group gives the main note a bogus near-origin bounding box; the collision
@@ -1823,7 +2341,11 @@ const TEST_CASES = [
 	// symbol flies to the top of the page and defeats the top crop, leaving a huge blank
 	// margin above the system. The symbol also lifts a hair to clear the grace's stem tip.
 	// - M1: a "C" symbol over a B4 quarter preceded by a slashed D5 grace.
-	testCase('harmony_grace.musicxml', 'harmony_grace.png'),
+	it.concurrent('renders harmony_grace.png', async () => {
+		expect(
+			await renderer.screenshot('harmony_grace.musicxml'),
+		).toMatchScreenshot('harmony_grace.png');
+	});
 
 	// The <kind> vocabulary, one kind per note: four measures of four C4 quarters, each with a
 	// <harmony> above spelling the kind's conventional suffix (HARMONY_KIND_SUFFIX in
@@ -1840,7 +2362,11 @@ const TEST_CASES = [
 	// ninths. So does <degree> (add9, ♭5), which harmonyText carries its own `ponytail:` note
 	// about ignoring: a "C(add9)" prints as a bare "C", a WRONG symbol rather than a missing
 	// one. Extend the fixture when a score needs them.
-	testCase('harmony_kinds.musicxml', 'harmony_kinds.png'),
+	it.concurrent('renders harmony_kinds.png', async () => {
+		expect(
+			await renderer.screenshot('harmony_kinds.musicxml'),
+		).toMatchScreenshot('harmony_kinds.png');
+	});
 
 	// <figured-bass> — the stacked numerals a continuo player reads under the bass line. One
 	// treble stave in common time holding six identical G4s, so only the figures vary; each
@@ -1859,7 +2385,11 @@ const TEST_CASES = [
 	// notes after it) is likewise unimplemented; this fixture writes none, and says so in its
 	// own <miscellaneous-field>.
 	// See also lilypond_46g-PickupMeasure-Chordnames-FiguredBass.xml.
-	testCase('figured_bass.musicxml', 'figured_bass.png'),
+	it.concurrent('renders figured_bass.png', async () => {
+		expect(
+			await renderer.screenshot('figured_bass.musicxml'),
+		).toMatchScreenshot('figured_bass.png');
+	});
 
 	// Treble stave, 4/4: guitar chord diagrams (fret boxes) from <harmony><frame>, each
 	// drawn above the stave at its measure's first note, with the chord name as the box's
@@ -1893,7 +2423,11 @@ const TEST_CASES = [
 	// - M12: same Bm7 box over four C6 quarters (two ledger lines above the staff) — the box
 	//   lifts until it clears the high noteheads/ledger lines, using the same padded
 	//   lift-clear treatment a chord symbol uses, instead of overlapping them.
-	testCase('chord_diagram.musicxml', 'chord_diagram.png'),
+	it.concurrent('renders chord_diagram.png', async () => {
+		expect(
+			await renderer.screenshot('chord_diagram.musicxml'),
+		).toMatchScreenshot('chord_diagram.png');
+	});
 
 	// Treble stave, 4/4, two measures at a narrow 500px width: a chord diagram bound to a
 	// note near the barline on each side, proving two adjacent diagrams don't collide even
@@ -1910,18 +2444,26 @@ const TEST_CASES = [
 	//   it would have sat, or two boxes that both rise out of the default row stop seeing
 	//   each other and print through each other. Cut from a real bass score
 	//   (Bass-LP-05-Fretboard M15).
-	testCase('chord_diagram_adjacent.musicxml', 'chord_diagram_adjacent.png', {
-		layout: { type: 'standard', referenceWidth: 500 },
-	}),
+	it.concurrent('renders chord_diagram_adjacent.png', async () => {
+		expect(
+			await renderer.screenshot('chord_diagram_adjacent.musicxml', {
+				layout: { type: 'standard', referenceWidth: 500 },
+			}),
+		).toMatchScreenshot('chord_diagram_adjacent.png');
+	});
 
 	// Treble stave, 4/4, one measure at a narrow 500px width: a Bm7 fret box bound to the
 	// LAST quarter, whose note sits right against the system's right edge. Anchored at that
 	// note's x, the box's natural right edge overruns the canvas; it must nudge left so the
 	// whole board — including the far-right muted "X" — stays inside the drawable region
 	// instead of being clipped. Four B4 quarters so only the diagram's clamp is exercised.
-	testCase('chord_diagram_edge.musicxml', 'chord_diagram_edge.png', {
-		layout: { type: 'standard', referenceWidth: 500 },
-	}),
+	it.concurrent('renders chord_diagram_edge.png', async () => {
+		expect(
+			await renderer.screenshot('chord_diagram_edge.musicxml', {
+				layout: { type: 'standard', referenceWidth: 500 },
+			}),
+		).toMatchScreenshot('chord_diagram_edge.png');
+	});
 
 	// Two treble parts, 4/4: a Voice part singing "sing"/"this" over a Guitar part that
 	// carries a C-major fret box. The diagram belongs to the LOWER part, so it must sit in
@@ -1930,7 +2472,11 @@ const TEST_CASES = [
 	// inter-part gap opens to hold it. The <harmony> is written twice, once per voice (the
 	// guitar's voice 1 E4 halves and voice 2 G3 whole, split by a <backup>), the way Guitar
 	// Pro repeats it; both copies sit on beat 1 and identical, so exactly ONE box draws.
-	testCase('chord_diagram_lower_part.musicxml', 'chord_diagram_lower_part.png'),
+	it.concurrent('renders chord_diagram_lower_part.png', async () => {
+		expect(
+			await renderer.screenshot('chord_diagram_lower_part.musicxml'),
+		).toMatchScreenshot('chord_diagram_lower_part.png');
+	});
 
 	// Treble stave, 4/4: natural harmonics drawn as diamond noteheads (from
 	// <harmonic><natural/>). The tab counterpart (angle-bracketed frets) is tab_harmonic.
@@ -1938,7 +2484,11 @@ const TEST_CASES = [
 	//   the two quarters (the diamond fill follows duration), so only the notehead varies.
 	// - M2: harmonic chords (open diamonds, every member a harmonic) — an E5/G5 dyad a third
 	//   apart, then a C5/E5/G5 triad of three stacked diamonds.
-	testCase('harmonic.musicxml', 'harmonic.png'),
+	it.concurrent('renders harmonic.png', async () => {
+		expect(await renderer.screenshot('harmonic.musicxml')).toMatchScreenshot(
+			'harmonic.png',
+		);
+	});
 
 	// Treble stave, 4/4: grace notes (small notes that steal no beat, drawn just left of
 	// the main note they ornament). Every main note is a plain C5 quarter so only the
@@ -1968,7 +2518,11 @@ const TEST_CASES = [
 	//   diagonal line slanting down from the grace notehead to the main notehead (no arrowhead, no label).
 	// - M10: the mirror of M9 — an 8th A4 grace sliding UP to the C5 quarter, so the diagonal line
 	//   slants up from the lower grace notehead to the main notehead.
-	testCase('grace_notes.musicxml', 'grace_notes.png'),
+	it.concurrent('renders grace_notes.png', async () => {
+		expect(await renderer.screenshot('grace_notes.musicxml')).toMatchScreenshot(
+			'grace_notes.png',
+		);
+	});
 
 	// Bass stave, 4/4: a grace note is placed against its own stave's clef, and its slur
 	// bows under to the notehead rather than to whatever vexflow's stem metrics point at.
@@ -1980,7 +2534,11 @@ const TEST_CASES = [
 	//   The bow sweeps under all three noteheads to the base of the chord's stem, staying
 	//   concave and passing well clear of both sharps — not up to the chord's TOP note, which
 	//   is what vexflow's own NEAR_HEAD metric would give (a straight diagonal across them).
-	testCase('grace_bass_clef.musicxml', 'grace_bass_clef.png'),
+	it.concurrent('renders grace_bass_clef.png', async () => {
+		expect(
+			await renderer.screenshot('grace_bass_clef.musicxml'),
+		).toMatchScreenshot('grace_bass_clef.png');
+	});
 
 	// Treble notation stave + 6-line TAB (transposed guitar), 4/4, Bb major: grace-note
 	// measure-width allocation in a dense real-world excerpt (measures 6-8 of a lead sheet).
@@ -2002,7 +2560,11 @@ const TEST_CASES = [
 	//   right would fling the dots out. The chord is flagged, not beamed (its only beam
 	//   partner is the excluded grace); beat 4 beams the Bb4/C5 16ths. Beat 3's chord is wholly
 	//   tied, so the tab omits all three of its frets (the held beat is blank).
-	testCase('grace_spacing.musicxml', 'grace_spacing.png'),
+	it.concurrent('renders grace_spacing.png', async () => {
+		expect(
+			await renderer.screenshot('grace_spacing.musicxml'),
+		).toMatchScreenshot('grace_spacing.png');
+	});
 
 	// Treble stave, common time: a CHORD as a grace note on a notation stave — the grace's
 	// members stack as one small chord sharing a stem, each with its own slash. Both graces are
@@ -2015,7 +2577,11 @@ const TEST_CASES = [
 	//   offset chord.musicxml documents for seconds — they stack straight up one side.
 	// ponytail: lilypond_24b carries no <slur> on its graces, so the grace slur (which would
 	// leave the chord's lowest member) is still unexercised.
-	testCase('grace_chord.musicxml', 'grace_chord.png'),
+	it.concurrent('renders grace_chord.png', async () => {
+		expect(await renderer.screenshot('grace_chord.musicxml')).toMatchScreenshot(
+			'grace_chord.png',
+		);
+	});
 
 	// Treble stave, 4/4: AFTER-graces — a grace cluster with no note left to lead, which
 	// decorates the note it FOLLOWS and so prints to that note's RIGHT. grace_notes.musicxml is
@@ -2036,7 +2602,11 @@ const TEST_CASES = [
 	// <slur>, and vexflow's own grace slur runs the other way (host to LEADING grace).
 	// See also lilypond_24c-GraceNote-MeasureEnd.xml (a grace as the very last thing in a
 	// measure, which has nothing to attach to) and lilypond_24e-GraceNote-StaffChange.xml.
-	testCase('grace_after.musicxml', 'grace_after.png'),
+	it.concurrent('renders grace_after.png', async () => {
+		expect(await renderer.screenshot('grace_after.musicxml')).toMatchScreenshot(
+			'grace_after.png',
+		);
+	});
 
 	// Treble stave, 4/4: two voices sharing one stave across five measures of increasing
 	// complexity, exercising <backup>/<forward> in different ways. V1 stems up, V2 stems
@@ -2066,7 +2636,11 @@ const TEST_CASES = [
 	//   reading its missing <voice> as "1" would strand all four B4s in a phantom voice 1 —
 	//   an unbroken <chord/> run with no lead between them, collapsing into a single
 	//   four-note B4 cluster on beat 1 with the remaining three G4s left bare.
-	testCase('two_voices.musicxml', 'two_voices.png'),
+	it.concurrent('renders two_voices.png', async () => {
+		expect(await renderer.screenshot('two_voices.musicxml')).toMatchScreenshot(
+			'two_voices.png',
+		);
+	});
 
 	// Grand staff (treble over bass, braced), 4/4, three measures of a four-voice SATB
 	// chorale — two voices on each stave to exercise voice distribution across staves. On
@@ -2078,7 +2652,11 @@ const TEST_CASES = [
 	// - M2-3: settle into quarter-quarter-half motion in every voice, the alto/tenor halves
 	//   aligning vertically with the soprano/bass halves, closing on a C-major chord
 	//   (E5/C5/G4/C3).
-	testCase('voices_grand_staff.musicxml', 'voices_grand_staff.png'),
+	it.concurrent('renders voices_grand_staff.png', async () => {
+		expect(
+			await renderer.screenshot('voices_grand_staff.musicxml'),
+		).toMatchScreenshot('voices_grand_staff.png');
+	});
 
 	// Cross-staff notes — a voice whose notes change <staff> mid-beam, the defining gesture of
 	// piano writing. One braced grand staff (treble over bass), common time, everything in
@@ -2111,7 +2689,11 @@ const TEST_CASES = [
 	//   full height of the gap; nothing escapes above the treble staff. A half rest fills
 	//   beats 3-4.
 	// See also cross_stave_16ths_ghost_notes_simple.xml.
-	testCase('cross_stave.musicxml', 'cross_stave.png'),
+	it.concurrent('renders cross_stave.png', async () => {
+		expect(await renderer.screenshot('cross_stave.musicxml')).toMatchScreenshot(
+			'cross_stave.png',
+		);
+	});
 
 	// A different key signature on each staff of one part — normal for transposing scores
 	// and for some contemporary piano writing. One braced two-stave part, 4/4, one whole
@@ -2125,7 +2707,11 @@ const TEST_CASES = [
 	//   to the wider one (alignBegModifiers).
 	// See also lilypond_43c-MultiStaff-DifferentKeysAfterBackup.xml, where the second
 	// staff's key arrives after a <backup> and so is easy to miss.
-	testCase('staves_different_keys.musicxml', 'staves_different_keys.png'),
+	it.concurrent('renders staves_different_keys.png', async () => {
+		expect(
+			await renderer.screenshot('staves_different_keys.musicxml'),
+		).toMatchScreenshot('staves_different_keys.png');
+	});
 
 	// A <direction> carrying a <staff>, on a multi-staff part: one braced grand staff in
 	// common time, four quarters per staff per measure. Every direction here is written
@@ -2141,7 +2727,11 @@ const TEST_CASES = [
 	// - M2: <clef number="2"> changes the LOWER staff to treble while staff 1 keeps its own,
 	//   so only the bass staff redraws a clef (at the reduced mid-system size) and the new
 	//   2-sharp key signature prints on both. Bass reads F#4-G4-A4-B4 in the new clef.
-	testCase('staff_dynamics.musicxml', 'staff_dynamics.png'),
+	it.concurrent('renders staff_dynamics.png', async () => {
+		expect(
+			await renderer.screenshot('staff_dynamics.musicxml'),
+		).toMatchScreenshot('staff_dynamics.png');
+	});
 
 	// Three transposing parts (Bb trumpet, Eb horn, piano) each playing the same concert C
 	// scale, so each is WRITTEN in its own key: three treble staves in common time, the top
@@ -2155,7 +2745,11 @@ const TEST_CASES = [
 	// a future change must not start "helpfully" transposing. Where <transpose> does matter is
 	// playback pitch (not a render concern) and a mid-score transposition change — see
 	// transpose_change.musicxml below.
-	testCase('transpose.musicxml', 'transpose.png'),
+	it.concurrent('renders transpose.png', async () => {
+		expect(await renderer.screenshot('transpose.musicxml')).toMatchScreenshot(
+			'transpose.png',
+		);
+	});
 
 	// A <transpose> that changes mid-score — an instrument doubling change, here a clarinet
 	// in Eb picking up a clarinet in Bb (lilypond_72c-TransposingInstruments-Change). One
@@ -2170,7 +2764,11 @@ const TEST_CASES = [
 	// half that relabels the stave "Clarinet in Bb" mid-score — is ignored; part labels are
 	// read once off the <part-list>. See also lilypond_72b-TransposingInstruments-Full.xml
 	// and concert_score_and_for_part.xml (the <for-part> concert-score form).
-	testCase('transpose_change.musicxml', 'transpose_change.png'),
+	it.concurrent('renders transpose_change.png', async () => {
+		expect(
+			await renderer.screenshot('transpose_change.musicxml'),
+		).toMatchScreenshot('transpose_change.png');
+	});
 
 	// Sixteen identical C5 whole-note measures wrapping onto three systems (seven, eight,
 	// then one — each whole note floors at its minimum width, and the first system gives up
@@ -2178,26 +2776,42 @@ const TEST_CASES = [
 	// The default 'system' measure numbering prints a "1", an "8" and a "16" above each
 	// system's first measure. The lone M16 stays ragged at its natural width — the last
 	// system is under minLastSystemFill, so it is not justified out to the page edge.
-	testCase('system_break.musicxml', 'system_break.png'),
+	it.concurrent('renders system_break.png', async () => {
+		expect(
+			await renderer.screenshot('system_break.musicxml'),
+		).toMatchScreenshot('system_break.png');
+	});
 
 	// Four C5 whole-note measures, treble 4/4, that would all fit on one system — but
 	// M3 carries a <print new-system="yes"/>, forcing a system break before it. So the
 	// score wraps to two systems: M1-2 on top, M3-4 below (each re-stating the treble
 	// clef; the time signature prints only on M1). Proves an explicit break overrides
 	// width-based wrapping.
-	testCase('print_new_system.musicxml', 'print_new_system.png'),
+	it.concurrent('renders print_new_system.png', async () => {
+		expect(
+			await renderer.screenshot('print_new_system.musicxml'),
+		).toMatchScreenshot('print_new_system.png');
+	});
 
 	// The same four measures with honorSystemBreaks off: the <print new-system="yes"/> on M3
 	// is ignored and all four measures fit on one system.
-	testCase('print_new_system.musicxml', 'ignore_new_system.png', {
-		layout: { type: 'standard', honorSystemBreaks: false },
-	}),
+	it.concurrent('renders ignore_new_system.png', async () => {
+		expect(
+			await renderer.screenshot('print_new_system.musicxml', {
+				layout: { type: 'standard', honorSystemBreaks: false },
+			}),
+		).toMatchScreenshot('ignore_new_system.png');
+	});
 
 	// The same sixteen C5 whole-note measures, but with panoramic layout: all sixteen sit
 	// on a single uninterrupted system (no system break).
-	testCase('system_break.musicxml', 'layout_panoramic.png', {
-		layout: { type: 'panoramic' },
-	}),
+	it.concurrent('renders layout_panoramic.png', async () => {
+		expect(
+			await renderer.screenshot('system_break.musicxml', {
+				layout: { type: 'panoramic' },
+			}),
+		).toMatchScreenshot('layout_panoramic.png');
+	});
 
 	// An Chloe's M1-5: one line the document engraved for a page wider than vexml's reference
 	// width (<print new-system="no"/> throughout), so the document's line and the reference
@@ -2209,21 +2823,33 @@ const TEST_CASES = [
 	// 'wrap' (the default): the page wins. The engraved line is broken across two systems,
 	// both fitting the reference width, and this is the only one of the three at the plain
 	// 900px page.
-	testCase('overflow_forced_line.musicxml', 'overflow_wrap.png'),
+	it.concurrent('renders overflow_wrap.png', async () => {
+		expect(
+			await renderer.screenshot('overflow_forced_line.musicxml'),
+		).toMatchScreenshot('overflow_wrap.png');
+	});
 
 	// 'allow': the document wins. All five measures stay on one system, squeezed to their
 	// collision-free minimum and still running past the reference width; the page grows to
 	// cover the spill rather than clipping it, so this image is wider than overflow_wrap.png.
-	testCase('overflow_forced_line.musicxml', 'overflow_allow.png', {
-		layout: { type: 'standard', overflow: 'allow' },
-	}),
+	it.concurrent('renders overflow_allow.png', async () => {
+		expect(
+			await renderer.screenshot('overflow_forced_line.musicxml', {
+				layout: { type: 'standard', overflow: 'allow' },
+			}),
+		).toMatchScreenshot('overflow_allow.png');
+	});
 
 	// 'widen': neither loses. The reference width itself grows until the five measures fit at
 	// their ideal spacing rather than their minimum, so this is wider still than 'allow' —
 	// same one system, but with the notes spaced normally instead of pushed to the floor.
-	testCase('overflow_forced_line.musicxml', 'overflow_widen.png', {
-		layout: { type: 'standard', overflow: 'widen' },
-	}),
+	it.concurrent('renders overflow_widen.png', async () => {
+		expect(
+			await renderer.screenshot('overflow_forced_line.musicxml', {
+				layout: { type: 'standard', overflow: 'widen' },
+			}),
+		).toMatchScreenshot('overflow_widen.png');
+	});
 
 	// The same sixteen C5 whole-note measures wrapping the same three ways (7 + 8 + 1), but
 	// with minLastSystemFill lowered to 0 so the last system ALWAYS justifies. The only
@@ -2233,49 +2859,73 @@ const TEST_CASES = [
 	// systems above are unchanged. A one-measure system blown out to a whole page line is
 	// what a 0 fill threshold asks for — the point of the case is that the threshold is
 	// honoured, not that the result is good engraving.
-	testCase('system_break.musicxml', 'last_system_stretch.png', {
-		minLastSystemFill: 0,
-	}),
+	it.concurrent('renders last_system_stretch.png', async () => {
+		expect(
+			await renderer.screenshot('system_break.musicxml', {
+				minLastSystemFill: 0,
+			}),
+		).toMatchScreenshot('last_system_stretch.png');
+	});
 
 	// A score that fits on a single system, rendered with stretchSingleSystem false. The
 	// lone system's few measures fill well under minLastSystemFill of the page, so instead
 	// of stretching to the full page width (the default — see aloof_measure_1.png) it stays
 	// ragged at its natural width: the staff ends well short of the right page edge with
 	// empty margin beyond it.
-	testCase('aloof_measure_1.musicxml', 'stretch_single_system_off.png', {
-		stretchSingleSystem: false,
-	}),
+	it.concurrent('renders stretch_single_system_off.png', async () => {
+		expect(
+			await renderer.screenshot('aloof_measure_1.musicxml', {
+				stretchSingleSystem: false,
+			}),
+		).toMatchScreenshot('stretch_single_system_off.png');
+	});
 
 	// The same two systems (nine then seven C5 whole-note measures), with a measure number
 	// printed above the left edge of every measure (measureNumbering 'every'): "1"-"9"
 	// across the top system, "10"-"16" across the bottom.
-	testCase('system_break.musicxml', 'measure_numbering_every.png', {
-		measureNumbering: 'every',
-	}),
+	it.concurrent('renders measure_numbering_every.png', async () => {
+		expect(
+			await renderer.screenshot('system_break.musicxml', {
+				measureNumbering: 'every',
+			}),
+		).toMatchScreenshot('measure_numbering_every.png');
+	});
 
 	// The same two systems with measure numbering turned off (measureNumbering
 	// 'none'): no measure numbers anywhere, opting out of the 'system' default.
-	testCase('system_break.musicxml', 'measure_numbering_none.png', {
-		measureNumbering: 'none',
-	}),
+	it.concurrent('renders measure_numbering_none.png', async () => {
+		expect(
+			await renderer.screenshot('system_break.musicxml', {
+				measureNumbering: 'none',
+			}),
+		).toMatchScreenshot('measure_numbering_none.png');
+	});
 
 	// The same two systems with measureNumbering 'every-2': every 2nd measure plus every
 	// system start. The every-2 cadence (0-based) falls on the odd measures 1, 3, 5, 7, 9,
 	// 11, 13, 15 — so 1, 3, 5, 7, 9 on the top system and 11, 13, 15 on the bottom. The
 	// second system's start, M10, is even and off the cadence, so it is numbered only
 	// because it begins a system — the case that proves the "plus every system start" union.
-	testCase('system_break.musicxml', 'measure_numbering_every_2.png', {
-		measureNumbering: 'every-2',
-	}),
+	it.concurrent('renders measure_numbering_every_2.png', async () => {
+		expect(
+			await renderer.screenshot('system_break.musicxml', {
+				measureNumbering: 'every-2',
+			}),
+		).toMatchScreenshot('measure_numbering_every_2.png');
+	});
 
 	// The same two systems with measureNumbering 'every-3': every 3rd measure plus every
 	// system start. The every-3 cadence falls on 1, 4, 7, 10, 13, 16 — so 1, 4, 7 on the
 	// top system and 10, 13, 16 on the bottom. Here the second system's start (M10) already
 	// lands on the cadence, so the "plus system start" union adds nothing visible (see
 	// measure_numbering_every_2 for the case where it does).
-	testCase('system_break.musicxml', 'measure_numbering_every_3.png', {
-		measureNumbering: 'every-3',
-	}),
+	it.concurrent('renders measure_numbering_every_3.png', async () => {
+		expect(
+			await renderer.screenshot('system_break.musicxml', {
+				measureNumbering: 'every-3',
+			}),
+		).toMatchScreenshot('measure_numbering_every_3.png');
+	});
 
 	// Treble, 4/4, narrowed to 660px so it wraps to two systems of three measures each.
 	// Tests vertical spacing between stacked systems: the first system's notes hang far
@@ -2284,9 +2934,13 @@ const TEST_CASES = [
 	// - M1-3 (system 1): very low quarter notes (C3) with many ledger lines below the staff.
 	// - M4-6 (system 2): very high quarter notes (C7) with many ledger lines above the staff,
 	//   which must not collide with system 1's low notes.
-	testCase('system_spacing.musicxml', 'system_spacing.png', {
-		layout: { type: 'standard', referenceWidth: 660 },
-	}),
+	it.concurrent('renders system_spacing.png', async () => {
+		expect(
+			await renderer.screenshot('system_spacing.musicxml', {
+				layout: { type: 'standard', referenceWidth: 660 },
+			}),
+		).toMatchScreenshot('system_spacing.png');
+	});
 
 	// One two-stave (braced) treble part, 4/4, one measure. Tests the vertical gap
 	// *within* a part: staff 1 plays four C3 quarters (many ledger lines hanging below
@@ -2295,7 +2949,11 @@ const TEST_CASES = [
 	// enough that the planned within-part gap can't hold them and has to widen. The
 	// lower ledger lines/noteheads of staff 1 must stay clear of the upper ledger
 	// lines/noteheads of staff 2 — nothing from either staff may touch the other.
-	testCase('stave_spacing.musicxml', 'stave_spacing.png'),
+	it.concurrent('renders stave_spacing.png', async () => {
+		expect(
+			await renderer.screenshot('stave_spacing.musicxml'),
+		).toMatchScreenshot('stave_spacing.png');
+	});
 
 	// The same braced two-stave part and the same extremes as stave_spacing.musicxml (staff 1
 	// down to C3, staff 2 up to C7), rearranged so the gap has to be measured per x column
@@ -2309,7 +2967,11 @@ const TEST_CASES = [
 	// The point is that the two systems come out at visibly DIFFERENT gaps in one score.
 	// Summing the worst drop and the worst rise (or resolving one gap for the whole score)
 	// would draw M1 as far apart as M2 for a collision that never happens there.
-	testCase('stave_spacing_dynamic.musicxml', 'stave_spacing_dynamic.png'),
+	it.concurrent('renders stave_spacing_dynamic.png', async () => {
+		expect(
+			await renderer.screenshot('stave_spacing_dynamic.musicxml'),
+		).toMatchScreenshot('stave_spacing_dynamic.png');
+	});
 
 	// Two two-stave (braced) treble parts, 4/4, one measure. Tests the vertical gap
 	// *between* parts: the pair of staves that meet in the middle are the extreme ones —
@@ -2319,19 +2981,43 @@ const TEST_CASES = [
 	// whole note each, so only the inter-part boundary is stressed. P1's low ledger
 	// lines must stay clear of P2's high ones, and each part's own two staves must
 	// stay clear too.
-	testCase('part_spacing.musicxml', 'part_spacing.png'),
+	it.concurrent('renders part_spacing.png', async () => {
+		expect(
+			await renderer.screenshot('part_spacing.musicxml'),
+		).toMatchScreenshot('part_spacing.png');
+	});
 
 	// Individual measures extracted from 'aloof' for focused testing.
-	testCase('aloof_measure_1.musicxml', 'aloof_measure_1.png'),
+	it.concurrent('renders aloof_measure_1.png', async () => {
+		expect(
+			await renderer.screenshot('aloof_measure_1.musicxml'),
+		).toMatchScreenshot('aloof_measure_1.png');
+	});
 	// Treble + 6-line TAB, A major, 4/4. Beat 1 strikes a chord that ties into beat 2;
 	// the notation stave draws both noteheads joined by a tie arc, but the TAB omits the
 	// held frets (beat 2 shows only the newly struck bass fret, not the tied 4/5) — a
 	// re-struck string is shown, a held one is not. The two beamed eighth pairs carry
 	// slurs that change fret (5→7, 4→5), so those are drawn as hammer/pull arcs in the tab.
-	testCase('aloof_measure_2.musicxml', 'aloof_measure_2.png'),
-	testCase('aloof_measure_7.musicxml', 'aloof_measure_7.png'),
-	testCase('aloof_measure_14.musicxml', 'aloof_measure_14.png'),
-	testCase('aloof_measure_15.musicxml', 'aloof_measure_15.png'),
+	it.concurrent('renders aloof_measure_2.png', async () => {
+		expect(
+			await renderer.screenshot('aloof_measure_2.musicxml'),
+		).toMatchScreenshot('aloof_measure_2.png');
+	});
+	it.concurrent('renders aloof_measure_7.png', async () => {
+		expect(
+			await renderer.screenshot('aloof_measure_7.musicxml'),
+		).toMatchScreenshot('aloof_measure_7.png');
+	});
+	it.concurrent('renders aloof_measure_14.png', async () => {
+		expect(
+			await renderer.screenshot('aloof_measure_14.musicxml'),
+		).toMatchScreenshot('aloof_measure_14.png');
+	});
+	it.concurrent('renders aloof_measure_15.png', async () => {
+		expect(
+			await renderer.screenshot('aloof_measure_15.musicxml'),
+		).toMatchScreenshot('aloof_measure_15.png');
+	});
 
 	// ---------------------------------------------------------------------------------------
 	// Whole real-world scores, engraved end to end at the default 900px reference width. Every
@@ -2347,47 +3033,73 @@ const TEST_CASES = [
 	// ---------------------------------------------------------------------------------------
 
 	// Chopin: one measure of piano, both staves in bass clef, 3 flats.
-	testCase('score_chopin_prelude.musicxml', 'score_chopin_prelude.png'),
+	it.concurrent('renders score_chopin_prelude.png', async () => {
+		expect(
+			await renderer.screenshot('score_chopin_prelude.musicxml'),
+		).toMatchScreenshot('score_chopin_prelude.png');
+	});
 
 	// Brahms: 8 measures of solo violin double stops, with fingerings and circled string
 	// numbers.
-	testCase(
-		'score_brahms_violin_concerto.musicxml',
-		'score_brahms_violin_concerto.png',
-	),
+	it.concurrent('renders score_brahms_violin_concerto.png', async () => {
+		expect(
+			await renderer.screenshot('score_brahms_violin_concerto.musicxml'),
+		).toMatchScreenshot('score_brahms_violin_concerto.png');
+	});
 
 	// Fauré, "Après un rêve": 4 measures of voice over braced piano, with lyrics and hairpins.
-	testCase(
-		'score_faure_apres_un_reve.musicxml',
-		'score_faure_apres_un_reve.png',
-	),
+	it.concurrent('renders score_faure_apres_un_reve.png', async () => {
+		expect(
+			await renderer.screenshot('score_faure_apres_un_reve.musicxml'),
+		).toMatchScreenshot('score_faure_apres_un_reve.png');
+	});
 
 	// Mozart, K. 387: 13 measures of string quartet — four parts, viola in alto C clef, pickup.
-	testCase(
-		'score_mozart_string_quartet.musicxml',
-		'score_mozart_string_quartet.png',
-	),
+	it.concurrent('renders score_mozart_string_quartet.png', async () => {
+		expect(
+			await renderer.screenshot('score_mozart_string_quartet.musicxml'),
+		).toMatchScreenshot('score_mozart_string_quartet.png');
+	});
 
 	// Debussy, "Mandoline": 12 measures of voice over piano in 6/8 — the densest annotation
 	// stack here (lyrics, graces, arpeggios, an octave shift, hairpins, a mid-measure clef).
-	testCase('score_debussy_mandoline.musicxml', 'score_debussy_mandoline.png'),
+	it.concurrent('renders score_debussy_mandoline.png', async () => {
+		expect(
+			await renderer.screenshot('score_debussy_mandoline.musicxml'),
+		).toMatchScreenshot('score_debussy_mandoline.png');
+	});
 
 	// Beethoven, "An die ferne Geliebte": 15 measures of voice over piano, with pedal marks and
 	// a mid-measure clef change on the lower piano stave.
-	testCase(
-		'score_beethoven_an_die_ferne_geliebte.musicxml',
-		'score_beethoven_an_die_ferne_geliebte.png',
-	),
+	it.concurrent('renders score_beethoven_an_die_ferne_geliebte.png', async () => {
+		expect(
+			await renderer.screenshot(
+				'score_beethoven_an_die_ferne_geliebte.musicxml',
+			),
+		).toMatchScreenshot('score_beethoven_an_die_ferne_geliebte.png');
+	});
 
 	// 16 measures of solo guitar on a TAB stave with no notation stave above it.
-	testCase('score_wanna_skip_class.musicxml', 'score_wanna_skip_class.png'),
+	it.concurrent('renders score_wanna_skip_class.png', async () => {
+		expect(
+			await renderer.screenshot('score_wanna_skip_class.musicxml'),
+		).toMatchScreenshot('score_wanna_skip_class.png');
+	});
 
 	// Mozart, "An Chloe": 18 measures of voice over piano in cut common, with turn ornaments.
-	testCase('score_mozart_an_chloe.musicxml', 'score_mozart_an_chloe.png'),
+	it.concurrent('renders score_mozart_an_chloe.png', async () => {
+		expect(
+			await renderer.screenshot('score_mozart_an_chloe.musicxml'),
+		).toMatchScreenshot('score_mozart_an_chloe.png');
+	});
 
 	// Bach, "Air": 19 measures of string quartet with repeats and numbered endings spanning all
 	// four parts.
-	testCase('score_bach_air.musicxml', 'score_bach_air.png'),
+	it.concurrent('renders score_bach_air.png', async () => {
+		expect(
+			await renderer.screenshot('score_bach_air.musicxml'),
+		).toMatchScreenshot('score_bach_air.png');
+	});
 
 	// Mozart, "Das Veilchen": 23 measures of voice over piano, with grace notes. The document
 	// engraved four lines (<print new-system="yes"> at measures 6, 12 and 18) for a page wider
@@ -2409,14 +3121,19 @@ const TEST_CASES = [
 	//   voice and the piano opens to hold it (see recordStaveSpill in draw-pass.ts) — but
 	//   only on the systems carrying those bars, and only across the x range the bow covers.
 	//   Every other line sits back at its planned spacing.
-	testCase(
-		'score_mozart_das_veilchen.musicxml',
-		'score_mozart_das_veilchen.png',
-	),
+	it.concurrent('renders score_mozart_das_veilchen.png', async () => {
+		expect(
+			await renderer.screenshot('score_mozart_das_veilchen.musicxml'),
+		).toMatchScreenshot('score_mozart_das_veilchen.png');
+	});
 
 	// Austrian national anthem: 28 measures of voice over piano, with three stacked verses of
 	// lyrics setting the measure widths.
-	testCase('score_land_der_berge.musicxml', 'score_land_der_berge.png'),
+	it.concurrent('renders score_land_der_berge.png', async () => {
+		expect(
+			await renderer.screenshot('score_land_der_berge.musicxml'),
+		).toMatchScreenshot('score_land_der_berge.png');
+	});
 
 	// "Amazing Grace": 33 measures of voice over guitar notation + TAB, with lyrics and chord
 	// diagrams. A Singer treble stave sits above a two-stave A.Guitar part (treble notation +
@@ -2437,12 +3154,20 @@ const TEST_CASES = [
 	// and independent of the notation/TAB and banding fixes; neither affects any other
 	// system. Fix in the diagram placement pass in draw-pass.ts, then re-accept this
 	// baseline.
-	testCase('score_amazing_grace.musicxml', 'score_amazing_grace.png'),
+	it.concurrent('renders score_amazing_grace.png', async () => {
+		expect(
+			await renderer.screenshot('score_amazing_grace.musicxml'),
+		).toMatchScreenshot('score_amazing_grace.png');
+	});
 
 	// "Green's Greenery": 61 measures of guitar notation + TAB, with repeats and endings. ONE
 	// Steel Guitar part of two staves — a treble notation stave in 2 flats and 4/4 over the
 	// 6-line TAB.
-	testCase('score_greens_greenery.musicxml', 'score_greens_greenery.png'),
+	it.concurrent('renders score_greens_greenery.png', async () => {
+		expect(
+			await renderer.screenshot('score_greens_greenery.musicxml'),
+		).toMatchScreenshot('score_greens_greenery.png');
+	});
 
 	// TODO: False positive — this baseline was created from the current render and shows a bug.
 	// Measure 2 holds a genuine cross-staff beam (voice 2 begins on staff 1 at C4, then
@@ -2453,23 +3178,9 @@ const TEST_CASES = [
 	// See the recent cross-staff beam work in vexml. Fix, then
 	// `vex test score_joplin_elite_syncopations --update`.
 	// Joplin, "Elite Syncopations": 88 measures of piano, with repeats and numbered endings.
-	testCase(
-		'score_joplin_elite_syncopations.musicxml',
-		'score_joplin_elite_syncopations.png',
-	),
-];
-
-describe('render', () => {
-	// rule-ignore simple-test-setup: these 190 cases are one assertion over a corpus, and
-	// TEST_CASES above is the readable form of it: each entry is a fixture, a baseline and
-	// the comment explaining what that file covers. Unrolling them would be 190 copies of
-	// the same three lines, and adding a fixture would stop being a one-line change.
-	for (const t of TEST_CASES) {
-		// Concurrent: each render borrows its own page from the pool (see setup.ts), so
-		// bun runs up to POOL_SIZE of them in parallel across separate renderer processes.
-		it.concurrent(`renders ${t.screenshotFilename}`, async () => {
-			const png = await render(t.musicXMLFilename, t.config);
-			expect(png).toMatchScreenshot(t.screenshotFilename);
-		});
-	}
+	it.concurrent('renders score_joplin_elite_syncopations.png', async () => {
+		expect(
+			await renderer.screenshot('score_joplin_elite_syncopations.musicxml'),
+		).toMatchScreenshot('score_joplin_elite_syncopations.png');
+	});
 });

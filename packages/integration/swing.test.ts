@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { renderTest } from './harness';
+import { renderer } from './renderer';
 
 describe('swing', () => {
 	/*
@@ -12,19 +12,14 @@ describe('swing', () => {
 	 * the way late, and the pickup — which IS an off-beat — plays short rather than long.
 	 */
 	it.concurrent('a 2:1 <swing> lengthens the on-beat eighths and shortens the off-beats', async () => {
-		const { result } = await renderTest(
+		const { result } = await renderer.render(
 			'swing.musicxml',
 			{},
 			{
-				fn: (score) => {
-					const seq = score.getSequence();
-					const steps = [];
-					for (let i = 0; i < seq.length; i++) {
-						const step = seq.getStep(i);
-						steps.push(Math.round(step?.startMs ?? -1));
-					}
-					return { steps, durationMs: Math.round(score.getDurationMs()) };
-				},
+				fn: (score) => ({
+					steps: window.stepStartsMs(score),
+					durationMs: Math.round(score.getDurationMs()),
+				}),
 			},
 		);
 

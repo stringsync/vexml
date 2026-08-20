@@ -10,7 +10,7 @@ The monorepo. The library everything else exists to serve lives in
 | [`packages/vexml`](packages/vexml) | `@stringsync/vexml` — the published library |
 | `packages/vex` | the `vex` dev CLI, and the Docker images it drives |
 | `packages/site` | the playground at https://vexml.dev |
-| `packages/integration` | visual-regression tests and their harness |
+| `packages/integration` | visual-regression tests |
 
 ## Development
 
