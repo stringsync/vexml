@@ -48,8 +48,9 @@ const POOL_SIZE = 8;
 /**
  * A test's browser-side function. It is serialized into the page via toString(), so it
  * must be self-contained: no closing over test-scope variables — thread values through
- * `arg` (which must be structured-cloneable) instead. The helpers page.ts hangs on
- * `window` are the one thing it can call besides the Score itself.
+ * `arg` (which must be structured-cloneable) instead. A module-level function in a test
+ * file serializes the same way, so it can be passed AS `fn` — but an fn cannot call one
+ * (that would be a closure). Besides the Score, the page offers only `window.render`.
  */
 type BrowserFn<A, T> = (
 	score: Score,

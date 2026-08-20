@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import type { Score } from '@stringsync/vexml';
 import { renderer } from './renderer';
 
 describe('cursor', () => {
@@ -35,7 +36,11 @@ describe('cursor', () => {
 				fn: (score) => {
 					const cursor = score.createCursor();
 					cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
-					window.colorHighlightedOnChange(cursor, '#155dfc');
+					cursor.events.on('change', (e) => {
+						for (const n of e.highlighted) {
+							n.color.on('#155dfc');
+						}
+					});
 					cursor.seekMs(score.getDurationMs() * 0.3);
 				},
 			},
@@ -68,7 +73,7 @@ describe('cursor', () => {
 		const { result: graces } = await renderer.render(
 			'grace_notes.musicxml',
 			{},
-			{ fn: (score) => window.graceNoteStats(score) },
+			{ fn: graceNoteStats },
 		);
 		// The fixture puts a grace before several notes; each must resolve with a sounding pitch and a
 		// real, non-degenerate notehead box (not the near-origin bogus group box).
@@ -84,7 +89,7 @@ describe('cursor', () => {
 		const { result: graces } = await renderer.render(
 			'tab_grace.musicxml',
 			{},
-			{ fn: (score) => window.graceNoteStats(score) },
+			{ fn: graceNoteStats },
 		);
 		// Each grace resolves to a target whose fret glyph (TabPosition) is laid out at a real x.
 		expect(graces.count).toBeGreaterThan(0);
@@ -103,7 +108,23 @@ describe('cursor', () => {
 		const { result } = await renderer.render(
 			'tie.musicxml',
 			{},
-			{ fn: (score) => window.sequenceTransitions(score) },
+			{
+				fn: (score) => {
+					const seq = score.getSequence();
+					const pitches = (notes: ReadonlyArray<{ getPitch(): string | null }>) =>
+						notes.map((n) => n.getPitch()).sort();
+					const transitions = [];
+					for (let i = 1; i < seq.length; i++) {
+						const t = seq.classify(i - 1, i);
+						transitions.push({
+							started: pitches(t.started),
+							sustained: pitches(t.sustained),
+							stopped: pitches(t.stopped),
+						});
+					}
+					return { length: seq.length, transitions };
+				},
+			},
 		);
 
 		// Onsets: M1 C5, M1 C5 (tie stop), M2 C5, M3 C5 (tie stop), M4 F#5, M4 F#5 (tie stop).
@@ -133,14 +154,16 @@ describe('cursor', () => {
 			{
 				fn: (score) => {
 					const cursor = score.createCursor();
+					const pitches = () =>
+						cursor
+							.getHighlightedElements()
+							.map((n) => n.getPitch())
+							.sort();
 					const dur = score.getDurationMs();
 					cursor.seekMs(dur * 0.75); // within the 2nd chord's step
-					const sounding = window.highlightedPitches(cursor);
+					const sounding = pitches();
 					cursor.seekMs(dur); // done
-					return {
-						sounding,
-						whenDone: window.highlightedPitches(cursor).length,
-					};
+					return { sounding, whenDone: pitches().length };
 				},
 			},
 		);
@@ -159,12 +182,18 @@ describe('cursor', () => {
 			'repeats.musicxml',
 			{},
 			{
-				fn: (score) => ({
-					order: window.stepMeasureIndexes(score),
-					measureCount: score.getSequence().getMeasureCount(),
-					// A repeated measure's cursor lands on its first pass, not its last.
-					firstStepOfM2: score.getSequence().getFirstStepOfMeasure(1),
-				}),
+				fn: (score) => {
+					const seq = score.getSequence();
+					return {
+						order: Array.from(
+							{ length: seq.length },
+							(_, i) => seq.getStep(i)?.measureIndex,
+						),
+						measureCount: seq.getMeasureCount(),
+						// A repeated measure's cursor lands on its first pass, not its last.
+						firstStepOfM2: seq.getFirstStepOfMeasure(1),
+					};
+				},
 			},
 		);
 
@@ -193,7 +222,7 @@ describe('cursor', () => {
 		const { result } = await renderer.render(
 			'repeats_multiple_times.musicxml',
 			{},
-			{ fn: (score) => window.stepMeasureIndexes(score) },
+			{ fn: stepMeasureIndexes },
 		);
 
 		// M1, then |: M2 M3 :| five times over, then out to M4 M5.
@@ -209,7 +238,7 @@ describe('cursor', () => {
 		const { result } = await renderer.render(
 			'repeats_nested.musicxml',
 			{},
-			{ fn: (score) => window.stepMeasureIndexes(score) },
+			{ fn: stepMeasureIndexes },
 		);
 
 		// Outer pass 1: M1, then the inner block |: M2 :| — M3 (1st ending) back to M2, then M4
@@ -227,7 +256,18 @@ describe('cursor', () => {
 		const { result } = await renderer.render(
 			'voice_short.musicxml',
 			{},
-			{ fn: (score) => window.stepBeats(score) },
+			{
+				fn: (score) => {
+					const seq = score.getSequence();
+					return Array.from({ length: seq.length }, (_, i) => {
+						const step = seq.getStep(i);
+						return {
+							startBeat: step?.startBeat,
+							active: (step?.active ?? []).map((n) => n.getPitch()).sort(),
+						};
+					});
+				},
+			},
 		);
 
 		expect(result).toEqual([
@@ -237,3 +277,50 @@ describe('cursor', () => {
 		]);
 	});
 });
+
+// These run in the page via toString(), so they must stay self-contained: no closing over
+// test scope, and a test's fn cannot call them (that would be a closure) — only pass them
+// AS the fn.
+
+/** Each sequence step's measure index, in playback (jump) order. */
+function stepMeasureIndexes(score: Score) {
+	const seq = score.getSequence();
+	return Array.from(
+		{ length: seq.length },
+		(_, i) => seq.getStep(i)?.measureIndex,
+	);
+}
+
+/** Walk the cursor over the whole piece and aggregate every grace note encountered. */
+function graceNoteStats(score: Score) {
+	const cursor = score.createCursor();
+	const found: Array<{
+		pitch: string | null;
+		hasFret: boolean;
+		x: number;
+		w: number;
+	}> = [];
+	cursor.events.on('change', (e) => {
+		for (const n of e.started) {
+			for (const g of n.getGraceNotes()) {
+				found.push({
+					pitch: g.getPitch(),
+					hasFret: g.getTabPosition() !== null,
+					x: g.rect.x,
+					w: g.rect.w,
+				});
+			}
+		}
+	});
+	const duration = score.getDurationMs();
+	for (let t = 0; t <= duration; t += duration / 200) {
+		cursor.seekMs(t);
+	}
+	return {
+		count: found.length,
+		minX: Math.min(...found.map((g) => g.x)),
+		minW: Math.min(...found.map((g) => g.w)),
+		missingPitch: found.filter((g) => g.pitch === null).length,
+		missingFret: found.filter((g) => !g.hasFret).length,
+	};
+}
