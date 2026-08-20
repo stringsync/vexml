@@ -113,15 +113,17 @@ describe('cursor', () => {
 					const seq = score.getSequence();
 					const pitches = (notes: ReadonlyArray<{ getPitch(): string | null }>) =>
 						notes.map((n) => n.getPitch()).sort();
-					const transitions = [];
-					for (let i = 1; i < seq.length; i++) {
-						const t = seq.classify(i - 1, i);
-						transitions.push({
-							started: pitches(t.started),
-							sustained: pitches(t.sustained),
-							stopped: pitches(t.stopped),
+					const transitions = seq
+						.getSteps()
+						.slice(1)
+						.map((step) => {
+							const t = seq.classify(step.index - 1, step.index);
+							return {
+								started: pitches(t.started),
+								sustained: pitches(t.sustained),
+								stopped: pitches(t.stopped),
+							};
 						});
-					}
 					return { length: seq.length, transitions };
 				},
 			},
@@ -185,10 +187,7 @@ describe('cursor', () => {
 				fn: (score) => {
 					const seq = score.getSequence();
 					return {
-						order: Array.from(
-							{ length: seq.length },
-							(_, i) => seq.getStep(i)?.measureIndex,
-						),
+						order: seq.getSteps().map((step) => step.measureIndex),
 						measureCount: seq.getMeasureCount(),
 						// A repeated measure's cursor lands on its first pass, not its last.
 						firstStepOfM2: seq.getFirstStepOfMeasure(1),
@@ -222,7 +221,13 @@ describe('cursor', () => {
 		const { result } = await renderer.render(
 			'repeats_multiple_times.musicxml',
 			{},
-			{ fn: stepMeasureIndexes },
+			{
+				fn: (score) =>
+					score
+						.getSequence()
+						.getSteps()
+						.map((step) => step.measureIndex),
+			},
 		);
 
 		// M1, then |: M2 M3 :| five times over, then out to M4 M5.
@@ -238,7 +243,13 @@ describe('cursor', () => {
 		const { result } = await renderer.render(
 			'repeats_nested.musicxml',
 			{},
-			{ fn: stepMeasureIndexes },
+			{
+				fn: (score) =>
+					score
+						.getSequence()
+						.getSteps()
+						.map((step) => step.measureIndex),
+			},
 		);
 
 		// Outer pass 1: M1, then the inner block |: M2 :| — M3 (1st ending) back to M2, then M4
@@ -257,16 +268,14 @@ describe('cursor', () => {
 			'voice_short.musicxml',
 			{},
 			{
-				fn: (score) => {
-					const seq = score.getSequence();
-					return Array.from({ length: seq.length }, (_, i) => {
-						const step = seq.getStep(i);
-						return {
-							startBeat: step?.startBeat,
-							active: (step?.active ?? []).map((n) => n.getPitch()).sort(),
-						};
-					});
-				},
+				fn: (score) =>
+					score
+						.getSequence()
+						.getSteps()
+						.map((step) => ({
+							startBeat: step.startBeat,
+							active: step.active.map((n) => n.getPitch()).sort(),
+						})),
 			},
 		);
 
@@ -278,20 +287,10 @@ describe('cursor', () => {
 	});
 });
 
-// These run in the page via toString(), so they must stay self-contained: no closing over
-// test scope, and a test's fn cannot call them (that would be a closure) — only pass them
-// AS the fn.
+// Runs in the page via toString(), so it must stay self-contained: no closing over test
+// scope, and a test's fn cannot call it (that would be a closure) — only pass it AS the fn.
 
-/** Each sequence step's measure index, in playback (jump) order. */
-function stepMeasureIndexes(score: Score) {
-	const seq = score.getSequence();
-	return Array.from(
-		{ length: seq.length },
-		(_, i) => seq.getStep(i)?.measureIndex,
-	);
-}
-
-/** Walk the cursor over the whole piece and aggregate every grace note encountered. */
+/** Walk the cursor over every onset and aggregate every grace note encountered. */
 function graceNoteStats(score: Score) {
 	const cursor = score.createCursor();
 	const found: Array<{
@@ -312,9 +311,8 @@ function graceNoteStats(score: Score) {
 			}
 		}
 	});
-	const duration = score.getDurationMs();
-	for (let t = 0; t <= duration; t += duration / 200) {
-		cursor.seekMs(t);
+	for (const step of score.getSequence().getSteps()) {
+		cursor.seekMs(step.startMs);
 	}
 	return {
 		count: found.length,

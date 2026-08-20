@@ -128,6 +128,10 @@ export class Sequence {
 		return this.steps[index] ?? null;
 	}
 
+	getSteps(): readonly Step[] {
+		return this.steps;
+	}
+
 	getDurationBeats(): number {
 		return this.durationBeats;
 	}

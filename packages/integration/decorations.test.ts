@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'bun:test';
-import type { Note, Score, TabPosition } from '@stringsync/vexml';
+import type { Score } from '@stringsync/vexml';
 import { renderer } from './renderer';
 
-// Decorations end to end, the way a caller actually reaches them: render, hover to hit-test the
-// targets, toggle a decoration, and screenshot the composite (base engraving + the decoration
-// overlay). The drawing logic itself is unit-tested in packages/vexml/decorations.test.ts; this proves it
-// lands on the score, aligned.
+// Decorations end to end: render, toggle a decoration on every target, and screenshot the
+// composite (base engraving + the decoration overlay). The drawing logic itself is unit-tested
+// in packages/vexml/decorations.test.ts; this proves it lands on the score, aligned.
 //
 // Both noteheads (Note) and tab fret numbers (TabPosition) are decoratable, with their own
 // drawColor stamps, so decorateAllTargets collects both: a notation-only document yields only
@@ -59,33 +58,16 @@ describe('decorations', () => {
 // Runs in the page via toString(), so it must stay self-contained: no closing over test scope.
 function decorateAllTargets(
 	score: Score,
-	container: HTMLDivElement,
+	_container: HTMLDivElement,
 	mode: 'color' | 'halo',
 ) {
-	const canvas = container.querySelector('canvas');
-	if (!canvas) {
-		throw new Error('canvas not found');
-	}
-	// Hover the whole canvas to collect every decoratable target under the pointer
-	// (noteheads and tab frets), deduped by identity.
-	const targets = new Set<Note | TabPosition>();
-	score.events.on('pointermove', (e) => {
-		if (e.target?.type === 'note' || e.target?.type === 'tab-position') {
-			targets.add(e.target as Note | TabPosition);
-		}
-	});
-	const rect = canvas.getBoundingClientRect();
-	for (let dy = 2; dy < rect.height; dy += 4) {
-		for (let dx = 2; dx < rect.width; dx += 4) {
-			canvas.dispatchEvent(
-				new PointerEvent('pointermove', {
-					clientX: rect.left + dx,
-					clientY: rect.top + dy,
-					bubbles: true,
-				}),
-			);
-		}
-	}
+	// Reaching a target via the pointer is proven once in events.test.ts; here the elements
+	// index enumerates them directly.
+	const targets = score
+		.getElements()
+		.notes()
+		.flatMap((note) => [note, note.getTabPosition()])
+		.filter((target) => target !== null);
 	for (const target of targets) {
 		if (mode === 'color') {
 			target.color.on('#2962ff');
@@ -93,5 +75,5 @@ function decorateAllTargets(
 			target.halo.on('rgba(41, 98, 255, 0.35)');
 		}
 	}
-	return targets.size;
+	return targets.length;
 }

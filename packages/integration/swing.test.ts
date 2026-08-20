@@ -16,15 +16,13 @@ describe('swing', () => {
 			'swing.musicxml',
 			{},
 			{
-				fn: (score) => {
-					const seq = score.getSequence();
-					return {
-						steps: Array.from({ length: seq.length }, (_, i) =>
-							Math.round(seq.getStep(i)?.startMs ?? -1),
-						),
-						durationMs: Math.round(score.getDurationMs()),
-					};
-				},
+				fn: (score) => ({
+					steps: score
+						.getSequence()
+						.getSteps()
+						.map((step) => Math.round(step.startMs)),
+					durationMs: Math.round(score.getDurationMs()),
+				}),
 			},
 		);
 
