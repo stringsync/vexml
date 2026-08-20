@@ -111,8 +111,9 @@ describe('cursor', () => {
 			{
 				fn: (score) => {
 					const seq = score.getSequence();
-					const pitches = (notes: ReadonlyArray<{ getPitch(): string | null }>) =>
-						notes.map((n) => n.getPitch()).sort();
+					const pitches = (
+						notes: ReadonlyArray<{ getPitch(): string | null }>,
+					) => notes.map((n) => n.getPitch()).sort();
 					const transitions = seq
 						.getSteps()
 						.slice(1)
