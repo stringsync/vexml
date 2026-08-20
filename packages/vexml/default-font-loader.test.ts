@@ -70,9 +70,9 @@ describe('DefaultFontLoader', () => {
 		globalThis.document = orig;
 	});
 
-	it('default render injects google fonts only, scopes vars to container', () => {
+	it('default render injects google fonts only, scopes vars to container', async () => {
 		const { head, vars, container } = fakeDom();
-		new DefaultFontLoader().load(container);
+		await new DefaultFontLoader().load(container);
 		// 1 google <link> for Source Sans 3; Bravura comes from VexFlow, so no <style>.
 		expect(head.filter((n) => n.tag === 'link').length).toBe(1);
 		expect(head.filter((n) => n.tag === 'style').length).toBe(0);
@@ -80,17 +80,17 @@ describe('DefaultFontLoader', () => {
 		expect(vars['--vexml-font-text']).toBe("'Source Sans 3', sans-serif");
 	});
 
-	it('idempotent: second default call injects nothing new', () => {
+	it('idempotent: second default call injects nothing new', async () => {
 		const { head, container } = fakeDom();
-		new DefaultFontLoader().load(container); // dedup markers persist on the document
+		await new DefaultFontLoader().load(container); // dedup markers persist on the document
 		const after = head.length;
-		new DefaultFontLoader().load(container); // fresh loader, same document: still deduped
+		await new DefaultFontLoader().load(container); // fresh loader, same document: still deduped
 		expect(head.length).toBe(after); // no new tags
 	});
 
-	it('custom notation url injects that url, not bundled path', () => {
+	it('custom notation url injects that url, not bundled path', async () => {
 		const { head, container } = fakeDom();
-		new DefaultFontLoader().load(container, {
+		await new DefaultFontLoader().load(container, {
 			notation: { family: 'Bravura', url: '/static/Custom.woff2' },
 		});
 		const styleText = head

@@ -42,7 +42,7 @@ const POOL_SIZE = 8;
 
 /**
  * The infrastructure a browser test renders through: the fixture server, one Chromium
- * for the whole run, and a pool of font-warmed pages navigated to the test page.
+ * for the whole run, and a pool of pages navigated to the test page.
  *
  * One browser for the run because launching a second Chromium in the same run is flaky
  * in Docker — its teardown hangs past the hook timeout. And it must be Docker: pixel
@@ -106,7 +106,6 @@ export class PagePool {
 			// The port the server actually got: serve() moves along when 3100 is taken, so a
 			// run alongside another one still points at its own server.
 			await page.goto(`http://localhost:${this.server?.port}/`);
-			await warmFonts(page);
 			this.pages.push(page);
 			return page;
 		}
@@ -121,31 +120,4 @@ export class PagePool {
 			this.idle.push(page);
 		}
 	}
-}
-
-// Make the render fonts resident in the context's font cache before any real render.
-// Chromium loads even a system font lazily on first use, and VexFlow positions tab fret
-// digits by measuring them — so the first render on a cold page measures glyphs before the
-// font is resident and places them bistably. A reused single page self-warms after its first
-// test; a pool starts every page cold, so under parallel load many renders measure cold and
-// flake. Rendering the warm-up fixture once paints every font/weight a real render uses,
-// forcing the load up front. Same system families the tests use; if a new test uses a new
-// font/weight and flakes, extend font_warmup.musicxml to paint it.
-async function warmFonts(page: Page): Promise<void> {
-	await page.evaluate(async () => {
-		const container = document.getElementById('screenshot');
-		if (!(container instanceof HTMLDivElement)) {
-			throw new Error('container not found');
-		}
-		const res = await fetch('/data/font_warmup.musicxml');
-		await window.render(await res.text(), container, {
-			showPartLabels: true, // paints the part names in Source Sans 3 regular
-			fonts: {
-				notation: { family: 'Bravura' },
-				text: { family: 'Source Sans 3' },
-			},
-		});
-		await document.fonts.ready;
-		container.replaceChildren();
-	});
 }

@@ -5,10 +5,10 @@ import type { FontLoader } from './font-loader';
 /** Resolves the family names without touching the DOM or VexFlow — for callers that
  * need the resolved names but none of the side effects (headless environments, tests). */
 export class NoopFontLoader implements FontLoader {
-	load(
+	async load(
 		_container: HTMLElement,
 		config?: FontConfig,
-	): { notation: string; text: string } {
+	): Promise<{ notation: string; text: string }> {
 		return new FontFamilies(config);
 	}
 }

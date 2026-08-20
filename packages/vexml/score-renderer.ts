@@ -57,7 +57,7 @@ export class ScoreRenderer {
 		// Fonts before ANY layout or drawing: load() puts the fonts and CSS vars on the container
 		// (the managed canvas inherits them) and sets VexFlow's global glyph fonts, which both the
 		// planner's measurements and the drawer's engraving read.
-		this.fontLoader.load(this.stage.container, this.config.fonts);
+		await this.fontLoader.load(this.stage.container, this.config.fonts);
 
 		const mdoc = await this.parser.parse(input);
 

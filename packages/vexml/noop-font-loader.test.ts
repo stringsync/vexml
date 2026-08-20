@@ -6,16 +6,16 @@ describe('NoopFontLoader', () => {
 	// and the absence of a document in this environment is itself the no-side-effects assertion.
 	const container = {} as HTMLElement;
 
-	it('resolves the default families', () => {
-		expect(new NoopFontLoader().load(container)).toEqual({
+	it('resolves the default families', async () => {
+		expect(await new NoopFontLoader().load(container)).toEqual({
 			notation: 'Bravura',
 			text: 'Source Sans 3',
 		});
 	});
 
-	it('resolves an overridden text family', () => {
+	it('resolves an overridden text family', async () => {
 		expect(
-			new NoopFontLoader().load(container, { text: { family: 'Inter' } }),
+			await new NoopFontLoader().load(container, { text: { family: 'Inter' } }),
 		).toEqual({ notation: 'Bravura', text: 'Inter' });
 	});
 });

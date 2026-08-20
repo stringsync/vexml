@@ -35,7 +35,7 @@ class RecordingFontLoader extends NoopFontLoader {
 	override load(
 		container: HTMLElement,
 		config?: FontConfig,
-	): { notation: string; text: string } {
+	): Promise<{ notation: string; text: string }> {
 		this.calls.push(config);
 		return super.load(container, config);
 	}

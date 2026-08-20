@@ -8,14 +8,14 @@ import type { FontLoader } from './font-loader';
 // injecting, so the document itself tracks what's been injected — no process-global
 // state. It tracks injected DOM, not font choices.
 export class DefaultFontLoader implements FontLoader {
-	/** Inject the requested fonts and return the resolved family names. The family-name
-	 * fallbacks are applied here, once, from DEFAULT_FONT_CONFIG — callers (the CSS
-	 * variables) and the VexFlow.setFonts call below reuse the returned names instead
-	 * of defaulting again. */
-	load(
+	/** Inject the requested fonts, wait until they are resident, and return the resolved
+	 * family names. The family-name fallbacks are applied here, once, from
+	 * DEFAULT_FONT_CONFIG — callers (the CSS variables) and the VexFlow.setFonts call
+	 * below reuse the returned names instead of defaulting again. */
+	async load(
 		container: HTMLElement,
 		config?: FontConfig,
-	): { notation: string; text: string } {
+	): Promise<{ notation: string; text: string }> {
 		const { notation, text } = new FontFamilies(config);
 		if (typeof document === 'undefined') {
 			return { notation, text }; // SSR guard
@@ -34,7 +34,91 @@ export class DefaultFontLoader implements FontLoader {
 		// the whole CSS font string invalid and every glyph falls back to serif. Reset each call
 		// so one render's font choice can't leak into the next.
 		VexFlow.setFonts(`'${notation}'`, `'${text}'`, 'sans-serif');
+		await this.settle(notation, text);
 		return { notation, text };
+	}
+
+	/** Wait until the resolved faces are resident, so layout never measures text against
+	 * fallback metrics. Chromium loads a face lazily on first use, and the pipeline
+	 * positions every text glyph — tab fret digits, part labels, annotations — by
+	 * measuring it; a cold face measures with substitute metrics and the glyphs land in
+	 * the wrong place once the real face arrives. Faces the loader can see
+	 * (@font-face injections, the Google Fonts link, VexFlow's embedded Bravura) sit in
+	 * document.fonts and are awaited directly; a bare family (FontOverride.url absent —
+	 * a system font) is invisible to the CSS Font Loading API, so it is forced resident
+	 * by measuring a probe span and waiting for the measurement to stop changing. */
+	private async settle(notation: string, text: string): Promise<void> {
+		// Partial DOM (unit-test fakes, exotic embedders): nothing to wait for. Real
+		// browser renders always have fonts, a body, and rAF.
+		if (
+			!document.fonts ||
+			!document.body ||
+			!globalThis.requestAnimationFrame
+		) {
+			return;
+		}
+		// DOM-derived dedup, like the injectors above: one settled marker per family pair,
+		// so re-renders skip the probe entirely. Families are FontFamilies.sanitize'd, so
+		// the key is safe to embed in the attribute selector.
+		const key = `${notation}|${text}`;
+		if (
+			document.head.querySelector(`meta[data-vexml-fonts-settled="${key}"]`)
+		) {
+			return;
+		}
+
+		// Sample text chooses which glyphs must load: SMuFL staples for the notation face
+		// (clefs, a notehead, the flat/sharp pair), and the digits/letters the text face
+		// renders (fret numbers are the metrics-sensitive worst case). Weights mirror what
+		// a render can use: the Google Fonts link loads 300/400/600; a face that lacks a
+		// weight just resolves to the nearest one, which is harmless to await.
+		const specs: Array<{ font: string; sample: string }> = [
+			// G clef, F clef, black notehead, flat, sharp — the SMuFL staples every score paints.
+			{ font: `1em '${notation}'`, sample: '\uE050\uE062\uE0A4\uE260\uE262' },
+			...[300, 400, 600].map((weight) => ({
+				font: `${weight} 1em '${text}'`,
+				sample: '0123456789 HPabcdefgh',
+			})),
+		];
+		await Promise.all(
+			specs.map(({ font, sample }) => document.fonts.load(font, sample)),
+		);
+
+		// The probe: paint each face/weight offscreen and re-measure until two consecutive
+		// frames agree. A resident face settles on the second look (one frame); a lazy
+		// system face gets its load triggered by the first measurement and converges as
+		// soon as the real metrics arrive. Bounded so a pathological environment degrades
+		// to today's behavior instead of hanging the render.
+		const probe = document.createElement('div');
+		probe.style.cssText =
+			'position:absolute;visibility:hidden;left:-9999px;top:0';
+		for (const { font, sample } of specs) {
+			const span = document.createElement('span');
+			span.style.font = font;
+			span.textContent = sample;
+			probe.appendChild(span);
+		}
+		document.body.appendChild(probe);
+		try {
+			let previous = '';
+			for (let attempt = 0; attempt < 20; attempt++) {
+				const widths = Array.from(probe.children)
+					.map((span) => span.getBoundingClientRect().width)
+					.join();
+				if (widths === previous) {
+					break;
+				}
+				previous = widths;
+				await document.fonts.ready;
+				await new Promise(requestAnimationFrame);
+			}
+		} finally {
+			probe.remove();
+		}
+
+		const settled = document.createElement('meta');
+		settled.setAttribute('data-vexml-fonts-settled', key);
+		document.head.appendChild(settled);
 	}
 
 	private injectNotationFont(override?: FontOverride): void {

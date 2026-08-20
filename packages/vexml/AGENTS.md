@@ -21,7 +21,7 @@ come from `webappwiz/geometry`, not this repo. Every feature has a fixture in
 
 | Stage | Does | Files |
 | --- | --- | --- |
-| Fonts | Loads Bravura + text face as CSS vars | `font-loader.ts`, `default-font-loader.ts` |
+| Fonts | Loads Bravura + text face as CSS vars, awaits residency before layout | `font-loader.ts`, `default-font-loader.ts` |
 | Parse | MusicXML text to an mdom document | `score-parser.ts`, `default-score-parser.ts` |
 | Gaps | Inserts the caller's silent measures | `gaps.ts` |
 | Layout | Measure widths, system breaks, stave offsets — no drawing | `layout-planner.ts` |
