@@ -55,7 +55,7 @@
         "vex": "./index.ts",
       },
       "dependencies": {
-        "@stringsync/mdom": "0.2.4",
+        "@stringsync/mdom": "0.2.5",
         "@vexml/integration": "workspace:*",
         "webappwiz": "0.0.3",
       },
@@ -69,7 +69,7 @@
       "name": "@stringsync/vexml",
       "version": "1.2.4",
       "dependencies": {
-        "@stringsync/mdom": "0.2.4",
+        "@stringsync/mdom": "0.2.5",
         "vexflow": "5.0.0",
         "webappwiz": "0.0.3",
       },
@@ -155,7 +155,7 @@
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 
-    "@stringsync/mdom": ["@stringsync/mdom@0.2.4", "", { "dependencies": { "jszip": "^3.10.1", "xml-js": "^1.6.11" }, "bin": { "mdom": "cli/index.ts" } }, "sha512-BGLiuZxtDK3hJ18s/WbtjNWa07wYzZFQ/7c+YYqp2pcSlh8M4pyp1DRj/+8MhCh6WwZ9ev6PMjtpl0Zriqubxw=="],
+    "@stringsync/mdom": ["@stringsync/mdom@0.2.5", "", { "dependencies": { "jszip": "^3.10.1", "xml-js": "^1.6.11" }, "bin": { "mdom": "cli/index.ts" } }, "sha512-36NhNk/OSPtt78srslDvCV1DRIojX3D9BTr2MnH2Km76cUGMEUFgANlzabrFCRz6IBbHf40ue0tTngIRrcZonQ=="],
 
     "@stringsync/vexml": ["@stringsync/vexml@workspace:packages/vexml"],
 
