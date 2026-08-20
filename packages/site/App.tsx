@@ -18,12 +18,12 @@ import { ScoreFit } from './score-fit';
 import { Or, Section } from './section';
 import { SiteModel } from './site-model';
 
-// Vite reads the test fixtures straight from ../tests at build time (fs.allow: ['..'] in
-// vite.config permits it) and hands us the file list — no symlink or hand-written manifest.
+// Vite reads the fixtures straight from packages/integration at build time (fs.allow:
+// ['../..'] in vite.config permits it) and hands us the file list — no symlink or manifest.
 // Keyed by basename, each value lazily loads the file's raw text.
 const loaders: Record<string, () => Promise<string>> = {};
 for (const [path, load] of Object.entries(
-	import.meta.glob<string>('../../tests/integration/__data__/*.musicxml', {
+	import.meta.glob<string>('../integration/__data__/*.musicxml', {
 		query: '?raw',
 		import: 'default',
 	}),
