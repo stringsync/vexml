@@ -13,6 +13,13 @@
         "typescript": "^5",
       },
     },
+    "packages/browser": {
+      "name": "@vexml/browser",
+      "version": "1.2.4",
+      "dependencies": {
+        "playwright": "^1.61.1",
+      },
+    },
     "packages/integration": {
       "name": "@vexml/integration",
       "version": "1.2.4",
@@ -202,6 +209,8 @@
     "@types/react-dom": ["@types/react-dom@19.2.3", "", { "peerDependencies": { "@types/react": "^19.2.0" } }, "sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ=="],
 
     "@types/vexflow": ["@types/vexflow@1.2.42", "", {}, "sha512-bj3If1sm1FYJN0tJMV2BJNrwoeQ6xfrTt+rbmFvUytyxUhklLlW79MR4uwQ+upzrNJLVy012TnC7oZqSpEglSw=="],
+
+    "@vexml/browser": ["@vexml/browser@workspace:packages/browser"],
 
     "@vexml/integration": ["@vexml/integration@workspace:packages/integration"],
 
