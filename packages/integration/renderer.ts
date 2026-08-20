@@ -1,104 +1,34 @@
-import type { ConfigInput, Score } from '@stringsync/vexml';
-import { PagePool } from './pool';
+import * as path from 'node:path';
+import type { ConfigInput } from '@stringsync/vexml';
+import { TabPool } from './pool';
+
+const DATA_DIR = path.resolve(import.meta.dir, './__data__');
 
 // ponytail: mirrors vexml's DEFAULT_WIDTH — the public API doesn't expose it, so tests
 // don't get privileged access. Bump if vexml's default reference width ever exceeds this.
 const DEFAULT_WIDTH = 900;
 
-/**
- * A test's browser-side function. It is serialized into the page via toString(), so it
- * must be self-contained: no closing over test-scope variables — thread values through
- * `arg` (which must be structured-cloneable) instead. A module-level function in a test
- * file serializes the same way, so it can be passed AS `fn` — but an fn cannot call one
- * (that would be a closure). Besides the Score, the page offers only `window.render`.
- */
-type BrowserFn<A, T> = (
-	score: Score,
-	container: HTMLDivElement,
-	arg: A,
-) => T | Promise<T>;
-
-export interface RenderOptions<A, T> {
-	/* Run against the live Score in the browser once it has rendered. Omit it for a test
-	 * that only wants the screenshot. */
-	fn?: BrowserFn<A, T>;
-	/* Passed to `fn` as its third argument. Must be structured-cloneable: it crosses into
-	 * the page, so a closure will not do. */
-	arg?: A;
-}
-
-/** Runs inside the page (serialized by page.evaluate, so self-contained): fetch the
- * fixture, render it into a fresh container, and run the test's rehydrated fn. */
-async function renderInPage({
-	file,
-	config,
-	fnSrc,
-	arg,
-}: {
-	file: string;
-	config: ConfigInput;
-	fnSrc?: string;
-	arg: unknown;
-}): Promise<unknown> {
-	const res = await fetch(`/data/${file}`);
-	const input = file.endsWith('.mxl') ? await res.blob() : await res.text();
-	const container = document.getElementById('screenshot');
-	if (!(container instanceof HTMLDivElement)) {
-		throw new Error('container not found');
-	}
-	container.replaceChildren();
-	// Pages are pooled, so a style the previous test set would carry into this one.
-	container.removeAttribute('style');
-	const score = await window.render(input, container, config);
-	if (!fnSrc) {
-		return undefined;
-	}
-	// Rehydrate the test's function; it crossed the boundary as source text.
-	const fn = new Function(`return (${fnSrc})`)();
-	return await fn(score, container, arg);
-}
-
-/* The width a fixture lays out to (8.5in unless the test overrides it); the result
- * scales to any container at runtime, so a static viewport exercises the layout
- * deterministically. */
-function referenceWidth(config: ConfigInput): number {
-	return (
-		(config.layout?.type === 'standard'
-			? config.layout.referenceWidth
-			: undefined) ?? DEFAULT_WIDTH
-	);
-}
-
-/* Default both fonts to the families the Docker image installs as system fonts (see
- * Dockerfile). Passing a family with no URL takes fonts.ts's "already available" path —
- * the browser resolves it synchronously instead of fetching Bravura's woff2 or Source
- * Sans 3 from the Google Fonts CDN, so nothing races the layout. A test that sets
- * fonts.notation or fonts.text (spread last) overrides the default. */
-function withDefaultFonts(config: ConfigInput): ConfigInput {
-	return {
-		...config,
-		fonts: {
-			notation: { family: 'Bravura' },
-			text: { family: 'Source Sans 3' },
-			...config.fonts,
-		},
-	};
-}
+/* The probe registry, by type only: render()'s probe names and their arg/result types
+ * derive from the real browser-side functions in probes.ts. */
+type Probes = typeof import('./probes');
+type ProbeName = keyof Probes;
+type ProbeArg<K extends ProbeName> = Parameters<Probes[K]>[2];
+type ProbeResult<K extends ProbeName> = Awaited<ReturnType<Probes[K]>>;
 
 /**
- * Renders corpus files for tests. The infrastructure — fixture server, browser, pooled
- * pages — lives in the PagePool (see pool.ts); this class only turns a fixture + config
- * into a screenshot and/or a value computed against the live Score. Tests use the shared
+ * Renders corpus files for tests. The infrastructure — the browser, the pooled tabs
+ * loaded with page.ts — lives in the TabPool (see pool.ts); this class only turns a
+ * fixture + config into a screenshot and/or a probe result. Tests use the shared
  * `renderer` instance below; setup.ts starts and closes it around the run.
  */
 export class Renderer {
-	constructor(private readonly pool = new PagePool()) {}
+	constructor(private readonly pool = new TabPool()) {}
 
-	start() {
+	start(): Promise<void> {
 		return this.pool.start();
 	}
 
-	close() {
+	close(): Promise<void> {
 		return this.pool.close();
 	}
 
@@ -108,31 +38,85 @@ export class Renderer {
 	}
 
 	/**
-	 * Render a corpus file on a pooled page, run `opts.fn` against the live Score in the
-	 * browser, and screenshot the container. Tests that only want pixels use screenshot();
-	 * tests that only want data ignore `png`.
+	 * Render a corpus file on a pooled tab, optionally run a named probe (a browser-side
+	 * function from probes.ts) against the live Score, and screenshot the container.
+	 * Tests that only want pixels use screenshot(); tests that only want data ignore
+	 * `png`.
+	 *
+	 * A fixture is laid out to its reference width (8.5in unless the test overrides it);
+	 * the result scales to any container at runtime, so a static viewport exercises the
+	 * layout deterministically.
 	 */
-	async render<T = undefined, A = undefined>(
+	async render(file: string, config?: ConfigInput): Promise<{ png: Buffer }>;
+	async render<K extends ProbeName>(
 		file: string,
 		config: ConfigInput,
-		opts: RenderOptions<A, T> = {},
-	): Promise<{ result: T; png: Buffer }> {
-		return this.pool.withPage(async (page) => {
-			await page.setViewportSize({
-				width: referenceWidth(config) + 64,
-				height: 600,
+		probe: K,
+		arg?: ProbeArg<K>,
+	): Promise<{ result: ProbeResult<K>; png: Buffer }>;
+	async render(
+		file: string,
+		config: ConfigInput = {},
+		probe?: ProbeName,
+		arg?: unknown,
+	): Promise<{ result?: unknown; png: Buffer }> {
+		return this.pool.withTab(async (tab) => {
+			await tab.resize(this.referenceWidth(config) + 64, 600);
+			await tab.call('render', {
+				...(await this.input(file)),
+				config: this.withDefaultFonts(config),
 			});
-			const result = (await page.evaluate(renderInPage, {
-				file,
-				config: withDefaultFonts(config),
-				fnSrc: opts.fn?.toString(),
-				arg: opts.arg,
-			})) as T;
-			const png = await page.locator('#screenshot').screenshot();
+			const result = probe
+				? await tab.call<unknown>('probe', { name: probe, arg })
+				: undefined;
+			const png = await tab.screenshot('#screenshot');
 			return { result, png };
 		});
+	}
+
+	/** A fixture's content, keyed the way page.ts's render expects it: text for
+	 * MusicXML, base64 bytes for compressed .mxl. */
+	private async input(
+		file: string,
+	): Promise<{ musicXML: string } | { mxl: string }> {
+		const fixture = Bun.file(path.join(DATA_DIR, file));
+		if (file.endsWith('.mxl')) {
+			return { mxl: (await fixture.bytes()).toBase64() };
+		}
+		return { musicXML: await fixture.text() };
+	}
+
+	/* The width a fixture lays out to (8.5in unless the test overrides it). */
+	private referenceWidth(config: ConfigInput): number {
+		return (
+			(config.layout?.type === 'standard'
+				? config.layout.referenceWidth
+				: undefined) ?? DEFAULT_WIDTH
+		);
+	}
+
+	/* Default both fonts to the families the Docker image installs as system fonts (see
+	 * Dockerfile). Passing a family with no URL takes the font loader's "already
+	 * available" path — the browser resolves it locally instead of fetching Bravura's
+	 * woff2 or Source Sans 3 from the Google Fonts CDN, so renders never touch the
+	 * network. A test that sets fonts.notation or fonts.text (spread last) overrides the
+	 * default. */
+	private withDefaultFonts(config: ConfigInput): ConfigInput {
+		return {
+			...config,
+			fonts: {
+				notation: { family: 'Bravura' },
+				text: { family: 'Source Sans 3' },
+				...config.fonts,
+			},
+		};
 	}
 }
 
 /** The shared instance every test renders through. */
 export const renderer = new Renderer();
+
+/** A corpus fixture's text — for the rare test that feeds one to a probe. */
+export function fixture(file: string): Promise<string> {
+	return Bun.file(path.join(DATA_DIR, file)).text();
+}

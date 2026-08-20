@@ -1,13 +1,14 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
-import { serve } from '@vexml/integration/pool';
+import { PlaywrightBrowser } from '@vexml/browser';
+import { PAGE_HTML, pageScript } from '@vexml/integration/pool';
 import { chromium } from 'playwright';
 import type { Logger } from 'webappwiz/log';
 import type { Fs, Ps } from 'webappwiz/system';
 
 // Same browser-render path as the integration tests, but fed an arbitrary file
 // instead of a corpus fixture. VexFlow needs the DOM, so there's no headless
-// shortcut — reuse the page that already exposes window.render.
+// shortcut — reuse the page the tests render through.
 export async function render(opts: {
 	input: string;
 	output?: string;
@@ -64,31 +65,22 @@ export async function render(opts: {
 	// from DEFAULT_CONFIG, so this knows nothing about config's shape.
 	const config = opts.config ? JSON.parse(opts.config) : {};
 
-	// 3101 so a `vex render` alongside a test run does not fight it for 3100.
-	const server = serve(3101);
-	const browser = await chromium.launch();
+	// The same page the integration tests render through, injected instead of served:
+	// the tab needs no server and no ports at all.
+	const browser = new PlaywrightBrowser();
 	try {
-		const page = await browser.newPage({
-			viewport: { width: 1064, height: 600 },
+		const tab = await browser.open({
+			html: PAGE_HTML,
+			scripts: [await pageScript()],
+			width: 1064,
+			height: 600,
 		});
-		await page.goto(`http://localhost:${server.port}/`);
-		await page.evaluate(
-			async ({ musicXML, config }) => {
-				const container = document.getElementById('screenshot');
-				if (!(container instanceof HTMLDivElement)) {
-					throw new Error('container not found');
-				}
-				await window.render(musicXML, container, config);
-			},
-			{ musicXML, config },
-		);
-		const buf = await page.locator('#screenshot').screenshot();
+		await tab.call('render', { musicXML, config });
 		// Fs is text-only, so a PNG goes out through node:fs.
-		writeFileSync(output, buf);
+		writeFileSync(output, await tab.screenshot('#screenshot'));
 		opts.log.info(`wrote ${output}`);
 	} finally {
 		await browser.close();
-		server.stop(true);
 	}
 }
 

@@ -25,13 +25,13 @@
       "version": "1.2.4",
       "dependencies": {
         "@stringsync/vexml": "workspace:*",
+        "@vexml/browser": "workspace:*",
       },
       "devDependencies": {
         "@types/pngjs": "^6.0.5",
         "canvas": "^3.2.3",
         "chalk": "5.6.2",
         "pixelmatch": "^7.2.0",
-        "playwright": "^1.61.1",
         "pngjs": "^7.0.0",
       },
     },
@@ -63,6 +63,7 @@
       },
       "dependencies": {
         "@stringsync/mdom": "0.2.5",
+        "@vexml/browser": "workspace:*",
         "@vexml/integration": "workspace:*",
         "webappwiz": "0.0.3",
       },

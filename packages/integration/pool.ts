@@ -1,123 +1,94 @@
 import * as path from 'node:path';
-import { type Browser, chromium, type Page } from 'playwright';
-import index from './index.html';
+import {
+	type Browser,
+	bundle,
+	PlaywrightBrowser,
+	type Tab,
+} from '@vexml/browser';
 
-const DATA_DIR = path.resolve(import.meta.dir, './__data__');
+/* The tab shell every render mounts into: page.ts's script targets #screenshot and the
+ * screenshots crop to it. The padding gives engravings that overshoot their box a margin
+ * to land in; inline-block shrinkwraps the div to the canvas. */
+export const PAGE_HTML =
+	'<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0}#screenshot{padding:16px;display:inline-block}</style></head><body><div id="screenshot"></div></body></html>';
 
-/* How many ports past `from` to try before giving up. Enough for a handful of concurrent
- * runs (a test suite, a `vex render`, a stale server) without scanning forever. */
-const PORT_ATTEMPTS = 20;
+let script: Promise<string> | null = null;
 
-/* Serves the test page (page.ts inside index.html) and the fixture corpus
- * (`/data/:file` from `__data__/`). `from` is a starting point, not a demand: a second
- * copy, or anything else already on the port, moves this one along. Read the port it
- * actually got off the returned server rather than assuming `from`. Exported on its own
- * because `vex render` wants the page without the rest of the pool. */
-export function serve(from = 3100) {
-	for (let port = from; port < from + PORT_ATTEMPTS; port++) {
-		try {
-			return Bun.serve({
-				port,
-				routes: {
-					'/': index,
-					'/data/:file': (req) =>
-						new Response(Bun.file(path.join(DATA_DIR, req.params.file))),
-				},
-			});
-		} catch (error) {
-			// Bun reports the taken port on `code`, not in the message ("Failed to start
-			// server. Is port 3100 in use?"), so matching the text would never fire.
-			if ((error as { code?: string })?.code !== 'EADDRINUSE') {
-				throw error;
-			}
-		}
-	}
-	throw new Error(
-		`serve: no free port between ${from} and ${from + PORT_ATTEMPTS}`,
-	);
+/** page.ts (the browser side of the harness) as an injectable script, bundled once per
+ * process. Exported alongside PAGE_HTML because `vex render` opens the same page. */
+export function pageScript(): Promise<string> {
+	script ??= bundle(path.resolve(import.meta.dir, 'page.ts'));
+	return script;
 }
 
-// Pool size ~= perf-core count; bump if renders starve waiting for a page.
+// Pool size ~= perf-core count; bump if renders starve waiting for a tab.
 const POOL_SIZE = 8;
 
 /**
- * The infrastructure a browser test renders through: the fixture server, one Chromium
- * for the whole run, and a pool of pages navigated to the test page.
+ * A pool of tabs, each loaded with the harness page exactly once and reused across
+ * tests. Screenshot tests are stateless — they clear the container and re-render — so a
+ * test borrows an idle tab instead of paying open() (a fresh page plus a ~2MB bundle
+ * parse) itself. Pooling (vs. one shared tab) lets `it.concurrent` renders run on
+ * separate tabs/renderer processes in parallel; POOL_SIZE caps how many churn at once.
  *
- * One browser for the run because launching a second Chromium in the same run is flaky
- * in Docker — its teardown hangs past the hook timeout. And it must be Docker: pixel
- * matching is exact, so renders have to be bit-stable, and the pinned image (fonts,
- * Chromium build) is where that stability comes from. `vex test` runs the suite there;
- * setup.ts refuses to run anywhere else.
- *
- * Each page is navigated (bundle loaded/parsed) exactly once and reused across tests.
- * Screenshot tests are stateless — they clear the container and re-render — so a test
- * borrows an idle page instead of paying newPage() (new context) + goto() (bundle
- * reload) itself. Pooling (vs. one shared page) lets `it.concurrent` renders run on
- * separate pages/renderer processes in parallel; POOL_SIZE caps how many Chromiums
- * churn at once.
+ * One Browser for the whole run because launching a second Chromium in the same run is
+ * flaky in Docker — its teardown hangs past the hook timeout. And it must be Docker:
+ * pixel matching is exact, so renders have to be bit-stable, and the pinned image
+ * (fonts, Chromium build) is where that stability comes from. `vex test` runs the suite
+ * there; setup.ts refuses to run anywhere else.
  */
-export class PagePool {
-	private server: ReturnType<typeof serve> | null = null;
-	private browser: Promise<Browser> | null = null;
+export class TabPool {
+	constructor(private readonly browser: Browser = new PlaywrightBrowser()) {}
 
-	private readonly pages: Page[] = []; // every page created, for close()
-	private readonly idle: Page[] = [];
-	private readonly waiters: Array<(page: Page) => void> = [];
+	private readonly idle: Tab[] = [];
+	private readonly waiters: Array<(tab: Tab) => void> = [];
 	private created = 0;
 
-	/** Start the server and browser. Idempotent; withPage() calls it lazily, but starting
-	 * eagerly (setup.ts's beforeAll) keeps the launch out of the first test's timeout. */
-	start(): Promise<Browser> {
-		this.server ??= serve();
-		this.browser ??= chromium.launch();
-		return this.browser;
+	/** Warm the pool — bundle the page, launch the browser — by opening the first tab.
+	 * withTab() would do it lazily; setup.ts calls this eagerly (beforeAll) to keep the
+	 * launch out of the first test's timeout. */
+	async start(): Promise<void> {
+		this.release(await this.acquire());
 	}
 
-	async close(): Promise<void> {
-		await Promise.all(this.pages.map((page) => page.close()));
-		if (this.browser) {
-			await (await this.browser).close();
-		}
-		this.server?.stop(true);
+	/** Close the browser, and with it every tab. */
+	close(): Promise<void> {
+		return this.browser.close();
 	}
 
-	/** Borrow a pooled page for one render, returning it to the pool afterwards. */
-	async withPage<T>(fn: (page: Page) => Promise<T>): Promise<T> {
-		const page = await this.acquire();
+	/** Borrow a pooled tab for one render, returning it to the pool afterwards. */
+	async withTab<T>(fn: (tab: Tab) => Promise<T>): Promise<T> {
+		const tab = await this.acquire();
 		try {
-			return await fn(page);
+			return await fn(tab);
 		} finally {
-			this.release(page);
+			this.release(tab);
 		}
 	}
 
-	private async acquire(): Promise<Page> {
+	private async acquire(): Promise<Tab> {
 		const free = this.idle.pop();
 		if (free) {
 			return free;
 		}
 		if (this.created < POOL_SIZE) {
 			this.created++; // reserve the slot synchronously, before the awaits below yield
-			const browser = await this.start();
-			const page = await browser.newPage({
-				viewport: { width: 964, height: 600 },
+			return this.browser.open({
+				html: PAGE_HTML,
+				scripts: [await pageScript()],
+				width: 964,
+				height: 600,
 			});
-			// The port the server actually got: serve() moves along when 3100 is taken, so a
-			// run alongside another one still points at its own server.
-			await page.goto(`http://localhost:${this.server?.port}/`);
-			this.pages.push(page);
-			return page;
 		}
 		return new Promise((resolve) => this.waiters.push(resolve));
 	}
 
-	private release(page: Page): void {
+	private release(tab: Tab): void {
 		const waiter = this.waiters.shift();
 		if (waiter) {
-			waiter(page);
+			waiter(tab);
 		} else {
-			this.idle.push(page);
+			this.idle.push(tab);
 		}
 	}
 }
