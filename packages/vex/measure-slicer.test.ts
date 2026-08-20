@@ -117,8 +117,9 @@ describe('MeasureSlicer', () => {
 	});
 });
 
-/* The three cases below stay hand-written: mdom 0.2.4 has no writer for <staves>, and none
- * for a mid-measure <attributes> change. Convert them once it does. */
+/* The three cases below are hand-written MusicXML rather than built through mdom's writers:
+ * <staves>, a per-staff <key>, and an <attributes> change sitting between two notes. Each is
+ * a markup shape the slicer has to carry, so the fixture states it literally. */
 const DIVISIONS = '<divisions>1</divisions>';
 const NOTE =
 	'<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>';
@@ -134,7 +135,7 @@ function rawScoreOf(...measures: string[]): string {
 </score-partwise>`;
 }
 
-describe('MeasureSlicer, on markup mdom cannot yet write', () => {
+describe('MeasureSlicer, on hand-written markup', () => {
 	it('hoists a per-staff clef for each staff', () => {
 		const grandStaff =
 			`<attributes>${DIVISIONS}<staves>2</staves>` +
