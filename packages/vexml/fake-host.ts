@@ -1,8 +1,9 @@
 import { disposables, type Resource } from 'webappwiz/disposable';
+import { Dispatcher } from 'webappwiz/events';
 import type { Rect } from 'webappwiz/geometry';
 import { FakeLayer } from './fake-layer';
 import { FakeScroller } from './fake-scroller';
-import type { Host } from './host';
+import type { Host, HostEventMap } from './host';
 import type { Layer, LayerKind } from './layer';
 
 /* Fake fulfilling the Host seam (preferred over mocks); records the layers it made, the listeners
@@ -10,14 +11,13 @@ import type { Layer, LayerKind } from './layer';
  * (identity transform), so a test asserts on the point it passed in. Test-only — excluded from the
  * published package via package.json "files". */
 export class FakeHost implements Host {
-	readonly events = new EventTarget();
+	private readonly dispatcher = new Dispatcher<HostEventMap>();
+	readonly events = this.dispatcher.events;
+	readonly dom = new EventTarget();
 	readonly created: FakeLayer[] = [];
 	readonly scroller = new FakeScroller();
 	scroll = { left: 0, top: 0 };
-	resizeListener: ((size: { width: number; height: number }) => void) | null =
-		null;
 	scrollListener: (() => void) | null = null;
-	resizeUnobserved = false;
 	relayoutLayersCalls = 0;
 	maxHeight: number | null = null;
 	disposed = false;
@@ -26,14 +26,9 @@ export class FakeHost implements Host {
 		return { x: clientX, y: clientY };
 	}
 
-	observeResize(
-		onResize: (size: { width: number; height: number }) => void,
-	): Resource {
-		this.resizeListener = onResize;
-		return disposables.callback(() => {
-			this.resizeUnobserved = true;
-			this.resizeListener = null;
-		});
+	/* Test hook: fire a host resize the way a real ResizeObserver would. */
+	resize(size: { width: number; height: number }): void {
+		this.dispatcher.dispatch('resize', size);
 	}
 
 	observeScroll(onScroll: () => void): Resource {

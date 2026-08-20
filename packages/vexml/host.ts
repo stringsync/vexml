@@ -1,25 +1,36 @@
 import type { Resource } from 'webappwiz/disposable';
+import type { Eventful } from 'webappwiz/events';
 import type { LayerHost } from './layer-host';
 import type { Scroller } from './scroller';
 import type { Viewport } from './viewport';
 
+/* What the host raises. `resize` fires whenever the container OR the base canvas changes size, and
+ * carries the container's visible (client) box — see Stage for why both are watched and why the
+ * container's box is what gets reported. */
+export type HostEventMap = {
+	resize: { width: number; height: number };
+};
+
 /*
  * What a Score needs from its host: the score<-client transform (toScoreSpace), a raw event
- * source to bind pointer/scroll listeners on, the current scroll offset, a resize subscription,
+ * source to bind pointer/scroll listeners on, the current scroll offset, resize notifications,
  * custom-layer creation/resizing, and teardown. Stage is the production implementer; a Score unit
  * test injects a FakeHost. Kept separate from Viewport (the targets' coordinate seam) so each
  * consumer depends only on what it uses, even though Stage satisfies both.
  */
-export interface Host extends LayerHost, Viewport, Resource {
-	readonly events: EventTarget;
+export interface Host
+	extends LayerHost,
+		Viewport,
+		Eventful<HostEventMap>,
+		Resource {
+	/* The raw DOM event source pointer/scroll listeners are bound on — distinct from `events`,
+	 * which is the host's own typed event stream. */
+	readonly dom: EventTarget;
 	readonly scroll: { left: number; top: number };
 	/* The visible scrollport box in client coords — what a cursor's visibility check compares against. */
 	viewportRect(): DOMRect;
 	/* Scrolls a score-space rect into view (axis-aware); a cursor's follow()/scrollIntoView() use it. */
 	readonly scroller: Scroller;
-	observeResize(
-		onResize: (size: { width: number; height: number }) => void,
-	): Resource;
 	/* Subscribe to any scroll that slides the score within the viewport — the container's own, or
 	 * any ancestor's (scroll doesn't bubble, so the real host listens on window in the capture
 	 * phase). Dispose the returned Resource to unsubscribe. Drives hover: content can move under a

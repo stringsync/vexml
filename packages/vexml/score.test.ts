@@ -96,7 +96,7 @@ describe('Score', () => {
 		);
 
 		const native = new FakePointerEvent('pointermove', 30, 40);
-		host.events.dispatchEvent(native);
+		host.dom.dispatchEvent(native);
 
 		expect(index.probes).toEqual([{ x: 30, y: 40 }]);
 		expect(seen).toHaveLength(1);
@@ -104,23 +104,23 @@ describe('Score', () => {
 	});
 
 	it('listeners are bound lazily: no subscriber means no hit-testing', () => {
-		host.events.dispatchEvent(new FakePointerEvent('pointermove', 1, 2));
+		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 1, 2));
 		expect(index.probes).toHaveLength(0);
 	});
 
 	it('the source is detached when the last listener leaves', () => {
 		const unlisten = score.events.on('pointermove', () => {});
-		host.events.dispatchEvent(new FakePointerEvent('pointermove', 1, 1));
+		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 1, 1));
 		unlisten();
-		host.events.dispatchEvent(new FakePointerEvent('pointermove', 2, 2));
+		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 2, 2));
 		// Only the dispatch made while subscribed reached the hit tester.
 		expect(index.probes).toEqual([{ x: 1, y: 1 }]);
 	});
 
 	it('a once listener releases the source when it fires', () => {
 		score.events.on('pointermove', () => {}, { once: true });
-		host.events.dispatchEvent(new FakePointerEvent('pointermove', 1, 1));
-		host.events.dispatchEvent(new FakePointerEvent('pointermove', 2, 2));
+		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 1, 1));
+		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 2, 2));
 		// The listener unsubscribed itself, so the second dispatch never reached the hit tester.
 		expect(index.probes).toEqual([{ x: 1, y: 1 }]);
 	});
@@ -129,10 +129,10 @@ describe('Score', () => {
 		const a = score.events.on('pointermove', () => {});
 		const b = score.events.on('pointermove', () => {});
 		a();
-		host.events.dispatchEvent(new FakePointerEvent('pointermove', 5, 5));
+		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 5, 5));
 		expect(index.probes).toEqual([{ x: 5, y: 5 }]); // still bound for b
 		b();
-		host.events.dispatchEvent(new FakePointerEvent('pointermove', 6, 6));
+		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 6, 6));
 		expect(index.probes).toEqual([{ x: 5, y: 5 }]); // now detached
 	});
 
@@ -140,7 +140,7 @@ describe('Score', () => {
 		host.scroll = { left: 12, top: 34 };
 		const seen: Array<{ left: number; top: number }> = [];
 		score.events.on('scroll', (e) => seen.push({ left: e.left, top: e.top }));
-		host.events.dispatchEvent(new Event('scroll'));
+		host.dom.dispatchEvent(new Event('scroll'));
 		expect(seen).toEqual([{ left: 12, top: 34 }]);
 	});
 
@@ -166,8 +166,8 @@ describe('Score', () => {
 		const seen: Array<Element | null> = [];
 		const unlisten = score.events.on('hover', (e) => seen.push(e.target));
 
-		host.events.dispatchEvent(new FakePointerEvent('pointermove', 5, 5)); // enter target
-		host.events.dispatchEvent(new FakePointerEvent('pointermove', 6, 6)); // same target, quiet
+		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 5, 5)); // enter target
+		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 6, 6)); // same target, quiet
 		expect(seen).toEqual([target]);
 
 		hit = null; // scroll slid the target away
@@ -179,8 +179,10 @@ describe('Score', () => {
 	});
 
 	it('resize is observed from construction and re-fits viewport layers before emitting', () => {
-		// Observed eagerly (it also drives viewport-layer sizing), not lazily on first subscriber.
-		expect(host.resizeListener).not.toBeNull();
+		// Subscribed eagerly (resize also drives viewport-layer sizing), not lazily on the first
+		// caller: a host resize relayouts even with nobody listening for 'resize'.
+		host.resize({ width: 10, height: 10 });
+		expect(host.relayoutLayersCalls).toBe(1);
 
 		const seen: Array<{ width: number; height: number }> = [];
 		let layersResizedAtEmit = -1;
@@ -188,11 +190,11 @@ describe('Score', () => {
 			layersResizedAtEmit = host.relayoutLayersCalls;
 			seen.push({ width: e.width, height: e.height });
 		});
-		host.resizeListener?.({ width: 100, height: 50 });
+		host.resize({ width: 100, height: 50 });
 
 		expect(seen).toEqual([{ width: 100, height: 50 }]);
 		// Layers were re-fit (and cleared) before the caller's handler ran, so its redraw lands clean.
-		expect(layersResizedAtEmit).toBe(1);
+		expect(layersResizedAtEmit).toBe(2);
 	});
 
 	it('a base-only change (same container size) relayouts without re-emitting resize', () => {
@@ -202,10 +204,10 @@ describe('Score', () => {
 		);
 
 		// First notification: real container size → relayout + emit.
-		host.resizeListener?.({ width: 100, height: 50 });
+		host.resize({ width: 100, height: 50 });
 		// Base-canvas reflow with the container size held constant (e.g. the music font settling
-		// taller): observeResize still fires, reporting the unchanged container size.
-		host.resizeListener?.({ width: 100, height: 50 });
+		// taller): the host still fires 'resize', reporting the unchanged container size.
+		host.resize({ width: 100, height: 50 });
 
 		// Layers were re-synced to the base's live box on both notifications (the drift fix)...
 		expect(host.relayoutLayersCalls).toBe(2);
@@ -323,9 +325,10 @@ describe('Score', () => {
 		score.dispose();
 
 		expect(host.disposed).toBe(true);
-		expect(host.resizeUnobserved).toBe(true);
+		host.resize({ width: 100, height: 50 });
+		expect(host.relayoutLayersCalls).toBe(0); // resize subscription released
 		expect(decorations.color.has(target)).toBe(false); // decorations.dispose() ran
-		host.events.dispatchEvent(new FakePointerEvent('pointermove', 9, 9));
+		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 9, 9));
 		expect(index.probes).toHaveLength(0); // pointer handler detached
 	});
 });

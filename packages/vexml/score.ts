@@ -1,5 +1,10 @@
 import type { Resource } from 'webappwiz/disposable';
-import { Dispatcher, type Eventful, type Events } from 'webappwiz/events';
+import {
+	Dispatcher,
+	type Eventful,
+	type Events,
+	type Unlisten,
+} from 'webappwiz/events';
 import { CursorController } from './cursor-controller';
 import { CursorHostAdapter } from './cursor-host-adapter';
 import type { Element } from './element';
@@ -79,7 +84,7 @@ export class Score implements Eventful<ScoreEventMap> {
 		keyof ScoreEventMap,
 		Array<[string, EventListener]>
 	>();
-	private readonly resizeObserver: Resource;
+	private readonly unlistenResize: Unlisten;
 	// Last container size we emitted a 'resize' for, so a base-only reflow (same container size)
 	// relayouts without re-emitting. null until the first notification.
 	private lastResize: { width: number; height: number } | null = null;
@@ -108,7 +113,7 @@ export class Score implements Eventful<ScoreEventMap> {
 		// without a container resize. Viewport layers are refit and cleared; content layers just
 		// re-track the base canvas, so a viewport-layer redraw in the resize handler lands on a
 		// correctly sized, cleared surface.
-		this.resizeObserver = host.observeResize((size) => {
+		this.unlistenResize = host.events.on('resize', (size) => {
 			host.relayoutLayers();
 			// Only an actual container-size change is a 'resize' for the caller. A base-only reflow
 			// reports the unchanged container size, so dedupe: relayout above, but don't suspend
@@ -276,13 +281,13 @@ export class Score implements Eventful<ScoreEventMap> {
 		this.cursors.clear();
 		for (const handlers of this.bound.values()) {
 			for (const [domType, handler] of handlers) {
-				this.host.events.removeEventListener(domType, handler);
+				this.host.dom.removeEventListener(domType, handler);
 			}
 		}
 		this.bound.clear();
 		this.scrollObserver?.dispose();
 		this.scrollObserver = null;
-		this.resizeObserver.dispose();
+		this.unlistenResize();
 		this.decorations.dispose();
 		this.dispatcher.dispose();
 		this.host.dispose();
@@ -373,7 +378,7 @@ export class Score implements Eventful<ScoreEventMap> {
 		const handlers = this.bound.get(type);
 		if (handlers) {
 			for (const [domType, handler] of handlers) {
-				this.host.events.removeEventListener(domType, handler);
+				this.host.dom.removeEventListener(domType, handler);
 			}
 			this.bound.delete(type);
 		}
@@ -391,7 +396,7 @@ export class Score implements Eventful<ScoreEventMap> {
 		domType: string,
 		handler: EventListener,
 	): void {
-		this.host.events.addEventListener(domType, handler);
+		this.host.dom.addEventListener(domType, handler);
 		const handlers = this.bound.get(type) ?? [];
 		handlers.push([domType, handler]);
 		this.bound.set(type, handlers);

@@ -1,6 +1,7 @@
 import { disposables, type Resource } from 'webappwiz/disposable';
+import { Dispatcher } from 'webappwiz/events';
 import type { Rect } from 'webappwiz/geometry';
-import type { Host } from './host';
+import type { Host, HostEventMap } from './host';
 import type { Layer, LayerKind } from './layer';
 import { ManagedLayer } from './managed-layer';
 import { ScrollController } from './scroll-controller';
@@ -42,6 +43,10 @@ export class Stage implements Viewport, Host, ScrollHost {
 	private static readonly byContainer = new WeakMap<HTMLDivElement, Stage>();
 
 	readonly base: HTMLCanvasElement;
+	private readonly dispatcher = new Dispatcher<HostEventMap>();
+	readonly events = this.dispatcher.events;
+	// Watches the container and the base canvas; created with the Stage, disconnected on dispose.
+	private readonly resizeObserver: ResizeObserver;
 	private readonly prevPosition: string;
 	private readonly prevIsolation: string;
 	// Inline styles this stage set on the container, with their prior values, restored on dispose.
@@ -117,6 +122,27 @@ export class Stage implements Viewport, Host, ScrollHost {
 			: 'vexml-canvas';
 		this.ensureCanvasStyles();
 		container.appendChild(this.base);
+
+		// Observe BOTH the container and the base canvas. Placement (placeLayer and the score<->client
+		// frame) is derived from the base canvas's rendered box, which can change *without* the
+		// container's box changing — e.g. the Bravura web font finishing load and reflowing the
+		// engraving taller, or content-height settling inside a fixed-size scroll box. Observing only
+		// the container misses those, leaving overlays and the cursor placed against a stale base box.
+		// Observing the base can't self-trigger: listeners only move absolutely-positioned overlay
+		// canvases (relayoutLayers) or reposition the cursor, none of which affect the base or
+		// container layout, so there's no feedback loop.
+		//
+		// Report the container's visible (client) box regardless of which target fired — that's the
+		// size a viewport layer is given and the "rendered area" a caller cares about. A base-only
+		// change reports the (unchanged) container size; the listener dedupes its public 'resize' on it.
+		this.resizeObserver = new ResizeObserver(() => {
+			this.dispatcher.dispatch('resize', {
+				width: this.container.clientWidth,
+				height: this.container.clientHeight,
+			});
+		});
+		this.resizeObserver.observe(container);
+		this.resizeObserver.observe(this.base);
 	}
 
 	// The cap is pure container CSS — the engraving doesn't depend on it — so this is a style write,
@@ -146,7 +172,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 
 	// Bind on the container, not the canvas: canvas pointer/scroll events bubble up to it, and
 	// it's where the overlay layers live too, so one source covers the whole stage.
-	get events(): EventTarget {
+	get dom(): EventTarget {
 		return this.container;
 	}
 
@@ -181,32 +207,6 @@ export class Stage implements Viewport, Host, ScrollHost {
 
 	scrollTo(options: ScrollToOptions): void {
 		this.container.scrollTo(options);
-	}
-
-	observeResize(
-		onResize: (size: { width: number; height: number }) => void,
-	): Resource {
-		// Observe BOTH the container and the base canvas. Placement (placeLayer and the score<->client
-		// frame) is derived from the base canvas's rendered box, which can change *without* the
-		// container's box changing — e.g. the Bravura web font finishing load and reflowing the
-		// engraving taller, or content-height settling inside a fixed-size scroll box. Observing only
-		// the container misses those, leaving overlays and the cursor placed against a stale base box.
-		// Observing the base can't self-trigger: consumers only move absolutely-positioned overlay
-		// canvases (relayoutLayers) or reposition the cursor, none of which affect the base or
-		// container layout, so there's no feedback loop.
-		//
-		// Report the container's visible (client) box regardless of which target fired — that's the
-		// size a viewport layer is given and the "rendered area" a caller cares about. A base-only
-		// change reports the (unchanged) container size; the consumer dedupes its public 'resize' on it.
-		const observer = new ResizeObserver(() => {
-			onResize({
-				width: this.container.clientWidth,
-				height: this.container.clientHeight,
-			});
-		});
-		observer.observe(this.container);
-		observer.observe(this.base);
-		return disposables.callback(() => observer.disconnect());
 	}
 
 	observeScroll(onScroll: () => void): Resource {
@@ -271,6 +271,8 @@ export class Stage implements Viewport, Host, ScrollHost {
 			return;
 		}
 		this.disposed = true;
+		this.resizeObserver.disconnect();
+		this.dispatcher.dispose();
 		this.scrollController?.dispose();
 		for (const layer of [...this.layers]) {
 			layer.dispose();

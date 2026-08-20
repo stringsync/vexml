@@ -17,7 +17,7 @@ export class CursorHostAdapter implements CursorHost, Resource {
 	constructor(private readonly host: Host) {
 		const fire = () => this.dispatcher.dispatch('viewportchange');
 		this.observers.use(host.observeScroll(fire));
-		this.observers.use(host.observeResize(fire));
+		this.observers.defer(host.events.on('resize', fire));
 		this.observers.use(this.dispatcher);
 	}
 
