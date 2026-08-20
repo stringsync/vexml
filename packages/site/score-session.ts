@@ -4,7 +4,7 @@ import { Disposer, disposables, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful, type Events } from 'webappwiz/events';
 import { ACTIVE_COLOR, GRACE_MS, HALO_COLOR, HOVER_COLOR } from './constants';
 import { describe } from './format';
-import type { Instrument } from './instrument/instrument';
+import type { Instrument } from './instrument';
 
 type ScoreSessionEvents = {
 	/* Anything a component reads has moved: time, playing, tooltip, duration. */

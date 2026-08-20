@@ -1,6 +1,6 @@
 import { disposables, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
-import { INSTRUMENT_KEY } from '../constants';
+import { INSTRUMENT_KEY } from './constants';
 import type { Instrument } from './instrument';
 import { INSTRUMENTS, OPENING_INSTRUMENT } from './instruments';
 import { PianoInstrument } from './piano-instrument';

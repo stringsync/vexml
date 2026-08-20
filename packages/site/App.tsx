@@ -12,7 +12,7 @@ import {
 	FAST_RENDER_MS,
 } from './constants';
 import { Header } from './header';
-import { INSTRUMENTS } from './instrument/instruments';
+import { INSTRUMENTS } from './instruments';
 import { Player } from './player';
 import { ScoreFit } from './score-fit';
 import { Or, Section } from './section';

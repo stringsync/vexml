@@ -2,7 +2,7 @@ import { type ConfigInput, render } from '@stringsync/vexml';
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
 import { DocumentSource, type Fixtures } from './document-source';
-import { InstrumentHolder } from './instrument/instrument-holder';
+import { InstrumentHolder } from './instrument-holder';
 import { RenderConfig } from './render-config';
 import { ScoreSession } from './score-session';
 

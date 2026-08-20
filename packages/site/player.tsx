@@ -1,7 +1,7 @@
 import { type RefObject, useState } from 'react';
 import { fmtTime } from './format';
 import { ICON, PlayerIcon } from './icons';
-import type { InstrumentHolder } from './instrument/instrument-holder';
+import type { InstrumentHolder } from './instrument-holder';
 import type { ScoreSession } from './score-session';
 
 export interface PlayerProps {
