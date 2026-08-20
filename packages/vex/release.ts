@@ -11,8 +11,8 @@ export interface ReleaseOptions {
 
 export async function release(opts: ReleaseOptions) {
 	// The gate is the only part of a release that belongs to this repo. We publish
-	// src directly (no build step), so a typecheck is the compile gate. Run it
-	// before ship touches anything so failures abort cleanly.
+	// TypeScript directly (no build step), so a typecheck is the compile gate. Run
+	// it before ship touches anything so failures abort cleanly.
 	await fix({ check: true, log: opts.log, ps: opts.ps });
 
 	// Everything else is ship's: it refuses a dirty tree or a branch that isn't
