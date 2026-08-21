@@ -53,7 +53,7 @@ Object.assign(globalThis, {
 			throw new Error('probe: nothing mounted yet');
 		}
 		// Rehydrate the test's fn; it crossed the boundary as source text (see BrowserFn
-		// in renderer.ts for the contract that makes that legal).
+		// in harness.ts for the contract that makes that legal).
 		const fn = new Function(`return (${input.fnSrc})`)();
 		return await fn(current.score, current.container, input.arg);
 	},

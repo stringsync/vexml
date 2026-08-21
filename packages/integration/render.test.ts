@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { renderer } from './renderer';
+import { screenshot } from './harness';
 
 /*
  * Every case here is a hand-cut fixture proving one thing, ordered by increasing rendering
@@ -33,7 +33,7 @@ import { renderer } from './renderer';
  */
 
 describe('render', () => {
-	// Concurrent: each render borrows its own page from the pool (see renderer.ts), so
+	// Concurrent: each render borrows its own tab from the pool (see pool.ts), so
 	// bun runs up to POOL_SIZE of them in parallel across separate renderer processes.
 
 	// A single empty 5-line stave: staff lines, start and end barlines, a treble clef and a
@@ -41,7 +41,7 @@ describe('render', () => {
 	// <time>, so every stave in this group opens with those two defaults (see the note above).
 	it.concurrent('renders structure_single_stave.png', async () => {
 		expect(
-			await renderer.screenshot('structure_single_stave.musicxml'),
+			await screenshot('structure_single_stave.musicxml'),
 		).toMatchScreenshot('structure_single_stave.png');
 	});
 
@@ -50,7 +50,7 @@ describe('render', () => {
 	// printed clef and meter do.
 	it.concurrent('renders structure_grand_staff.png', async () => {
 		expect(
-			await renderer.screenshot('structure_grand_staff.musicxml'),
+			await screenshot('structure_grand_staff.musicxml'),
 		).toMatchScreenshot('structure_grand_staff.png');
 	});
 
@@ -58,9 +58,9 @@ describe('render', () => {
 	// parts don't share barlines either, so the end barline is two separate segments — only
 	// the system's left line spans both staves.
 	it.concurrent('renders structure_two_parts.png', async () => {
-		expect(
-			await renderer.screenshot('structure_two_parts.musicxml'),
-		).toMatchScreenshot('structure_two_parts.png');
+		expect(await screenshot('structure_two_parts.musicxml')).toMatchScreenshot(
+			'structure_two_parts.png',
+		);
 	});
 
 	// A single-stave part above a two-stave (braced) part — mixed stave counts. The braced
@@ -68,7 +68,7 @@ describe('render', () => {
 	// still stops at the boundary between the two parts.
 	it.concurrent('renders structure_mixed_staves.png', async () => {
 		expect(
-			await renderer.screenshot('structure_mixed_staves.musicxml'),
+			await screenshot('structure_mixed_staves.musicxml'),
 		).toMatchScreenshot('structure_mixed_staves.png');
 	});
 
@@ -94,7 +94,7 @@ describe('render', () => {
 	// packages/vexml/score-reader.ts.
 	it.concurrent('renders structure_part_group_symbols.png', async () => {
 		expect(
-			await renderer.screenshot('structure_part_group_symbols.musicxml', {
+			await screenshot('structure_part_group_symbols.musicxml', {
 				showPartLabels: true,
 			}),
 		).toMatchScreenshot('structure_part_group_symbols.png');
@@ -113,7 +113,7 @@ describe('render', () => {
 	// barline runs through parts 2-4 and stops at the 1|2 and 4|5 boundaries.
 	it.concurrent('renders structure_part_groups.png', async () => {
 		expect(
-			await renderer.screenshot('structure_part_groups.musicxml'),
+			await screenshot('structure_part_groups.musicxml'),
 		).toMatchScreenshot('structure_part_groups.png');
 	});
 
@@ -127,7 +127,7 @@ describe('render', () => {
 	// difference is the case.
 	it.concurrent('renders structure_part_group_bracket_top.png', async () => {
 		expect(
-			await renderer.screenshot('structure_part_group_bracket_top.musicxml', {
+			await screenshot('structure_part_group_bracket_top.musicxml', {
 				measureNumbering: 'every',
 			}),
 		).toMatchScreenshot('structure_part_group_bracket_top.png');
@@ -161,14 +161,14 @@ describe('render', () => {
 	//   part has no notation stave, and the kind's conventional suffix fills in for the
 	//   missing text.
 	it.concurrent('renders structure_tab_parts.png', async () => {
-		expect(
-			await renderer.screenshot('structure_tab_parts.musicxml'),
-		).toMatchScreenshot('structure_tab_parts.png');
+		expect(await screenshot('structure_tab_parts.musicxml')).toMatchScreenshot(
+			'structure_tab_parts.png',
+		);
 	});
 
 	it.concurrent('renders structure_notation_and_tab_parts.png', async () => {
 		expect(
-			await renderer.screenshot('structure_notation_and_tab_parts.musicxml'),
+			await screenshot('structure_notation_and_tab_parts.musicxml'),
 		).toMatchScreenshot('structure_notation_and_tab_parts.png');
 	});
 
@@ -178,7 +178,7 @@ describe('render', () => {
 	// staves open with a treble clef (the fixture declares none).
 	it.concurrent('renders structure_part_labels.png', async () => {
 		expect(
-			await renderer.screenshot('structure_part_labels.musicxml', {
+			await screenshot('structure_part_labels.musicxml', {
 				showPartLabels: true,
 			}),
 		).toMatchScreenshot('structure_part_labels.png');
@@ -190,7 +190,7 @@ describe('render', () => {
 	// flows through to the part labels (the text vexml draws in the margin).
 	it.concurrent('renders font_text.png', async () => {
 		expect(
-			await renderer.screenshot('structure_part_labels.musicxml', {
+			await screenshot('structure_part_labels.musicxml', {
 				showPartLabels: true,
 				fonts: { text: { family: 'Times New Roman' } },
 			}),
@@ -207,7 +207,7 @@ describe('render', () => {
 	//   take the notation color, not VexFlow's hardcoded gray.
 	it.concurrent('renders colors.png', async () => {
 		expect(
-			await renderer.screenshot('colors.musicxml', {
+			await screenshot('colors.musicxml', {
 				showPartLabels: true,
 				backgroundColor: '#fce4ec',
 				fonts: {
@@ -225,7 +225,7 @@ describe('render', () => {
 	// option swaps the engraving font.
 	it.concurrent('renders font_notation_petaluma.png', async () => {
 		expect(
-			await renderer.screenshot('font_notation_petaluma.musicxml', {
+			await screenshot('font_notation_petaluma.musicxml', {
 				fonts: { notation: { family: 'Petaluma' } },
 			}),
 		).toMatchScreenshot('font_notation_petaluma.png');
@@ -234,7 +234,7 @@ describe('render', () => {
 	// A single empty stave with a treble (G) clef and the default 4/4 signature (the
 	// fixture declares neither).
 	it.concurrent('renders clef_treble.png', async () => {
-		expect(await renderer.screenshot('clef_treble.musicxml')).toMatchScreenshot(
+		expect(await screenshot('clef_treble.musicxml')).toMatchScreenshot(
 			'clef_treble.png',
 		);
 	});
@@ -252,33 +252,33 @@ describe('render', () => {
 	//   on the bottom line, beam below the staff, then a half rest. The voices stay clear
 	//   of each other; auto-stemming both voices down would slash V1's beams through V2.
 	it.concurrent('renders clef_treble_octave.png', async () => {
-		expect(
-			await renderer.screenshot('clef_treble_octave.musicxml'),
-		).toMatchScreenshot('clef_treble_octave.png');
+		expect(await screenshot('clef_treble_octave.musicxml')).toMatchScreenshot(
+			'clef_treble_octave.png',
+		);
 	});
 
 	// Grand staff: treble clef on the upper stave, bass clef on the lower, joined by a
 	// brace, each stave taking the default 4/4 (the fixture states no <time>).
 	it.concurrent('renders clef_treble_bass.png', async () => {
-		expect(
-			await renderer.screenshot('clef_treble_bass.musicxml'),
-		).toMatchScreenshot('clef_treble_bass.png');
+		expect(await screenshot('clef_treble_bass.musicxml')).toMatchScreenshot(
+			'clef_treble_bass.png',
+		);
 	});
 
 	// A 6-line tablature stave with a stacked "TAB" label at the left. With no
 	// other stave to connect to, the lone TAB stave draws its own begin barline.
 	it.concurrent('renders clef_tab_6_string.png', async () => {
-		expect(
-			await renderer.screenshot('clef_tab_6_string.musicxml'),
-		).toMatchScreenshot('clef_tab_6_string.png');
+		expect(await screenshot('clef_tab_6_string.musicxml')).toMatchScreenshot(
+			'clef_tab_6_string.png',
+		);
 	});
 
 	// A 4-line tablature stave with a stacked "TAB" label at the left. With no
 	// other stave to connect to, the lone TAB stave draws its own begin barline.
 	it.concurrent('renders clef_tab_4_string.png', async () => {
-		expect(
-			await renderer.screenshot('clef_tab_4_string.musicxml'),
-		).toMatchScreenshot('clef_tab_4_string.png');
+		expect(await screenshot('clef_tab_4_string.musicxml')).toMatchScreenshot(
+			'clef_tab_4_string.png',
+		);
 	});
 
 	// A 6-line tablature stave whose <clef> is an octave-down treble, not TAB — the stave
@@ -288,7 +288,7 @@ describe('render', () => {
 	// E4/F4/G4/A4) drawn as numbers on the top line rather than noteheads on a treble staff.
 	it.concurrent('renders clef_tab_staff_tuning.png', async () => {
 		expect(
-			await renderer.screenshot('clef_tab_staff_tuning.musicxml'),
+			await screenshot('clef_tab_staff_tuning.musicxml'),
 		).toMatchScreenshot('clef_tab_staff_tuning.png');
 	});
 
@@ -298,7 +298,7 @@ describe('render', () => {
 	// shows neither key signature nor time signature, just its stacked "TAB" glyph.
 	it.concurrent('renders clef_notation_and_tab.png', async () => {
 		expect(
-			await renderer.screenshot('clef_notation_and_tab.musicxml'),
+			await screenshot('clef_notation_and_tab.musicxml'),
 		).toMatchScreenshot('clef_notation_and_tab.png');
 	});
 
@@ -311,7 +311,7 @@ describe('render', () => {
 	// and it declares <staff-lines> too.
 	it.concurrent('renders clef_notation_and_tab_tuned.png', async () => {
 		expect(
-			await renderer.screenshot('clef_notation_and_tab_tuned.musicxml'),
+			await screenshot('clef_notation_and_tab_tuned.musicxml'),
 		).toMatchScreenshot('clef_notation_and_tab_tuned.png');
 	});
 
@@ -322,7 +322,7 @@ describe('render', () => {
 	// proving the fret -> pitch mapping.
 	it.concurrent('renders clef_notation_and_tab_bracket.png', async () => {
 		expect(
-			await renderer.screenshot('clef_notation_and_tab_bracket.musicxml'),
+			await screenshot('clef_notation_and_tab_bracket.musicxml'),
 		).toMatchScreenshot('clef_notation_and_tab_bracket.png');
 	});
 
@@ -339,9 +339,7 @@ describe('render', () => {
 	// - M6: treble clef with <clef-octave-change>-1 — the same G/2 glyph with a small "8"
 	//   under it, so the note draws where M1's did.
 	it.concurrent('renders clef_c.png', async () => {
-		expect(await renderer.screenshot('clef_c.musicxml')).toMatchScreenshot(
-			'clef_c.png',
-		);
+		expect(await screenshot('clef_c.musicxml')).toMatchScreenshot('clef_c.png');
 	});
 
 	// Treble stave, 4/4: a clef change written INSIDE a measure rather than at its head, drawn
@@ -363,9 +361,9 @@ describe('render', () => {
 	// See also in_measure_clefs.xml, clef_end_measure.xml,
 	// end_measure_clefs_staffentry_bbox.xml.
 	it.concurrent('renders clef_mid_measure.png', async () => {
-		expect(
-			await renderer.screenshot('clef_mid_measure.musicxml'),
-		).toMatchScreenshot('clef_mid_measure.png');
+		expect(await screenshot('clef_mid_measure.musicxml')).toMatchScreenshot(
+			'clef_mid_measure.png',
+		);
 	});
 
 	// A percussion stave, 4/4: <unpitched> notes, which carry no <pitch> at all. Their
@@ -384,7 +382,7 @@ describe('render', () => {
 	//   keeping its own row and its own glyph.
 	it.concurrent('renders percussion_display_step.png', async () => {
 		expect(
-			await renderer.screenshot('percussion_display_step.musicxml'),
+			await screenshot('percussion_display_step.musicxml'),
 		).toMatchScreenshot('percussion_display_step.png');
 	});
 
@@ -405,9 +403,9 @@ describe('render', () => {
 	//   five-line frame, so a reduced stave never gets any. MuseScore does draw them here.
 	// See also drumset.xml, tutorial_percussion.xml.
 	it.concurrent('renders clef_percussion.png', async () => {
-		expect(
-			await renderer.screenshot('clef_percussion.musicxml'),
-		).toMatchScreenshot('clef_percussion.png');
+		expect(await screenshot('clef_percussion.musicxml')).toMatchScreenshot(
+			'clef_percussion.png',
+		);
 	});
 
 	// <staff-details><staff-lines> on NON-tab staves: two single-stave parts joined by a
@@ -429,9 +427,9 @@ describe('render', () => {
 	// measure start (the same limit clef_mid_measure works around above), so this fixture puts
 	// M3's change at the barline rather than after its first note, where lilypond_14a had it.
 	it.concurrent('renders staff_details_lines.png', async () => {
-		expect(
-			await renderer.screenshot('staff_details_lines.musicxml'),
-		).toMatchScreenshot('staff_details_lines.png');
+		expect(await screenshot('staff_details_lines.musicxml')).toMatchScreenshot(
+			'staff_details_lines.png',
+		);
 	});
 
 	// One system, treble 4/4: key signatures and a mid-system key change. Each measure
@@ -446,9 +444,7 @@ describe('render', () => {
 	//   valid vexflow key spec, so it renders via the 'G#m' minor spec instead of throwing.
 	//   The flats flip back to sharps, so two naturals cancel them ahead of the five sharps.
 	it.concurrent('renders key.png', async () => {
-		expect(await renderer.screenshot('key.musicxml')).toMatchScreenshot(
-			'key.png',
-		);
+		expect(await screenshot('key.musicxml')).toMatchScreenshot('key.png');
 	});
 
 	// Treble stave, common time: the church modes. Every <key> carries the same
@@ -461,7 +457,7 @@ describe('render', () => {
 	// - M2: phrygian, lydian, mixolydian, aeolian — no signature redrawn, the key is unchanged.
 	// - M3: locrian; wraps to a second system, which reprints the same two sharps.
 	it.concurrent('renders key_modes.png', async () => {
-		expect(await renderer.screenshot('key_modes.musicxml')).toMatchScreenshot(
+		expect(await screenshot('key_modes.musicxml')).toMatchScreenshot(
 			'key_modes.png',
 		);
 	});
@@ -487,9 +483,9 @@ describe('render', () => {
 	// held by the ordinary page margins.
 	// See also lilypond_13d-KeySignatures-Microtones.xml.
 	it.concurrent('renders key_non_traditional.png', async () => {
-		expect(
-			await renderer.screenshot('key_non_traditional.musicxml'),
-		).toMatchScreenshot('key_non_traditional.png');
+		expect(await screenshot('key_non_traditional.musicxml')).toMatchScreenshot(
+			'key_non_traditional.png',
+		);
 	});
 
 	// One system, treble: time signatures and mid-system meter changes.
@@ -500,9 +496,7 @@ describe('render', () => {
 	// - M3: changes the meter to a numeric 3/4 (stacked numerals); three C5 quarters.
 	// - M4: continues in 3/4 with no time signature redrawn; three C5 quarters.
 	it.concurrent('renders time.png', async () => {
-		expect(await renderer.screenshot('time.musicxml')).toMatchScreenshot(
-			'time.png',
-		);
+		expect(await screenshot('time.musicxml')).toMatchScreenshot('time.png');
 	});
 
 	// Treble stave: additive (compound) meters, whose numerator sums the groups the bar beats
@@ -517,9 +511,9 @@ describe('render', () => {
 	//   (2/4 + 3/8) is not — vexflow's TimeSignature reads only the first two '/'-separated
 	//   groups, so that form needs its own glyph work before a fixture is worth adding.
 	it.concurrent('renders time_compound.png', async () => {
-		expect(
-			await renderer.screenshot('time_compound.musicxml'),
-		).toMatchScreenshot('time_compound.png');
+		expect(await screenshot('time_compound.musicxml')).toMatchScreenshot(
+			'time_compound.png',
+		);
 	});
 
 	// Treble stave, <time symbol="single-number">: three beamed eighths under a signature that
@@ -528,9 +522,9 @@ describe('render', () => {
 	// ponytail: <time symbol="note"> and symbol="dotted-note" (the beat drawn as a note glyph)
 	// still fall through to the stacked fraction; no fixture reaches them.
 	it.concurrent('renders time_single_number.png', async () => {
-		expect(
-			await renderer.screenshot('time_single_number.musicxml'),
-		).toMatchScreenshot('time_single_number.png');
+		expect(await screenshot('time_single_number.musicxml')).toMatchScreenshot(
+			'time_single_number.png',
+		);
 	});
 
 	// Treble stave, <senza-misura> (unmetered): three beamed eighths with NO time signature
@@ -540,9 +534,9 @@ describe('render', () => {
 	// clef_treble and the structure_* cases), so declaring "unmetered" and saying nothing are
 	// deliberately different renders.
 	it.concurrent('renders time_senza_misura.png', async () => {
-		expect(
-			await renderer.screenshot('time_senza_misura.musicxml'),
-		).toMatchScreenshot('time_senza_misura.png');
+		expect(await screenshot('time_senza_misura.musicxml')).toMatchScreenshot(
+			'time_senza_misura.png',
+		);
 	});
 
 	// Treble stave, 4/4: single-note rendering — durations then stem direction.
@@ -558,9 +552,7 @@ describe('render', () => {
 	// - M6: eight C5 eighths with <stem>none</stem> — bare noteheads, no stems and no flags,
 	//   evenly spaced across the measure.
 	it.concurrent('renders note.png', async () => {
-		expect(await renderer.screenshot('note.musicxml')).toMatchScreenshot(
-			'note.png',
-		);
+		expect(await screenshot('note.musicxml')).toMatchScreenshot('note.png');
 	});
 
 	// Treble stave, 4/4, all on C5: note density per measure (beat counts deliberately
@@ -579,9 +571,9 @@ describe('render', () => {
 	//   sixteenths, then a half. Trailing system, left unjustified at its natural width, so
 	//   the uneven within-measure spacing (wide quarter, then progressively tighter) shows.
 	it.concurrent('renders note_density.png', async () => {
-		expect(
-			await renderer.screenshot('note_density.musicxml'),
-		).toMatchScreenshot('note_density.png');
+		expect(await screenshot('note_density.musicxml')).toMatchScreenshot(
+			'note_density.png',
+		);
 	});
 
 	// Treble stave, 4/4, all on C5: dotted-note variations.
@@ -589,9 +581,9 @@ describe('render', () => {
 	// - M2: double-dotted-quarter + sixteenth pairs (double dots).
 	// - M3: four beamed dotted-eighth + sixteenth pairs (dots inside beams).
 	it.concurrent('renders dotted_notes.png', async () => {
-		expect(
-			await renderer.screenshot('dotted_notes.musicxml'),
-		).toMatchScreenshot('dotted_notes.png');
+		expect(await screenshot('dotted_notes.musicxml')).toMatchScreenshot(
+			'dotted_notes.png',
+		);
 	});
 
 	// Treble stave, 4/4: the rest counterpart of note.musicxml's durations.
@@ -605,9 +597,7 @@ describe('render', () => {
 	//   voice offset splits them, V1's rest one line above center and V2's one line below.
 	//   The G4s are deliberately identical — only the rests' placement is under test.
 	it.concurrent('renders rest.png', async () => {
-		expect(await renderer.screenshot('rest.musicxml')).toMatchScreenshot(
-			'rest.png',
-		);
+		expect(await screenshot('rest.musicxml')).toMatchScreenshot('rest.png');
 	});
 
 	// Treble stave, 5/4: five quarter rests, identical but for where they are displayed. The
@@ -619,9 +609,9 @@ describe('render', () => {
 	// the rest-placement corpus in rest_positioning_*.xml for the realistic version (two
 	// voices, C clef, 8th/16th rests), which deserves its own case.
 	it.concurrent('renders rest_pitched.png', async () => {
-		expect(
-			await renderer.screenshot('rest_pitched.musicxml'),
-		).toMatchScreenshot('rest_pitched.png');
+		expect(await screenshot('rest_pitched.musicxml')).toMatchScreenshot(
+			'rest_pitched.png',
+		);
 	});
 
 	// Treble stave, 4/4: <measure-style><multiple-rest>, the consolidated multi-bar rest. A run
@@ -645,7 +635,7 @@ describe('render', () => {
 	// measure_numbers_xml_starting_at_3_with_multirest.xml.
 	it.concurrent('renders rest_multi_measure.png', async () => {
 		expect(
-			await renderer.screenshot('rest_multi_measure.musicxml', {
+			await screenshot('rest_multi_measure.musicxml', {
 				measureNumbering: 'every',
 			}),
 		).toMatchScreenshot('rest_multi_measure.png');
@@ -664,7 +654,7 @@ describe('render', () => {
 	//   wrapped; the notehead is untouched (unlike notehead_parentheses.musicxml, which
 	//   brackets the head).
 	it.concurrent('renders accidentals.png', async () => {
-		expect(await renderer.screenshot('accidentals.musicxml')).toMatchScreenshot(
+		expect(await screenshot('accidentals.musicxml')).toMatchScreenshot(
 			'accidentals.png',
 		);
 	});
@@ -676,9 +666,9 @@ describe('render', () => {
 	//   divisions 8.
 	// - M2: two half notes, evenly spaced — the first at divisions 8, the second at 38.
 	it.concurrent('renders divisions_change.png', async () => {
-		expect(
-			await renderer.screenshot('divisions_change.musicxml'),
-		).toMatchScreenshot('divisions_change.png');
+		expect(await screenshot('divisions_change.musicxml')).toMatchScreenshot(
+			'divisions_change.png',
+		);
 	});
 
 	// Grand staff, 4/4: <note print-object="no">, the hidden spacer notes exporters use to
@@ -699,9 +689,9 @@ describe('render', () => {
 	// visible members draws all of them, and print-object on a whole <staff>/<measure> is
 	// ignored. No fixture reaches either yet.
 	it.concurrent('renders invisible_notes.png', async () => {
-		expect(
-			await renderer.screenshot('invisible_notes.musicxml'),
-		).toMatchScreenshot('invisible_notes.png');
+		expect(await screenshot('invisible_notes.musicxml')).toMatchScreenshot(
+			'invisible_notes.png',
+		);
 	});
 
 	// A colored Beethoven lied (color.xml M1-2): a vocal treble stave over a piano grand
@@ -729,7 +719,7 @@ describe('render', () => {
 	// so each needs its own pass) — hence the black beam over the colored eighths in M2.
 	// See also auto_custom_coloring_entchen.xml.
 	it.concurrent('renders note_color.png', async () => {
-		expect(await renderer.screenshot('note_color.musicxml')).toMatchScreenshot(
+		expect(await screenshot('note_color.musicxml')).toMatchScreenshot(
 			'note_color.png',
 		);
 	});
@@ -744,9 +734,7 @@ describe('render', () => {
 	//   same first note. The mark stacks above the symbol (chord symbol nearest the staff,
 	//   tempo on top) instead of the two printing on top of each other.
 	it.concurrent('renders tempo.png', async () => {
-		expect(await renderer.screenshot('tempo.musicxml')).toMatchScreenshot(
-			'tempo.png',
-		);
+		expect(await screenshot('tempo.musicxml')).toMatchScreenshot('tempo.png');
 	});
 
 	// Treble stave, common time: the metronome-mark variants tempo.musicxml does not reach.
@@ -774,9 +762,9 @@ describe('render', () => {
 	// this way) and belongs with the playback tempo path, not here. The M4/M5 swing figure is
 	// notation only for the same reason — a <sound><swing> is what makes playback swing.
 	it.concurrent('renders tempo_beat_unit_dot.png', async () => {
-		expect(
-			await renderer.screenshot('tempo_beat_unit_dot.musicxml'),
-		).toMatchScreenshot('tempo_beat_unit_dot.png');
+		expect(await screenshot('tempo_beat_unit_dot.musicxml')).toMatchScreenshot(
+			'tempo_beat_unit_dot.png',
+		);
 	});
 
 	// Treble stave, 4/4: a words direction from <direction><direction-type><words>, drawn
@@ -804,9 +792,7 @@ describe('render', () => {
 	//   the CURVE, and the whole line prints above the arc rather than being struck through by
 	//   it. Cut from a real bass score (Bass-LP-05-Fretboard M9).
 	it.concurrent('renders words.png', async () => {
-		expect(await renderer.screenshot('words.musicxml')).toMatchScreenshot(
-			'words.png',
-		);
+		expect(await screenshot('words.musicxml')).toMatchScreenshot('words.png');
 	});
 
 	// Treble stave, common time: the full <dynamics> vocabulary, one marking per C4 quarter,
@@ -835,7 +821,7 @@ describe('render', () => {
 	//   two measures past the last one, too far to read as an exporter repeating itself, so
 	//   this mf DOES print — a composer re-marking a level after a rest is a real reminder.
 	it.concurrent('renders dynamics.png', async () => {
-		expect(await renderer.screenshot('dynamics.musicxml')).toMatchScreenshot(
+		expect(await screenshot('dynamics.musicxml')).toMatchScreenshot(
 			'dynamics.png',
 		);
 	});
@@ -858,9 +844,7 @@ describe('render', () => {
 	// ponytail: a hairpin that wraps across a system break isn't split into two partials the
 	// way a tie or slur is; no fixture reaches that yet.
 	it.concurrent('renders wedges.png', async () => {
-		expect(await renderer.screenshot('wedges.musicxml')).toMatchScreenshot(
-			'wedges.png',
-		);
+		expect(await screenshot('wedges.musicxml')).toMatchScreenshot('wedges.png');
 	});
 
 	// Treble stave, common time (lilypond_33d-Spanners-OctaveShifts M1): <octave-shift>, the
@@ -888,9 +872,9 @@ describe('render', () => {
 	// bracket running right-to-left rather than splitting the way buildTies splits a tie.
 	// See also octave_shift_simple_piano.xml.
 	it.concurrent('renders octave_shift.png', async () => {
-		expect(
-			await renderer.screenshot('octave_shift.musicxml'),
-		).toMatchScreenshot('octave_shift.png');
+		expect(await screenshot('octave_shift.musicxml')).toMatchScreenshot(
+			'octave_shift.png',
+		);
 	});
 
 	// Treble stave, 3/4 (lilypond_33a-Spanners M10-15): the direction-type LINE spanners —
@@ -913,9 +897,9 @@ describe('render', () => {
 	// path), line-type="wavy" falls back to solid, and a span wrapping onto a later system is
 	// dropped rather than split. None has a fixture.
 	it.concurrent('renders direction_lines.png', async () => {
-		expect(
-			await renderer.screenshot('direction_lines.musicxml'),
-		).toMatchScreenshot('direction_lines.png');
+		expect(await screenshot('direction_lines.musicxml')).toMatchScreenshot(
+			'direction_lines.png',
+		);
 	});
 
 	// Navigation marks — <segno> and <coda> — on a real (braced) piano score in 4/4, five
@@ -938,7 +922,7 @@ describe('render', () => {
 	// measure's left edge, where a player scanning for "the sign" looks.
 	// See also stave_repetitions_coda_etc_positioning.xml for the placement stress version.
 	it.concurrent('renders navigation.png', async () => {
-		expect(await renderer.screenshot('navigation.musicxml')).toMatchScreenshot(
+		expect(await screenshot('navigation.musicxml')).toMatchScreenshot(
 			'navigation.png',
 		);
 	});
@@ -956,9 +940,7 @@ describe('render', () => {
 	//   C6 on ledger lines) — the syllables stay on a readable row under the stave instead
 	//   of following each notehead's height.
 	it.concurrent('renders lyrics.png', async () => {
-		expect(await renderer.screenshot('lyrics.musicxml')).toMatchScreenshot(
-			'lyrics.png',
-		);
+		expect(await screenshot('lyrics.musicxml')).toMatchScreenshot('lyrics.png');
 	});
 
 	// Treble stave, common time: melismas — a syllable held over notes that carry no lyric of
@@ -975,9 +957,9 @@ describe('render', () => {
 	// ponytail: an extender stops at the end of its stave — a melisma crossing a barline or a
 	// system break draws only its first segment. See drawMelismas.
 	it.concurrent('renders lyrics_melisma.png', async () => {
-		expect(
-			await renderer.screenshot('lyrics_melisma.musicxml'),
-		).toMatchScreenshot('lyrics_melisma.png');
+		expect(await screenshot('lyrics_melisma.musicxml')).toMatchScreenshot(
+			'lyrics_melisma.png',
+		);
 	});
 
 	// Treble stave, common time: <elision> — several syllables sung on one note, which is how
@@ -988,9 +970,9 @@ describe('render', () => {
 	//   elisions). The second and third must look the same — an empty <elision/> prints as a
 	//   space, so the two spellings of the same lyric render identically.
 	it.concurrent('renders lyrics_elision.png', async () => {
-		expect(
-			await renderer.screenshot('lyrics_elision.musicxml'),
-		).toMatchScreenshot('lyrics_elision.png');
+		expect(await screenshot('lyrics_elision.musicxml')).toMatchScreenshot(
+			'lyrics_elision.png',
+		);
 	});
 
 	// Treble stave, 4/4: lyrics under a stave carrying TWO voices. Both voices number their
@@ -1010,9 +992,9 @@ describe('render', () => {
 	// See also lilypond_61c-Lyrics-Pianostaff.xml (lyrics between the two staves of a grand
 	// staff) and lilypond_61e-Lyrics-Chords.xml.
 	it.concurrent('renders lyrics_two_voices.png', async () => {
-		expect(
-			await renderer.screenshot('lyrics_two_voices.musicxml'),
-		).toMatchScreenshot('lyrics_two_voices.png');
+		expect(await screenshot('lyrics_two_voices.musicxml')).toMatchScreenshot(
+			'lyrics_two_voices.png',
+		);
 	});
 
 	// Treble stave, 4/4: section headers from <direction><direction-type><rehearsal>, drawn
@@ -1025,7 +1007,7 @@ describe('render', () => {
 	// - M3: "Chorus" — a multi-character label, so the box widens to fit the text instead
 	//   of staying letter-sized.
 	it.concurrent('renders rehearsal.png', async () => {
-		expect(await renderer.screenshot('rehearsal.musicxml')).toMatchScreenshot(
+		expect(await screenshot('rehearsal.musicxml')).toMatchScreenshot(
 			'rehearsal.png',
 		);
 	});
@@ -1033,9 +1015,9 @@ describe('render', () => {
 	// Treble stave, 4/4: two measures split by a barline, each holding one whole note
 	// (C5, same pitch in both).
 	it.concurrent('renders measures_two.png', async () => {
-		expect(
-			await renderer.screenshot('measures_two.musicxml'),
-		).toMatchScreenshot('measures_two.png');
+		expect(await screenshot('measures_two.musicxml')).toMatchScreenshot(
+			'measures_two.png',
+		);
 	});
 
 	// Grand staff (empty treble over empty bass), two measures. Because the system has
@@ -1047,9 +1029,9 @@ describe('render', () => {
 	//   both staves (boldDoubleRight) rather than the plain single line drawn at every
 	//   other measure end.
 	it.concurrent('renders measures_end_barline.png', async () => {
-		expect(
-			await renderer.screenshot('measures_end_barline.musicxml'),
-		).toMatchScreenshot('measures_end_barline.png');
+		expect(await screenshot('measures_end_barline.musicxml')).toMatchScreenshot(
+			'measures_end_barline.png',
+		);
 	});
 
 	// Treble stave, 4/4, two whole-note measures (C5 in both). M1 carries an explicit
@@ -1057,9 +1039,9 @@ describe('render', () => {
 	// and M2 renders as a thin double line instead of the default single line; M2 closes
 	// with the usual thin-thick end barline.
 	it.concurrent('renders measures_light_light.png', async () => {
-		expect(
-			await renderer.screenshot('measures_light_light.musicxml'),
-		).toMatchScreenshot('measures_light_light.png');
+		expect(await screenshot('measures_light_light.musicxml')).toMatchScreenshot(
+			'measures_light_light.png',
+		);
 	});
 
 	// The whole non-repeat <bar-style> vocabulary, one value per measure. Treble stave in
@@ -1089,9 +1071,9 @@ describe('render', () => {
 	// These styles are a single-stave idiom, so that gap is unexercised; see drawConnectors.
 	// See also bar_lines.xml.
 	it.concurrent('renders barline_styles.png', async () => {
-		expect(
-			await renderer.screenshot('barline_styles.musicxml'),
-		).toMatchScreenshot('barline_styles.png');
+		expect(await screenshot('barline_styles.musicxml')).toMatchScreenshot(
+			'barline_styles.png',
+		);
 	});
 
 	// Treble stave, 4/4: a barline in the MIDDLE of a measure — <barline location="middle">,
@@ -1108,9 +1090,9 @@ describe('render', () => {
 	// same line — and ScoreReader.midBarlinesOf binds it to the last note in document order
 	// rather than rewinding a <backup>, so a multi-voice measure could place it early.
 	it.concurrent('renders barline_mid_measure.png', async () => {
-		expect(
-			await renderer.screenshot('barline_mid_measure.musicxml'),
-		).toMatchScreenshot('barline_mid_measure.png');
+		expect(await screenshot('barline_mid_measure.musicxml')).toMatchScreenshot(
+			'barline_mid_measure.png',
+		);
 	});
 
 	// Pickup (anacrusis) and incomplete measures — <measure implicit="yes">, which is short by
@@ -1137,9 +1119,9 @@ describe('render', () => {
 	// pickup_measure_double_rhythm.xml, lilypond_46f-IncompleteMeasures.xml and
 	// lilypond_46e-PickupMeasure-SecondVoiceStartsLater.xml.
 	it.concurrent('renders pickup_measure.png', async () => {
-		expect(
-			await renderer.screenshot('pickup_measure.musicxml'),
-		).toMatchScreenshot('pickup_measure.png');
+		expect(await screenshot('pickup_measure.musicxml')).toMatchScreenshot(
+			'pickup_measure.png',
+		);
 	});
 
 	// Treble stave, 4/4, one whole note per measure (M8 and M12-15 excepted): repeat barlines and
@@ -1185,7 +1167,7 @@ describe('render', () => {
 	// Every bracket on a system shares one height, so M9-11's brackets ride at M13/M15's level
 	// too — the second system's brackets are visibly higher than the first system's.
 	it.concurrent('renders repeats.png', async () => {
-		expect(await renderer.screenshot('repeats.musicxml')).toMatchScreenshot(
+		expect(await screenshot('repeats.musicxml')).toMatchScreenshot(
 			'repeats.png',
 		);
 	});
@@ -1205,7 +1187,7 @@ describe('render', () => {
 	// - M4: fret 7 / B4, closing with a backward repeat instead of the usual end barline.
 	it.concurrent('renders repeats_notation_and_tab.png', async () => {
 		expect(
-			await renderer.screenshot('repeats_notation_and_tab.musicxml'),
+			await screenshot('repeats_notation_and_tab.musicxml'),
 		).toMatchScreenshot('repeats_notation_and_tab.png');
 	});
 
@@ -1222,7 +1204,7 @@ describe('render', () => {
 	// expands to five passes, not two.
 	it.concurrent('renders repeats_multiple_times.png', async () => {
 		expect(
-			await renderer.screenshot('repeats_multiple_times.musicxml'),
+			await screenshot('repeats_multiple_times.musicxml'),
 		).toMatchScreenshot('repeats_multiple_times.png');
 	});
 
@@ -1251,9 +1233,9 @@ describe('render', () => {
 	// and the pre-scan in packages/vexml/sequence-factory.ts).
 	// See also lilypond_45e-Repeats-Nested-Alternatives.xml.
 	it.concurrent('renders repeats_nested.png', async () => {
-		expect(
-			await renderer.screenshot('repeats_nested.musicxml'),
-		).toMatchScreenshot('repeats_nested.png');
+		expect(await screenshot('repeats_nested.musicxml')).toMatchScreenshot(
+			'repeats_nested.png',
+		);
 	});
 
 	// Gap measures (config.gaps) inserted into the two-whole-note fixture. Four measure
@@ -1270,7 +1252,7 @@ describe('render', () => {
 	// - M2 ("2"): the original second measure — whole note C5, thin-thick end barline.
 	it.concurrent('renders measures_gap.png', async () => {
 		expect(
-			await renderer.screenshot('measures_two.musicxml', {
+			await screenshot('measures_two.musicxml', {
 				measureNumbering: 'every',
 				gaps: [
 					{
@@ -1312,18 +1294,16 @@ describe('render', () => {
 	//   Stems point down to a beam below the stave; the low A4/G4 stems reach it at full
 	//   standard length rather than being pulled short by the group's average stem tip.
 	it.concurrent('renders beam_variations.png', async () => {
-		expect(
-			await renderer.screenshot('beam_variations.musicxml'),
-		).toMatchScreenshot('beam_variations.png');
+		expect(await screenshot('beam_variations.musicxml')).toMatchScreenshot(
+			'beam_variations.png',
+		);
 	});
 
 	// Treble stave, 4/4: four quarter-note chords — a C5/E5/G5 triad, a C5/D5 second
 	// (offset noteheads), a C5/D5/E5 cluster, then a C5/E5/G5/A5 chord with a second
 	// (G5/A5) on top.
 	it.concurrent('renders chord.png', async () => {
-		expect(await renderer.screenshot('chord.musicxml')).toMatchScreenshot(
-			'chord.png',
-		);
+		expect(await screenshot('chord.musicxml')).toMatchScreenshot('chord.png');
 	});
 
 	// Treble stave, 3/4: an ascending run of quarter notes covering every natural
@@ -1332,9 +1312,9 @@ describe('render', () => {
 	// three below, shrink to none on the staff, then grow to three above. Wraps across
 	// systems.
 	it.concurrent('renders ledger_lines.png', async () => {
-		expect(
-			await renderer.screenshot('ledger_lines.musicxml'),
-		).toMatchScreenshot('ledger_lines.png');
+		expect(await screenshot('ledger_lines.musicxml')).toMatchScreenshot(
+			'ledger_lines.png',
+		);
 	});
 
 	// Treble stave, 4/4: ties on single notes (the tied-chord variants live in the
@@ -1348,9 +1328,7 @@ describe('render', () => {
 	//   in the MusicXML, but only the tie-start note prints the sharp — the tied note carries the
 	//   accidental implicitly, so its glyph is suppressed.
 	it.concurrent('renders tie.png', async () => {
-		expect(await renderer.screenshot('tie.musicxml')).toMatchScreenshot(
-			'tie.png',
-		);
+		expect(await screenshot('tie.musicxml')).toMatchScreenshot('tie.png');
 	});
 
 	// Treble stave, D major, 4/4: a three-note tie chain on F#4 — dotted-eighth -> quarter ->
@@ -1364,7 +1342,7 @@ describe('render', () => {
 	// beats 3-4 add a below-placed slur over a 16th run (F#4-G4) into a slashed grace E4 that
 	// slurs into the closing F#4 eighth.
 	it.concurrent('renders tie_chain.png', async () => {
-		expect(await renderer.screenshot('tie_chain.musicxml')).toMatchScreenshot(
+		expect(await screenshot('tie_chain.musicxml')).toMatchScreenshot(
 			'tie_chain.png',
 		);
 	});
@@ -1373,45 +1351,45 @@ describe('render', () => {
 	// members tied — the bottom member (C5) bows under (concave up) and the upper two (E5, G5)
 	// bow over (concave down), sandwiching the chord while the over-arcs clear the up-stems.
 	it.concurrent('renders tie_chord_triad.png', async () => {
-		expect(
-			await renderer.screenshot('tie_chord_triad.musicxml'),
-		).toMatchScreenshot('tie_chord_triad.png');
+		expect(await screenshot('tie_chord_triad.musicxml')).toMatchScreenshot(
+			'tie_chord_triad.png',
+		);
 	});
 
 	// Treble stave, 4/4, one measure: a two-note chord (C5/E5) with both members tied — the
 	// lower bows under (concave up), the upper bows over (concave down), so the ties diverge
 	// from the chord center.
 	it.concurrent('renders tie_chord_dyad.png', async () => {
-		expect(
-			await renderer.screenshot('tie_chord_dyad.musicxml'),
-		).toMatchScreenshot('tie_chord_dyad.png');
+		expect(await screenshot('tie_chord_dyad.musicxml')).toMatchScreenshot(
+			'tie_chord_dyad.png',
+		);
 	});
 
 	// Treble stave, 4/4, one measure: a four-note chord (C5/E5/G5/C6) with all members tied —
 	// the lower half (C5, E5) bows under and the upper half (G5, C6) bows over, a two-under /
 	// two-over split across a one-octave spread.
 	it.concurrent('renders tie_chord_octave.png', async () => {
-		expect(
-			await renderer.screenshot('tie_chord_octave.musicxml'),
-		).toMatchScreenshot('tie_chord_octave.png');
+		expect(await screenshot('tie_chord_octave.musicxml')).toMatchScreenshot(
+			'tie_chord_octave.png',
+		);
 	});
 
 	// Treble stave, 4/4, one measure: spacing variant — a two-note second (C5/D5) with both
 	// members tied; the second offsets the noteheads across the stem, C5 bowing under and D5
 	// over.
 	it.concurrent('renders tie_chord_second.png', async () => {
-		expect(
-			await renderer.screenshot('tie_chord_second.musicxml'),
-		).toMatchScreenshot('tie_chord_second.png');
+		expect(await screenshot('tie_chord_second.musicxml')).toMatchScreenshot(
+			'tie_chord_second.png',
+		);
 	});
 
 	// Treble stave, 4/4, one measure: spacing variant — a four-note cluster of stacked seconds
 	// (C5/D5/E5/F5) with all members tied; zig-zag offset noteheads, lower half under and upper
 	// half over.
 	it.concurrent('renders tie_chord_cluster.png', async () => {
-		expect(
-			await renderer.screenshot('tie_chord_cluster.musicxml'),
-		).toMatchScreenshot('tie_chord_cluster.png');
+		expect(await screenshot('tie_chord_cluster.musicxml')).toMatchScreenshot(
+			'tie_chord_cluster.png',
+		);
 	});
 
 	// Treble, 4/4, narrowed to 360px so the system breaks between M1 and M2. A three-note
@@ -1425,7 +1403,7 @@ describe('render', () => {
 	//   edge of the stave into the chord ("tie from nothing").
 	it.concurrent('renders tie_system_break.png', async () => {
 		expect(
-			await renderer.screenshot('tie_system_break.musicxml', {
+			await screenshot('tie_system_break.musicxml', {
 				layout: { type: 'standard', referenceWidth: 360 },
 			}),
 		).toMatchScreenshot('tie_system_break.png');
@@ -1434,15 +1412,15 @@ describe('render', () => {
 	// Treble stave, 4/4: four quarters C5, D5, E5, F5 under one slur with no placement
 	// attribute (default). The stem-down notes push the slur above the noteheads.
 	it.concurrent('renders slur_default.png', async () => {
-		expect(
-			await renderer.screenshot('slur_default.musicxml'),
-		).toMatchScreenshot('slur_default.png');
+		expect(await screenshot('slur_default.musicxml')).toMatchScreenshot(
+			'slur_default.png',
+		);
 	});
 
 	// Treble stave, 4/4: four quarters G5, A5, B5, A5 under one slur with explicit
 	// placement="above" — the slur arcs above the noteheads.
 	it.concurrent('renders slur_above.png', async () => {
-		expect(await renderer.screenshot('slur_above.musicxml')).toMatchScreenshot(
+		expect(await screenshot('slur_above.musicxml')).toMatchScreenshot(
 			'slur_above.png',
 		);
 	});
@@ -1451,9 +1429,9 @@ describe('render', () => {
 	// notes sit below the middle line so their stems point up, and the slur bows below
 	// the noteheads (opposite side from the stems).
 	it.concurrent('renders slur_stem_up.png', async () => {
-		expect(
-			await renderer.screenshot('slur_stem_up.musicxml'),
-		).toMatchScreenshot('slur_stem_up.png');
+		expect(await screenshot('slur_stem_up.musicxml')).toMatchScreenshot(
+			'slur_stem_up.png',
+		);
 	});
 
 	// Treble stave, 4/4: above-slurs whose two ends have opposing stem directions.
@@ -1469,15 +1447,15 @@ describe('render', () => {
 	//   underneath and make it dive under both beams; because the two ends disagree the
 	//   slur goes above instead, one arc over the beams from the E4 stem tip to the B4.
 	it.concurrent('renders slur_mixed_stems.png', async () => {
-		expect(
-			await renderer.screenshot('slur_mixed_stems.musicxml'),
-		).toMatchScreenshot('slur_mixed_stems.png');
+		expect(await screenshot('slur_mixed_stems.musicxml')).toMatchScreenshot(
+			'slur_mixed_stems.png',
+		);
 	});
 
 	// Treble stave, 4/4: two half notes A5 and C4 slurred across a wide downward leap —
 	// the slur spans the measure between the distant noteheads.
 	it.concurrent('renders slur_leap.png', async () => {
-		expect(await renderer.screenshot('slur_leap.musicxml')).toMatchScreenshot(
+		expect(await screenshot('slur_leap.musicxml')).toMatchScreenshot(
 			'slur_leap.png',
 		);
 	});
@@ -1491,7 +1469,7 @@ describe('render', () => {
 	//   the arc cannot clear them by inflating; the slur's ends lift off their noteheads
 	//   instead and the whole curve passes above all eight heads. No notehead touches it.
 	it.concurrent('renders slur_beamed.png', async () => {
-		expect(await renderer.screenshot('slur_beamed.musicxml')).toMatchScreenshot(
+		expect(await screenshot('slur_beamed.musicxml')).toMatchScreenshot(
 			'slur_beamed.png',
 		);
 	});
@@ -1499,9 +1477,9 @@ describe('render', () => {
 	// Treble stave, 4/4: four quarters carrying two separate two-note slurs (C5-D5 and
 	// E5-D5) using distinct slur numbers — two short independent arcs above.
 	it.concurrent('renders slur_multiple.png', async () => {
-		expect(
-			await renderer.screenshot('slur_multiple.musicxml'),
-		).toMatchScreenshot('slur_multiple.png');
+		expect(await screenshot('slur_multiple.musicxml')).toMatchScreenshot(
+			'slur_multiple.png',
+		);
 	});
 
 	// Treble stave, 4/4: three chained slurs over E4, G4, E5, C5 — a slur below the
@@ -1510,9 +1488,9 @@ describe('render', () => {
 	// (E5-C5, stem-down). Overlapping slurs use distinct numbers, so notes 2 and 3 each
 	// carry both a stop and a start.
 	it.concurrent('renders slur_chained.png', async () => {
-		expect(
-			await renderer.screenshot('slur_chained.musicxml'),
-		).toMatchScreenshot('slur_chained.png');
+		expect(await screenshot('slur_chained.musicxml')).toMatchScreenshot(
+			'slur_chained.png',
+		);
 	});
 
 	// Treble, 4/4, narrowed to 350px so the system breaks between M1 and M2. A slur runs
@@ -1525,7 +1503,7 @@ describe('render', () => {
 	//   of the stave into G5 ("slur from nothing").
 	it.concurrent('renders slur_system_break.png', async () => {
 		expect(
-			await renderer.screenshot('slur_system_break.musicxml', {
+			await screenshot('slur_system_break.musicxml', {
 				layout: { type: 'standard', referenceWidth: 350 },
 			}),
 		).toMatchScreenshot('slur_system_break.png');
@@ -1545,9 +1523,9 @@ describe('render', () => {
 	// still ignored — vexml computes its own control points to clear the spanned notes,
 	// which an exporter's absolute offsets would fight rather than improve.
 	it.concurrent('renders slur_line_types.png', async () => {
-		expect(
-			await renderer.screenshot('slur_line_types.musicxml'),
-		).toMatchScreenshot('slur_line_types.png');
+		expect(await screenshot('slur_line_types.musicxml')).toMatchScreenshot(
+			'slur_line_types.png',
+		);
 	});
 
 	// Treble stave, 4/4, two voices: slurs paired across a <backup>, which makes document
@@ -1562,9 +1540,9 @@ describe('render', () => {
 	//   The two arcs are nested, not crossed: whichever voice a stop is in claims the start
 	//   from that same voice.
 	it.concurrent('renders slur_backup_voices.png', async () => {
-		expect(
-			await renderer.screenshot('slur_backup_voices.musicxml'),
-		).toMatchScreenshot('slur_backup_voices.png');
+		expect(await screenshot('slur_backup_voices.musicxml')).toMatchScreenshot(
+			'slur_backup_voices.png',
+		);
 	});
 
 	// Piano grand staff, 2/4, 3 sharps: a slur spanning a cross-stave figure. Each measure is
@@ -1581,9 +1559,9 @@ describe('render', () => {
 	// nearly every bar; it used to draw as a long S-swoop sagging through the empty gap
 	// between the staves, identical for both placements.
 	it.concurrent('renders slur_cross_stave.png', async () => {
-		expect(
-			await renderer.screenshot('slur_cross_stave.musicxml'),
-		).toMatchScreenshot('slur_cross_stave.png');
+		expect(await screenshot('slur_cross_stave.musicxml')).toMatchScreenshot(
+			'slur_cross_stave.png',
+		);
 	});
 
 	// Treble stave, 4/4: sustain pedals from <direction><direction-type><pedal>, drawn
@@ -1598,9 +1576,7 @@ describe('render', () => {
 	//   dropped clear below them instead of printing through the notes; M1's pedal, over
 	//   mid-staff notes, stays at the default height as the control.
 	it.concurrent('renders pedal.png', async () => {
-		expect(await renderer.screenshot('pedal.musicxml')).toMatchScreenshot(
-			'pedal.png',
-		);
+		expect(await screenshot('pedal.musicxml')).toMatchScreenshot('pedal.png');
 	});
 
 	// 6-line TAB stave, half notes: hammer-ons and pull-offs, both notated with plain
@@ -1638,9 +1614,9 @@ describe('render', () => {
 	//   partner and draws nothing — it must not reach across the barline and swallow one of
 	//   M12's stops, which would leave a bow stretched over the whole measure.
 	it.concurrent('renders tab_hammer_pull.png', async () => {
-		expect(
-			await renderer.screenshot('tab_hammer_pull.musicxml'),
-		).toMatchScreenshot('tab_hammer_pull.png');
+		expect(await screenshot('tab_hammer_pull.musicxml')).toMatchScreenshot(
+			'tab_hammer_pull.png',
+		);
 	});
 
 	// Same fixture at a narrow width that breaks the system between M3 and M4, where M3's
@@ -1651,7 +1627,7 @@ describe('render', () => {
 	// The width is load-bearing: at 320 and up M3 and M4 share a system and nothing splits.
 	it.concurrent('renders tab_hammer_pull_wrap.png', async () => {
 		expect(
-			await renderer.screenshot('tab_hammer_pull.musicxml', {
+			await screenshot('tab_hammer_pull.musicxml', {
 				layout: { type: 'standard', referenceWidth: 300 },
 			}),
 		).toMatchScreenshot('tab_hammer_pull_wrap.png');
@@ -1669,7 +1645,7 @@ describe('render', () => {
 	//   frets and leaves beat 2 blank — an invisible ghost note reserves the tick so the tab
 	//   stays aligned with the notation stave (see vexflowTabTickables).
 	it.concurrent('renders tab_tie.png', async () => {
-		expect(await renderer.screenshot('tab_tie.musicxml')).toMatchScreenshot(
+		expect(await screenshot('tab_tie.musicxml')).toMatchScreenshot(
 			'tab_tie.png',
 		);
 	});
@@ -1681,7 +1657,7 @@ describe('render', () => {
 	// - M2: a grace note slurred to its main note — a slur curves from the small grace
 	//   fret 7 to the fret-5 half note, both on string 3.
 	it.concurrent('renders tab_grace.png', async () => {
-		expect(await renderer.screenshot('tab_grace.musicxml')).toMatchScreenshot(
+		expect(await screenshot('tab_grace.musicxml')).toMatchScreenshot(
 			'tab_grace.png',
 		);
 	});
@@ -1698,7 +1674,7 @@ describe('render', () => {
 	//   C5 whole note. Control: graces line up the same with or without the accidental.
 	it.concurrent('renders tab_grace_notation_align.png', async () => {
 		expect(
-			await renderer.screenshot('tab_grace_notation_align.musicxml'),
+			await screenshot('tab_grace_notation_align.musicxml'),
 		).toMatchScreenshot('tab_grace_notation_align.png');
 	});
 
@@ -1715,7 +1691,7 @@ describe('render', () => {
 	//   before a main chord (Eb4-flat + G4 + C5; TAB "6/5/5" strings 5/4/3). Same alignment.
 	it.concurrent('renders tab_grace_chord_align.png', async () => {
 		expect(
-			await renderer.screenshot('tab_grace_chord_align.musicxml'),
+			await screenshot('tab_grace_chord_align.musicxml'),
 		).toMatchScreenshot('tab_grace_chord_align.png');
 	});
 
@@ -1724,7 +1700,7 @@ describe('render', () => {
 	// - M1: a slide up (string 3, fret 5 -> 7) then a slide down (fret 9 -> 7); four
 	//   quarter notes. The "sl." labels are off by default (showTabSlideText).
 	it.concurrent('renders tab_slide.png', async () => {
-		expect(await renderer.screenshot('tab_slide.musicxml')).toMatchScreenshot(
+		expect(await screenshot('tab_slide.musicxml')).toMatchScreenshot(
 			'tab_slide.png',
 		);
 	});
@@ -1733,7 +1709,7 @@ describe('render', () => {
 	// lines.
 	it.concurrent('renders tab_slide_text.png', async () => {
 		expect(
-			await renderer.screenshot('tab_slide.musicxml', {
+			await screenshot('tab_slide.musicxml', {
 				showTabSlideText: true,
 			}),
 		).toMatchScreenshot('tab_slide_text.png');
@@ -1747,9 +1723,9 @@ describe('render', () => {
 	//   line erased under it, so each slide reads as one diagonal, not a diagonal
 	//   alongside a horizontal.
 	it.concurrent('renders tab_slide_notation.png', async () => {
-		expect(
-			await renderer.screenshot('tab_slide_notation.musicxml'),
-		).toMatchScreenshot('tab_slide_notation.png');
+		expect(await screenshot('tab_slide_notation.musicxml')).toMatchScreenshot(
+			'tab_slide_notation.png',
+		);
 	});
 
 	// Notation stave over a 6-line TAB stave, 4/4: a slide INTO a note (an unpaired
@@ -1759,7 +1735,7 @@ describe('render', () => {
 	//   "/" tick rising up into the head on both staves — left of the notehead on the
 	//   notation stave, and left of the fret as "/8" on the TAB stave (string 2, fret 8).
 	it.concurrent('renders slide_in.png', async () => {
-		expect(await renderer.screenshot('slide_in.musicxml')).toMatchScreenshot(
+		expect(await screenshot('slide_in.musicxml')).toMatchScreenshot(
 			'slide_in.png',
 		);
 	});
@@ -1770,7 +1746,7 @@ describe('render', () => {
 	// - M1: the "/" tick sits on the RIGHT of the note instead, rising up out of it — right
 	//   of the notehead on the notation stave and right of the fret as "8/" on the TAB stave.
 	it.concurrent('renders slide_out.png', async () => {
-		expect(await renderer.screenshot('slide_out.musicxml')).toMatchScreenshot(
+		expect(await screenshot('slide_out.musicxml')).toMatchScreenshot(
 			'slide_out.png',
 		);
 	});
@@ -1783,7 +1759,7 @@ describe('render', () => {
 	// - M3: M1's first bend with a "Slowly" words direction over it — the text sits above
 	//   the arrow and its "1" label, clear of both.
 	it.concurrent('renders tab_bend.png', async () => {
-		expect(await renderer.screenshot('tab_bend.musicxml')).toMatchScreenshot(
+		expect(await screenshot('tab_bend.musicxml')).toMatchScreenshot(
 			'tab_bend.png',
 		);
 	});
@@ -1792,7 +1768,7 @@ describe('render', () => {
 	// whichever comes first. No <time>, so no time signature is drawn.
 	// - M1: string 3 fret 7 runs up to the second note; fret 5 (last) runs to the bar's end.
 	it.concurrent('renders tab_vibrato.png', async () => {
-		expect(await renderer.screenshot('tab_vibrato.musicxml')).toMatchScreenshot(
+		expect(await screenshot('tab_vibrato.musicxml')).toMatchScreenshot(
 			'tab_vibrato.png',
 		);
 	});
@@ -1805,9 +1781,9 @@ describe('render', () => {
 	//   half rest. The arc bows up into the band the words park in, so "Dm" sits ABOVE the
 	//   arc's apex — the curve must not strike through the text.
 	it.concurrent('renders tab_annotation.png', async () => {
-		expect(
-			await renderer.screenshot('tab_annotation.musicxml'),
-		).toMatchScreenshot('tab_annotation.png');
+		expect(await screenshot('tab_annotation.musicxml')).toMatchScreenshot(
+			'tab_annotation.png',
+		);
 	});
 
 	// A notation stave (P1) over a 6-line TAB stave (P2), 4/4, formatted together. Four C5
@@ -1827,9 +1803,9 @@ describe('render', () => {
 	//   carries them up across the notation/TAB gap. Unjustified last system (see
 	//   system_break).
 	it.concurrent('renders tab_words_align.png', async () => {
-		expect(
-			await renderer.screenshot('tab_words_align.musicxml'),
-		).toMatchScreenshot('tab_words_align.png');
+		expect(await screenshot('tab_words_align.musicxml')).toMatchScreenshot(
+			'tab_words_align.png',
+		);
 	});
 
 	// 6-line TAB stave, quarter-note tab chords. Each chord member carries its own
@@ -1851,7 +1827,7 @@ describe('render', () => {
 	//   derivePosition in packages/vexml/voice-translator.ts). The chord's derived "2" stacks
 	//   directly under the two explicit "0"s on the next line down.
 	it.concurrent('renders tab_chord.png', async () => {
-		expect(await renderer.screenshot('tab_chord.musicxml')).toMatchScreenshot(
+		expect(await screenshot('tab_chord.musicxml')).toMatchScreenshot(
 			'tab_chord.png',
 		);
 	});
@@ -1868,9 +1844,9 @@ describe('render', () => {
 	//   over a plain "0" on string 1, so only the harmonic is bracketed), then a 5th-fret triad
 	//   (strings 3/2/1, single-digit "<5>"). Watch the stacked brackets for vertical clashing.
 	it.concurrent('renders tab_harmonic.png', async () => {
-		expect(
-			await renderer.screenshot('tab_harmonic.musicxml'),
-		).toMatchScreenshot('tab_harmonic.png');
+		expect(await screenshot('tab_harmonic.musicxml')).toMatchScreenshot(
+			'tab_harmonic.png',
+		);
 	});
 
 	// Notation stave over a 6-line TAB stave: X noteheads (<notehead>x</notehead>) for
@@ -1895,7 +1871,7 @@ describe('render', () => {
 	//   X (dead/muted, no definite pitch) noteheads suppress it (packages/vexml/notes.ts addAccidentals).
 	//   The tab stave is unaffected (it never prints accidentals): fret "0" / "✕" / "0" / "✕".
 	it.concurrent('renders notehead_x.png', async () => {
-		expect(await renderer.screenshot('notehead_x.musicxml')).toMatchScreenshot(
+		expect(await screenshot('notehead_x.musicxml')).toMatchScreenshot(
 			'notehead_x.png',
 		);
 	});
@@ -1909,9 +1885,9 @@ describe('render', () => {
 	//   then a parenthesized G4/B4/D5 half-note chord — each notehead bracketed on the notation
 	//   stave and each fret "(0)"/"(0)"/"(2)" bracketed on tab strings 3/2/1.
 	it.concurrent('renders notehead_parentheses.png', async () => {
-		expect(
-			await renderer.screenshot('notehead_parentheses.musicxml'),
-		).toMatchScreenshot('notehead_parentheses.png');
+		expect(await screenshot('notehead_parentheses.musicxml')).toMatchScreenshot(
+			'notehead_parentheses.png',
+		);
 	});
 
 	// Treble stave, 4/4: slash noteheads (<notehead>slash</notehead>) — rhythm slashes with the
@@ -1921,9 +1897,9 @@ describe('render', () => {
 	// - M2: two half slashes — open bars with stems.
 	// - M3: one whole slash — open bar, no stem.
 	it.concurrent('renders notehead_slash.png', async () => {
-		expect(
-			await renderer.screenshot('notehead_slash.musicxml'),
-		).toMatchScreenshot('notehead_slash.png');
+		expect(await screenshot('notehead_slash.musicxml')).toMatchScreenshot(
+			'notehead_slash.png',
+		);
 	});
 
 	// Treble stave, 4/4: alternate notehead shapes drawn via vexflow's duration-aware key-suffix
@@ -1933,9 +1909,9 @@ describe('render', () => {
 	// - M2: point-up triangle heads.
 	// - M3: circle-x heads.
 	it.concurrent('renders notehead_shapes.png', async () => {
-		expect(
-			await renderer.screenshot('notehead_shapes.musicxml'),
-		).toMatchScreenshot('notehead_shapes.png');
+		expect(await screenshot('notehead_shapes.musicxml')).toMatchScreenshot(
+			'notehead_shapes.png',
+		);
 	});
 
 	// Treble stave, common time: four <notehead> shapes and the `filled` attribute that
@@ -1955,7 +1931,7 @@ describe('render', () => {
 	// lilypond_22b-Staff-Notestyles.xml.
 	it.concurrent('renders notehead_shapes_extended.png', async () => {
 		expect(
-			await renderer.screenshot('notehead_shapes_extended.musicxml'),
+			await screenshot('notehead_shapes_extended.musicxml'),
 		).toMatchScreenshot('notehead_shapes_extended.png');
 	});
 
@@ -1966,9 +1942,9 @@ describe('render', () => {
 	//   5). Each tab fret sits directly under its notehead, with an empty gap on the tab
 	//   stave under the rest — frets read 0, (gap), 3, 5.
 	it.concurrent('renders tab_notation_rest.png', async () => {
-		expect(
-			await renderer.screenshot('tab_notation_rest.musicxml'),
-		).toMatchScreenshot('tab_notation_rest.png');
+		expect(await screenshot('tab_notation_rest.musicxml')).toMatchScreenshot(
+			'tab_notation_rest.png',
+		);
 	});
 
 	// Notation stave over a 6-line TAB stave, 4/4: the same ascending string-1 line on both
@@ -1990,7 +1966,7 @@ describe('render', () => {
 	//   quarter and rest.
 	it.concurrent('renders tab_notation_durations.png', async () => {
 		expect(
-			await renderer.screenshot('tab_notation_durations.musicxml'),
+			await screenshot('tab_notation_durations.musicxml'),
 		).toMatchScreenshot('tab_notation_durations.png');
 	});
 
@@ -2000,7 +1976,7 @@ describe('render', () => {
 	// show individual flags rather than a beam.
 	it.concurrent('renders tab_notation_durations_stems_below.png', async () => {
 		expect(
-			await renderer.screenshot('tab_notation_durations.musicxml', {
+			await screenshot('tab_notation_durations.musicxml', {
 				tabStemPlacement: 'below',
 			}),
 		).toMatchScreenshot('tab_notation_durations_stems_below.png');
@@ -2010,7 +1986,7 @@ describe('render', () => {
 	// instead of hanging below, the mirror image of the 'below' case.
 	it.concurrent('renders tab_notation_durations_stems_above.png', async () => {
 		expect(
-			await renderer.screenshot('tab_notation_durations.musicxml', {
+			await screenshot('tab_notation_durations.musicxml', {
 				tabStemPlacement: 'above',
 			}),
 		).toMatchScreenshot('tab_notation_durations_stems_above.png');
@@ -2022,7 +1998,7 @@ describe('render', () => {
 	// is gone). As a now-lone stave it gets its own begin barline at each system start.
 	it.concurrent('renders tab_notation_durations_no_notation.png', async () => {
 		expect(
-			await renderer.screenshot('tab_notation_durations.musicxml', {
+			await screenshot('tab_notation_durations.musicxml', {
 				showNotation: false,
 			}),
 		).toMatchScreenshot('tab_notation_durations_no_notation.png');
@@ -2036,7 +2012,7 @@ describe('render', () => {
 	// of tab_notation_durations.png exactly.
 	it.concurrent('renders tab_notation_durations_no_tab.png', async () => {
 		expect(
-			await renderer.screenshot('tab_notation_durations.musicxml', {
+			await screenshot('tab_notation_durations.musicxml', {
 				showTabs: false,
 			}),
 		).toMatchScreenshot('tab_notation_durations_no_tab.png');
@@ -2050,9 +2026,9 @@ describe('render', () => {
 	//   vexflow prints by default; MusicXML's default is show-number="actual"), a beamed
 	//   eighth-note triplet ("3"), then a half note.
 	it.concurrent('renders tuplet_triplet.png', async () => {
-		expect(
-			await renderer.screenshot('tuplet_triplet.musicxml'),
-		).toMatchScreenshot('tuplet_triplet.png');
+		expect(await screenshot('tuplet_triplet.musicxml')).toMatchScreenshot(
+			'tuplet_triplet.png',
+		);
 	});
 
 	// A tuplet inside another tuplet. Treble, 2/4, nine stem-down B4 eighths beamed 2+5+2, so
@@ -2068,9 +2044,9 @@ describe('render', () => {
 	// side-by-side brackets ("3", "15", "3") off the <time-modification> alone, ignoring the
 	// <tuplet> spans — its own reading, not a second opinion on this one.
 	it.concurrent('renders tuplet_nested.png', async () => {
-		expect(
-			await renderer.screenshot('tuplet_nested.musicxml'),
-		).toMatchScreenshot('tuplet_nested.png');
+		expect(await screenshot('tuplet_nested.musicxml')).toMatchScreenshot(
+			'tuplet_nested.png',
+		);
 	});
 
 	// Treble stave, common time: what a <tuplet> marker asks to be PRINTED, held apart from
@@ -2091,9 +2067,9 @@ describe('render', () => {
 	// lilypond_23b-Tuplets-Styles.xml, lilypond_23f-Tuplets-DurationButNoBracket.xml,
 	// and tuplet_placement.xml.
 	it.concurrent('renders tuplet_display.png', async () => {
-		expect(
-			await renderer.screenshot('tuplet_display.musicxml'),
-		).toMatchScreenshot('tuplet_display.png');
+		expect(await screenshot('tuplet_display.musicxml')).toMatchScreenshot(
+			'tuplet_display.png',
+		);
 	});
 
 	// Treble stave, 4/4: staccato (dot), accent (>), tenuto (—), then staccatissimo
@@ -2104,9 +2080,9 @@ describe('render', () => {
 	// - M3: a C5+G4 beamed eighth pair — the beam forces stems up (driven by the low
 	//   G4), so the C5's staccato sits below its notehead, not above the beam.
 	it.concurrent('renders articulations.png', async () => {
-		expect(
-			await renderer.screenshot('articulations.musicxml'),
-		).toMatchScreenshot('articulations.png');
+		expect(await screenshot('articulations.musicxml')).toMatchScreenshot(
+			'articulations.png',
+		);
 	});
 
 	// Treble stave, 4/4 (lilypond_32a-Notations M3-6): the rest of the <articulations>
@@ -2133,7 +2109,7 @@ describe('render', () => {
 	// articulation_staccato_placement_below.xml; worth its own measure when it matters.
 	it.concurrent('renders articulations_extended.png', async () => {
 		expect(
-			await renderer.screenshot('articulations_extended.musicxml'),
+			await screenshot('articulations_extended.musicxml'),
 		).toMatchScreenshot('articulations_extended.png');
 	});
 
@@ -2157,7 +2133,7 @@ describe('render', () => {
 	// goes over the glyph and the second under it, which is how the pair conventionally reads.
 	// See also ornaments.xml and lilypond_33f-Trill-EndingOnGraceNote.xml.
 	it.concurrent('renders ornaments.png', async () => {
-		expect(await renderer.screenshot('ornaments.musicxml')).toMatchScreenshot(
+		expect(await screenshot('ornaments.musicxml')).toMatchScreenshot(
 			'ornaments.png',
 		);
 	});
@@ -2175,7 +2151,7 @@ describe('render', () => {
 	// (slashes BETWEEN two noteheads) needs a spanner — see the note in addOrnaments — and no
 	// fixture reaches it; see tremelo_two_bars.xml when one does.
 	it.concurrent('renders tremolo.png', async () => {
-		expect(await renderer.screenshot('tremolo.musicxml')).toMatchScreenshot(
+		expect(await screenshot('tremolo.musicxml')).toMatchScreenshot(
 			'tremolo.png',
 		);
 	});
@@ -2205,9 +2181,9 @@ describe('render', () => {
 	//   row a full stave space clear of the beam; they must not rest on it (see
 	//   StaveArticulation).
 	it.concurrent('renders technical_marks.png', async () => {
-		expect(
-			await renderer.screenshot('technical_marks.musicxml'),
-		).toMatchScreenshot('technical_marks.png');
+		expect(await screenshot('technical_marks.musicxml')).toMatchScreenshot(
+			'technical_marks.png',
+		);
 	});
 
 	// The realistic fingering case: <technical><fingering> on CHORDS across a grand staff,
@@ -2220,7 +2196,7 @@ describe('render', () => {
 	//   nearest-first again (1 on G2). Both columns clear the stave rather than sitting
 	//   beside the noteheads — the engraving MuseScore and OSMD both give this file.
 	it.concurrent('renders fingering.png', async () => {
-		expect(await renderer.screenshot('fingering.musicxml')).toMatchScreenshot(
+		expect(await screenshot('fingering.musicxml')).toMatchScreenshot(
 			'fingering.png',
 		);
 	});
@@ -2239,9 +2215,9 @@ describe('render', () => {
 	//   collapses — every mark on a note low in the stave lands on one row — so it pins that
 	//   the column is built by the draw pass instead (DrawPass.pinTechnicals).
 	it.concurrent('renders string_numbers.png', async () => {
-		expect(
-			await renderer.screenshot('string_numbers.musicxml'),
-		).toMatchScreenshot('string_numbers.png');
+		expect(await screenshot('string_numbers.musicxml')).toMatchScreenshot(
+			'string_numbers.png',
+		);
 	});
 
 	// Treble stave, 4/4: fermatas from <notations><fermata>, drawn as a held-note
@@ -2250,7 +2226,7 @@ describe('render', () => {
 	// - M1: a normal fermata above a C5 whole note (default placement).
 	// - M2: an inverted fermata (type="inverted") below a C5 whole note.
 	it.concurrent('renders fermata.png', async () => {
-		expect(await renderer.screenshot('fermata.musicxml')).toMatchScreenshot(
+		expect(await screenshot('fermata.musicxml')).toMatchScreenshot(
 			'fermata.png',
 		);
 	});
@@ -2262,7 +2238,7 @@ describe('render', () => {
 	// - M2: direction="up" — the wiggle with an arrowhead pointing up at the top.
 	// - M3: direction="down" — the wiggle with an arrowhead pointing down at the bottom.
 	it.concurrent('renders arpeggio.png', async () => {
-		expect(await renderer.screenshot('arpeggio.musicxml')).toMatchScreenshot(
+		expect(await screenshot('arpeggio.musicxml')).toMatchScreenshot(
 			'arpeggio.png',
 		);
 	});
@@ -2279,9 +2255,9 @@ describe('render', () => {
 	//   hook at each end, overhanging the outer two noteheads by half a staff space the way
 	//   the wiggle does.
 	it.concurrent('renders non_arpeggiate.png', async () => {
-		expect(
-			await renderer.screenshot('non_arpeggiate.musicxml'),
-		).toMatchScreenshot('non_arpeggiate.png');
+		expect(await screenshot('non_arpeggiate.musicxml')).toMatchScreenshot(
+			'non_arpeggiate.png',
+		);
 	});
 
 	// Treble stave, 4/4: chord symbols from <harmony>, each printed above the first
@@ -2330,7 +2306,7 @@ describe('render', () => {
 	//   ponytail: an above-stave tuplet bracket still isn't a collision obstacle, so a
 	//   stem-UP tuplet under a chord symbol would overprint. No fixture reaches that.
 	it.concurrent('renders harmony.png', async () => {
-		expect(await renderer.screenshot('harmony.musicxml')).toMatchScreenshot(
+		expect(await screenshot('harmony.musicxml')).toMatchScreenshot(
 			'harmony.png',
 		);
 	});
@@ -2342,9 +2318,9 @@ describe('render', () => {
 	// margin above the system. The symbol also lifts a hair to clear the grace's stem tip.
 	// - M1: a "C" symbol over a B4 quarter preceded by a slashed D5 grace.
 	it.concurrent('renders harmony_grace.png', async () => {
-		expect(
-			await renderer.screenshot('harmony_grace.musicxml'),
-		).toMatchScreenshot('harmony_grace.png');
+		expect(await screenshot('harmony_grace.musicxml')).toMatchScreenshot(
+			'harmony_grace.png',
+		);
 	});
 
 	// The <kind> vocabulary, one kind per note: four measures of four C4 quarters, each with a
@@ -2363,9 +2339,9 @@ describe('render', () => {
 	// about ignoring: a "C(add9)" prints as a bare "C", a WRONG symbol rather than a missing
 	// one. Extend the fixture when a score needs them.
 	it.concurrent('renders harmony_kinds.png', async () => {
-		expect(
-			await renderer.screenshot('harmony_kinds.musicxml'),
-		).toMatchScreenshot('harmony_kinds.png');
+		expect(await screenshot('harmony_kinds.musicxml')).toMatchScreenshot(
+			'harmony_kinds.png',
+		);
 	});
 
 	// <figured-bass> — the stacked numerals a continuo player reads under the bass line. One
@@ -2386,9 +2362,9 @@ describe('render', () => {
 	// own <miscellaneous-field>.
 	// See also lilypond_46g-PickupMeasure-Chordnames-FiguredBass.xml.
 	it.concurrent('renders figured_bass.png', async () => {
-		expect(
-			await renderer.screenshot('figured_bass.musicxml'),
-		).toMatchScreenshot('figured_bass.png');
+		expect(await screenshot('figured_bass.musicxml')).toMatchScreenshot(
+			'figured_bass.png',
+		);
 	});
 
 	// Treble stave, 4/4: guitar chord diagrams (fret boxes) from <harmony><frame>, each
@@ -2424,9 +2400,9 @@ describe('render', () => {
 	//   lifts until it clears the high noteheads/ledger lines, using the same padded
 	//   lift-clear treatment a chord symbol uses, instead of overlapping them.
 	it.concurrent('renders chord_diagram.png', async () => {
-		expect(
-			await renderer.screenshot('chord_diagram.musicxml'),
-		).toMatchScreenshot('chord_diagram.png');
+		expect(await screenshot('chord_diagram.musicxml')).toMatchScreenshot(
+			'chord_diagram.png',
+		);
 	});
 
 	// Treble stave, 4/4, two measures at a narrow 500px width: a chord diagram bound to a
@@ -2446,7 +2422,7 @@ describe('render', () => {
 	//   (Bass-LP-05-Fretboard M15).
 	it.concurrent('renders chord_diagram_adjacent.png', async () => {
 		expect(
-			await renderer.screenshot('chord_diagram_adjacent.musicxml', {
+			await screenshot('chord_diagram_adjacent.musicxml', {
 				layout: { type: 'standard', referenceWidth: 500 },
 			}),
 		).toMatchScreenshot('chord_diagram_adjacent.png');
@@ -2459,7 +2435,7 @@ describe('render', () => {
 	// instead of being clipped. Four B4 quarters so only the diagram's clamp is exercised.
 	it.concurrent('renders chord_diagram_edge.png', async () => {
 		expect(
-			await renderer.screenshot('chord_diagram_edge.musicxml', {
+			await screenshot('chord_diagram_edge.musicxml', {
 				layout: { type: 'standard', referenceWidth: 500 },
 			}),
 		).toMatchScreenshot('chord_diagram_edge.png');
@@ -2474,7 +2450,7 @@ describe('render', () => {
 	// Pro repeats it; both copies sit on beat 1 and identical, so exactly ONE box draws.
 	it.concurrent('renders chord_diagram_lower_part.png', async () => {
 		expect(
-			await renderer.screenshot('chord_diagram_lower_part.musicxml'),
+			await screenshot('chord_diagram_lower_part.musicxml'),
 		).toMatchScreenshot('chord_diagram_lower_part.png');
 	});
 
@@ -2485,7 +2461,7 @@ describe('render', () => {
 	// - M2: harmonic chords (open diamonds, every member a harmonic) — an E5/G5 dyad a third
 	//   apart, then a C5/E5/G5 triad of three stacked diamonds.
 	it.concurrent('renders harmonic.png', async () => {
-		expect(await renderer.screenshot('harmonic.musicxml')).toMatchScreenshot(
+		expect(await screenshot('harmonic.musicxml')).toMatchScreenshot(
 			'harmonic.png',
 		);
 	});
@@ -2519,7 +2495,7 @@ describe('render', () => {
 	// - M10: the mirror of M9 — an 8th A4 grace sliding UP to the C5 quarter, so the diagonal line
 	//   slants up from the lower grace notehead to the main notehead.
 	it.concurrent('renders grace_notes.png', async () => {
-		expect(await renderer.screenshot('grace_notes.musicxml')).toMatchScreenshot(
+		expect(await screenshot('grace_notes.musicxml')).toMatchScreenshot(
 			'grace_notes.png',
 		);
 	});
@@ -2535,9 +2511,9 @@ describe('render', () => {
 	//   concave and passing well clear of both sharps — not up to the chord's TOP note, which
 	//   is what vexflow's own NEAR_HEAD metric would give (a straight diagonal across them).
 	it.concurrent('renders grace_bass_clef.png', async () => {
-		expect(
-			await renderer.screenshot('grace_bass_clef.musicxml'),
-		).toMatchScreenshot('grace_bass_clef.png');
+		expect(await screenshot('grace_bass_clef.musicxml')).toMatchScreenshot(
+			'grace_bass_clef.png',
+		);
 	});
 
 	// Treble notation stave + 6-line TAB (transposed guitar), 4/4, Bb major: grace-note
@@ -2561,9 +2537,9 @@ describe('render', () => {
 	//   partner is the excluded grace); beat 4 beams the Bb4/C5 16ths. Beat 3's chord is wholly
 	//   tied, so the tab omits all three of its frets (the held beat is blank).
 	it.concurrent('renders grace_spacing.png', async () => {
-		expect(
-			await renderer.screenshot('grace_spacing.musicxml'),
-		).toMatchScreenshot('grace_spacing.png');
+		expect(await screenshot('grace_spacing.musicxml')).toMatchScreenshot(
+			'grace_spacing.png',
+		);
 	});
 
 	// Treble stave, common time: a CHORD as a grace note on a notation stave — the grace's
@@ -2578,7 +2554,7 @@ describe('render', () => {
 	// ponytail: lilypond_24b carries no <slur> on its graces, so the grace slur (which would
 	// leave the chord's lowest member) is still unexercised.
 	it.concurrent('renders grace_chord.png', async () => {
-		expect(await renderer.screenshot('grace_chord.musicxml')).toMatchScreenshot(
+		expect(await screenshot('grace_chord.musicxml')).toMatchScreenshot(
 			'grace_chord.png',
 		);
 	});
@@ -2603,7 +2579,7 @@ describe('render', () => {
 	// See also lilypond_24c-GraceNote-MeasureEnd.xml (a grace as the very last thing in a
 	// measure, which has nothing to attach to) and lilypond_24e-GraceNote-StaffChange.xml.
 	it.concurrent('renders grace_after.png', async () => {
-		expect(await renderer.screenshot('grace_after.musicxml')).toMatchScreenshot(
+		expect(await screenshot('grace_after.musicxml')).toMatchScreenshot(
 			'grace_after.png',
 		);
 	});
@@ -2637,7 +2613,7 @@ describe('render', () => {
 	//   an unbroken <chord/> run with no lead between them, collapsing into a single
 	//   four-note B4 cluster on beat 1 with the remaining three G4s left bare.
 	it.concurrent('renders two_voices.png', async () => {
-		expect(await renderer.screenshot('two_voices.musicxml')).toMatchScreenshot(
+		expect(await screenshot('two_voices.musicxml')).toMatchScreenshot(
 			'two_voices.png',
 		);
 	});
@@ -2653,9 +2629,9 @@ describe('render', () => {
 	//   aligning vertically with the soprano/bass halves, closing on a C-major chord
 	//   (E5/C5/G4/C3).
 	it.concurrent('renders voices_grand_staff.png', async () => {
-		expect(
-			await renderer.screenshot('voices_grand_staff.musicxml'),
-		).toMatchScreenshot('voices_grand_staff.png');
+		expect(await screenshot('voices_grand_staff.musicxml')).toMatchScreenshot(
+			'voices_grand_staff.png',
+		);
 	});
 
 	// Cross-staff notes — a voice whose notes change <staff> mid-beam, the defining gesture of
@@ -2690,7 +2666,7 @@ describe('render', () => {
 	//   beats 3-4.
 	// See also cross_stave_16ths_ghost_notes_simple.xml.
 	it.concurrent('renders cross_stave.png', async () => {
-		expect(await renderer.screenshot('cross_stave.musicxml')).toMatchScreenshot(
+		expect(await screenshot('cross_stave.musicxml')).toMatchScreenshot(
 			'cross_stave.png',
 		);
 	});
@@ -2709,7 +2685,7 @@ describe('render', () => {
 	// staff's key arrives after a <backup> and so is easy to miss.
 	it.concurrent('renders staves_different_keys.png', async () => {
 		expect(
-			await renderer.screenshot('staves_different_keys.musicxml'),
+			await screenshot('staves_different_keys.musicxml'),
 		).toMatchScreenshot('staves_different_keys.png');
 	});
 
@@ -2728,9 +2704,9 @@ describe('render', () => {
 	//   so only the bass staff redraws a clef (at the reduced mid-system size) and the new
 	//   2-sharp key signature prints on both. Bass reads F#4-G4-A4-B4 in the new clef.
 	it.concurrent('renders staff_dynamics.png', async () => {
-		expect(
-			await renderer.screenshot('staff_dynamics.musicxml'),
-		).toMatchScreenshot('staff_dynamics.png');
+		expect(await screenshot('staff_dynamics.musicxml')).toMatchScreenshot(
+			'staff_dynamics.png',
+		);
 	});
 
 	// Three transposing parts (Bb trumpet, Eb horn, piano) each playing the same concert C
@@ -2746,7 +2722,7 @@ describe('render', () => {
 	// playback pitch (not a render concern) and a mid-score transposition change — see
 	// transpose_change.musicxml below.
 	it.concurrent('renders transpose.png', async () => {
-		expect(await renderer.screenshot('transpose.musicxml')).toMatchScreenshot(
+		expect(await screenshot('transpose.musicxml')).toMatchScreenshot(
 			'transpose.png',
 		);
 	});
@@ -2765,9 +2741,9 @@ describe('render', () => {
 	// read once off the <part-list>. See also lilypond_72b-TransposingInstruments-Full.xml
 	// and concert_score_and_for_part.xml (the <for-part> concert-score form).
 	it.concurrent('renders transpose_change.png', async () => {
-		expect(
-			await renderer.screenshot('transpose_change.musicxml'),
-		).toMatchScreenshot('transpose_change.png');
+		expect(await screenshot('transpose_change.musicxml')).toMatchScreenshot(
+			'transpose_change.png',
+		);
 	});
 
 	// Sixteen identical C5 whole-note measures wrapping onto three systems (seven, eight,
@@ -2777,9 +2753,9 @@ describe('render', () => {
 	// system's first measure. The lone M16 stays ragged at its natural width — the last
 	// system is under minLastSystemFill, so it is not justified out to the page edge.
 	it.concurrent('renders system_break.png', async () => {
-		expect(
-			await renderer.screenshot('system_break.musicxml'),
-		).toMatchScreenshot('system_break.png');
+		expect(await screenshot('system_break.musicxml')).toMatchScreenshot(
+			'system_break.png',
+		);
 	});
 
 	// Four C5 whole-note measures, treble 4/4, that would all fit on one system — but
@@ -2788,16 +2764,16 @@ describe('render', () => {
 	// clef; the time signature prints only on M1). Proves an explicit break overrides
 	// width-based wrapping.
 	it.concurrent('renders print_new_system.png', async () => {
-		expect(
-			await renderer.screenshot('print_new_system.musicxml'),
-		).toMatchScreenshot('print_new_system.png');
+		expect(await screenshot('print_new_system.musicxml')).toMatchScreenshot(
+			'print_new_system.png',
+		);
 	});
 
 	// The same four measures with honorSystemBreaks off: the <print new-system="yes"/> on M3
 	// is ignored and all four measures fit on one system.
 	it.concurrent('renders ignore_new_system.png', async () => {
 		expect(
-			await renderer.screenshot('print_new_system.musicxml', {
+			await screenshot('print_new_system.musicxml', {
 				layout: { type: 'standard', honorSystemBreaks: false },
 			}),
 		).toMatchScreenshot('ignore_new_system.png');
@@ -2807,7 +2783,7 @@ describe('render', () => {
 	// on a single uninterrupted system (no system break).
 	it.concurrent('renders layout_panoramic.png', async () => {
 		expect(
-			await renderer.screenshot('system_break.musicxml', {
+			await screenshot('system_break.musicxml', {
 				layout: { type: 'panoramic' },
 			}),
 		).toMatchScreenshot('layout_panoramic.png');
@@ -2824,9 +2800,9 @@ describe('render', () => {
 	// both fitting the reference width, and this is the only one of the three at the plain
 	// 900px page.
 	it.concurrent('renders overflow_wrap.png', async () => {
-		expect(
-			await renderer.screenshot('overflow_forced_line.musicxml'),
-		).toMatchScreenshot('overflow_wrap.png');
+		expect(await screenshot('overflow_forced_line.musicxml')).toMatchScreenshot(
+			'overflow_wrap.png',
+		);
 	});
 
 	// 'allow': the document wins. All five measures stay on one system, squeezed to their
@@ -2834,7 +2810,7 @@ describe('render', () => {
 	// cover the spill rather than clipping it, so this image is wider than overflow_wrap.png.
 	it.concurrent('renders overflow_allow.png', async () => {
 		expect(
-			await renderer.screenshot('overflow_forced_line.musicxml', {
+			await screenshot('overflow_forced_line.musicxml', {
 				layout: { type: 'standard', overflow: 'allow' },
 			}),
 		).toMatchScreenshot('overflow_allow.png');
@@ -2845,7 +2821,7 @@ describe('render', () => {
 	// same one system, but with the notes spaced normally instead of pushed to the floor.
 	it.concurrent('renders overflow_widen.png', async () => {
 		expect(
-			await renderer.screenshot('overflow_forced_line.musicxml', {
+			await screenshot('overflow_forced_line.musicxml', {
 				layout: { type: 'standard', overflow: 'widen' },
 			}),
 		).toMatchScreenshot('overflow_widen.png');
@@ -2861,7 +2837,7 @@ describe('render', () => {
 	// honoured, not that the result is good engraving.
 	it.concurrent('renders last_system_stretch.png', async () => {
 		expect(
-			await renderer.screenshot('system_break.musicxml', {
+			await screenshot('system_break.musicxml', {
 				minLastSystemFill: 0,
 			}),
 		).toMatchScreenshot('last_system_stretch.png');
@@ -2874,7 +2850,7 @@ describe('render', () => {
 	// empty margin beyond it.
 	it.concurrent('renders stretch_single_system_off.png', async () => {
 		expect(
-			await renderer.screenshot('aloof_measure_1.musicxml', {
+			await screenshot('aloof_measure_1.musicxml', {
 				stretchSingleSystem: false,
 			}),
 		).toMatchScreenshot('stretch_single_system_off.png');
@@ -2885,7 +2861,7 @@ describe('render', () => {
 	// across the top system, "10"-"16" across the bottom.
 	it.concurrent('renders measure_numbering_every.png', async () => {
 		expect(
-			await renderer.screenshot('system_break.musicxml', {
+			await screenshot('system_break.musicxml', {
 				measureNumbering: 'every',
 			}),
 		).toMatchScreenshot('measure_numbering_every.png');
@@ -2895,7 +2871,7 @@ describe('render', () => {
 	// 'none'): no measure numbers anywhere, opting out of the 'system' default.
 	it.concurrent('renders measure_numbering_none.png', async () => {
 		expect(
-			await renderer.screenshot('system_break.musicxml', {
+			await screenshot('system_break.musicxml', {
 				measureNumbering: 'none',
 			}),
 		).toMatchScreenshot('measure_numbering_none.png');
@@ -2908,7 +2884,7 @@ describe('render', () => {
 	// because it begins a system — the case that proves the "plus every system start" union.
 	it.concurrent('renders measure_numbering_every_2.png', async () => {
 		expect(
-			await renderer.screenshot('system_break.musicxml', {
+			await screenshot('system_break.musicxml', {
 				measureNumbering: 'every-2',
 			}),
 		).toMatchScreenshot('measure_numbering_every_2.png');
@@ -2921,7 +2897,7 @@ describe('render', () => {
 	// measure_numbering_every_2 for the case where it does).
 	it.concurrent('renders measure_numbering_every_3.png', async () => {
 		expect(
-			await renderer.screenshot('system_break.musicxml', {
+			await screenshot('system_break.musicxml', {
 				measureNumbering: 'every-3',
 			}),
 		).toMatchScreenshot('measure_numbering_every_3.png');
@@ -2936,7 +2912,7 @@ describe('render', () => {
 	//   which must not collide with system 1's low notes.
 	it.concurrent('renders system_spacing.png', async () => {
 		expect(
-			await renderer.screenshot('system_spacing.musicxml', {
+			await screenshot('system_spacing.musicxml', {
 				layout: { type: 'standard', referenceWidth: 660 },
 			}),
 		).toMatchScreenshot('system_spacing.png');
@@ -2950,9 +2926,9 @@ describe('render', () => {
 	// lower ledger lines/noteheads of staff 1 must stay clear of the upper ledger
 	// lines/noteheads of staff 2 — nothing from either staff may touch the other.
 	it.concurrent('renders stave_spacing.png', async () => {
-		expect(
-			await renderer.screenshot('stave_spacing.musicxml'),
-		).toMatchScreenshot('stave_spacing.png');
+		expect(await screenshot('stave_spacing.musicxml')).toMatchScreenshot(
+			'stave_spacing.png',
+		);
 	});
 
 	// The same braced two-stave part and the same extremes as stave_spacing.musicxml (staff 1
@@ -2969,7 +2945,7 @@ describe('render', () => {
 	// would draw M1 as far apart as M2 for a collision that never happens there.
 	it.concurrent('renders stave_spacing_dynamic.png', async () => {
 		expect(
-			await renderer.screenshot('stave_spacing_dynamic.musicxml'),
+			await screenshot('stave_spacing_dynamic.musicxml'),
 		).toMatchScreenshot('stave_spacing_dynamic.png');
 	});
 
@@ -2982,16 +2958,16 @@ describe('render', () => {
 	// lines must stay clear of P2's high ones, and each part's own two staves must
 	// stay clear too.
 	it.concurrent('renders part_spacing.png', async () => {
-		expect(
-			await renderer.screenshot('part_spacing.musicxml'),
-		).toMatchScreenshot('part_spacing.png');
+		expect(await screenshot('part_spacing.musicxml')).toMatchScreenshot(
+			'part_spacing.png',
+		);
 	});
 
 	// Individual measures extracted from 'aloof' for focused testing.
 	it.concurrent('renders aloof_measure_1.png', async () => {
-		expect(
-			await renderer.screenshot('aloof_measure_1.musicxml'),
-		).toMatchScreenshot('aloof_measure_1.png');
+		expect(await screenshot('aloof_measure_1.musicxml')).toMatchScreenshot(
+			'aloof_measure_1.png',
+		);
 	});
 	// Treble + 6-line TAB, A major, 4/4. Beat 1 strikes a chord that ties into beat 2;
 	// the notation stave draws both noteheads joined by a tie arc, but the TAB omits the
@@ -2999,24 +2975,24 @@ describe('render', () => {
 	// re-struck string is shown, a held one is not. The two beamed eighth pairs carry
 	// slurs that change fret (5→7, 4→5), so those are drawn as hammer/pull arcs in the tab.
 	it.concurrent('renders aloof_measure_2.png', async () => {
-		expect(
-			await renderer.screenshot('aloof_measure_2.musicxml'),
-		).toMatchScreenshot('aloof_measure_2.png');
+		expect(await screenshot('aloof_measure_2.musicxml')).toMatchScreenshot(
+			'aloof_measure_2.png',
+		);
 	});
 	it.concurrent('renders aloof_measure_7.png', async () => {
-		expect(
-			await renderer.screenshot('aloof_measure_7.musicxml'),
-		).toMatchScreenshot('aloof_measure_7.png');
+		expect(await screenshot('aloof_measure_7.musicxml')).toMatchScreenshot(
+			'aloof_measure_7.png',
+		);
 	});
 	it.concurrent('renders aloof_measure_14.png', async () => {
-		expect(
-			await renderer.screenshot('aloof_measure_14.musicxml'),
-		).toMatchScreenshot('aloof_measure_14.png');
+		expect(await screenshot('aloof_measure_14.musicxml')).toMatchScreenshot(
+			'aloof_measure_14.png',
+		);
 	});
 	it.concurrent('renders aloof_measure_15.png', async () => {
-		expect(
-			await renderer.screenshot('aloof_measure_15.musicxml'),
-		).toMatchScreenshot('aloof_measure_15.png');
+		expect(await screenshot('aloof_measure_15.musicxml')).toMatchScreenshot(
+			'aloof_measure_15.png',
+		);
 	});
 
 	// ---------------------------------------------------------------------------------------
@@ -3034,30 +3010,30 @@ describe('render', () => {
 
 	// Chopin: one measure of piano, both staves in bass clef, 3 flats.
 	it.concurrent('renders score_chopin_prelude.png', async () => {
-		expect(
-			await renderer.screenshot('score_chopin_prelude.musicxml'),
-		).toMatchScreenshot('score_chopin_prelude.png');
+		expect(await screenshot('score_chopin_prelude.musicxml')).toMatchScreenshot(
+			'score_chopin_prelude.png',
+		);
 	});
 
 	// Brahms: 8 measures of solo violin double stops, with fingerings and circled string
 	// numbers.
 	it.concurrent('renders score_brahms_violin_concerto.png', async () => {
 		expect(
-			await renderer.screenshot('score_brahms_violin_concerto.musicxml'),
+			await screenshot('score_brahms_violin_concerto.musicxml'),
 		).toMatchScreenshot('score_brahms_violin_concerto.png');
 	});
 
 	// Fauré, "Après un rêve": 4 measures of voice over braced piano, with lyrics and hairpins.
 	it.concurrent('renders score_faure_apres_un_reve.png', async () => {
 		expect(
-			await renderer.screenshot('score_faure_apres_un_reve.musicxml'),
+			await screenshot('score_faure_apres_un_reve.musicxml'),
 		).toMatchScreenshot('score_faure_apres_un_reve.png');
 	});
 
 	// Mozart, K. 387: 13 measures of string quartet — four parts, viola in alto C clef, pickup.
 	it.concurrent('renders score_mozart_string_quartet.png', async () => {
 		expect(
-			await renderer.screenshot('score_mozart_string_quartet.musicxml'),
+			await screenshot('score_mozart_string_quartet.musicxml'),
 		).toMatchScreenshot('score_mozart_string_quartet.png');
 	});
 
@@ -3065,7 +3041,7 @@ describe('render', () => {
 	// stack here (lyrics, graces, arpeggios, an octave shift, hairpins, a mid-measure clef).
 	it.concurrent('renders score_debussy_mandoline.png', async () => {
 		expect(
-			await renderer.screenshot('score_debussy_mandoline.musicxml'),
+			await screenshot('score_debussy_mandoline.musicxml'),
 		).toMatchScreenshot('score_debussy_mandoline.png');
 	});
 
@@ -3073,32 +3049,30 @@ describe('render', () => {
 	// a mid-measure clef change on the lower piano stave.
 	it.concurrent('renders score_beethoven_an_die_ferne_geliebte.png', async () => {
 		expect(
-			await renderer.screenshot(
-				'score_beethoven_an_die_ferne_geliebte.musicxml',
-			),
+			await screenshot('score_beethoven_an_die_ferne_geliebte.musicxml'),
 		).toMatchScreenshot('score_beethoven_an_die_ferne_geliebte.png');
 	});
 
 	// 16 measures of solo guitar on a TAB stave with no notation stave above it.
 	it.concurrent('renders score_wanna_skip_class.png', async () => {
 		expect(
-			await renderer.screenshot('score_wanna_skip_class.musicxml'),
+			await screenshot('score_wanna_skip_class.musicxml'),
 		).toMatchScreenshot('score_wanna_skip_class.png');
 	});
 
 	// Mozart, "An Chloe": 18 measures of voice over piano in cut common, with turn ornaments.
 	it.concurrent('renders score_mozart_an_chloe.png', async () => {
 		expect(
-			await renderer.screenshot('score_mozart_an_chloe.musicxml'),
+			await screenshot('score_mozart_an_chloe.musicxml'),
 		).toMatchScreenshot('score_mozart_an_chloe.png');
 	});
 
 	// Bach, "Air": 19 measures of string quartet with repeats and numbered endings spanning all
 	// four parts.
 	it.concurrent('renders score_bach_air.png', async () => {
-		expect(
-			await renderer.screenshot('score_bach_air.musicxml'),
-		).toMatchScreenshot('score_bach_air.png');
+		expect(await screenshot('score_bach_air.musicxml')).toMatchScreenshot(
+			'score_bach_air.png',
+		);
 	});
 
 	// Mozart, "Das Veilchen": 23 measures of voice over piano, with grace notes. The document
@@ -3123,16 +3097,16 @@ describe('render', () => {
 	//   Every other line sits back at its planned spacing.
 	it.concurrent('renders score_mozart_das_veilchen.png', async () => {
 		expect(
-			await renderer.screenshot('score_mozart_das_veilchen.musicxml'),
+			await screenshot('score_mozart_das_veilchen.musicxml'),
 		).toMatchScreenshot('score_mozart_das_veilchen.png');
 	});
 
 	// Austrian national anthem: 28 measures of voice over piano, with three stacked verses of
 	// lyrics setting the measure widths.
 	it.concurrent('renders score_land_der_berge.png', async () => {
-		expect(
-			await renderer.screenshot('score_land_der_berge.musicxml'),
-		).toMatchScreenshot('score_land_der_berge.png');
+		expect(await screenshot('score_land_der_berge.musicxml')).toMatchScreenshot(
+			'score_land_der_berge.png',
+		);
 	});
 
 	// "Amazing Grace": 33 measures of voice over guitar notation + TAB, with lyrics and chord
@@ -3155,9 +3129,9 @@ describe('render', () => {
 	// system. Fix in the diagram placement pass in draw-pass.ts, then re-accept this
 	// baseline.
 	it.concurrent('renders score_amazing_grace.png', async () => {
-		expect(
-			await renderer.screenshot('score_amazing_grace.musicxml'),
-		).toMatchScreenshot('score_amazing_grace.png');
+		expect(await screenshot('score_amazing_grace.musicxml')).toMatchScreenshot(
+			'score_amazing_grace.png',
+		);
 	});
 
 	// "Green's Greenery": 61 measures of guitar notation + TAB, with repeats and endings. ONE
@@ -3165,7 +3139,7 @@ describe('render', () => {
 	// 6-line TAB.
 	it.concurrent('renders score_greens_greenery.png', async () => {
 		expect(
-			await renderer.screenshot('score_greens_greenery.musicxml'),
+			await screenshot('score_greens_greenery.musicxml'),
 		).toMatchScreenshot('score_greens_greenery.png');
 	});
 
@@ -3180,7 +3154,7 @@ describe('render', () => {
 	// Joplin, "Elite Syncopations": 88 measures of piano, with repeats and numbered endings.
 	it.concurrent('renders score_joplin_elite_syncopations.png', async () => {
 		expect(
-			await renderer.screenshot('score_joplin_elite_syncopations.musicxml'),
+			await screenshot('score_joplin_elite_syncopations.musicxml'),
 		).toMatchScreenshot('score_joplin_elite_syncopations.png');
 	});
 });

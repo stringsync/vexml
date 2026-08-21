@@ -1,9 +1,9 @@
 import { afterAll, beforeAll } from 'bun:test';
-import { renderer } from './renderer';
+import { close, start } from './harness';
 // Registers the toMatchScreenshot matcher and its end-of-run report.
 import './screenshot';
 
-// The preload (see bunfig.toml): preloaded once per `bun test` run, so the renderer and
+// The preload (see bunfig.toml): preloaded once per `bun test` run, so the tab pool and
 // the matcher's cleanups scope to the whole run, not one file.
 
 // Guard: tests must go through `vex test`, which renders in the pinned Docker
@@ -21,9 +21,9 @@ if (process.env.I_AM_RUNNING_TESTS_USING_VEX_TEST !== '1') {
 
 // Eager, to keep the browser launch out of the first test's own timeout.
 beforeAll(async () => {
-	await renderer.start();
+	await start();
 });
 
 afterAll(async () => {
-	await renderer.close();
+	await close();
 });

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'bun:test';
-import { renderer } from './renderer';
+import { probe } from './harness';
 
 describe('events', () => {
 	// The unit tests cover the wiring with fakes; this proves the real chain end to end — a DOM
 	// pointer event on the managed canvas bubbles to the Score, gets mapped to score space through
 	// the live Stage transform, and hit-tests against the index built from real geometry.
 	it.concurrent('a real pointer event maps to score space and hit-tests a target', async () => {
-		const { result } = await renderer.probe(
+		const { result } = await probe(
 			'structure_single_stave.musicxml',
 			{},
 			(score, container) => {

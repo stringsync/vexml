@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { renderer } from './renderer';
+import { probe } from './harness';
 
 describe('swing', () => {
 	/*
@@ -12,7 +12,7 @@ describe('swing', () => {
 	 * the way late, and the pickup — which IS an off-beat — plays short rather than long.
 	 */
 	it.concurrent('a 2:1 <swing> lengthens the on-beat eighths and shortens the off-beats', async () => {
-		const { result } = await renderer.probe('swing.musicxml', {}, (score) => ({
+		const { result } = await probe('swing.musicxml', {}, (score) => ({
 			steps: score
 				.getSequence()
 				.getSteps()
