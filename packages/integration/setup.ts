@@ -1,10 +1,11 @@
 import { afterAll, beforeAll } from 'bun:test';
-import { close, start } from './harness';
+import { ScoreBrowser } from './score-browser';
 // Registers the toMatchScreenshot matcher and its end-of-run report.
 import './screenshot';
 
-// The preload (see bunfig.toml): preloaded once per `bun test` run, so the tab pool and
-// the matcher's cleanups scope to the whole run, not one file.
+// The preload (see bunfig.toml): preloaded once per `bun test` run, so the browser and
+// the matcher's cleanups scope to the whole run, not one file. This is the one module
+// allowed side effects; everything else only declares.
 
 // Guard: tests must go through `vex test`, which renders in the pinned Docker
 // image. Bare `bun test` on the host compares against the committed Docker
@@ -19,11 +20,17 @@ if (process.env.I_AM_RUNNING_TESTS_USING_VEX_TEST !== '1') {
 	process.exit(1);
 }
 
+/** The run's one ScoreBrowser, shared so the suite launches one Chromium (see pool.ts).
+ * Assigned in beforeAll below — an ESM binding is live, so tests importing `scores` see
+ * the instance by the time any of them runs. */
+export let scores: ScoreBrowser;
+
 // Eager, to keep the browser launch out of the first test's own timeout.
 beforeAll(async () => {
-	await start();
+	scores = new ScoreBrowser();
+	await scores.start();
 });
 
 afterAll(async () => {
-	await close();
+	await scores.close();
 });

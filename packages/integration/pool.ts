@@ -14,7 +14,7 @@ export const PAGE_HTML =
 
 let script: Promise<string> | null = null;
 
-/** page.ts (the browser side of the harness) as an injectable script, bundled once per
+/** page.ts (the browser side of the ScoreBrowser) as an injectable script, bundled once per
  * process. Exported alongside PAGE_HTML because `vex render` opens the same page. */
 export function pageScript(): Promise<string> {
 	script ??= bundle(path.resolve(import.meta.dir, 'page.ts'));
@@ -25,7 +25,7 @@ export function pageScript(): Promise<string> {
 const POOL_SIZE = 8;
 
 /**
- * A pool of tabs, each loaded with the harness page exactly once and reused across
+ * A pool of tabs, each loaded with the ScoreBrowser page exactly once and reused across
  * tests. Screenshot tests are stateless — they clear the container and re-render — so a
  * test borrows an idle tab instead of paying open() (a fresh page plus a ~2MB bundle
  * parse) itself. Pooling (vs. one shared tab) lets `it.concurrent` renders run on

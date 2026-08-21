@@ -5,7 +5,7 @@ import {
 } from '@stringsync/vexml';
 
 /*
- * The browser side of the harness: bundled into a classic script (pool.ts's
+ * The browser side of the ScoreBrowser: bundled into a classic script (pool.ts's
  * pageScript()) and injected into every tab the pool opens — and into the tab `vex
  * render` opens. It registers the two functions Tab.call reaches: `mount` renders a
  * score into #screenshot, `probe` runs a test's fn against it. The Score/container pair
@@ -53,7 +53,7 @@ Object.assign(globalThis, {
 			throw new Error('probe: nothing mounted yet');
 		}
 		// Rehydrate the test's fn; it crossed the boundary as source text (see BrowserFn
-		// in harness.ts for the contract that makes that legal).
+		// in score-browser.ts for the contract that makes that legal).
 		const fn = new Function(`return (${input.fnSrc})`)();
 		return await fn(current.score, current.container, input.arg);
 	},

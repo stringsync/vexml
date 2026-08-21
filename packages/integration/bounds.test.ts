@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { probe } from './harness';
+import { scores } from './setup';
 
 // Measure box bounds, end to end: render a bracketed notation+tab guitar part with a run of
 // high ledger-line notes and a chord diagram, draw a debug rect around every measure box, and
@@ -9,7 +9,7 @@ import { probe } from './harness';
 // rides the box) stops at the staff, not the fret box (see draw-pass growMeasureTops).
 describe('measure box bounds', () => {
 	it.concurrent('encloses the bracket connector and high notes', async () => {
-		const { result: violations, png } = await probe(
+		const { result: violations, png } = await scores.probe(
 			'measure_box_bounds.musicxml',
 			{},
 			(score) => {

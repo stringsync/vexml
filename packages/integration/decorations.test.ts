@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Score } from '@stringsync/vexml';
-import { probe } from './harness';
+import { scores } from './setup';
 
 // Decorations end to end: render, toggle a decoration on every target, and screenshot the
 // composite (base engraving + the decoration overlay). The drawing logic itself is unit-tested
@@ -12,7 +12,7 @@ import { probe } from './harness';
 
 describe('decorations', () => {
 	it.concurrent('draws a colored note', async () => {
-		const { result: count, png } = await probe(
+		const { result: count, png } = await scores.probe(
 			'note.musicxml',
 			{},
 			decorateAllTargets,
@@ -23,7 +23,7 @@ describe('decorations', () => {
 	});
 
 	it.concurrent('draws a halo behind a note', async () => {
-		const { result: count, png } = await probe(
+		const { result: count, png } = await scores.probe(
 			'note.musicxml',
 			{},
 			decorateAllTargets,
@@ -37,7 +37,7 @@ describe('decorations', () => {
 	// light up. Color restamps each notehead glyph and each fret digit in blue; halo draws a soft
 	// blue circle behind every notehead and every fret.
 	it.concurrent('colors both a note and its tab fret', async () => {
-		const { result: count, png } = await probe(
+		const { result: count, png } = await scores.probe(
 			'structure_notation_and_tab_parts.musicxml',
 			{},
 			decorateAllTargets,
@@ -48,7 +48,7 @@ describe('decorations', () => {
 	});
 
 	it.concurrent('halos both a note and its tab fret', async () => {
-		const { result: count, png } = await probe(
+		const { result: count, png } = await scores.probe(
 			'structure_notation_and_tab_parts.musicxml',
 			{},
 			decorateAllTargets,
