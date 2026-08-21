@@ -9,12 +9,7 @@
 	},
 	"dependencies": {
 		"@stringsync/mdom": "0.2.5",
-		"@vexml/integration": "workspace:*",
-		"webappwiz": "0.0.3",
-		"@vexml/browser": "workspace:*"
-	},
-	"devDependencies": {
-		"@coderline/alphatab": "^1.8.4",
-		"opensheetmusicdisplay": "^2.1.1"
+		"@vexml/renderer": "workspace:*",
+		"webappwiz": "0.0.3"
 	}
 }

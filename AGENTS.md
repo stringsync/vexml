@@ -4,9 +4,10 @@ everything else exists to build or check it:
 | Package | What it is |
 | --- | --- |
 | `packages/vexml` | the library. Source sits flat in `packages/vexml` |
-| `packages/vex` | the `vex` CLI below, plus the xmllint and MuseScore images it drives |
+| `packages/vex` | the `vex` CLI below, plus the xmllint image it drives |
 | `packages/site` | the playground at https://vexml.dev |
-| `packages/integration` | visual-regression tests, their fixtures and the `Renderer` they run through |
+| `packages/integration` | visual-regression tests and their fixtures |
+| `packages/renderer` | repo-private `renderers` factories — MusicXML to pixels via vexml, OSMD, alphaTab, or MuseScore, hiding the browser/Docker underneath |
 
 Read `packages/vexml/AGENTS.md` before hunting through the library: it maps each piece
 of notation (slur, volta, lyric, fret) to the files that decide it. Keep it current — a

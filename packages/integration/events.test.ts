@@ -6,10 +6,10 @@ describe('events', () => {
 	// pointer event on the managed canvas bubbles to the Score, gets mapped to score space through
 	// the live Stage transform, and hit-tests against the index built from real geometry.
 	it.concurrent('a real pointer event maps to score space and hit-tests a target', async () => {
-		const { result } = await scores.probe(
+		const { result } = await scores.eval(
 			'structure_single_stave.musicxml',
 			{},
-			(score, container) => {
+			({ score, container }) => {
 				const canvas = container.querySelector('canvas');
 				if (!canvas) {
 					throw new Error('canvas not found');

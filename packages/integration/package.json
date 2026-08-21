@@ -3,13 +3,9 @@
 	"version": "1.2.4",
 	"private": true,
 	"type": "module",
-	"exports": {
-		"./renderer": "./renderer.ts",
-		"./pool": "./pool.ts"
-	},
 	"dependencies": {
 		"@stringsync/vexml": "workspace:*",
-		"@vexml/browser": "workspace:*"
+		"@vexml/renderer": "workspace:*"
 	},
 	"devDependencies": {
 		"@types/pngjs": "^6.0.5",

@@ -9,10 +9,10 @@ import { scores } from './setup';
 // rides the box) stops at the staff, not the fret box (see draw-pass growMeasureTops).
 describe('measure box bounds', () => {
 	it.concurrent('encloses the bracket connector and high notes', async () => {
-		const { result: violations, png } = await scores.probe(
+		const { result: violations, image } = await scores.eval(
 			'measure_box_bounds.musicxml',
 			{},
-			(score) => {
+			({ score }) => {
 				// Outline every measure box on a content layer (score space) for visual review.
 				const layer = score.addLayer('content');
 				layer.ctx.strokeStyle = '#e53935';
@@ -45,6 +45,6 @@ describe('measure box bounds', () => {
 			},
 		);
 		expect(violations).toEqual([]);
-		expect(png).toMatchScreenshot('measure_box_bounds.png');
+		expect(image).toMatchScreenshot('measure_box_bounds.png');
 	});
 });

@@ -23,7 +23,7 @@ WORKDIR /app
 # until a manifest actually changes.
 COPY package.json bun.lock ./
 COPY packages/vexml/package.json packages/vexml/
-COPY packages/browser/package.json packages/browser/
+COPY packages/renderer/package.json packages/renderer/
 COPY packages/site/package.json packages/site/
 COPY packages/integration/package.json packages/integration/
 COPY packages/vex/package.json packages/vex/

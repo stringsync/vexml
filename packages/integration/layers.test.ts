@@ -7,10 +7,10 @@ describe('layers', () => {
 	// resizes. The fn reads layer.ctx.canvas to check sizing — a test-only peek; the public Layer
 	// hides the canvas.
 	it.concurrent('content layers span the score, viewport layers span the visible box and re-fit on resize', async () => {
-		const { result } = await scores.probe(
+		const { result } = await scores.eval(
 			'structure_single_stave.musicxml',
 			{},
-			async (score, container) => {
+			async ({ score, container }) => {
 				const base = container.querySelector('canvas');
 				if (!base) {
 					throw new Error('base canvas not found');

@@ -13,11 +13,10 @@ export interface OpenOptions {
 }
 
 /**
- * A real browser, abstractly: opens tabs loaded with the caller's page. This package is
- * repo-private plumbing for the integration tests and the vex CLI — it knows nothing
- * about vexml, and callers know nothing about the engine behind it (see
- * PlaywrightBrowser, the one implementation). One instance means one browser process;
- * share it rather than launching a second, which is flaky in Docker.
+ * A real browser, abstractly: opens tabs loaded with the caller's page. Internal to
+ * this package — renderers hides it, and callers of renderers never learn a browser is
+ * involved (see PlaywrightBrowser, the one implementation). One instance means one
+ * browser process; share it rather than launching a second, which is flaky in Docker.
  */
 export interface Browser {
 	open(options: OpenOptions): Promise<Tab>;

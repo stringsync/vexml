@@ -92,7 +92,7 @@ vex
 		...flag,
 		description: 'render with alphaTab instead — a reference, not ground truth',
 	})
-	.action(async (opts, { log, fs, ps, invocationDir }) => {
+	.action(async (opts, { log, fs, invocationDir }) => {
 		const refs = (['muse', 'osmd', 'alpha'] as const).filter(
 			(name) => opts[name],
 		);
@@ -103,7 +103,7 @@ vex
 		if (refs.length > 0 && opts.config) {
 			throw new Error(`--config and --${refs[0]} are incompatible`);
 		}
-		await render({ ...opts, cwd: invocationDir, log, fs, ps });
+		await render({ ...opts, cwd: invocationDir, log, fs });
 	});
 
 vex

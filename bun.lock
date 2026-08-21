@@ -13,19 +13,12 @@
         "typescript": "^5",
       },
     },
-    "packages/browser": {
-      "name": "@vexml/browser",
-      "version": "1.2.4",
-      "dependencies": {
-        "playwright": "^1.61.1",
-      },
-    },
     "packages/integration": {
       "name": "@vexml/integration",
       "version": "1.2.4",
       "dependencies": {
         "@stringsync/vexml": "workspace:*",
-        "@vexml/browser": "workspace:*",
+        "@vexml/renderer": "workspace:*",
       },
       "devDependencies": {
         "@types/pngjs": "^6.0.5",
@@ -33,6 +26,17 @@
         "chalk": "5.6.2",
         "pixelmatch": "^7.2.0",
         "pngjs": "^7.0.0",
+      },
+    },
+    "packages/renderer": {
+      "name": "@vexml/renderer",
+      "version": "1.2.4",
+      "dependencies": {
+        "@coderline/alphatab": "^1.8.4",
+        "@stringsync/vexml": "workspace:*",
+        "opensheetmusicdisplay": "^2.1.1",
+        "playwright": "^1.61.1",
+        "webappwiz": "0.0.3",
       },
     },
     "packages/site": {
@@ -63,13 +67,8 @@
       },
       "dependencies": {
         "@stringsync/mdom": "0.2.5",
-        "@vexml/browser": "workspace:*",
-        "@vexml/integration": "workspace:*",
+        "@vexml/renderer": "workspace:*",
         "webappwiz": "0.0.3",
-      },
-      "devDependencies": {
-        "@coderline/alphatab": "^1.8.4",
-        "opensheetmusicdisplay": "^2.1.1",
       },
     },
     "packages/vexml": {
@@ -210,9 +209,9 @@
 
     "@types/vexflow": ["@types/vexflow@1.2.42", "", {}, "sha512-bj3If1sm1FYJN0tJMV2BJNrwoeQ6xfrTt+rbmFvUytyxUhklLlW79MR4uwQ+upzrNJLVy012TnC7oZqSpEglSw=="],
 
-    "@vexml/browser": ["@vexml/browser@workspace:packages/browser"],
-
     "@vexml/integration": ["@vexml/integration@workspace:packages/integration"],
+
+    "@vexml/renderer": ["@vexml/renderer@workspace:packages/renderer"],
 
     "@vexml/site": ["@vexml/site@workspace:packages/site"],
 
