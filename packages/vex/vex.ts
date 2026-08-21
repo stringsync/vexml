@@ -33,7 +33,7 @@ const timing: Middleware<VexDeps> = async (ctx, next) => {
 	// args[0] is the command; a failing command throws past this, so only the
 	// runs that finished get timed.
 	ctx.log.info(
-		`${color.bold(ctx.ps.args[0])} took ${clock.now().subtract(started).human()}`,
+		`${color.dim(ctx.ps.args[0])} took ${clock.now().subtract(started).human()}`,
 	);
 };
 
