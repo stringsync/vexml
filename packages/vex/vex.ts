@@ -1,4 +1,4 @@
-import { cli, type Deps } from 'webappwiz/cmd';
+import { cli, type Deps, type Middleware } from 'webappwiz/cmd';
 import type { Fs } from 'webappwiz/system';
 import { t } from 'webappwiz/t';
 import { SystemClock } from 'webappwiz/time';
@@ -25,7 +25,8 @@ const flag = { default: false };
 
 const clock = new SystemClock();
 
-export const vex = cli<VexDeps>('vex').use<VexDeps>(async (ctx, next) => {
+/** Reports how long the command took once it is done. */
+const timing: Middleware<VexDeps> = async (ctx, next) => {
 	const started = clock.now();
 	await next(ctx);
 	// args[0] is the command; a failing command throws past this, so only the
@@ -33,7 +34,9 @@ export const vex = cli<VexDeps>('vex').use<VexDeps>(async (ctx, next) => {
 	ctx.log.info(
 		`${ctx.ps.args[0]} took ${clock.now().subtract(started).human()}`,
 	);
-});
+};
+
+export const vex = cli<VexDeps>('vex');
 
 vex
 	.command('dev')
@@ -103,6 +106,7 @@ vex
 		...flag,
 		description: 'render with alphaTab instead — a reference, not ground truth',
 	})
+	.use(timing)
 	.action(async (opts, { log, fs, invocationDir }) => {
 		const refs = (['muse', 'osmd', 'alpha'] as const).filter(
 			(name) => opts[name],
