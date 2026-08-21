@@ -9,10 +9,9 @@ import {
 } from 'node:fs';
 import * as path from 'node:path';
 import { createCanvas, createImageData } from 'canvas';
-import chalk from 'chalk';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
-import { ConsoleLogger } from 'webappwiz/log';
+import { ConsoleLogger, color } from 'webappwiz/log';
 
 // The screenshot half of the tests: a `toMatchScreenshot` matcher that pixel-diffs a PNG
 // against its committed baseline in `__screenshots__/`, writes a side-by-side composite to
@@ -122,13 +121,13 @@ afterAll(() => {
 			log.info(`    ${path.relative(ROOT, path.join(dir, f))}`);
 		}
 	};
-	log.info(chalk.bold('\nScreenshot report'));
-	report(chalk.green('✓'), 'added', added, SCREENSHOTS_DIR);
-	report(chalk.yellow('↻'), 'updated', updated, SCREENSHOTS_DIR);
-	report(chalk.red('✗'), 'deleted', deleted, SCREENSHOTS_DIR);
-	report(chalk.magenta('Δ'), 'diffed', seenDiffs, DIFF_DIR);
+	log.info(color.bold('\nScreenshot report'));
+	report(color.green('✓'), 'added', added, SCREENSHOTS_DIR);
+	report(color.yellow('↻'), 'updated', updated, SCREENSHOTS_DIR);
+	report(color.red('✗'), 'deleted', deleted, SCREENSHOTS_DIR);
+	report(color.blue('Δ'), 'diffed', seenDiffs, DIFF_DIR);
 	if (added.size + updated.size + deleted.size === 0) {
-		log.info(`${chalk.green('✓')} no screenshot changes`);
+		log.info(`${color.green('✓')} no screenshot changes`);
 	}
 });
 
