@@ -2,16 +2,6 @@
 
 https://vexml.dev
 
-The library itself lives in [`packages/vexml`](packages/vexml) — everything else in
-this repo exists to build, check, or show it off.
-
-| Package | What it is |
-| --- | --- |
-| [`packages/vexml`](packages/vexml) | `@stringsync/vexml` — the published library |
-| `packages/vex` | the `vex` dev CLI, and the Docker images it drives |
-| `packages/site` | the playground at https://vexml.dev |
-| `packages/integration` | visual-regression tests |
-
 ## Getting Started
 
 Install the package.
@@ -194,6 +184,16 @@ score.dispose();
 ```
 
 ## Development
+
+The library itself lives in [`packages/vexml`](packages/vexml). Everything else in
+this repo exists to build, check, or show it off.
+
+| Package | What it is |
+| --- | --- |
+| [`packages/vexml`](packages/vexml) | `@stringsync/vexml`, the published library |
+| `packages/vex` | the `vex` dev CLI, and the Docker images it drives |
+| `packages/site` | the playground at https://vexml.dev |
+| `packages/integration` | visual-regression tests |
 
 Dependencies:
 
