@@ -14,9 +14,9 @@ const DATA_DIR = path.resolve(import.meta.dir, './__data__');
  * The suite's view of renderers.vexml: resolves corpus fixtures and defaults both
  * fonts to the families the Docker image installs, so a test states only what it is
  * about. render/eval mirror the Renderer/EvalRenderer verbs. setup.ts constructs the
- * run's one shared instance (`scores`); importing a module never constructs anything.
+ * run's one shared instance (`testing`); importing a module never constructs anything.
  */
-export class Scores {
+export class Testing {
 	/** Render a corpus file and return its pixels. */
 	async render(file: string, config: ConfigInput = {}): Promise<Image> {
 		return (await this.vexml(file, config)).render();

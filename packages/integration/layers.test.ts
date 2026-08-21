@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { scores } from './setup';
+import { testing } from './setup';
 
 describe('layers', () => {
 	// Custom layers, end to end in a real browser: a content layer spans the engraved score (score
@@ -7,7 +7,7 @@ describe('layers', () => {
 	// resizes. The fn reads layer.ctx.canvas to check sizing — a test-only peek; the public Layer
 	// hides the canvas.
 	it.concurrent('content layers span the score, viewport layers span the visible box and re-fit on resize', async () => {
-		const { result } = await scores.eval(
+		const { result } = await testing.eval(
 			'structure_single_stave.musicxml',
 			{},
 			async ({ score, container }) => {

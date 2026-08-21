@@ -1,6 +1,6 @@
 import { afterAll, beforeAll } from 'bun:test';
 import { renderers } from '@vexml/renderer';
-import { Scores } from './scores';
+import { Testing } from './testing';
 // Registers the toMatchScreenshot matcher and its end-of-run report.
 import './screenshot';
 
@@ -21,15 +21,15 @@ if (process.env.I_AM_RUNNING_TESTS_USING_VEX_TEST !== '1') {
 	process.exit(1);
 }
 
-/** The run's one Scores. Assigned in beforeAll below — an ESM binding is live, so
- * tests importing `scores` see the instance by the time any of them runs. */
-export let scores: Scores;
+/** The run's one Testing. Assigned in beforeAll below — an ESM binding is live, so
+ * tests importing `testing` see the instance by the time any of them runs. */
+export let testing: Testing;
 
 beforeAll(async () => {
-	scores = new Scores();
+	testing = new Testing();
 	// One throwaway render to warm the shared machinery (browser launch, page bundle,
 	// first tab) outside any test's own timeout.
-	await scores.render('note.musicxml');
+	await testing.render('note.musicxml');
 });
 
 afterAll(async () => {
