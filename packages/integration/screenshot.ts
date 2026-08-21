@@ -125,7 +125,7 @@ afterAll(() => {
 	report(color.green('✓'), 'added', added, SCREENSHOTS_DIR);
 	report(color.yellow('↻'), 'updated', updated, SCREENSHOTS_DIR);
 	report(color.red('✗'), 'deleted', deleted, SCREENSHOTS_DIR);
-	report(color.blue('Δ'), 'diffed', seenDiffs, DIFF_DIR);
+	report(color.red('Δ'), 'diffed', seenDiffs, DIFF_DIR);
 	if (added.size + updated.size + deleted.size === 0) {
 		log.info(`${color.green('✓')} no screenshot changes`);
 	}
