@@ -1,6 +1,7 @@
 import { cli, type Deps } from 'webappwiz/cmd';
 import type { Fs } from 'webappwiz/system';
 import { t } from 'webappwiz/t';
+import { SystemClock } from 'webappwiz/time';
 import { dev } from './dev';
 import { fix } from './fix';
 import { release } from './release';
@@ -22,7 +23,17 @@ export interface VexDeps extends Deps {
 
 const flag = { default: false };
 
-export const vex = cli<VexDeps>('vex');
+const clock = new SystemClock();
+
+export const vex = cli<VexDeps>('vex').use<VexDeps>(async (ctx, next) => {
+	const started = clock.now();
+	await next(ctx);
+	// args[0] is the command; a failing command throws past this, so only the
+	// runs that finished get timed.
+	ctx.log.info(
+		`${ctx.ps.args[0]} took ${clock.now().subtract(started).human()}`,
+	);
+});
 
 vex
 	.command('dev')
