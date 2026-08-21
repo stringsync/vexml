@@ -39,7 +39,6 @@ export type {
 	ScoreResizeEvent,
 	ScoreScrollEvent,
 } from './events';
-export type { NoteGlyph } from './geometry-collector';
 export type { Layer, LayerKind } from './layer';
 export { Measure } from './measure';
 export { MeasureBox } from './measure-box';
