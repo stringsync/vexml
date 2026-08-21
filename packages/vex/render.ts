@@ -43,13 +43,22 @@ export async function render(opts: {
 	}
 
 	const output = at(opts.output ?? `${name} ${timestamp()}.png`);
+	let png: Buffer;
 	try {
+		png = await renderer.render();
 		// Fs is text-only, so the PNG goes out through node:fs.
-		writeFileSync(output, await renderer.render());
+		writeFileSync(output, png);
 	} finally {
 		await renderers.disposeAsync();
 	}
-	opts.log.info(`wrote ${output}`);
+	opts.log.info(`wrote ${output} (${dimensions(png)})`);
+}
+
+// A PNG's IHDR is always the first chunk, so width and height sit at fixed
+// offsets: 8 bytes of signature, 8 of chunk header, then the two big-endian
+// uint32s. ponytail: no image-size dependency for two reads.
+function dimensions(png: Buffer): string {
+	return `${png.readUInt32BE(16)}x${png.readUInt32BE(20)}`;
 }
 
 function timestamp(): string {
