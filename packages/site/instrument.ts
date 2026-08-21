@@ -1,7 +1,7 @@
 import type { Resource } from 'webappwiz/disposable';
 
 // A pitched instrument the player drives. Pitches are vexflow keys ("C#/4", "Bb/3").
-// Swap PianoInstrument for another implementation by satisfying this interface.
+// Swap SmplrInstrument for another implementation by satisfying this interface.
 export interface Instrument extends Resource {
 	// Strike a pitch now and return the voice sounding it, which the caller disposes to release
 	// that voice. Each call is a fresh attack, so re-struck pitches (and unisons) each get their

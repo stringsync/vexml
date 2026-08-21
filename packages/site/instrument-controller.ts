@@ -3,7 +3,7 @@ import { Dispatcher, type Eventful } from 'webappwiz/events';
 import { INSTRUMENT_KEY } from './constants';
 import type { Instrument } from './instrument';
 import { INSTRUMENTS, OPENING_INSTRUMENT } from './instruments';
-import { PianoInstrument } from './piano-instrument';
+import { SmplrInstrument } from './smplr-instrument';
 
 type InstrumentControllerEvents = { changed: undefined };
 
@@ -42,7 +42,7 @@ export class InstrumentController
 
 	constructor(private readonly storage: Storage) {
 		this.name = openingName(storage.getItem(INSTRUMENT_KEY));
-		this.instrument = new PianoInstrument(this.name);
+		this.instrument = new SmplrInstrument(this.name);
 	}
 
 	/* The instrument to play through. Never null, so a caller does not have to check. */
@@ -63,7 +63,7 @@ export class InstrumentController
 		this.name = name;
 		this.storage.setItem(INSTRUMENT_KEY, name);
 		this.instrument.dispose();
-		this.instrument = new PianoInstrument(name);
+		this.instrument = new SmplrInstrument(name);
 		this.instrument.setMuted(this.muted);
 		this.instrument.preload();
 		this.dispatcher.dispatch('changed');

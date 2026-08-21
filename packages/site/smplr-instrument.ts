@@ -17,7 +17,7 @@ const toNote = (pitch: string) => pitch.replace('/', '');
  * short — smplr's sampled SplendidGrandPiano sounds better and costs a file per note per
  * velocity layer, which reads as a piano that does not work.
  */
-export class PianoInstrument implements Instrument {
+export class SmplrInstrument implements Instrument {
 	private ctx: AudioContext | null = null;
 	private synth: Smplr | null = null;
 	private ready = false;
