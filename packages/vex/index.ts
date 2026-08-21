@@ -3,6 +3,7 @@ import { NodeFs, NodePs } from 'webappwiz/system';
 import { vex } from './vex';
 
 const ps = new NodePs();
+const fs = new NodeFs();
 
 // Where the user actually ran `vex`, before we chdir below. Every command
 // underneath resolves from the repo root, not this package: the shell scripts,
@@ -10,4 +11,4 @@ const ps = new NodePs();
 const invocationDir = ps.cwd();
 ps.cd(`${import.meta.dir}/../..`);
 
-await vex.run({ ps, fs: new NodeFs(), invocationDir });
+await vex.run({ ps, fs, invocationDir });
