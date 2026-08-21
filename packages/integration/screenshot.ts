@@ -12,6 +12,7 @@ import { createCanvas, createImageData } from 'canvas';
 import chalk from 'chalk';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
+import { ConsoleLogger } from 'webappwiz/log';
 
 // The screenshot half of the tests: a `toMatchScreenshot` matcher that pixel-diffs a PNG
 // against its committed baseline in `__screenshots__/`, writes a side-by-side composite to
@@ -60,6 +61,8 @@ const DIFF_DIR = path.resolve(import.meta.dir, './__diffs__');
 const ROOT = path.resolve(import.meta.dir, '../..');
 const UPDATE = process.env.UPDATE_SCREENSHOTS === '1';
 
+const log = new ConsoleLogger();
+
 // Every diff written this run; stale ones are whatever's left over in DIFF_DIR.
 const seenDiffs = new Set<string>();
 afterAll(() => {
@@ -69,7 +72,7 @@ afterAll(() => {
 	for (const f of readdirSync(DIFF_DIR)) {
 		if (f.endsWith('.png') && !seenDiffs.has(f)) {
 			rmSync(path.join(DIFF_DIR, f));
-			console.log(`removed stale diff ${f}`);
+			log.info(`removed stale diff ${f}`);
 		}
 	}
 	if (readdirSync(DIFF_DIR).length === 0) {
@@ -111,21 +114,21 @@ afterAll(() => {
 			return;
 		}
 		if (!first) {
-			console.log();
+			log.info('');
 		}
 		first = false;
-		console.log(`${icon} ${label} ${set.size} screenshot(s):`);
+		log.info(`${icon} ${label} ${set.size} screenshot(s):`);
 		for (const f of [...set].sort()) {
-			console.log(`    ${path.relative(ROOT, path.join(dir, f))}`);
+			log.info(`    ${path.relative(ROOT, path.join(dir, f))}`);
 		}
 	};
-	console.log(chalk.bold('\nScreenshot report'));
+	log.info(chalk.bold('\nScreenshot report'));
 	report(chalk.green('✓'), 'added', added, SCREENSHOTS_DIR);
 	report(chalk.yellow('↻'), 'updated', updated, SCREENSHOTS_DIR);
 	report(chalk.red('✗'), 'deleted', deleted, SCREENSHOTS_DIR);
 	report(chalk.magenta('Δ'), 'diffed', seenDiffs, DIFF_DIR);
 	if (added.size + updated.size + deleted.size === 0) {
-		console.log(`${chalk.green('✓')} no screenshot changes`);
+		log.info(`${chalk.green('✓')} no screenshot changes`);
 	}
 });
 

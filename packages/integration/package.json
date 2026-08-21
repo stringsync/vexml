@@ -5,7 +5,8 @@
 	"type": "module",
 	"dependencies": {
 		"@stringsync/vexml": "workspace:*",
-		"@vexml/renderer": "workspace:*"
+		"@vexml/renderer": "workspace:*",
+		"webappwiz": "0.0.3"
 	},
 	"devDependencies": {
 		"@types/pngjs": "^6.0.5",
