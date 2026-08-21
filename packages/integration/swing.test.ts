@@ -12,19 +12,13 @@ describe('swing', () => {
 	 * the way late, and the pickup — which IS an off-beat — plays short rather than long.
 	 */
 	it.concurrent('a 2:1 <swing> lengthens the on-beat eighths and shortens the off-beats', async () => {
-		const { result } = await renderer.render(
-			'swing.musicxml',
-			{},
-			{
-				fn: (score) => ({
-					steps: score
-						.getSequence()
-						.getSteps()
-						.map((step) => Math.round(step.startMs)),
-					durationMs: Math.round(score.getDurationMs()),
-				}),
-			},
-		);
+		const { result } = await renderer.probe('swing.musicxml', {}, (score) => ({
+			steps: score
+				.getSequence()
+				.getSteps()
+				.map((step) => Math.round(step.startMs)),
+			durationMs: Math.round(score.getDurationMs()),
+		}));
 
 		// Downbeats stay put at whole seconds; each off-beat sits 2/3 of the way through its pair.
 		// The 4333/4667 pair is M2's written-out TRIPLET, which divides its beat evenly (4000 ->

@@ -12,20 +12,22 @@ import { renderer } from './renderer';
 
 describe('decorations', () => {
 	it.concurrent('draws a colored note', async () => {
-		const { result: count, png } = await renderer.render(
+		const { result: count, png } = await renderer.probe(
 			'note.musicxml',
 			{},
-			{ fn: decorateAllTargets, arg: 'color' },
+			decorateAllTargets,
+			'color',
 		);
 		expect(count).toBeGreaterThan(0);
 		expect(png).toMatchScreenshot('decoration_color.png');
 	});
 
 	it.concurrent('draws a halo behind a note', async () => {
-		const { result: count, png } = await renderer.render(
+		const { result: count, png } = await renderer.probe(
 			'note.musicxml',
 			{},
-			{ fn: decorateAllTargets, arg: 'halo' },
+			decorateAllTargets,
+			'halo',
 		);
 		expect(count).toBeGreaterThan(0);
 		expect(png).toMatchScreenshot('decoration_halo.png');
@@ -35,20 +37,22 @@ describe('decorations', () => {
 	// light up. Color restamps each notehead glyph and each fret digit in blue; halo draws a soft
 	// blue circle behind every notehead and every fret.
 	it.concurrent('colors both a note and its tab fret', async () => {
-		const { result: count, png } = await renderer.render(
+		const { result: count, png } = await renderer.probe(
 			'structure_notation_and_tab_parts.musicxml',
 			{},
-			{ fn: decorateAllTargets, arg: 'color' },
+			decorateAllTargets,
+			'color',
 		);
 		expect(count).toBeGreaterThan(0);
 		expect(png).toMatchScreenshot('decoration_tab_color.png');
 	});
 
 	it.concurrent('halos both a note and its tab fret', async () => {
-		const { result: count, png } = await renderer.render(
+		const { result: count, png } = await renderer.probe(
 			'structure_notation_and_tab_parts.musicxml',
 			{},
-			{ fn: decorateAllTargets, arg: 'halo' },
+			decorateAllTargets,
+			'halo',
 		);
 		expect(count).toBeGreaterThan(0);
 		expect(png).toMatchScreenshot('decoration_tab_halo.png');

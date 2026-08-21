@@ -6,43 +6,41 @@ describe('events', () => {
 	// pointer event on the managed canvas bubbles to the Score, gets mapped to score space through
 	// the live Stage transform, and hit-tests against the index built from real geometry.
 	it.concurrent('a real pointer event maps to score space and hit-tests a target', async () => {
-		const { result } = await renderer.render(
+		const { result } = await renderer.probe(
 			'structure_single_stave.musicxml',
 			{},
-			{
-				fn: (score, container) => {
-					const canvas = container.querySelector('canvas');
-					if (!canvas) {
-						throw new Error('canvas not found');
+			(score, container) => {
+				const canvas = container.querySelector('canvas');
+				if (!canvas) {
+					throw new Error('canvas not found');
+				}
+				const types = new Set<string>();
+				const points: Array<{ x: number; y: number }> = [];
+				score.events.on('pointerdown', (e) => {
+					if (e.target) {
+						types.add(e.target.type);
 					}
-					const types = new Set<string>();
-					const points: Array<{ x: number; y: number }> = [];
-					score.events.on('pointerdown', (e) => {
-						if (e.target) {
-							types.add(e.target.type);
-						}
-						points.push({ x: e.point.x, y: e.point.y });
-					});
-					// Scan down the vertical center line so the stave is crossed wherever the crop
-					// places it — robust to the exact engraved height.
-					const rect = canvas.getBoundingClientRect();
-					const cx = rect.left + rect.width / 2;
-					for (let dy = 4; dy < rect.height; dy += 4) {
-						canvas.dispatchEvent(
-							new PointerEvent('pointerdown', {
-								clientX: cx,
-								clientY: rect.top + dy,
-								bubbles: true,
-							}),
-						);
-					}
-					return {
-						types: [...types],
-						firstPoint: points[0] ?? { x: -1, y: -1 },
-						pointCount: points.length,
-						width: rect.width,
-					};
-				},
+					points.push({ x: e.point.x, y: e.point.y });
+				});
+				// Scan down the vertical center line so the stave is crossed wherever the crop
+				// places it — robust to the exact engraved height.
+				const rect = canvas.getBoundingClientRect();
+				const cx = rect.left + rect.width / 2;
+				for (let dy = 4; dy < rect.height; dy += 4) {
+					canvas.dispatchEvent(
+						new PointerEvent('pointerdown', {
+							clientX: cx,
+							clientY: rect.top + dy,
+							bubbles: true,
+						}),
+					);
+				}
+				return {
+					types: [...types],
+					firstPoint: points[0] ?? { x: -1, y: -1 },
+					pointCount: points.length,
+					width: rect.width,
+				};
 			},
 		);
 

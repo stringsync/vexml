@@ -28,37 +28,41 @@ export class Renderer {
 
 	/** Render a corpus file in the browser and return its screenshot PNG. */
 	async screenshot(file: string, config: ConfigInput = {}): Promise<Buffer> {
-		return (await this.render(file, config)).png;
+		return (await this.run(file, config)).png;
 	}
 
-	/**
-	 * Render a corpus file on a pooled tab, run `opts.fn` against the live Score in the
-	 * browser, and screenshot the container. Tests that only want pixels use
-	 * screenshot(); tests that only want data ignore `png`.
-	 *
-	 * A fixture is laid out to its reference width (8.5in unless the test overrides it);
-	 * the result scales to any container at runtime, so a static viewport exercises the
-	 * layout deterministically.
-	 */
-	async render<T = undefined, A = undefined>(
+	/** Render a corpus file, run `fn` against the live Score in the browser, and return
+	 * fn's result along with the screenshot (some tests assert on both; ignore `png` if
+	 * pixels aren't the point). For pixels alone, use screenshot(). */
+	async probe<T, A = undefined>(
 		file: string,
 		config: ConfigInput,
-		opts: RenderOptions<A, T> = {},
+		fn: BrowserFn<A, T>,
+		arg?: A,
 	): Promise<{ result: T; png: Buffer }> {
+		const { result, png } = await this.run(file, config, fn.toString(), arg);
+		return { result: result as T, png };
+	}
+
+	/* One render on a pooled tab: mount the fixture, run the serialized fn (if any),
+	 * screenshot the container. A fixture is laid out to its reference width (8.5in
+	 * unless the config overrides it); the result scales to any container at runtime, so
+	 * a static viewport exercises the layout deterministically. */
+	private async run(
+		file: string,
+		config: ConfigInput,
+		fnSrc?: string,
+		arg?: unknown,
+	): Promise<{ result: unknown; png: Buffer }> {
 		return this.pool.withTab(async (tab) => {
 			await tab.resize(this.referenceWidth(config) + 64, 600);
 			await tab.call('mount', {
 				...(await this.input(file)),
 				config: this.withDefaultFonts(config),
 			});
-			const result = (
-				opts.fn
-					? await tab.call<unknown>('probe', {
-							fnSrc: opts.fn.toString(),
-							arg: opts.arg,
-						})
-					: undefined
-			) as T;
+			const result = fnSrc
+				? await tab.call<unknown>('probe', { fnSrc, arg })
+				: undefined;
 			const png = await tab.screenshot('#screenshot');
 			return { result, png };
 		});
@@ -106,30 +110,22 @@ export class Renderer {
 /** The shared instance every test renders through. */
 export const renderer = new Renderer();
 
-/** A corpus fixture's text — for the rare test that feeds one to its fn via `arg`. */
+/** A corpus fixture's text — for the rare test that feeds one to its fn via probe's
+ * `arg`. */
 export function fixture(file: string): Promise<string> {
 	return Bun.file(path.join(DATA_DIR, file)).text();
 }
 
 /**
- * A test's browser-side function. It crosses into the page as source text (toString),
- * so it must be self-contained: no closing over test-scope variables — thread values
- * through `arg` (which must be structured-cloneable) instead. A module-level function
- * in a test file serializes the same way, so it can be passed AS `fn` — but an fn
- * cannot call one (that would be a closure). Besides the Score, the page offers only
- * `window.render`.
+ * A test's browser-side function, probe()'s third argument. It crosses into the page as
+ * source text (toString), so it must be self-contained: no closing over test-scope
+ * variables — thread values through `arg` (which must be structured-cloneable) instead.
+ * A module-level function in a test file serializes the same way, so it can be passed
+ * AS the fn — but an fn cannot call one (that would be a closure). Besides the Score,
+ * the page offers only `window.render`.
  */
 type BrowserFn<A, T> = (
 	score: Score,
 	container: HTMLDivElement,
 	arg: A,
 ) => T | Promise<T>;
-
-export interface RenderOptions<A, T> {
-	/* Run against the live Score in the browser once it has rendered. Omit it for a test
-	 * that only wants the screenshot. */
-	fn?: BrowserFn<A, T>;
-	/* Passed to `fn` as its third argument. Must be structured-cloneable: it crosses into
-	 * the page, so a closure will not do. */
-	arg?: A;
-}
