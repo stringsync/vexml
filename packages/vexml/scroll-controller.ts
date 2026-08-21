@@ -1,4 +1,6 @@
+import type { Resource } from 'webappwiz/disposable';
 import type { Rect } from 'webappwiz/geometry';
+import { Duration, SystemTimer } from 'webappwiz/time';
 import {
 	MAX_SCROLL_SPEED_PX_PER_MS,
 	RESIZE_SETTLE_MS,
@@ -26,11 +28,13 @@ export class ScrollController implements Scroller {
 		to: { left: number; top: number };
 		start: number;
 	} | null = null;
-	private frameTimer: ReturnType<typeof setTimeout> | null = null;
+	private frameTimer: Resource | null = null;
 
 	// While a resize burst is in flight, scrolling targets stale geometry, so scrollIntoView is a
 	// no-op until the size holds still for RESIZE_SETTLE_MS. This timer is the debounce.
-	private resizeSettleTimer: ReturnType<typeof setTimeout> | null = null;
+	private resizeSettleTimer: Resource | null = null;
+
+	private readonly timer = new SystemTimer();
 
 	constructor(private readonly host: ScrollHost) {}
 
@@ -42,11 +46,11 @@ export class ScrollController implements Scroller {
 			this.cancel();
 		}
 		if (this.resizeSettleTimer) {
-			clearTimeout(this.resizeSettleTimer);
+			this.resizeSettleTimer.dispose();
 		}
-		this.resizeSettleTimer = setTimeout(() => {
+		this.resizeSettleTimer = this.timer.setTimeout(() => {
 			this.resizeSettleTimer = null;
-		}, RESIZE_SETTLE_MS);
+		}, Duration.ms(RESIZE_SETTLE_MS));
 	}
 
 	// Scroll the container so a score-space rect is visible, moving only the axis that's off-screen.
@@ -122,13 +126,16 @@ export class ScrollController implements Scroller {
 			this.frameTimer = null;
 			return;
 		}
-		this.frameTimer = setTimeout(() => this.step(), SCROLL_FRAME_MS);
+		this.frameTimer = this.timer.setTimeout(
+			() => this.step(),
+			Duration.ms(SCROLL_FRAME_MS),
+		);
 	}
 
 	// Stop the tween where it is, without moving the scroll box.
 	private stopTween(): void {
 		if (this.frameTimer) {
-			clearTimeout(this.frameTimer);
+			this.frameTimer.dispose();
 			this.frameTimer = null;
 		}
 		this.tween = null;
@@ -146,7 +153,7 @@ export class ScrollController implements Scroller {
 	dispose(): void {
 		this.stopTween();
 		if (this.resizeSettleTimer) {
-			clearTimeout(this.resizeSettleTimer);
+			this.resizeSettleTimer.dispose();
 			this.resizeSettleTimer = null;
 		}
 	}

@@ -2,6 +2,7 @@ import type { CursorController, Element, Score } from '@stringsync/vexml';
 import { Note, TabPosition } from '@stringsync/vexml';
 import { Disposer, disposables, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful, type Events } from 'webappwiz/events';
+import { Duration, SystemTimer } from 'webappwiz/time';
 import { ACTIVE_COLOR, GRACE_MS, HALO_COLOR, HOVER_COLOR } from './constants';
 import { describe } from './format';
 import type { Instrument } from './instrument';
@@ -42,6 +43,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	tooltip: Tooltip | null = null;
 
 	private readonly disposer = new Disposer();
+	private readonly timer = new SystemTimer();
 	// The notes currently sounding, so a change can tell what newly started and what stopped.
 	private readonly lit = new Set<Note>();
 	// The voice each sounding note owns, keyed by Note (not pitch) so a re-struck pitch, which a
@@ -266,7 +268,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		}
 		// Grace notes steal no timeline time, so sound them as quick plucks staggered just before
 		// the main note, then attack the main note after the run. The returned voice cancels a
-		// still-pending main attack (clearTimeout) or releases the live one; stopAll is the backstop.
+		// still-pending main attack or releases the live one; stopAll is the backstop.
 		let offset = 0;
 		for (const g of graces) {
 			const gp = g.getPitch();
@@ -274,22 +276,22 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 				const at = offset;
 				// Light the grace while it sounds, then clear it as the next one (or the main note)
 				// takes over.
-				setTimeout(() => {
+				this.timer.setTimeout(() => {
 					instrument.pluck(gp, GRACE_MS);
 					g.color.on(ACTIVE_COLOR);
-				}, at);
-				setTimeout(() => g.color.off(), at + GRACE_MS);
+				}, Duration.ms(at));
+				this.timer.setTimeout(() => g.color.off(), Duration.ms(at + GRACE_MS));
 				offset += GRACE_MS;
 			}
 		}
 		let voice: Resource = disposables.noop();
-		const id = setTimeout(() => {
+		const scheduled = this.timer.setTimeout(() => {
 			voice = instrument.play(pitch);
-		}, offset);
+		}, Duration.ms(offset));
 		this.voices.set(
 			n,
 			disposables.callback(() => {
-				clearTimeout(id);
+				scheduled.dispose();
 				voice.dispose();
 			}),
 		);

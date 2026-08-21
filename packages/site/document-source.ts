@@ -1,5 +1,6 @@
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
+import { Duration, SystemTimer } from 'webappwiz/time';
 import { DEBOUNCE_MS, DEFAULT_FIXTURE, STORAGE_KEY } from './constants';
 
 type DocumentSourceEvents = { changed: undefined };
@@ -34,13 +35,14 @@ export class DocumentSource
 	debouncing = false;
 
 	private readonly disposer = new Disposer();
-	private timer: ReturnType<typeof setTimeout> | undefined;
+	private readonly timer = new SystemTimer();
+	private pending: Resource | undefined;
 
 	constructor(
 		private readonly fixtures: Fixtures,
 		private readonly storage: Storage,
 	) {
-		this.disposer.defer(() => clearTimeout(this.timer));
+		this.disposer.defer(() => this.cancelDebounce());
 		this.disposer.use(this.dispatcher);
 	}
 
@@ -91,11 +93,11 @@ export class DocumentSource
 		}
 		this.debouncing = true;
 		this.dispatcher.dispatch('changed');
-		this.timer = setTimeout(() => {
+		this.pending = this.timer.setTimeout(() => {
 			this.input = this.text;
 			this.debouncing = false;
 			this.dispatcher.dispatch('changed');
-		}, DEBOUNCE_MS);
+		}, Duration.ms(DEBOUNCE_MS));
 	}
 
 	/* A dropped or picked file. .mxl is a zip, which render() detects from the Blob; MusicXML is
@@ -132,7 +134,7 @@ export class DocumentSource
 	}
 
 	private cancelDebounce(): void {
-		clearTimeout(this.timer);
+		this.pending?.dispose();
 		this.debouncing = false;
 	}
 
