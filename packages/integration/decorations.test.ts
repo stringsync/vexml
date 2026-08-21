@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test';
+import type { Score } from '@stringsync/vexml';
 import { renderer } from './renderer';
 
-// Decorations end to end: render, toggle a decoration on every target (the
-// decorateAllTargets probe), and screenshot the composite (base engraving + the decoration
-// overlay). The drawing logic itself is unit-tested in packages/vexml/decorations.test.ts;
-// this proves it lands on the score, aligned.
+// Decorations end to end: render, toggle a decoration on every target, and screenshot the
+// composite (base engraving + the decoration overlay). The drawing logic itself is unit-tested
+// in packages/vexml/decorations.test.ts; this proves it lands on the score, aligned.
 //
 // Both noteheads (Note) and tab fret numbers (TabPosition) are decoratable, with their own
 // drawColor stamps, so decorateAllTargets collects both: a notation-only document yields only
@@ -15,8 +15,7 @@ describe('decorations', () => {
 		const { result: count, png } = await renderer.render(
 			'note.musicxml',
 			{},
-			'decorateAllTargets',
-			'color',
+			{ fn: decorateAllTargets, arg: 'color' },
 		);
 		expect(count).toBeGreaterThan(0);
 		expect(png).toMatchScreenshot('decoration_color.png');
@@ -26,8 +25,7 @@ describe('decorations', () => {
 		const { result: count, png } = await renderer.render(
 			'note.musicxml',
 			{},
-			'decorateAllTargets',
-			'halo',
+			{ fn: decorateAllTargets, arg: 'halo' },
 		);
 		expect(count).toBeGreaterThan(0);
 		expect(png).toMatchScreenshot('decoration_halo.png');
@@ -40,8 +38,7 @@ describe('decorations', () => {
 		const { result: count, png } = await renderer.render(
 			'structure_notation_and_tab_parts.musicxml',
 			{},
-			'decorateAllTargets',
-			'color',
+			{ fn: decorateAllTargets, arg: 'color' },
 		);
 		expect(count).toBeGreaterThan(0);
 		expect(png).toMatchScreenshot('decoration_tab_color.png');
@@ -51,10 +48,33 @@ describe('decorations', () => {
 		const { result: count, png } = await renderer.render(
 			'structure_notation_and_tab_parts.musicxml',
 			{},
-			'decorateAllTargets',
-			'halo',
+			{ fn: decorateAllTargets, arg: 'halo' },
 		);
 		expect(count).toBeGreaterThan(0);
 		expect(png).toMatchScreenshot('decoration_tab_halo.png');
 	});
 });
+
+// Runs in the page via toString(), so it must stay self-contained: no closing over test scope.
+function decorateAllTargets(
+	score: Score,
+	_container: HTMLDivElement,
+	mode: 'color' | 'halo',
+) {
+	// Reaching a target via the pointer is proven once in events.test.ts; here the elements
+	// index enumerates them directly. A tab note's visible glyph is its fret (TabPosition),
+	// a notation note's is its notehead — decorate whichever this note shows, exactly once
+	// (both wrappers stamp the same glyph, so decorating a note AND its fret double-prints).
+	const targets = score
+		.getElements()
+		.notes()
+		.map((note) => note.getTabPosition() ?? note);
+	for (const target of targets) {
+		if (mode === 'color') {
+			target.color.on('#2962ff');
+		} else {
+			target.halo.on('rgba(41, 98, 255, 0.35)');
+		}
+	}
+	return targets.length;
+}

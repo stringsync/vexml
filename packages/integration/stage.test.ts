@@ -10,8 +10,26 @@ describe('stage', () => {
 		const { result } = await renderer.render(
 			'structure_single_stave.musicxml',
 			{ height: 200 },
-			'rerenderKeepsScrollBox',
-			await fixture('structure_single_stave.musicxml'),
+			{
+				fn: async (first, container, xml) => {
+					const before = {
+						overflowY: getComputedStyle(container).overflowY,
+						position: getComputedStyle(container).position,
+					};
+					// Mount the second Stage while the first is still bound, then dispose the first.
+					await window.render(xml, container, { height: 200 });
+					first.dispose();
+					const after = {
+						overflowY: getComputedStyle(container).overflowY,
+						position: getComputedStyle(container).position,
+						scrollHeight: container.scrollHeight,
+						clientHeight: container.clientHeight,
+					};
+					return { before, after };
+				},
+				// The fn can't fetch (no server); the fixture rides in as its arg.
+				arg: await fixture('structure_single_stave.musicxml'),
+			},
 		);
 
 		expect(result.before.overflowY).toBe('auto');
@@ -31,7 +49,29 @@ describe('stage', () => {
 		const { result } = await renderer.render(
 			'structure_single_stave.musicxml',
 			{},
-			'capUncapHeight',
+			{
+				fn: async (score, container) => {
+					const canvas = container.querySelector('.vexml-canvas');
+					// Computed height, not clientHeight: max-height caps the content box, and the harness
+					// container has padding that clientHeight would fold in.
+					const natural = parseFloat(getComputedStyle(container).height);
+
+					score.setMaxHeight(100);
+					const capped = {
+						height: parseFloat(getComputedStyle(container).height),
+						scrollHeight: container.scrollHeight,
+						overflowY: getComputedStyle(container).overflowY,
+						sameCanvas: container.querySelector('.vexml-canvas') === canvas,
+					};
+
+					score.setMaxHeight(null);
+					return {
+						natural,
+						capped,
+						uncapped: parseFloat(getComputedStyle(container).height),
+					};
+				},
+			},
 		);
 
 		expect(result.natural).toBeGreaterThan(100);
@@ -49,7 +89,33 @@ describe('stage', () => {
 		const { result } = await renderer.render(
 			'structure_single_stave.musicxml',
 			{},
-			'callerCssScales',
+			{
+				fn: async (_score, container) => {
+					const canvas = container.querySelector(
+						'.vexml-canvas',
+					) as HTMLCanvasElement;
+					const intrinsic = parseFloat(
+						canvas.style.getPropertyValue('--vexml-width'),
+					);
+					// Default: the :where() rule renders the canvas at its intrinsic width (scale 1).
+					const defaultWidth = canvas.getBoundingClientRect().width;
+
+					// Constrain the container narrower than the score and add a plain (no !important) rule
+					// telling the canvas to fill it.
+					container.style.width = '300px';
+					const style = document.createElement('style');
+					style.textContent = '.vexml-canvas { width: 100%; height: auto }';
+					document.head.appendChild(style);
+					// Force layout, then measure. Compare against the container's content-box width
+					// (getComputedStyle.width), since the canvas's width:100% resolves against that, not the
+					// padded clientWidth.
+					const scaledWidth = canvas.getBoundingClientRect().width;
+					const contentWidth = parseFloat(getComputedStyle(container).width);
+					style.remove();
+
+					return { intrinsic, defaultWidth, scaledWidth, contentWidth };
+				},
+			},
 		);
 
 		// The default rule sizes the canvas to the intrinsic score width...
@@ -67,7 +133,45 @@ describe('stage', () => {
 		const { result } = await renderer.render(
 			'structure_single_stave.musicxml',
 			{},
-			'fitAndCenter',
+			{
+				fn: async (_score, container) => {
+					const canvas = container.querySelector(
+						'.vexml-canvas',
+					) as HTMLCanvasElement;
+					const intrinsicW = parseFloat(
+						canvas.style.getPropertyValue('--vexml-width'),
+					);
+					const intrinsicH = parseFloat(
+						canvas.style.getPropertyValue('--vexml-height'),
+					);
+
+					// Narrower than the score: it shrinks to fill, keeping its aspect ratio.
+					container.style.width = `${Math.round(intrinsicW / 2)}px`;
+					const narrow = canvas.getBoundingClientRect();
+					const narrowContent = parseFloat(getComputedStyle(container).width);
+
+					// Wider than the score: it stays at its engraved width (no upscaling) and centers —
+					// equal gaps to the container's content edges.
+					container.style.width = `${Math.round(intrinsicW * 2)}px`;
+					const padLeft = parseFloat(getComputedStyle(container).paddingLeft);
+					const padRight = parseFloat(getComputedStyle(container).paddingRight);
+					const wide = canvas.getBoundingClientRect();
+					const box = container.getBoundingClientRect();
+					const gapLeft = wide.left - (box.left + padLeft);
+					const gapRight = box.right - padRight - wide.right;
+
+					return {
+						intrinsicW,
+						aspect: intrinsicW / intrinsicH,
+						narrowW: narrow.width,
+						narrowAspect: narrow.width / narrow.height,
+						narrowContent,
+						wideW: wide.width,
+						gapLeft,
+						gapRight,
+					};
+				},
+			},
 		);
 
 		// Shrank to fill the narrow container, below intrinsic, aspect preserved.

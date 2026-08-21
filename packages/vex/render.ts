@@ -74,7 +74,7 @@ export async function render(opts: {
 			width: 1064,
 			height: 600,
 		});
-		await tab.call('render', { musicXML, config });
+		await tab.call('mount', { musicXML, config });
 		// Fs is text-only, so a PNG goes out through node:fs.
 		writeFileSync(output, await tab.screenshot('#screenshot'));
 		opts.log.info(`wrote ${output}`);

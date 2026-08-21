@@ -15,7 +15,15 @@ describe('swing', () => {
 		const { result } = await renderer.render(
 			'swing.musicxml',
 			{},
-			'swingSteps',
+			{
+				fn: (score) => ({
+					steps: score
+						.getSequence()
+						.getSteps()
+						.map((step) => Math.round(step.startMs)),
+					durationMs: Math.round(score.getDurationMs()),
+				}),
+			},
 		);
 
 		// Downbeats stay put at whole seconds; each off-beat sits 2/3 of the way through its pair.

@@ -3,21 +3,29 @@ import {
 	render as renderScore,
 	type Score,
 } from '@stringsync/vexml';
-import * as probes from './probes';
 
 /*
  * The browser side of the harness: bundled into a classic script (pool.ts's
  * pageScript()) and injected into every tab the pool opens — and into the tab `vex
- * render` opens. It registers the two functions Tab.call reaches: `render` mounts a
- * score into #screenshot, `probe` runs a named probe from probes.ts against it. The
- * Score/container pair lives here between the calls, because only cloneable data
- * crosses the process boundary.
+ * render` opens. It registers the two functions Tab.call reaches: `mount` renders a
+ * score into #screenshot, `probe` runs a test's fn against it. The Score/container pair
+ * lives here between the calls, because only cloneable data crosses the process
+ * boundary.
  */
+
+// The raw library entry, for the rare test fn that renders again itself (see
+// stage.test.ts). Everything else mounts through `mount`.
+declare global {
+	interface Window {
+		render: typeof renderScore;
+	}
+}
+window.render = renderScore;
 
 let current: { score: Score; container: HTMLDivElement } | null = null;
 
 Object.assign(globalThis, {
-	async render(input: {
+	async mount(input: {
 		musicXML?: string;
 		/** A compressed .mxl file's bytes, base64. */
 		mxl?: string;
@@ -25,7 +33,7 @@ Object.assign(globalThis, {
 	}): Promise<void> {
 		const container = document.getElementById('screenshot');
 		if (!(container instanceof HTMLDivElement)) {
-			throw new Error('render: #screenshot container not found');
+			throw new Error('mount: #screenshot container not found');
 		}
 		container.replaceChildren();
 		// Tabs are pooled, so a style the previous test set would carry into this one.
@@ -40,14 +48,13 @@ Object.assign(globalThis, {
 		};
 	},
 
-	async probe(input: { name: string; arg?: unknown }): Promise<unknown> {
+	async probe(input: { fnSrc: string; arg?: unknown }): Promise<unknown> {
 		if (!current) {
-			throw new Error(`probe ${input.name}: nothing rendered yet`);
+			throw new Error('probe: nothing mounted yet');
 		}
-		const probe = (probes as Record<string, unknown>)[input.name];
-		if (typeof probe !== 'function') {
-			throw new Error(`probe: no probe named '${input.name}' in probes.ts`);
-		}
-		return await probe(current.score, current.container, input.arg);
+		// Rehydrate the test's fn; it crossed the boundary as source text (see BrowserFn
+		// in renderer.ts for the contract that makes that legal).
+		const fn = new Function(`return (${input.fnSrc})`)();
+		return await fn(current.score, current.container, input.arg);
 	},
 });

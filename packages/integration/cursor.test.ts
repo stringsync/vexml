@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import type { Score } from '@stringsync/vexml';
 import { renderer } from './renderer';
 
 describe('cursor', () => {
@@ -7,12 +8,17 @@ describe('cursor', () => {
 	// engraving at the sought time. The timeline/cursor/view logic is unit-tested in packages/vexml; this is the
 	// integration screenshot.
 	it.concurrent('a playback cursor draws its bar on the score at the sought time', async () => {
-		// Seek 40% through the piece — a deterministic spot independent of the note count.
 		const { png } = await renderer.render(
 			'arpeggio.musicxml',
 			{},
-			'seekPlayhead',
-			0.4,
+			{
+				fn: (score) => {
+					const cursor = score.createCursor();
+					cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
+					// Seek 40% through the piece — a deterministic spot independent of the note count.
+					cursor.seekMs(score.getDurationMs() * 0.4);
+				},
+			},
 		);
 		expect(png).toMatchScreenshot('cursor_bar.png');
 	});
@@ -26,8 +32,18 @@ describe('cursor', () => {
 		const { png } = await renderer.render(
 			'aloof_measure_2.musicxml',
 			{},
-			'seekPlayheadColoring',
-			0.3,
+			{
+				fn: (score) => {
+					const cursor = score.createCursor();
+					cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
+					cursor.events.on('change', (e) => {
+						for (const n of e.highlighted) {
+							n.color.on('#155dfc');
+						}
+					});
+					cursor.seekMs(score.getDurationMs() * 0.3);
+				},
+			},
 		);
 		expect(png).toMatchScreenshot('cursor_tab_tie.png');
 	});
@@ -39,8 +55,13 @@ describe('cursor', () => {
 		const { png } = await renderer.render(
 			'chord_diagram_tab.musicxml',
 			{},
-			'seekPlayhead',
-			0.4,
+			{
+				fn: (score) => {
+					const cursor = score.createCursor();
+					cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
+					cursor.seekMs(score.getDurationMs() * 0.4);
+				},
+			},
 		);
 		expect(png).toMatchScreenshot('cursor_chord_diagram.png');
 	});
@@ -52,7 +73,7 @@ describe('cursor', () => {
 		const { result: graces } = await renderer.render(
 			'grace_notes.musicxml',
 			{},
-			'graceNoteStats',
+			{ fn: graceNoteStats },
 		);
 		// The fixture puts a grace before several notes; each must resolve with a sounding pitch and a
 		// real, non-degenerate notehead box (not the near-origin bogus group box).
@@ -68,7 +89,7 @@ describe('cursor', () => {
 		const { result: graces } = await renderer.render(
 			'tab_grace.musicxml',
 			{},
-			'graceNoteStats',
+			{ fn: graceNoteStats },
 		);
 		// Each grace resolves to a target whose fret glyph (TabPosition) is laid out at a real x.
 		expect(graces.count).toBeGreaterThan(0);
@@ -87,7 +108,26 @@ describe('cursor', () => {
 		const { result } = await renderer.render(
 			'tie.musicxml',
 			{},
-			'tieTransitions',
+			{
+				fn: (score) => {
+					const seq = score.getSequence();
+					const pitches = (
+						notes: ReadonlyArray<{ getPitch(): string | null }>,
+					) => notes.map((n) => n.getPitch()).sort();
+					const transitions = seq
+						.getSteps()
+						.slice(1)
+						.map((step) => {
+							const t = seq.classify(step.index - 1, step.index);
+							return {
+								started: pitches(t.started),
+								sustained: pitches(t.sustained),
+								stopped: pitches(t.stopped),
+							};
+						});
+					return { length: seq.length, transitions };
+				},
+			},
 		);
 
 		// Onsets: M1 C5, M1 C5 (tie stop), M2 C5, M3 C5 (tie stop), M4 F#5, M4 F#5 (tie stop).
@@ -114,7 +154,21 @@ describe('cursor', () => {
 		const { result } = await renderer.render(
 			'tie_chord_dyad.musicxml',
 			{},
-			'tiedChordHighlight',
+			{
+				fn: (score) => {
+					const cursor = score.createCursor();
+					const pitches = () =>
+						cursor
+							.getHighlightedElements()
+							.map((n) => n.getPitch())
+							.sort();
+					const dur = score.getDurationMs();
+					cursor.seekMs(dur * 0.75); // within the 2nd chord's step
+					const sounding = pitches();
+					cursor.seekMs(dur); // done
+					return { sounding, whenDone: pitches().length };
+				},
+			},
 		);
 		expect(result.sounding).toEqual(['C/5', 'C/5', 'E/5', 'E/5']);
 		expect(result.whenDone).toBe(0);
@@ -130,7 +184,17 @@ describe('cursor', () => {
 		const { result } = await renderer.render(
 			'repeats.musicxml',
 			{},
-			'repeatExpansion',
+			{
+				fn: (score) => {
+					const seq = score.getSequence();
+					return {
+						order: seq.getSteps().map((step) => step.measureIndex),
+						measureCount: seq.getMeasureCount(),
+						// A repeated measure's cursor lands on its first pass, not its last.
+						firstStepOfM2: seq.getFirstStepOfMeasure(1),
+					};
+				},
+			},
 		);
 
 		// |: M1 M2 :| twice, then M3 into the two-measure 1st ending (M4 M5) and back to M3,
@@ -158,7 +222,13 @@ describe('cursor', () => {
 		const { result } = await renderer.render(
 			'repeats_multiple_times.musicxml',
 			{},
-			'stepMeasureIndexes',
+			{
+				fn: (score) =>
+					score
+						.getSequence()
+						.getSteps()
+						.map((step) => step.measureIndex),
+			},
 		);
 
 		// M1, then |: M2 M3 :| five times over, then out to M4 M5.
@@ -174,7 +244,13 @@ describe('cursor', () => {
 		const { result } = await renderer.render(
 			'repeats_nested.musicxml',
 			{},
-			'stepMeasureIndexes',
+			{
+				fn: (score) =>
+					score
+						.getSequence()
+						.getSteps()
+						.map((step) => step.measureIndex),
+			},
 		);
 
 		// Outer pass 1: M1, then the inner block |: M2 :| — M3 (1st ending) back to M2, then M4
@@ -192,7 +268,16 @@ describe('cursor', () => {
 		const { result } = await renderer.render(
 			'voice_short.musicxml',
 			{},
-			'stepActivePitches',
+			{
+				fn: (score) =>
+					score
+						.getSequence()
+						.getSteps()
+						.map((step) => ({
+							startBeat: step.startBeat,
+							active: step.active.map((n) => n.getPitch()).sort(),
+						})),
+			},
 		);
 
 		expect(result).toEqual([
@@ -202,3 +287,39 @@ describe('cursor', () => {
 		]);
 	});
 });
+
+// Runs in the page via toString(), so it must stay self-contained: no closing over test
+// scope, and a test's fn cannot call it (that would be a closure) — only pass it AS the fn.
+
+/** Walk the cursor over every onset and aggregate every grace note encountered. */
+function graceNoteStats(score: Score) {
+	const cursor = score.createCursor();
+	const found: Array<{
+		pitch: string | null;
+		hasFret: boolean;
+		x: number;
+		w: number;
+	}> = [];
+	cursor.events.on('change', (e) => {
+		for (const n of e.started) {
+			for (const g of n.getGraceNotes()) {
+				found.push({
+					pitch: g.getPitch(),
+					hasFret: g.getTabPosition() !== null,
+					x: g.rect.x,
+					w: g.rect.w,
+				});
+			}
+		}
+	});
+	for (const step of score.getSequence().getSteps()) {
+		cursor.seekMs(step.startMs);
+	}
+	return {
+		count: found.length,
+		minX: Math.min(...found.map((g) => g.x)),
+		minW: Math.min(...found.map((g) => g.w)),
+		missingPitch: found.filter((g) => g.pitch === null).length,
+		missingFret: found.filter((g) => !g.hasFret).length,
+	};
+}
