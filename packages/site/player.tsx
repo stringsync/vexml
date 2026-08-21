@@ -1,14 +1,14 @@
 import { type RefObject, useState } from 'react';
 import { fmtTime } from './format';
 import { ICON, PlayerIcon } from './icons';
-import type { InstrumentHolder } from './instrument-holder';
+import type { InstrumentController } from './instrument-controller';
 import type { ScoreSession } from './score-session';
 
 export interface PlayerProps {
 	playerRef: RefObject<HTMLDivElement | null>;
 	/* What the transport drives. Null before the first render lands, which the caller guards. */
 	session: ScoreSession | null;
-	instrument: InstrumentHolder;
+	instrument: InstrumentController;
 	/* Read off the two objects above by the caller's projection, so a change re-renders this. */
 	muted: boolean;
 	playing: boolean;

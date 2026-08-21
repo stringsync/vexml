@@ -5,7 +5,7 @@ import type { Instrument } from './instrument';
 import { INSTRUMENTS, OPENING_INSTRUMENT } from './instruments';
 import { PianoInstrument } from './piano-instrument';
 
-type InstrumentHolderEvents = { changed: undefined };
+type InstrumentControllerEvents = { changed: undefined };
 
 /*
  * The instrument to open with, from whatever the last visit stored.
@@ -29,10 +29,10 @@ function openingName(stored: string | null): string {
  * only a few dozen). Muting must not rebuild, because that re-downloads samples. Holding them
  * together is what makes both true without a mirror ref.
  */
-export class InstrumentHolder
-	implements Eventful<InstrumentHolderEvents>, Resource
+export class InstrumentController
+	implements Eventful<InstrumentControllerEvents>, Resource
 {
-	private readonly dispatcher = new Dispatcher<InstrumentHolderEvents>();
+	private readonly dispatcher = new Dispatcher<InstrumentControllerEvents>();
 	readonly events = this.dispatcher.events;
 
 	name: string;

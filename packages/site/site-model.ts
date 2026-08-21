@@ -2,7 +2,7 @@ import { type ConfigInput, render } from '@stringsync/vexml';
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
 import { DocumentSource, type Fixtures } from './document-source';
-import { InstrumentHolder } from './instrument-holder';
+import { InstrumentController } from './instrument-controller';
 import { RenderConfig } from './render-config';
 import { ScoreSession } from './score-session';
 
@@ -24,7 +24,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 
 	readonly config = new RenderConfig();
 	readonly document: DocumentSource;
-	readonly instrument: InstrumentHolder;
+	readonly instrument: InstrumentController;
 
 	/* The live score and everything happening to it, or null before the first render lands. */
 	session: ScoreSession | null = null;
@@ -40,7 +40,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 
 	constructor(fixtures: Fixtures, storage: Storage) {
 		this.document = new DocumentSource(fixtures, storage);
-		this.instrument = new InstrumentHolder(storage);
+		this.instrument = new InstrumentController(storage);
 		this.disposer.use(this.config);
 		this.disposer.use(this.document);
 		this.disposer.use(this.instrument);
