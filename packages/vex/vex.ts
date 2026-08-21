@@ -1,4 +1,5 @@
 import { cli, type Deps, type Middleware } from 'webappwiz/cmd';
+import { color } from 'webappwiz/log';
 import type { Fs } from 'webappwiz/system';
 import { t } from 'webappwiz/t';
 import { SystemClock } from 'webappwiz/time';
@@ -32,7 +33,7 @@ const timing: Middleware<VexDeps> = async (ctx, next) => {
 	// args[0] is the command; a failing command throws past this, so only the
 	// runs that finished get timed.
 	ctx.log.info(
-		`${ctx.ps.args[0]} took ${clock.now().subtract(started).human()}`,
+		`${color.bold(ctx.ps.args[0])} took ${clock.now().subtract(started).human()}`,
 	);
 };
 
