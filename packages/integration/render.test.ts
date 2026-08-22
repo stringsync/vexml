@@ -2451,16 +2451,16 @@ describe('render', () => {
 		).toMatchScreenshot('chord_diagram_adjacent.png');
 	});
 
-	// The same fixture squeezed to 420px, where horizontal room for M3's pair runs out
-	// entirely: pushRightOf sends the G box past the right page margin, and the clamp back
-	// inside (nudgeInsideX) would land it exactly on top of the C box — at this width the
-	// two boxes used to print through each other at the same x. With no sideways room left,
-	// the later box stacks upward instead: at the right margin, the C box sits lifted over
-	// M3's high ledger-line run, and the G box sits directly above the C box, both titles
-	// legible, no overprinting.
+	// The same fixture squeezed to 420px, where M3's pair is crowded right against the page
+	// margin: both boxes' notes sit far enough right that each box alone would overrun the
+	// canvas, and clamping them back inside used to pin BOTH to the same x, printing one
+	// through the other. Chord order is horizontal, so the pair packs leftward off the
+	// margin instead of stacking: the beat-3 C box gives up the edge to leave room for the
+	// beat-4 G box, and the two sit side by side, in that order, on one row.
 	// - M1: its own system; the C box near the right edge.
-	// - M2-3: share the second system; M2's G box at its default height on the left, M3's
-	//   C-over-notes + G-over-C stack pinned at the right margin.
+	// - M2-3: share the second system; M2's G box at its default height on the left, then
+	//   M3's C and G side by side at the right margin, both lifted clear of M3's bass-clef
+	//   C6 run (four ledger lines up).
 	it.concurrent('renders chord_diagram_adjacent_squeezed.png', async () => {
 		expect(
 			await testing.render('chord_diagram_adjacent.musicxml', {

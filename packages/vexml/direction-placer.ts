@@ -347,11 +347,17 @@ export class DirectionPlacer {
 		// above any notes, ties, or words in its column (the diagrams pass runs after the
 		// notes and words), so a high note or a word like "(as taught)" stays put and the
 		// box rises over it.
+		// Diagrams read left to right in chord order, so a box crowded against the page edge
+		// has to leave room for the ones still to come rather than take the edge for itself.
+		// Counted down as they place: `pending` is the room (boxes + gaps) owed to this
+		// column's right.
+		let pending = column.harmonies.filter((h) => h.frame).length;
 		for (const h of column.harmonies) {
 			// A <harmony> with a <frame> draws as a fret box (chord name as its title)
 			// above the stave; one without draws as the plain chord-symbol text.
 			const stave = h.frame ? h.staveNote.getStave() : null;
 			if (h.frame && stave) {
+				pending--;
 				const top =
 					stave.getYForLine(0) - CHORD_DIAGRAM_GAP - CHORD_DIAGRAM_HEIGHT;
 				// Size to the frame: one column per string, enough fret rows to hold the
@@ -395,33 +401,34 @@ export class DirectionPlacer {
 				const unpad = (box: Rect) =>
 					new Rect(box.x, box.y, CHORD_DIAGRAM_WIDTH, CHORD_DIAGRAM_HEIGHT);
 				const lifted = unpad(lift(natural));
-				const spaced = this.collisionResolver.pushRightOf(
+				// A box anchored at a note near the right edge would overrun the canvas and be
+				// clipped (page overflow has no crop-growth knob like the vertical edges do), so
+				// nudge it back inside the drawable region — minus the room this column's later
+				// boxes are owed, so they land beside it instead of on top of it.
+				//
+				// Clamp BEFORE spacing, not after. Clamping last pins every crowded box to the
+				// same margin, and the pull left lands the box back on the neighbour
+				// pushRightOf had just cleared; spacing last keeps them in chord order, since
+				// pushRightOf only ever moves a box right of what is already placed.
+				const clamped = this.collisionResolver.nudgeInsideX(
 					lifted,
+					new Rect(
+						this.scratchViewport.x,
+						this.scratchViewport.y,
+						this.scratchViewport.w -
+							pending * (CHORD_DIAGRAM_WIDTH + CHORD_DIAGRAM_GAP),
+						this.scratchViewport.h,
+					),
+					PAGE_MARGIN_X,
+				);
+				const spaced = this.collisionResolver.pushRightOf(
+					clamped,
 					'diagram',
 					CHORD_DIAGRAM_GAP,
 				);
 				// Spacing moved it into a different column, which may hold taller notes than
 				// the one it was lifted out of — so lift again where it actually landed.
-				const unclamped = spaced.x === lifted.x ? lifted : unpad(lift(spaced));
-				// A box anchored at a note near the right edge would overrun the canvas and be
-				// clipped (page overflow has no crop-growth knob like the vertical edges do), so
-				// nudge it back inside the drawable region.
-				const nudged = this.collisionResolver.nudgeInsideX(
-					unclamped,
-					this.scratchViewport,
-					PAGE_MARGIN_X,
-				);
-				// The clamp can pull the box back over the very diagram pushRightOf had just
-				// cleared (both then sit pinned at the margin and print through each other).
-				// Horizontal room is exhausted at the page edge, so stack upward instead:
-				// lift the clamped box clear of the diagrams in its column.
-				const placed =
-					nudged.x === unclamped.x
-						? nudged
-						: this.collisionResolver.liftClear(nudged, CHORD_DIAGRAM_GAP, {
-								kinds: ['diagram'],
-								band,
-							});
+				const placed = spaced.x === lifted.x ? lifted : unpad(lift(spaced));
 				const diagram = new ChordDiagramGlyph(placed.x, placed.y, {
 					...h.frame,
 					title: h.text || undefined,
