@@ -24,57 +24,6 @@ const musicXML = await res.text();        // or .blob() for mxl
 await render(musicXML, element);
 ```
 
-## Sizing and centering
-
-The score is engraved once at a reference width, then **scaled to fit its container and centered**
-automatically, with no CSS needed. A container narrower than the reference width shrinks the
-score to fit; a wider one leaves it at its engraved width (never upscaled) and centers it.
-Resizing the container re-scales instantly without re-rendering. Set the reference width with
-`layout.referenceWidth` (default 8.5in / 816px).
-
-To override, style the `.vexml-canvas` class: vexml's own rules use `:where()` (zero specificity),
-so a plain rule wins with no `!important`:
-
-```css
-.vexml-canvas { width: 600px; height: auto; } /* fixed on-screen width, say */
-```
-
-Capping the container turns it into a scroll box instead of fitting: `width`/`maxWidth` for a
-horizontal scroll (pair with `layout: { type: 'panoramic' }` for a single row), `height`/`maxHeight`
-for a vertical one.
-
-## When a line won't fit
-
-A MusicXML file can engrave its own system breaks (`<print new-system="no">` says "keep this
-measure on the current line"), and those lines were laid out for whatever page the file was
-written for, not for your reference width. When one of them needs more room than you have,
-something has to give. vexml never gives up the notes: measures are squeezed toward each
-other only down to the width at which they'd start to collide, and never past it. What happens
-at that point is `layout.overflow`:
-
-```ts
-await render(musicXML, element, {
-  layout: { type: 'standard', overflow: 'widen' },
-});
-```
-
-| mode | what wins | result |
-| --- | --- | --- |
-| `'wrap'` (default) | the page | the engraved line is broken in two; every system fits the reference width |
-| `'allow'` | the document | the line keeps its measures and runs past the reference width; the page grows to cover the spill so it scales down instead of clipping |
-| `'widen'` | neither | the reference width itself grows until every system fits at its *ideal* spacing, so the whole score engraves wider and renders smaller |
-
-`'wrap'` keeps pages uniform at the cost of the source's line breaks, which is reasonable,
-since those breaks were made for a different page size. `'widen'` is the one to reach for when
-you want the engraving the file actually describes. Set `layout.honorSystemBreaks: false` to
-ignore the document's breaks entirely and wrap purely on width.
-
-One caveat on `'wrap'`: a *single* measure whose minimum exceeds the usable width has nowhere
-to wrap to, so it spills like `'allow'`. That takes a very small `referenceWidth` or a very
-large `noteSpacing`, and the measure still draws at its collision-free minimum: it reads
-correctly, it just runs past the margin.
-
-
 ## Listening to events
 
 ```ts
@@ -96,6 +45,44 @@ score.events.on('pointermove', (e) => {
 
 `on` hands back a function that unsubscribes; call it when you're done listening.
 
+## Sizing and centering
+
+The score is scaled to fit its container and centered automatically, with no CSS
+needed; resizing the container re-scales instantly. Set the width the score is
+engraved at with `layout.referenceWidth` (default 8.5in / 816px).
+
+To override, style the `.vexml-canvas` class:
+
+```css
+.vexml-canvas { width: 600px; height: auto; }
+```
+
+Capping the container turns it into a scroll box instead of fitting: `width`/`maxWidth` for a
+horizontal scroll (pair with `layout: { type: 'panoramic' }` for a single row), `height`/`maxHeight`
+for a vertical one.
+
+## When a line won't fit
+
+A MusicXML file can engrave its own line breaks, laid out for whatever page the file
+was written for, not for your reference width. When one of those lines needs more room
+than you have, `layout.overflow` decides what gives:
+
+```ts
+await render(musicXML, element, {
+  layout: { type: 'standard', overflow: 'widen' },
+});
+```
+
+| mode | result |
+| --- | --- |
+| `'wrap'` (default) | the line is broken in two; every system fits the reference width |
+| `'allow'` | the line keeps its measures and runs past the reference width; the page grows to cover the spill |
+| `'widen'` | the reference width grows until every line fits, so the whole score engraves wider and renders smaller |
+
+`'widen'` is the one to reach for when you want the engraving the file actually
+describes. Set `layout.honorSystemBreaks: false` to ignore the document's breaks
+entirely and wrap purely on width.
+
 ## Using custom fonts
 
 > [!NOTE]
@@ -115,10 +102,9 @@ await render(musicXML, element, {
 
 ## Custom colors
 
-Recolor the engraving and the page behind it. `fonts.notation.color` tints the engraved
-glyphs (noteheads, stems, staves, clefs), `fonts.text.color` the words vexml types (part
-labels, measure numbers, chord symbols), and `backgroundColor` paints the container behind
-the score. Together, a dark theme:
+`fonts.notation.color` tints the engraved glyphs (noteheads, stems, staves, clefs),
+`fonts.text.color` the words vexml types (part labels, measure numbers, chord symbols),
+and `backgroundColor` paints the container behind the score. Each is any CSS color string.
 
 ```ts
 await render(musicXML, element, {
@@ -129,9 +115,6 @@ await render(musicXML, element, {
   },
 });
 ```
-
-Each color is any CSS color string. `backgroundColor` defaults to transparent; a canvas
-layer added at a negative z-index still draws over it.
 
 ## Gap measures
 
@@ -151,9 +134,7 @@ const score = await render(musicXML, element, {
 });
 ```
 
-`beforeMeasureIndex` refers to the MusicXML as written, so gaps never shift each other; the measure count appends after the last measure. In the rendered score, each gap occupies a measure **index** of its own and shifts the measures after it right by one, but measure **numbers** (the printed labels) are untouched, and the gap itself shows none.
-
-Read the resulting timing with `score.getGaps()`, which returns `{ measureIndex, label, startMs, endMs }` per gap in the same order they were passed: `gaps[i]` in is `getGaps()[i]` out, so join by position to line the score up with your media. Playback treats a gap like any other measure: the cursor glides across it and `getMeasureIndexAtMs` resolves into it.
+Read the resulting timing with `score.getGaps()`, which returns `{ measureIndex, label, startMs, endMs }` per gap in the same order they were passed, so join by position to line the score up with your media. Playback treats a gap like any other measure: the cursor glides across it and `getMeasureIndexAtMs` resolves into it.
 
 ## Adding a canvas layer
 
