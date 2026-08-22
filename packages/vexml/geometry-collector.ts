@@ -134,10 +134,10 @@ export class GeometryCollector {
 		chords: ReadonlyArray<{ note: StaveNote; chord: Chord }>,
 	): void {
 		for (const { note, chord } of chords) {
-			// The notehead glyph's true x-span (getAbsoluteX is the tick anchor, left of
-			// the notehead — centering on it puts decorations off the note). y per
-			// notehead comes from getYs; noteHeads is indexed in the same (chord.notes)
-			// order, so heads[i] is this note's glyph.
+			// The normal notehead column's x-span (getAbsoluteX is the tick anchor, left of
+			// the notehead — centering on it puts decorations off the note); the fallback
+			// when a note drew no head. y per notehead comes from getYs; noteHeads is
+			// indexed in the same (chord.notes) order, so heads[i] is this note's glyph.
 			const headX = note.getNoteHeadBeginX();
 			const headWidth = note.getNoteHeadEndX() - headX;
 			const ys = note.getYs();
@@ -154,20 +154,25 @@ export class GeometryCollector {
 				// its StaveNote's tick context, so the inherited Tickable.getX() throws.
 				// The baseline y is the notehead's staff y (ys[i]); noteheads carry no yShift.
 				const head = heads[i];
-				const glyph = head
-					? {
-							text: head.getText(),
-							font: head.getFont(),
-							x: head.getBoundingBox().getX(),
-							y,
-						}
-					: null;
+				const box = head?.getBoundingBox();
+				const glyph =
+					head && box
+						? {
+								text: head.getText(),
+								font: head.getFont(),
+								x: box.getX(),
+								y,
+							}
+						: null;
+				// The rect tracks this head's own drawn box, not the chord's normal column
+				// (getNoteHeadBeginX/EndX): a head displaced for a second sits a head-width
+				// off the stem, and a rect that misses it would clip its color stamp.
 				this.rawNotes.push({
 					mnote,
 					rect: new Rect(
-						headX,
+						box ? box.getX() : headX,
 						y - NOTEHEAD_HALF_H,
-						headWidth,
+						box ? box.getW() : headWidth,
 						2 * NOTEHEAD_HALF_H,
 					),
 					chord: chord.notes,

@@ -24,15 +24,18 @@ describe('GeometryCollector', () => {
 		return built;
 	})();
 
-	const staveNote = (ys: (number | undefined)[]) =>
+	const staveNote = (ys: (number | undefined)[], headXs?: number[]) =>
 		({
 			getNoteHeadBeginX: () => 10,
 			getNoteHeadEndX: () => 22,
 			getYs: () => ys,
-			noteHeads: ys.map(() => ({
+			noteHeads: ys.map((_, i) => ({
 				getText: () => '',
 				getFont: () => '30px Bravura',
-				getBoundingBox: () => ({ getX: () => 11 }),
+				getBoundingBox: () => ({
+					getX: () => headXs?.[i] ?? 11,
+					getW: () => 12,
+				}),
 			})),
 		}) as unknown as StaveNote;
 
@@ -41,13 +44,25 @@ describe('GeometryCollector', () => {
 		collector.collectStaveNotes(3, [{ note: staveNote([50, 60]), chord }]);
 		const notes = collector.notes();
 		expect(notes).toHaveLength(2);
-		expect(notes[0]?.rect.x).toBe(10);
+		expect(notes[0]?.rect.x).toBe(11);
 		expect(notes[0]?.rect.w).toBe(12);
 		expect(notes[0]?.measureIndex).toBe(3);
 		expect(notes[0]?.tab).toBeNull();
 		expect(notes[0]?.glyph).toMatchObject({ x: 11, y: 50 });
 		expect(notes[1]?.glyph).toMatchObject({ y: 60 });
 		expect(notes[0]?.chord).toHaveLength(2);
+	});
+
+	it('tracks a displaced notehead (a second) at its own drawn box, not the stem column', () => {
+		const collector = new GeometryCollector();
+		// The lower head of a stem-down second draws a head-width left of the column.
+		collector.collectStaveNotes(0, [
+			{ note: staveNote([60, 50], [-1, 11]), chord },
+		]);
+		const notes = collector.notes();
+		expect(notes[0]?.rect.x).toBe(-1);
+		expect(notes[0]?.glyph).toMatchObject({ x: -1 });
+		expect(notes[1]?.rect.x).toBe(11);
 	});
 
 	it('skips a chord note the formatter gave no y', () => {

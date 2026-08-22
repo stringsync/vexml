@@ -33,6 +33,20 @@ describe('decorations', () => {
 		expect(image).toMatchScreenshot('decoration_halo.png');
 	});
 
+	// Chords whose seconds displace a notehead off the stem column (chord.musicxml: the C5/D5
+	// second in M2, and the G5/A5 second atop the M4 chord). Every head must recolor completely,
+	// including the displaced ones — their stamps once clipped to the normal column's rect.
+	it.concurrent('colors displaced second noteheads completely', async () => {
+		const { result: count, image } = await testing.eval(
+			'chord.musicxml',
+			{},
+			decorateAllTargets,
+			'color',
+		);
+		expect(count).toBeGreaterThan(0);
+		expect(image).toMatchScreenshot('decoration_chord_color.png');
+	});
+
 	// A notation+tab document: the notation staff's noteheads and the tab staff's fret numbers both
 	// light up. Color restamps each notehead glyph and each fret digit in blue; halo draws a soft
 	// blue circle behind every notehead and every fret.
