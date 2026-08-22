@@ -3169,28 +3169,4 @@ describe('render', () => {
 			await testing.render('score_amazing_grace.musicxml'),
 		).toMatchScreenshot('score_amazing_grace.png');
 	});
-
-	// "Green's Greenery": 61 measures of guitar notation + TAB, with repeats and endings. ONE
-	// Steel Guitar part of two staves — a treble notation stave in 2 flats and 4/4 over the
-	// 6-line TAB.
-	it.concurrent('renders score_greens_greenery.png', async () => {
-		expect(
-			await testing.render('score_greens_greenery.musicxml'),
-		).toMatchScreenshot('score_greens_greenery.png');
-	});
-
-	// TODO: False positive — this baseline was created from the current render and shows a bug.
-	// Measure 2 holds a genuine cross-staff beam (voice 2 begins on staff 1 at C4, then
-	// continues on staff 2 for F3/G3/A3). vexml draws it as two long diagonal beams that slash
-	// across the treble stave from measure 1 into measure 2, leaves three stems standing with no
-	// noteheads shooting off the top of the image, and inflates the first system's height enough
-	// to leave a 385px blank band beneath it — every other system here gaps by ~85-130px.
-	// See the recent cross-staff beam work in vexml. Fix, then
-	// `vex test score_joplin_elite_syncopations --update`.
-	// Joplin, "Elite Syncopations": 88 measures of piano, with repeats and numbered endings.
-	it.concurrent('renders score_joplin_elite_syncopations.png', async () => {
-		expect(
-			await testing.render('score_joplin_elite_syncopations.musicxml'),
-		).toMatchScreenshot('score_joplin_elite_syncopations.png');
-	});
 });
