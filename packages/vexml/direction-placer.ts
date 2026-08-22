@@ -287,7 +287,7 @@ export class DirectionPlacer {
 							italic: true,
 							align: 'center',
 						}
-					: undefined,
+					: { font: this.labelFont, size: WORDS_FONT_SIZE, italic: true },
 			);
 			// A below-stave directive grows the crop downward instead (drawWords already
 			// reported the drop); only above-stave text lifts the measure box's top.
@@ -808,12 +808,8 @@ export class DirectionPlacer {
 		stave: Stave,
 		text: string,
 		anchor: StaveNote | TabNote | number | undefined,
-		placement: Placement = 'above',
-		style: SideTextStyle = {
-			font: this.labelFont,
-			size: WORDS_FONT_SIZE,
-			italic: true,
-		},
+		placement: Placement,
+		style: SideTextStyle,
 	): Rect {
 		const below = placement === 'below';
 		const baseY = below
@@ -875,6 +871,7 @@ export class DirectionPlacer {
 							this.scratchViewport.right - stave.getNoteStartX(),
 							cleared.h,
 						),
+						0,
 					);
 		// A mark anchored near the right edge would run off the canvas and be clipped (there's
 		// no horizontal crop-growth knob), so pull it back inside — the same treatment a chord

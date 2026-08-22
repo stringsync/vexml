@@ -35,7 +35,7 @@ describe('VoiceBuilder', () => {
 			...overrides,
 		}) as unknown as Note;
 
-	const chordOf = (l: Note, measureBeat = 0) =>
+	const chordOf = (l: Note, measureBeat: number) =>
 		({ lead: l, measureBeat }) as unknown as Chord;
 
 	const staffVoice = (
@@ -160,7 +160,7 @@ describe('VoiceBuilder', () => {
 		const plain = lead();
 		const tied = lead({ ties: [{}] });
 		const grace = lead({ isGrace: true });
-		const chords = [chordOf(plain), chordOf(tied), chordOf(grace)];
+		const chords = [chordOf(plain, 0), chordOf(tied, 0), chordOf(grace, 0)];
 		const byLead = new Map<Note, StaveNote>();
 		const pending = buildNotes(makeBuilder({ byLead }), [staffVoice(chords)]);
 
@@ -259,8 +259,8 @@ describe('VoiceBuilder', () => {
 	});
 
 	it('stacks a later voice’s verses beneath the rows already used', () => {
-		const upper = new FakeLyricMark(1);
-		const low = new FakeLyricMark(0);
+		const upper = new FakeLyricMark(1, {});
+		const low = new FakeLyricMark(0, {});
 		const translator = fakeTranslator(({ opts, chords }, voiceIndex) =>
 			chords.map((chord) => {
 				const note = staveNote(voiceIndex === 0 ? [upper] : [low]);
@@ -269,8 +269,8 @@ describe('VoiceBuilder', () => {
 			}),
 		);
 		buildNotes(makeBuilder({ translator }), [
-			staffVoice([chordOf(lead())]),
-			staffVoice([chordOf(lead({ voice: '2' }))]),
+			staffVoice([chordOf(lead(), 0)]),
+			staffVoice([chordOf(lead({ voice: '2' }), 0)]),
 		]);
 		// Voice 1 used rows 0-1, so voice 2's first verse starts on row 2.
 		expect(upper.verseIndex).toBe(1);
@@ -281,7 +281,7 @@ describe('VoiceBuilder', () => {
 		const begin = lead({ beams: [{ number: '1', text: 'begin' }] });
 		const end = lead({ beams: [{ number: '1', text: 'end' }] });
 		const pending = buildNotes(makeBuilder(), [
-			staffVoice([], [chordOf(begin), chordOf(end)]),
+			staffVoice([], [chordOf(begin, 0), chordOf(end, 0)]),
 			// beamChords is null on the staves that don't own the voice, so no plan here.
 			staffVoice([], null),
 		]);
@@ -328,7 +328,7 @@ describe('VoiceBuilder', () => {
 			[b, noteB],
 		]);
 		const spanners = fakeSpanners();
-		const chords = [chordOf(a), chordOf(b)];
+		const chords = [chordOf(a, 0), chordOf(b, 0)];
 		const pending = pendingStave({
 			staveNotes: [noteA, noteB],
 			beamPlans: [beamPlan([a, b])],
@@ -455,7 +455,11 @@ describe('VoiceBuilder', () => {
 				});
 			},
 		};
-		const voice = staffVoice([chordOf(rest), chordOf(struck), chordOf(grace)]);
+		const voice = staffVoice([
+			chordOf(rest, 0),
+			chordOf(struck, 0),
+			chordOf(grace, 0),
+		]);
 		const pending = makeBuilder({
 			tab,
 			spanners,

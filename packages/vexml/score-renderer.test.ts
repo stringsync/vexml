@@ -3,6 +3,7 @@ import { BarlineTranslator } from './barline-translator';
 import { ChordTranslator } from './chord-translator';
 import { DEFAULT_CONFIG, type FontConfig } from './config';
 import { DurationTranslator } from './duration-translator';
+import { DynamicGlyphs } from './dynamic-glyphs';
 import { ElementFactory } from './element-factory';
 import { FakeHost } from './fake-host';
 import { FakeScoreParser } from './fake-score-parser';
@@ -60,10 +61,10 @@ describe('ScoreRenderer', () => {
 		const barlines = new BarlineTranslator();
 		const signatures = new SignatureTranslator();
 		const staves = new StavePlan({ showTabs: true, showNotation: true });
-		const tab = new TabVoiceTranslator(durations);
+		const tab = new TabVoiceTranslator(durations, 'none');
 		const chords = new ChordTranslator(durations, new NotationTranslator());
 		const translator = new VoiceTranslator(chords, durations, barlines);
-		const reader = new ScoreReader();
+		const reader = new ScoreReader(new DynamicGlyphs());
 		const gaps = new Gaps([]);
 		return new ScoreRenderer(
 			config,

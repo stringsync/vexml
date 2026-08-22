@@ -29,7 +29,7 @@ export class SingleSlide {
 		// Extra gap between the note glyph and the near (head-touching) end of the tick, on top
 		// of SLIDE_PADDING. The default padding hugs a notehead well, but a bare tab fret digit
 		// wants more air, so callers widen it per case.
-		private readonly extraPad = 0,
+		private readonly extraPad: number,
 	) {}
 	setContext(context: RenderContext): this {
 		this.context = context;

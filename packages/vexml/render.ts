@@ -10,6 +10,7 @@ import {
 import { DefaultFontLoader } from './default-font-loader';
 import { DefaultScoreParser } from './default-score-parser';
 import { DurationTranslator } from './duration-translator';
+import { DynamicGlyphs } from './dynamic-glyphs';
 import { ElementFactory } from './element-factory';
 import { Gaps } from './gaps';
 import { LayoutPlanner } from './layout-planner';
@@ -78,7 +79,7 @@ export function render(
 	// ONE translator instance shared by layout and draw: both must build identical vexflow
 	// voices for the measured widths to match the drawn ones.
 	const translator = new VoiceTranslator(chords, durations, barlines);
-	const reader = new ScoreReader();
+	const reader = new ScoreReader(new DynamicGlyphs());
 	const gaps = new Gaps(resolved.gaps);
 	return new ScoreRenderer(
 		resolved,

@@ -10,7 +10,7 @@ import type { HitTester } from './hit-tester';
 export class FakeHitTester implements HitTester {
 	readonly probes: Array<{ x: number; y: number }> = [];
 
-	constructor(public result: Element | null = null) {}
+	constructor(public result: Element | null) {}
 
 	hitTest(point: { x: number; y: number }): Element | null {
 		this.probes.push(point);

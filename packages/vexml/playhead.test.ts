@@ -21,7 +21,7 @@ function changeAt(rect: Rect): CursorChangeEvent {
 
 describe('Playhead', () => {
 	it('draws a vertical bar straddling the onset x, spanning the system', () => {
-		const layer = new FakeLayer();
+		const layer = new FakeLayer({});
 		const view = new Playhead(layer); // default width 2
 		view.render(changeAt(new Rect(10, 0, 1, 100)));
 		// Nothing was drawn before, so there's nothing to clear on the first render.
@@ -32,7 +32,7 @@ describe('Playhead', () => {
 	});
 
 	it('honors color and width options', () => {
-		const layer = new FakeLayer();
+		const layer = new FakeLayer({});
 		const view = new Playhead(layer, { color: 'red', widthPx: 4 });
 		view.render(changeAt(new Rect(10, 5, 1, 80)));
 		expect(layer.recording.fills).toEqual([
@@ -41,7 +41,7 @@ describe('Playhead', () => {
 	});
 
 	it('erases exactly the previous bar (1px pad) on each render and disposes its layer', () => {
-		const layer = new FakeLayer();
+		const layer = new FakeLayer({});
 		const view = new Playhead(layer);
 		view.render(changeAt(new Rect(10, 0, 1, 100)));
 		view.render(changeAt(new Rect(20, 0, 1, 100)));

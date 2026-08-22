@@ -559,7 +559,7 @@ export class SpannerBuilder {
 						if (!from) {
 							// Stop with no start: a slide *into* this note (a "/" tick left of
 							// the head) — the notation counterpart of the tab slide-in.
-							lines.push(new SingleSlide(at.staveNote, at.index, 'in'));
+							lines.push(new SingleSlide(at.staveNote, at.index, 'in', 0));
 							continue;
 						}
 						lines.push(
@@ -1223,10 +1223,7 @@ export class SpannerBuilder {
 		);
 	}
 
-	private slurConnectors(
-		note: Note,
-		spans: Array<Set<Note>> = [],
-	): SlurConnector[] {
+	private slurConnectors(note: Note, spans: Array<Set<Note>>): SlurConnector[] {
 		const slurTargets = new Set(note.slurs.map((s) => s.partner?.note ?? null));
 		const techniques: SlurConnector[] = [
 			...note.hammerOns.map((h) => ({

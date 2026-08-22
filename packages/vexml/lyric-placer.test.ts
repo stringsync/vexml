@@ -32,7 +32,7 @@ describe('LyricPlacer', () => {
 				lines.push({ x1: pen.x, x2: x, y });
 			},
 		} as unknown as RenderContext;
-		const resolver = new CollisionResolver(new Rect(0, 0, 2000, 2000));
+		const resolver = new CollisionResolver(new Rect(0, 0, 2000, 2000), {});
 		const translator = {
 			noteheadHalfWidth: () => 6,
 		} as unknown as VoiceTranslator;
@@ -63,8 +63,8 @@ describe('LyricPlacer', () => {
 
 	it('pins each syllable one verse line below the baseline in the notation ink', () => {
 		const { placer } = makePlacer();
-		const v0 = new FakeLyricMark(0);
-		const v1 = new FakeLyricMark(1);
+		const v0 = new FakeLyricMark(0, {});
+		const v1 = new FakeLyricMark(1, {});
 		placer.pin([note(100, [v0, v1])], 3, 200);
 		expect(v0.baselineY).toBe(200);
 		expect(v1.baselineY).toBe(200 + LYRIC_LINE_HEIGHT);
@@ -96,7 +96,7 @@ describe('LyricPlacer', () => {
 		const notes = [
 			note(100, [new FakeLyricMark(0, { extend: true, width: 30 })]),
 			note(140, []),
-			note(180, [new FakeLyricMark(0)]),
+			note(180, [new FakeLyricMark(0, {})]),
 		];
 		placer.pin(notes, 0, 50);
 		// From half the syllable's width past its note to half a notehead past the held

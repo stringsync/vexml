@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { Rect } from 'webappwiz/geometry';
 import { ColorStyle } from './color-style';
 import { DefaultDecoration } from './default-decoration';
-import { FakeDecoratable } from './fake-decoratable';
+import { FakeDecoratable, NOTEHEAD } from './fake-decoratable';
 import { FakeLayerHost } from './fake-layer-host';
 import { HaloStyle } from './halo-style';
 
@@ -11,14 +11,17 @@ describe('DefaultDecoration', () => {
 		const host = new FakeLayerHost();
 		const colors = new DefaultDecoration(host, new ColorStyle());
 		expect(host.created).toHaveLength(0);
-		colors.set(new FakeDecoratable(new Rect(0, 0, 12, 10)), '#2962ff');
+		colors.set(
+			new FakeDecoratable(new Rect(0, 0, 12, 10), NOTEHEAD),
+			'#2962ff',
+		);
 		expect(host.created).toHaveLength(1);
 	});
 
 	it('a color stamps the notehead glyph in the color and reports has()', () => {
 		const host = new FakeLayerHost();
 		const colors = new DefaultDecoration(host, new ColorStyle());
-		const target = new FakeDecoratable(new Rect(10, 10, 12, 10));
+		const target = new FakeDecoratable(new Rect(10, 10, 12, 10), NOTEHEAD);
 		colors.set(target, '#2962ff');
 		expect(colors.has(target)).toBe(true);
 		// The exact glyph (text + font) vexflow drew, replayed in the chosen color.
@@ -35,7 +38,7 @@ describe('DefaultDecoration', () => {
 	it('set(null) clears the decoration, drawing nothing', () => {
 		const host = new FakeLayerHost();
 		const colors = new DefaultDecoration(host, new ColorStyle());
-		const target = new FakeDecoratable(new Rect(0, 0, 12, 10));
+		const target = new FakeDecoratable(new Rect(0, 0, 12, 10), NOTEHEAD);
 		colors.set(target, '#ff0000');
 		colors.set(target, null);
 		expect(colors.has(target)).toBe(false);
@@ -47,7 +50,7 @@ describe('DefaultDecoration', () => {
 		const host = new FakeLayerHost();
 		const colors = new DefaultDecoration(host, new ColorStyle());
 		const halos = new DefaultDecoration(host, new HaloStyle());
-		const target = new FakeDecoratable(new Rect(0, 0, 12, 10));
+		const target = new FakeDecoratable(new Rect(0, 0, 12, 10), NOTEHEAD);
 		colors.set(target, '#2962ff');
 		halos.set(target, 'rgba(41, 98, 255, 0.35)');
 		// The color stamps the notehead on the content (over) layer; the halo fills its circle on the
@@ -61,7 +64,7 @@ describe('DefaultDecoration', () => {
 	it('a halo set(null) removes it', () => {
 		const host = new FakeLayerHost();
 		const halos = new DefaultDecoration(host, new HaloStyle());
-		const target = new FakeDecoratable(new Rect(0, 0, 12, 10));
+		const target = new FakeDecoratable(new Rect(0, 0, 12, 10), NOTEHEAD);
 		halos.set(target, 'rgba(41, 98, 255, 0.35)');
 		expect(halos.has(target)).toBe(true);
 		halos.set(target, null);
@@ -72,8 +75,14 @@ describe('DefaultDecoration', () => {
 	it('a repaint redraws neighbors whose bounds overlap the changed region', () => {
 		const host = new FakeLayerHost();
 		const colors = new DefaultDecoration(host, new ColorStyle());
-		colors.set(new FakeDecoratable(new Rect(0, 0, 12, 10)), '#111111');
-		colors.set(new FakeDecoratable(new Rect(20, 0, 12, 10)), '#222222');
+		colors.set(
+			new FakeDecoratable(new Rect(0, 0, 12, 10), NOTEHEAD),
+			'#111111',
+		);
+		colors.set(
+			new FakeDecoratable(new Rect(20, 0, 12, 10), NOTEHEAD),
+			'#222222',
+		);
 		// The rects nearly touch, so clearing the second's padded region requires restamping the
 		// first — otherwise its edge pixels would be wiped.
 		expect(host.marks('content')).toEqual([
@@ -85,8 +94,14 @@ describe('DefaultDecoration', () => {
 	it('a repaint leaves decorations outside the changed region untouched', () => {
 		const host = new FakeLayerHost();
 		const colors = new DefaultDecoration(host, new ColorStyle());
-		colors.set(new FakeDecoratable(new Rect(0, 0, 12, 10)), '#111111');
-		colors.set(new FakeDecoratable(new Rect(500, 0, 12, 10)), '#222222');
+		colors.set(
+			new FakeDecoratable(new Rect(0, 0, 12, 10), NOTEHEAD),
+			'#111111',
+		);
+		colors.set(
+			new FakeDecoratable(new Rect(500, 0, 12, 10), NOTEHEAD),
+			'#222222',
+		);
 		// The distant first decoration's pixels aren't in the cleared region, so it isn't redrawn.
 		expect(host.marks('content')).toEqual(['text:q:#222222:30px Bravura']);
 	});
@@ -94,7 +109,7 @@ describe('DefaultDecoration', () => {
 	it('an off() while already off is a no-op — no layer, no paint', () => {
 		const host = new FakeLayerHost();
 		const colors = new DefaultDecoration(host, new ColorStyle());
-		colors.set(new FakeDecoratable(new Rect(0, 0, 12, 10)), null);
+		colors.set(new FakeDecoratable(new Rect(0, 0, 12, 10), NOTEHEAD), null);
 		expect(host.created).toHaveLength(0);
 	});
 
@@ -102,7 +117,7 @@ describe('DefaultDecoration', () => {
 		const host = new FakeLayerHost();
 		const colors = new DefaultDecoration(host, new ColorStyle());
 		const halos = new DefaultDecoration(host, new HaloStyle());
-		const target = new FakeDecoratable(new Rect(0, 0, 12, 10));
+		const target = new FakeDecoratable(new Rect(0, 0, 12, 10), NOTEHEAD);
 		colors.set(target, '#2962ff');
 		halos.set(target, 'rgba(41, 98, 255, 0.35)');
 		const content = host.layer('content');

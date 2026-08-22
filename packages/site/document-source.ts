@@ -77,7 +77,7 @@ export class DocumentSource
 
 	/* An edit in the textarea. Renders on every keystroke while renders are fast enough to keep
 	 * up, and waits out the typing once they are not. */
-	edit(value: string, opts: EditOptions = {}): void {
+	edit(value: string, opts: EditOptions): void {
 		this.cancelDebounce();
 		this.text = value;
 		this.fixture = '';

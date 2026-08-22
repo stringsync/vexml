@@ -167,11 +167,7 @@ export class ChordTranslator {
 	 * notes stack their keys and carry each member's printed accidental, dots, stem
 	 * direction, and articulations.
 	 */
-	staveNote(
-		chord: Chord,
-		clef: string,
-		opts: VexflowChordOptions = {},
-	): StaveNote {
+	staveNote(chord: Chord, clef: string, opts: VexflowChordOptions): StaveNote {
 		const { alignCenter = false, octaveShift = 0, defaultStem } = opts;
 		const lead = chord.lead;
 		const duration = this.durations.code(lead);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import {
 	Barline,
+	type BarlineType,
 	GraceNoteGroup,
 	Modifier,
 	type RenderContext,
@@ -29,7 +30,7 @@ describe('SystemFormatter', () => {
 			{} as unknown as SpannerBuilder,
 			{} as unknown as ConnectorDrawer,
 			{} as unknown as LyricPlacer,
-			new CollisionResolver(new Rect(0, 0, 2000, 2000)),
+			new CollisionResolver(new Rect(0, 0, 2000, 2000), {}),
 			new SpillTracker(),
 			{ systemOf: () => 0 },
 			{
@@ -160,7 +161,7 @@ describe('SystemFormatter', () => {
 
 	// A real begin modifier: alignBegModifiers groups repeats by instanceof, and the time
 	// signature beside them by category alone (so that one stays a plain object).
-	const _repeat = (x: number, type = Barline.type.REPEAT_BEGIN) => {
+	const _repeat = (x: number, type: BarlineType) => {
 		const barline = new Barline(type);
 		barline.setX(x);
 		return barline;
@@ -187,7 +188,10 @@ describe('SystemFormatter', () => {
 		}) as unknown as Stave;
 
 	it('squares repeats and time signatures to their own widest x and returns the repeat x', () => {
-		const repeats = [_repeat(10), _repeat(25)];
+		const repeats = [
+			_repeat(10, Barline.type.REPEAT_BEGIN),
+			_repeat(25, Barline.type.REPEAT_BEGIN),
+		];
 		const sigs = [timeSig(30), timeSig(22)];
 		const x = makeFormatter().alignBegModifiers([
 			fakeStave([repeats[0], sigs[0]]),

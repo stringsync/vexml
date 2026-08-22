@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { Rect } from 'webappwiz/geometry';
 import { CursorController } from './cursor-controller';
+import { DynamicGlyphs } from './dynamic-glyphs';
 import type { CursorChangeEvent } from './events';
 import { FakeCursorHost } from './fake-cursor-host';
 import { FakeCursorView } from './fake-cursor-view';
@@ -27,7 +28,10 @@ function fourQuarters() {
 		x: 10 + i * 10,
 		tiedFrom: null,
 	}));
-	return new SequenceFactory(new ScoreReader(), new Gaps([])).createFromInput({
+	return new SequenceFactory(
+		new ScoreReader(new DynamicGlyphs()),
+		new Gaps([]),
+	).createFromInput({
 		measures: [
 			{
 				index: 0,

@@ -4,7 +4,7 @@ import { isTechnicalMark } from './technical-mark';
 
 describe('isTechnicalMark', () => {
 	it('recognizes a technical mark', () => {
-		expect(isTechnicalMark(new FakeTechnicalMark())).toBe(true);
+		expect(isTechnicalMark(new FakeTechnicalMark({}))).toBe(true);
 	});
 
 	it('passes over the other modifiers a note carries', () => {

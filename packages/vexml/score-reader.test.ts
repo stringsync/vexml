@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { DefaultScoreParser } from './default-score-parser';
+import { DynamicGlyphs } from './dynamic-glyphs';
 import { ScoreReader } from './score-reader';
 
 /* A one-part score whose measures carry exactly the given <barline>s (and a note, so the
@@ -41,7 +42,9 @@ async function measureOf(prefix: string) {
 
 async function repeatsOf(xml: string) {
 	const mdoc = await new DefaultScoreParser().parse(xml);
-	return new ScoreReader().measureRepeats(mdoc.score.parts[0]?.measures ?? []);
+	return new ScoreReader(new DynamicGlyphs()).measureRepeats(
+		mdoc.score.parts[0]?.measures ?? [],
+	);
 }
 
 const FORWARD =
@@ -50,7 +53,7 @@ const BACKWARD =
 	'<barline location="right"><repeat direction="backward"/></barline>';
 const start = (n: string) =>
 	`<barline location="left"><ending number="${n}" type="start"/></barline>`;
-const stop = (n: string, type = 'stop') =>
+const stop = (n: string, type: string) =>
 	`<barline location="right"><ending number="${n}" type="${type}"/></barline>`;
 
 describe('ScoreReader', () => {
@@ -60,7 +63,7 @@ describe('ScoreReader', () => {
 	 * it modifies, not a child, so "dotted quarter = half" and "quarter = dotted half" differ
 	 * only in where the <beat-unit-dot/> sits in document order.
 	 */
-	const reader = new ScoreReader();
+	const reader = new ScoreReader(new DynamicGlyphs());
 	const metronome = (inner: string, attrs = '') =>
 		`<direction><direction-type><metronome ${attrs}>${inner}</metronome></direction-type></direction>`;
 	const markOf = async (inner: string, attrs = '') =>
@@ -268,7 +271,7 @@ describe('ScoreReader', () => {
 
 	it('marks a one-measure ending as both first and last', async () => {
 		const result = await repeatsOf(
-			scoreOf(start('1') + stop('1') + BACKWARD, ''),
+			scoreOf(start('1') + stop('1', 'stop') + BACKWARD, ''),
 		);
 		expect(result[0]?.ending).toEqual({
 			number: '1',
@@ -282,7 +285,7 @@ describe('ScoreReader', () => {
 	it('spans a multi-measure ending marked only at its edges', async () => {
 		// The standard encoding: `start` on the run's first measure, `stop` on its last.
 		const result = await repeatsOf(
-			scoreOf(start('1'), '', stop('1') + BACKWARD, ''),
+			scoreOf(start('1'), '', stop('1', 'stop') + BACKWARD, ''),
 		);
 		expect(result.map((r) => r.ending)).toEqual([
 			{ number: '1', first: true, last: false, open: false },
@@ -296,7 +299,11 @@ describe('ScoreReader', () => {
 		// Some exporters repeat `start`/`stop` on every measure of the run; a `stop` the next
 		// measure reopens with the same number is that restatement, not a second ending.
 		const result = await repeatsOf(
-			scoreOf(start('1') + stop('1'), start('1') + stop('1') + BACKWARD, ''),
+			scoreOf(
+				start('1') + stop('1', 'stop'),
+				start('1') + stop('1', 'stop') + BACKWARD,
+				'',
+			),
 		);
 		expect(result.map((r) => r.ending)).toEqual([
 			{ number: '1', first: true, last: false, open: false },
@@ -309,7 +316,11 @@ describe('ScoreReader', () => {
 		// A final ending has nothing jumping back from it, so its bracket runs on into the
 		// music with no down hook — even though exporters still write `type="stop"` on it.
 		const result = await repeatsOf(
-			scoreOf(start('1') + stop('1') + BACKWARD, start('2') + stop('2'), ''),
+			scoreOf(
+				start('1') + stop('1', 'stop') + BACKWARD,
+				start('2') + stop('2', 'stop'),
+				'',
+			),
 		);
 		expect(result.map((r) => r.ending?.open)).toEqual([false, true, undefined]);
 	});
@@ -317,14 +328,17 @@ describe('ScoreReader', () => {
 	it('closes an ending that runs to the end of the score', async () => {
 		// Nothing follows it, so there is no music for the bracket to run on into.
 		const result = await repeatsOf(
-			scoreOf(start('1') + stop('1') + BACKWARD, start('2') + stop('2')),
+			scoreOf(
+				start('1') + stop('1', 'stop') + BACKWARD,
+				start('2') + stop('2', 'stop'),
+			),
 		);
 		expect(result.map((r) => r.ending?.open)).toEqual([false, false]);
 	});
 
 	it('starts a new ending when the next run has a different number', async () => {
 		const result = await repeatsOf(
-			scoreOf(start('1') + stop('1'), start('2') + stop('2')),
+			scoreOf(start('1') + stop('1', 'stop'), start('2') + stop('2', 'stop')),
 		);
 		expect(result.map((r) => [r.ending?.number, r.ending?.first])).toEqual([
 			['1', true],

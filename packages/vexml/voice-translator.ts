@@ -83,7 +83,7 @@ export class VoiceTranslator {
 	tickables(
 		chords: Chord[],
 		clef: string,
-		opts: VoiceTickablesOptions = {},
+		opts: VoiceTickablesOptions,
 	): VoiceTickable[] {
 		const {
 			endBeat = 0,

@@ -4,7 +4,12 @@ import type { NoteGlyph } from './geometry-collector';
 
 // A quarter notehead in the engraving font: what a real Note carries, and enough for a test to
 // tell a stamped glyph apart from the fallback.
-const NOTEHEAD: NoteGlyph = { text: 'q', font: '30px Bravura', x: 12, y: 20 };
+export const NOTEHEAD: NoteGlyph = {
+	text: 'q',
+	font: '30px Bravura',
+	x: 12,
+	y: 20,
+};
 
 /* Fake fulfilling the Decoratable seam (preferred over mocks): a box that stamps itself the way
  * the real elements do — the glyph in the given color, or a filled ellipse over the box when
@@ -13,7 +18,7 @@ const NOTEHEAD: NoteGlyph = { text: 'q', font: '30px Bravura', x: 12, y: 20 };
 export class FakeDecoratable implements Decoratable {
 	constructor(
 		readonly rect: Rect,
-		private readonly glyph: NoteGlyph | null = NOTEHEAD,
+		private readonly glyph: NoteGlyph | null,
 	) {}
 
 	getBoundingClientRect(): DOMRect {

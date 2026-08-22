@@ -105,7 +105,7 @@ export class Score implements Eventful<ScoreEventMap> {
 			cancel(): void;
 			suspendForResize(): void;
 		},
-		private readonly gaps: readonly GapInfo[] = [],
+		private readonly gaps: readonly GapInfo[],
 	) {
 		// Fires on any change to the container OR the base canvas's rendered box (e.g. a web-font
 		// reflow growing the engraving without the container resizing). Re-sync the layers to the

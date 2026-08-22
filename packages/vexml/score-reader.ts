@@ -16,7 +16,7 @@ import {
 } from '@stringsync/mdom';
 import type { ChordFrame } from './chord-diagram-glyph';
 import { DEFAULT_TEMPO_BPM, EPSILON } from './constants';
-import { DynamicGlyphs } from './dynamic-glyphs';
+import type { DynamicGlyphs } from './dynamic-glyphs';
 import type { ModulationNote, TempoModulation } from './metronome-glyph';
 
 /**
@@ -238,7 +238,7 @@ type BarlineRead = {
 export class ScoreReader {
 	// Only to answer whether a dynamic marking can be drawn as music (see dynamicsOf). The
 	// spelling itself belongs to the draw pass, not to a read.
-	constructor(private readonly dynamics = new DynamicGlyphs()) {}
+	constructor(private readonly dynamics: DynamicGlyphs) {}
 
 	/*
 	 * One staff's renderable content from a measure's voices — see {@link StaffVoice}.
@@ -373,7 +373,7 @@ export class ScoreReader {
 	 */
 	midClefsOf(
 		measure: Measure,
-		staffNumber = '1',
+		staffNumber: string,
 	): { beat: number; clef: Clef }[] {
 		return measure
 			.clefChanges(staffNumber)
@@ -430,7 +430,7 @@ export class ScoreReader {
 	 * against to decide whether to reprint a clef — a change already stated inside a measure
 	 * (or as its courtesy clef) must not be stated again at the next barline.
 	 */
-	clefAtEndOf(measure: Measure | undefined, staffNumber = '1'): Clef | null {
+	clefAtEndOf(measure: Measure | undefined, staffNumber: string): Clef | null {
 		if (!measure) {
 			return null;
 		}
@@ -581,7 +581,7 @@ export class ScoreReader {
 		return measure.directions.flatMap((d) => {
 			const staffNumber = d.staff;
 			const lead = d.nextNote;
-			const placement = this.placementOf(d);
+			const placement = this.placementOf(d, 'above');
 			return d.words
 				.filter(Boolean)
 				.map((text) => ({ text, staffNumber, lead, placement }));
@@ -894,7 +894,7 @@ export class ScoreReader {
 					}
 					open.set(key, {
 						from,
-						above: this.placementOf(direction) === 'above',
+						above: this.placementOf(direction, 'above') === 'above',
 						dash: spec.dash,
 						startEnd: spec.lineEnd,
 					});
@@ -1100,14 +1100,11 @@ export class ScoreReader {
 
 	/**
 	 * A `<direction>`'s placement attribute. MusicXML leaves it optional and the default is
-	 * renderer's choice; vexml keeps 'above' as the default so an unmarked directive draws
-	 * where it always has. Callers that engrave BELOW by convention (dynamics, wedges) pass
-	 * their own default rather than reading it from here.
+	 * renderer's choice, so each caller names the fallback it wants: 'above' keeps an unmarked
+	 * directive where it has always drawn, and the ones that engrave BELOW by convention
+	 * (dynamics, wedges) say so.
 	 */
-	private placementOf(
-		direction: Direction,
-		fallback: Placement = 'above',
-	): Placement {
+	private placementOf(direction: Direction, fallback: Placement): Placement {
 		return direction.placement ?? fallback;
 	}
 

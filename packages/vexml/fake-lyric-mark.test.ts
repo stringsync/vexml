@@ -14,7 +14,7 @@ describe('FakeLyricMark', () => {
 	});
 
 	it('renumbers its verse when a voice shifts it', () => {
-		const lyric = new FakeLyricMark(1);
+		const lyric = new FakeLyricMark(1, {});
 		lyric.shiftVerses(2);
 		expect(lyric.verseIndex).toBe(3);
 	});

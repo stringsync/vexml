@@ -354,11 +354,11 @@ export class SpannerResolver {
 			Math.max(...xs) + hw - left,
 			PEDAL_INK_RISE,
 		);
-		const scoped = new CollisionResolver(this.scratchViewport);
+		const scoped = new CollisionResolver(this.scratchViewport, {});
 		for (const note of notes) {
 			scoped.add({ rect: this.reporter.noteObstacle(note), kind: 'note' });
 		}
-		const placed = scoped.dropClear(natural, WORDS_NOTE_CLEARANCE);
+		const placed = scoped.dropClear(natural, WORDS_NOTE_CLEARANCE, {});
 		marking.setLine((placed.y - natural.y) / stave.getSpacingBetweenLines());
 		this.reporter.growPageBottom(placed.bottom + PEDAL_BOTTOM_MARGIN);
 	}
@@ -377,15 +377,15 @@ export class SpannerResolver {
 		bows: { stave: Stave; rect: Rect }[],
 	): void {
 		const natural = wedge.rect;
-		const scoped = new CollisionResolver(this.scratchViewport);
+		const scoped = new CollisionResolver(this.scratchViewport, {});
 		for (const bow of bows) {
 			if (bow.stave === wedge.stave) {
 				scoped.add({ rect: bow.rect, kind: 'tie' });
 			}
 		}
 		const placed = wedge.above
-			? scoped.liftClear(natural, WORDS_NOTE_CLEARANCE)
-			: scoped.dropClear(natural, WORDS_NOTE_CLEARANCE);
+			? scoped.liftClear(natural, WORDS_NOTE_CLEARANCE, {})
+			: scoped.dropClear(natural, WORDS_NOTE_CLEARANCE, {});
 		wedge.setOffset(wedge.above ? natural.y - placed.y : placed.y - natural.y);
 	}
 
@@ -428,13 +428,13 @@ export class SpannerResolver {
 			Math.max(...xs) + hw - left,
 			height,
 		);
-		const scoped = new CollisionResolver(this.scratchViewport);
+		const scoped = new CollisionResolver(this.scratchViewport, {});
 		for (const note of notes) {
 			scoped.add({ rect: this.reporter.noteObstacle(note), kind: 'note' });
 		}
 		const placed = above
-			? scoped.liftClear(natural, WORDS_NOTE_CLEARANCE)
-			: scoped.dropClear(natural, WORDS_NOTE_CLEARANCE);
+			? scoped.liftClear(natural, WORDS_NOTE_CLEARANCE, {})
+			: scoped.dropClear(natural, WORDS_NOTE_CLEARANCE, {});
 		// getYForTopText counts away from the stave upward and getYForBottomText downward, so
 		// the same "further out" shift has the opposite sign in line units.
 		const shift =

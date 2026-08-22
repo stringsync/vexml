@@ -56,7 +56,7 @@ export class CollisionResolver {
 	// answers "what is near here". Registration goes through `add`, so the two cannot drift.
 	private readonly registered: Collidable[] = [];
 
-	constructor(bounds: Rect, opts: QuadTreeOptions = {}) {
+	constructor(bounds: Rect, opts: QuadTreeOptions) {
 		this.tree = new QuadTree<Collidable>(bounds, opts);
 	}
 
@@ -95,7 +95,7 @@ export class CollisionResolver {
 	 *
 	 * See {@link ClearOptions} for how to narrow which obstacles count.
 	 */
-	liftClear(rect: Rect, gap: number, opts: ClearOptions = {}): Rect {
+	liftClear(rect: Rect, gap: number, opts: ClearOptions): Rect {
 		const { kinds, band } = opts;
 		// A tall, thin probe down the rect's x-column, ending at the rect's bottom: catches
 		// every obstacle in the column whose top is at/above where the rect currently sits.
@@ -127,7 +127,7 @@ export class CollisionResolver {
 	 * (dynamics, a placement="below" direction) stacks downward the same way above-stave
 	 * text stacks upward, so the two share one policy with the sign flipped.
 	 */
-	dropClear(rect: Rect, gap: number, opts: ClearOptions = {}): Rect {
+	dropClear(rect: Rect, gap: number, opts: ClearOptions): Rect {
 		const { kinds, band } = opts;
 		// A tall, thin probe down the rect's x-column, starting at the rect's top: catches
 		// every obstacle in the column whose bottom is at/below where the rect currently sits.
@@ -176,7 +176,7 @@ export class CollisionResolver {
 	 * moves along x — vertical clipping is handled by growing the crop, not nudging. The left
 	 * edge wins if the rect is wider than the available span. `margin` insets both edges.
 	 */
-	nudgeInsideX(rect: Rect, bounds: Rect, margin = 0): Rect {
+	nudgeInsideX(rect: Rect, bounds: Rect, margin: number): Rect {
 		const left = bounds.x + margin;
 		const right = bounds.right - margin;
 		let dx = 0;

@@ -113,7 +113,7 @@ export class ScoreDrawer {
 			activeLayout: ScoreLayout,
 			topOverflow: Map<number, number>,
 			height: number,
-			opts: DrawPassOptions = {},
+			opts: DrawPassOptions,
 		) =>
 			new DrawPass(
 				this.translator,
@@ -137,7 +137,7 @@ export class ScoreDrawer {
 				opts,
 			).run();
 
-		let pass = runPass(layout, new Map(), scratchHeight);
+		let pass = runPass(layout, new Map(), scratchHeight, {});
 		const revision = this.spillResolver.revise(
 			layout.staveOffsets,
 			pass,

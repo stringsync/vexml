@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { Rect } from 'webappwiz/geometry';
 import { DefaultDecorations } from './default-decorations';
+import { DynamicGlyphs } from './dynamic-glyphs';
 import type { Element } from './element';
 import { ElementIndex } from './element-index';
 import { FakeHitTester } from './fake-hit-tester';
@@ -18,7 +19,7 @@ import { System } from './system';
 
 /* An empty timeline: these tests exercise events/layers/hover, not playback. */
 const EMPTY_SEQUENCE = new SequenceFactory(
-	new ScoreReader(),
+	new ScoreReader(new DynamicGlyphs()),
 	new Gaps([]),
 ).createFromInput({ measures: [], notes: [] });
 
@@ -70,7 +71,7 @@ describe('Score', () => {
 
 	beforeEach(() => {
 		host = new FakeHost();
-		index = new FakeHitTester();
+		index = new FakeHitTester(null);
 		decorations = new DefaultDecorations(host);
 		score = new Score(
 			host,
@@ -78,6 +79,7 @@ describe('Score', () => {
 			decorations,
 			EMPTY_SEQUENCE,
 			host.scroller,
+			[],
 		);
 	});
 
@@ -161,6 +163,7 @@ describe('Score', () => {
 			new DefaultDecorations(host),
 			EMPTY_SEQUENCE,
 			host.scroller,
+			[],
 		);
 
 		const seen: Array<Element | null> = [];
@@ -240,6 +243,7 @@ describe('Score', () => {
 			new DefaultDecorations(host),
 			EMPTY_SEQUENCE,
 			host.scroller,
+			[],
 		);
 		expect(score.getElements()).toBe(index);
 	});
@@ -248,7 +252,7 @@ describe('Score', () => {
 		const host = new FakeHost();
 		// A measure at index 0 with two quarter notes (x 10 @ beat 0, x 20 @ beat 1) at 120bpm.
 		const sequence = new SequenceFactory(
-			new ScoreReader(),
+			new ScoreReader(new DynamicGlyphs()),
 			new Gaps([]),
 		).createFromInput({
 			measures: [
@@ -286,6 +290,7 @@ describe('Score', () => {
 			new DefaultDecorations(host),
 			sequence,
 			host.scroller,
+			[],
 		);
 
 		// x 15 is halfway through step 0's glide (10 -> 20), so beat 0.5 = 250ms; closest step is 0.
@@ -311,6 +316,7 @@ describe('Score', () => {
 			new DefaultDecorations(host),
 			sequence,
 			host.scroller,
+			[],
 		);
 		expect(offScore.getTimeAt({ x: 15, y: 50 })).toBeNull();
 	});

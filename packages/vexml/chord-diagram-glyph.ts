@@ -191,6 +191,7 @@ export class ChordDiagramGlyph {
 				originX - spacing / 2 - spacing * 0.45,
 				originY + fretSpacing * positionText,
 				String(position),
+				this.fontSize,
 			);
 		}
 
@@ -221,6 +222,7 @@ export class ChordDiagramGlyph {
 					originX + spacing * i,
 					originY + this.fretCount * fretSpacing + fretSpacing / 2,
 					tuning[i] ?? '',
+					this.fontSize,
 				);
 			}
 		}
@@ -252,7 +254,7 @@ export class ChordDiagramGlyph {
 		}
 
 		if (mute) {
-			this.text(context, x, y - this.fretSpacing, 'X');
+			this.text(context, x, y - this.fretSpacing, 'X', this.fontSize);
 			return;
 		}
 
@@ -321,7 +323,7 @@ export class ChordDiagramGlyph {
 		x: number,
 		topY: number,
 		msg: string,
-		size = this.fontSize,
+		size: number,
 	): void {
 		context.save();
 		context.setFont(this.opts.fontFamily, size);

@@ -185,7 +185,7 @@ export class ConnectorDrawer {
 			// The piece's final measure gets a bold thin-thick connector to match its
 			// end barline; all other measure ends get a plain single line.
 			if (column.repeatEnd) {
-				this.drawRepeatConnector(column, 'boldDoubleRight');
+				this.drawRepeatConnector(column, 'boldDoubleRight', 0);
 				// A back-to-back sign closes and reopens on the same line: the reopening half
 				// sits at the same x, so its connector shifts out to the measure's right edge.
 				if (column.repeatBoth) {
@@ -424,7 +424,7 @@ export class ConnectorDrawer {
 	private drawRepeatConnector(
 		column: ConnectorColumn,
 		type: 'boldDoubleLeft' | 'boldDoubleRight',
-		xShift = 0,
+		xShift: number,
 	): void {
 		if (!column.systemTop || !column.systemBottom) {
 			return;

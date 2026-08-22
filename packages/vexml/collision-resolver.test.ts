@@ -3,7 +3,7 @@ import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
 
 function detector(): CollisionResolver {
-	return new CollisionResolver(new Rect(-1000, -1000, 4000, 4000));
+	return new CollisionResolver(new Rect(-1000, -1000, 4000, 4000), {});
 }
 
 describe('CollisionResolver', () => {
@@ -23,7 +23,7 @@ describe('CollisionResolver', () => {
 		d.add({ rect: new Rect(5, 90, 10, 30), kind: 'note' }); // top at y=90
 		d.add({ rect: new Rect(5, 70, 10, 5), kind: 'tie' }); // higher: top at y=70 (kind-agnostic)
 		const natural = new Rect(0, 85, 20, 15); // bottom at y=100, overlaps both
-		const placed = d.liftClear(natural, 8);
+		const placed = d.liftClear(natural, 8, {});
 		expect(placed.bottom).toBe(62); // 70 (highest top) - 8 gap
 		expect(placed.x).toBe(0); // x unchanged — text only lifts vertically
 	});
@@ -32,15 +32,15 @@ describe('CollisionResolver', () => {
 		const d = detector();
 		d.add({ rect: new Rect(5, 200, 10, 30), kind: 'note' }); // well below the annotation
 		const natural = new Rect(0, 85, 20, 15); // bottom at y=100
-		expect(d.liftClear(natural, 8)).toBe(natural); // returned unchanged
+		expect(d.liftClear(natural, 8, {})).toBe(natural); // returned unchanged
 	});
 
 	it('stacks successive annotations above one another', () => {
 		const d = detector();
 		d.add({ rect: new Rect(5, 90, 10, 30), kind: 'note' });
-		const a = d.liftClear(new Rect(0, 85, 20, 15), 8); // bottom 82
+		const a = d.liftClear(new Rect(0, 85, 20, 15), 8, {}); // bottom 82
 		d.add({ rect: a, kind: 'annotation' });
-		const b = d.liftClear(new Rect(0, 85, 20, 15), 8); // must clear `a`, not the note
+		const b = d.liftClear(new Rect(0, 85, 20, 15), 8, {}); // must clear `a`, not the note
 		expect(b.bottom).toBe(a.y - 8); // a.y is a's top
 	});
 
@@ -61,18 +61,18 @@ describe('CollisionResolver', () => {
 		d.add({ rect: new Rect(5, 90, 10, 30), kind: 'note' }); // bottom at y=120
 		d.add({ rect: new Rect(5, 130, 10, 5), kind: 'tie' }); // lower: bottom at y=135
 		const natural = new Rect(0, 100, 20, 15);
-		expect(d.dropClear(natural, 8).y).toBe(143); // 135 (lowest bottom) + 8 gap
+		expect(d.dropClear(natural, 8, {}).y).toBe(143); // 135 (lowest bottom) + 8 gap
 	});
 
 	it('leaves an already-clear rect put when dropping, and stacks the next one under it', () => {
 		const d = detector();
 		d.add({ rect: new Rect(5, 0, 10, 30), kind: 'note' }); // well above
 		const natural = new Rect(0, 100, 20, 15);
-		expect(d.dropClear(natural, 8)).toBe(natural); // returned unchanged
+		expect(d.dropClear(natural, 8, {})).toBe(natural); // returned unchanged
 		d.add({ rect: new Rect(5, 100, 10, 30), kind: 'note' }); // bottom at 130
-		const a = d.dropClear(natural, 8);
+		const a = d.dropClear(natural, 8, {});
 		d.add({ rect: a, kind: 'annotation' });
-		expect(d.dropClear(natural, 8).y).toBe(a.bottom + 8); // stacks under `a`
+		expect(d.dropClear(natural, 8, {}).y).toBe(a.bottom + 8); // stacks under `a`
 	});
 
 	it('keeps the gap when pushing a box right of a close neighbor, as the chord-diagram cursor does', () => {

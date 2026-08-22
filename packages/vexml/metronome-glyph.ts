@@ -147,7 +147,7 @@ export class MetronomeGlyph {
 		this.ascent = -this.top;
 	}
 
-	private putGlyph(content: string, y = 0): void {
+	private putGlyph(content: string, y: number): void {
 		this.glyph.setText(content);
 		this.placed.push({
 			kind: 'glyph',
@@ -182,6 +182,7 @@ export class MetronomeGlyph {
 			const left = this.x;
 			this.putGlyph(
 				note.beamed ? BEAMED_GLYPH : (NOTE_GLYPHS[note.type] ?? BEAMED_GLYPH),
+				0,
 			);
 			for (let dot = 0; dot < note.dots; dot++) {
 				this.x += GAP;

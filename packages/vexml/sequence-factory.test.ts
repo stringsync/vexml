@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { Rect } from 'webappwiz/geometry';
 import { DefaultScoreParser } from './default-score-parser';
+import { DynamicGlyphs } from './dynamic-glyphs';
 import { Gaps } from './gaps';
 import type { Note } from './note';
 import { ScoreReader } from './score-reader';
@@ -64,7 +65,10 @@ async function measureOf(prefix: string) {
 
 // createFromInput never touches the reader (only create() does), so a real stateless one is fine.
 const build = (input: SequenceInput) =>
-	new SequenceFactory(new ScoreReader(), new Gaps([])).createFromInput(input);
+	new SequenceFactory(
+		new ScoreReader(new DynamicGlyphs()),
+		new Gaps([]),
+	).createFromInput(input);
 
 describe('SequenceFactory', () => {
 	it('assembly: two 4/4 measures of quarters → 8 steps with correct beats/ms', () => {
@@ -376,7 +380,7 @@ describe('SequenceFactory', () => {
 	});
 
 	// Playback tempo resolution: <sound tempo> drives timing, <metronome> the visuals.
-	const reader = new ScoreReader();
+	const reader = new ScoreReader(new DynamicGlyphs());
 
 	it('metronome wins over a co-located <sound tempo>', async () => {
 		const m = await measureOf(metronomeDir(60, 120));

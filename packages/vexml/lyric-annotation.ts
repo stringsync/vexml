@@ -26,7 +26,7 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 		 * before it used (see {@link shiftVerses}). */
 		public verseIndex: number,
 		/** Whether a melisma `<extend/>` line trails this syllable (drawn by LyricPlacer). */
-		readonly extend = false,
+		readonly extend: boolean,
 	) {
 		super(text);
 		this.setVerticalJustification(Annotation.VerticalJustify.BOTTOM);

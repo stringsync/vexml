@@ -58,7 +58,7 @@ export class TabVoiceTranslator {
 	constructor(
 		private readonly durations: DurationTranslator,
 		// Whether/where TabNotes are built with stems (and flags). See Config.tabStemPlacement.
-		private readonly tabStemPlacement: TabStemPlacement = 'none',
+		private readonly tabStemPlacement: TabStemPlacement,
 	) {}
 
 	/* The held tail of a tie: the string isn't re-struck, so guitar tab omits its fret. */
@@ -169,7 +169,7 @@ export class TabVoiceTranslator {
 			},
 			this.tabStemPlacement !== 'none',
 		);
-		this.styleFrets(tabNote);
+		this.styleFrets(tabNote, TAB_FRET_SCALE);
 		this.addTabModifiers(tabNote, lead);
 		return tabNote;
 	}
@@ -258,7 +258,7 @@ export class TabVoiceTranslator {
 	}
 
 	/* MIDI number of a step/octave/alter, the common scale a pitch and a string's tuning compare on. */
-	private midiOf(step: string, octave: number, alter = 0): number {
+	private midiOf(step: string, octave: number, alter: number): number {
 		return (
 			(octave + 1) * 12 + (STEP_SEMITONES[step.toUpperCase()] ?? 0) + alter
 		);
@@ -327,10 +327,7 @@ export class TabVoiceTranslator {
 	 * each digit's vertical centering and the note width off the new glyphs so the formatter
 	 * reserves the right horizontal space. Grace notes pass a smaller scale.
 	 */
-	private styleFrets(
-		tabNote: TabNote | GraceTabNote,
-		scale = TAB_FRET_SCALE,
-	): void {
+	private styleFrets(tabNote: TabNote | GraceTabNote, scale: number): void {
 		const note = tabNote as unknown as {
 			fretElement: FretElement[];
 			width: number;

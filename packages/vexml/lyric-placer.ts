@@ -31,7 +31,7 @@ export class LyricPlacer {
 		private readonly context: RenderContext,
 		private readonly collisionResolver: CollisionResolver,
 		private readonly notationColor: string,
-		opts: LyricPlacerOptions = {},
+		opts: LyricPlacerOptions,
 	) {
 		this.lyricDrops = opts.lyricDrops ?? new Map();
 	}

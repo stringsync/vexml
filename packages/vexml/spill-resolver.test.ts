@@ -7,7 +7,7 @@ import type { StaveSpill } from './spill-tracker';
 // Spill is columned by x; `column` says which one it sits over, so two staves can be given
 // content that shares an x or content that never does. Zero extents are left out, matching
 // what bandSpill records.
-function spill(rise: number, drop: number, column = 0): StaveSpill {
+function spill(rise: number, drop: number, column: number): StaveSpill {
 	return {
 		rise: new Map(rise > 0 ? [[column, rise]] : []),
 		drop: new Map(drop > 0 ? [[column, drop]] : []),
@@ -33,8 +33,8 @@ describe('SpillResolver', () => {
 			offsets(
 				[0, 120],
 				[
-					[0, spill(0, 0)],
-					[1, spill(0, 0)],
+					[0, spill(0, 0, 0)],
+					[1, spill(0, 0, 0)],
 				],
 			),
 		).toEqual([0, 120]);
@@ -44,8 +44,8 @@ describe('SpillResolver', () => {
 		const gap = offsets(
 			[0, 120],
 			[
-				[0, spill(0, 50)], // upper stave hangs 50px below its bottom line
-				[1, spill(60, 0)], // lower stave rises 60px above its top line
+				[0, spill(0, 50, 0)], // upper stave hangs 50px below its bottom line
+				[1, spill(60, 0, 0)], // lower stave rises 60px above its top line
 			],
 		)?.[1];
 		expect(gap).toBe(80 + 50 + STAVE_CLEARANCE + 60 - 40);
@@ -71,9 +71,9 @@ describe('SpillResolver', () => {
 			offsets(
 				[0, 120, 240],
 				[
-					[0, spill(0, 50)],
-					[1, spill(60, 50)],
-					[2, spill(60, 0)],
+					[0, spill(0, 50, 0)],
+					[1, spill(60, 50, 0)],
+					[2, spill(60, 0, 0)],
 				],
 			),
 		).toEqual([0, 162, 324]);
@@ -90,9 +90,9 @@ describe('SpillResolver', () => {
 			offsets(
 				[0, 80, 160],
 				[
-					[0, spill(0, 0)],
-					[1, spill(60, 0)], // only the middle stave carries content above its lines
-					[2, spill(0, 0)],
+					[0, spill(0, 0, 0)],
+					[1, spill(60, 0, 0)], // only the middle stave carries content above its lines
+					[2, spill(0, 0, 0)],
 				],
 			),
 		).toEqual([0, 112, 224]);
@@ -105,9 +105,9 @@ describe('SpillResolver', () => {
 			offsets(
 				[0, 120, 200],
 				[
-					[0, spill(0, 0)],
-					[1, spill(60, 0)],
-					[2, spill(0, 0)],
+					[0, spill(0, 0, 0)],
+					[1, spill(60, 0, 0)],
+					[2, spill(0, 0, 0)],
 				],
 			),
 		).toEqual([0, 120, 200]);
@@ -121,16 +121,16 @@ describe('SpillResolver', () => {
 				[
 					0,
 					new Map([
-						[0, spill(0, 0)],
-						[1, spill(0, 0)],
+						[0, spill(0, 0, 0)],
+						[1, spill(0, 0, 0)],
 					]),
 				],
 				// System 1 has a run hanging below the upper stave into the lower one's.
 				[
 					1,
 					new Map([
-						[0, spill(0, 50)],
-						[1, spill(60, 0)],
+						[0, spill(0, 50, 0)],
+						[1, spill(60, 0, 0)],
 					]),
 				],
 			]),
@@ -145,8 +145,8 @@ describe('SpillResolver', () => {
 			[
 				0,
 				new Map([
-					[0, spill(0, 0)],
-					[1, spill(0, 0)],
+					[0, spill(0, 0, 0)],
+					[1, spill(0, 0, 0)],
 				]),
 			],
 		]),
@@ -170,8 +170,8 @@ describe('SpillResolver', () => {
 					[
 						0,
 						new Map([
-							[0, spill(0, 50)],
-							[1, spill(60, 0)],
+							[0, spill(0, 50, 0)],
+							[1, spill(60, 0, 0)],
 						]),
 					],
 				]),

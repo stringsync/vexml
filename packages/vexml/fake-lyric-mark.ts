@@ -21,7 +21,7 @@ export class FakeLyricMark implements LyricMark {
 	readonly extend: boolean;
 	private readonly width: number;
 
-	constructor(verseIndex: number, opts: FakeLyricMarkOptions = {}) {
+	constructor(verseIndex: number, opts: FakeLyricMarkOptions) {
 		this.verseIndex = verseIndex;
 		this.extend = opts.extend ?? false;
 		this.width = opts.width ?? 20;

@@ -262,7 +262,7 @@ export class DrawPass {
 		topSlack: number,
 		scratchHeight: number,
 		private readonly topOverflow: Map<number, number>,
-		opts: DrawPassOptions = {},
+		opts: DrawPassOptions,
 	) {
 		this.voltaLifts = opts.voltaLifts ?? new Map();
 		const {
@@ -331,6 +331,7 @@ export class DrawPass {
 		this.systemContentBottom = this.systemTopY;
 		this.collisionResolver = new CollisionResolver(
 			new Rect(0, 0, width, scratchHeight),
+			{},
 		);
 		this.staveBuilder = new StaveBuilder(
 			this.signatures,

@@ -103,7 +103,7 @@ export class VoiceBuilder {
 		row: number,
 		voices: StaffVoice[],
 		clef: string,
-		opts: BuildNotesOptions = {},
+		opts: BuildNotesOptions,
 	): PendingStave {
 		const {
 			meterFloor = 0,

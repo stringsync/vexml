@@ -26,7 +26,7 @@ export class FakeTechnicalMark implements TechnicalMark {
 	private readonly height: number;
 	private readonly width: number;
 
-	constructor(opts: FakeTechnicalMarkOptions = {}) {
+	constructor(opts: FakeTechnicalMarkOptions) {
 		this.below = opts.below ?? false;
 		this.top = opts.top ?? 0;
 		this.height = opts.rowHeight ?? 10;

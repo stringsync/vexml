@@ -41,7 +41,7 @@ describe('DirectionPlacer', () => {
 			getYForBottomText: () => 160,
 		}) as unknown as Stave;
 
-	const note = (x: number, anchorStave = stave()) =>
+	const note = (x: number, anchorStave: Stave) =>
 		({
 			getAbsoluteX: () => x,
 			getGlyphWidth: () => 10,
@@ -81,7 +81,10 @@ describe('DirectionPlacer', () => {
 	// A real reader with the case's canned answers layered over it. The placer calls reader
 	// methods a given case says nothing about, so a bare object literal leaves holes.
 	const makePlacer = (overrides: Partial<ScoreReader> = {}) => {
-		const reader = Object.assign(new ScoreReader(), overrides);
+		const reader = Object.assign(
+			new ScoreReader(new DynamicGlyphs()),
+			overrides,
+		);
 		// Captures every typed string with the ink it was typed in, and every stroked
 		// segment, so placements and direction-line paths are assertable.
 		const texts: Array<{ text: string; x: number; y: number; fill: string }> =
@@ -121,7 +124,7 @@ describe('DirectionPlacer', () => {
 		const drops: Rect[] = [];
 		const pageTops: number[] = [];
 		const pageBottoms: number[] = [];
-		const resolver = new CollisionResolver(new Rect(0, 0, 2000, 2000));
+		const resolver = new CollisionResolver(new Rect(0, 0, 2000, 2000), {});
 		const spill = new SpillTracker();
 		const placer = new DirectionPlacer(
 			context,
@@ -206,7 +209,7 @@ describe('DirectionPlacer', () => {
 					{
 						stave: stave(),
 						text: 'rit.',
-						anchor: note(200),
+						anchor: note(200, stave()),
 						placement: 'above',
 					},
 				],
@@ -227,7 +230,7 @@ describe('DirectionPlacer', () => {
 					{
 						stave: stave(),
 						text: 'dolce',
-						anchor: note(200),
+						anchor: note(200, stave()),
 						placement: 'below',
 					},
 				],
@@ -284,7 +287,7 @@ describe('DirectionPlacer', () => {
 					{
 						stave: stave(),
 						text: 'rit.',
-						anchor: note(200),
+						anchor: note(200, stave()),
 						placement: 'above',
 					},
 				],
@@ -304,7 +307,7 @@ describe('DirectionPlacer', () => {
 						stave: stave(),
 						text: 'p',
 						glyph: true,
-						anchor: note(200),
+						anchor: note(200, stave()),
 						placement: 'below',
 					},
 				],
@@ -326,7 +329,7 @@ describe('DirectionPlacer', () => {
 		placer.placeColumn(
 			column({
 				figuredBasses: [
-					{ stave: stave(), figures: ['6', '4'], anchor: note(200) },
+					{ stave: stave(), figures: ['6', '4'], anchor: note(200, stave()) },
 				],
 			}),
 		);
@@ -344,7 +347,7 @@ describe('DirectionPlacer', () => {
 			column({
 				harmonies: [
 					{
-						staveNote: note(200),
+						staveNote: note(200, stave()),
 						text: 'B♭',
 						frame: null,
 						source: {} as never,
@@ -397,9 +400,9 @@ describe('DirectionPlacer', () => {
 			stopEnd: 'none',
 		} as unknown as DirectionLineSpan;
 		const lines: DirectionLineTask[] = [
-			{ span, start: undefined, stop: note(200) },
+			{ span, start: undefined, stop: note(200, stave()) },
 			// A span wrapping onto a later system runs right-to-left and is dropped.
-			{ span, start: note(300), stop: note(100) },
+			{ span, start: note(300, stave()), stop: note(100, stave()) },
 		];
 		placer.drawDirectionLines(lines);
 		expect(segments).toHaveLength(0);
@@ -414,7 +417,9 @@ describe('DirectionPlacer', () => {
 			startEnd: 'down',
 			stopEnd: 'down',
 		} as unknown as DirectionLineSpan;
-		placer.drawDirectionLines([{ span, start: note(100), stop: note(200) }]);
+		placer.drawDirectionLines([
+			{ span, start: note(100, stave()), stop: note(200, stave()) },
+		]);
 		// Down the start hook, along the line at the top-text y, down the stop hook.
 		expect(segments).toEqual([
 			{ x1: 100, y1: 80 + DIRECTION_LINE_HOOK, x2: 100, y2: 80 },

@@ -16,7 +16,7 @@ export class FakeLayer implements Layer {
 	readonly ctx = this.recording.ctx;
 	disposed = false;
 
-	constructor(opts: FakeLayerOptions = {}) {
+	constructor(opts: FakeLayerOptions) {
 		this.kind = opts.kind ?? 'content';
 		this.zIndex = opts.zIndex;
 	}

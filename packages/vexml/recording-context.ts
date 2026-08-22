@@ -33,7 +33,7 @@ export class RecordingContext {
 	clip(): void {}
 	beginPath(): void {}
 
-	clearRect(x = 0, y = 0, w = 0, h = 0): void {
+	clearRect(x: number, y: number, w: number, h: number): void {
 		this.ops.push('clear');
 		this.clears.push({ x, y, w, h });
 	}

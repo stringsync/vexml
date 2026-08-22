@@ -59,7 +59,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 
 	constructor(
 		readonly container: HTMLDivElement,
-		scroll: ScrollBox = {},
+		scroll: ScrollBox,
 	) {
 		// Tear down any Stage still bound to this container before capturing prior styles, so this
 		// Stage sees the container's true restored state (not the outgoing Stage's applied styles) and
