@@ -2,6 +2,17 @@
 export type Image = Buffer;
 
 /**
+ * An image's `WIDTHxHEIGHT`, for logs and tables.
+ *
+ * A PNG's IHDR is always the first chunk, so width and height sit at fixed offsets:
+ * 8 bytes of signature, 8 of chunk header, then the two big-endian uint32s.
+ * ponytail: no image-size dependency for two reads.
+ */
+export function dimensions(image: Image): string {
+	return `${image.readUInt32BE(16)}x${image.readUInt32BE(20)}`;
+}
+
+/**
  * Configured and inert: render() does the engine's whole job — render the score,
  * capture the pixels, clean up — in one call, holding nothing between calls. What
  * engine does the work (a browser, Docker) is the implementation's business; construct

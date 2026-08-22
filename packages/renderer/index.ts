@@ -16,5 +16,6 @@ export type {
 	Renderer,
 	RenderResult,
 } from './renderer';
+export { dimensions } from './renderer';
 export { renderers } from './renderers';
 export type { VexmlContext, VexmlInput } from './vexml-renderer';

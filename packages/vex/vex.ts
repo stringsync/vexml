@@ -5,6 +5,7 @@ import { t } from 'webappwiz/t';
 import { SystemClock } from 'webappwiz/time';
 import { dev } from './dev';
 import { fix } from './fix';
+import { perf } from './perf';
 import { release } from './release';
 import { render } from './render';
 import { slice } from './slice';
@@ -121,6 +122,18 @@ vex
 		}
 		await render({ ...opts, cwd: invocationDir, log, fs });
 	});
+
+vex
+	.command('perf')
+	.description(
+		'render every musicxml fixture through vexml, osmd, and alphatab once, and tabulate time and output size; pattern filters by filename',
+	)
+	.arg('pattern', t.optional(t.string()), {
+		default: undefined,
+		description: 'filter fixtures by filename',
+	})
+	.use(timing)
+	.action((opts, { log, fs }) => perf({ pattern: opts.pattern, log, fs }));
 
 vex
 	.command('slice')

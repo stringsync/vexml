@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
-import { type Renderer, renderers } from '@vexml/renderer';
+import { dimensions, type Renderer, renderers } from '@vexml/renderer';
 import type { Logger } from 'webappwiz/log';
 import type { Fs } from 'webappwiz/system';
 
@@ -52,13 +52,6 @@ export async function render(opts: {
 		await renderers.disposeAsync();
 	}
 	opts.log.info(`wrote ${output} (${dimensions(png)})`);
-}
-
-// A PNG's IHDR is always the first chunk, so width and height sit at fixed
-// offsets: 8 bytes of signature, 8 of chunk header, then the two big-endian
-// uint32s. ponytail: no image-size dependency for two reads.
-function dimensions(png: Buffer): string {
-	return `${png.readUInt32BE(16)}x${png.readUInt32BE(20)}`;
 }
 
 function timestamp(): string {
