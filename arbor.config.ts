@@ -1,6 +1,7 @@
-import { defineConfig } from '@webappwiz/arbor/config';
-
-export default defineConfig({
+// arbor runs through `bunx @webappwiz/arbor`, so it is not a dependency here and
+// this file cannot import its `defineConfig`. That costs key-name checking on the
+// object below; arbor validates what it reads anyway.
+export default {
 	// This repo's trunk is master, not arbor's default of main.
 	trunk: 'master',
 	// A fresh worktree has no node_modules, and a rebase can bring in a
@@ -14,4 +15,4 @@ export default defineConfig({
 	// commands CLAUDE.md asks for: fix is biome + tsc + xmllint, test is bun
 	// test. --check so the gate reads the tree instead of writing to it.
 	preMerge: './bin/vex fix --check && ./bin/vex test',
-});
+};

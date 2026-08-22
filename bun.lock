@@ -7,7 +7,6 @@
       "devDependencies": {
         "@biomejs/biome": "2.5.1",
         "@types/bun": "latest",
-        "@webappwiz/arbor": "0.0.5",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -218,8 +217,6 @@
     "@vexml/vex": ["@vexml/vex@workspace:packages/vex"],
 
     "@vitejs/plugin-react": ["@vitejs/plugin-react@6.0.3", "", { "dependencies": { "@rolldown/pluginutils": "^1.0.1" }, "peerDependencies": { "@rolldown/plugin-babel": "^0.1.7 || ^0.2.0", "babel-plugin-react-compiler": "^1.0.0", "vite": "^8.0.0" }, "optionalPeers": ["@rolldown/plugin-babel", "babel-plugin-react-compiler"] }, "sha512-vmFvco5/QuC2f9Oj+wTk0+9XeDFkHxSamwZKYc7MxYwKICfvUvlMhqKI0VuICPltGqh1neqBKDvO4kes1ya8vg=="],
-
-    "@webappwiz/arbor": ["@webappwiz/arbor@0.0.5", "", { "dependencies": { "webappwiz": "^0.0.5" }, "bin": { "arbor": "index.js" } }, "sha512-UQ9zn921ufqtaUXBES6AicEeJrxsS4puKFKtq2+pgWLCOtao4twQGmUy68l9Bt/ZNnUBWwOjFwbuqqq76ZxHJA=="],
 
     "@webappwiz/react": ["@webappwiz/react@0.0.5", "", { "dependencies": { "webappwiz": "^0.0.5" }, "peerDependencies": { "react": "^19" } }, "sha512-DgxR6tyfak3eObaymd2X8KxhlMQpO8kix7Kbs701cRA9DN79/Y8V6ovQ1rWwhxluVehmQOB5zwHxnFUEYag7fQ=="],
 
