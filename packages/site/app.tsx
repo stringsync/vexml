@@ -12,6 +12,7 @@ import {
 	FAST_RENDER_MS,
 } from './constants';
 import { Header } from './header';
+import { ICON, PlayerIcon } from './icons';
 import { INSTRUMENTS } from './instruments';
 import { Player } from './player';
 import { ScoreFit } from './score-fit';
@@ -36,6 +37,9 @@ const fixtures = {
 	names: () => fixtureNames,
 	load: (name: string) => loaders[name]?.(),
 };
+
+const stepper =
+	'flex items-center justify-center rounded-md border border-zinc-300 bg-white px-2 text-zinc-700 hover:bg-zinc-100 disabled:opacity-40 disabled:hover:bg-white';
 
 // Hoisted, not inline: useResource rebuilds when the factory's identity changes, so an arrow
 // written at the call site would build (and dispose) a fresh model on every render.
@@ -105,6 +109,12 @@ export default function App() {
 	const maxSystemFill = config.maxSystemFill ?? DEFAULT_MAX_SYSTEM_FILL;
 	const notationFont = config.fonts?.notation?.family ?? 'Bravura';
 	const width = layout?.referenceWidth ?? DEFAULT_WIDTH;
+	// Both undefined when the document did not come from the picker, which disables both arrows.
+	const fixtureIndex = fixtureNames.indexOf(fixture);
+	const prevFixture =
+		fixtureIndex > 0 ? fixtureNames[fixtureIndex - 1] : undefined;
+	const nextFixture =
+		fixtureIndex >= 0 ? fixtureNames[fixtureIndex + 1] : undefined;
 
 	useEffect(() => {
 		model.document.restore();
@@ -284,21 +294,45 @@ export default function App() {
 										>
 											Select an Example
 										</label>
-										<select
-											id="example"
-											value={fixture}
-											onChange={(e) =>
-												model.document.loadFixture(e.target.value)
-											}
-											className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700"
-										>
-											<option value="">Load an example…</option>
-											{fixtureNames.map((name) => (
-												<option key={name} value={name}>
-													{name}
-												</option>
-											))}
-										</select>
+										<div className="flex items-stretch gap-1.5">
+											<button
+												type="button"
+												disabled={!prevFixture}
+												onClick={() =>
+													prevFixture && model.document.loadFixture(prevFixture)
+												}
+												aria-label="Previous example"
+												className={stepper}
+											>
+												<PlayerIcon d={ICON.prev} className="size-4" />
+											</button>
+											<select
+												id="example"
+												value={fixture}
+												onChange={(e) =>
+													model.document.loadFixture(e.target.value)
+												}
+												className="min-w-0 flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700"
+											>
+												<option value="">Load an example…</option>
+												{fixtureNames.map((name) => (
+													<option key={name} value={name}>
+														{name}
+													</option>
+												))}
+											</select>
+											<button
+												type="button"
+												disabled={!nextFixture}
+												onClick={() =>
+													nextFixture && model.document.loadFixture(nextFixture)
+												}
+												aria-label="Next example"
+												className={stepper}
+											>
+												<PlayerIcon d={ICON.next} className="size-4" />
+											</button>
+										</div>
 									</div>
 
 									<Or />
