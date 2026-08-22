@@ -2451,6 +2451,24 @@ describe('render', () => {
 		).toMatchScreenshot('chord_diagram_adjacent.png');
 	});
 
+	// The same fixture squeezed to 420px, where horizontal room for M3's pair runs out
+	// entirely: pushRightOf sends the G box past the right page margin, and the clamp back
+	// inside (nudgeInsideX) would land it exactly on top of the C box — at this width the
+	// two boxes used to print through each other at the same x. With no sideways room left,
+	// the later box stacks upward instead: at the right margin, the C box sits lifted over
+	// M3's high ledger-line run, and the G box sits directly above the C box, both titles
+	// legible, no overprinting.
+	// - M1: its own system; the C box near the right edge.
+	// - M2-3: share the second system; M2's G box at its default height on the left, M3's
+	//   C-over-notes + G-over-C stack pinned at the right margin.
+	it.concurrent('renders chord_diagram_adjacent_squeezed.png', async () => {
+		expect(
+			await testing.render('chord_diagram_adjacent.musicxml', {
+				layout: { type: 'standard', referenceWidth: 420 },
+			}),
+		).toMatchScreenshot('chord_diagram_adjacent_squeezed.png');
+	});
+
 	// Treble stave, 4/4, one measure at a narrow 500px width: a Bm7 fret box bound to the
 	// LAST quarter, whose note sits right against the system's right edge. Anchored at that
 	// note's x, the box's natural right edge overruns the canvas; it must nudge left so the
@@ -3143,14 +3161,9 @@ describe('render', () => {
 	// notation stave — one box per chord change.
 	// Note: chord roots print with a natural (A♮5, D♮) because the source writes an explicit
 	// <root-alter>0</root-alter> on every harmony; see harmony.musicxml M6.
-	// TODO: the FINAL measure crowds four chord changes into one bar and its last two boxes
-	// still misplace — "A♮/C#" sits at its natural height where the tall chord's stems poke
-	// up into it (a stem is not a lift-clear obstacle, only its notehead is), and "B♮m7"/
-	// "A♮m7" overprint each other at the right edge because nudgeInsideX pulls the last box
-	// back left over the one pushRightOf had just separated it from. Both are pre-existing
-	// and independent of the notation/TAB and banding fixes; neither affects any other
-	// system. Fix in the diagram placement pass in draw-pass.ts, then re-accept this
-	// baseline.
+	// TODO: in the FINAL measure (four chord changes in one bar) "A♮/C#" sits at its natural
+	// height where the tall chord's stems poke up into it — a stem is not a lift-clear
+	// obstacle, only its notehead is. Pre-existing, affects no other system.
 	it.concurrent('renders score_amazing_grace.png', async () => {
 		expect(
 			await testing.render('score_amazing_grace.musicxml'),

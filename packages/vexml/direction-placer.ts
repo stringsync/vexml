@@ -406,16 +406,22 @@ export class DirectionPlacer {
 				// A box anchored at a note near the right edge would overrun the canvas and be
 				// clipped (page overflow has no crop-growth knob like the vertical edges do), so
 				// nudge it back inside the drawable region.
-				const placed = this.collisionResolver.nudgeInsideX(
+				const nudged = this.collisionResolver.nudgeInsideX(
 					unclamped,
 					this.scratchViewport,
 					PAGE_MARGIN_X,
 				);
-				this.collisionResolver.add({
-					rect: placed,
-					kind: 'diagram',
-					band: this.reporter.rowOf(stave),
-				});
+				// The clamp can pull the box back over the very diagram pushRightOf had just
+				// cleared (both then sit pinned at the margin and print through each other).
+				// Horizontal room is exhausted at the page edge, so stack upward instead:
+				// lift the clamped box clear of the diagrams in its column.
+				const placed =
+					nudged.x === unclamped.x
+						? nudged
+						: this.collisionResolver.liftClear(nudged, CHORD_DIAGRAM_GAP, {
+								kinds: ['diagram'],
+								band,
+							});
 				const diagram = new ChordDiagramGlyph(placed.x, placed.y, {
 					...h.frame,
 					title: h.text || undefined,
@@ -428,6 +434,19 @@ export class DirectionPlacer {
 					// ponytail: only the ink follows the engraving color; the open-string bgColor
 					// stays white. Thread backgroundColor through if a dark theme needs it too.
 					color: this.notationColor,
+				});
+				// Register the whole drawn extent (title included), not just the board: a later
+				// box stacking above this one must clear the title, or its board prints
+				// through the "C" it stacked over.
+				this.collisionResolver.add({
+					rect: new Rect(
+						placed.x,
+						diagram.top,
+						placed.w,
+						placed.bottom - diagram.top,
+					),
+					kind: 'diagram',
+					band: this.reporter.rowOf(stave),
 				});
 				diagram.draw(this.context);
 				this.reporter.growPageTop(diagram.top);

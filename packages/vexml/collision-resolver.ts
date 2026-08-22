@@ -156,18 +156,28 @@ export class CollisionResolver {
 	/*
 	 * Push `rect` right until it sits `gap` past every already-placed obstacle of `kind` in
 	 * its y-band. Enforces the gap against a neighbor that's merely close (not yet
-	 * overlapping), reproducing the running-cursor spacing chord diagrams used.
+	 * overlapping), reproducing the running-cursor spacing chord diagrams used. Iterates to
+	 * a fixed point: the push can land the rect on a further-right obstacle the original
+	 * probe (which only reaches the rect's right edge) never saw — three crowded diagrams
+	 * would leave the third printed through the second. Each pass extends the probe to the
+	 * new right edge; the target only ever grows, so it terminates.
 	 */
 	pushRightOf(rect: Rect, kind: CollisionKind, gap: number): Rect {
-		// Span everything from far left up to the rect's right edge, within its y-band.
-		const probe = new Rect(-FAR, rect.y, FAR + rect.right, rect.h);
-		let targetX = rect.x;
-		for (const c of this.query(probe)) {
-			if (c.other.kind === kind) {
-				targetX = Math.max(targetX, c.other.rect.right + gap);
+		let out = rect;
+		for (;;) {
+			// Span everything from far left up to the rect's right edge, within its y-band.
+			const probe = new Rect(-FAR, out.y, FAR + out.right, out.h);
+			let targetX = out.x;
+			for (const c of this.query(probe)) {
+				if (c.other.kind === kind) {
+					targetX = Math.max(targetX, c.other.rect.right + gap);
+				}
 			}
+			if (targetX === out.x) {
+				return out;
+			}
+			out = out.translate(targetX - out.x, 0);
 		}
-		return rect.translate(targetX - rect.x, 0);
 	}
 
 	/*
