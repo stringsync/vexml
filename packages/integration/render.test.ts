@@ -1172,10 +1172,19 @@ describe('render', () => {
 	//   high A6 (no accidental — the plain notehead lift, M13's case minus the flat). The line
 	//   runs FLAT across the M14/M15 divider at the shared height the system's brackets ride at —
 	//   a bracket is one object, so it can't step down over the measure that happens to be low.
-	//   M15 is the last measure, so this final ending DOES hook at its right end (nothing left
-	//   to run on into), over the piece's thin-thick end barline.
+	//   Like M6 and M11 its right end runs flat with no hook: the music carries on into M16.
+	// - M16: a forced system break, then a fifth repeat block (forward repeat) whose endings sit
+	//   over a SLUR rather than over high noteheads. Its own note is an ordinary C5.
+	// - M17: a one-measure volta labelled "1." over four quarters (G5 A5 A5 G5) under one slur
+	//   bowed above them, closing with a backward repeat. The noteheads all sit inside the gap
+	//   the bracket normally leaves, but the bow arches through it, so the bracket rides above
+	//   the BOW — a bracket cleared only for the noteheads would print across the slur.
+	// - M18: the same shape labelled "2.", the block's final ending. It is the last measure, so
+	//   this ending DOES hook at its right end (nothing left to run on into), over the piece's
+	//   thin-thick end barline.
 	// Every bracket on a system shares one height, so M9-11's brackets ride at M13/M15's level
-	// too — the second system's brackets are visibly higher than the first system's.
+	// too — the second system's brackets are visibly higher than the first system's, and M17's
+	// and M18's sit level with each other above the two slurs.
 	it.concurrent('renders repeats.png', async () => {
 		expect(await testing.render('repeats.musicxml')).toMatchScreenshot(
 			'repeats.png',

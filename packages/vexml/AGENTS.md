@@ -129,6 +129,7 @@ there, then `add` the placed rect. `kinds` narrows which obstacles count;
 | Chord symbols, words, rehearsal marks, tempo marks | notes, ties, slur bows, lyrics, technical marks, volta brackets, other placed text (`placement="below"` words drop instead of lifting) | `direction-placer.ts` |
 | Chord diagrams | lift off notes, push right of the previous diagram, lift again, pull inside the page edge | `direction-placer.ts` |
 | Hairpins, pedal lines, ottava brackets | slur bows and beam-extended stem tips, via a resolver scoped to their own stave (they resolve after the per-system index) | `spanner-resolver.ts` |
+| Volta (ending) brackets | noteheads, stem tips and slur bows on the top stave — resolved a pass late, see below | `draw-pass.ts` (`observeVoltaLift`) |
 
 Registered as obstacles: noteheads/stem tips, tie apexes, tab bend arcs, slur
 bows, technical marks (`system-formatter.ts`); lyrics and melisma lines
@@ -137,11 +138,12 @@ early — and measure numbers (`stave-builder.ts`).
 
 Deliberately NOT collisions, do not "migrate" them: deterministic engraving
 placement (page margins, `LEAD_*` reservations, part labels and brackets,
-chord-diagram internals, tab centering, slur control points); stave/system
-spill (`spill-tracker.ts`, `spill-resolver.ts`), which moves a whole row; and
-the volta bracket's lift, measured in one draw pass and applied in the next
-(`draw-pass.ts`, `observedVoltaLifts`) because the bracket draws with the
-stave, before the notes are formatted. `<bracket>`/`<dashes>` spans take
+chord-diagram internals, tab centering, slur control points); and stave/system
+spill (`spill-tracker.ts`, `spill-resolver.ts`), which moves a whole row. The
+volta bracket resolves against the index like anything else, but a pass late:
+it draws with the stave, before the notes are formatted, so the lift is
+measured after the format pass and applied on the NEXT draw pass
+(`draw-pass.ts`, `observedVoltaLifts`), one shared height per system. `<bracket>`/`<dashes>` spans take
 vexflow's fixed text line — drawn in the finish pass, after the index clears.
 
 ## Tablature

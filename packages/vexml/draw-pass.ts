@@ -199,9 +199,9 @@ export class DrawPass {
 	// How far this system's volta brackets have to rise off their default gap to clear the
 	// notes under them, measured this pass and applied on the next (see voltaLifts).
 	private observedVoltaLifts = new Map<number, number>();
-	// This column's unlifted volta line y, or null when the column carries no bracket — set
-	// while the staves are built, read once the notes have been formatted.
-	private columnVoltaBase: number | null = null;
+	// This column's volta bracket at its unlifted height, or null when the column carries no
+	// bracket — set while the staves are built, read once the notes have been formatted.
+	private columnVoltaBox: Rect | null = null;
 	// Every stave of the measure column being built, drawn once the whole column exists so a
 	// repeat sign can be lined up across staves that reserve different opening widths.
 	private columnStaves: Stave[] = [];
@@ -518,7 +518,7 @@ export class DrawPass {
 		this.systemTop = undefined;
 		this.systemBottom = undefined;
 		this.systemPending = [];
-		this.columnVoltaBase = null;
+		this.columnVoltaBox = null;
 		this.columnStaves = [];
 		this.columnMultiRests = [];
 		this.tempoTasks = [];
@@ -763,26 +763,39 @@ export class DrawPass {
 
 		if (noteExtent.top < Infinity) {
 			this.spill.growHighestTop(this.systemIndex, noteExtent.top);
-			// A bracket over this measure and notes that climb past where it sits: record how
-			// far the whole system's brackets have to rise so the next pass can draw them clear
-			// of the noteheads and ledger lines. Also fed to systemHighestTop, so the headroom
-			// reserved above this system already covers where the bracket is about to move.
-			if (this.columnVoltaBase !== null) {
-				const lift = Math.max(
-					0,
-					this.columnVoltaBase - noteExtent.top + VOLTA_NOTE_CLEARANCE,
-				);
-				if (lift > (this.observedVoltaLifts.get(this.systemIndex) ?? 0)) {
-					this.observedVoltaLifts.set(this.systemIndex, lift);
-					this.spill.growHighestTop(
-						this.systemIndex,
-						this.columnVoltaBase - lift,
-					);
-				}
-			}
+			this.observeVoltaLift();
 		}
 		this.directionPlacer.placeColumn(this.directionColumn(m));
 		this.connectorDrawer.drawConnectors(this.connectorColumn());
+	}
+
+	/*
+	 * A bracket over this column and content that climbs past where it sits: record how far
+	 * the whole system's brackets have to rise so the next pass can draw them clear of it.
+	 * Measured off the column's own collision obstacles, registered by the format pass that
+	 * just ran — noteheads, stem tips and slur bows alike, so a bow arching over the notes
+	 * lifts the bracket the way a high notehead does. The whole box clears, not just the
+	 * line: vexflow hangs the "1." label below it. The result also grows systemHighestTop,
+	 * so the headroom reserved above this system covers where the bracket is about to move.
+	 */
+	private observeVoltaLift(): void {
+		const box = this.columnVoltaBox;
+		if (!box) {
+			return;
+		}
+		const cleared = this.collisionResolver.liftClear(
+			box,
+			VOLTA_NOTE_CLEARANCE,
+			{
+				kinds: ['note', 'tie'],
+				band: 0,
+			},
+		);
+		const lift = box.y - cleared.y;
+		if (lift > (this.observedVoltaLifts.get(this.systemIndex) ?? 0)) {
+			this.observedVoltaLifts.set(this.systemIndex, lift);
+			this.spill.growHighestTop(this.systemIndex, cleared.y);
+		}
 	}
 
 	/* The measure loop's locals the system formatter reads, snapshotted at the call —
@@ -902,7 +915,7 @@ export class DrawPass {
 		// repeat sign can be aligned across them first (see SystemFormatter.alignBegModifiers).
 		this.columnStaves.push(stave);
 		if (built.volta) {
-			this.columnVoltaBase = built.volta.base;
+			this.columnVoltaBox = built.volta.box;
 			// The bracket is the highest ink in this column, so it grows the page crop.
 			this.pageTop = Math.min(this.pageTop, built.volta.top);
 		}

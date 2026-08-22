@@ -518,8 +518,9 @@ export const MULTI_REST_PADDING = 12;
  * a multirest rather than as a stray thick line. */
 export const MULTI_REST_MIN_WIDTH = 110;
 
-/** How far a volta bracket's line clears the highest note glyph under it, when a measure
- * reaches past VOLTA_STAVE_GAP and the bracket has to be lifted off its default height. */
+/** How far a volta bracket (its line plus the label hanging below it) clears the highest
+ * glyph under it — a notehead, a stem tip, a slur bow — when a measure reaches past
+ * VOLTA_STAVE_GAP and the bracket has to be lifted off its default height. */
 export const VOLTA_NOTE_CLEARANCE = 12;
 
 /** How tall a volta bracket's obstacle box is: vexflow draws the "1." label hanging below

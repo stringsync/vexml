@@ -64,10 +64,11 @@ export interface BuiltStave {
 	stave: Stave;
 	/** Whether the stave is a TabStave (fret numbers; no clef, key or time). */
 	isTab: boolean;
-	/** The column's volta line ys when this stave carries the bracket (the system's top
-	 * stave under an ending), or null: `base` is the unlifted line the lift observations
-	 * measure against, `top` where the bracket actually sits. */
-	volta: { base: number; top: number } | null;
+	/** The column's volta box when this stave carries the bracket (the system's top
+	 * stave under an ending), or null: `box` is the bracket (line plus its label drop) at
+	 * its unlifted height, what the lift observations measure against; `top` is where the
+	 * bracket actually sits. */
+	volta: { box: Rect; top: number } | null;
 	/** How many measures the stave's <multiple-rest> consolidates, or null when the
 	 * measure draws its own notes. */
 	multiRestCount: number | null;
@@ -493,7 +494,15 @@ export class StaveBuilder {
 			isTab,
 			volta:
 				volta && column.staveRow === 0
-					? { base: voltaBase, top: voltaTop }
+					? {
+							box: new Rect(
+								stave.getX(),
+								voltaBase,
+								stave.getWidth(),
+								VOLTA_LABEL_DROP,
+							),
+							top: voltaTop,
+						}
 					: null,
 			multiRestCount: this.multiRests.get(m) ?? null,
 			numbered,
