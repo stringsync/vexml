@@ -1,7 +1,7 @@
 ---
 name: arbor
 description: Use the @webappwiz/arbor CLI to land your work on trunk, or a base branch given as an argument, from an isolated git worktree without pull requests. Read this before making any code change in an arbor repository, since it decides where the work happens, and whenever you need to add, claim, merge, remove, list, show, locate, or escalate a task.
-version: 0.0.4
+version: 0.0.5
 ---
 
 # Using arbor
@@ -54,8 +54,10 @@ command runs): when waiting, watch a task's status, never its lease.
    names the branch the work should land on, pass it as `--base` to every
    task you create for that request. Otherwise omit `--base`; never guess a
    base from the currently checked-out branch.
-2. Fill in the `ARBOR.md` stub `add` wrote at the worktree root (see below).
-3. Do the work; commit with git (arbor never commits for you).
+2. Fill in the `ARBOR.md` stub `add` wrote at the worktree root (see below)
+   before touching code.
+3. Do the work, updating `ARBOR.md` as you go; commit with git (arbor never
+   commits for you).
 4. `arbor merge`. On failure, do what stderr says and merge again.
 
 A successful merge deletes the worktree, and your working directory with it:
@@ -78,8 +80,9 @@ Your session can die at any moment; `ARBOR.md` is what lets a stranger
 what done means) and list every step you can foresee under `## Next` as
 `- [ ]` items, roughly one commit each. Move items to `## Done` as you finish
 them: those checkboxes are the only progress the task reports. Decisions,
-dead ends and how to verify go under `## Notes`. Update it as you go; a stale
-plan is worse than none.
+dead ends and how to verify go under `## Notes`. Update it as each step
+lands, during implementation rather than at the end; a stale plan is worse
+than none, and a session that dies mid-task reports nothing.
 
 `arbor show <task>` prints the file and every way it departs from the
 expected shape; run it on your own task after writing the file. `add` excludes

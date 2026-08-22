@@ -11,6 +11,6 @@
 		"@stringsync/vexml": "workspace:*",
 		"opensheetmusicdisplay": "^2.1.1",
 		"playwright": "^1.61.1",
-		"webappwiz": "0.0.4"
+		"webappwiz": "0.0.5"
 	}
 }

@@ -7,7 +7,7 @@
       "devDependencies": {
         "@biomejs/biome": "2.5.1",
         "@types/bun": "latest",
-        "@webappwiz/arbor": "0.0.4",
+        "@webappwiz/arbor": "0.0.5",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -15,11 +15,11 @@
     },
     "packages/integration": {
       "name": "@vexml/integration",
-      "version": "1.2.4",
+      "version": "1.3.0",
       "dependencies": {
         "@stringsync/vexml": "workspace:*",
         "@vexml/renderer": "workspace:*",
-        "webappwiz": "0.0.4",
+        "webappwiz": "0.0.5",
       },
       "devDependencies": {
         "@types/pngjs": "^6.0.5",
@@ -30,25 +30,25 @@
     },
     "packages/renderer": {
       "name": "@vexml/renderer",
-      "version": "1.2.4",
+      "version": "1.3.0",
       "dependencies": {
         "@coderline/alphatab": "^1.8.4",
         "@stringsync/vexml": "workspace:*",
         "opensheetmusicdisplay": "^2.1.1",
         "playwright": "^1.61.1",
-        "webappwiz": "0.0.4",
+        "webappwiz": "0.0.5",
       },
     },
     "packages/site": {
       "name": "@vexml/site",
-      "version": "1.2.4",
+      "version": "1.3.0",
       "dependencies": {
         "@stringsync/vexml": "workspace:*",
-        "@webappwiz/react": "0.0.4",
+        "@webappwiz/react": "0.0.5",
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
         "smplr": "^1.0.0",
-        "webappwiz": "0.0.4",
+        "webappwiz": "0.0.5",
       },
       "devDependencies": {
         "@tailwindcss/vite": "^4.3.1",
@@ -61,23 +61,23 @@
     },
     "packages/vex": {
       "name": "@vexml/vex",
-      "version": "1.2.4",
+      "version": "1.3.0",
       "bin": {
         "vex": "./index.ts",
       },
       "dependencies": {
         "@stringsync/mdom": "0.2.5",
         "@vexml/renderer": "workspace:*",
-        "webappwiz": "0.0.4",
+        "webappwiz": "0.0.5",
       },
     },
     "packages/vexml": {
       "name": "@stringsync/vexml",
-      "version": "1.2.4",
+      "version": "1.3.0",
       "dependencies": {
         "@stringsync/mdom": "0.2.5",
         "vexflow": "5.0.0",
-        "webappwiz": "0.0.4",
+        "webappwiz": "0.0.5",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -219,9 +219,9 @@
 
     "@vitejs/plugin-react": ["@vitejs/plugin-react@6.0.3", "", { "dependencies": { "@rolldown/pluginutils": "^1.0.1" }, "peerDependencies": { "@rolldown/plugin-babel": "^0.1.7 || ^0.2.0", "babel-plugin-react-compiler": "^1.0.0", "vite": "^8.0.0" }, "optionalPeers": ["@rolldown/plugin-babel", "babel-plugin-react-compiler"] }, "sha512-vmFvco5/QuC2f9Oj+wTk0+9XeDFkHxSamwZKYc7MxYwKICfvUvlMhqKI0VuICPltGqh1neqBKDvO4kes1ya8vg=="],
 
-    "@webappwiz/arbor": ["@webappwiz/arbor@0.0.4", "", { "dependencies": { "webappwiz": "^0.0.4" }, "bin": { "arbor": "index.js" } }, "sha512-M0/kfaStsazchn9ej7mqif7xriRPJF1JbTifvp8fIq/EPRIvAQiF+KiMiqbhCdacMBTbj/b62EwlpD4WfhThtw=="],
+    "@webappwiz/arbor": ["@webappwiz/arbor@0.0.5", "", { "dependencies": { "webappwiz": "^0.0.5" }, "bin": { "arbor": "index.js" } }, "sha512-UQ9zn921ufqtaUXBES6AicEeJrxsS4puKFKtq2+pgWLCOtao4twQGmUy68l9Bt/ZNnUBWwOjFwbuqqq76ZxHJA=="],
 
-    "@webappwiz/react": ["@webappwiz/react@0.0.4", "", { "dependencies": { "webappwiz": "^0.0.4" }, "peerDependencies": { "react": "^19" } }, "sha512-yRP/k0H8ilN9hUSOe1U3TRybK1oqqkyhaEmBSQdqkYEQTp0L4M5yAjQ3O8wJ8gdPM6y3IuNwB0D3An/ES+2p7w=="],
+    "@webappwiz/react": ["@webappwiz/react@0.0.5", "", { "dependencies": { "webappwiz": "^0.0.5" }, "peerDependencies": { "react": "^19" } }, "sha512-DgxR6tyfak3eObaymd2X8KxhlMQpO8kix7Kbs701cRA9DN79/Y8V6ovQ1rWwhxluVehmQOB5zwHxnFUEYag7fQ=="],
 
     "abbrev": ["abbrev@4.0.0", "", {}, "sha512-a1wflyaL0tHtJSmLSOVybYhy22vRih4eduhhrkcjgrWGnRfrZtovJ2FRjxuTtkkj47O/baf0R86QU5OuYpz8fA=="],
 
@@ -439,7 +439,7 @@
 
     "vite": ["vite@8.1.0", "", { "dependencies": { "lightningcss": "^1.32.0", "picomatch": "^4.0.4", "postcss": "^8.5.15", "rolldown": "~1.1.2", "tinyglobby": "^0.2.17" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^20.19.0 || >=22.12.0", "@vitejs/devtools": "^0.3.0", "esbuild": "^0.27.0 || ^0.28.0", "jiti": ">=1.21.0", "less": "^4.0.0", "sass": "^1.70.0", "sass-embedded": "^1.70.0", "stylus": ">=0.54.8", "sugarss": "^5.0.0", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "@vitejs/devtools", "esbuild", "jiti", "less", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-BuJcQK/56NQTWDGn4ABea3q4SSBdNPWwNZKTkkUpcMPnLoquSYH8llRtSUIgoL1KSCpHt5eghLShn50mH36y7Q=="],
 
-    "webappwiz": ["webappwiz@0.0.4", "", { "dependencies": { "@standard-schema/spec": "^1.1.0" } }, "sha512-RRRkjrTuYnUr1RIkH1eXogqRWYrj+HMDx9TsRS8OUzRNGwkt4w2cEYs6Rkf0D2gZuodqq4os5Ets+2KtamtgLg=="],
+    "webappwiz": ["webappwiz@0.0.5", "", { "dependencies": { "@standard-schema/spec": "^1.1.0" } }, "sha512-HE1cTGuN/zg3WiBe+zrrqIZj9TXXxq0c3rIhr09qFI3y7n4iPnLPhriwUehEgMKyJPz/IjxSDpbEpiqX94xAbg=="],
 
     "which": ["which@6.0.1", "", { "dependencies": { "isexe": "^4.0.0" }, "bin": { "node-which": "bin/which.js" } }, "sha512-oGLe46MIrCRqX7ytPUf66EAYvdeMIZYn3WaocqqKZAxrBpkqHfL/qvTyJ/bTk5+AqHCjXmrv3CEWgy368zhRUg=="],
 

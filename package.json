@@ -9,7 +9,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "2.5.1",
 		"@types/bun": "latest",
-		"@webappwiz/arbor": "0.0.4"
+		"@webappwiz/arbor": "0.0.5"
 	},
 	"peerDependencies": {
 		"typescript": "^5"
