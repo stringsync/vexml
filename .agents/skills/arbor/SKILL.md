@@ -1,7 +1,7 @@
 ---
 name: arbor
 description: Use the @webappwiz/arbor CLI to land your work on trunk, or a base branch given as an argument, from an isolated git worktree without pull requests. Read this before making any code change in an arbor repository, since it decides where the work happens, and whenever you need to add, claim, merge, remove, list, show, locate, or escalate a task.
-version: 0.0.12
+version: 0.0.13
 ---
 
 # Using arbor
@@ -22,7 +22,7 @@ do not retry, another agent owns the tree.
 ## Before you start
 
 Other agents may already be working. Before creating anything, list the files
-you expect to touch, then `arbor ls`, and for each task in flight compare with
+you expect to touch, then `arbor list`, and for each task in flight compare with
 its changed files:
 `git -C "$(arbor path <task>)" diff --name-only main...task/<task>`
 (`arbor show <task>` for its plan; neither takes its lease).
