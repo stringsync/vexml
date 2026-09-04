@@ -1,47 +1,16 @@
 import { describe, expect, it } from 'bun:test';
+import type { VexmlContext } from '@vexml/renderer';
 import { testing } from './setup';
 
 describe('events', () => {
-	// The unit tests cover the wiring with fakes; this proves the real chain end to end — a DOM
+	// The unit tests cover the wiring with fakes; this proves the real chain end to end: a DOM
 	// pointer event on the managed canvas bubbles to the Score, gets mapped to score space through
 	// the live Stage transform, and hit-tests against the index built from real geometry.
 	it.concurrent('a real pointer event maps to score space and hit-tests a target', async () => {
 		const { result } = await testing.eval(
 			'structure_single_stave.musicxml',
 			{},
-			({ score, container }) => {
-				const canvas = container.querySelector('canvas');
-				if (!canvas) {
-					throw new Error('canvas not found');
-				}
-				const types = new Set<string>();
-				const points: Array<{ x: number; y: number }> = [];
-				score.events.on('pointerdown', (e) => {
-					if (e.target) {
-						types.add(e.target.type);
-					}
-					points.push({ x: e.point.x, y: e.point.y });
-				});
-				// Scan down the vertical center line so the stave is crossed wherever the crop
-				// places it — robust to the exact engraved height.
-				const rect = canvas.getBoundingClientRect();
-				const cx = rect.left + rect.width / 2;
-				for (let dy = 4; dy < rect.height; dy += 4) {
-					canvas.dispatchEvent(
-						new PointerEvent('pointerdown', {
-							clientX: cx,
-							clientY: rect.top + dy,
-							bubbles: true,
-						}),
-					);
-				}
-				return {
-					types: [...types],
-					firstPoint: points[0] ?? { x: -1, y: -1 },
-					pointCount: points.length,
-					width: rect.width,
-				};
-			},
+			scanCenterLine,
 		);
 
 		// The event reached the listener with its point mapped into score space (the unscaled
@@ -53,3 +22,36 @@ describe('events', () => {
 		expect(result.types).toContain('measure');
 	});
 });
+
+/** Dispatches pointerdowns down the canvas's vertical center line, so the stave is crossed
+ * wherever the crop places it (robust to the exact engraved height), and reports what the
+ * Score's pointerdown listener saw. */
+function scanCenterLine({ score, container }: VexmlContext) {
+	const canvas = container.querySelector('canvas');
+	if (!canvas) {
+		throw new Error('canvas not found');
+	}
+	const types = new Set<string | null>();
+	const points: Array<{ x: number; y: number }> = [];
+	score.events.on('pointerdown', (e) => {
+		types.add(e.target?.type ?? null);
+		points.push({ x: e.point.x, y: e.point.y });
+	});
+	const rect = canvas.getBoundingClientRect();
+	const cx = rect.left + rect.width / 2;
+	for (let dy = 4; dy < rect.height; dy += 4) {
+		canvas.dispatchEvent(
+			new PointerEvent('pointerdown', {
+				clientX: cx,
+				clientY: rect.top + dy,
+				bubbles: true,
+			}),
+		);
+	}
+	return {
+		types: [...types],
+		firstPoint: points[0] ?? { x: -1, y: -1 },
+		pointCount: points.length,
+		width: rect.width,
+	};
+}

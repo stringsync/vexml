@@ -4,8 +4,8 @@ import { testing } from './setup';
 describe('layers', () => {
 	// Custom layers, end to end in a real browser: a content layer spans the engraved score (score
 	// space), a viewport layer spans the visible box (client space) and is re-fit when the container
-	// resizes. The fn reads layer.ctx.canvas to check sizing — a test-only peek; the public Layer
-	// hides the canvas.
+	// resizes. The fn reads layer.ctx.canvas to check sizing: a test-only peek, since the public
+	// Layer hides the canvas.
 	it.concurrent('content layers span the score, viewport layers span the visible box and re-fit on resize', async () => {
 		const { result } = await testing.eval(
 			'structure_single_stave.musicxml',
@@ -24,25 +24,34 @@ describe('layers', () => {
 					clientW: container.clientWidth,
 				};
 
-				// Shrink the container and wait for the resize to propagate to the viewport layer.
-				let resizes = 0;
+				// Any 'resize' settles the wait: Score re-fits its viewport layers before it
+				// dispatches, and it dispatches only when the container box actually changed, so the
+				// first one already reports the shrunken box.
+				let resized = () => {};
 				const settled = new Promise<void>((resolve) => {
-					score.events.on('resize', () => {
-						resizes++;
-						if (
-							parseFloat(viewport.ctx.canvas.style.width) ===
-								container.clientWidth &&
-							container.clientWidth < before.clientW
-						) {
-							resolve();
-						}
-					});
+					resized = resolve;
 				});
+				let resizes = 0;
+				const unlisten = score.events.on('resize', () => {
+					resizes++;
+					resized();
+				});
+
+				// A deadline rather than a hang, so a resize that never arrives fails on the
+				// assertions below instead of on the suite's timeout.
+				let expire = () => {};
+				const deadline = new Promise<void>((resolve) => {
+					expire = resolve;
+				});
+				const timer = setTimeout(expire, 3000);
+
 				container.style.width = '300px';
-				await Promise.race([
-					settled,
-					new Promise<void>((r) => setTimeout(r, 3000)),
-				]);
+				try {
+					await Promise.race([settled, deadline]);
+				} finally {
+					clearTimeout(timer);
+					unlisten();
+				}
 
 				return {
 					before,
@@ -55,10 +64,8 @@ describe('layers', () => {
 			},
 		);
 
-		// Content layer matches the base canvas (score space); viewport matches the visible box.
 		expect(result.before.contentW).toBeCloseTo(result.before.baseW, 0);
 		expect(result.before.viewportW).toBeCloseTo(result.before.clientW, 0);
-		// Shrinking the container fired a resize that re-fit the viewport layer to the new box.
 		expect(result.after.clientW).toBeLessThan(result.before.clientW);
 		expect(result.after.resizes).toBeGreaterThan(0);
 		expect(result.after.viewportW).toBeCloseTo(result.after.clientW, 0);

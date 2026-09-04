@@ -21,7 +21,7 @@ if (process.env.I_AM_RUNNING_TESTS_USING_VEX_TEST !== '1') {
 	process.exit(1);
 }
 
-/** The run's one Testing. Assigned in beforeAll below — an ESM binding is live, so
+/** The run's one Testing. Assigned in beforeAll below. An ESM binding is live, so
  * tests importing `testing` see the instance by the time any of them runs. */
 export let testing: Testing;
 

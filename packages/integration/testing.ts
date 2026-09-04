@@ -11,12 +11,14 @@ import {
 const DATA_DIR = path.resolve(import.meta.dir, './__data__');
 
 /**
- * The suite's view of renderers.vexml: resolves corpus fixtures and defaults both
- * fonts to the families the Docker image installs, so a test states only what it is
- * about. render/eval mirror the Renderer/EvalRenderer verbs. setup.ts constructs the
- * run's one shared instance (`testing`); importing a module never constructs anything.
+ * Renders corpus fixtures with vexml. Fixture paths resolve against the suite's data
+ * directory, and both fonts default to the families the Docker image installs, so a
+ * test states only what it is about. Use the shared `testing` instance from setup.ts.
  */
 export class Testing {
+	/* render/eval mirror the Renderer/EvalRenderer verbs. setup.ts constructs the run's
+	 * one shared instance (`testing`); importing a module never constructs anything. */
+
 	/** Render a corpus file and return its pixels. */
 	async render(file: string, config: ConfigInput = {}): Promise<Image> {
 		return (await this.vexml(file, config)).render();
@@ -33,7 +35,7 @@ export class Testing {
 		return (await this.vexml(file, config)).eval(fn, arg);
 	}
 
-	/** A corpus fixture's text — for the rare eval fn that needs one as its arg. */
+	/** A corpus fixture's text, for the rare eval fn that needs one as its arg. */
 	fixture(file: string): Promise<string> {
 		return Bun.file(path.join(DATA_DIR, file)).text();
 	}
@@ -51,7 +53,7 @@ export class Testing {
 
 	/* Default both fonts to the families the Docker image installs as system fonts (see
 	 * Dockerfile). Passing a family with no URL takes the font loader's "already
-	 * available" path — the browser resolves it locally instead of fetching Bravura's
+	 * available" path : the browser resolves it locally instead of fetching Bravura's
 	 * woff2 or Source Sans 3 from the Google Fonts CDN, so renders never touch the
 	 * network. A test that sets fonts.notation or fonts.text (spread last) overrides
 	 * the default. */

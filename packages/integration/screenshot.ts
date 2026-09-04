@@ -19,42 +19,6 @@ import { ConsoleLogger, color } from 'webappwiz/log';
 // added/updated/deleted report at the end of the run. Imported once by setup.ts (the
 // preload), so its afterAll cleanups scope to the whole run.
 
-// [old][diff][new] side by side, each captioned, returned as a PNG buffer.
-//
-// Side by side, not stacked: Cairo (under node-canvas) refuses a surface over 32767px on
-// either axis, and baselines are tall and narrow — a whole score runs to ~12,000px tall but
-// no baseline is wider than the 1598px of layout_panoramic. Stacking tripled the dimension
-// that was already large and threw on the score cases; laying the panels out along the
-// short axis triples ~1600px at worst. Aligning the panels horizontally also happens to be
-// the easier read for a tall score, since the same system lands at the same y in all three.
-function composite(
-	expected: PNG,
-	diff: PNG,
-	got: PNG,
-	w: number,
-	h: number,
-): Buffer {
-	const header = 32;
-	const canvas = createCanvas(w * 3, h + header);
-	const ctx = canvas.getContext('2d');
-	ctx.fillStyle = '#fff';
-	ctx.fillRect(0, 0, w * 3, header);
-	ctx.font = '24px sans-serif';
-	const panels: [string, PNG][] = [
-		['old', expected],
-		['diff', diff],
-		['new', got],
-	];
-	panels.forEach(([label, png], i) => {
-		ctx.fillStyle = '#000';
-		ctx.fillText(label, i * w + 4, 24);
-		const img = createImageData(w, h);
-		img.data.set(png.data);
-		ctx.putImageData(img, i * w, header);
-	});
-	return canvas.toBuffer('image/png');
-}
-
 const SCREENSHOTS_DIR = path.resolve(import.meta.dir, './__screenshots__');
 const DIFF_DIR = path.resolve(import.meta.dir, './__diffs__');
 const ROOT = path.resolve(import.meta.dir, '../..');
@@ -192,4 +156,40 @@ declare module 'bun:test' {
 	interface Matchers {
 		toMatchScreenshot(filename: string): void;
 	}
+}
+
+// [old][diff][new] side by side, each captioned, returned as a PNG buffer.
+//
+// Side by side, not stacked: Cairo (under node-canvas) refuses a surface over 32767px on
+// either axis, and baselines are tall and narrow. A whole score runs to ~12,000px tall but
+// no baseline is wider than the 1598px of layout_panoramic. Stacking tripled the dimension
+// that was already large and threw on the score cases; laying the panels out along the
+// short axis triples ~1600px at worst. Aligning the panels horizontally also happens to be
+// the easier read for a tall score, since the same system lands at the same y in all three.
+function composite(
+	expected: PNG,
+	diff: PNG,
+	got: PNG,
+	w: number,
+	h: number,
+): Buffer {
+	const header = 32;
+	const canvas = createCanvas(w * 3, h + header);
+	const ctx = canvas.getContext('2d');
+	ctx.fillStyle = '#fff';
+	ctx.fillRect(0, 0, w * 3, header);
+	ctx.font = '24px sans-serif';
+	const panels: [string, PNG][] = [
+		['old', expected],
+		['diff', diff],
+		['new', got],
+	];
+	panels.forEach(([label, png], i) => {
+		ctx.fillStyle = '#000';
+		ctx.fillText(label, i * w + 4, 24);
+		const img = createImageData(w, h);
+		img.data.set(png.data);
+		ctx.putImageData(img, i * w, header);
+	});
+	return canvas.toBuffer('image/png');
 }

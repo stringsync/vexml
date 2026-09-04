@@ -9,7 +9,7 @@ describe('swing', () => {
 	 *
 	 * The fixture is a one-eighth pickup plus six eighths in 3/4 at quarter=60 (1000ms a quarter),
 	 * swung 2:1. So the pair boundaries stay on the second: the off-beat eighths land a third of
-	 * the way late, and the pickup — which IS an off-beat — plays short rather than long.
+	 * the way late, and the pickup (which IS an off-beat) plays short rather than long.
 	 */
 	it.concurrent('a 2:1 <swing> lengthens the on-beat eighths and shortens the off-beats', async () => {
 		const { result } = await testing.eval(
@@ -33,7 +33,7 @@ describe('swing', () => {
 			6000,
 		]);
 		// Straight, the pickup would be 500ms. Swung it is 333ms, and the two full bars stay
-		// 3000ms each — swing moves notes within a bar, never the barlines.
+		// 3000ms each: swing moves notes within a bar, never the barlines.
 		expect(result.durationMs).toBe(6333);
 	});
 });

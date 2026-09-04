@@ -35,7 +35,7 @@ describe('decorations', () => {
 
 	// Chords whose seconds displace a notehead off the stem column (chord.musicxml: the C5/D5
 	// second in M2, and the G5/A5 second atop the M4 chord). Every head must recolor completely,
-	// including the displaced ones — their stamps once clipped to the normal column's rect.
+	// including the displaced ones: their stamps once clipped to the normal column's rect.
 	it.concurrent('colors displaced second noteheads completely', async () => {
 		const { result: count, image } = await testing.eval(
 			'chord.musicxml',
@@ -77,7 +77,7 @@ describe('decorations', () => {
 function decorateAllTargets({ score }: VexmlContext, mode: 'color' | 'halo') {
 	// Reaching a target via the pointer is proven once in events.test.ts; here the elements
 	// index enumerates them directly. A tab note's visible glyph is its fret (TabPosition),
-	// a notation note's is its notehead — decorate whichever this note shows, exactly once
+	// a notation note's is its notehead. Decorate whichever this note shows, exactly once
 	// (both wrappers stamp the same glyph, so decorating a note AND its fret double-prints).
 	const targets = score
 		.getElements()

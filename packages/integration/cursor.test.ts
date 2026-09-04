@@ -14,7 +14,7 @@ describe('cursor', () => {
 			({ score }) => {
 				const cursor = score.createCursor();
 				cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
-				// Seek 40% through the piece — a deterministic spot independent of the note count.
+				// Seek 40% through the piece: a deterministic spot independent of the note count.
 				cursor.seekMs(score.getDurationMs() * 0.4);
 			},
 		);
@@ -23,7 +23,7 @@ describe('cursor', () => {
 
 	// Coloring the highlighted notes of a tied tab chord must not stamp phantom blips on the tab
 	// staff. A tie-stop string re-uses the struck note's fret, so guitar convention omits its
-	// number — its tab Note carries no glyph. Seek 30% in, into the eighth-note re-articulation of
+	// number: its tab Note carries no glyph. Seek 30% in, into the eighth-note re-articulation of
 	// the tied chord (strings 1 & 2), then color everything the cursor highlights: the drawn frets
 	// recolor, and the two number-less tied strings draw nothing (no filled-ellipse blip).
 	it.concurrent('a tied tab chord colors its drawn frets but not the number-less tied strings', async () => {
@@ -34,9 +34,9 @@ describe('cursor', () => {
 				const cursor = score.createCursor();
 				cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
 				cursor.events.on('change', (e) => {
-					for (const n of e.highlighted) {
+					e.highlighted.forEach((n) => {
 						n.color.on('#155dfc');
-					}
+					});
 				});
 				cursor.seekMs(score.getDurationMs() * 0.3);
 			},
@@ -45,8 +45,9 @@ describe('cursor', () => {
 	});
 
 	// A chord diagram (a <harmony> <frame>) floats well above the stave, but the playback bar must not
-	// reach up to it: the bar should span only the stave region — here a treble + 6-line TAB grand staff
-	// — as if the diagram weren't there. Seek 40% in (mid first measure) so the bar lands between notes.
+	// reach up to it: the bar should span only the stave region (here a treble + 6-line TAB grand
+	// staff) as if the diagram weren't there. Seek 40% in (mid first measure) so the bar lands
+	// between notes.
 	it.concurrent('the playback bar spans the stave, not up to a chord diagram', async () => {
 		const { image } = await testing.eval(
 			'chord_diagram_tab.musicxml',
@@ -60,7 +61,7 @@ describe('cursor', () => {
 		expect(image).toMatchScreenshot('cursor_chord_diagram.png');
 	});
 
-	// Grace notes aren't tickables, so they never enter the timeline — but they must still be reachable
+	// Grace notes aren't tickables, so they never enter the timeline, but they must still be reachable
 	// as Note targets (with real engraved geometry) so the player can sound and light them. graceNoteStats
 	// walks the cursor over every onset and aggregates the grace notes attached to each started note.
 	it.concurrent('grace notes resolve to targets with real geometry off their host onsets', async () => {
@@ -133,7 +134,7 @@ describe('cursor', () => {
 		]);
 	});
 
-	// A tied chord must light every member of the whole tie group while any of it sounds — mdom pairs
+	// A tied chord must light every member of the whole tie group while any of it sounds: mdom pairs
 	// a chord's ties by shared number, so the timeline re-resolves each to its same-pitch member. Seek
 	// into the 2nd (tied-to) chord; all four noteheads (both chords, C5 + E5 each) must be highlighted,
 	// and nothing once playback is done.
@@ -162,7 +163,7 @@ describe('cursor', () => {
 	// Repeats and voltas expand the timeline: the score's eleven measures play as sixteen steps
 	// in jump order, not straight through. Proves the barlines the renderer draws (repeat dots
 	// and "1."/"2."/"3." brackets) and the order playback takes are read from the same
-	// <barline>s — in particular that the two-measure first ending plays through before the
+	// <barline>s, in particular that the two-measure first ending plays through before the
 	// back-jump rather than jumping from its first measure, and that a three-ending block takes
 	// each ending once across three passes. One whole note per measure, so one step per measure.
 	it.concurrent('repeats and endings expand the playback order', async () => {
@@ -184,7 +185,7 @@ describe('cursor', () => {
 		// skipping the whole exhausted ending into the 2nd (M6), then out to M7. M8 then opens a
 		// three-ending block: each pass replays M8 and takes the next ending (M9, M10, M11), and
 		// the last one has no back-jump so the block ends there. M12 opens a fourth block with two
-		// endings — M13, then back to M12 and out through the two-measure 2nd ending (M14 M15).
+		// endings: M13, then back to M12 and out through the two-measure 2nd ending (M14 M15).
 		// M16 opens a fifth block the same shape: M17, back to M16, out through M18.
 		// M8, M13 and M15 are the measures holding two notes rather than a whole note, so each of
 		// their passes contributes two steps; M17 and M18 hold four quarters, so four each.
@@ -192,14 +193,14 @@ describe('cursor', () => {
 			0, 1, 0, 1, 2, 3, 4, 2, 5, 6, 7, 7, 8, 7, 7, 9, 7, 7, 10, 11, 12, 12, 11,
 			13, 14, 14, 15, 16, 16, 16, 16, 15, 17, 17, 17, 17,
 		]);
-		// Document order is unchanged — only playback expands.
+		// Document order is unchanged: only playback expands.
 		expect(result.measureCount).toBe(18);
 		expect(result.firstStepOfM2).toBe(1);
 	});
 
 	// <repeat times="5"> plays a block five times, not the two a bare repeat sign means. The render
 	// prints "Play 5 times" over the closing barline (repeats_multiple_times.png); this is the other
-	// half of the same attribute — the block must actually expand to five passes, or the label
+	// half of the same attribute. The block must actually expand to five passes, or the label
 	// promises something playback doesn't do. Five measures, one whole rest each, so one step per
 	// measure.
 	it.concurrent('a repeat with times="5" plays its block five times', async () => {
@@ -220,7 +221,7 @@ describe('cursor', () => {
 	// A repeat block nested inside another, each closing with its own 1st/2nd endings
 	// (repeats_nested.png draws the brackets). M3-M6 are four consecutive ending measures with no
 	// plain measure between them, so the only thing separating the outer volta group from the inner
-	// one is the numbering restarting at 1 on M5 — read it as one four-ending group and the outer
+	// one is the numbering restarting at 1 on M5: read it as one four-ending group and the outer
 	// repeat never jumps back to M1. One whole note per measure, so one step per measure.
 	it.concurrent('a nested repeat block replays whole on each outer pass', async () => {
 		const { result } = await testing.eval(
@@ -233,8 +234,8 @@ describe('cursor', () => {
 					.map((step) => step.measureIndex),
 		);
 
-		// Outer pass 1: M1, then the inner block |: M2 :| — M3 (1st ending) back to M2, then M4
-		// (2nd ending) — then the outer 1st ending M5, which jumps back to M1. Outer pass 2 replays
+		// Outer pass 1: M1, then the inner block |: M2 :| with M3 (1st ending) back to M2, then M4
+		// (2nd ending), then the outer 1st ending M5, which jumps back to M1. Outer pass 2 replays
 		// the inner block in full (the inner endings re-arm), skips the exhausted M5 and closes on
 		// the outer 2nd ending M6.
 		expect(result).toEqual([0, 1, 2, 1, 3, 4, 0, 1, 2, 1, 3, 5]);
@@ -267,7 +268,7 @@ describe('cursor', () => {
 });
 
 // Runs in the page via toString(), so it must stay self-contained: no closing over test
-// scope, and a test's fn cannot call it (that would be a closure) — only pass it AS the fn.
+// scope, and a test's fn cannot call it (that would be a closure). Only pass it AS the fn.
 
 /** Walk the cursor over every onset and aggregate every grace note encountered. */
 function graceNoteStats({ score }: VexmlContext) {
