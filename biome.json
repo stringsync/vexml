@@ -6,7 +6,13 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!dist", "!**/*.musicxml"]
+		"includes": [
+			"**",
+			"!dist",
+			"!**/*.musicxml",
+			"!.agents",
+			"!skills-lock.json"
+		]
 	},
 	"formatter": {
 		"enabled": true,
@@ -22,6 +28,11 @@
 			}
 		}
 	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "single"
@@ -34,5 +45,23 @@
 				"organizeImports": "on"
 			}
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["packages/site/components/ui/**"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"useSemanticElements": "off"
+					},
+					"style": {
+						"noNestedTernary": "off"
+					},
+					"suspicious": {
+						"noArrayIndexKey": "off"
+					}
+				}
+			}
+		}
+	]
 }

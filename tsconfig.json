@@ -5,6 +5,9 @@
 		"module": "Preserve",
 		"moduleDetection": "force",
 		"jsx": "react-jsx",
+		"paths": {
+			"@/*": ["./packages/site/*"]
+		},
 		"allowJs": true,
 		"types": ["bun"],
 		"moduleResolution": "bundler",
