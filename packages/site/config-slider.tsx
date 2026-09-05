@@ -46,7 +46,7 @@ export function ConfigSlider({
 					<Button
 						type="button"
 						variant="ghost"
-						size="icon-xs"
+						size="icon-sm"
 						onClick={onReset}
 						disabled={!canReset}
 						aria-label={`Reset ${label.toLowerCase()}`}

@@ -274,10 +274,10 @@ export default function App() {
 						}}
 						aria-expanded={mobileOpen}
 						aria-label={mobileOpen ? 'Hide controls' : 'Show controls'}
-						className={`h-auto w-full rounded-t-xl rounded-b-none py-3 text-muted-foreground transition-shadow md:hidden ${scrolled ? 'shadow-[0_4px_8px_rgba(0,0,0,0.08)]' : ''}`}
+						className={`h-auto w-full rounded-t-xl rounded-b-none py-3 transition-shadow md:hidden ${scrolled ? 'shadow-[0_4px_8px_rgba(0,0,0,0.08)]' : ''}`}
 					>
 						<ChevronUpIcon
-							className={`size-6 transition-transform duration-300 ${mobileOpen ? 'rotate-180' : ''}`}
+							className={`transition-transform duration-300 ${mobileOpen ? 'rotate-180' : ''}`}
 						/>
 					</Button>
 
@@ -285,12 +285,12 @@ export default function App() {
 					    default collapsed state never slides in); its end re-fits the score box */}
 					<div
 						onTransitionEnd={() => fitRef.current?.remeasure()}
-						className={`grid md:grid-rows-[1fr] ${sheetToggled ? 'transition-[grid-template-rows] duration-300' : ''} ${mobileOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
+						className={`grid md:min-h-0 md:flex-1 md:grid-rows-[1fr] ${sheetToggled ? 'transition-[grid-template-rows] duration-300' : ''} ${mobileOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
 					>
 						<div className="min-h-0 overflow-hidden">
 							<div
 								onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 0)}
-								className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto p-4 md:max-h-[calc(100vh-8rem)]"
+								className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto p-4 md:h-full md:max-h-none"
 							>
 								<Section title="MusicXML">
 									<Button asChild className="w-full cursor-pointer">
@@ -365,7 +365,7 @@ export default function App() {
 												type="button"
 												variant="ghost"
 												size="sm"
-												className="w-fit text-muted-foreground"
+												className="w-fit"
 											>
 												Edit MusicXML
 											</Button>
@@ -392,7 +392,6 @@ export default function App() {
 											size="sm"
 											onClick={() => model.config.resetAll()}
 											disabled={!canReset}
-											className="text-muted-foreground"
 										>
 											Reset all
 										</Button>
@@ -658,7 +657,7 @@ export default function App() {
 								{/* sticky so the badge stays centered in the viewport even when the backdrop is taller than the screen */}
 								<div className="sticky top-0 flex h-screen items-center justify-center">
 									<Card className="flex-row items-center gap-3 px-6 py-5 shadow-lg">
-										<Spinner className="size-6" />
+										<Spinner />
 										<span className="text-sm font-medium text-muted-foreground">
 											Loading…
 										</span>

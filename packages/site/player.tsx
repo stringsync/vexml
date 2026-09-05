@@ -1,8 +1,8 @@
 import {
-	ChevronLeftIcon,
-	ChevronRightIcon,
 	PauseIcon,
 	PlayIcon,
+	SkipBackIcon,
+	SkipForwardIcon,
 	Volume2Icon,
 	VolumeXIcon,
 } from 'lucide-react';
@@ -59,19 +59,20 @@ export function Player({
 					onClick={() => session?.previous()}
 					aria-label="Previous note"
 				>
-					<ChevronLeftIcon className="size-6" />
+					<SkipBackIcon fill="currentColor" />
 				</Button>
+				{/* The one filled button on the bar: play is what the eye should land on. */}
 				<Button
 					type="button"
-					variant="ghost"
 					size="icon-lg"
 					onClick={() => session?.togglePlay()}
 					aria-label={playing ? 'Pause' : 'Play'}
+					className="rounded-full"
 				>
 					{playing ? (
-						<PauseIcon className="size-7" />
+						<PauseIcon fill="currentColor" />
 					) : (
-						<PlayIcon className="size-7" />
+						<PlayIcon fill="currentColor" />
 					)}
 				</Button>
 				<Button
@@ -81,7 +82,7 @@ export function Player({
 					onClick={() => session?.next()}
 					aria-label="Next note"
 				>
-					<ChevronRightIcon className="size-6" />
+					<SkipForwardIcon fill="currentColor" />
 				</Button>
 				<Button
 					type="button"
@@ -92,11 +93,7 @@ export function Player({
 					aria-pressed={muted}
 					className="absolute right-0"
 				>
-					{muted ? (
-						<VolumeXIcon className="size-6" />
-					) : (
-						<Volume2Icon className="size-6" />
-					)}
+					{muted ? <VolumeXIcon /> : <Volume2Icon />}
 				</Button>
 			</div>
 			<div className="flex items-center gap-2">
