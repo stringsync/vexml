@@ -1,6 +1,7 @@
 import { type ConfigInput, render } from '@stringsync/vexml';
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
+import { SystemClock } from 'webappwiz/time';
 import { DocumentSource, type Fixtures } from './document-source';
 import { InstrumentController } from './instrument-controller';
 import { RenderConfig } from './render-config';
@@ -37,6 +38,8 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	// Bumped per render request. A render that resolves after a newer one started is dropped, so a
 	// late score never leaks a canvas into a container a newer render already owns.
 	private generation = 0;
+
+	private readonly clock = new SystemClock();
 
 	constructor(fixtures: Fixtures, storage: Storage) {
 		this.document = new DocumentSource(fixtures, storage);
@@ -75,7 +78,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		this.disposeSession();
 		this.error = null;
 		this.dispatcher.dispatch('changed');
-		const start = performance.now();
+		const start = this.clock.now();
 		try {
 			const score = await render(input, container, config);
 			if (at !== this.generation) {
@@ -90,7 +93,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 					this.dispatcher.dispatch('changed'),
 				),
 			);
-			this.config.reportRenderMs(performance.now() - start);
+			this.config.reportRenderMs(this.clock.now().subtract(start).ms);
 		} catch (e: unknown) {
 			if (at !== this.generation) {
 				return;

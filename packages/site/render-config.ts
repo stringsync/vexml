@@ -1,7 +1,7 @@
 import type { ConfigInput, StandardLayout } from '@stringsync/vexml';
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
-import { Duration, SystemTimer } from 'webappwiz/time';
+import { Debouncer, Duration, SystemTimer } from 'webappwiz/time';
 import { DEBOUNCE_MS, FAST_RENDER_MS } from './constants';
 
 type RenderConfigEvents = { changed: undefined };
@@ -29,11 +29,13 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 	renderMs: number | null = null;
 
 	private readonly disposer = new Disposer();
-	private readonly timer = new SystemTimer();
-	private pending: Resource | undefined;
+	private readonly debouncer = new Debouncer(
+		new SystemTimer(),
+		Duration.ms(DEBOUNCE_MS),
+	);
 
 	constructor() {
-		this.disposer.defer(() => this.pending?.dispose());
+		this.disposer.use(this.debouncer);
 		this.disposer.use(this.dispatcher);
 	}
 
@@ -112,7 +114,7 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 	// One write path, so `live`, `applied` and `debouncing` can only move together.
 	private set(next: ConfigInput): void {
 		this.live = next;
-		this.pending?.dispose();
+		this.debouncer.cancel();
 		// A fast last render keeps up with the sliders, so skip the wait entirely.
 		if (this.renderMs != null && this.renderMs <= FAST_RENDER_MS) {
 			this.applied = next;
@@ -122,11 +124,11 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 		}
 		this.debouncing = true;
 		this.dispatcher.dispatch('changed');
-		this.pending = this.timer.setTimeout(() => {
+		this.debouncer.call(() => {
 			this.applied = this.live;
 			this.debouncing = false;
 			this.dispatcher.dispatch('changed');
-		}, Duration.ms(DEBOUNCE_MS));
+		});
 	}
 }
 

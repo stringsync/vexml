@@ -1,8 +1,9 @@
 import type { CursorController, Element, Score } from '@stringsync/vexml';
 import { Note, TabPosition } from '@stringsync/vexml';
+import { AnimationLoop } from 'webappwiz/browser';
 import { Disposer, disposables, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful, type Events } from 'webappwiz/events';
-import { Duration, SystemTimer } from 'webappwiz/time';
+import { Duration, SystemClock, SystemTimer } from 'webappwiz/time';
 import { ACTIVE_COLOR, GRACE_MS, HALO_COLOR, HOVER_COLOR } from './constants';
 import { describe } from './format';
 import type { Instrument } from './instrument';
@@ -44,6 +45,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 
 	private readonly disposer = new Disposer();
 	private readonly timer = new SystemTimer();
+	private readonly loop = new AnimationLoop(new SystemClock());
 	// The notes currently sounding, so a change can tell what newly started and what stopped.
 	private readonly lit = new Set<Note>();
 	// The voice each sounding note owns, keyed by Note (not pitch) so a re-struck pitch, which a
@@ -55,7 +57,6 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	private hovered: Element | null = null;
 	// The note whose halo is lit, so the next move can turn it back off.
 	private halo: Note | null = null;
-	private raf = 0;
 
 	constructor(
 		readonly score: Score,
@@ -64,6 +65,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	) {
 		this.durationMs = score.getDurationMs();
 		this.disposer.use(this.dispatcher);
+		this.disposer.use(this.loop);
 		this.disposer.adopt(score, (s) => s.dispose());
 		this.disposer.defer(() => this.stop());
 		this.disposer.defer(() => this.clearHighlight());
@@ -77,6 +79,17 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 				this.cursor.scrollIntoView();
 			}
 		});
+		// The loop only runs between start() and stop(), so a frame here means playing.
+		this.watch(this.loop.events, 'frame', ({ dt }) => {
+			const next = this.cursor.getTimeMs() + dt.ms;
+			if (next >= this.durationMs) {
+				this.cursor.seekMs(this.durationMs);
+				this.stop();
+				return;
+			}
+			this.cursor.seekMs(next);
+		});
+
 		this.watch(this.cursor.events, 'change', (e) => {
 			this.timeMs = e.timeMs;
 			this.paint(e.highlighted);
@@ -235,25 +248,12 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		for (const n of this.cursor.getActiveElements()) {
 			this.attack(n);
 		}
-		let last = performance.now();
-		const tick = (now: number) => {
-			const next = this.cursor.getTimeMs() + (now - last);
-			last = now;
-			if (next >= this.durationMs) {
-				this.cursor.seekMs(this.durationMs);
-				this.stop();
-				return;
-			}
-			this.cursor.seekMs(next);
-			this.raf = requestAnimationFrame(tick);
-		};
-		this.raf = requestAnimationFrame(tick);
+		this.loop.start();
 		this.dispatcher.dispatch('changed');
 	}
 
 	private stop(): void {
-		cancelAnimationFrame(this.raf);
-		this.raf = 0;
+		this.loop.stop();
 		if (!this.playing) {
 			return;
 		}

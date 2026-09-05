@@ -1,6 +1,6 @@
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
-import { Duration, SystemTimer } from 'webappwiz/time';
+import { Debouncer, Duration, SystemTimer } from 'webappwiz/time';
 import { DEBOUNCE_MS, DEFAULT_FIXTURE, STORAGE_KEY } from './constants';
 
 type DocumentSourceEvents = { changed: undefined };
@@ -35,14 +35,16 @@ export class DocumentSource
 	debouncing = false;
 
 	private readonly disposer = new Disposer();
-	private readonly timer = new SystemTimer();
-	private pending: Resource | undefined;
+	private readonly debouncer = new Debouncer(
+		new SystemTimer(),
+		Duration.ms(DEBOUNCE_MS),
+	);
 
 	constructor(
 		private readonly fixtures: Fixtures,
 		private readonly storage: Storage,
 	) {
-		this.disposer.defer(() => this.cancelDebounce());
+		this.disposer.use(this.debouncer);
 		this.disposer.use(this.dispatcher);
 	}
 
@@ -62,7 +64,7 @@ export class DocumentSource
 
 	/* Load a fixture by name, into both the editor and the score. */
 	async loadFixture(name: string): Promise<void> {
-		this.cancelDebounce();
+		this.stopDebouncing();
 		this.fixture = name;
 		this.dispatcher.dispatch('changed');
 		const xml = await this.fixtures.load(name);
@@ -78,7 +80,7 @@ export class DocumentSource
 	/* An edit in the textarea. Renders on every keystroke while renders are fast enough to keep
 	 * up, and waits out the typing once they are not. */
 	edit(value: string, opts: EditOptions): void {
-		this.cancelDebounce();
+		this.stopDebouncing();
 		this.text = value;
 		this.fixture = '';
 		this.save(value);
@@ -93,17 +95,17 @@ export class DocumentSource
 		}
 		this.debouncing = true;
 		this.dispatcher.dispatch('changed');
-		this.pending = this.timer.setTimeout(() => {
+		this.debouncer.call(() => {
 			this.input = this.text;
 			this.debouncing = false;
 			this.dispatcher.dispatch('changed');
-		}, Duration.ms(DEBOUNCE_MS));
+		});
 	}
 
 	/* A dropped or picked file. .mxl is a zip, which render() detects from the Blob; MusicXML is
 	 * plain text, which also goes into the editor so it can be tweaked. */
 	async loadFile(file: File): Promise<void> {
-		this.cancelDebounce();
+		this.stopDebouncing();
 		this.fixture = '';
 		if (file.name.toLowerCase().endsWith('.mxl')) {
 			this.text = '';
@@ -133,8 +135,10 @@ export class DocumentSource
 		this.disposer.dispose();
 	}
 
-	private cancelDebounce(): void {
-		this.pending?.dispose();
+	// The flag is the loading indicator, and it is not the Debouncer's to know about, so the
+	// two are only ever cleared together.
+	private stopDebouncing(): void {
+		this.debouncer.cancel();
 		this.debouncing = false;
 	}
 
