@@ -160,8 +160,65 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.cursor.next();
 	}
 
+	/*
+	 * Step to the first onset of the previous measure, or to the start of the current one when the
+	 * cursor is somewhere inside it: the usual transport behavior, where "back" first rewinds the
+	 * bar you are in. Pauses first, like the note steps.
+	 */
+	previousMeasure(): void {
+		this.stop();
+		const steps = this.score.getSequence().getSteps();
+		const index = this.stepIndex();
+		const start = this.measureStart(index);
+		// Already parked on the downbeat, so "back" means the measure before this one.
+		const target = start === index ? this.measureStart(start - 1) : start;
+		const step = steps[target];
+		if (step) {
+			this.cursor.seekMs(step.startMs);
+		}
+	}
+
+	/* Step to the first onset of the next measure in playback order, if there is one. */
+	nextMeasure(): void {
+		this.stop();
+		const steps = this.score.getSequence().getSteps();
+		const index = this.stepIndex();
+		const here = steps[index]?.measureIndex;
+		for (let i = index + 1; i < steps.length; i++) {
+			const step = steps[i];
+			if (step && step.measureIndex !== here) {
+				this.cursor.seekMs(step.startMs);
+				return;
+			}
+		}
+	}
+
 	seekMs(ms: number): void {
 		this.cursor.seekMs(ms);
+	}
+
+	/* The step the cursor sits on, clamped to the first (before the first onset there is none). */
+	private stepIndex(): number {
+		const sequence = this.score.getSequence();
+		return sequence.getStepIndexAtMs(this.cursor.getTimeMs()) ?? 0;
+	}
+
+	/*
+	 * Walk back to the first step of the measure `index` is in. Measure runs are scanned rather than
+	 * looked up by measure number because a repeated measure has one number and several runs, and
+	 * the one wanted is whichever the cursor is playing now.
+	 */
+	private measureStart(index: number): number {
+		const steps = this.score.getSequence().getSteps();
+		const measureIndex = steps[index]?.measureIndex;
+		if (measureIndex === undefined) {
+			return 0;
+		}
+		let start = index;
+		while (start > 0 && steps[start - 1]?.measureIndex === measureIndex) {
+			start--;
+		}
+		return start;
 	}
 
 	dispose(): void {

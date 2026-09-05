@@ -1,4 +1,6 @@
 import {
+	ChevronLeftIcon,
+	ChevronRightIcon,
 	PauseIcon,
 	PlayIcon,
 	SkipBackIcon,
@@ -32,8 +34,9 @@ export interface PlayerProps {
 
 const TIME = 'font-mono text-xs tabular-nums text-muted-foreground';
 
-// Floating transport bar: prev / play-pause / next / mute on top, a seek track flanked by the
-// elapsed and total times below. Seeking (slider or scrub-drag) drives the cursor directly; the
+// Floating transport bar: the two measure jumps outside the two note steps, play-pause between
+// them, and mute off to the right, over a seek track flanked by the elapsed and total times.
+// The filled skip glyphs are the coarse move, the thin chevrons the fine one. Seeking (slider or scrub-drag) drives the cursor directly; the
 // "measure i of N" scrub tooltip is local state since nothing outside the bar needs it.
 export function Player({
 	playerRef,
@@ -47,6 +50,15 @@ export function Player({
 	const [scrubTip, setScrubTip] = useState<{ x: number; text: string } | null>(
 		null,
 	);
+
+	// A measure jump can land outside the scroll box, so every step follows the cursor the way
+	// seeking does.
+	function step(move: () => void) {
+		move();
+		if (session && !session.cursor.isFullyVisible()) {
+			session.cursor.scrollIntoView({ behavior: 'smooth' });
+		}
+	}
 	return (
 		<div
 			ref={playerRef}
@@ -56,17 +68,31 @@ export function Player({
 			// keeps inset-x-4 padding. Rides up with the bottom sheet on mobile, fixed on desktop.
 			className="absolute inset-x-4 bottom-full z-30 mx-auto mb-4 flex max-w-237.5 flex-col gap-2 rounded-2xl border bg-background/95 px-4 py-2.5 shadow-lg backdrop-blur sm:inset-x-6 sm:px-6 md:fixed md:inset-x-auto md:bottom-4 md:left-86 md:right-6 md:mb-0"
 		>
-			<div className="relative flex items-center justify-center gap-5">
+			<div className="relative flex items-center justify-center gap-3">
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon-lg"
-							onClick={() => session?.previous()}
-							aria-label="Previous note"
+							onClick={() => step(() => session?.previousMeasure())}
+							aria-label="Previous measure"
 						>
 							<SkipBackIcon fill="currentColor" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Previous measure</TooltipContent>
+				</Tooltip>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-lg"
+							onClick={() => step(() => session?.previous())}
+							aria-label="Previous note"
+						>
+							<ChevronLeftIcon strokeWidth={1.5} />
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>Previous note</TooltipContent>
@@ -96,13 +122,27 @@ export function Player({
 							type="button"
 							variant="ghost"
 							size="icon-lg"
-							onClick={() => session?.next()}
+							onClick={() => step(() => session?.next())}
 							aria-label="Next note"
+						>
+							<ChevronRightIcon strokeWidth={1.5} />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Next note</TooltipContent>
+				</Tooltip>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-lg"
+							onClick={() => step(() => session?.nextMeasure())}
+							aria-label="Next measure"
 						>
 							<SkipForwardIcon fill="currentColor" />
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>Next note</TooltipContent>
+					<TooltipContent>Next measure</TooltipContent>
 				</Tooltip>
 				<Tooltip>
 					<TooltipTrigger asChild>
