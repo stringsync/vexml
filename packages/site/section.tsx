@@ -1,5 +1,15 @@
 import type { ReactNode } from 'react';
+import {
+	Card,
+	CardAction,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card';
+import { FieldGroup } from '@/components/ui/field';
 
+// One titled block of the control panel, with an optional control (e.g. "Reset all")
+// parked in the header. The body is a FieldGroup, so the Fields inside space themselves.
 export function Section({
 	title,
 	action,
@@ -10,24 +20,14 @@ export function Section({
 	children: ReactNode;
 }) {
 	return (
-		<div className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-			<div className="flex items-center justify-between">
-				<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-					{title}
-				</span>
-				{action}
-			</div>
-			{children}
-		</div>
-	);
-}
-
-export function Or() {
-	return (
-		<div className="flex items-center gap-2 text-xs text-zinc-400">
-			<span className="h-px flex-1 bg-zinc-200" />
-			or
-			<span className="h-px flex-1 bg-zinc-200" />
-		</div>
+		<Card size="sm" className="bg-muted/40">
+			<CardHeader>
+				<CardTitle>{title}</CardTitle>
+				{action && <CardAction>{action}</CardAction>}
+			</CardHeader>
+			<CardContent>
+				<FieldGroup>{children}</FieldGroup>
+			</CardContent>
+		</Card>
 	);
 }

@@ -1,8 +1,11 @@
+import { RotateCcwIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { ResetIcon } from './icons';
+import { Button } from '@/components/ui/button';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Slider } from '@/components/ui/slider';
 
-// One labelled range slider in the Config panel: label + current value + a reset button, the
-// range input, and a description. The caller owns the value and the reset behavior (the four
+// One labelled slider in the Config panel: label + current value + a reset button, the
+// slider, and a description. The caller owns the value and the reset behavior (the four
 // scalar config keys reset alike; reference width strips the layout object), so onChange/onReset/
 // canReset are passed in.
 export interface ConfigSliderProps {
@@ -14,7 +17,7 @@ export interface ConfigSliderProps {
 	min: number;
 	max: number;
 	step: number;
-	onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	onChange: (value: number) => void;
 	onReset: () => void;
 	/* Whether this knob differs from vexml's default, which is what enables the reset button. */
 	canReset: boolean;
@@ -35,35 +38,32 @@ export function ConfigSlider({
 	description,
 }: ConfigSliderProps) {
 	return (
-		<div className="flex flex-col gap-1.5">
-			<label
-				htmlFor={id}
-				className="flex items-center justify-between text-xs font-medium text-zinc-500"
-			>
+		<Field>
+			<FieldLabel htmlFor={id} className="w-full justify-between">
 				{label}
 				<span className="flex items-center gap-1.5">
-					<span className="font-mono text-zinc-400">{display}</span>
-					<button
+					<span className="font-mono text-muted-foreground">{display}</span>
+					<Button
 						type="button"
+						variant="ghost"
+						size="icon-xs"
 						onClick={onReset}
 						disabled={!canReset}
 						aria-label={`Reset ${label.toLowerCase()}`}
-						className="text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
 					>
-						<ResetIcon />
-					</button>
+						<RotateCcwIcon />
+					</Button>
 				</span>
-			</label>
-			<input
+			</FieldLabel>
+			<Slider
 				id={id}
-				type="range"
 				min={min}
 				max={max}
 				step={step}
-				value={value}
-				onChange={onChange}
+				value={[value]}
+				onValueChange={(next) => onChange(next[0] ?? value)}
 			/>
-			<p className="text-xs text-zinc-400">{description}</p>
-		</div>
+			<FieldDescription>{description}</FieldDescription>
+		</Field>
 	);
 }

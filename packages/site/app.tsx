@@ -1,6 +1,41 @@
 import type { SystemOverflow } from '@stringsync/vexml';
 import { useDisposerEffect, useReactive, useResource } from '@webappwiz/react';
+import {
+	AlertCircleIcon,
+	ChevronLeftIcon,
+	ChevronRightIcon,
+	ChevronUpIcon,
+	UploadIcon,
+	XIcon,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
+	Field,
+	FieldContent,
+	FieldDescription,
+	FieldLabel,
+	FieldSeparator,
+} from '@/components/ui/field';
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import { ConfigSlider } from './config-slider';
 import {
 	DEFAULT_FIXTURE,
@@ -12,11 +47,10 @@ import {
 	FAST_RENDER_MS,
 } from './constants';
 import { Header } from './header';
-import { ICON, PlayerIcon } from './icons';
 import { INSTRUMENTS } from './instruments';
 import { Player } from './player';
 import { ScoreFit } from './score-fit';
-import { Or, Section } from './section';
+import { Section } from './section';
 import { SiteModel } from './site-model';
 
 // Vite reads the fixtures straight from packages/integration at build time (fs.allow:
@@ -37,9 +71,6 @@ const fixtures = {
 	names: () => fixtureNames,
 	load: (name: string) => loaders[name]?.(),
 };
-
-const stepper =
-	'flex items-center justify-center rounded-md border border-zinc-300 bg-white px-2 text-zinc-700 hover:bg-zinc-100 disabled:opacity-40 disabled:hover:bg-white';
 
 // Hoisted, not inline: useResource rebuilds when the factory's identity changes, so an arrow
 // written at the call site would build (and dispose) a fresh model on every render.
@@ -207,7 +238,7 @@ export default function App() {
 	}
 
 	return (
-		<div className="flex h-screen flex-col bg-zinc-50 text-zinc-900">
+		<div className="flex h-screen flex-col bg-muted/40 text-foreground">
 			<Header />
 
 			<main className="flex min-h-0 flex-1">
@@ -221,7 +252,7 @@ export default function App() {
 				{/* No overflow on the aside: Safari clips position:fixed descendants (the Player)
 				    to an overflow ancestor's box. Desktop scrolling lives on the inner config
 				    div below instead, which the fixed Player is not a descendant of. */}
-				<aside className="fixed inset-x-0 bottom-0 z-20 flex flex-col rounded-t-xl border-t border-zinc-200 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.1)] md:static md:max-h-none md:w-80 md:shrink-0 md:rounded-none md:border-t-0 md:border-r md:shadow-none">
+				<aside className="fixed inset-x-0 bottom-0 z-20 flex flex-col rounded-t-xl border-t bg-background shadow-[0_-4px_16px_rgba(0,0,0,0.1)] md:static md:max-h-none md:w-80 md:shrink-0 md:rounded-none md:border-t-0 md:border-r md:shadow-none">
 					{input != null && initialized && (
 						<Player
 							playerRef={playerRef}
@@ -234,32 +265,21 @@ export default function App() {
 						/>
 					)}
 					{/* top part: always visible, taps toggle the panel */}
-					<button
+					<Button
 						type="button"
+						variant="ghost"
 						onClick={() => {
 							setSheetToggled(true);
 							setMobileOpen((o) => !o);
 						}}
 						aria-expanded={mobileOpen}
 						aria-label={mobileOpen ? 'Hide controls' : 'Show controls'}
-						className={`flex w-full items-center justify-center rounded-t-xl py-3 text-zinc-600 transition-shadow hover:bg-zinc-100 active:bg-zinc-200 md:hidden ${scrolled ? 'shadow-[0_4px_8px_rgba(0,0,0,0.08)]' : ''}`}
+						className={`h-auto w-full rounded-t-xl rounded-b-none py-3 text-muted-foreground transition-shadow md:hidden ${scrolled ? 'shadow-[0_4px_8px_rgba(0,0,0,0.08)]' : ''}`}
 					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							fill="none"
-							viewBox="0 0 24 24"
-							strokeWidth={1.5}
-							stroke="currentColor"
-							aria-hidden="true"
+						<ChevronUpIcon
 							className={`size-6 transition-transform duration-300 ${mobileOpen ? 'rotate-180' : ''}`}
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								d="m4.5 15.75 7.5-7.5 7.5 7.5"
-							/>
-						</svg>
-					</button>
+						/>
+					</Button>
 
 					{/* grid-rows 0fr↔1fr animates the height open/closed (only once tapped, so the
 					    default collapsed state never slides in); its end re-fits the score box */}
@@ -273,8 +293,9 @@ export default function App() {
 								className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto p-4 md:max-h-[calc(100vh-8rem)]"
 							>
 								<Section title="MusicXML">
-									<div className="flex flex-col gap-1.5">
-										<label className="cursor-pointer rounded-md bg-zinc-900 px-3 py-2 text-center text-sm font-medium text-white hover:bg-zinc-700">
+									<Button asChild className="w-full cursor-pointer">
+										<label>
+											<UploadIcon data-icon="inline-start" />
 											Choose File
 											<input
 												type="file"
@@ -283,148 +304,164 @@ export default function App() {
 												onChange={onFile}
 											/>
 										</label>
-									</div>
+									</Button>
 
-									<Or />
+									<FieldSeparator>or</FieldSeparator>
 
-									<div className="flex flex-col gap-1.5">
-										<label
-											htmlFor="example"
-											className="text-xs font-medium text-zinc-500"
-										>
-											Select an Example
-										</label>
-										<div className="flex items-stretch gap-1.5">
-											<button
+									<Field>
+										<FieldLabel htmlFor="example">Select an Example</FieldLabel>
+										<div className="flex items-center gap-1.5">
+											<Button
 												type="button"
+												variant="outline"
+												size="icon"
 												disabled={!prevFixture}
 												onClick={() =>
 													prevFixture && model.document.loadFixture(prevFixture)
 												}
 												aria-label="Previous example"
-												className={stepper}
 											>
-												<PlayerIcon d={ICON.prev} className="size-4" />
-											</button>
-											<select
-												id="example"
+												<ChevronLeftIcon />
+											</Button>
+											<Select
 												value={fixture}
-												onChange={(e) =>
-													model.document.loadFixture(e.target.value)
+												onValueChange={(name) =>
+													model.document.loadFixture(name)
 												}
-												className="min-w-0 flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700"
 											>
-												<option value="">Load an example…</option>
-												{fixtureNames.map((name) => (
-													<option key={name} value={name}>
-														{name}
-													</option>
-												))}
-											</select>
-											<button
+												<SelectTrigger id="example" className="min-w-0 flex-1">
+													<SelectValue placeholder="Load an example…" />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectGroup>
+														{fixtureNames.map((name) => (
+															<SelectItem key={name} value={name}>
+																{name}
+															</SelectItem>
+														))}
+													</SelectGroup>
+												</SelectContent>
+											</Select>
+											<Button
 												type="button"
+												variant="outline"
+												size="icon"
 												disabled={!nextFixture}
 												onClick={() =>
 													nextFixture && model.document.loadFixture(nextFixture)
 												}
 												aria-label="Next example"
-												className={stepper}
 											>
-												<PlayerIcon d={ICON.next} className="size-4" />
-											</button>
+												<ChevronRightIcon />
+											</Button>
 										</div>
-									</div>
+									</Field>
 
-									<Or />
+									<FieldSeparator>or</FieldSeparator>
 
-									<details className="flex flex-col gap-1.5">
-										<summary className="cursor-pointer text-xs font-medium text-zinc-500">
-											Edit MusicXML
-										</summary>
-										<textarea
-											id="musicxml"
-											value={text}
-											onChange={onTextChange}
-											placeholder="Paste MusicXML here"
-											spellCheck={false}
-											className="h-48 w-full resize-y rounded-md border border-zinc-300 bg-white p-2 font-mono text-xs text-zinc-700"
-										/>
-									</details>
+									<Collapsible className="flex flex-col gap-2">
+										<CollapsibleTrigger asChild>
+											<Button
+												type="button"
+												variant="ghost"
+												size="sm"
+												className="w-fit text-muted-foreground"
+											>
+												Edit MusicXML
+											</Button>
+										</CollapsibleTrigger>
+										<CollapsibleContent>
+											<Textarea
+												id="musicxml"
+												value={text}
+												onChange={onTextChange}
+												placeholder="Paste MusicXML here"
+												spellCheck={false}
+												className="h-48 resize-y font-mono text-xs"
+											/>
+										</CollapsibleContent>
+									</Collapsible>
 								</Section>
 
 								<Section
 									title="Config"
 									action={
-										<button
+										<Button
 											type="button"
+											variant="ghost"
+											size="sm"
 											onClick={() => model.config.resetAll()}
 											disabled={!canReset}
-											className="text-xs font-medium text-zinc-400 hover:text-zinc-600 disabled:cursor-default disabled:text-zinc-300 disabled:hover:text-zinc-300"
+											className="text-muted-foreground"
 										>
 											Reset all
-										</button>
+										</Button>
 									}
 								>
-									<p className="text-xs text-zinc-400">
+									<FieldDescription>
 										With only a single system, some controls (e.g. system
 										spacing and max system fill) won't have a visible effect.
-									</p>
-									<div className="flex flex-col gap-1.5">
-										<label
-											htmlFor="instrument"
-											className="text-xs font-medium text-zinc-500"
-										>
-											Instrument
-										</label>
-										<select
-											id="instrument"
+									</FieldDescription>
+
+									<Field>
+										<FieldLabel htmlFor="instrument">Instrument</FieldLabel>
+										<Select
 											value={instrumentName}
-											onChange={(e) => model.instrument.setName(e.target.value)}
-											className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-700"
+											onValueChange={(name) => model.instrument.setName(name)}
 										>
-											{INSTRUMENTS.map((i) => (
-												<option key={i.value} value={i.value}>
-													{i.label}
-												</option>
-											))}
-										</select>
-										<p className="text-xs text-zinc-400">
+											<SelectTrigger id="instrument">
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectGroup>
+													{INSTRUMENTS.map((i) => (
+														<SelectItem key={i.value} value={i.value}>
+															{i.label}
+														</SelectItem>
+													))}
+												</SelectGroup>
+											</SelectContent>
+										</Select>
+										<FieldDescription>
 											The synth voice used for playback and note previews.
-										</p>
-									</div>
-									<div className="flex flex-col gap-1.5">
-										<label
-											htmlFor="notationFont"
-											className="text-xs font-medium text-zinc-500"
-										>
+										</FieldDescription>
+									</Field>
+
+									<Field>
+										<FieldLabel htmlFor="notationFont">
 											Notation font
-										</label>
-										<select
-											id="notationFont"
+										</FieldLabel>
+										<Select
 											value={notationFont}
-											onChange={(e) => {
-												if (e.target.value === 'Bravura') {
+											onValueChange={(family) => {
+												if (family === 'Bravura') {
 													model.config.clear('fonts');
 												} else {
 													model.config.patch({
 														fonts: {
 															...config.fonts,
-															notation: { family: e.target.value },
+															notation: { family },
 														},
 													});
 												}
 											}}
-											className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-700"
 										>
-											<option value="Bravura">Bravura</option>
-											<option value="Petaluma">Petaluma</option>
-											<option value="Gonville">Gonville</option>
-										</select>
-										<p className="text-xs text-zinc-400">
+											<SelectTrigger id="notationFont">
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectGroup>
+													<SelectItem value="Bravura">Bravura</SelectItem>
+													<SelectItem value="Petaluma">Petaluma</SelectItem>
+													<SelectItem value="Gonville">Gonville</SelectItem>
+												</SelectGroup>
+											</SelectContent>
+										</Select>
+										<FieldDescription>
 											The engraving font for noteheads, clefs, accidentals, and
 											rests. Bravura is the default.
-										</p>
-									</div>
+										</FieldDescription>
+									</Field>
 
 									<ConfigSlider
 										id="noteSpacing"
@@ -434,10 +471,8 @@ export default function App() {
 										min={12}
 										max={120}
 										step={1}
-										onChange={(e) =>
-											model.config.patch({
-												noteSpacing: e.target.valueAsNumber,
-											})
+										onChange={(noteSpacing) =>
+											model.config.patch({ noteSpacing })
 										}
 										onReset={() => model.config.clear('noteSpacing')}
 										canReset={config.noteSpacing !== undefined}
@@ -452,10 +487,8 @@ export default function App() {
 										min={1}
 										max={30}
 										step={1}
-										onChange={(e) =>
-											model.config.patch({
-												softmaxFactor: e.target.valueAsNumber,
-											})
+										onChange={(softmaxFactor) =>
+											model.config.patch({ softmaxFactor })
 										}
 										onReset={() => model.config.clear('softmaxFactor')}
 										canReset={config.softmaxFactor !== undefined}
@@ -470,10 +503,8 @@ export default function App() {
 										min={10}
 										max={50}
 										step={1}
-										onChange={(e) =>
-											model.config.patch({
-												systemSpacing: e.target.valueAsNumber,
-											})
+										onChange={(systemSpacing) =>
+											model.config.patch({ systemSpacing })
 										}
 										onReset={() => model.config.clear('systemSpacing')}
 										canReset={config.systemSpacing !== undefined}
@@ -488,39 +519,35 @@ export default function App() {
 										min={0.1}
 										max={1}
 										step={0.05}
-										onChange={(e) =>
-											model.config.patch({
-												maxSystemFill: e.target.valueAsNumber,
-											})
+										onChange={(maxSystemFill) =>
+											model.config.patch({ maxSystemFill })
 										}
 										onReset={() => model.config.clear('maxSystemFill')}
 										canReset={config.maxSystemFill !== undefined}
 										description="How full a system gets before the next measure wraps to a new line. Lower leaves more air; 1 packs each line to the edge."
 									/>
 
-									<div className="flex flex-col gap-1.5">
-										<label
-											htmlFor="honorSystemBreaks"
-											className="flex items-center gap-2 text-xs font-medium text-zinc-500"
-										>
-											<input
-												id="honorSystemBreaks"
-												type="checkbox"
-												checked={layout?.honorSystemBreaks ?? true}
-												onChange={(e) =>
-													model.config.patchLayout({
-														honorSystemBreaks: e.target.checked,
-													})
-												}
-											/>
-											Honor system breaks
-										</label>
-										<p className="text-xs text-zinc-400">
-											Whether a <code>&lt;print new-system="yes"&gt;</code> in
-											the document forces a line break. Off wraps purely on
-											width.
-										</p>
-									</div>
+									<Field orientation="horizontal">
+										<Checkbox
+											id="honorSystemBreaks"
+											checked={layout?.honorSystemBreaks ?? true}
+											onCheckedChange={(checked) =>
+												model.config.patchLayout({
+													honorSystemBreaks: checked === true,
+												})
+											}
+										/>
+										<FieldContent>
+											<FieldLabel htmlFor="honorSystemBreaks">
+												Honor system breaks
+											</FieldLabel>
+											<FieldDescription>
+												Whether a <code>&lt;print new-system="yes"&gt;</code> in
+												the document forces a line break. Off wraps purely on
+												width.
+											</FieldDescription>
+										</FieldContent>
+									</Field>
 
 									<ConfigSlider
 										id="width"
@@ -530,45 +557,43 @@ export default function App() {
 										min={400}
 										max={2000}
 										step={50}
-										onChange={(e) =>
-											model.config.patchLayout({
-												referenceWidth: e.target.valueAsNumber,
-											})
+										onChange={(referenceWidth) =>
+											model.config.patchLayout({ referenceWidth })
 										}
 										onReset={() => model.config.clearLayout('referenceWidth')}
 										canReset={layout?.referenceWidth !== undefined}
 										description="The width the score is engraved to; the rendering then scales up or down to fit its container. Wider fits more measures per system before wrapping."
 									/>
 
-									<div className="flex flex-col gap-1.5">
-										<label
-											htmlFor="overflow"
-											className="text-xs font-medium text-zinc-500"
-										>
-											Overflow
-										</label>
-										<select
-											id="overflow"
+									<Field>
+										<FieldLabel htmlFor="overflow">Overflow</FieldLabel>
+										<Select
 											value={layout?.overflow ?? 'wrap'}
-											onChange={(e) =>
+											onValueChange={(overflow) =>
 												model.config.patchLayout({
-													overflow: e.target.value as SystemOverflow,
+													overflow: overflow as SystemOverflow,
 												})
 											}
-											className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-700"
 										>
-											<option value="wrap">wrap</option>
-											<option value="allow">allow</option>
-											<option value="widen">widen</option>
-										</select>
-										<p className="text-xs text-zinc-400">
+											<SelectTrigger id="overflow">
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectGroup>
+													<SelectItem value="wrap">wrap</SelectItem>
+													<SelectItem value="allow">allow</SelectItem>
+													<SelectItem value="widen">widen</SelectItem>
+												</SelectGroup>
+											</SelectContent>
+										</Select>
+										<FieldDescription>
 											What gives when a document's engraved line can't fit the
 											reference width: <code>wrap</code> breaks the line anyway,{' '}
 											<code>allow</code> lets it stick out past the width, and{' '}
 											<code>widen</code> grows the width until it fits. The
 											notes are never squeezed together far enough to collide.
-										</p>
-									</div>
+										</FieldDescription>
+									</Field>
 								</Section>
 							</div>
 						</div>
@@ -580,32 +605,40 @@ export default function App() {
 					onDragOver={onDragOver}
 					onDragLeave={onDragLeave}
 					onDrop={onDrop}
-					className={`min-w-0 flex-1 overflow-auto border-2 border-dashed ${dragging ? 'border-blue-400 bg-blue-50/40' : 'border-transparent'}`}
+					className={`min-w-0 flex-1 overflow-auto border-2 border-dashed ${dragging ? 'border-primary bg-primary/5' : 'border-transparent'}`}
 				>
 					{/* relative + min-h-full so the loading overlay covers the full scroll content, not just the visible area. Padding lives here (not on section) so inset-0 covers it too. */}
 					<div className="relative min-h-full py-6 pb-20 sm:px-6 md:pb-6">
 						<div className="mx-auto mb-6 flex w-fit items-center gap-2">
 							{error ? (
-								<pre className="w-fit whitespace-pre-wrap rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
-									{error}
-								</pre>
+								<Alert variant="destructive" className="w-fit">
+									<AlertCircleIcon />
+									<AlertTitle>Could not render this document</AlertTitle>
+									<AlertDescription>
+										<pre className="whitespace-pre-wrap font-mono text-xs">
+											{error}
+										</pre>
+									</AlertDescription>
+								</Alert>
 							) : (
 								renderMs != null && (
-									<p className="w-fit rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
+									<Badge variant="secondary">
 										Rendered in {renderMs.toFixed(1)} ms
-									</p>
+									</Badge>
 								)
 							)}
 							{/* Nothing to clear once the default example is what's showing. */}
 							{fixture !== DEFAULT_FIXTURE && (
-								<button
+								<Button
 									type="button"
+									variant="outline"
+									size="sm"
 									onClick={() => model.document.clear()}
 									title="Clear the saved score and reload the default example"
-									className="flex items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
 								>
-									Clear ✕
-								</button>
+									Clear
+									<XIcon data-icon="inline-end" />
+								</Button>
 							)}
 						</div>
 						{input != null && (
@@ -617,19 +650,19 @@ export default function App() {
 								ref={containerRef}
 								// invisible (not hidden) until initialized so the container keeps its
 								// width — the canvas fits against it and would fit against 0 if removed.
-								className={`relative mx-auto w-full max-w-237.5 bg-white py-8 px-4 shadow-md ring-1 ring-zinc-200 sm:py-16 ${initialized ? '' : 'invisible'}`}
+								className={`relative mx-auto w-full max-w-237.5 bg-card py-8 px-4 shadow-md ring-1 ring-border sm:py-16 ${initialized ? '' : 'invisible'}`}
 							/>
 						)}
 						{(!initialized || debouncing) && (
 							<div className="pointer-events-none absolute inset-0 bg-black/40">
 								{/* sticky so the badge stays centered in the viewport even when the backdrop is taller than the screen */}
 								<div className="sticky top-0 flex h-screen items-center justify-center">
-									<div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-white px-6 py-5 shadow-lg">
-										<span className="size-8 animate-spin rounded-full border-4 border-zinc-300 border-t-zinc-600" />
-										<span className="text-sm font-medium text-zinc-600">
+									<Card className="flex-row items-center gap-3 px-6 py-5 shadow-lg">
+										<Spinner className="size-6" />
+										<span className="text-sm font-medium text-muted-foreground">
 											Loading…
 										</span>
-									</div>
+									</Card>
 								</div>
 							</div>
 						)}
@@ -639,7 +672,7 @@ export default function App() {
 
 			{tooltip && (
 				<div
-					className="pointer-events-none fixed z-30 -translate-x-1/2 -translate-y-full whitespace-pre-line rounded text-center bg-zinc-900/90 px-2 py-1 font-mono text-xs text-white shadow-lg"
+					className="pointer-events-none fixed z-30 -translate-x-1/2 -translate-y-full whitespace-pre-line rounded-md bg-foreground px-2 py-1 text-center font-mono text-xs text-background shadow-lg"
 					style={{ left: tooltip.x, top: tooltip.y - 16 }}
 				>
 					{tooltip.text}
