@@ -20,7 +20,9 @@ export function Section({
 	children: ReactNode;
 }) {
 	return (
-		<Card size="sm" className="bg-muted/40">
+		// shrink-0: the panel that holds these is a scrolling flex column, and Card clips
+		// its own overflow, so a shrinkable card would hide its last fields rather than scroll.
+		<Card size="sm" className="shrink-0 bg-muted/40">
 			<CardHeader>
 				<CardTitle>{title}</CardTitle>
 				{action && <CardAction>{action}</CardAction>}
