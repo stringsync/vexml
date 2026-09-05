@@ -1,30 +1,23 @@
 import type { SystemOverflow } from '@stringsync/vexml';
 import { useDisposerEffect, useReactive, useResource } from '@webappwiz/react';
 import {
-	CheckIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
 	CircleXIcon,
+	Rows3Icon,
+	SlidersVerticalIcon,
 	UploadIcon,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import {
-	Field,
-	FieldContent,
-	FieldDescription,
-	FieldLabel,
-	FieldSeparator,
-} from '@/components/ui/field';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import {
 	Select,
 	SelectContent,
@@ -40,6 +33,7 @@ import {
 	SheetTitle,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ConfigSlider } from './config-slider';
@@ -57,7 +51,8 @@ import { INSTRUMENTS } from './instruments';
 import { LayoutToggle } from './layout-toggle';
 import { Player } from './player';
 import { ScoreFit } from './score-fit';
-import { Section } from './section';
+import { Section, SectionReset } from './section';
+import { Segmented, type SegmentedOption } from './segmented';
 import { SiteModel } from './site-model';
 
 // Vite reads the fixtures straight from packages/integration at build time (fs.allow:
@@ -78,6 +73,13 @@ const fixtures = {
 	names: () => fixtureNames,
 	load: (name: string) => loaders[name]?.(),
 };
+
+// The overflow modes, in the order they sit in the segmented control.
+const OVERFLOWS: ReadonlyArray<SegmentedOption<SystemOverflow>> = [
+	{ value: 'wrap', label: 'wrap' },
+	{ value: 'allow', label: 'allow' },
+	{ value: 'widen', label: 'widen' },
+];
 
 // Hoisted, not inline: useResource rebuilds when the factory's identity changes, so an arrow
 // written at the call site would build (and dispose) a fresh model on every render.
@@ -169,7 +171,7 @@ export default function App() {
 	}, [isMobile]);
 
 	// Re-render the score whenever what to draw, or how to draw it, changes. The counter keys the
-	// timing badge: two renders can land on the same duration, and the badge should replay its
+	// render-time line: two renders can land on the same duration, and it should replay its
 	// entrance either way.
 	useEffect(() => {
 		const container = containerRef.current;
@@ -255,25 +257,28 @@ export default function App() {
 	const controls = (
 		<>
 			<Section
+				icon={UploadIcon}
 				title="MusicXML"
 				action={
-					<Button
-						type="button"
-						variant="ghost"
-						size="sm"
+					<SectionReset
 						onClick={() => model.document.clear()}
 						// Nothing to clear once the default example is what's showing.
 						disabled={fixture === DEFAULT_FIXTURE}
 						title="Clear the saved score and reload the default example"
-					>
-						Reset
-					</Button>
+					/>
 				}
 			>
-				<Button asChild className="w-full cursor-pointer">
+				{/* Outlined rather than filled: it is the card's primary action, but a pink
+				    slab at the top of the panel shouts over the score it is there to load. */}
+				<Button
+					asChild
+					variant="outline"
+					size="xl"
+					className="w-full cursor-pointer font-semibold"
+				>
 					<label>
-						<UploadIcon data-icon="inline-start" />
-						Choose File
+						Choose file
+						<span className="font-normal text-faint">.xml .musicxml .mxl</span>
 						<input
 							type="file"
 							accept=".xml,.musicxml,.mxl"
@@ -283,15 +288,19 @@ export default function App() {
 					</label>
 				</Button>
 
-				<FieldSeparator>or</FieldSeparator>
-
-				<Field>
-					<FieldLabel htmlFor="example">Select an Example</FieldLabel>
+				<Field className="gap-1.5">
+					<FieldLabel
+						htmlFor="example"
+						className="text-xs font-normal text-muted-foreground"
+					>
+						Or pick an example
+					</FieldLabel>
 					<div className="flex items-center gap-1.5">
 						<Button
 							type="button"
 							variant="outline"
-							size="icon"
+							size="icon-lg"
+							className="bg-muted"
 							disabled={!prevFixture}
 							onClick={() =>
 								prevFixture && model.document.loadFixture(prevFixture)
@@ -304,7 +313,10 @@ export default function App() {
 							value={fixture}
 							onValueChange={(name) => model.document.loadFixture(name)}
 						>
-							<SelectTrigger id="example" className="min-w-0 flex-1">
+							<SelectTrigger
+								id="example"
+								className="min-w-0 flex-1 font-mono text-sm data-[size=default]:h-9"
+							>
 								<SelectValue placeholder="Load an example…" />
 							</SelectTrigger>
 							<SelectContent>
@@ -320,7 +332,8 @@ export default function App() {
 						<Button
 							type="button"
 							variant="outline"
-							size="icon"
+							size="icon-lg"
+							className="bg-muted"
 							disabled={!nextFixture}
 							onClick={() =>
 								nextFixture && model.document.loadFixture(nextFixture)
@@ -332,8 +345,6 @@ export default function App() {
 					</div>
 				</Field>
 
-				<FieldSeparator>or</FieldSeparator>
-
 				<Collapsible className="flex flex-col gap-2">
 					<CollapsibleTrigger asChild>
 						{/* The chevron turns down when it opens, so the row reads as
@@ -342,7 +353,7 @@ export default function App() {
 							type="button"
 							variant="ghost"
 							size="sm"
-							className="w-fit [&>svg]:transition-transform [&[data-state=open]>svg]:rotate-90"
+							className="h-auto w-fit gap-1.5 px-0 text-sm text-secondary-foreground hover:bg-transparent [&>svg]:size-3.5 [&>svg]:transition-transform [&[data-state=open]>svg]:rotate-90"
 						>
 							<ChevronRightIcon data-icon="inline-start" />
 							Edit MusicXML
@@ -355,39 +366,49 @@ export default function App() {
 							onChange={onTextChange}
 							placeholder="Paste MusicXML here"
 							spellCheck={false}
-							className="h-48 resize-y font-mono text-xs"
+							className="h-48 resize-y font-mono text-2xs"
 						/>
 					</CollapsibleContent>
 				</Collapsible>
+
+				{/* Below md there is no meta row above the score for the view toggle to sit in,
+				    so it rides along with the document controls instead. */}
+				<Field
+					orientation="horizontal"
+					className="justify-between gap-3 md:hidden"
+				>
+					<FieldLabel className="font-normal text-muted-foreground">
+						View
+					</FieldLabel>
+					<LayoutToggle
+						size="sm"
+						value={layoutType}
+						onChange={(type) => model.config.setLayoutType(type)}
+					/>
+				</Field>
 			</Section>
 
-			<Section
-				title="Config"
-				action={
-					<Button
-						type="button"
-						variant="ghost"
-						size="sm"
-						onClick={() => model.config.resetAll()}
-						disabled={!canReset}
+			<Section icon={SlidersVerticalIcon} title="Playback">
+				<Field
+					orientation="horizontal"
+					className="justify-between gap-3"
+					title="The synth voice used for playback and note previews."
+				>
+					<FieldLabel
+						htmlFor="instrument"
+						className="font-normal text-muted-foreground"
 					>
-						Reset
-					</Button>
-				}
-			>
-				<FieldDescription>
-					{panoramic
-						? 'The panoramic view puts every measure on one system, so the controls that decide where a line breaks — and how systems stack — are hidden here.'
-						: "With only a single system, some controls (e.g. system spacing and max system fill) won't have a visible effect."}
-				</FieldDescription>
-
-				<Field>
-					<FieldLabel htmlFor="instrument">Instrument</FieldLabel>
+						Instrument
+					</FieldLabel>
 					<Select
 						value={instrumentName}
 						onValueChange={(name) => model.instrument.setName(name)}
 					>
-						<SelectTrigger id="instrument">
+						<SelectTrigger
+							id="instrument"
+							size="sm"
+							className="h-7.5 text-xs font-medium"
+						>
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
@@ -400,13 +421,31 @@ export default function App() {
 							</SelectGroup>
 						</SelectContent>
 					</Select>
-					<FieldDescription>
-						The synth voice used for playback and note previews.
-					</FieldDescription>
 				</Field>
+			</Section>
 
-				<Field>
-					<FieldLabel htmlFor="notationFont">Notation font</FieldLabel>
+			<Section
+				icon={Rows3Icon}
+				title="Layout"
+				gap="lg"
+				action={
+					<SectionReset
+						onClick={() => model.config.resetAll()}
+						disabled={!canReset}
+					/>
+				}
+			>
+				<Field
+					orientation="horizontal"
+					className="justify-between gap-3"
+					title="The engraving font for noteheads, clefs, accidentals, and rests. Bravura is the default."
+				>
+					<FieldLabel
+						htmlFor="notationFont"
+						className="font-normal text-muted-foreground"
+					>
+						Notation font
+					</FieldLabel>
 					<Select
 						value={notationFont}
 						onValueChange={(family) => {
@@ -422,7 +461,11 @@ export default function App() {
 							}
 						}}
 					>
-						<SelectTrigger id="notationFont">
+						<SelectTrigger
+							id="notationFont"
+							size="sm"
+							className="h-7.5 text-xs font-medium"
+						>
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
@@ -433,10 +476,6 @@ export default function App() {
 							</SelectGroup>
 						</SelectContent>
 					</Select>
-					<FieldDescription>
-						The engraving font for noteheads, clefs, accidentals, and rests.
-						Bravura is the default.
-					</FieldDescription>
 				</Field>
 
 				<ConfigSlider
@@ -448,8 +487,6 @@ export default function App() {
 					max={120}
 					step={1}
 					onChange={(noteSpacing) => model.config.patch({ noteSpacing })}
-					onReset={() => model.config.clear('noteSpacing')}
-					canReset={config.noteSpacing !== undefined}
 					description="How much horizontal space notes get: the px a quarter note is allotted. Higher spreads every measure wider."
 				/>
 
@@ -462,8 +499,6 @@ export default function App() {
 					max={30}
 					step={1}
 					onChange={(softmaxFactor) => model.config.patch({ softmaxFactor })}
-					onReset={() => model.config.clear('softmaxFactor')}
-					canReset={config.softmaxFactor !== undefined}
 					description="How that space is divided among notes. Higher exaggerates the width difference between long and short notes."
 				/>
 
@@ -482,8 +517,6 @@ export default function App() {
 							onChange={(systemSpacing) =>
 								model.config.patch({ systemSpacing })
 							}
-							onReset={() => model.config.clear('systemSpacing')}
-							canReset={config.systemSpacing !== undefined}
 							description="Vertical gap between stacked systems. Lower packs systems closer together down the page."
 						/>
 
@@ -498,31 +531,8 @@ export default function App() {
 							onChange={(maxSystemFill) =>
 								model.config.patch({ maxSystemFill })
 							}
-							onReset={() => model.config.clear('maxSystemFill')}
-							canReset={config.maxSystemFill !== undefined}
 							description="How full a system gets before the next measure wraps to a new line. Lower leaves more air; 1 packs each line to the edge."
 						/>
-
-						<Field orientation="horizontal">
-							<Checkbox
-								id="honorSystemBreaks"
-								checked={layout?.honorSystemBreaks ?? true}
-								onCheckedChange={(checked) =>
-									model.config.patchLayout({
-										honorSystemBreaks: checked === true,
-									})
-								}
-							/>
-							<FieldContent>
-								<FieldLabel htmlFor="honorSystemBreaks">
-									Honor system breaks
-								</FieldLabel>
-								<FieldDescription>
-									Whether a <code>&lt;print new-system="yes"&gt;</code> in the
-									document forces a line break. Off wraps purely on width.
-								</FieldDescription>
-							</FieldContent>
-						</Field>
 
 						<ConfigSlider
 							id="width"
@@ -535,39 +545,46 @@ export default function App() {
 							onChange={(referenceWidth) =>
 								model.config.patchLayout({ referenceWidth })
 							}
-							onReset={() => model.config.clearLayout('referenceWidth')}
-							canReset={layout?.referenceWidth !== undefined}
 							description="The width the score is engraved to; the rendering then scales up or down to fit its container. Wider fits more measures per system before wrapping."
 						/>
 
-						<Field>
-							<FieldLabel htmlFor="overflow">Overflow</FieldLabel>
-							<Select
-								value={layout?.overflow ?? 'wrap'}
-								onValueChange={(overflow) =>
+						<Field className="gap-2">
+							<FieldLabel className="font-normal text-muted-foreground">
+								Overflow
+							</FieldLabel>
+							<Segmented
+								value={(layout?.overflow ?? 'wrap') as SystemOverflow}
+								onChange={(overflow) => model.config.patchLayout({ overflow })}
+								options={OVERFLOWS}
+								label="Overflow"
+								size="sm"
+								mono
+								stretch
+								className="bg-muted"
+							/>
+							<FieldDescription className="text-2xs text-faint">
+								What gives when an engraved line can't fit the reference width.
+							</FieldDescription>
+						</Field>
+
+						<Field orientation="horizontal" className="justify-between gap-3">
+							<FieldLabel
+								htmlFor="honorSystemBreaks"
+								className="font-normal text-muted-foreground"
+								title={`Whether a <print new-system="yes"> in the document forces a line break. Off wraps purely on width.`}
+							>
+								Honor system breaks
+							</FieldLabel>
+							<Switch
+								id="honorSystemBreaks"
+								size="lg"
+								checked={layout?.honorSystemBreaks ?? true}
+								onCheckedChange={(checked) =>
 									model.config.patchLayout({
-										overflow: overflow as SystemOverflow,
+										honorSystemBreaks: checked === true,
 									})
 								}
-							>
-								<SelectTrigger id="overflow">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectGroup>
-										<SelectItem value="wrap">wrap</SelectItem>
-										<SelectItem value="allow">allow</SelectItem>
-										<SelectItem value="widen">widen</SelectItem>
-									</SelectGroup>
-								</SelectContent>
-							</Select>
-							<FieldDescription>
-								What gives when a document's engraved line can't fit the
-								reference width: <code>wrap</code> breaks the line anyway,{' '}
-								<code>allow</code> lets it stick out past the width, and{' '}
-								<code>widen</code> grows the width until it fits. The notes are
-								never squeezed together far enough to collide.
-							</FieldDescription>
+							/>
 						</Field>
 					</>
 				)}
@@ -576,49 +593,49 @@ export default function App() {
 	);
 
 	return (
-		<div className="flex h-screen flex-col bg-muted/40 text-foreground">
-			<Header onOpenControls={() => setControlsOpen(true)} />
+		<div className="flex h-screen flex-col bg-background text-foreground">
+			<Header
+				controlsOpen={controlsOpen}
+				onOpenControls={() => setControlsOpen(true)}
+			/>
 
 			<main className="flex min-h-0 flex-1">
 				{/* Desktop keeps the panel in the layout; below md it lives in the Sheet below. */}
-				<aside className="hidden w-80 shrink-0 flex-col border-r bg-background md:flex">
-					<div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
-						{controls}
-					</div>
+				<aside className="hidden w-80 shrink-0 flex-col gap-3 overflow-y-auto border-r bg-card px-3.5 py-4 md:flex">
+					{controls}
 				</aside>
 
 				<Sheet open={controlsOpen} onOpenChange={setControlsOpen}>
-					<SheetContent side="left" className="w-80 gap-0">
-						{/* pb-0 here and p-4 below, so the scroll box starts clear of the title:
+					<SheetContent side="left" className="w-80 gap-0 shadow-sheet">
+						{/* pb-0 here and p-3.5 below, so the scroll box starts clear of the title:
 						    with no top padding it clips the first card's ring at rest. */}
-						<SheetHeader className="pb-0">
-							<SheetTitle>Controls</SheetTitle>
+						<SheetHeader className="h-14 justify-center pb-0">
+							<SheetTitle className="text-[15px] font-semibold">
+								Controls
+							</SheetTitle>
 						</SheetHeader>
-						<div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
+						<div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3.5">
 							{controls}
 						</div>
 					</SheetContent>
 				</Sheet>
 
-				{/* biome-ignore lint/a11y/noStaticElementInteractions: drag-drop zone; Choose File is the keyboard-accessible path */}
-				<section
-					onDragOver={onDragOver}
-					onDragLeave={onDragLeave}
-					onDrop={onDrop}
-					className={`min-w-0 flex-1 overflow-auto border-2 border-dashed ${dragging ? 'border-primary bg-primary/5' : 'border-transparent'}`}
-				>
-					{/* relative + min-h-full so the loading overlay covers the full scroll content, not just the visible area. Padding lives here (not on section) so inset-0 covers it too. */}
-					<div className="relative min-h-full py-6 pb-20 sm:px-6 md:pb-6">
-						{/* The badge stays centered over the score and the view toggle sits in the
-						    corner; absolute rather than a flex sibling, so the toggle's width
-						    doesn't shove the badge off center. */}
-						<div className="relative mb-6 flex min-h-8 items-start justify-center gap-2 px-4 sm:px-0">
+				<div className="flex min-w-0 flex-1 flex-col">
+					{/* The document and how long it took to draw on the left, the view it is drawn
+					    in on the right. */}
+					<div className="flex items-start justify-between gap-3 px-4 pt-3 md:px-10 md:pt-4">
+						<div className="flex min-w-0 flex-1 items-center justify-between gap-3 text-2xs text-muted-foreground md:flex-none md:justify-start">
+							{fixture && (
+								<span className="truncate font-mono text-xs text-foreground md:text-sm">
+									{fixture}
+								</span>
+							)}
 							{error ? (
 								<Alert variant="destructive" className="w-fit">
 									<CircleXIcon />
 									<AlertTitle>Could not render this document</AlertTitle>
 									<AlertDescription>
-										<pre className="whitespace-pre-wrap font-mono text-xs">
+										<pre className="font-mono text-2xs whitespace-pre-wrap">
 											{error}
 										</pre>
 									</AlertDescription>
@@ -626,71 +643,93 @@ export default function App() {
 							) : (
 								renderMs != null && (
 									// Remounting on each render is what replays the entrance; the
-									// badge holds no state worth keeping across one.
-									<Badge
+									// line holds no state worth keeping across one.
+									<span
 										key={renderCount}
-										variant="success"
-										className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300"
+										className="flex shrink-0 items-center gap-3 duration-300 animate-in fade-in-0 slide-in-from-bottom-2"
 									>
-										<CheckIcon />
-										Rendered in {renderMs.toFixed(1)} ms
-									</Badge>
+										{fixture && <span className="hidden md:inline">·</span>}
+										<span>
+											Rendered in{' '}
+											<span className="font-medium text-brand">
+												{renderMs.toFixed(1)} ms
+											</span>
+										</span>
+									</span>
 								)
 							)}
-							<LayoutToggle
-								className="absolute top-0 right-4 sm:right-0"
-								value={layoutType}
-								onChange={(type) => model.config.setLayoutType(type)}
-							/>
 						</div>
-						{input != null && (
-							// vexml appends its managed canvas here; React manages only this div's
-							// attributes, never its children. vexml sizes the score to fit this container
-							// (scaling down when narrow, never past its engraved width) and centers it — no
-							// CSS needed here.
-							<div
-								ref={containerRef}
-								// invisible (not hidden) until initialized so the container keeps its
-								// width — the canvas fits against it and would fit against 0 if removed.
-								// Panoramic is the horizontal scroll box itself — vexml's ScrollController
-								// scrolls this container either way, and the measured height already ends
-								// it above the player, so the scrollbar lands somewhere reachable. It also
-								// drops the page-width cap: a panorama has no page to be as wide as.
-								className={`relative mx-auto w-full bg-card py-12 px-8 shadow-md ring-1 ring-border sm:py-20 sm:px-12 ${panoramic ? 'overflow-x-auto' : 'max-w-237.5'} ${initialized ? '' : 'invisible'}`}
-							/>
-						)}
-						{(!initialized || debouncing) && (
-							<div className="pointer-events-none absolute inset-0 bg-black/40">
-								{/* sticky so the badge stays centered in the viewport even when the backdrop is taller than the screen */}
-								<div className="sticky top-0 flex h-screen items-center justify-center">
-									<Card className="flex-row items-center gap-3 px-6 py-5 shadow-lg">
-										<Spinner />
-										<span className="text-sm font-medium text-muted-foreground">
-											Loading…
-										</span>
-									</Card>
-								</div>
-							</div>
-						)}
+						<LayoutToggle
+							className="hidden bg-card md:flex"
+							value={layoutType}
+							onChange={(type) => model.config.setLayoutType(type)}
+						/>
 					</div>
-				</section>
-			</main>
 
-			{input != null && initialized && (
-				<Player
-					playerRef={playerRef}
-					session={session}
-					instrument={model.instrument}
-					muted={muted}
-					playing={playing}
-					timeMs={timeMs}
-					durationMs={durationMs}
-				/>
-			)}
+					<div className="relative min-h-0 flex-1">
+						{/* biome-ignore lint/a11y/noStaticElementInteractions: drag-drop zone; Choose file is the keyboard-accessible path */}
+						<div
+							onDragOver={onDragOver}
+							onDragLeave={onDragLeave}
+							onDrop={onDrop}
+							className={`h-full overflow-auto border-2 border-dashed px-4 pt-3 md:px-10 md:py-5 ${dragging ? 'border-brand bg-brand/5' : 'border-transparent'}`}
+						>
+							{/* relative + min-h-full so the loading overlay covers the full scroll content, not just the visible area. */}
+							<div className="relative min-h-full">
+								{input != null && (
+									// vexml appends its managed canvas here; React manages only this div's
+									// attributes, never its children. vexml sizes the score to fit this container
+									// (scaling down when narrow, never past its engraved width) and centers it — no
+									// CSS needed here.
+									<div
+										ref={containerRef}
+										// invisible (not hidden) until initialized so the container keeps its
+										// width — the canvas fits against it and would fit against 0 if removed.
+										// Panoramic is the horizontal scroll box itself — vexml's ScrollController
+										// scrolls this container either way, and the measured height already ends
+										// it above the player, so the scrollbar lands somewhere reachable. It also
+										// drops the page-width cap: a panorama has no page to be as wide as.
+										className={`relative mx-auto w-full rounded-t-2xl border border-border bg-card px-6 py-8 shadow-score md:rounded-2xl md:px-12 md:py-14 ${panoramic ? 'overflow-x-auto' : 'max-w-237.5'} ${initialized ? '' : 'invisible'}`}
+									/>
+								)}
+								{(!initialized || debouncing) && (
+									<div className="pointer-events-none absolute inset-0 bg-foreground/35">
+										{/* sticky so the card stays centered in the viewport even when the backdrop is taller than the screen */}
+										<div className="sticky top-0 flex h-screen items-center justify-center">
+											<Card className="flex-row items-center gap-3 px-6 py-5 shadow-lg">
+												<Spinner />
+												<span className="font-medium text-muted-foreground">
+													Loading…
+												</span>
+											</Card>
+										</div>
+									</div>
+								)}
+							</div>
+						</div>
+						{/* Below md the score card runs into the player rather than ending above
+						    it, so the music fades out instead of being cut off mid-staff. */}
+						<div className="pointer-events-none absolute inset-x-0 bottom-0 h-15 bg-linear-to-b from-transparent to-background md:hidden" />
+					</div>
+
+					{input != null && initialized && (
+						<Player
+							playerRef={playerRef}
+							session={session}
+							instrument={model.instrument}
+							instrumentName={instrumentName}
+							muted={muted}
+							playing={playing}
+							timeMs={timeMs}
+							durationMs={durationMs}
+						/>
+					)}
+				</div>
+			</main>
 
 			{tooltip && (
 				<div
-					className="pointer-events-none fixed -translate-x-1/2 -translate-y-full whitespace-pre-line rounded-md bg-foreground px-2 py-1 text-center font-mono text-xs text-background shadow-lg"
+					className="pointer-events-none fixed -translate-x-1/2 -translate-y-full rounded-md bg-foreground px-2 py-1 text-center font-mono text-2xs whitespace-pre-line text-background shadow-lg"
 					style={{ left: tooltip.x, top: tooltip.y - 16 }}
 				>
 					{tooltip.text}

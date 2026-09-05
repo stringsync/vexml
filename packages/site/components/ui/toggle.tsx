@@ -10,10 +10,17 @@ const toggleVariants = cva(
 			variant: {
 				default: 'bg-transparent',
 				outline: 'border border-input bg-transparent hover:bg-muted',
+				// One cell of a segmented control: the chosen one is a filled dark chip, the rest
+				// are bare labels on whatever the container is sitting on. Selection is read off
+				// aria-checked as well as data-state, because a cell wrapped in a TooltipTrigger
+				// hands its data-state over to the tooltip and only the ARIA state survives.
+				segment:
+					'rounded-sm bg-transparent text-secondary-foreground hover:bg-foreground/5 hover:text-foreground aria-checked:bg-primary aria-checked:text-primary-foreground aria-pressed:bg-primary aria-pressed:text-primary-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground',
 			},
 			size: {
 				default:
 					'h-8 min-w-8 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
+				xs: "h-6.5 min-w-6.5 rounded-sm px-2 text-2xs [&_svg:not([class*='size-'])]:size-3",
 				sm: "h-7 min-w-7 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
 				lg: 'h-9 min-w-9 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
 			},

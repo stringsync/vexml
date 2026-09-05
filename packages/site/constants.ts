@@ -5,12 +5,21 @@ export const INSTRUMENT_KEY = 'vexml:instrument';
 // How long each grace note sounds before the main note, in ms. Short enough to read as an ornament.
 export const GRACE_MS = 80;
 
+// The playhead bar drawn over the score: the brand pink, wide enough to read against a staff.
+export const CURSOR_COLOR = '#ff3d9e';
+export const CURSOR_WIDTH_PX = 2;
+
+// The pink playhead is what says where playback is, so a sounding note only has to look lit, not
+// labelled: it lifts to a dark grey a shade off the engraved black rather than taking a color of
+// its own. Hovering is the one thing that does need to be picked out at a glance, so it goes warm
+// amber — a third of the wheel from the pink, and never mistakable for the notation.
+//
 // The color a sounding note shows while the cursor is over it (and a grace note while it plays).
-export const ACTIVE_COLOR = '#155dfc';
+export const ACTIVE_COLOR = '#44424a';
 // A note's fill while it's hovered/pinned (wins over ACTIVE_COLOR).
-export const HOVER_COLOR = '#f4f800';
+export const HOVER_COLOR = '#f59e0b';
 // The halo outline drawn around the hovered/pinned note.
-export const HALO_COLOR = 'rgba(255, 0, 105, 0.9)';
+export const HALO_COLOR = 'rgba(180, 83, 9, 0.95)';
 
 // Debounce window for slider/typing-driven re-renders, and the render-time threshold below which we
 // skip the debounce entirely (renders fast enough to keep up with input).

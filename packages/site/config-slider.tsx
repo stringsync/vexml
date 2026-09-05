@@ -1,13 +1,9 @@
-import { RotateCcwIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Slider } from '@/components/ui/slider';
 
-// One labelled slider in the Config panel: label + current value + a reset button, the
-// slider, and a description. The caller owns the value and the reset behavior (the four
-// scalar config keys reset alike; reference width strips the layout object), so onChange/onReset/
-// canReset are passed in.
+// One labelled slider in the Layout panel: the label and its current value on one row, the
+// slider under it. Resetting is the card's job, not each row's, so there is no button here.
 export interface ConfigSliderProps {
 	id: string;
 	label: string;
@@ -18,9 +14,7 @@ export interface ConfigSliderProps {
 	max: number;
 	step: number;
 	onChange: (value: number) => void;
-	onReset: () => void;
-	/* Whether this knob differs from vexml's default, which is what enables the reset button. */
-	canReset: boolean;
+	/* What the knob does, kept as the row's hover text now that the panel shows no prose. */
 	description: string;
 }
 
@@ -33,27 +27,13 @@ export function ConfigSlider({
 	max,
 	step,
 	onChange,
-	onReset,
-	canReset,
 	description,
 }: ConfigSliderProps) {
 	return (
-		<Field>
-			<FieldLabel htmlFor={id} className="w-full justify-between">
-				{label}
-				<span className="flex items-center gap-1.5">
-					<span className="font-mono text-muted-foreground">{display}</span>
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon-sm"
-						onClick={onReset}
-						disabled={!canReset}
-						aria-label={`Reset ${label.toLowerCase()}`}
-					>
-						<RotateCcwIcon />
-					</Button>
-				</span>
+		<Field title={description}>
+			<FieldLabel htmlFor={id} className="w-full justify-between font-normal">
+				<span className="text-muted-foreground">{label}</span>
+				<span className="font-semibold tabular-nums">{display}</span>
 			</FieldLabel>
 			<Slider
 				id={id}
@@ -63,7 +43,6 @@ export function ConfigSlider({
 				value={[value]}
 				onValueChange={(next) => onChange(next[0] ?? value)}
 			/>
-			<FieldDescription>{description}</FieldDescription>
 		</Field>
 	);
 }

@@ -4,7 +4,14 @@ import { AnimationLoop } from 'webappwiz/browser';
 import { Disposer, disposables, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful, type Events } from 'webappwiz/events';
 import { Duration, SystemClock, SystemTimer } from 'webappwiz/time';
-import { ACTIVE_COLOR, GRACE_MS, HALO_COLOR, HOVER_COLOR } from './constants';
+import {
+	ACTIVE_COLOR,
+	CURSOR_COLOR,
+	CURSOR_WIDTH_PX,
+	GRACE_MS,
+	HALO_COLOR,
+	HOVER_COLOR,
+} from './constants';
 import { describe } from './format';
 import type { Instrument } from './instrument';
 
@@ -77,7 +84,14 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		// Headless cursor plus the built-in bar view. Page-turn scrolling: when the bar crosses out
 		// of the scroll box (by moving, or the user scrolling it away), bring it back.
 		this.cursor = score.createCursor();
-		this.disposer.use(this.cursor.sync(score.createPlayhead()));
+		this.disposer.use(
+			this.cursor.sync(
+				score.createPlayhead({
+					color: CURSOR_COLOR,
+					widthPx: CURSOR_WIDTH_PX,
+				}),
+			),
+		);
 		this.watch(this.cursor.events, 'visibility', (e) => {
 			if (!e.fullyVisible && this.playing) {
 				this.cursor.scrollIntoView();
