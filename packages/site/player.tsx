@@ -66,7 +66,7 @@ export function Player({
 			// gutter so the two align edge-to-edge (left-86 = 20rem sidebar + 1.5rem gutter,
 			// right-6 = 1.5rem gutter). Below md there is no sidebar to clear, so it spans the
 			// viewport on its own inset-x gutter instead.
-			className="fixed inset-x-4 bottom-4 z-30 mx-auto flex max-w-237.5 flex-col gap-2 rounded-2xl border bg-background/95 px-4 py-2.5 shadow-lg backdrop-blur sm:inset-x-6 sm:px-6 md:inset-x-auto md:left-86 md:right-6"
+			className="fixed inset-x-4 bottom-4 mx-auto flex max-w-237.5 flex-col gap-2 rounded-2xl border bg-background/95 px-4 py-2.5 shadow-lg backdrop-blur sm:inset-x-6 sm:px-6 md:inset-x-auto md:left-86 md:right-6"
 		>
 			<div className="relative flex items-center justify-center gap-1">
 				<Tooltip>

@@ -1,4 +1,4 @@
-import { PanelLeftIcon } from 'lucide-react';
+import { MenuIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function Header({ onOpenControls }: { onOpenControls: () => void }) {
@@ -13,7 +13,7 @@ export function Header({ onOpenControls }: { onOpenControls: () => void }) {
 				aria-label="Show controls"
 				className="md:hidden"
 			>
-				<PanelLeftIcon />
+				<MenuIcon />
 			</Button>
 			<h1 className="font-mono text-xl font-bold tracking-tight">vexml</h1>
 			<Button variant="ghost" size="sm" asChild>

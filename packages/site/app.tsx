@@ -662,7 +662,7 @@ export default function App() {
 
 			{tooltip && (
 				<div
-					className="pointer-events-none fixed z-30 -translate-x-1/2 -translate-y-full whitespace-pre-line rounded-md bg-foreground px-2 py-1 text-center font-mono text-xs text-background shadow-lg"
+					className="pointer-events-none fixed -translate-x-1/2 -translate-y-full whitespace-pre-line rounded-md bg-foreground px-2 py-1 text-center font-mono text-xs text-background shadow-lg"
 					style={{ left: tooltip.x, top: tooltip.y - 16 }}
 				>
 					{tooltip.text}
