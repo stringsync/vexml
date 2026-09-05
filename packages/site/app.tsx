@@ -54,6 +54,7 @@ import {
 } from './constants';
 import { Header } from './header';
 import { INSTRUMENTS } from './instruments';
+import { LayoutToggle } from './layout-toggle';
 import { Player } from './player';
 import { ScoreFit } from './score-fit';
 import { Section } from './section';
@@ -136,6 +137,10 @@ export default function App() {
 	const [renderCount, setRenderCount] = useState(0);
 	const isMobile = useIsMobile();
 
+	const layoutType = config.layout?.type ?? 'standard';
+	// Panoramic draws one endless system, so the knobs that decide where a line breaks belong to
+	// the stacked view alone. Both views still fit the same scroll box above the player.
+	const panoramic = layoutType === 'panoramic';
 	const layout = config.layout?.type === 'standard' ? config.layout : undefined;
 	const noteSpacing = config.noteSpacing ?? DEFAULT_NOTE_SPACING;
 	const softmaxFactor = config.softmaxFactor ?? DEFAULT_SOFTMAX_FACTOR;
@@ -371,8 +376,9 @@ export default function App() {
 				}
 			>
 				<FieldDescription>
-					With only a single system, some controls (e.g. system spacing and max
-					system fill) won't have a visible effect.
+					{panoramic
+						? 'The panoramic view puts every measure on one system, so the controls that decide where a line breaks — and how systems stack — are hidden here.'
+						: "With only a single system, some controls (e.g. system spacing and max system fill) won't have a visible effect."}
 				</FieldDescription>
 
 				<Field>
@@ -461,100 +467,110 @@ export default function App() {
 					description="How that space is divided among notes. Higher exaggerates the width difference between long and short notes."
 				/>
 
-				<ConfigSlider
-					id="systemSpacing"
-					label="System spacing"
-					display={systemSpacing}
-					value={systemSpacing}
-					min={10}
-					max={50}
-					step={1}
-					onChange={(systemSpacing) => model.config.patch({ systemSpacing })}
-					onReset={() => model.config.clear('systemSpacing')}
-					canReset={config.systemSpacing !== undefined}
-					description="Vertical gap between stacked systems. Lower packs systems closer together down the page."
-				/>
+				{/* Every knob below decides where a line breaks or how systems stack, and the
+				    panoramic view has neither: one system, no wrapping. */}
+				{!panoramic && (
+					<>
+						<ConfigSlider
+							id="systemSpacing"
+							label="System spacing"
+							display={systemSpacing}
+							value={systemSpacing}
+							min={10}
+							max={50}
+							step={1}
+							onChange={(systemSpacing) =>
+								model.config.patch({ systemSpacing })
+							}
+							onReset={() => model.config.clear('systemSpacing')}
+							canReset={config.systemSpacing !== undefined}
+							description="Vertical gap between stacked systems. Lower packs systems closer together down the page."
+						/>
 
-				<ConfigSlider
-					id="maxSystemFill"
-					label="Max system fill"
-					display={maxSystemFill.toFixed(2)}
-					value={maxSystemFill}
-					min={0.1}
-					max={1}
-					step={0.05}
-					onChange={(maxSystemFill) => model.config.patch({ maxSystemFill })}
-					onReset={() => model.config.clear('maxSystemFill')}
-					canReset={config.maxSystemFill !== undefined}
-					description="How full a system gets before the next measure wraps to a new line. Lower leaves more air; 1 packs each line to the edge."
-				/>
+						<ConfigSlider
+							id="maxSystemFill"
+							label="Max system fill"
+							display={maxSystemFill.toFixed(2)}
+							value={maxSystemFill}
+							min={0.1}
+							max={1}
+							step={0.05}
+							onChange={(maxSystemFill) =>
+								model.config.patch({ maxSystemFill })
+							}
+							onReset={() => model.config.clear('maxSystemFill')}
+							canReset={config.maxSystemFill !== undefined}
+							description="How full a system gets before the next measure wraps to a new line. Lower leaves more air; 1 packs each line to the edge."
+						/>
 
-				<Field orientation="horizontal">
-					<Checkbox
-						id="honorSystemBreaks"
-						checked={layout?.honorSystemBreaks ?? true}
-						onCheckedChange={(checked) =>
-							model.config.patchLayout({
-								honorSystemBreaks: checked === true,
-							})
-						}
-					/>
-					<FieldContent>
-						<FieldLabel htmlFor="honorSystemBreaks">
-							Honor system breaks
-						</FieldLabel>
-						<FieldDescription>
-							Whether a <code>&lt;print new-system="yes"&gt;</code> in the
-							document forces a line break. Off wraps purely on width.
-						</FieldDescription>
-					</FieldContent>
-				</Field>
+						<Field orientation="horizontal">
+							<Checkbox
+								id="honorSystemBreaks"
+								checked={layout?.honorSystemBreaks ?? true}
+								onCheckedChange={(checked) =>
+									model.config.patchLayout({
+										honorSystemBreaks: checked === true,
+									})
+								}
+							/>
+							<FieldContent>
+								<FieldLabel htmlFor="honorSystemBreaks">
+									Honor system breaks
+								</FieldLabel>
+								<FieldDescription>
+									Whether a <code>&lt;print new-system="yes"&gt;</code> in the
+									document forces a line break. Off wraps purely on width.
+								</FieldDescription>
+							</FieldContent>
+						</Field>
 
-				<ConfigSlider
-					id="width"
-					label="Reference width"
-					display={width}
-					value={width}
-					min={400}
-					max={2000}
-					step={50}
-					onChange={(referenceWidth) =>
-						model.config.patchLayout({ referenceWidth })
-					}
-					onReset={() => model.config.clearLayout('referenceWidth')}
-					canReset={layout?.referenceWidth !== undefined}
-					description="The width the score is engraved to; the rendering then scales up or down to fit its container. Wider fits more measures per system before wrapping."
-				/>
+						<ConfigSlider
+							id="width"
+							label="Reference width"
+							display={width}
+							value={width}
+							min={400}
+							max={2000}
+							step={50}
+							onChange={(referenceWidth) =>
+								model.config.patchLayout({ referenceWidth })
+							}
+							onReset={() => model.config.clearLayout('referenceWidth')}
+							canReset={layout?.referenceWidth !== undefined}
+							description="The width the score is engraved to; the rendering then scales up or down to fit its container. Wider fits more measures per system before wrapping."
+						/>
 
-				<Field>
-					<FieldLabel htmlFor="overflow">Overflow</FieldLabel>
-					<Select
-						value={layout?.overflow ?? 'wrap'}
-						onValueChange={(overflow) =>
-							model.config.patchLayout({
-								overflow: overflow as SystemOverflow,
-							})
-						}
-					>
-						<SelectTrigger id="overflow">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectGroup>
-								<SelectItem value="wrap">wrap</SelectItem>
-								<SelectItem value="allow">allow</SelectItem>
-								<SelectItem value="widen">widen</SelectItem>
-							</SelectGroup>
-						</SelectContent>
-					</Select>
-					<FieldDescription>
-						What gives when a document's engraved line can't fit the reference
-						width: <code>wrap</code> breaks the line anyway, <code>allow</code>{' '}
-						lets it stick out past the width, and <code>widen</code> grows the
-						width until it fits. The notes are never squeezed together far
-						enough to collide.
-					</FieldDescription>
-				</Field>
+						<Field>
+							<FieldLabel htmlFor="overflow">Overflow</FieldLabel>
+							<Select
+								value={layout?.overflow ?? 'wrap'}
+								onValueChange={(overflow) =>
+									model.config.patchLayout({
+										overflow: overflow as SystemOverflow,
+									})
+								}
+							>
+								<SelectTrigger id="overflow">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectGroup>
+										<SelectItem value="wrap">wrap</SelectItem>
+										<SelectItem value="allow">allow</SelectItem>
+										<SelectItem value="widen">widen</SelectItem>
+									</SelectGroup>
+								</SelectContent>
+							</Select>
+							<FieldDescription>
+								What gives when a document's engraved line can't fit the
+								reference width: <code>wrap</code> breaks the line anyway,{' '}
+								<code>allow</code> lets it stick out past the width, and{' '}
+								<code>widen</code> grows the width until it fits. The notes are
+								never squeezed together far enough to collide.
+							</FieldDescription>
+						</Field>
+					</>
+				)}
 			</Section>
 		</>
 	);
@@ -593,7 +609,10 @@ export default function App() {
 				>
 					{/* relative + min-h-full so the loading overlay covers the full scroll content, not just the visible area. Padding lives here (not on section) so inset-0 covers it too. */}
 					<div className="relative min-h-full py-6 pb-20 sm:px-6 md:pb-6">
-						<div className="mx-auto mb-6 flex w-fit items-center gap-2">
+						{/* The badge stays centered over the score and the view toggle sits in the
+						    corner; absolute rather than a flex sibling, so the toggle's width
+						    doesn't shove the badge off center. */}
+						<div className="relative mb-6 flex min-h-8 items-start justify-center gap-2 px-4 sm:px-0">
 							{error ? (
 								<Alert variant="destructive" className="w-fit">
 									<CircleXIcon />
@@ -618,6 +637,11 @@ export default function App() {
 									</Badge>
 								)
 							)}
+							<LayoutToggle
+								className="absolute top-0 right-4 sm:right-0"
+								value={layoutType}
+								onChange={(type) => model.config.setLayoutType(type)}
+							/>
 						</div>
 						{input != null && (
 							// vexml appends its managed canvas here; React manages only this div's
@@ -628,7 +652,11 @@ export default function App() {
 								ref={containerRef}
 								// invisible (not hidden) until initialized so the container keeps its
 								// width — the canvas fits against it and would fit against 0 if removed.
-								className={`relative mx-auto w-full max-w-237.5 bg-card py-12 px-8 shadow-md ring-1 ring-border sm:py-20 sm:px-12 ${initialized ? '' : 'invisible'}`}
+								// Panoramic is the horizontal scroll box itself — vexml's ScrollController
+								// scrolls this container either way, and the measured height already ends
+								// it above the player, so the scrollbar lands somewhere reachable. It also
+								// drops the page-width cap: a panorama has no page to be as wide as.
+								className={`relative mx-auto w-full bg-card py-12 px-8 shadow-md ring-1 ring-border sm:py-20 sm:px-12 ${panoramic ? 'overflow-x-auto' : 'max-w-237.5'} ${initialized ? '' : 'invisible'}`}
 							/>
 						)}
 						{(!initialized || debouncing) && (

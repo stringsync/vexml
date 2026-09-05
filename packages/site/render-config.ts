@@ -1,4 +1,4 @@
-import type { ConfigInput, StandardLayout } from '@stringsync/vexml';
+import type { ConfigInput, Layout, StandardLayout } from '@stringsync/vexml';
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
 import { Debouncer, Duration, SystemTimer } from 'webappwiz/time';
@@ -28,6 +28,10 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 	/* How long the last render took, or null if it failed or has not happened yet. */
 	renderMs: number | null = null;
 
+	// The standard layout's knobs while panoramic is showing. Panoramic has no room for them in
+	// `live`, and dropping them would silently reset the width a user set before switching views.
+	private stashedLayout: StandardLayoutInput | undefined;
+
 	private readonly disposer = new Disposer();
 	private readonly debouncer = new Debouncer(
 		new SystemTimer(),
@@ -54,8 +58,13 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 	}
 
 	/* The layout knobs live in one nested object, so each writes through the others: setting the
-	 * width must not silently reset the overflow mode. */
+	 * width must not silently reset the overflow mode. Standard-only — every knob it writes is
+	 * ignored by a panoramic layout, and the panel hides them there rather than writing a patch
+	 * that would flip the view back. */
 	patchLayout(patch: Partial<StandardLayout>): void {
+		if (this.layoutType() !== 'standard') {
+			return;
+		}
 		this.set({
 			...this.live,
 			layout: {
@@ -74,11 +83,40 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 		this.set({ ...this.live, layout: rest as StandardLayout });
 	}
 
+	/* Which layout the score is drawn with; standard unless panoramic was chosen. */
+	layoutType(): Layout['type'] {
+		return this.live.layout?.type ?? 'standard';
+	}
+
+	/* Switch views. The standard knobs are stashed rather than dropped, so a trip through
+	 * panoramic and back leaves the reference width and overflow mode as the user left them. */
+	setLayoutType(type: Layout['type']): void {
+		if (this.layoutType() === type) {
+			return;
+		}
+		if (type === 'standard') {
+			this.set({
+				...this.live,
+				layout: this.stashedLayout ?? { type: 'standard' },
+			});
+			return;
+		}
+		this.stashedLayout =
+			this.live.layout?.type === 'standard' ? this.live.layout : undefined;
+		this.set({ ...this.live, layout: { type: 'panoramic' } });
+	}
+
 	/* Drop every override, including the whole layout object. */
 	resetAll(): void {
-		const { height } = this.live;
-		// height is measured, not chosen: resetting the sliders must not collapse the scroll box.
-		this.set(height === undefined ? {} : { height });
+		const { height, layout } = this.live;
+		this.stashedLayout = undefined;
+		// height is measured rather than chosen, and the layout type is a view the user is looking
+		// at rather than a knob: resetting the sliders must neither collapse the scroll box nor
+		// kick the score out of the panoramic view.
+		this.set({
+			...(height === undefined ? {} : { height }),
+			...(layout?.type === 'panoramic' ? { layout } : {}),
+		});
 	}
 
 	/* The measured scroll-box height, from the fit observer. Same value is a no-op, which is what
@@ -97,10 +135,13 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 		this.dispatcher.dispatch('changed');
 	}
 
-	/* Whether any slider or layout knob differs from vexml's default. */
+	/* Whether any slider or layout knob differs from vexml's default. The stash counts: a
+	 * reference width set before switching to panoramic is still there to be reset. */
 	canReset(): boolean {
 		const layout =
-			this.live.layout?.type === 'standard' ? this.live.layout : undefined;
+			this.live.layout?.type === 'standard'
+				? this.live.layout
+				: this.stashedLayout;
 		return (
 			SCALAR_KEYS.some((k) => this.live[k] !== undefined) ||
 			LAYOUT_KEYS.some((k) => layout?.[k] !== undefined)
@@ -131,6 +172,9 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 		});
 	}
 }
+
+/* A standard layout as the panel holds it: every knob optional, filled from vexml's defaults. */
+type StandardLayoutInput = Partial<StandardLayout> & { type: 'standard' };
 
 /* The scalar knobs a reset button clears, in panel order. */
 export const SCALAR_KEYS = [
