@@ -9,13 +9,14 @@ export const GRACE_MS = 80;
 export const CURSOR_COLOR = '#ff3d9e';
 export const CURSOR_WIDTH_PX = 2;
 
-// The pink playhead is what says where playback is, so a sounding note only has to look lit, not
-// labelled: it lifts to a dark grey a shade off the engraved black rather than taking a color of
-// its own. Hovering is the one thing that does need to be picked out at a glance, so it goes warm
-// amber — a third of the wheel from the pink, and never mistakable for the notation.
+// A sounding note belongs to the playhead sitting on it, so it takes the playhead's own pink a few
+// steps lighter: the bar reads as the position and the notes under it as what that position is
+// playing, rather than as two unrelated signals. Hovering is the one thing that has to be picked
+// out against both, so it goes warm amber — a third of the wheel away, and never mistakable for
+// either the pink or the engraved black.
 //
 // The color a sounding note shows while the cursor is over it (and a grace note while it plays).
-export const ACTIVE_COLOR = '#44424a';
+export const ACTIVE_COLOR = '#ff70b8';
 // A note's fill while it's hovered/pinned (wins over ACTIVE_COLOR).
 export const HOVER_COLOR = '#f59e0b';
 // The halo outline drawn around the hovered/pinned note.
