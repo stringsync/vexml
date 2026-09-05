@@ -133,6 +133,7 @@ export default function App() {
 	// Purely local view state: nothing outside the component reads any of it.
 	const [dragging, setDragging] = useState(false);
 	const [controlsOpen, setControlsOpen] = useState(false);
+	const [renderCount, setRenderCount] = useState(0);
 	const isMobile = useIsMobile();
 
 	const layout = config.layout?.type === 'standard' ? config.layout : undefined;
@@ -162,11 +163,14 @@ export default function App() {
 		}
 	}, [isMobile]);
 
-	// Re-render the score whenever what to draw, or how to draw it, changes.
+	// Re-render the score whenever what to draw, or how to draw it, changes. The counter keys the
+	// timing badge: two renders can land on the same duration, and the badge should replay its
+	// entrance either way.
 	useEffect(() => {
 		const container = containerRef.current;
 		if (container) {
 			model.renderInto(container, { input, config: applied });
+			setRenderCount((n) => n + 1);
 		}
 	}, [model, input, applied]);
 
@@ -602,7 +606,13 @@ export default function App() {
 								</Alert>
 							) : (
 								renderMs != null && (
-									<Badge variant="success">
+									// Remounting on each render is what replays the entrance; the
+									// badge holds no state worth keeping across one.
+									<Badge
+										key={renderCount}
+										variant="success"
+										className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300"
+									>
 										<CheckIcon />
 										Rendered in {renderMs.toFixed(1)} ms
 									</Badge>
