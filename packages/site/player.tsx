@@ -1,10 +1,10 @@
 import {
+	ChevronFirstIcon,
+	ChevronLastIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
 	PauseIcon,
 	PlayIcon,
-	SkipBackIcon,
-	SkipForwardIcon,
 	Volume2Icon,
 	VolumeXIcon,
 } from 'lucide-react';
@@ -36,7 +36,7 @@ const TIME = 'font-mono text-xs tabular-nums text-muted-foreground';
 
 // Floating transport bar: the two measure jumps outside the two note steps, play-pause between
 // them, and mute off to the right, over a seek track flanked by the elapsed and total times.
-// The filled skip glyphs are the coarse move, the thin chevrons the fine one. Seeking (slider or scrub-drag) drives the cursor directly; the
+// The barred chevrons are the coarse move, the thinner bare ones the fine step. Seeking (slider or scrub-drag) drives the cursor directly; the
 // "measure i of N" scrub tooltip is local state since nothing outside the bar needs it.
 export function Player({
 	playerRef,
@@ -78,7 +78,7 @@ export function Player({
 							onClick={() => step(() => session?.previousMeasure())}
 							aria-label="Previous measure"
 						>
-							<SkipBackIcon fill="currentColor" />
+							<ChevronFirstIcon />
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>Previous measure</TooltipContent>
@@ -97,15 +97,14 @@ export function Player({
 					</TooltipTrigger>
 					<TooltipContent>Previous note</TooltipContent>
 				</Tooltip>
-				{/* The one filled button on the bar: play is what the eye should land on. */}
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
 							type="button"
+							variant="ghost"
 							size="icon-lg"
 							onClick={() => session?.togglePlay()}
 							aria-label={playing ? 'Pause' : 'Play'}
-							className="rounded-full"
 						>
 							{playing ? (
 								<PauseIcon fill="currentColor" />
@@ -139,7 +138,7 @@ export function Player({
 							onClick={() => step(() => session?.nextMeasure())}
 							aria-label="Next measure"
 						>
-							<SkipForwardIcon fill="currentColor" />
+							<ChevronLastIcon />
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>Next measure</TooltipContent>
