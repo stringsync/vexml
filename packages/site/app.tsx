@@ -1,9 +1,10 @@
 import type { SystemOverflow } from '@stringsync/vexml';
 import { useDisposerEffect, useReactive, useResource } from '@webappwiz/react';
 import {
-	AlertCircleIcon,
+	CheckIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
+	CircleXIcon,
 	UploadIcon,
 	XIcon,
 } from 'lucide-react';
@@ -565,7 +566,7 @@ export default function App() {
 						<div className="mx-auto mb-6 flex w-fit items-center gap-2">
 							{error ? (
 								<Alert variant="destructive" className="w-fit">
-									<AlertCircleIcon />
+									<CircleXIcon />
 									<AlertTitle>Could not render this document</AlertTitle>
 									<AlertDescription>
 										<pre className="whitespace-pre-wrap font-mono text-xs">
@@ -575,7 +576,8 @@ export default function App() {
 								</Alert>
 							) : (
 								renderMs != null && (
-									<Badge variant="outline">
+									<Badge variant="success">
+										<CheckIcon />
 										Rendered in {renderMs.toFixed(1)} ms
 									</Badge>
 								)
