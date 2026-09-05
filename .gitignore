@@ -7,3 +7,6 @@ packages/integration/__diffs__/
 
 # a release under way; the last artifact to land deletes it
 RELEASE
+
+# generated review output
+.wiz/reviews/
