@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { ConfigSlider } from './config-slider';
 import {
 	DEFAULT_FIXTURE,
@@ -132,6 +133,7 @@ export default function App() {
 	// Purely local view state: nothing outside the component reads any of it.
 	const [dragging, setDragging] = useState(false);
 	const [controlsOpen, setControlsOpen] = useState(false);
+	const isMobile = useIsMobile();
 
 	const layout = config.layout?.type === 'standard' ? config.layout : undefined;
 	const noteSpacing = config.noteSpacing ?? DEFAULT_NOTE_SPACING;
@@ -151,6 +153,14 @@ export default function App() {
 		model.document.restore();
 		model.instrument.preload();
 	}, [model]);
+
+	// The Sheet stands in for the sidebar below md, so widening past it has to close the Sheet:
+	// left open, it stacks on top of the very sidebar it was standing in for.
+	useEffect(() => {
+		if (!isMobile) {
+			setControlsOpen(false);
+		}
+	}, [isMobile]);
 
 	// Re-render the score whenever what to draw, or how to draw it, changes.
 	useEffect(() => {
