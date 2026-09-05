@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 
 export function Header({ onOpenControls }: { onOpenControls: () => void }) {
 	return (
-		<header className="flex items-center gap-3 border-b bg-background px-3 py-2 md:px-6">
+		<header className="flex items-center gap-2 border-b bg-background px-3 py-2 md:px-6">
 			{/* Below md the control panel is a Sheet, and this is the only way to reach it. */}
 			<Button
 				type="button"
@@ -16,18 +16,19 @@ export function Header({ onOpenControls }: { onOpenControls: () => void }) {
 				<MenuIcon />
 			</Button>
 			<h1 className="font-mono text-xl font-bold tracking-tight">vexml</h1>
-			<Button variant="ghost" size="sm" asChild>
-				<a
-					href="https://github.com/stringsync/vexml"
-					target="_blank"
-					rel="noreferrer"
-				>
-					<img
-						src="https://img.shields.io/github/stars/stringsync/vexml?style=social"
-						alt="GitHub stars"
-					/>
-				</a>
-			</Button>
+			{/* A bare anchor, not a Button: the badge is already a pill, and button padding
+			    around it just reads as a stray margin. */}
+			<a
+				href="https://github.com/stringsync/vexml"
+				target="_blank"
+				rel="noreferrer"
+				className="flex rounded-md"
+			>
+				<img
+					src="https://img.shields.io/github/stars/stringsync/vexml?style=social"
+					alt="GitHub stars"
+				/>
+			</a>
 		</header>
 	);
 }
