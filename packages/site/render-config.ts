@@ -34,7 +34,7 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 
 	// The gap above the player, as the fit observer last measured it. Kept aside rather than in
 	// `live` because it is a measurement, not a knob, and because which config key it lands in
-	// depends on the layout — see `fit`.
+	// depends on the layout: see `fit`.
 	private measuredHeight: number | undefined;
 
 	private readonly disposer = new Disposer();
@@ -158,8 +158,8 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 	/* Place the measured fit on whichever height knob the current layout wants.
 	 *
 	 * Stacked scores run past the bottom of the gap, so they take it as a fixed `height` and scroll
-	 * within it. A panorama is a single system — a fixed height would leave most of the card empty
-	 * below the music — so it takes the same number as a `maxHeight` cap and keeps its natural
+	 * within it. A panorama is a single system, and a fixed height would leave most of the card
+	 * empty below the music, so it takes the same number as a `maxHeight` cap and keeps its natural
 	 * height, scrolling only if one system somehow grows taller than the gap.
 	 *
 	 * Both keys are stripped first, so switching views moves the measurement across rather than
