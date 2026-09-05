@@ -5,7 +5,7 @@ files: "**/*.test.ts"
 level: error
 complexity: medium
 recommended: true
-version: 0.0.13
+version: 0.0.14
 ---
 # Fakes over mocks
 

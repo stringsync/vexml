@@ -1,7 +1,7 @@
 ---
 name: review
 description: "Review a change against the RULE.md rules in this project's .wiz/rules directory by handing blocks of rules to separate agents, without reading a rule yourself. Use only when the project has a .wiz/rules directory and the user asks to run, check, or apply the rules, the wiz rules, or the webappwiz rules to a change, or asks to write, add, or edit a rule there. Not for a general code review, a pull request review, a security review, or any review that does not name the rules."
-version: 0.0.13
+version: 0.0.14
 ---
 
 # Reviewing against the rules
