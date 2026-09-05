@@ -361,12 +361,15 @@ export default function App() {
 
 									<Collapsible className="flex flex-col gap-2">
 										<CollapsibleTrigger asChild>
+											{/* The chevron turns down when it opens, so the row reads as
+											    the disclosure toggle it is rather than as a label. */}
 											<Button
 												type="button"
 												variant="ghost"
 												size="sm"
-												className="w-fit"
+												className="w-fit [&>svg]:transition-transform [&[data-state=open]>svg]:rotate-90"
 											>
+												<ChevronRightIcon data-icon="inline-start" />
 												Edit MusicXML
 											</Button>
 										</CollapsibleTrigger>
@@ -621,7 +624,7 @@ export default function App() {
 								</Alert>
 							) : (
 								renderMs != null && (
-									<Badge variant="secondary">
+									<Badge variant="outline">
 										Rendered in {renderMs.toFixed(1)} ms
 									</Badge>
 								)
@@ -649,7 +652,7 @@ export default function App() {
 								ref={containerRef}
 								// invisible (not hidden) until initialized so the container keeps its
 								// width — the canvas fits against it and would fit against 0 if removed.
-								className={`relative mx-auto w-full max-w-237.5 bg-card py-8 px-4 shadow-md ring-1 ring-border sm:py-16 ${initialized ? '' : 'invisible'}`}
+								className={`relative mx-auto w-full max-w-237.5 bg-card py-12 px-8 shadow-md ring-1 ring-border sm:py-20 sm:px-12 ${initialized ? '' : 'invisible'}`}
 							/>
 						)}
 						{(!initialized || debouncing) && (

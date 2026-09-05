@@ -9,6 +9,11 @@ import {
 import { type RefObject, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { fmtTime } from './format';
 import type { InstrumentController } from './instrument-controller';
 import type { ScoreSession } from './score-session';
@@ -52,49 +57,69 @@ export function Player({
 			className="absolute inset-x-4 bottom-full z-30 mx-auto mb-4 flex max-w-237.5 flex-col gap-2 rounded-2xl border bg-background/95 px-4 py-2.5 shadow-lg backdrop-blur sm:inset-x-6 sm:px-6 md:fixed md:inset-x-auto md:bottom-4 md:left-86 md:right-6 md:mb-0"
 		>
 			<div className="relative flex items-center justify-center gap-5">
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon-lg"
-					onClick={() => session?.previous()}
-					aria-label="Previous note"
-				>
-					<SkipBackIcon fill="currentColor" />
-				</Button>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-lg"
+							onClick={() => session?.previous()}
+							aria-label="Previous note"
+						>
+							<SkipBackIcon fill="currentColor" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Previous note</TooltipContent>
+				</Tooltip>
 				{/* The one filled button on the bar: play is what the eye should land on. */}
-				<Button
-					type="button"
-					size="icon-lg"
-					onClick={() => session?.togglePlay()}
-					aria-label={playing ? 'Pause' : 'Play'}
-					className="rounded-full"
-				>
-					{playing ? (
-						<PauseIcon fill="currentColor" />
-					) : (
-						<PlayIcon fill="currentColor" />
-					)}
-				</Button>
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon-lg"
-					onClick={() => session?.next()}
-					aria-label="Next note"
-				>
-					<SkipForwardIcon fill="currentColor" />
-				</Button>
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon-lg"
-					onClick={() => instrument.toggleMuted()}
-					aria-label={muted ? 'Unmute' : 'Mute'}
-					aria-pressed={muted}
-					className="absolute right-0"
-				>
-					{muted ? <VolumeXIcon /> : <Volume2Icon />}
-				</Button>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							type="button"
+							size="icon-lg"
+							onClick={() => session?.togglePlay()}
+							aria-label={playing ? 'Pause' : 'Play'}
+							className="rounded-full"
+						>
+							{playing ? (
+								<PauseIcon fill="currentColor" />
+							) : (
+								<PlayIcon fill="currentColor" />
+							)}
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{playing ? 'Pause' : 'Play'}</TooltipContent>
+				</Tooltip>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-lg"
+							onClick={() => session?.next()}
+							aria-label="Next note"
+						>
+							<SkipForwardIcon fill="currentColor" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Next note</TooltipContent>
+				</Tooltip>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-lg"
+							onClick={() => instrument.toggleMuted()}
+							aria-label={muted ? 'Unmute' : 'Mute'}
+							aria-pressed={muted}
+							className="absolute right-0"
+						>
+							{muted ? <VolumeXIcon /> : <Volume2Icon />}
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{muted ? 'Unmute' : 'Mute'}</TooltipContent>
+				</Tooltip>
 			</div>
 			<div className="flex items-center gap-2">
 				<span className={TIME}>{fmtTime(timeMs)}</span>
