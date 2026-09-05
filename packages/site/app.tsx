@@ -545,10 +545,12 @@ export default function App() {
 
 				<Sheet open={controlsOpen} onOpenChange={setControlsOpen}>
 					<SheetContent side="left" className="w-80 gap-0">
-						<SheetHeader>
+						{/* pb-0 here and p-4 below, so the scroll box starts clear of the title:
+						    with no top padding it clips the first card's ring at rest. */}
+						<SheetHeader className="pb-0">
 							<SheetTitle>Controls</SheetTitle>
 						</SheetHeader>
-						<div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
+						<div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
 							{controls}
 						</div>
 					</SheetContent>
