@@ -73,7 +73,13 @@ export class DocumentSource
 		}
 		this.text = xml;
 		this.input = xml;
-		this.save(xml);
+		// Storage answers "what to open instead of the default", so the default is the one thing
+		// never written: saving it would undo a reset on the very next load.
+		if (name === DEFAULT_FIXTURE) {
+			this.storage.removeItem(STORAGE_KEY);
+		} else {
+			this.save(xml);
+		}
 		this.dispatcher.dispatch('changed');
 	}
 
