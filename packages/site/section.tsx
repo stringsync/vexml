@@ -23,9 +23,13 @@ export function Section({
 		// shrink-0: the panel that holds these is a scrolling flex column, and Card clips
 		// its own overflow, so a shrinkable card would hide its last fields rather than scroll.
 		<Card size="sm" className="shrink-0 bg-muted/40">
-			<CardHeader>
+			{/* The header's own items-start would pin the title to the top of a row that the
+			    taller action button sizes, leaving the two off by a few px; these Sections carry
+			    no CardDescription, so centring the row is safe. row-span-1 keeps the action out
+			    of the implicit second row it would otherwise straddle. */}
+			<CardHeader className="items-center">
 				<CardTitle>{title}</CardTitle>
-				{action && <CardAction>{action}</CardAction>}
+				{action && <CardAction className="row-span-1">{action}</CardAction>}
 			</CardHeader>
 			<CardContent>
 				<FieldGroup>{children}</FieldGroup>

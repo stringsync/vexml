@@ -6,7 +6,6 @@ import {
 	ChevronRightIcon,
 	CircleXIcon,
 	UploadIcon,
-	XIcon,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -236,7 +235,22 @@ export default function App() {
 	// One copy of the panel, rendered into the desktop aside and into the mobile Sheet.
 	const controls = (
 		<>
-			<Section title="MusicXML">
+			<Section
+				title="MusicXML"
+				action={
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						onClick={() => model.document.clear()}
+						// Nothing to clear once the default example is what's showing.
+						disabled={fixture === DEFAULT_FIXTURE}
+						title="Clear the saved score and reload the default example"
+					>
+						Reset
+					</Button>
+				}
+			>
 				<Button asChild className="w-full cursor-pointer">
 					<label>
 						<UploadIcon data-icon="inline-start" />
@@ -338,7 +352,7 @@ export default function App() {
 						onClick={() => model.config.resetAll()}
 						disabled={!canReset}
 					>
-						Reset all
+						Reset
 					</Button>
 				}
 			>
@@ -583,19 +597,6 @@ export default function App() {
 										Rendered in {renderMs.toFixed(1)} ms
 									</Badge>
 								)
-							)}
-							{/* Nothing to clear once the default example is what's showing. */}
-							{fixture !== DEFAULT_FIXTURE && (
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									onClick={() => model.document.clear()}
-									title="Clear the saved score and reload the default example"
-								>
-									Clear
-									<XIcon data-icon="inline-end" />
-								</Button>
 							)}
 						</div>
 						{input != null && (
