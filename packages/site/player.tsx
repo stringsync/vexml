@@ -8,7 +8,7 @@ import {
 	Volume2Icon,
 	VolumeXIcon,
 } from 'lucide-react';
-import { type RefObject, useRef, useState } from 'react';
+import { type RefObject, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import {
@@ -50,10 +50,6 @@ export function Player({
 	const [scrubTip, setScrubTip] = useState<{ x: number; text: string } | null>(
 		null,
 	);
-	// Seeking pauses, so a drag that began mid-playback has to hand playback back on release.
-	// Refs, not state: nothing renders off them, and the value has to survive the drag's frames.
-	const seeking = useRef(false);
-	const resumeAfterSeek = useRef(false);
 
 	// A measure jump can land outside the scroll box, so every step follows the cursor the way
 	// seeking does.
@@ -185,13 +181,9 @@ export function Player({
 							if (!session || ms === undefined) {
 								return;
 							}
-							// Read before pausing, and only once per gesture: every later frame of
-							// the same drag would read the paused state back.
-							if (!seeking.current) {
-								seeking.current = true;
-								resumeAfterSeek.current = session.playing;
-							}
-							session.setPlaying(false);
+							// The session owns the pause-and-resume, so dragging here and dragging
+							// the notation behave alike.
+							session.beginSeek();
 							session.seekMs(ms);
 							if (!session.cursor.isFullyVisible()) {
 								session.cursor.scrollIntoView({ behavior: 'smooth' });
@@ -210,13 +202,7 @@ export function Player({
 								text: `measure ${(score?.getMeasureIndexAtMs(ms) ?? 0) + 1} of ${score?.getMeasureCount() ?? 0}`,
 							});
 						}}
-						onValueCommit={() => {
-							seeking.current = false;
-							if (resumeAfterSeek.current) {
-								resumeAfterSeek.current = false;
-								session?.setPlaying(true);
-							}
-						}}
+						onValueCommit={() => session?.endSeek()}
 						onPointerLeave={() => setScrubTip(null)}
 						onPointerUp={() => setScrubTip(null)}
 						aria-label="Seek"

@@ -46,6 +46,9 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	private readonly disposer = new Disposer();
 	private readonly timer = new SystemTimer();
 	private readonly loop = new AnimationLoop(new SystemClock());
+	// A scrub gesture in progress, and whether it interrupted playback that owes a resume.
+	private seeking = false;
+	private resumeAfterSeek = false;
 	// The notes currently sounding, so a change can tell what newly started and what stopped.
 	private readonly lit = new Set<Note>();
 	// The voice each sounding note owns, keyed by Note (not pitch) so a re-struck pitch, which a
@@ -121,24 +124,41 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.apply();
 		});
 		// Click or drag anywhere on the score scrubs the cursor to that position's time.
-		this.watch(this.score.events, 'pointerdown', (e) => this.seekTo(e.point));
+		this.watch(this.score.events, 'pointerdown', (e) => {
+			this.beginSeek();
+			this.seekTo(e.point);
+		});
 		this.watch(this.score.events, 'pointermove', (e) => {
 			// buttons === 1 means the primary button is held, so this continues the scrub during a
-			// drag and ignores a plain hover: no manual drag-state flag needed.
+			// drag and ignores a plain hover: no manual drag-state flag needed. beginSeek also
+			// catches a drag that started off the score and moved onto it.
 			if (e.native.buttons === 1) {
+				this.beginSeek();
 				this.seekTo(e.point);
 				this.follow();
 			}
 		});
-		// Finishing a scrub-drag: if the cursor landed off-screen, bring it into view (the
-		// playing-gated visibility listener above stays quiet while paused).
-		this.watch(this.score.events, 'pointerup', () => this.follow());
+		// Finishing a scrub-drag: hand playback back if the drag took it, and if the cursor landed
+		// off-screen bring it into view (the playing-gated visibility listener above stays quiet
+		// while paused).
+		this.watch(this.score.events, 'pointerup', () => {
+			this.endSeek();
+			this.follow();
+		});
+		// A drag released off the score never reaches the score's own pointerup, so the window's
+		// is what guarantees the gesture closes. endSeek does nothing when none is open.
+		const onPointerUp = () => this.endSeek();
+		window.addEventListener('pointerup', onPointerUp);
+		this.disposer.defer(() =>
+			window.removeEventListener('pointerup', onPointerUp),
+		);
 
 		this.paint(this.cursor.getHighlightedElements());
 	}
 
 	/* Start or stop the play loop. Starting from the end restarts from the top. */
 	togglePlay(): void {
+		this.forgetSeek();
 		if (this.playing) {
 			this.stop();
 			return;
@@ -152,6 +172,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	}
 
 	setPlaying(playing: boolean): void {
+		this.forgetSeek();
 		if (playing === this.playing) {
 			return;
 		}
@@ -208,6 +229,36 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 
 	seekMs(ms: number): void {
 		this.cursor.seekMs(ms);
+	}
+
+	/*
+	 * Opens a scrub gesture. Seeking pauses, so the gesture records whether it interrupted
+	 * playback and `endSeek` hands it back. Both the notation drag and the transport's seek bar
+	 * go through this pair, so a drag behaves the same wherever it started. Calling it again
+	 * mid-gesture is a no-op: every frame of a drag arrives here, and only the first has the
+	 * pre-seek state to read.
+	 */
+	beginSeek(): void {
+		if (this.seeking) {
+			return;
+		}
+		const wasPlaying = this.playing;
+		this.stop();
+		this.seeking = true;
+		this.resumeAfterSeek = wasPlaying;
+	}
+
+	/* Closes the gesture, resuming if it was playing when the gesture began. */
+	endSeek(): void {
+		if (!this.seeking) {
+			return;
+		}
+		this.seeking = false;
+		if (this.resumeAfterSeek) {
+			this.resumeAfterSeek = false;
+			this.start();
+			this.dispatcher.dispatch('changed');
+		}
 	}
 
 	/* The step the cursor sits on, clamped to the first (before the first onset there is none). */
@@ -273,6 +324,12 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.stop();
 			this.cursor.seekMs(at.ms);
 		}
+	}
+
+	/* Drops a pending resume, so an explicit play or pause is the last word on the matter. */
+	private forgetSeek(): void {
+		this.seeking = false;
+		this.resumeAfterSeek = false;
 	}
 
 	private follow(): void {
