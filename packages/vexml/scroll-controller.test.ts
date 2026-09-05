@@ -3,7 +3,7 @@ import { Rect } from 'webappwiz/geometry';
 import { FakeScrollHost } from './fake-scroll-host';
 import { ScrollController } from './scroll-controller';
 
-// Longer than SCROLL_DURATION_MS (350) so an in-flight tween has fully landed.
+// Longer than SCROLL_DURATION_MS (200) so an in-flight tween has fully landed.
 const settle = () => new Promise((r) => setTimeout(r, 500));
 
 // Unless a test says otherwise, the target is a narrow rect at x=0, always visible horizontally
@@ -20,7 +20,7 @@ describe('ScrollController', () => {
 
 	it('passes the axis-resolved offset straight through on an instant scroll', () => {
 		scroller.scrollIntoView(new Rect(150, 10, 10, 10));
-		expect(host.calls).toEqual([{ left: 60, top: -6, behavior: undefined }]);
+		expect(host.calls).toEqual([{ left: 134, top: -6, behavior: undefined }]);
 	});
 
 	it('leaves x alone when the target is already visible horizontally', () => {
@@ -28,10 +28,37 @@ describe('ScrollController', () => {
 		expect(host.last()).toEqual({ left: 0, top: 34, behavior: undefined });
 	});
 
-	it('scrolls x back to the near edge when the target is off to the left', () => {
+	it('turns the page to the left edge when the target runs off to the right', () => {
+		// The 150..160 target left the 0..100 view by its right edge, so it comes back 16px in
+		// from the left with the rest of the viewport ahead of it — not pinned flush at the right.
+		scroller.scrollIntoView(new Rect(150, 10, 10, 10));
+		expect(host.last()?.left).toBe(134);
+	});
+
+	it('turns the page to the right edge when the target runs off to the left', () => {
+		// Mirrored: the 220..230 target left the 300..400 view by its left edge, so it comes back
+		// 16px in from the right with the viewport it came from behind it.
+		host.scroll = { left: 300, top: 0 };
+		scroller.scrollIntoView(new Rect(220, 10, 10, 10));
+		expect(host.last()?.left).toBe(146);
+	});
+
+	it('aligns a target wider than the viewport to its left edge', () => {
+		// Off both sides at once, so there is no edge it left by; the near edge wins. scrollTo
+		// clamps the negative to 0 in a real container.
 		host.scroll = { left: 50, top: 0 };
-		scroller.scrollIntoView(new Rect(20, 10, 10, 10));
-		expect(host.last()).toEqual({ left: 20, top: -6, behavior: undefined });
+		scroller.scrollIntoView(new Rect(20, 10, 300, 10));
+		expect(host.last()?.left).toBe(4);
+	});
+
+	it('does not scroll x while the target stays inside the view', () => {
+		// The creep this guards against: three bars advancing across one viewport must leave the
+		// horizontal offset alone, or the music would slide under the cursor note by note.
+		host.scroll = { left: 300, top: 0 };
+		for (const x of [310, 350, 390]) {
+			scroller.scrollIntoView(new Rect(x, 10, 10, 10));
+		}
+		expect(host.calls.map((c) => c.left)).toEqual([300, 300, 300]);
 	});
 
 	it('tweens over several instant frames and lands exactly on the target', async () => {

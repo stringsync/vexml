@@ -457,8 +457,8 @@ export const FRET_HALF_H = 7;
 export const SCROLL_DURATION_MS = 200;
 
 /** Above this scroll speed (px of travel per ms, i.e. distance / SCROLL_DURATION_MS), the tween
- * would fling too fast to read, so we snap instantly instead. At 350ms this snaps travels beyond
- * ~1050px. ponytail: tune to taste. */
+ * would fling too fast to read, so we snap instantly instead. At 200ms this snaps travels beyond
+ * ~600px — which is most horizontal page-turns, and they read better as a cut than as a blur. */
 export const MAX_SCROLL_SPEED_PX_PER_MS = 3;
 
 /** Tween step interval (~60fps). setTimeout, not requestAnimationFrame — rAF isn't available in the
@@ -468,6 +468,10 @@ export const SCROLL_FRAME_MS = 16;
 
 /** Breathing room left above a rect scrolled to the top of the viewport, so it isn't pinned flush. */
 export const SCROLL_TOP_PADDING_PX = 16;
+
+/** Breathing room left beside a rect scrolled to the near or far edge of the viewport, so it isn't
+ * pinned flush against it. */
+export const SCROLL_SIDE_PADDING_PX = 16;
 
 /** How long the scroll box must go without a resize before the ScrollController resumes scrolling.
  * A resize arrives as a burst of ResizeObserver callbacks; scrolling mid-burst targets stale

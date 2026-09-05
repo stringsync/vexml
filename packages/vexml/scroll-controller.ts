@@ -6,6 +6,7 @@ import {
 	RESIZE_SETTLE_MS,
 	SCROLL_DURATION_MS,
 	SCROLL_FRAME_MS,
+	SCROLL_SIDE_PADDING_PX,
 	SCROLL_TOP_PADDING_PX,
 } from './constants';
 import type { ScrollHost } from './scroll-host';
@@ -160,36 +161,45 @@ export class ScrollController implements Scroller {
 
 	/*
 	 * The scroll offset that brings `target` into `view`, both in the container's scroll-content
-	 * coordinates. Horizontal is minimal: if the target's near edge is off the near side, align to it; if
-	 * its far edge is off the far side, scroll just enough to show it; otherwise leave it. So scrolling a
-	 * horizontally-off-screen bar in a panoramic score never disturbs the vertical position. Vertical
-	 * pins the target's top to the viewport top (scrollTo clamps to the max scroll height near the end of
-	 * the content). Pure — the DOM application lives in scrollIntoView.
+	 * coordinates. Vertical pins the target's top to the viewport top (scrollTo clamps to the max
+	 * scroll height near the end of the content); horizontal turns the page, see below. Only the
+	 * off-screen axis moves, so chasing a horizontally-off-screen bar in a panoramic score never
+	 * disturbs the vertical position. Pure — the DOM application lives in scrollIntoView.
 	 */
 	private scrollOffsetFor(
 		target: Box,
 		view: Box,
 	): { left: number; top: number } {
-		const axis = (
-			tLo: number,
-			tHi: number,
-			vLo: number,
-			vHi: number,
-		): number => {
-			if (tLo < vLo) {
-				return tLo;
-			}
-			if (tHi > vHi) {
-				return vLo + (tHi - vHi);
-			}
-			return vLo;
-		};
 		return {
-			left: axis(target.left, target.right, view.left, view.right),
+			left: this.pageX(target, view),
 			// Leave breathing room above the target instead of pinning it flush to the top. scrollTo
 			// clamps negatives to 0.
 			top: target.top - SCROLL_TOP_PADDING_PX,
 		};
+	}
+
+	/*
+	 * Where the scroll box goes horizontally to keep `target` in `view`: a page-turn, not a nudge.
+	 *
+	 * A target still on screen doesn't move the box at all — otherwise a cursor crossing a panoramic
+	 * score would drag the music under it note by note. Once it does leave, the edge it left by
+	 * decides where it comes back: a bar that ran off the right returns at the *left* edge, with a
+	 * full viewport of music still ahead of it, and one that ran off the left (a repeat, a scrub
+	 * backwards) returns at the *right*, with a full viewport behind. Scrolling only far enough to
+	 * expose the bar would leave it pinned to the edge it exited by, so the very next bar would
+	 * scroll again, and the score would creep continuously instead of turning pages.
+	 */
+	private pageX(target: Box, view: Box): number {
+		const width = view.right - view.left;
+		if (target.left >= view.left && target.right <= view.right) {
+			return view.left;
+		}
+		// A target wider than the viewport can only be aligned one way; it falls through to the near
+		// edge, same as one that ran off the right.
+		if (target.left < view.left && target.right <= view.right) {
+			return target.right + SCROLL_SIDE_PADDING_PX - width;
+		}
+		return target.left - SCROLL_SIDE_PADDING_PX;
 	}
 }
 
