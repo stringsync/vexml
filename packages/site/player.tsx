@@ -68,7 +68,7 @@ export function Player({
 			// keeps inset-x-4 padding. Rides up with the bottom sheet on mobile, fixed on desktop.
 			className="absolute inset-x-4 bottom-full z-30 mx-auto mb-4 flex max-w-237.5 flex-col gap-2 rounded-2xl border bg-background/95 px-4 py-2.5 shadow-lg backdrop-blur sm:inset-x-6 sm:px-6 md:fixed md:inset-x-auto md:bottom-4 md:left-86 md:right-6 md:mb-0"
 		>
-			<div className="relative flex items-center justify-center gap-3">
+			<div className="relative flex items-center justify-center gap-1">
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
