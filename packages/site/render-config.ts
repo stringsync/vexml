@@ -32,6 +32,11 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 	// `live`, and dropping them would silently reset the width a user set before switching views.
 	private stashedLayout: StandardLayoutInput | undefined;
 
+	// The gap above the player, as the fit observer last measured it. Kept aside rather than in
+	// `live` because it is a measurement, not a knob, and because which config key it lands in
+	// depends on the layout — see `fit`.
+	private measuredHeight: number | undefined;
+
 	private readonly disposer = new Disposer();
 	private readonly debouncer = new Debouncer(
 		new SystemTimer(),
@@ -108,24 +113,22 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 
 	/* Drop every override, including the whole layout object. */
 	resetAll(): void {
-		const { height, layout } = this.live;
+		const { layout } = this.live;
 		this.stashedLayout = undefined;
-		// height is measured rather than chosen, and the layout type is a view the user is looking
-		// at rather than a knob: resetting the sliders must neither collapse the scroll box nor
-		// kick the score out of the panoramic view.
-		this.set({
-			...(height === undefined ? {} : { height }),
-			...(layout?.type === 'panoramic' ? { layout } : {}),
-		});
+		// The layout type is a view the user is looking at rather than a knob: resetting the
+		// sliders must not kick the score out of the panoramic view. The measured fit is put back
+		// by `set`, so resetting cannot collapse the scroll box either.
+		this.set({ ...(layout?.type === 'panoramic' ? { layout } : {}) });
 	}
 
 	/* The measured scroll-box height, from the fit observer. Same value is a no-op, which is what
 	 * breaks the feedback loop: applying a height resizes the container, which re-measures. */
 	setHeight(height: number): void {
-		if (this.live.height === height) {
+		if (this.measuredHeight === height) {
 			return;
 		}
-		this.set({ ...this.live, height });
+		this.measuredHeight = height;
+		this.set(this.live);
 	}
 
 	/* Report how long a render took, so the next config change knows whether to debounce. Null
@@ -152,8 +155,28 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 		this.disposer.dispose();
 	}
 
+	/* Place the measured fit on whichever height knob the current layout wants.
+	 *
+	 * Stacked scores run past the bottom of the gap, so they take it as a fixed `height` and scroll
+	 * within it. A panorama is a single system — a fixed height would leave most of the card empty
+	 * below the music — so it takes the same number as a `maxHeight` cap and keeps its natural
+	 * height, scrolling only if one system somehow grows taller than the gap.
+	 *
+	 * Both keys are stripped first, so switching views moves the measurement across rather than
+	 * leaving the old view's key behind to fight the new one. */
+	private fit(config: ConfigInput): ConfigInput {
+		const { height: _height, maxHeight: _maxHeight, ...rest } = config;
+		if (this.measuredHeight === undefined) {
+			return rest;
+		}
+		return config.layout?.type === 'panoramic'
+			? { ...rest, maxHeight: this.measuredHeight }
+			: { ...rest, height: this.measuredHeight };
+	}
+
 	// One write path, so `live`, `applied` and `debouncing` can only move together.
-	private set(next: ConfigInput): void {
+	private set(input: ConfigInput): void {
+		const next = this.fit(input);
 		this.live = next;
 		this.debouncer.cancel();
 		// A fast last render keeps up with the sliders, so skip the wait entirely.

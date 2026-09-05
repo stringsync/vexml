@@ -685,10 +685,13 @@ export default function App() {
 									// invisible (not hidden) until initialized so the container keeps its
 									// width — the canvas fits against it and would fit against 0 if removed.
 									// Panoramic is the horizontal scroll box itself — vexml's ScrollController
-									// scrolls this container either way, and the measured height already ends
-									// it above the player, so the scrollbar lands somewhere reachable. It also
-									// drops the page-width cap: a panorama has no page to be as wide as.
-									className={`relative mx-auto w-full rounded-t-2xl border border-border bg-card px-6 py-8 shadow-score md:rounded-2xl md:px-12 md:py-14 ${panoramic ? 'overflow-x-auto' : 'max-w-237.5'} ${initialized ? '' : 'invisible'}`}
+									// scrolls this container either way, and the measured cap already ends it
+									// above the player, so the scrollbar lands somewhere reachable. The card
+									// wraps the panorama rather than filling the space: w-fit hugs the music
+									// (the height cap does the same vertically) and max-w-full stops a long one
+									// from pushing past the space, leaving it to scroll. It also drops the
+									// page-width cap: a panorama has no page to be as wide as.
+									className={`relative mx-auto rounded-t-2xl border border-border bg-card px-6 py-8 shadow-score md:rounded-2xl md:px-12 md:py-14 ${panoramic ? 'w-fit max-w-full overflow-x-auto' : 'w-full max-w-237.5'} ${initialized ? '' : 'invisible'}`}
 								/>
 							)}
 						</div>
