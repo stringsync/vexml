@@ -4,7 +4,6 @@ import {
 	AlertCircleIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
-	ChevronUpIcon,
 	UploadIcon,
 	XIcon,
 } from 'lucide-react';
@@ -34,6 +33,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
+import {
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+} from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { ConfigSlider } from './config-slider';
@@ -103,7 +108,6 @@ const projection = (model: SiteModel) => ({
 export default function App() {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const playerRef = useRef<HTMLDivElement>(null);
-	const fitRef = useRef<ScoreFit | null>(null);
 	const model = useResource(buildModel);
 	const {
 		text,
@@ -127,11 +131,7 @@ export default function App() {
 
 	// Purely local view state: nothing outside the component reads any of it.
 	const [dragging, setDragging] = useState(false);
-	const [mobileOpen, setMobileOpen] = useState(false);
-	// The sheet opens collapsed with no animation: the grid-rows transition is only enabled once
-	// the user first taps it, so the initial (and any HMR/remount) render can't slide it down.
-	const [sheetToggled, setSheetToggled] = useState(false);
-	const [scrolled, setScrolled] = useState(false);
+	const [controlsOpen, setControlsOpen] = useState(false);
 
 	const layout = config.layout?.type === 'standard' ? config.layout : undefined;
 	const noteSpacing = config.noteSpacing ?? DEFAULT_NOTE_SPACING;
@@ -170,12 +170,7 @@ export default function App() {
 			if (!initialized || !container || !player) {
 				return;
 			}
-			fitRef.current = disposer.use(
-				new ScoreFit(container, player, model.config),
-			);
-			disposer.defer(() => {
-				fitRef.current = null;
-			});
+			disposer.use(new ScoreFit(container, player, model.config));
 		},
 		[model, initialized],
 	);
@@ -237,370 +232,326 @@ export default function App() {
 		}
 	}
 
-	return (
-		<div className="flex h-screen flex-col bg-muted/40 text-foreground">
-			<Header />
-
-			<main className="flex min-h-0 flex-1">
-				{/* underlay: tap-to-close backdrop behind the panel (mobile only) */}
-				<div
-					onClick={() => setMobileOpen(false)}
-					aria-hidden="true"
-					className={`fixed inset-0 z-10 bg-black/40 transition-opacity duration-300 md:hidden ${mobileOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
-				/>
-
-				{/* No overflow on the aside: Safari clips position:fixed descendants (the Player)
-				    to an overflow ancestor's box. Desktop scrolling lives on the inner config
-				    div below instead, which the fixed Player is not a descendant of. */}
-				<aside className="fixed inset-x-0 bottom-0 z-20 flex flex-col rounded-t-xl border-t bg-background shadow-[0_-4px_16px_rgba(0,0,0,0.1)] md:static md:max-h-none md:w-80 md:shrink-0 md:rounded-none md:border-t-0 md:border-r md:shadow-none">
-					{input != null && initialized && (
-						<Player
-							playerRef={playerRef}
-							session={session}
-							instrument={model.instrument}
-							muted={muted}
-							playing={playing}
-							timeMs={timeMs}
-							durationMs={durationMs}
+	// One copy of the panel, rendered into the desktop aside and into the mobile Sheet.
+	const controls = (
+		<>
+			<Section title="MusicXML">
+				<Button asChild className="w-full cursor-pointer">
+					<label>
+						<UploadIcon data-icon="inline-start" />
+						Choose File
+						<input
+							type="file"
+							accept=".xml,.musicxml,.mxl"
+							className="hidden"
+							onChange={onFile}
 						/>
-					)}
-					{/* top part: always visible, taps toggle the panel */}
+					</label>
+				</Button>
+
+				<FieldSeparator>or</FieldSeparator>
+
+				<Field>
+					<FieldLabel htmlFor="example">Select an Example</FieldLabel>
+					<div className="flex items-center gap-1.5">
+						<Button
+							type="button"
+							variant="outline"
+							size="icon"
+							disabled={!prevFixture}
+							onClick={() =>
+								prevFixture && model.document.loadFixture(prevFixture)
+							}
+							aria-label="Previous example"
+						>
+							<ChevronLeftIcon />
+						</Button>
+						<Select
+							value={fixture}
+							onValueChange={(name) => model.document.loadFixture(name)}
+						>
+							<SelectTrigger id="example" className="min-w-0 flex-1">
+								<SelectValue placeholder="Load an example…" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectGroup>
+									{fixtureNames.map((name) => (
+										<SelectItem key={name} value={name}>
+											{name}
+										</SelectItem>
+									))}
+								</SelectGroup>
+							</SelectContent>
+						</Select>
+						<Button
+							type="button"
+							variant="outline"
+							size="icon"
+							disabled={!nextFixture}
+							onClick={() =>
+								nextFixture && model.document.loadFixture(nextFixture)
+							}
+							aria-label="Next example"
+						>
+							<ChevronRightIcon />
+						</Button>
+					</div>
+				</Field>
+
+				<FieldSeparator>or</FieldSeparator>
+
+				<Collapsible className="flex flex-col gap-2">
+					<CollapsibleTrigger asChild>
+						{/* The chevron turns down when it opens, so the row reads as
+						    the disclosure toggle it is rather than as a label. */}
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							className="w-fit [&>svg]:transition-transform [&[data-state=open]>svg]:rotate-90"
+						>
+							<ChevronRightIcon data-icon="inline-start" />
+							Edit MusicXML
+						</Button>
+					</CollapsibleTrigger>
+					<CollapsibleContent>
+						<Textarea
+							id="musicxml"
+							value={text}
+							onChange={onTextChange}
+							placeholder="Paste MusicXML here"
+							spellCheck={false}
+							className="h-48 resize-y font-mono text-xs"
+						/>
+					</CollapsibleContent>
+				</Collapsible>
+			</Section>
+
+			<Section
+				title="Config"
+				action={
 					<Button
 						type="button"
 						variant="ghost"
-						onClick={() => {
-							setSheetToggled(true);
-							setMobileOpen((o) => !o);
-						}}
-						aria-expanded={mobileOpen}
-						aria-label={mobileOpen ? 'Hide controls' : 'Show controls'}
-						className={`h-auto w-full rounded-t-xl rounded-b-none py-3 transition-shadow md:hidden ${scrolled ? 'shadow-[0_4px_8px_rgba(0,0,0,0.08)]' : ''}`}
+						size="sm"
+						onClick={() => model.config.resetAll()}
+						disabled={!canReset}
 					>
-						<ChevronUpIcon
-							className={`transition-transform duration-300 ${mobileOpen ? 'rotate-180' : ''}`}
-						/>
+						Reset all
 					</Button>
+				}
+			>
+				<FieldDescription>
+					With only a single system, some controls (e.g. system spacing and max
+					system fill) won't have a visible effect.
+				</FieldDescription>
 
-					{/* grid-rows 0fr↔1fr animates the height open/closed (only once tapped, so the
-					    default collapsed state never slides in); its end re-fits the score box */}
-					<div
-						onTransitionEnd={() => fitRef.current?.remeasure()}
-						className={`grid md:min-h-0 md:flex-1 md:grid-rows-[1fr] ${sheetToggled ? 'transition-[grid-template-rows] duration-300' : ''} ${mobileOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
+				<Field>
+					<FieldLabel htmlFor="instrument">Instrument</FieldLabel>
+					<Select
+						value={instrumentName}
+						onValueChange={(name) => model.instrument.setName(name)}
 					>
-						<div className="min-h-0 overflow-hidden">
-							<div
-								onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 0)}
-								className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto p-4 md:h-full md:max-h-none"
-							>
-								<Section title="MusicXML">
-									<Button asChild className="w-full cursor-pointer">
-										<label>
-											<UploadIcon data-icon="inline-start" />
-											Choose File
-											<input
-												type="file"
-												accept=".xml,.musicxml,.mxl"
-												className="hidden"
-												onChange={onFile}
-											/>
-										</label>
-									</Button>
+						<SelectTrigger id="instrument">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectGroup>
+								{INSTRUMENTS.map((i) => (
+									<SelectItem key={i.value} value={i.value}>
+										{i.label}
+									</SelectItem>
+								))}
+							</SelectGroup>
+						</SelectContent>
+					</Select>
+					<FieldDescription>
+						The synth voice used for playback and note previews.
+					</FieldDescription>
+				</Field>
 
-									<FieldSeparator>or</FieldSeparator>
+				<Field>
+					<FieldLabel htmlFor="notationFont">Notation font</FieldLabel>
+					<Select
+						value={notationFont}
+						onValueChange={(family) => {
+							if (family === 'Bravura') {
+								model.config.clear('fonts');
+							} else {
+								model.config.patch({
+									fonts: {
+										...config.fonts,
+										notation: { family },
+									},
+								});
+							}
+						}}
+					>
+						<SelectTrigger id="notationFont">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectGroup>
+								<SelectItem value="Bravura">Bravura</SelectItem>
+								<SelectItem value="Petaluma">Petaluma</SelectItem>
+								<SelectItem value="Gonville">Gonville</SelectItem>
+							</SelectGroup>
+						</SelectContent>
+					</Select>
+					<FieldDescription>
+						The engraving font for noteheads, clefs, accidentals, and rests.
+						Bravura is the default.
+					</FieldDescription>
+				</Field>
 
-									<Field>
-										<FieldLabel htmlFor="example">Select an Example</FieldLabel>
-										<div className="flex items-center gap-1.5">
-											<Button
-												type="button"
-												variant="outline"
-												size="icon"
-												disabled={!prevFixture}
-												onClick={() =>
-													prevFixture && model.document.loadFixture(prevFixture)
-												}
-												aria-label="Previous example"
-											>
-												<ChevronLeftIcon />
-											</Button>
-											<Select
-												value={fixture}
-												onValueChange={(name) =>
-													model.document.loadFixture(name)
-												}
-											>
-												<SelectTrigger id="example" className="min-w-0 flex-1">
-													<SelectValue placeholder="Load an example…" />
-												</SelectTrigger>
-												<SelectContent>
-													<SelectGroup>
-														{fixtureNames.map((name) => (
-															<SelectItem key={name} value={name}>
-																{name}
-															</SelectItem>
-														))}
-													</SelectGroup>
-												</SelectContent>
-											</Select>
-											<Button
-												type="button"
-												variant="outline"
-												size="icon"
-												disabled={!nextFixture}
-												onClick={() =>
-													nextFixture && model.document.loadFixture(nextFixture)
-												}
-												aria-label="Next example"
-											>
-												<ChevronRightIcon />
-											</Button>
-										</div>
-									</Field>
+				<ConfigSlider
+					id="noteSpacing"
+					label="Note spacing"
+					display={noteSpacing}
+					value={noteSpacing}
+					min={12}
+					max={120}
+					step={1}
+					onChange={(noteSpacing) => model.config.patch({ noteSpacing })}
+					onReset={() => model.config.clear('noteSpacing')}
+					canReset={config.noteSpacing !== undefined}
+					description="How much horizontal space notes get: the px a quarter note is allotted. Higher spreads every measure wider."
+				/>
 
-									<FieldSeparator>or</FieldSeparator>
+				<ConfigSlider
+					id="softmaxFactor"
+					label="Softmax factor"
+					display={softmaxFactor}
+					value={softmaxFactor}
+					min={1}
+					max={30}
+					step={1}
+					onChange={(softmaxFactor) => model.config.patch({ softmaxFactor })}
+					onReset={() => model.config.clear('softmaxFactor')}
+					canReset={config.softmaxFactor !== undefined}
+					description="How that space is divided among notes. Higher exaggerates the width difference between long and short notes."
+				/>
 
-									<Collapsible className="flex flex-col gap-2">
-										<CollapsibleTrigger asChild>
-											{/* The chevron turns down when it opens, so the row reads as
-											    the disclosure toggle it is rather than as a label. */}
-											<Button
-												type="button"
-												variant="ghost"
-												size="sm"
-												className="w-fit [&>svg]:transition-transform [&[data-state=open]>svg]:rotate-90"
-											>
-												<ChevronRightIcon data-icon="inline-start" />
-												Edit MusicXML
-											</Button>
-										</CollapsibleTrigger>
-										<CollapsibleContent>
-											<Textarea
-												id="musicxml"
-												value={text}
-												onChange={onTextChange}
-												placeholder="Paste MusicXML here"
-												spellCheck={false}
-												className="h-48 resize-y font-mono text-xs"
-											/>
-										</CollapsibleContent>
-									</Collapsible>
-								</Section>
+				<ConfigSlider
+					id="systemSpacing"
+					label="System spacing"
+					display={systemSpacing}
+					value={systemSpacing}
+					min={10}
+					max={50}
+					step={1}
+					onChange={(systemSpacing) => model.config.patch({ systemSpacing })}
+					onReset={() => model.config.clear('systemSpacing')}
+					canReset={config.systemSpacing !== undefined}
+					description="Vertical gap between stacked systems. Lower packs systems closer together down the page."
+				/>
 
-								<Section
-									title="Config"
-									action={
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											onClick={() => model.config.resetAll()}
-											disabled={!canReset}
-										>
-											Reset all
-										</Button>
-									}
-								>
-									<FieldDescription>
-										With only a single system, some controls (e.g. system
-										spacing and max system fill) won't have a visible effect.
-									</FieldDescription>
+				<ConfigSlider
+					id="maxSystemFill"
+					label="Max system fill"
+					display={maxSystemFill.toFixed(2)}
+					value={maxSystemFill}
+					min={0.1}
+					max={1}
+					step={0.05}
+					onChange={(maxSystemFill) => model.config.patch({ maxSystemFill })}
+					onReset={() => model.config.clear('maxSystemFill')}
+					canReset={config.maxSystemFill !== undefined}
+					description="How full a system gets before the next measure wraps to a new line. Lower leaves more air; 1 packs each line to the edge."
+				/>
 
-									<Field>
-										<FieldLabel htmlFor="instrument">Instrument</FieldLabel>
-										<Select
-											value={instrumentName}
-											onValueChange={(name) => model.instrument.setName(name)}
-										>
-											<SelectTrigger id="instrument">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectGroup>
-													{INSTRUMENTS.map((i) => (
-														<SelectItem key={i.value} value={i.value}>
-															{i.label}
-														</SelectItem>
-													))}
-												</SelectGroup>
-											</SelectContent>
-										</Select>
-										<FieldDescription>
-											The synth voice used for playback and note previews.
-										</FieldDescription>
-									</Field>
+				<Field orientation="horizontal">
+					<Checkbox
+						id="honorSystemBreaks"
+						checked={layout?.honorSystemBreaks ?? true}
+						onCheckedChange={(checked) =>
+							model.config.patchLayout({
+								honorSystemBreaks: checked === true,
+							})
+						}
+					/>
+					<FieldContent>
+						<FieldLabel htmlFor="honorSystemBreaks">
+							Honor system breaks
+						</FieldLabel>
+						<FieldDescription>
+							Whether a <code>&lt;print new-system="yes"&gt;</code> in the
+							document forces a line break. Off wraps purely on width.
+						</FieldDescription>
+					</FieldContent>
+				</Field>
 
-									<Field>
-										<FieldLabel htmlFor="notationFont">
-											Notation font
-										</FieldLabel>
-										<Select
-											value={notationFont}
-											onValueChange={(family) => {
-												if (family === 'Bravura') {
-													model.config.clear('fonts');
-												} else {
-													model.config.patch({
-														fonts: {
-															...config.fonts,
-															notation: { family },
-														},
-													});
-												}
-											}}
-										>
-											<SelectTrigger id="notationFont">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectGroup>
-													<SelectItem value="Bravura">Bravura</SelectItem>
-													<SelectItem value="Petaluma">Petaluma</SelectItem>
-													<SelectItem value="Gonville">Gonville</SelectItem>
-												</SelectGroup>
-											</SelectContent>
-										</Select>
-										<FieldDescription>
-											The engraving font for noteheads, clefs, accidentals, and
-											rests. Bravura is the default.
-										</FieldDescription>
-									</Field>
+				<ConfigSlider
+					id="width"
+					label="Reference width"
+					display={width}
+					value={width}
+					min={400}
+					max={2000}
+					step={50}
+					onChange={(referenceWidth) =>
+						model.config.patchLayout({ referenceWidth })
+					}
+					onReset={() => model.config.clearLayout('referenceWidth')}
+					canReset={layout?.referenceWidth !== undefined}
+					description="The width the score is engraved to; the rendering then scales up or down to fit its container. Wider fits more measures per system before wrapping."
+				/>
 
-									<ConfigSlider
-										id="noteSpacing"
-										label="Note spacing"
-										display={noteSpacing}
-										value={noteSpacing}
-										min={12}
-										max={120}
-										step={1}
-										onChange={(noteSpacing) =>
-											model.config.patch({ noteSpacing })
-										}
-										onReset={() => model.config.clear('noteSpacing')}
-										canReset={config.noteSpacing !== undefined}
-										description="How much horizontal space notes get: the px a quarter note is allotted. Higher spreads every measure wider."
-									/>
+				<Field>
+					<FieldLabel htmlFor="overflow">Overflow</FieldLabel>
+					<Select
+						value={layout?.overflow ?? 'wrap'}
+						onValueChange={(overflow) =>
+							model.config.patchLayout({
+								overflow: overflow as SystemOverflow,
+							})
+						}
+					>
+						<SelectTrigger id="overflow">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectGroup>
+								<SelectItem value="wrap">wrap</SelectItem>
+								<SelectItem value="allow">allow</SelectItem>
+								<SelectItem value="widen">widen</SelectItem>
+							</SelectGroup>
+						</SelectContent>
+					</Select>
+					<FieldDescription>
+						What gives when a document's engraved line can't fit the reference
+						width: <code>wrap</code> breaks the line anyway, <code>allow</code>{' '}
+						lets it stick out past the width, and <code>widen</code> grows the
+						width until it fits. The notes are never squeezed together far
+						enough to collide.
+					</FieldDescription>
+				</Field>
+			</Section>
+		</>
+	);
 
-									<ConfigSlider
-										id="softmaxFactor"
-										label="Softmax factor"
-										display={softmaxFactor}
-										value={softmaxFactor}
-										min={1}
-										max={30}
-										step={1}
-										onChange={(softmaxFactor) =>
-											model.config.patch({ softmaxFactor })
-										}
-										onReset={() => model.config.clear('softmaxFactor')}
-										canReset={config.softmaxFactor !== undefined}
-										description="How that space is divided among notes. Higher exaggerates the width difference between long and short notes."
-									/>
+	return (
+		<div className="flex h-screen flex-col bg-muted/40 text-foreground">
+			<Header onOpenControls={() => setControlsOpen(true)} />
 
-									<ConfigSlider
-										id="systemSpacing"
-										label="System spacing"
-										display={systemSpacing}
-										value={systemSpacing}
-										min={10}
-										max={50}
-										step={1}
-										onChange={(systemSpacing) =>
-											model.config.patch({ systemSpacing })
-										}
-										onReset={() => model.config.clear('systemSpacing')}
-										canReset={config.systemSpacing !== undefined}
-										description="Vertical gap between stacked systems. Lower packs systems closer together down the page."
-									/>
-
-									<ConfigSlider
-										id="maxSystemFill"
-										label="Max system fill"
-										display={maxSystemFill.toFixed(2)}
-										value={maxSystemFill}
-										min={0.1}
-										max={1}
-										step={0.05}
-										onChange={(maxSystemFill) =>
-											model.config.patch({ maxSystemFill })
-										}
-										onReset={() => model.config.clear('maxSystemFill')}
-										canReset={config.maxSystemFill !== undefined}
-										description="How full a system gets before the next measure wraps to a new line. Lower leaves more air; 1 packs each line to the edge."
-									/>
-
-									<Field orientation="horizontal">
-										<Checkbox
-											id="honorSystemBreaks"
-											checked={layout?.honorSystemBreaks ?? true}
-											onCheckedChange={(checked) =>
-												model.config.patchLayout({
-													honorSystemBreaks: checked === true,
-												})
-											}
-										/>
-										<FieldContent>
-											<FieldLabel htmlFor="honorSystemBreaks">
-												Honor system breaks
-											</FieldLabel>
-											<FieldDescription>
-												Whether a <code>&lt;print new-system="yes"&gt;</code> in
-												the document forces a line break. Off wraps purely on
-												width.
-											</FieldDescription>
-										</FieldContent>
-									</Field>
-
-									<ConfigSlider
-										id="width"
-										label="Reference width"
-										display={width}
-										value={width}
-										min={400}
-										max={2000}
-										step={50}
-										onChange={(referenceWidth) =>
-											model.config.patchLayout({ referenceWidth })
-										}
-										onReset={() => model.config.clearLayout('referenceWidth')}
-										canReset={layout?.referenceWidth !== undefined}
-										description="The width the score is engraved to; the rendering then scales up or down to fit its container. Wider fits more measures per system before wrapping."
-									/>
-
-									<Field>
-										<FieldLabel htmlFor="overflow">Overflow</FieldLabel>
-										<Select
-											value={layout?.overflow ?? 'wrap'}
-											onValueChange={(overflow) =>
-												model.config.patchLayout({
-													overflow: overflow as SystemOverflow,
-												})
-											}
-										>
-											<SelectTrigger id="overflow">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectGroup>
-													<SelectItem value="wrap">wrap</SelectItem>
-													<SelectItem value="allow">allow</SelectItem>
-													<SelectItem value="widen">widen</SelectItem>
-												</SelectGroup>
-											</SelectContent>
-										</Select>
-										<FieldDescription>
-											What gives when a document's engraved line can't fit the
-											reference width: <code>wrap</code> breaks the line anyway,{' '}
-											<code>allow</code> lets it stick out past the width, and{' '}
-											<code>widen</code> grows the width until it fits. The
-											notes are never squeezed together far enough to collide.
-										</FieldDescription>
-									</Field>
-								</Section>
-							</div>
-						</div>
+			<main className="flex min-h-0 flex-1">
+				{/* Desktop keeps the panel in the layout; below md it lives in the Sheet below. */}
+				<aside className="hidden w-80 shrink-0 flex-col border-r bg-background md:flex">
+					<div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
+						{controls}
 					</div>
 				</aside>
+
+				<Sheet open={controlsOpen} onOpenChange={setControlsOpen}>
+					<SheetContent side="left" className="w-80 gap-0">
+						<SheetHeader>
+							<SheetTitle>Controls</SheetTitle>
+						</SheetHeader>
+						<div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
+							{controls}
+						</div>
+					</SheetContent>
+				</Sheet>
 
 				{/* biome-ignore lint/a11y/noStaticElementInteractions: drag-drop zone; Choose File is the keyboard-accessible path */}
 				<section
@@ -671,6 +622,18 @@ export default function App() {
 					</div>
 				</section>
 			</main>
+
+			{input != null && initialized && (
+				<Player
+					playerRef={playerRef}
+					session={session}
+					instrument={model.instrument}
+					muted={muted}
+					playing={playing}
+					timeMs={timeMs}
+					durationMs={durationMs}
+				/>
+			)}
 
 			{tooltip && (
 				<div

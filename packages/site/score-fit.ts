@@ -13,9 +13,7 @@ const AIR_PX = 16;
  * controls, so the music fills the space above them and page-turns within it.
  *
  * Re-measures on any container dimension change (width resize, editor toggle, its own height
- * update) and on a window resize, which moves the player without resizing the container. The
- * mobile sheet moves the player without firing either, so the component calls `remeasure` when the
- * sheet's transition ends.
+ * update) and on a window resize, which moves the player without resizing the container.
  */
 export class ScoreFit implements Resource {
 	private readonly disposer = new Disposer();
@@ -37,9 +35,8 @@ export class ScoreFit implements Resource {
 	remeasure(): void {
 		const c = this.container.getBoundingClientRect();
 		const p = this.player.getBoundingClientRect();
-		// On mobile the player rides up with the open bottom sheet, so a gap measured against it
-		// would collapse the scroll box to ~0 and stick, since closing the sheet fires no event
-		// here. Skip those readings; the sheet's transition end re-measures once it is back at rest.
+		// A short viewport can scroll the container below the player, where the gap reads as
+		// negative and would collapse the scroll box. Leave the last good height standing.
 		if (p.top < c.top) {
 			return;
 		}
