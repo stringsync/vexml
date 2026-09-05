@@ -599,7 +599,8 @@ export default function App() {
 				onOpenControls={() => setControlsOpen(true)}
 			/>
 
-			<main className="flex min-h-0 flex-1">
+			{/* relative: the loading overlay below covers this whole box, controls and all. */}
+			<main className="relative flex min-h-0 flex-1">
 				{/* Desktop keeps the panel in the layout; below md it lives in the Sheet below. */}
 				<aside className="hidden w-80 shrink-0 flex-col gap-3 overflow-y-auto border-r bg-card px-3.5 py-4 md:flex">
 					{controls}
@@ -674,38 +675,22 @@ export default function App() {
 							onDrop={onDrop}
 							className={`h-full overflow-auto border-2 border-dashed px-4 pt-3 md:px-10 md:py-5 ${dragging ? 'border-brand bg-brand/5' : 'border-transparent'}`}
 						>
-							{/* relative + min-h-full so the loading overlay covers the full scroll content, not just the visible area. */}
-							<div className="relative min-h-full">
-								{input != null && (
-									// vexml appends its managed canvas here; React manages only this div's
-									// attributes, never its children. vexml sizes the score to fit this container
-									// (scaling down when narrow, never past its engraved width) and centers it — no
-									// CSS needed here.
-									<div
-										ref={containerRef}
-										// invisible (not hidden) until initialized so the container keeps its
-										// width — the canvas fits against it and would fit against 0 if removed.
-										// Panoramic is the horizontal scroll box itself — vexml's ScrollController
-										// scrolls this container either way, and the measured height already ends
-										// it above the player, so the scrollbar lands somewhere reachable. It also
-										// drops the page-width cap: a panorama has no page to be as wide as.
-										className={`relative mx-auto w-full rounded-t-2xl border border-border bg-card px-6 py-8 shadow-score md:rounded-2xl md:px-12 md:py-14 ${panoramic ? 'overflow-x-auto' : 'max-w-237.5'} ${initialized ? '' : 'invisible'}`}
-									/>
-								)}
-								{(!initialized || debouncing) && (
-									<div className="pointer-events-none absolute inset-0 bg-foreground/35">
-										{/* sticky so the card stays centered in the viewport even when the backdrop is taller than the screen */}
-										<div className="sticky top-0 flex h-screen items-center justify-center">
-											<Card className="flex-row items-center gap-3 px-6 py-5 shadow-lg">
-												<Spinner />
-												<span className="font-medium text-muted-foreground">
-													Loading…
-												</span>
-											</Card>
-										</div>
-									</div>
-								)}
-							</div>
+							{input != null && (
+								// vexml appends its managed canvas here; React manages only this div's
+								// attributes, never its children. vexml sizes the score to fit this container
+								// (scaling down when narrow, never past its engraved width) and centers it — no
+								// CSS needed here.
+								<div
+									ref={containerRef}
+									// invisible (not hidden) until initialized so the container keeps its
+									// width — the canvas fits against it and would fit against 0 if removed.
+									// Panoramic is the horizontal scroll box itself — vexml's ScrollController
+									// scrolls this container either way, and the measured height already ends
+									// it above the player, so the scrollbar lands somewhere reachable. It also
+									// drops the page-width cap: a panorama has no page to be as wide as.
+									className={`relative mx-auto w-full rounded-t-2xl border border-border bg-card px-6 py-8 shadow-score md:rounded-2xl md:px-12 md:py-14 ${panoramic ? 'overflow-x-auto' : 'max-w-237.5'} ${initialized ? '' : 'invisible'}`}
+								/>
+							)}
 						</div>
 						{/* Below md the score card runs into the player rather than ending above
 						    it, so the music fades out instead of being cut off mid-staff. */}
@@ -725,6 +710,22 @@ export default function App() {
 						/>
 					)}
 				</div>
+
+				{/* Over the whole of main, not just the score: a render in flight suspends the
+				    controls that would queue another one as much as it does the notation. Sized
+				    to main rather than to the scroll content, so it covers the panel, the player
+				    and the padding between them, and stays put while the score scrolls under it.
+				    pointer-events-none: the overlay reports, it does not trap. */}
+				{(!initialized || debouncing) && (
+					<div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-foreground/35">
+						<Card className="flex-row items-center gap-3 px-6 py-5 shadow-lg">
+							<Spinner />
+							<span className="font-medium text-muted-foreground">
+								Loading…
+							</span>
+						</Card>
+					</div>
+				)}
 			</main>
 
 			{tooltip && (
