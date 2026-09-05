@@ -46,7 +46,8 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	private readonly disposer = new Disposer();
 	private readonly timer = new SystemTimer();
 	private readonly loop = new AnimationLoop(new SystemClock());
-	// A scrub gesture in progress, and whether it interrupted playback that owes a resume.
+	// Every frame of a drag calls beginSeek, so the flag latches the gesture: the second frame
+	// would otherwise read the state the first one just paused and forget a resume was owed.
 	private seeking = false;
 	private resumeAfterSeek = false;
 	// The notes currently sounding, so a change can tell what newly started and what stopped.
