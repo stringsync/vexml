@@ -1,3 +1,4 @@
+import { MDocument } from '@stringsync/mdom';
 import { BarlineTranslator } from './barline-translator';
 import { ChordTranslator } from './chord-translator';
 import {
@@ -29,8 +30,9 @@ import { TabVoiceTranslator } from './tab-voice-translator';
 import { VoiceTranslator } from './voice-translator';
 
 /*
- * Render a MusicXML score into a container: parse the input (a MusicXML string or a compressed
- * .mxl Blob), build the stage inside the div, lay the score out, and draw it onto the stage's
+ * Render a MusicXML score into a container: parse text or a compressed .mxl Blob, or reuse an
+ * editor-owned MDocument. Document input requires empty config.gaps to avoid source mutation.
+ * Build the stage inside the div, lay the score out, and draw it onto the stage's
  * managed canvas. The caller never sees the canvas — only the returned Score, which owns the DOM
  * and is the handle for events/decorations/layers (and dispose).
  *
@@ -39,7 +41,7 @@ import { VoiceTranslator } from './voice-translator';
  * is built belongs in one of those classes rather than in this function.
  */
 export function render(
-	input: string | Blob,
+	input: string | Blob | MDocument,
 	container: HTMLDivElement,
 	config?: ConfigInput,
 ): Promise<Score> {
@@ -51,6 +53,9 @@ export function render(
 			? { ...DEFAULT_STANDARD_LAYOUT, ...layoutInput }
 			: layoutInput;
 	const resolved: Config = { ...DEFAULT_CONFIG, ...config, layout };
+	if (input instanceof MDocument && resolved.gaps.length > 0) {
+		throw new Error('render: configured gaps require string or Blob input');
+	}
 	// Scale-to-fit + center by default for a system-stacked layout that isn't a horizontal scroll
 	// box: the score is engraved once at its reference width, then shrunk to fit a narrower container
 	// (never blown up past that width) and centered. A panoramic layout, or one the caller capped into

@@ -1,3 +1,4 @@
+import type { MDocument } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
 import type { Config } from './config';
 import { DefaultDecorations } from './default-decorations';
@@ -47,7 +48,7 @@ export class ScoreRenderer {
 		private readonly configuredGaps: Gaps,
 	) {}
 
-	async render(input: string | Blob): Promise<Score> {
+	async render(input: string | Blob | MDocument): Promise<Score> {
 		if (
 			this.config.minLastSystemFill < 0 ||
 			this.config.minLastSystemFill > 1

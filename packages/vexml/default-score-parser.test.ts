@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import { MDocument } from '@stringsync/mdom';
 import { DefaultScoreParser } from './default-score-parser';
 
 const XML = `<?xml version="1.0"?>
@@ -34,6 +35,23 @@ const CHAIN_XML = `<?xml version="1.0"?>
 </score-partwise>`;
 
 describe('DefaultScoreParser', () => {
+	it('reuses an editor-owned document and its note identities across parses', async () => {
+		const document = MDocument.empty();
+		const note = document.score
+			.addPart()
+			.addMeasure()
+			.getOrCreateVoice('1')
+			.addNote({ step: 'C', octave: 4, type: 'quarter' });
+		const parser = new DefaultScoreParser();
+		expect(await parser.parse(document)).toBe(document);
+		note.setPitch({ step: 'D', octave: 4 });
+		const reparsed = await parser.parse(document);
+		expect(reparsed.score.parts[0]?.measures[0]?.notes[0]).toBe(note);
+		expect(reparsed.score.parts[0]?.measures[0]?.notes[0]?.pitch?.step).toBe(
+			'D',
+		);
+	});
+
 	it('parses a MusicXML string into a document', async () => {
 		const parser = new DefaultScoreParser();
 		const mdoc = await parser.parse(XML);
@@ -57,10 +75,10 @@ describe('DefaultScoreParser', () => {
 		]);
 	});
 
-	it('rejects input that is not a string or Blob', async () => {
+	it('rejects input that is not a string, Blob or MDocument', async () => {
 		const parser = new DefaultScoreParser();
 		await expect(parser.parse(42 as unknown as string)).rejects.toThrow(
-			new TypeError('render: input is not a string or Blob'),
+			new TypeError('render: input is not a string, Blob or MDocument'),
 		);
 	});
 });

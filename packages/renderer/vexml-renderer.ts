@@ -1,5 +1,11 @@
 import * as path from 'node:path';
-import type { ConfigInput, render, Score } from '@stringsync/vexml';
+import type { MDOMParser } from '@stringsync/mdom';
+import type {
+	ConfigInput,
+	EditingSession,
+	render,
+	Score,
+} from '@stringsync/vexml';
 import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
 import { type TabPool, tabPools } from './pool';
@@ -10,6 +16,8 @@ export interface VexmlContext {
 	score: Score;
 	container: HTMLDivElement;
 	render: typeof render;
+	MDOMParser: typeof MDOMParser;
+	EditingSession: typeof EditingSession;
 }
 
 /** A score as MusicXML text or compressed .mxl bytes, plus the config to render with. */

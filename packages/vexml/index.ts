@@ -21,6 +21,11 @@ export { CursorController } from './cursor-controller';
 export type { CursorView } from './cursor-view';
 export type { Bounded } from './decoration';
 export {
+	type EditingMove,
+	EditingSession,
+	type SelectionOptions,
+} from './editing-session';
+export {
 	Element,
 	type Highlightable,
 	isHighlightable,
@@ -44,6 +49,7 @@ export { Measure } from './measure';
 export { MeasureBox } from './measure-box';
 export { Note } from './note';
 export { Part } from './part';
+export type { PitchInput } from './pitch-edit';
 export {
 	Playhead,
 	type PlayheadOptions,

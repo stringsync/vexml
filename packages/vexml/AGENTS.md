@@ -162,6 +162,8 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 
 ## Interaction and playback
 
+- **Editing focus, note navigation, range/set selection and undo/redo** — `editing-session.ts`, `pitch-edit.ts`; host integration and current boundaries in `EDITING.md`
+- **Rendering an editor-owned mdom document without reparsing** — `render.ts`, `score-parser.ts`, `default-score-parser.ts`, `score-renderer.ts`
 - **What a caller gets from a hit test** — `element.ts`, `element-index.ts`, `note.ts`, `measure.ts`, `measure-box.ts`, `voice.ts`, `part.ts`, `system.ts`
 - **Pointer position to element** — `hit-tester.ts`, `default-hit-tester.ts`, `element-index.ts`
 - **Coloring, highlighting, halos** — `decoration.ts`, `default-decoration.ts`, `default-decorations.ts`, `decoration-style.ts`, `color-style.ts`, `halo-style.ts`

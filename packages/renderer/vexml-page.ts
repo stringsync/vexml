@@ -1,4 +1,5 @@
-import { type ConfigInput, render } from '@stringsync/vexml';
+import { MDOMParser } from '@stringsync/mdom';
+import { type ConfigInput, EditingSession, render } from '@stringsync/vexml';
 import { type EnginePage, registerPage } from './page-registry';
 import type { VexmlContext } from './vexml-renderer';
 
@@ -30,7 +31,7 @@ class VexmlPage implements EnginePage<VexmlInput, VexmlContext> {
 				? new Blob([Uint8Array.fromBase64(input.mxl)])
 				: (input.musicXML ?? '');
 		const score = await render(source, container, input.config);
-		return { score, container, render };
+		return { score, container, render, MDOMParser, EditingSession };
 	}
 }
 
