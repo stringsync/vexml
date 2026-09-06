@@ -1,5 +1,5 @@
 /*
- * Repo-private rendering: MusicXML in, pixels out, through any of four engines —
+ * Repo-private rendering: MusicXML in, pixels out, through any of four engines;
  * without callers knowing what runs underneath (a browser for vexml/OSMD/alphaTab,
  * Docker for MuseScore). `renderers` is the surface; everything else here is types.
  */

@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
-import { pool, type TabPool } from './pool';
+import { type TabPool, tabPools } from './pool';
 
 export interface OsmdInput {
 	musicXML: string;
@@ -24,6 +24,25 @@ export interface OsmdContext {
 const PAGE_HTML =
 	'<body style="margin:0;background:#fff"><div id="screenshot" style="width:1064px"></div></body>';
 
+export class OsmdRenderer extends BrowserRenderer<OsmdContext> {
+	constructor(private readonly input: OsmdInput) {
+		super();
+	}
+
+	protected pool(): TabPool {
+		return tabPools.pool('osmd', {
+			html: PAGE_HTML,
+			scripts,
+			width: 1064,
+			height: 600,
+		});
+	}
+
+	protected mountInput(): unknown {
+		return { musicXML: this.input.musicXML };
+	}
+}
+
 let script: Promise<string[]> | null = null;
 function scripts(): Promise<string[]> {
 	// OSMD's UMD build hangs the library off the window; osmd-page.ts reaches it there.
@@ -37,18 +56,4 @@ function scripts(): Promise<string[]> {
 		bundle(path.resolve(import.meta.dir, 'osmd-page.ts')),
 	]);
 	return script;
-}
-
-export class OsmdRenderer extends BrowserRenderer<OsmdContext> {
-	constructor(private readonly input: OsmdInput) {
-		super();
-	}
-
-	protected pool(): TabPool {
-		return pool('osmd', { html: PAGE_HTML, scripts, width: 1064, height: 600 });
-	}
-
-	protected mountInput(): unknown {
-		return { musicXML: this.input.musicXML };
-	}
 }

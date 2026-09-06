@@ -10,7 +10,7 @@ import {
 	type OsmdInput,
 	OsmdRenderer,
 } from './osmd-renderer';
-import { disposePools } from './pool';
+import { tabPools } from './pool';
 import type { EvalRenderer, Renderer } from './renderer';
 import {
 	type VexmlContext,
@@ -19,7 +19,7 @@ import {
 } from './vexml-renderer';
 
 /**
- * The package's one entry: a factory per engine. Every renderer is inert config —
+ * The package's one entry: a factory per engine. Every renderer is inert config:
  * render()/eval() borrow what they need (a pooled tab, a Docker run) and give it back
  * before resolving, so there is nothing per-renderer to dispose. The shared machinery
  * behind the factories is the one resource; disposeAsync() releases it (the class
@@ -45,10 +45,10 @@ export class renderers {
 	}
 
 	/** Close the shared machinery (one browser process serves every render). Call once
-	 * when done rendering — a suite's afterAll, a CLI's finally. Rendering after this
+	 * when done rendering: a suite's afterAll, a CLI's finally. Rendering after this
 	 * lazily starts fresh machinery. */
 	static disposeAsync(): Promise<void> {
-		return disposePools();
+		return tabPools.disposeAsync();
 	}
 }
 

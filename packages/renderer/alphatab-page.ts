@@ -1,5 +1,5 @@
 import type { AlphatabApi, AlphatabContext } from './alphatab-renderer';
-import { registerPage } from './page-registry';
+import { type EnginePage, registerPage } from './page-registry';
 
 /*
  * The browser side of the alphaTab renderer: bundled to a classic script and injected
@@ -13,12 +13,14 @@ type AlphaTabWindow = {
 	};
 };
 
-registerPage(
-	/** `musicXML` and `font` (the Bravura woff2) are both base64. */
-	async (input: {
-		musicXML: string;
-		font: string;
-	}): Promise<AlphatabContext> => {
+/** `musicXML` and `font` (the Bravura woff2) are both base64. */
+type AlphatabInput = {
+	musicXML: string;
+	font: string;
+};
+
+class AlphatabPage implements EnginePage<AlphatabInput, AlphatabContext> {
+	async mount(input: AlphatabInput): Promise<AlphatabContext> {
 		const { AlphaTabApi } = (window as unknown as AlphaTabWindow).alphaTab;
 		const container = document.getElementById('screenshot');
 		if (!(container instanceof HTMLDivElement)) {
@@ -43,5 +45,7 @@ registerPage(
 			}
 		});
 		return { alphatab, container };
-	},
-);
+	}
+}
+
+registerPage(new AlphatabPage());

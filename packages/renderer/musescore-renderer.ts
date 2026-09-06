@@ -9,7 +9,7 @@ export interface MusescoreInput {
 
 /**
  * The one engine with no browser behind it: MuseScore in Docker (see musescore/).
- * A reference renderer with its own bugs and its own house style — a second opinion on
+ * A reference renderer with its own bugs and its own house style: a second opinion on
  * an ambiguous measure, not ground truth. No eval: MuseScore renders at arm's length
  * and keeps no live handle.
  */

@@ -1,5 +1,5 @@
 import type { OsmdApi, OsmdContext } from './osmd-renderer';
-import { registerPage } from './page-registry';
+import { type EnginePage, registerPage } from './page-registry';
 
 /*
  * The browser side of the OSMD renderer: bundled to a classic script and injected
@@ -13,16 +13,20 @@ type OsmdWindow = {
 	};
 };
 
-registerPage(async (input: { musicXML: string }): Promise<OsmdContext> => {
-	const { OpenSheetMusicDisplay } = (window as unknown as OsmdWindow)
-		.opensheetmusicdisplay;
-	const container = document.getElementById('screenshot');
-	if (!(container instanceof HTMLDivElement)) {
-		throw new Error('mount: #screenshot container not found');
+class OsmdPage implements EnginePage<{ musicXML: string }, OsmdContext> {
+	async mount(input: { musicXML: string }): Promise<OsmdContext> {
+		const { OpenSheetMusicDisplay } = (window as unknown as OsmdWindow)
+			.opensheetmusicdisplay;
+		const container = document.getElementById('screenshot');
+		if (!(container instanceof HTMLDivElement)) {
+			throw new Error('mount: #screenshot container not found');
+		}
+		container.replaceChildren();
+		const osmd = new OpenSheetMusicDisplay(container, { autoResize: false });
+		await osmd.load(input.musicXML);
+		osmd.render();
+		return { osmd, container };
 	}
-	container.replaceChildren();
-	const osmd = new OpenSheetMusicDisplay(container, { autoResize: false });
-	await osmd.load(input.musicXML);
-	osmd.render();
-	return { osmd, container };
-});
+}
+
+registerPage(new OsmdPage());

@@ -28,7 +28,7 @@ export class PlaywrightTab implements Tab {
 		await this.page.setViewportSize({ width, height });
 	}
 
-	async close(): Promise<void> {
+	async disposeAsync(): Promise<void> {
 		await this.page.close();
 	}
 }

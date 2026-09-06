@@ -1,3 +1,4 @@
+import type { AsyncResource } from 'webappwiz/disposable';
 import type { Tab } from './tab';
 
 export interface OpenOptions {
@@ -14,12 +15,12 @@ export interface OpenOptions {
 
 /**
  * A real browser, abstractly: opens tabs loaded with the caller's page. Internal to
- * this package — renderers hides it, and callers of renderers never learn a browser is
- * involved (see PlaywrightBrowser, the one implementation). One instance means one
+ * this package, since renderers hides it and callers of renderers never learn a browser
+ * is involved (see PlaywrightBrowser, the one implementation). One instance means one
  * browser process; share it rather than launching a second, which is flaky in Docker.
  */
-export interface Browser {
-	open(options: OpenOptions): Promise<Tab>;
+export interface Browser extends AsyncResource {
+	open(opts: OpenOptions): Promise<Tab>;
 	/** Closes every tab this browser opened, then the browser itself. */
-	close(): Promise<void>;
+	disposeAsync(): Promise<void>;
 }

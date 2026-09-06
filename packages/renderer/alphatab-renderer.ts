@@ -1,14 +1,15 @@
 import * as path from 'node:path';
 import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
-import { pool, type TabPool } from './pool';
+import { type TabPool, tabPools } from './pool';
 
 export interface AlphatabInput {
 	musicXML: string;
 }
 
-/** The slice of alphaTab's api the page keeps. Deliberately minimal: the repo drives
- * alphaTab as a reference renderer for second opinions, not as a library under test. */
+// Deliberately minimal: the repo drives alphaTab as a reference renderer for second
+// opinions, not as a library under test.
+/** The slice of alphaTab's api the page keeps. */
 export interface AlphatabApi {
 	renderFinished: { on(handler: () => void): void };
 	error: { on(handler: (e: Error) => void): void };
@@ -24,6 +25,28 @@ export interface AlphatabContext {
 // alphaTab draws SVG into a fixed-width div; white so the PNG isn't transparent.
 const PAGE_HTML =
 	'<body style="margin:0;background:#fff"><div id="screenshot" style="width:1064px"></div></body>';
+
+export class AlphatabRenderer extends BrowserRenderer<AlphatabContext> {
+	constructor(private readonly input: AlphatabInput) {
+		super();
+	}
+
+	protected pool(): TabPool {
+		return tabPools.pool('alphatab', {
+			html: PAGE_HTML,
+			scripts,
+			width: 1064,
+			height: 600,
+		});
+	}
+
+	protected async mountInput(): Promise<unknown> {
+		return {
+			musicXML: Buffer.from(this.input.musicXML).toBase64(),
+			font: await fontBase64(),
+		};
+	}
+}
 
 // alphaTab's exports map hides its dist/ subpaths, so resolve the package's main
 // entry (dist/alphaTab.js) and reach its siblings from there.
@@ -45,7 +68,7 @@ function scripts(): Promise<string[]> {
 	return script;
 }
 
-// alphaTab draws with its own Bravura webfont, which it fetches by URL — so the font
+// alphaTab draws with its own Bravura webfont, which it fetches by URL, so the font
 // crosses with the mount as a data URL rather than standing up a server for one file.
 let font: Promise<string> | null = null;
 function fontBase64(): Promise<string> {
@@ -53,26 +76,4 @@ function fontBase64(): Promise<string> {
 		.bytes()
 		.then((bytes) => bytes.toBase64());
 	return font;
-}
-
-export class AlphatabRenderer extends BrowserRenderer<AlphatabContext> {
-	constructor(private readonly input: AlphatabInput) {
-		super();
-	}
-
-	protected pool(): TabPool {
-		return pool('alphatab', {
-			html: PAGE_HTML,
-			scripts,
-			width: 1064,
-			height: 600,
-		});
-	}
-
-	protected async mountInput(): Promise<unknown> {
-		return {
-			musicXML: Buffer.from(this.input.musicXML).toBase64(),
-			font: await fontBase64(),
-		};
-	}
 }

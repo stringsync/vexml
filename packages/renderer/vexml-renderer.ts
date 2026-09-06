@@ -2,7 +2,7 @@ import * as path from 'node:path';
 import type { ConfigInput, render, Score } from '@stringsync/vexml';
 import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
-import { pool, type TabPool } from './pool';
+import { type TabPool, tabPools } from './pool';
 
 /** What vexml exposes to eval fns: the live Score, the container it rendered into,
  * and the library entry itself (so a fn can drive a re-render, as the stage tests do). */
@@ -24,7 +24,7 @@ export type VexmlInput = { config?: ConfigInput } & (
 const PAGE_HTML =
 	'<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0}#screenshot{padding:16px;display:inline-block}</style></head><body><div id="screenshot"></div></body></html>';
 
-// ponytail: mirrors vexml's DEFAULT_WIDTH — the public API doesn't expose it, so this
+// ponytail: mirrors vexml's DEFAULT_WIDTH. The public API doesn't expose it, so this
 // package doesn't get privileged access. Bump if vexml's default reference width ever
 // exceeds this.
 const DEFAULT_WIDTH = 900;
@@ -32,19 +32,13 @@ const DEFAULT_WIDTH = 900;
 // Viewport headroom over the reference width, so the #screenshot padding fits.
 const MARGIN = 64;
 
-let script: Promise<string> | null = null;
-async function scripts(): Promise<string[]> {
-	script ??= bundle(path.resolve(import.meta.dir, 'vexml-page.ts'));
-	return [await script];
-}
-
 export class VexmlRenderer extends BrowserRenderer<VexmlContext> {
 	constructor(private readonly input: VexmlInput) {
 		super();
 	}
 
 	protected pool(): TabPool {
-		return pool('vexml', {
+		return tabPools.pool('vexml', {
 			html: PAGE_HTML,
 			scripts,
 			width: DEFAULT_WIDTH + MARGIN,
@@ -74,4 +68,10 @@ export class VexmlRenderer extends BrowserRenderer<VexmlContext> {
 			DEFAULT_WIDTH
 		);
 	}
+}
+
+let script: Promise<string> | null = null;
+async function scripts(): Promise<string[]> {
+	script ??= bundle(path.resolve(import.meta.dir, 'vexml-page.ts'));
+	return [await script];
 }

@@ -21,9 +21,11 @@ export class PlaywrightBrowser implements Browser {
 		return new PlaywrightTab(page);
 	}
 
-	async close(): Promise<void> {
-		if (this.engine) {
-			await (await this.engine).close();
-		}
+	async disposeAsync(): Promise<void> {
+		// Dropped first, so disposing twice shuts the engine down once and a later open()
+		// launches a fresh one.
+		const engine = this.engine;
+		this.engine = null;
+		await (await engine)?.close();
 	}
 }

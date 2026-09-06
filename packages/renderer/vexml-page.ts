@@ -1,5 +1,5 @@
 import { type ConfigInput, render } from '@stringsync/vexml';
-import { registerPage } from './page-registry';
+import { type EnginePage, registerPage } from './page-registry';
 import type { VexmlContext } from './vexml-renderer';
 
 /*
@@ -7,13 +7,16 @@ import type { VexmlContext } from './vexml-renderer';
  * VexmlRenderer's scripts()) and injected into every tab the vexml pool opens. mount
  * renders into #screenshot and keeps the VexmlContext eval fns run against.
  */
-registerPage(
-	async (input: {
-		musicXML?: string;
-		/** A compressed .mxl file's bytes, base64. */
-		mxl?: string;
-		config?: ConfigInput;
-	}): Promise<VexmlContext> => {
+
+type VexmlInput = {
+	musicXML?: string;
+	/** A compressed .mxl file's bytes, base64. */
+	mxl?: string;
+	config?: ConfigInput;
+};
+
+class VexmlPage implements EnginePage<VexmlInput, VexmlContext> {
+	async mount(input: VexmlInput): Promise<VexmlContext> {
 		const container = document.getElementById('screenshot');
 		if (!(container instanceof HTMLDivElement)) {
 			throw new Error('mount: #screenshot container not found');
@@ -28,5 +31,7 @@ registerPage(
 				: (input.musicXML ?? '');
 		const score = await render(source, container, input.config);
 		return { score, container, render };
-	},
-);
+	}
+}
+
+registerPage(new VexmlPage());

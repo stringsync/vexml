@@ -3,7 +3,7 @@ import type { EvalRenderer, Image, RenderResult } from './renderer';
 
 /**
  * The browser engines' common spine: render = mount + screenshot on a pooled tab, and
- * eval additionally runs the caller's fn (shipped as source text — see EvalRenderer)
+ * eval additionally runs the caller's fn (shipped as source text: see EvalRenderer)
  * between the two, so the image reflects whatever the fn did. Subclasses say which
  * pool their page lives in, what its mount global expects, and (optionally) the
  * viewport each render wants.
@@ -12,7 +12,7 @@ export abstract class BrowserRenderer<C> implements EvalRenderer<C> {
 	/** The pool whose tabs are loaded with this engine's page. */
 	protected abstract pool(): TabPool;
 
-	/** What the page's `mount` global expects — structured-cloneable throughout. May
+	/** What the page's `mount` global expects: structured-cloneable throughout. May
 	 * be a promise. */
 	protected abstract mountInput(): unknown;
 
