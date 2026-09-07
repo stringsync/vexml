@@ -47,7 +47,7 @@ score.events.on('pointermove', (e) => {
 
 ## Editing
 
-`EditingSession` keeps selection and undo/redo history on an mdom document. Render
+`EditingSession` keeps selection on an mdom document and exposes its native history. Render
 that same document and attach a controller for keyboard navigation, click/drag
 selection, highlighting and focus scrolling.
 
@@ -62,6 +62,11 @@ let editing = score.createEditingController(editor);
 
 editor.move('next'); // Select the first written note.
 editor.move('next', { extend: true }); // Extend within its voice.
+editor.history.edit('Add staccato', () => {
+  for (const note of editor.getSelection()) {
+    if (!note.articulations.includes('staccato')) note.addArticulation('staccato');
+  }
+});
 editor.setPitch({ step: 'F', octave: 5 }); // One undo step for the group.
 
 // Rerender after a document change, keeping the session.
@@ -81,8 +86,8 @@ Left/right move between chords in the active voice; up/down move through chord
 members and neighboring voices. Click selects, Command/Ctrl-click toggles a note,
 and dragging selects enclosed notes and frets across voices. Command/Ctrl-drag
 adds to the selection; touch dragging keeps native scrolling. Escape or a
-background click clears selection. Shift does not extend the default arrow or
-pointer selection; use `editor.move(..., { extend: true })` for ranges.
+background click clears selection. Shift-click and Shift-arrows extend a range
+within one part and voice. Command/Ctrl+Z undoes; add Shift to redo.
 
 Customize the controller when attaching it:
 
@@ -110,9 +115,30 @@ both. Dispose event subscriptions when their consumer is removed.
 
 Pitch edits currently support ordinary pitched notes, rejecting rests, unpitched
 notes, tied notes and string/fret assignments before changing the group. Navigation
-and selection still support those notes. Insertion, deletion and rhythmic edits
-are not supported. External document changes are not observed: call
-`editor.clearHistory()` after them. Reparsing requires a new session.
+and selection still support those notes. For any other mdom operation, use
+`editor.history.edit(label, () => { /* mutate editor.document */ })`. Transactions
+are synchronous and atomic; mdom owns rollback, undo/redo and node identity.
+The callback can edit any part of the document, regardless of the current selection.
+Rendering remains subject to vexml's notation support.
+
+Creating a session enables mdom history. Subsequent document mutations must run
+inside a history transaction, including changes made by other consumers. Native
+history edits, undo and redo all produce `documentchange`. No-op transactions
+produce no event and preserve redo. Read `history.canUndo`, `canRedo`, `undoLabel`
+and `redoLabel` for controls. The former pitch-specific `clearHistory()` API has
+been removed; document history is caller-owned. Dispose the session when its
+consumer goes away, then `document.history.dispose()` when discarding the document.
+Do not dispose document history while a session is still using its notifications.
+Reparsing requires a new session.
+
+Removed notes disappear from the visible selection; focus becomes null when its
+note is detached. Undo makes retained selection references available again.
+Render errors should leave the document and history available so users can undo.
+
+Run `vex dev` and open `/examples/editing.html` for a standalone example. Its
+[source](packages/site/examples/editing.ts) shows selection, a native mdom edit,
+history controls, render scheduling and cleanup. The dev site's **Try editing**
+score also demonstrates group pitch changes, mixed staccato state and MusicXML export.
 
 ## Sizing and centering
 

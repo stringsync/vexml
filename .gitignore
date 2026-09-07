@@ -10,3 +10,6 @@ RELEASE
 
 # generated review output
 .wiz/reviews/
+
+# Browser verification artifacts
+packages/integration/__artifacts__/

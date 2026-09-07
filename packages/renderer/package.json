@@ -8,7 +8,7 @@
 	},
 	"dependencies": {
 		"@coderline/alphatab": "^1.8.4",
-		"@stringsync/mdom": "0.4.0",
+		"@stringsync/mdom": "0.4.1",
 		"@stringsync/vexml": "workspace:*",
 		"opensheetmusicdisplay": "^2.1.1",
 		"playwright": "^1.61.1",

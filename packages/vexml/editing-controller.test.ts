@@ -259,7 +259,7 @@ describe('EditingController', () => {
 		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
 	});
 
-	it('handles scoped keys without Shift extension and leaves unhandled/modified/composing keys alone', () => {
+	it('handles scoped keys with Shift extension and leaves unhandled/modified/composing keys alone', () => {
 		const f = fixture();
 		const { host, controller } = f.create();
 		const arrow = new Key('ArrowRight');
@@ -267,7 +267,7 @@ describe('EditingController', () => {
 		expect(arrow.defaultPrevented).toBe(true);
 		expect(f.editor.getFocus()).toBe(f.first);
 		host.dom.dispatchEvent(new Key('ArrowRight', true));
-		expect(f.editor.getSelection()).toEqual([f.second]);
+		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
 		for (const key of [
 			new Key('x'),
 			new Key('ArrowLeft', false, true),
@@ -284,21 +284,21 @@ describe('EditingController', () => {
 		expect(f.editor.getFocus()).toBe(f.second);
 	});
 
-	it('selects notes and frets, toggles a set, and treats Shift-click as a plain click', () => {
+	it('extends within a voice, toggles frets and rejects cross-voice Shift-clicks', () => {
 		const f = fixture();
 		const { host, score } = f.create();
 		host.dom.dispatchEvent(new Click(22, 42));
 		host.dom.dispatchEvent(new Click(52, 42, true));
-		expect(f.editor.getSelection()).toEqual([f.second]);
+		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
 		host.dom.dispatchEvent(new Click(82, 42, false, true));
-		expect(f.editor.getSelection()).toEqual([f.second, f.other]);
+		expect(f.editor.getSelection()).toEqual([f.first, f.second, f.other]);
 		host.dom.dispatchEvent(new Click(82, 42, false, true));
-		expect(f.editor.getSelection()).toEqual([f.second]);
+		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
 		host.dom.dispatchEvent(new Click(82, 42, true));
-		expect(f.editor.getSelection()).toEqual([f.other]);
+		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
 		host.dom.dispatchEvent(new Click(150, 80));
 		expect(f.editor.getSelection()).toEqual([]);
-		expect(f.editor.getActiveVoice()?.voice).toBe('2');
+		expect(f.editor.getActiveVoice()?.voice).toBe('1');
 		score.dispose();
 	});
 
@@ -464,12 +464,14 @@ describe('EditingController', () => {
 describe('EditingController chord entry commands', () => {
 	it('maps up/down to vertical movement and selects explicit chord edges', () => {
 		const f = fixture();
-		const chord = f.first.measure.getOrCreateVoice('1').addChord(
-			[
-				{ step: 'E', octave: 4 },
-				{ step: 'G', octave: 4 },
-			],
-			{ type: 'whole' },
+		const chord = f.editor.history.edit('Add chord', () =>
+			f.first.measure.getOrCreateVoice('1').addChord(
+				[
+					{ step: 'E', octave: 4 },
+					{ step: 'G', octave: 4 },
+				],
+				{ type: 'whole' },
+			),
 		);
 		const high = chord.notes[1];
 		if (!high) {

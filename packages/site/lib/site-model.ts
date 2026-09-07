@@ -10,6 +10,7 @@ import {
 } from './document-source';
 import { EditingVoices } from './editing-voices';
 import { InstrumentController } from './instrument-controller';
+import { NoteEditing } from './note-editing';
 import { RenderConfig } from './render-config';
 import { type ScoreMode, ScoreSession } from './score-session';
 
@@ -39,12 +40,17 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	error: string | null = null;
 	/* False until the first render settles, one way or the other; drives the loading overlay. */
 	initialized = false;
+	rendering = false;
 
 	private readonly disposer = new Disposer();
 	// Bumped per render request. A render that resolves after a newer one started is dropped, so a
 	// late score never leaks a canvas into a container a newer render already owns.
 	private generation = 0;
 	private mode: ScoreMode = 'view';
+	private editorDisposer = new Disposer();
+	private sessionUnlisten: (() => void) | null = null;
+	noteEditing: NoteEditing | null = null;
+	editorVersion = 0;
 	private editingSource: {
 		input: string | Blob;
 		voices: EditingVoices;
@@ -56,6 +62,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		this.document = new DocumentSource(fixtures, storage);
 		this.instrument = new InstrumentController(storage);
 		this.disposer.use(this.config);
+		this.disposer.defer(() => this.editorDisposer.dispose());
 		this.disposer.use(this.document);
 		this.disposer.use(this.instrument);
 		this.disposer.use(this.dispatcher);
@@ -84,6 +91,11 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 			return;
 		}
 		const at = ++this.generation;
+		this.rendering = true;
+		const sameDocument = this.editingSource?.input === input;
+		const scrollTop = sameDocument ? container.scrollTop : 0;
+		const scrollLeft = sameDocument ? container.scrollLeft : 0;
+		const focused = container === container.ownerDocument.activeElement;
 		// render() appends a fresh managed canvas, so the previous score has to go first or the
 		// canvases stack.
 		this.disposeSession();
@@ -98,8 +110,31 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 				if (at !== this.generation) {
 					return;
 				}
-				voices = new EditingVoices(new EditingSession(document));
+				this.editorDisposer.dispose();
+				this.editorDisposer = new Disposer();
+				const editor = new EditingSession(document);
+				voices = new EditingVoices(editor);
 				this.editingSource = { input, voices };
+				this.noteEditing = new NoteEditing(editor);
+				this.editorVersion++;
+				this.editorDisposer.defer(() => document.history.dispose());
+				this.editorDisposer.use(editor);
+				this.editorDisposer.use(this.noteEditing);
+				this.editorDisposer.defer(
+					this.noteEditing.events.on('changed', () =>
+						this.dispatcher.dispatch('changed'),
+					),
+				);
+				this.editorDisposer.defer(
+					editor.events.on('documentchange', () => {
+						const xml = this.noteEditing?.serialize();
+						if (xml === undefined || !this.editingSource) {
+							return;
+						}
+						this.editingSource.input = xml;
+						this.document.acceptEdit(xml);
+					}),
+				);
 			}
 			const score = await render(voices.editor.document, container, config);
 			if (at !== this.generation) {
@@ -113,11 +148,15 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 				voices,
 				this.mode,
 			);
-			this.disposer.defer(
-				this.session.events.on('changed', () =>
-					this.dispatcher.dispatch('changed'),
-				),
+			this.sessionUnlisten = this.session.events.on('changed', () =>
+				this.dispatcher.dispatch('changed'),
 			);
+			this.session.cursor.cancelScroll();
+			container.scrollTop = scrollTop;
+			container.scrollLeft = scrollLeft;
+			if (focused) {
+				container.focus({ preventScroll: true });
+			}
 			this.config.reportRenderMs(this.clock.now().subtract(start).ms);
 		} catch (e: unknown) {
 			if (at !== this.generation) {
@@ -128,6 +167,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		} finally {
 			if (at === this.generation) {
 				this.initialized = true;
+				this.rendering = false;
 				this.dispatcher.dispatch('changed');
 			}
 		}
@@ -138,7 +178,23 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		this.disposer.dispose();
 	}
 
+	get editor(): EditingSession | null {
+		return this.editingSource?.voices.editor ?? null;
+	}
+
+	get currentMode(): ScoreMode {
+		return this.session?.mode ?? this.mode;
+	}
+
+	setMode(mode: ScoreMode): void {
+		this.mode = mode;
+		this.session?.setMode(mode);
+		this.dispatcher.dispatch('changed');
+	}
+
 	private disposeSession(): void {
+		this.sessionUnlisten?.();
+		this.sessionUnlisten = null;
 		this.mode = this.session?.mode ?? this.mode;
 		this.session?.dispose();
 		this.session = null;

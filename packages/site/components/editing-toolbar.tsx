@@ -1,4 +1,5 @@
 import { CircleXIcon, EyeIcon, PencilIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -24,7 +25,9 @@ export function EditingToolbar({
 	mode,
 	playing,
 	onModeChange,
+	children,
 }: {
+	children?: ReactNode;
 	title: string;
 	renderMs: number | null;
 	error: string | null;
@@ -56,7 +59,7 @@ export function EditingToolbar({
 	return (
 		<Card
 			size="sm"
-			className="gap-4 shadow-sm ring-border"
+			className="gap-2 shadow-sm ring-border"
 			role="region"
 			aria-label="Score details"
 		>
@@ -159,8 +162,8 @@ export function EditingToolbar({
 							? `${selectionCount} notes selected`
 							: 'Selection'}
 					</span>
-					<div className="flex min-h-14 min-w-0 items-center gap-3">
-						<div className="flex h-14 min-w-14 shrink-0 items-center justify-center rounded-lg bg-brand-wash px-2 font-mono text-lg font-medium whitespace-nowrap text-brand-ink">
+					<div className="flex min-h-10 min-w-0 items-center gap-3">
+						<div className="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-lg bg-brand-wash px-2 font-mono text-lg font-medium whitespace-nowrap text-brand-ink">
 							{selected ? pitch : '—'}
 						</div>
 						<div className="flex min-w-0 flex-col gap-1">
@@ -177,6 +180,7 @@ export function EditingToolbar({
 					</div>
 				</div>
 			</CardContent>
+			{children}
 		</Card>
 	);
 }

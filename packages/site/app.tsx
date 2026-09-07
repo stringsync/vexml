@@ -12,6 +12,7 @@ import { ConfigSlider } from '@/components/config-slider';
 import { EditingToolbar } from '@/components/editing-toolbar';
 import { Header } from '@/components/header';
 import { LayoutToggle } from '@/components/layout-toggle';
+import { NoteEditingControls } from '@/components/note-editing-controls';
 import { Player } from '@/components/player';
 import { Section, SectionReset } from '@/components/section';
 import { Segmented, type SegmentedOption } from '@/components/segmented';
@@ -53,6 +54,7 @@ import {
 import { INSTRUMENTS } from '@/lib/instruments';
 import { ScoreFit } from '@/lib/score-fit';
 import { SiteModel } from '@/lib/site-model';
+import editingExample from './examples/editing.ts?raw';
 
 // Vite reads the fixtures straight from packages/integration at build time (fs.allow:
 // ['../..'] in vite.config permits it) and hands us the file list — no symlink or manifest.
@@ -67,6 +69,8 @@ for (const [path, load] of Object.entries(
 	loaders[path.slice(path.lastIndexOf('/') + 1).replace('.musicxml', '')] =
 		load;
 }
+loaders['Try editing'] = () =>
+	import('./editing.musicxml?raw').then((module) => module.default);
 const fixtureNames = Object.keys(loaders).sort();
 const fixtures = {
 	names: () => fixtureNames,
@@ -95,6 +99,7 @@ const projection = (model: SiteModel) => ({
 	fixture: model.document.fixture,
 	error: model.error,
 	initialized: model.initialized,
+	rendering: model.rendering,
 	session: model.session,
 	applied: model.config.applied,
 	renderMs: model.config.renderMs,
@@ -107,7 +112,9 @@ const projection = (model: SiteModel) => ({
 	timeMs: model.session?.timeMs ?? 0,
 	durationMs: model.session?.durationMs ?? 0,
 	activeVoice: model.session?.editingVoices.getValue() ?? '',
-	mode: model.session?.mode ?? 'view',
+	mode: model.currentMode,
+	noteEditing: model.noteEditing,
+	editorVersion: model.editorVersion,
 	selectionDescription: model.session?.selectionDescription ?? 'No selection',
 	selectionCount: model.session?.editing.getPresentation().marquee
 		? model.session.editing.getPresentation().selected.length
@@ -125,6 +132,7 @@ export default function App() {
 		fixture,
 		error,
 		initialized,
+		rendering,
 		session,
 		applied,
 		renderMs,
@@ -140,6 +148,8 @@ export default function App() {
 		selectionCount,
 		mode,
 		activeVoice,
+		noteEditing,
+		editorVersion,
 	} = useReactive(model, projection, ['changed']);
 
 	// Purely local view state: nothing outside the component reads any of it.
@@ -216,6 +226,26 @@ export default function App() {
 				e.isComposing ||
 				target.closest('input, textarea, select, [contenteditable="true"]')
 			) {
+				return;
+			}
+			if (
+				model.currentMode === 'edit' &&
+				!model.rendering &&
+				!model.session?.playing &&
+				!e.altKey &&
+				(e.ctrlKey || e.metaKey) &&
+				e.key.toLowerCase() === 'z'
+			) {
+				e.preventDefault();
+				if (e.shiftKey) {
+					model.editor?.redo();
+				} else {
+					model.editor?.undo();
+				}
+				containerRef.current?.focus({ preventScroll: true });
+				return;
+			}
+			if (target.closest('button, [role="checkbox"]')) {
 				return;
 			}
 			if (
@@ -670,10 +700,59 @@ export default function App() {
 								mode={mode}
 								playing={playing}
 								onModeChange={(value) => {
-									session?.setMode(value);
+									model.setMode(value);
 									containerRef.current?.focus({ preventScroll: true });
 								}}
-							/>
+							>
+								{mode === 'edit' && noteEditing && (
+									<NoteEditingControls
+										key={editorVersion}
+										editing={noteEditing}
+										disabled={playing || rendering}
+										onApplied={() =>
+											containerRef.current?.focus({ preventScroll: true })
+										}
+									/>
+								)}
+								<Collapsible className="px-4 pb-2 md:px-5">
+									<div className="flex items-center gap-2">
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => {
+												model.setMode('edit');
+												model.config.patchLayout({ referenceWidth: 500 });
+												model.document.loadFixture('Try editing');
+											}}
+										>
+											Try editing
+										</Button>
+										<CollapsibleTrigger asChild>
+											<Button variant="ghost" size="sm">
+												Example & help
+											</Button>
+										</CollapsibleTrigger>
+									</div>
+									<CollapsibleContent className="max-h-48 overflow-auto pt-3">
+										<p className="text-xs text-muted-foreground">
+											Select a note, then Shift-click within its voice to select
+											a range. Drag around notes to select a group. Undo:
+											⌘/Ctrl+Z. Redo: ⌘/Ctrl+Shift+Z.
+										</p>
+										<a
+											className="text-xs underline"
+											href="/examples/editing.html"
+											target="_blank"
+											rel="noreferrer"
+										>
+											Open standalone editing example
+										</a>
+										<pre className="overflow-auto p-2 text-xs">
+											<code>{editingExample}</code>
+										</pre>
+									</CollapsibleContent>
+								</Collapsible>
+							</EditingToolbar>
 						</div>
 					</div>
 					<div className="relative min-h-0 flex-1">

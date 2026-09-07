@@ -181,17 +181,19 @@ Public integration guidance lives in [`README.md`](../../README.md#editing).
 Keep the session tied to document notes: rendered wrappers and geometry belong to
 one `Score` and must be resolved again after rendering.
 
-- `editing-session.ts` owns focus, active voice, range/set selection and history;
+- `editing-session.ts` owns focus, active voice and range/set selection; mdom owns history.
+  The session subscribes to native history and must be disposed separately from its controllers;
   it installs no DOM listeners. Ranges keep a fixed anchor and reject cross-part
   or cross-voice selection before mutation. Explicit sets use the last distinct
   note as focus and anchor. Getters return snapshots; detached notes disappear
   from selection, and selecting detached or foreign notes throws.
-- `pitch-edit.ts` preserves note identity and unrelated notation. A changed pitch
-  removes the explicit accidental; undo restores the original pitch and accidental
-  nodes. Validate the whole group before editing. No-ops preserve redo history;
-  new edits replace it. Cursor movement creates no history, and undo leaves focus
-  alone. Emit `documentchange` only for successful edits, undo or redo, never for
-  selection operations or empty history. Arbitrary external mdom edits are untracked.
+- `pitch-edit.ts` is a conservative pitch command, preserving note identity and unrelated
+  notation. A changed pitch removes the explicit accidental. The session runs it
+  inside `document.history.edit`; mdom owns rollback and reversal. Once a session
+  enables history, all document mutations use native mdom transactions. No-ops
+  preserve redo. Forward `documentchange` for native committed edits, undo and redo.
+  Selection does not create history. Detached focus becomes null; retained node
+  references resolve again after undo. The caller owns document history disposal.
 - `editing-navigator.ts` follows written order without expanding repeats and skips
   empty measures. `chord-note-order.ts` sorts by staff, then written diatonic
   position (display position for unpitched notes), ignoring accidentals and keeping

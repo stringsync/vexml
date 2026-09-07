@@ -23,7 +23,9 @@ describe('PitchEdit', () => {
 		const pitch = note.pitch;
 		const serializer = new MusicXMLSerializer();
 		const original = serializer.serializeToString(document);
-		const edit = PitchEdit.apply([note], { step: 'F', octave: 5, alter: -0.5 });
+		document.history.edit('Pitch', () =>
+			new PitchEdit([note]).apply({ step: 'F', octave: 5, alter: -0.5 }),
+		);
 		const edited = serializer.serializeToString(document);
 		expect(note.pitch?.step).toBe('F');
 		expect(note.pitch?.alter).toBe(-0.5);
@@ -32,11 +34,11 @@ describe('PitchEdit', () => {
 		expect(next.measureBeat).toBe(1.5);
 		expect(note.slurs[0]?.partner?.note).toBe(next);
 		for (let index = 0; index < 3; index++) {
-			edit.undo();
+			document.history.undo();
 			expect(serializer.serializeToString(document)).toBe(original);
 			expect(note.pitch).toBe(pitch);
 			expect(note.child('accidental')).toBe(accidental);
-			edit.redo();
+			document.history.redo();
 			expect(serializer.serializeToString(document)).toBe(edited);
 		}
 	});
@@ -48,7 +50,7 @@ describe('PitchEdit', () => {
 		const rest = voice.addRest({ type: 'quarter' });
 		const pitch = note.pitch;
 		expect(() =>
-			PitchEdit.apply([note, rest], { step: 'D', octave: 4 }),
+			new PitchEdit([note, rest]).apply({ step: 'D', octave: 4 }),
 		).toThrow('pitched notes');
 		expect(note.pitch).toBe(pitch);
 		expect(rest.isRest).toBe(true);
@@ -69,7 +71,7 @@ describe('PitchEdit', () => {
 			{ step: 'D', octave: 4.5 },
 			{ step: 'D', octave: 4, alter: Number.NaN },
 		]) {
-			expect(() => PitchEdit.apply([note], spec)).toThrow('invalid pitch');
+			expect(() => new PitchEdit([note]).apply(spec)).toThrow('invalid pitch');
 		}
 		expect(note.pitch).toBe(pitch);
 	});
@@ -80,9 +82,9 @@ describe('PitchEdit', () => {
 		const first = voice.addNote({ step: 'C', octave: 4, type: 'quarter' });
 		const second = voice.addNote({ step: 'C', octave: 4, type: 'quarter' });
 		first.addTie(second);
-		expect(() => PitchEdit.apply([first], { step: 'D', octave: 4 })).toThrow(
-			'tie-aware',
-		);
+		expect(() =>
+			new PitchEdit([first]).apply({ step: 'D', octave: 4 }),
+		).toThrow('tie-aware');
 		expect(first.pitch?.step).toBe('C');
 		expect(first.ties[0]?.partner?.note).toBe(second);
 	});
@@ -95,22 +97,10 @@ describe('PitchEdit', () => {
 			.getOrCreateVoice('1')
 			.addNote({ step: 'E', octave: 4, type: 'quarter' });
 		note.setStringFret({ string: 1, fret: 0 });
-		expect(() => PitchEdit.apply([note], { step: 'F', octave: 4 })).toThrow(
+		expect(() => new PitchEdit([note]).apply({ step: 'F', octave: 4 })).toThrow(
 			'fingering-aware',
 		);
 		expect(note.pitch?.step).toBe('E');
 		expect(note.fret).toBe(0);
-	});
-
-	it('checks the whole undo group before restoring a member changed outside the session', () => {
-		const document = MDocument.empty();
-		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
-		const first = voice.addNote({ step: 'C', octave: 4, type: 'quarter' });
-		const second = voice.addNote({ step: 'D', octave: 4, type: 'quarter' });
-		const edit = PitchEdit.apply([first, second], { step: 'E', octave: 4 });
-		second.setPitch({ step: 'F', octave: 4 });
-		expect(() => edit.undo()).toThrow('outside the session');
-		expect(first.pitch?.step).toBe('E');
-		expect(second.pitch?.step).toBe('F');
 	});
 });

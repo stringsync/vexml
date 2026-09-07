@@ -290,7 +290,7 @@ describe('EditingSession', () => {
 		session.select(c);
 		expect(() => session.selectNotes([d, foreign])).toThrow('this document');
 		expect(session.getSelection()).toEqual([c]);
-		d.remove();
+		session.history.edit('Remove note', () => d.remove());
 		expect(() => session.select(d)).toThrow('this document');
 		expect(session.getFocus()).toBe(c);
 	});
@@ -301,7 +301,7 @@ describe('EditingSession', () => {
 		const c = noteAt(document, 0);
 		const d = noteAt(document, 1);
 		session.select(c);
-		c.remove();
+		session.history.edit('Remove note', () => c.remove());
 		expect(session.getFocus()).toBeNull();
 		expect(session.getSelection()).toEqual([]);
 		session.select(d, { extend: true });
@@ -342,8 +342,6 @@ describe('EditingSession', () => {
 		session.setPitch({ step: 'E', octave: 4 });
 		expect(session.redo()).toBe(false);
 		expect(noteAt(document, 0).pitch?.step).toBe('E');
-		session.clearHistory();
-		expect(session.undo()).toBe(false);
 	});
 });
 
@@ -390,5 +388,62 @@ describe('EditingSession events and voice context', () => {
 		editor.clearSelection();
 		editor.move('next');
 		expect(editor.getFocus()?.voice).toBe('2');
+	});
+});
+
+describe('EditingSession mdom history', () => {
+	it('observes arbitrary native edits, rollback and undo without losing note identity', () => {
+		const document = createDocument(['C', 'D']);
+		const first = noteAt(document, 0);
+		const second = noteAt(document, 1);
+		const editor = new EditingSession(document);
+		const events: string[] = [];
+		editor.events.on('documentchange', () => events.push('document'));
+		editor.selectNotes([first, second]);
+		document.history.edit('Add slur', () => first.addSlur(second));
+		expect(editor.history).toBe(document.history);
+		expect(first.slurs[0]?.partner?.note).toBe(second);
+		expect(() =>
+			document.history.edit('Failed edit', () => {
+				first.remove();
+				throw new Error('cancel');
+			}),
+		).toThrow('cancel');
+		expect(editor.getSelection()).toEqual([first, second]);
+		expect(events).toEqual(['document']);
+		expect(editor.history.undoLabel).toBe('Add slur');
+		editor.undo();
+		expect(first.slurs).toEqual([]);
+		expect(editor.getFocus()).toBe(second);
+		expect(events).toEqual(['document', 'document']);
+		editor.dispose();
+	});
+
+	it('hides detached selection and resolves it again when a structural edit is undone', () => {
+		const document = createDocument(['C']);
+		const note = noteAt(document, 0);
+		const editor = new EditingSession(document);
+		editor.select(note);
+		editor.history.edit('Remove note', () => note.remove());
+		expect(editor.getSelection()).toEqual([]);
+		expect(editor.getFocus()).toBeNull();
+		editor.undo();
+		expect(editor.getSelection()).toEqual([note]);
+		expect(editor.getFocus()).toBe(note);
+		editor.dispose();
+	});
+
+	it('releases its subscription while leaving caller-owned history usable', () => {
+		const document = createDocument(['C']);
+		const note = noteAt(document, 0);
+		const editor = new EditingSession(document);
+		const events: string[] = [];
+		editor.events.on('documentchange', () => events.push('document'));
+		editor.dispose();
+		document.history.edit('Accent', () => note.addArticulation('accent'));
+		expect(events).toEqual([]);
+		expect(document.history.canUndo).toBe(true);
+		document.history.undo();
+		expect(note.articulations).toEqual([]);
 	});
 });

@@ -4,7 +4,8 @@ import type { EditingNavigation } from './editing-navigator';
 export type EditingCommand =
 	| { type: 'move'; move: EditingNavigation; extend?: boolean }
 	| { type: 'select'; note: Note; chordEdge?: 'top' | 'bottom' }
-	| { type: 'clear' };
+	| { type: 'clear' }
+	| { type: 'undo' | 'redo' };
 
 /** A key snapshot also usable by framework event adapters. */
 export interface EditingKey {

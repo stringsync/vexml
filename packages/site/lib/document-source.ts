@@ -124,6 +124,16 @@ export class DocumentSource
 		});
 	}
 
+	/** Reflect an mdom edit without scheduling a parse or a typing debounce. */
+	acceptEdit(xml: string): void {
+		this.stopDebouncing();
+		this.text = xml;
+		this.input = xml;
+		this.format = 'musicxml';
+		this.save(xml);
+		this.dispatcher.dispatch('changed');
+	}
+
 	/* A dropped or picked file. .mxl and .gp are both zips, told apart by their extension because
 	 * nothing downstream can; MusicXML is plain text, which also goes into the editor so it can be
 	 * tweaked. */

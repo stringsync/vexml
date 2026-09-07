@@ -9,6 +9,16 @@ import { defineConfig } from 'vite';
 // working tree, hence serving from the repo root, two levels up, rather than this package.
 export default defineConfig({
 	plugins: [react(), tailwindcss()],
+	build: {
+		rollupOptions: {
+			input: {
+				main: fileURLToPath(new URL('./index.html', import.meta.url)),
+				editing: fileURLToPath(
+					new URL('./examples/editing.html', import.meta.url),
+				),
+			},
+		},
+	},
 	// Mirrors the "@/*" paths entry in the root tsconfig, which is what the aliases in
 	// components.json resolve through.
 	resolve: {

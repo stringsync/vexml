@@ -203,6 +203,12 @@ export class EditingController
 		}
 		let moved = false;
 		switch (command.type) {
+			case 'undo':
+				moved = this.editor.undo();
+				break;
+			case 'redo':
+				moved = this.editor.redo();
+				break;
 			case 'move':
 				moved = this.navigator.move(command.move, { extend: command.extend });
 				break;
@@ -380,6 +386,10 @@ export class EditingController
 				!key.metaKey
 			) {
 				this.editor.clearSelection();
+			}
+		} else if (key.shiftKey) {
+			if (this.editor.canExtendTo(note)) {
+				this.editor.select(note, { extend: true });
 			}
 		} else if (key.ctrlKey || key.metaKey) {
 			if (

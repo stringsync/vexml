@@ -1,0 +1,254 @@
+import { describe, expect, it } from 'bun:test';
+import { chromium } from 'playwright';
+import { createServer } from 'vite';
+
+// Vite exercises the same module graph as the dev site, including the workspace library.
+describe('dev site editing', () => {
+	it('edits, undoes, exports and opens the standalone example', async () => {
+		const server = await createServer({
+			root: 'packages/site',
+			server: { port: 0 },
+		});
+		await server.listen();
+		const browser = await chromium.launch({
+			headless: true,
+			args: ['--no-sandbox'],
+		});
+		try {
+			const page = await browser.newPage({
+				viewport: { width: 1440, height: 1000 },
+			});
+			const errors: string[] = [];
+			page.on('pageerror', (error) => errors.push(error.message));
+			const url = server.resolvedUrls?.local[0];
+			if (!url) {
+				throw new Error('Missing dev server URL');
+			}
+			page.setDefaultTimeout(7000);
+			await page.route('https://**', (route) => route.abort());
+			await page.goto(url, { waitUntil: 'domcontentloaded' });
+			await page
+				.getByRole('button', { name: 'Try editing', exact: true })
+				.click();
+			await page
+				.getByRole('button', { name: 'Apply pitch', exact: true })
+				.waitFor();
+			await page.waitForFunction(
+				() => document.querySelector('#edit-step')?.textContent === 'C',
+			);
+			await page.getByRole('combobox', { name: 'Pitch', exact: true }).click();
+			await page.getByRole('option', { name: 'F', exact: true }).click();
+			await page
+				.getByRole('button', { name: 'Apply pitch', exact: true })
+				.click();
+			await page.getByRole('button', { name: 'Undo', exact: true }).waitFor();
+			await page.waitForFunction(
+				() => document.querySelector('#edit-step')?.textContent === 'F',
+			);
+			await page
+				.getByRole('checkbox', { name: 'Staccato', exact: true })
+				.check();
+			await page.waitForFunction(
+				() =>
+					document
+						.querySelector('#edit-staccato')
+						?.getAttribute('aria-checked') === 'true',
+			);
+			const downloadEvent = page.waitForEvent('download');
+			await page
+				.getByRole('button', { name: 'Download MusicXML', exact: true })
+				.click();
+			const downloaded = await downloadEvent;
+			expect(downloaded.suggestedFilename()).toBe('edited-score.musicxml');
+			const downloadedPath = await downloaded.path();
+			if (!downloadedPath) {
+				throw new Error('Missing MusicXML download');
+			}
+			const xml = await Bun.file(downloadedPath).text();
+			expect(xml).toContain('<step>F</step>');
+			expect(xml).toContain('<staccato');
+			await page.getByRole('button', { name: 'Undo', exact: true }).click();
+			await page.waitForFunction(
+				() =>
+					document
+						.querySelector('#edit-staccato')
+						?.getAttribute('aria-checked') === 'false',
+			);
+			await page.getByRole('button', { name: 'Undo', exact: true }).click();
+			await page.waitForFunction(
+				() => document.querySelector('#edit-step')?.textContent === 'C',
+			);
+			await page.getByRole('button', { name: 'Redo', exact: true }).click();
+			await page.waitForFunction(
+				() => document.querySelector('#edit-step')?.textContent === 'F',
+			);
+			expect(
+				await page
+					.getByRole('application', { name: 'Score', exact: true })
+					.evaluate((element) => element === document.activeElement),
+			).toBe(true);
+			await page.screenshot({
+				path: 'packages/integration/__artifacts__/editing-site-desktop.png',
+			});
+			await page.setViewportSize({ width: 390, height: 844 });
+			expect(
+				(
+					await page
+						.getByRole('application', { name: 'Score', exact: true })
+						.boundingBox()
+				)?.height,
+			).toBeGreaterThan(150);
+			await page.screenshot({
+				path: 'packages/integration/__artifacts__/editing-site-mobile.png',
+			});
+			expect(
+				await page.evaluate(
+					() => document.documentElement.scrollWidth <= window.innerWidth,
+				),
+			).toBe(true);
+			await page.goto(`${url}examples/editing.html`, {
+				waitUntil: 'domcontentloaded',
+			});
+			await page.locator('#score[tabindex="0"]').waitFor();
+			await page.locator('#score').focus();
+			await page.keyboard.press('ArrowRight');
+			await page
+				.getByRole('button', { name: 'Add staccato', exact: true })
+				.click();
+			await page
+				.getByRole('button', { name: 'Undo Add staccato', exact: true })
+				.waitFor();
+			expect(errors).toEqual([]);
+		} finally {
+			await browser.close();
+			await server.close();
+		}
+	}, 30_000);
+	it('preserves document selection and scroll, rebuilds playback, and retains undo after rendering fails', async () => {
+		const server = await createServer({
+			root: 'packages/site',
+			server: { port: 0 },
+		});
+		await server.listen();
+		const browser = await chromium.launch({
+			headless: true,
+			args: ['--no-sandbox'],
+		});
+		try {
+			const page = await browser.newPage();
+			const url = server.resolvedUrls?.local[0];
+			if (!url) {
+				throw new Error('Missing dev server URL');
+			}
+			await page.route(`${url}model-test`, (route) =>
+				route.fulfill({
+					contentType: 'text/html',
+					body: '<div id="score" tabindex="0" style="width:500px"></div>',
+				}),
+			);
+			await page.goto(`${url}model-test`);
+			const xml = await Bun.file(
+				'packages/integration/__data__/note.musicxml',
+			).text();
+			const result = await page.evaluate(async (xml) => {
+				const modulePath = '/lib/site-model.ts';
+				const { SiteModel } = await import(modulePath);
+				const model: import('./lib/site-model').SiteModel = new SiteModel(
+					{ names: () => [], load: () => undefined },
+					localStorage,
+				);
+				const container = document.querySelector<HTMLDivElement>('#score');
+				if (!container) {
+					throw new Error('Missing score container');
+				}
+				const config = {
+					maxHeight: 60,
+					layout: { type: 'standard' as const, referenceWidth: 300 },
+					fonts: {
+						notation: { family: 'Bravura' },
+						text: { family: 'Source Sans 3' },
+					},
+				};
+				model.document.edit(xml, { immediate: true });
+				await model.renderInto(container, {
+					input: model.document.input,
+					format: 'musicxml',
+					config,
+				});
+				model.setMode('edit');
+				const editor = model.editor;
+				const first = editor?.document.score.parts[0]?.measures[0]?.notes[0];
+				if (!editor || !first) {
+					throw new Error('Missing document note');
+				}
+				editor.select(first);
+				model.session?.cursor.cancelScroll();
+				container.scrollTop = 20;
+				container.focus();
+				const originalScroll = container.scrollTop;
+				editor.setPitch({ step: 'F', octave: 5 });
+				await model.renderInto(container, {
+					input: model.document.input,
+					format: 'musicxml',
+					config,
+				});
+				const afterEdit = {
+					sameEditor: model.editor === editor,
+					sameFocus: editor.getFocus() === first,
+					focused: document.activeElement === container,
+					scroll: container.scrollTop,
+					pitch: model.session?.score
+						.getSequence()
+						.getSteps()[0]
+						?.active[0]?.getPitch(),
+					sourceUpdated: model.document.text.includes('<step>F</step>'),
+				};
+				await model.renderInto(container, {
+					input: model.document.input,
+					format: 'musicxml',
+					config: {
+						...config,
+						gaps: [{ beforeMeasureIndex: 0, durationMs: 1000 }],
+					},
+				});
+				const afterFailure = {
+					failed: model.error !== null,
+					noScore: model.session === null,
+					canUndo: model.noteEditing?.editor.history.canUndo,
+				};
+				editor.undo();
+				await model.renderInto(container, {
+					input: model.document.input,
+					format: 'musicxml',
+					config,
+				});
+				const recovered = {
+					error: model.error,
+					pitch: model.session?.score
+						.getSequence()
+						.getSteps()[0]
+						?.active[0]?.getPitch(),
+					sameFocus: editor.getFocus() === first,
+				};
+				model.dispose();
+				return { originalScroll, afterEdit, afterFailure, recovered };
+			}, xml);
+			expect(result).toEqual({
+				originalScroll: 20,
+				afterEdit: {
+					sameEditor: true,
+					sameFocus: true,
+					focused: true,
+					scroll: 20,
+					pitch: 'F/5',
+					sourceUpdated: true,
+				},
+				afterFailure: { failed: true, noScore: true, canUndo: true },
+				recovered: { error: null, pitch: 'C/5', sameFocus: true },
+			});
+		} finally {
+			await browser.close();
+			await server.close();
+		}
+	}, 30_000);
+});

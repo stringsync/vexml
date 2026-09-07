@@ -8,6 +8,13 @@ import type {
  * With no selection, navigation begins at the document boundary. */
 export class SiteEditingBindings implements EditingBindings {
 	resolve(key: EditingKey): EditingCommand | null {
+		if (
+			!key.altKey &&
+			(key.ctrlKey || key.metaKey) &&
+			key.key.toLowerCase() === 'z'
+		) {
+			return { type: key.shiftKey ? 'redo' : 'undo' };
+		}
 		if (key.altKey || key.ctrlKey || key.metaKey) {
 			return null;
 		}
@@ -22,6 +29,7 @@ export class SiteEditingBindings implements EditingBindings {
 		const horizontal = key.key === 'ArrowLeft' || key.key === 'ArrowRight';
 		return {
 			type: 'move',
+			extend: key.shiftKey,
 			move: {
 				unit: horizontal ? 'note' : 'vertical',
 				direction: key.key === 'ArrowRight' || key.key === 'ArrowDown' ? 1 : -1,

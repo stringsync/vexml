@@ -3,6 +3,7 @@ import {
 	Note as MNote,
 	type Part as MPart,
 } from '@stringsync/mdom';
+import type { Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
 import { EditingNavigator } from './editing-navigator';
 import type { Element } from './element';
@@ -29,19 +30,35 @@ export type EditingSessionEvents = {
 };
 
 /** A note-editing session outlives rendered Scores. Optional EditingControllers own
- * input and overlays; the host schedules rerenders. This object owns document state.
- * Structural edits outside the session require clearHistory(); detached targets are pruned. */
-export class EditingSession implements Eventful<EditingSessionEvents> {
+ * input and overlays; the host schedules rerenders. mdom owns document history.
+ * Once created, all document mutations must run through document.history.edit(). */
+export class EditingSession
+	implements Eventful<EditingSessionEvents>, Resource
+{
 	private readonly dispatcher = new Dispatcher<EditingSessionEvents>();
 	readonly events = this.dispatcher.events;
 	private activeVoice: EditingVoice | null = null;
 	private focus: MNote | null = null;
 	private anchor: MNote | null = null;
 	private selected: MNote[] = [];
-	private readonly past: PitchEdit[] = [];
-	private readonly future: PitchEdit[] = [];
+	private readonly unlisten: () => void;
 
-	constructor(readonly document: MDocument) {}
+	constructor(readonly document: MDocument) {
+		this.unlisten = document.history.events.on('change', () => {
+			this.dispatcher.dispatch('documentchange');
+		});
+	}
+
+	/** The document's native mdom history. Use edit() for any supported mutation. */
+	get history() {
+		return this.document.history;
+	}
+
+	/** Release this session's listeners. The caller retains ownership of document history. */
+	dispose(): void {
+		this.unlisten();
+		this.dispatcher.dispose();
+	}
 
 	/** Voices in first-written order, deduplicated across measures and staves. */
 	getVoices(): readonly EditingVoice[] {
@@ -197,43 +214,17 @@ export class EditingSession implements Eventful<EditingSessionEvents> {
 
 	/** One group edit is one undo step. Returns false for an empty or unchanged selection. */
 	setPitch(spec: PitchInput): boolean {
-		const edit = PitchEdit.apply(this.getSelection(), spec);
-		if (!edit.changed) {
-			return false;
-		}
-		this.past.push(edit);
-		this.future.length = 0;
-		this.dispatcher.dispatch('documentchange');
-		return true;
+		return this.history.edit('Set pitch', () =>
+			new PitchEdit(this.getSelection()).apply(spec),
+		);
 	}
 
 	undo(): boolean {
-		const edit = this.past.at(-1);
-		if (!edit) {
-			return false;
-		}
-		edit.undo();
-		this.past.pop();
-		this.future.push(edit);
-		this.dispatcher.dispatch('documentchange');
-		return true;
+		return this.history.undo();
 	}
 
 	redo(): boolean {
-		const edit = this.future.at(-1);
-		if (!edit) {
-			return false;
-		}
-		edit.redo();
-		this.future.pop();
-		this.past.push(edit);
-		this.dispatcher.dispatch('documentchange');
-		return true;
-	}
-
-	clearHistory(): void {
-		this.past.length = 0;
-		this.future.length = 0;
+		return this.history.redo();
 	}
 
 	private contains(note: MNote): boolean {
