@@ -20,12 +20,12 @@ describe('ScrollController', () => {
 
 	it('passes the axis-resolved offset straight through on an instant scroll', () => {
 		scroller.scrollIntoView(new Rect(150, 10, 10, 10));
-		expect(host.calls).toEqual([{ left: 134, top: -6, behavior: undefined }]);
+		expect(host.calls).toEqual([{ left: 134, top: 0, behavior: undefined }]);
 	});
 
-	it('leaves x alone when the target is already visible horizontally', () => {
+	it('does not scroll when the target is already visible', () => {
 		scroller.scrollIntoView(new Rect(50, 50, 10, 10));
-		expect(host.last()).toEqual({ left: 0, top: 34, behavior: undefined });
+		expect(host.calls).toHaveLength(0);
 	});
 
 	it('turns the page to the left edge when the target runs off to the right', () => {
@@ -58,7 +58,58 @@ describe('ScrollController', () => {
 		for (const x of [310, 350, 390]) {
 			scroller.scrollIntoView(new Rect(x, 10, 10, 10));
 		}
-		expect(host.calls.map((c) => c.left)).toEqual([300, 300, 300]);
+		expect(host.calls).toHaveLength(0);
+	});
+
+	it('turns downward pages with the target near the top', () => {
+		scroller.scrollIntoView(new Rect(50, 150, 10, 10));
+		expect(host.last()).toEqual({ left: 0, top: 134, behavior: undefined });
+	});
+
+	it('turns upward pages with the target near the bottom', () => {
+		host.scroll = { left: 0, top: 300 };
+		scroller.scrollIntoView(new Rect(50, 220, 10, 10));
+		expect(host.last()).toEqual({ left: 0, top: 146, behavior: undefined });
+	});
+
+	it('leaves both axes still through focus changes, including viewport edges', async () => {
+		host.scroll = { left: 300, top: 300 };
+		for (const position of [300, 350, 390]) {
+			scroller.scrollIntoView(new Rect(position, position, 10, 10), {
+				behavior: 'smooth',
+			});
+		}
+		await settle();
+		expect(host.calls).toHaveLength(0);
+	});
+
+	it('pages both axes when the target leaves both', () => {
+		host.scroll = { left: 300, top: 0 };
+		scroller.scrollIntoView(new Rect(220, 150, 10, 10));
+		expect(host.last()).toEqual({ left: 146, top: 134, behavior: undefined });
+	});
+
+	it('reduces padding so a nearly viewport-sized target fits completely', () => {
+		scroller.scrollIntoView(new Rect(150, 150, 90, 90));
+		expect(host.last()).toEqual({ left: 140, top: 140, behavior: undefined });
+		host.scroll = { left: 300, top: 300 };
+		scroller.scrollIntoView(new Rect(150, 150, 90, 90));
+		expect(host.last()).toEqual({ left: 150, top: 150, behavior: undefined });
+	});
+
+	it('keeps the current page destination when it already reveals the next target', async () => {
+		scroller.scrollIntoView(new Rect(0, 150, 10, 10), { behavior: 'smooth' });
+		scroller.scrollIntoView(new Rect(0, 170, 10, 10), { behavior: 'smooth' });
+		await settle();
+		expect(host.last()?.top).toBe(134);
+	});
+
+	it('stops an old page turn that would hide newly focused visible content', async () => {
+		scroller.scrollIntoView(new Rect(0, 150, 10, 10), { behavior: 'smooth' });
+		scroller.scrollIntoView(new Rect(0, 20, 10, 10), { behavior: 'smooth' });
+		const count = host.calls.length;
+		await settle();
+		expect(host.calls).toHaveLength(count);
 	});
 
 	it('tweens over several instant frames and lands exactly on the target', async () => {

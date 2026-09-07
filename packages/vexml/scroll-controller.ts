@@ -78,7 +78,27 @@ export class ScrollController implements Scroller {
 			right: scroll.left + size.width,
 			bottom: scroll.top + size.height,
 		};
+		// Keep an existing page turn when its destination already reveals the new target.
+		if (this.tween) {
+			const destination = this.tween.to;
+			const pending = this.scrollOffsetFor(target, {
+				...destination,
+				right: destination.left + size.width,
+				bottom: destination.top + size.height,
+			});
+			if (
+				pending.left === destination.left &&
+				pending.top === destination.top
+			) {
+				return;
+			}
+		}
 		const offset = this.scrollOffsetFor(target, view);
+		if (offset.left === scroll.left && offset.top === scroll.top) {
+			// A newly focused visible target must not be carried offscreen by an old tween.
+			this.stopTween();
+			return;
+		}
 		const behavior = opts?.behavior;
 		if (behavior === 'smooth' || behavior === 'auto') {
 			this.smoothScrollTo(offset);
@@ -159,47 +179,47 @@ export class ScrollController implements Scroller {
 		}
 	}
 
-	/*
-	 * The scroll offset that brings `target` into `view`, both in the container's scroll-content
-	 * coordinates. Vertical pins the target's top to the viewport top (scrollTo clamps to the max
-	 * scroll height near the end of the content); horizontal turns the page, see below. Only the
-	 * off-screen axis moves, so chasing a horizontally-off-screen bar in a panoramic score never
-	 * disturbs the vertical position. Pure — the DOM application lives in scrollIntoView.
-	 */
+	// Resolve each axis independently: visible targets stay put, while offscreen targets return
+	// at the opposite edge, revealing the most content in the direction of travel.
 	private scrollOffsetFor(
 		target: Box,
 		view: Box,
 	): { left: number; top: number } {
 		return {
-			left: this.pageX(target, view),
-			// Leave breathing room above the target instead of pinning it flush to the top. scrollTo
-			// clamps negatives to 0.
-			top: target.top - SCROLL_TOP_PADDING_PX,
+			left: this.pageOffset(
+				target.left,
+				target.right,
+				view.left,
+				view.right,
+				SCROLL_SIDE_PADDING_PX,
+			),
+			top: this.pageOffset(
+				target.top,
+				target.bottom,
+				view.top,
+				view.bottom,
+				SCROLL_TOP_PADDING_PX,
+			),
 		};
 	}
 
-	/*
-	 * Where the scroll box goes horizontally to keep `target` in `view`: a page-turn, not a nudge.
-	 *
-	 * A target still on screen doesn't move the box at all — otherwise a cursor crossing a panoramic
-	 * score would drag the music under it note by note. Once it does leave, the edge it left by
-	 * decides where it comes back: a bar that ran off the right returns at the *left* edge, with a
-	 * full viewport of music still ahead of it, and one that ran off the left (a repeat, a scrub
-	 * backwards) returns at the *right*, with a full viewport behind. Scrolling only far enough to
-	 * expose the bar would leave it pinned to the edge it exited by, so the very next bar would
-	 * scroll again, and the score would creep continuously instead of turning pages.
-	 */
-	private pageX(target: Box, view: Box): number {
-		const width = view.right - view.left;
-		if (target.left >= view.left && target.right <= view.right) {
-			return view.left;
+	private pageOffset(
+		start: number,
+		end: number,
+		viewStart: number,
+		viewEnd: number,
+		padding: number,
+	): number {
+		if (start >= viewStart && end <= viewEnd) {
+			return viewStart;
 		}
-		// A target wider than the viewport can only be aligned one way; it falls through to the near
-		// edge, same as one that ran off the right.
-		if (target.left < view.left && target.right <= view.right) {
-			return target.right + SCROLL_SIDE_PADDING_PX - width;
+		const size = viewEnd - viewStart;
+		// Oversized targets cannot fit; consistently show their beginning without oscillating.
+		if (end - start > size) {
+			return start - padding;
 		}
-		return target.left - SCROLL_SIDE_PADDING_PX;
+		const inset = Math.min(padding, size - (end - start));
+		return start < viewStart ? end + inset - size : start - inset;
 	}
 }
 
