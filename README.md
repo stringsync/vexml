@@ -136,7 +136,7 @@ note is detached. Undo makes retained selection references available again.
 Render errors should leave the document and history available so users can undo.
 
 Run `vex dev` to try the lightweight editor. **New notation** creates a blank
-treble staff or guitar tab. Arrow keys move the pending note, A–G selects a
+treble staff or guitar tab. Arrow keys move the pending note, A to G selects a
 staff pitch, and digits enter a fret. Enter commits; Escape cancels. The gray
 preview lives on a separate drawing layer and never enters MusicXML or history.
 Select a note to change its duration with the segmented toolbar. Undo/redo and
