@@ -25,6 +25,23 @@ export class HaloStyle implements DecorationStyle {
 		ctx.restore();
 	}
 
+	/** Outline the same circle as the filled halo, keeping the stroke inside its bounds. */
+	drawOutline(
+		ctx: CanvasRenderingContext2D,
+		target: Decoratable,
+		color: string,
+	): void {
+		const b = this.bounds(target);
+		const radius = b.w / 2;
+		ctx.save();
+		ctx.strokeStyle = color;
+		ctx.lineWidth = 2;
+		ctx.beginPath();
+		ctx.arc(b.x + radius, b.y + radius, radius - 1, 0, 2 * Math.PI);
+		ctx.stroke();
+		ctx.restore();
+	}
+
 	bounds(target: Decoratable): Rect {
 		const r = target.rect;
 		const radius = Math.max(r.w, r.h) / 2 + HALO_MARGIN;

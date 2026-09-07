@@ -4,7 +4,7 @@ import type {
 	EditingKey,
 } from './editing-bindings';
 
-/** Arrows follow notes/chord members and voices; Shift extends within the anchored voice. */
+/** Arrows follow notes/chord members and voices. */
 export class DefaultEditingBindings implements EditingBindings {
 	resolve(key: EditingKey): EditingCommand | null {
 		if (key.altKey || key.ctrlKey || key.metaKey) {
@@ -18,25 +18,21 @@ export class DefaultEditingBindings implements EditingBindings {
 				return {
 					type: 'move',
 					move: { unit: 'note', direction: -1 },
-					extend: key.shiftKey,
 				};
 			case 'ArrowRight':
 				return {
 					type: 'move',
 					move: { unit: 'note', direction: 1 },
-					extend: key.shiftKey,
 				};
 			case 'ArrowUp':
 				return {
 					type: 'move',
 					move: { unit: 'vertical', direction: -1 },
-					extend: key.shiftKey,
 				};
 			case 'ArrowDown':
 				return {
 					type: 'move',
 					move: { unit: 'vertical', direction: 1 },
-					extend: key.shiftKey,
 				};
 			default:
 				return null;

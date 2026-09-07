@@ -1,20 +1,26 @@
-import { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'webappwiz/geometry';
 import type { EditingPresentation, EditingView } from './editing-view';
+import { HaloStyle } from './halo-style';
 import type { Layer } from './layer';
+import type { Note } from './note';
+import type { System } from './system';
 
 export interface SelectionOverlayOptions {
-	/** Selection wash color, drawn translucently over the engraving. */
+	/** Selection halo and region color, drawn translucently behind the engraving. */
 	color?: string;
-	/** Focus outline color; defaults to the selection color. */
+	/** Cursor halo outline color; defaults to the selection color. */
 	focusColor?: string;
 }
 
-/** Selection washes and a focus outline, isolated on a score-owned drawing layer. */
+/** Shared halo geometry on editing-owned layers, independent of hover and playback. */
 export class SelectionOverlay implements EditingView {
 	private previous: Rect[] = [];
+	private previousFocus: Rect[] = [];
+	private readonly halo = new HaloStyle();
 	constructor(
 		private readonly layer: Layer,
 		private readonly options: SelectionOverlayOptions = {},
+		private readonly focusLayer: Layer = layer,
 	) {}
 
 	render(state: EditingPresentation): void {
@@ -23,54 +29,81 @@ export class SelectionOverlay implements EditingView {
 			ctx.clearRect(rect.x - 1, rect.y - 1, rect.w + 2, rect.h + 2);
 		}
 		this.previous = [];
+		for (const rect of this.previousFocus) {
+			this.focusLayer.ctx.clearRect(
+				rect.x - 1,
+				rect.y - 1,
+				rect.w + 2,
+				rect.h + 2,
+			);
+		}
+		this.previousFocus = [];
 		ctx.save();
-		ctx.fillStyle = this.options.color ?? '#155dfc';
+		const color = this.options.color ?? '#155dfc';
+		ctx.fillStyle = color;
+		ctx.globalAlpha = 0.1;
+		const regions = state.marquee
+			? [state.marquee]
+			: this.regions(state.selected);
+		for (const rect of regions) {
+			ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+			this.previous.push(rect);
+		}
 		ctx.globalAlpha = 0.24;
 		for (const note of state.selected) {
 			for (const element of [note, note.getTabPosition()]) {
-				if (!element) {
-					continue;
+				if (element) {
+					this.halo.draw(ctx, element, color);
+					this.previous.push(this.halo.bounds(element));
 				}
-				const rect = this.padded(element.rect);
-				ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-				this.previous.push(rect);
 			}
 		}
 		ctx.globalAlpha = 1;
-		ctx.fillStyle = this.options.focusColor ?? this.options.color ?? '#155dfc';
-		const targets = state.focus
-			? [state.focus.rect, state.focus.getTabPosition()?.rect]
-			: [state.position];
-		for (const target of targets) {
-			if (!target) {
-				continue;
+		if (state.focus) {
+			for (const element of [state.focus, state.focus.getTabPosition()]) {
+				if (element) {
+					this.halo.drawOutline(
+						this.focusLayer.ctx,
+						element,
+						this.options.focusColor ?? color,
+					);
+					this.previousFocus.push(this.halo.bounds(element));
+				}
 			}
-			const rect = this.padded(target);
-			ctx.fillRect(rect.x, rect.y, rect.w, 2);
-			ctx.fillRect(rect.x, rect.y + rect.h - 2, rect.w, 2);
-			ctx.fillRect(rect.x, rect.y, 2, rect.h);
-			ctx.fillRect(rect.x + rect.w - 2, rect.y, 2, rect.h);
-			this.previous.push(rect);
 		}
 		if (state.marquee) {
 			const rect = state.marquee;
-			ctx.globalAlpha = 0.12;
-			ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-			ctx.globalAlpha = 1;
+			ctx.fillStyle = color;
 			ctx.fillRect(rect.x, rect.y, rect.w, 1);
 			ctx.fillRect(rect.x, rect.bottom - 1, rect.w, 1);
 			ctx.fillRect(rect.x, rect.y, 1, rect.h);
 			ctx.fillRect(rect.right - 1, rect.y, 1, rect.h);
-			this.previous.push(rect);
 		}
 		ctx.restore();
 	}
 
 	dispose(): void {
 		this.layer.dispose();
+		if (this.focusLayer !== this.layer) {
+			this.focusLayer.dispose();
+		}
 	}
 
-	private padded(rect: Rect): Rect {
-		return new Rect(rect.x - 3, rect.y - 3, rect.w + 6, rect.h + 6);
+	/** Separate enclosures per score line avoid shading the gap between wrapped systems. */
+	private regions(notes: readonly Note[]): Rect[] {
+		if (notes.length < 2) {
+			return [];
+		}
+		const systems = new Map<System, Rect>();
+		for (const note of notes) {
+			const system = note.getMeasure().getBox().getSystem();
+			for (const element of [note, note.getTabPosition()]) {
+				if (element) {
+					const rect = this.halo.bounds(element);
+					systems.set(system, systems.get(system)?.union(rect) ?? rect);
+				}
+			}
+		}
+		return [...systems.values()];
 	}
 }

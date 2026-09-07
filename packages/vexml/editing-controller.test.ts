@@ -229,7 +229,7 @@ describe('EditingController', () => {
 		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
 	});
 
-	it('handles scoped keys, extends selection and leaves unhandled/modified/composing keys alone', () => {
+	it('handles scoped keys without Shift extension and leaves unhandled/modified/composing keys alone', () => {
 		const f = fixture();
 		const { host, controller } = f.create();
 		const arrow = new Key('ArrowRight');
@@ -237,7 +237,7 @@ describe('EditingController', () => {
 		expect(arrow.defaultPrevented).toBe(true);
 		expect(f.editor.getFocus()).toBe(f.first);
 		host.dom.dispatchEvent(new Key('ArrowRight', true));
-		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
+		expect(f.editor.getSelection()).toEqual([f.second]);
 		for (const key of [
 			new Key('x'),
 			new Key('ArrowLeft', false, true),
@@ -254,16 +254,16 @@ describe('EditingController', () => {
 		expect(f.editor.getFocus()).toBe(f.second);
 	});
 
-	it('selects note/fret hits, extends a voice range, toggles a set, and starts a fresh range across voices', () => {
+	it('selects notes and frets, toggles a set, and treats Shift-click as a plain click', () => {
 		const f = fixture();
 		const { host, score } = f.create();
 		host.dom.dispatchEvent(new Click(22, 42));
 		host.dom.dispatchEvent(new Click(52, 42, true));
-		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
+		expect(f.editor.getSelection()).toEqual([f.second]);
 		host.dom.dispatchEvent(new Click(82, 42, false, true));
-		expect(f.editor.getSelection()).toEqual([f.first, f.second, f.other]);
+		expect(f.editor.getSelection()).toEqual([f.second, f.other]);
 		host.dom.dispatchEvent(new Click(82, 42, false, true));
-		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
+		expect(f.editor.getSelection()).toEqual([f.second]);
 		host.dom.dispatchEvent(new Click(82, 42, true));
 		expect(f.editor.getSelection()).toEqual([f.other]);
 		host.dom.dispatchEvent(new Click(150, 80));
@@ -377,18 +377,49 @@ describe('EditingController', () => {
 		expect(host.scroller.calls.length).toBe(1);
 	});
 
-	it('draws every selected note and fret on its own overlay without touching decoration state', () => {
+	it('draws selection halos and a region behind the score, with focus outlines above hover', () => {
 		const f = fixture();
-		const { host, decorations, score } = f.create(0, { view: undefined });
+		const { host, decorations, score } = f.create(0, {
+			view: undefined,
+			selection: { color: '#ff3d9e', focusColor: '#a80050' },
+		});
 		f.editor.selectNotes([f.first, f.other]);
 		const layer = host.created[0];
-		expect(layer?.recording.fills.length).toBe(11); // Three washes; four edges on note and fret focus.
+		const focus = host.created[1];
+		expect(layer?.kind).toBe('background');
+		expect(focus?.kind).toBe('content');
+		expect(layer?.recording.ops.filter((op) => op.startsWith('fill:'))).toEqual(
+			['fill:arc:#ff3d9e', 'fill:arc:#ff3d9e', 'fill:arc:#ff3d9e'],
+		);
+		expect(layer?.recording.fills).toHaveLength(1);
+		expect(
+			focus?.recording.ops.filter((op) => op.startsWith('stroke:')),
+		).toEqual(['stroke:arc:#a80050', 'stroke:arc:#a80050']);
 		const note = score.getElements().noteLookup.get(f.first);
 		expect(note && decorations.color.has(note)).toBe(false);
+		expect(note && decorations.halo.has(note)).toBe(false);
 		f.editor.clearSelection();
-		expect(layer?.recording.clears.length).toBe(5);
+		expect(layer?.recording.clears.length).toBe(4);
+		expect(focus?.recording.clears.length).toBe(2);
 		score.dispose();
 		expect(layer?.disposed).toBe(true);
+		expect(focus?.disposed).toBe(true);
+	});
+
+	it('removes the group region when selection shrinks to one note', () => {
+		const f = fixture();
+		const { host } = f.create(0, { view: undefined });
+		f.editor.selectNotes([f.first, f.second]);
+		const layer = host.created[0];
+		const region = layer?.recording.fills[0];
+		f.editor.select(f.second);
+		expect(layer?.recording.fills).toHaveLength(1);
+		expect(region && layer?.recording.clears).toContainEqual({
+			x: (region?.x ?? 0) - 1,
+			y: (region?.y ?? 0) - 1,
+			w: (region?.w ?? 0) + 2,
+			h: (region?.h ?? 0) + 2,
+		});
 	});
 });
 

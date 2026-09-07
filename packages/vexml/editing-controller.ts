@@ -359,8 +359,7 @@ export class EditingController
 			if (
 				this.options.allowDeselect !== false &&
 				!key.ctrlKey &&
-				!key.metaKey &&
-				!key.shiftKey
+				!key.metaKey
 			) {
 				this.editor.clearSelection();
 			}
@@ -372,8 +371,6 @@ export class EditingController
 			) {
 				this.editor.toggle(note);
 			}
-		} else if (key.shiftKey) {
-			this.editor.select(note, { extend: this.editor.canExtendTo(note) });
 		} else if (
 			this.options.allowDeselect !== false &&
 			this.options.toggleOnClick &&
@@ -408,17 +405,6 @@ export class EditingController
 	}
 
 	private resolve(): EditingPresentation {
-		if (this.drag?.rect) {
-			return {
-				selected: this.drag.notes.flatMap((note) => {
-					const element = this.deps.elements.noteLookup.get(note);
-					return element ? [element] : [];
-				}),
-				focus: null,
-				position: null,
-				marquee: this.drag.rect,
-			};
-		}
 		const source = this.editor.getFocus();
 		const focus = source
 			? (this.deps.elements.noteLookup.get(source) ?? null)
@@ -429,7 +415,13 @@ export class EditingController
 					.find((box) => box.getSources().includes(source.measure))
 			: null;
 		return {
-			selected: this.editor.getSelectedElements(this.deps.elements),
+			selected: this.drag?.rect
+				? this.drag.notes.flatMap((note) => {
+						const element = this.deps.elements.noteLookup.get(note);
+						return element ? [element] : [];
+					})
+				: this.editor.getSelectedElements(this.deps.elements),
+			...(this.drag?.rect ? { marquee: this.drag.rect } : {}),
 			focus,
 			position: focus?.rect ?? fallback?.rect ?? null,
 		};

@@ -115,7 +115,7 @@ export class EditingSession implements Eventful<EditingSessionEvents> {
 		return this.selected.filter((note) => this.contains(note));
 	}
 
-	/** Clicking a note starts a selection; Shift-click extends the existing voice range.
+	/** Selecting a note starts a selection; extend: true extends the existing voice range.
 	 * Chord members, grace notes and invisible notes remain individual targets. */
 	select(note: MNote, options: SelectionOptions = {}): void {
 		this.requireNote(note);

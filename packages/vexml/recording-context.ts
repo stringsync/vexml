@@ -9,6 +9,7 @@ type Clear = { x: number; y: number; w: number; h: number };
  * package.json "files". */
 export class RecordingContext {
 	fillStyle: string | CanvasGradient | CanvasPattern = '#000000';
+	strokeStyle = '#000000';
 	font = '';
 	textAlign = 'left';
 	textBaseline = 'alphabetic';
@@ -48,6 +49,10 @@ export class RecordingContext {
 
 	arc(): void {
 		this.shape = 'arc';
+	}
+
+	stroke(): void {
+		this.ops.push(`stroke:${this.shape}:${String(this.strokeStyle)}`);
 	}
 
 	fill(): void {

@@ -187,8 +187,9 @@ export class Score implements Eventful<ScoreEventMap> {
 			(options.selection === false
 				? null
 				: new SelectionOverlay(
-						this.host.createLayer('content'),
+						this.host.createLayer('background'),
 						options.selection,
+						this.host.createLayer('content'),
 					));
 		const controller = new EditingController(
 			editor,

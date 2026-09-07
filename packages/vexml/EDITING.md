@@ -34,7 +34,7 @@ String and Blob rendering retain their existing gap behavior.
 ## Default editing UI
 
 Attach an editing controller to each render. The controller installs scoped keyboard
-and pointer listeners, draws selection on a separate layer, and scrolls the focused
+and pointer listeners, draws selection on separate layers, and scrolls the focused
 note into view. Programmatic session selection changes refresh the view too.
 
 ```ts
@@ -61,10 +61,10 @@ selection focuses the container without browser scrolling. The host supplies the
 container's accessible name and any live selection announcement.
 
 Defaults: left/right follow chord leads in the written voice; up/down traverse
-chord members in staff order, then continue to the neighboring voice. Shift-arrow
-extends the range. Escape clears selection while retaining the active voice. Click selects a note or fret, Shift-click extends
-a range, and Command/Ctrl-click toggles set membership. Shift-click into another
-part or voice starts a fresh selection. Background clicks clear selection.
+chord members in staff order, then continue to the neighboring voice. Escape clears
+selection while retaining the active voice. Click selects a note or fret, and
+Command/Ctrl-click toggles set membership. Background clicks clear selection.
+Shift has no special meaning for pointer selection or the default arrow bindings.
 `toggleOnClick: true` makes a second plain click on the sole focused note clear it.
 Set `allowDeselect: false` to retain selection on background clicks, clear commands
 (including Escape), repeated clicks and toggling the final selected note. Programmatic
@@ -72,8 +72,12 @@ session selection remains under host control.
 
 Scrolling follows focus changes, not viewport events, so manual scrolling stays
 under the user's control. An unindexed focus falls back to its measure box when
-available. The overlay outlines focus separately from the complete selection and
-includes both notation and tab targets without changing playback/hover colors.
+available. The overlay uses the shared circular halo style for selected notes and frets.
+Multiple selected notes also get a translucent enclosure per rendered system,
+avoiding a shaded rectangle across the gaps between score lines. The focused note's
+halo has a separate outline above the engraving and hover halos. Selection halos
+and regions sit behind the engraving on their own layer; playback and hover
+retain their decoration state.
 
 ## Compositions and customization
 
@@ -102,13 +106,13 @@ includes both notation and tab targets without changing playback/hover colors.
   repeats. Cross-voice range extension through navigation is a no-op.
 - `EditingBindings.resolve(key)` maps a key snapshot to a semantic `EditingCommand`.
   Return null to leave the key to the host. Replace the defaults to bind arrows to
-  voice navigation or Shift-arrows to measure jumps. `editing.execute(command)`
+  voice navigation or measure jumps. `editing.execute(command)`
   lets buttons issue the same commands directly.
 - `EditingView.render(presentation)` receives current rendered notes, focus and
   score-space focus geometry. `SelectionOverlay` is the default view. A custom
   `view` is owned and disposed by the controller. `selection: false` disables the
-  default overlay. Set `selection.focusColor` to contrast the focus outline with
-  the translucent `selection.color` wash; `keyboard: false`, `pointer: false` and `follow: false` disable
+  default overlay. Set `selection.focusColor` to contrast the cursor halo outline with
+  the translucent `selection.color` halos and regions; `keyboard: false`, `pointer: false` and `follow: false` disable
   those individual behaviors. A framework can call `editing.handleKey(key)` and
   prevent the browser default when it returns true.
 
@@ -153,7 +157,7 @@ and frets fully enclosed by it are selected on release, across parts and voices;
 Command/Ctrl-drag adds to the set held at the start of the gesture. A small movement
 remains a click. Escape, pointer cancellation, lost capture, suspension and disposal
 cancel the preview. Dragging does not trigger focus following. Touch dragging retains
-native scrolling. Modified background clicks leave selection alone.
+native scrolling. Command/Ctrl background clicks leave selection alone.
 
 Custom views receive the optional score-space `presentation.marquee` and preview
 `selected` notes during a drag; the session itself changes only on release.

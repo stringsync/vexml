@@ -4,7 +4,7 @@ import type {
 	EditingKey,
 } from '@stringsync/vexml';
 
-/** Playground policy: vertical arrows traverse chords and voices; Shift-horizontal jumps measures.
+/** Playground policy: vertical arrows traverse chords and voices.
  * With no selection, navigation begins at the document boundary. */
 export class SiteEditingBindings implements EditingBindings {
 	resolve(key: EditingKey): EditingCommand | null {
@@ -19,15 +19,11 @@ export class SiteEditingBindings implements EditingBindings {
 		) {
 			return null;
 		}
-		if (key.shiftKey && (key.key === 'ArrowUp' || key.key === 'ArrowDown')) {
-			return null;
-		}
 		const horizontal = key.key === 'ArrowLeft' || key.key === 'ArrowRight';
-		const horizontalUnit = key.shiftKey ? 'measure' : 'note';
 		return {
 			type: 'move',
 			move: {
-				unit: horizontal ? horizontalUnit : 'vertical',
+				unit: horizontal ? 'note' : 'vertical',
 				direction: key.key === 'ArrowRight' || key.key === 'ArrowDown' ? 1 : -1,
 			},
 		};
