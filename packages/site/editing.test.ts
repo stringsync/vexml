@@ -1,29 +1,44 @@
 import { describe, expect, it } from 'bun:test';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { ensure } from 'webappwiz/assert';
+import { AsyncDisposer } from 'webappwiz/disposable';
 
 // Vite exercises the same module graph as the dev site, including the workspace library.
 describe('dev site editing', () => {
 	it('edits, undoes, exports and opens the standalone example', async () => {
-		const server = await createServer({
-			root: 'packages/site',
-			server: { port: 0 },
-		});
-		await server.listen();
-		const browser = await chromium.launch({
-			headless: true,
-			args: ['--no-sandbox'],
-		});
+		const disposer = new AsyncDisposer();
+		const cleanupErrors: unknown[] = [];
 		try {
+			const server = await createServer({
+				root: 'packages/site',
+				server: { port: 0 },
+			});
+			// AsyncDisposer stops at the first rejection, so report failures after every release.
+			disposer.defer(() =>
+				server.close().catch((error) => {
+					cleanupErrors.push(error);
+				}),
+			);
+			await server.listen();
+			const browser = await chromium.launch({
+				headless: true,
+				args: ['--no-sandbox'],
+			});
+			disposer.defer(() =>
+				browser.close().catch((error) => {
+					cleanupErrors.push(error);
+				}),
+			);
 			const page = await browser.newPage({
 				viewport: { width: 1440, height: 1000 },
 			});
 			const errors: string[] = [];
 			page.on('pageerror', (error) => errors.push(error.message));
-			const url = server.resolvedUrls?.local[0];
-			if (!url) {
-				throw new Error('Missing dev server URL');
-			}
+			const url = ensure.present(
+				server.resolvedUrls?.local[0],
+				'Missing dev server URL',
+			);
 			page.setDefaultTimeout(7000);
 			await page.route('https://**', (route) => route.abort());
 			await page.goto(url, { waitUntil: 'domcontentloaded' });
@@ -60,10 +75,10 @@ describe('dev site editing', () => {
 				.click();
 			const downloaded = await downloadEvent;
 			expect(downloaded.suggestedFilename()).toBe('edited-score.musicxml');
-			const downloadedPath = await downloaded.path();
-			if (!downloadedPath) {
-				throw new Error('Missing MusicXML download');
-			}
+			const downloadedPath = ensure.present(
+				await downloaded.path(),
+				'Missing MusicXML download',
+			);
 			const xml = await Bun.file(downloadedPath).text();
 			expect(xml).toContain('<step>F</step>');
 			expect(xml).toContain('<staccato');
@@ -74,11 +89,14 @@ describe('dev site editing', () => {
 						.querySelector('#edit-staccato')
 						?.getAttribute('aria-checked') === 'false',
 			);
-			await page.getByRole('button', { name: 'Undo', exact: true }).click();
+			await page
+				.getByRole('application', { name: 'Score', exact: true })
+				.focus();
+			await page.keyboard.press('Control+z');
 			await page.waitForFunction(
 				() => document.querySelector('#edit-step')?.textContent === 'C',
 			);
-			await page.getByRole('button', { name: 'Redo', exact: true }).click();
+			await page.keyboard.press('Control+Shift+z');
 			await page.waitForFunction(
 				() => document.querySelector('#edit-step')?.textContent === 'F',
 			);
@@ -120,26 +138,39 @@ describe('dev site editing', () => {
 				.waitFor();
 			expect(errors).toEqual([]);
 		} finally {
-			await browser.close();
-			await server.close();
+			await disposer.disposeAsync();
+			expect(cleanupErrors).toEqual([]);
 		}
 	}, 30_000);
 	it('preserves document selection and scroll, rebuilds playback, and retains undo after rendering fails', async () => {
-		const server = await createServer({
-			root: 'packages/site',
-			server: { port: 0 },
-		});
-		await server.listen();
-		const browser = await chromium.launch({
-			headless: true,
-			args: ['--no-sandbox'],
-		});
+		const disposer = new AsyncDisposer();
+		const cleanupErrors: unknown[] = [];
 		try {
+			const server = await createServer({
+				root: 'packages/site',
+				server: { port: 0 },
+			});
+			// AsyncDisposer stops at the first rejection, so report failures after every release.
+			disposer.defer(() =>
+				server.close().catch((error) => {
+					cleanupErrors.push(error);
+				}),
+			);
+			await server.listen();
+			const browser = await chromium.launch({
+				headless: true,
+				args: ['--no-sandbox'],
+			});
+			disposer.defer(() =>
+				browser.close().catch((error) => {
+					cleanupErrors.push(error);
+				}),
+			);
 			const page = await browser.newPage();
-			const url = server.resolvedUrls?.local[0];
-			if (!url) {
-				throw new Error('Missing dev server URL');
-			}
+			const url = ensure.present(
+				server.resolvedUrls?.local[0],
+				'Missing dev server URL',
+			);
 			await page.route(`${url}model-test`, (route) =>
 				route.fulfill({
 					contentType: 'text/html',
@@ -151,16 +182,20 @@ describe('dev site editing', () => {
 				'packages/integration/__data__/note.musicxml',
 			).text();
 			const result = await page.evaluate(async (xml) => {
+				const assertionPath = '/@id/webappwiz/assert';
+				const { ensure }: typeof import('webappwiz/assert') = await import(
+					assertionPath
+				);
 				const modulePath = '/lib/site-model.ts';
 				const { SiteModel } = await import(modulePath);
 				const model: import('./lib/site-model').SiteModel = new SiteModel(
 					{ names: () => [], load: () => undefined },
 					localStorage,
 				);
-				const container = document.querySelector<HTMLDivElement>('#score');
-				if (!container) {
-					throw new Error('Missing score container');
-				}
+				const container = ensure.present(
+					document.querySelector<HTMLDivElement>('#score'),
+					'Missing score container',
+				);
 				const config = {
 					maxHeight: 60,
 					layout: { type: 'standard' as const, referenceWidth: 300 },
@@ -176,11 +211,11 @@ describe('dev site editing', () => {
 					config,
 				});
 				model.setMode('edit');
-				const editor = model.editor;
-				const first = editor?.document.score.parts[0]?.measures[0]?.notes[0];
-				if (!editor || !first) {
-					throw new Error('Missing document note');
-				}
+				const editor = ensure.present(model.editor, 'Missing editor');
+				const first = ensure.present(
+					editor.document.score.parts[0]?.measures[0]?.notes[0],
+					'Missing document note',
+				);
 				editor.select(first);
 				model.session?.cursor.cancelScroll();
 				container.scrollTop = 20;
@@ -247,8 +282,8 @@ describe('dev site editing', () => {
 				recovered: { error: null, pitch: 'C/5', sameFocus: true },
 			});
 		} finally {
-			await browser.close();
-			await server.close();
+			await disposer.disposeAsync();
+			expect(cleanupErrors).toEqual([]);
 		}
 	}, 30_000);
 });
