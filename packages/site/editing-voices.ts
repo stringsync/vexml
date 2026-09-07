@@ -18,7 +18,7 @@ export class EditingVoices {
 				value: JSON.stringify([index, voice]),
 				label:
 					parts.length > 1
-						? `${part.label ?? part.id} (${part.id}) · Voice ${voice}`
+						? `Voice ${voice} · ${part.label ?? part.id} (${part.id})`
 						: `Voice ${voice}`,
 				part,
 				voice,
@@ -62,26 +62,22 @@ export class EditingVoices {
 		return true;
 	}
 
-	cycle(direction: 1 | -1): boolean {
-		if (this.options.length < 2) {
-			return false;
-		}
-		const at = this.options.findIndex(
-			(option) => option.value === this.getValue(),
-		);
-		const next =
-			this.options[
-				(at + direction + this.options.length) % this.options.length
-			];
-		return next ? this.select(next.value) : false;
-	}
-
 	clear(): void {
 		this.active = this.getValue();
 		this.editor.selectNotes([]);
 	}
 
 	move(direction: EditingMove): boolean {
+		if (direction === 'higher' || direction === 'lower') {
+			if (!this.editor.getFocus()) {
+				return false;
+			}
+			const at = this.options.findIndex(
+				(option) => option.value === this.getValue(),
+			);
+			const target = this.options[at + (direction === 'higher' ? -1 : 1)];
+			return target ? this.select(target.value) : false;
+		}
 		if (
 			!this.editor.getFocus() &&
 			(direction === 'next' || direction === 'previous')

@@ -12,7 +12,7 @@ describe('EditingVoices', () => {
 		expect(voices.select('missing')).toBe(false);
 	});
 
-	it('starts with the first written note and cycles voices in both directions with wraparound', () => {
+	it('starts with the first written note and traverses voices vertically without wrapping', () => {
 		const document = MDocument.empty();
 		const measure = document.score.addPart().addMeasure();
 		const first = measure
@@ -29,17 +29,20 @@ describe('EditingVoices', () => {
 		expect(editor.getFocus()).toBeNull();
 		expect(voices.move('next')).toBe(true);
 		expect(editor.getFocus()).toBe(first);
-		expect(voices.cycle(1)).toBe(true);
+		expect(voices.move('lower')).toBe(true);
 		expect(editor.getFocus()).toBe(second);
-		expect(voices.cycle(-1)).toBe(true);
+		expect(voices.move('higher')).toBe(true);
 		expect(editor.getFocus()).toBe(first);
-		expect(voices.cycle(-1)).toBe(true);
+		expect(voices.move('higher')).toBe(false);
+		expect(editor.getFocus()).toBe(first);
+		voices.move('lower');
+		voices.move('lower');
 		expect(editor.getFocus()).toBe(third);
-		expect(voices.cycle(1)).toBe(true);
-		expect(editor.getFocus()).toBe(first);
+		expect(voices.move('lower')).toBe(false);
+		expect(editor.getFocus()).toBe(third);
 	});
 
-	it('does not select a note when cycling a single voice', () => {
+	it('does not select a note when moving vertically without focus', () => {
 		const document = MDocument.empty();
 		document.score
 			.addPart()
@@ -48,8 +51,8 @@ describe('EditingVoices', () => {
 			.addNote({ step: 'C', octave: 4, type: 'quarter' });
 		const editor = new EditingSession(document);
 		const voices = new EditingVoices(editor);
-		expect(voices.cycle(1)).toBe(false);
-		expect(voices.cycle(-1)).toBe(false);
+		expect(voices.move('lower')).toBe(false);
+		expect(voices.move('higher')).toBe(false);
 		expect(editor.getFocus()).toBeNull();
 	});
 
@@ -90,8 +93,8 @@ describe('EditingVoices', () => {
 		expect(editor.getFocus()).toBe(closest);
 		expect(voices.move('next')).toBe(true);
 		expect(editor.getFocus()).toBe(next);
-		expect(voices.move('higher')).toBe(false);
-		expect(editor.getFocus()).toBe(next);
+		expect(voices.move('higher')).toBe(true);
+		expect(editor.getFocus()).toBe(focus);
 	});
 
 	it('remembers a clicked voice after Escape and restarts at its chord lead', () => {

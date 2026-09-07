@@ -216,12 +216,6 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			case 'ArrowDown':
 				this.editingVoices.move('lower');
 				break;
-			case 'v':
-				this.editingVoices.cycle(1);
-				break;
-			case 'V':
-				this.editingVoices.cycle(-1);
-				break;
 			case 'Escape':
 				this.editingVoices.clear();
 				break;

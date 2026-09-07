@@ -661,14 +661,13 @@ export default function App() {
 									tabIndex={0}
 									role="application"
 									aria-label="Score"
-									aria-keyshortcuts="V Shift+V"
 									onKeyDown={(event) => {
 										if (
 											event.target !== event.currentTarget ||
 											event.altKey ||
 											event.ctrlKey ||
 											event.metaKey ||
-											(event.shiftKey && event.key !== 'V')
+											event.shiftKey
 										) {
 											return;
 										}

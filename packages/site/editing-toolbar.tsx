@@ -29,6 +29,8 @@ export function EditingToolbar({
 }) {
 	const [pitch, ...details] = selection.split(' · ');
 	const selected = details.length > 0;
+	const voiceLabel =
+		voices.find((voice) => voice.value === activeVoice)?.label ?? details[2];
 	return (
 		<Card
 			size="sm"
@@ -95,12 +97,6 @@ export function EditingToolbar({
 								</SelectGroup>
 							</SelectContent>
 						</Select>
-						<p className="flex items-center gap-1.5 text-2xs text-muted-foreground">
-							<kbd className="inline-flex size-4.5 items-center justify-center rounded border border-border bg-card font-mono text-[10px] shadow-xs">
-								V
-							</kbd>
-							<span>Cycle voices</span>
-						</p>
 					</div>
 				)}
 				<div
@@ -117,11 +113,14 @@ export function EditingToolbar({
 							{selected ? pitch : '—'}
 						</div>
 						<div className="flex min-w-0 flex-col gap-1">
-							<span className="truncate text-sm font-medium text-foreground">
-								{selected ? details[0] : 'No note selected'}
+							<span
+								className="truncate text-sm font-medium text-foreground"
+								title={selected ? voiceLabel : undefined}
+							>
+								{selected ? voiceLabel : 'No note selected'}
 							</span>
 							<span className="truncate text-xs text-muted-foreground">
-								{selected ? details.slice(1).join(' · ') : '\u00a0'}
+								{selected ? details.slice(0, 2).join(' · ') : '\u00a0'}
 							</span>
 						</div>
 					</div>
