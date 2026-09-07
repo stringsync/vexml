@@ -58,11 +58,11 @@ export function EditingToolbar({
 			role="region"
 			aria-label="Score details"
 		>
-			<CardHeader className="flex min-w-0 flex-col gap-1 px-4 md:flex-row md:items-center md:justify-between md:gap-4 md:px-5">
-				<div className="flex min-w-0 items-center gap-3">
-					<CardTitle className="min-w-0 truncate" title={title}>
-						{title}
-					</CardTitle>
+			<CardHeader className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2 px-4 md:gap-4 md:px-5">
+				<CardTitle className="min-w-0 truncate pt-2" title={title}>
+					{title}
+				</CardTitle>
+				<div className="flex flex-col items-center gap-1">
 					<Segmented<ScoreMode>
 						className="shrink-0"
 						value={mode}
@@ -83,9 +83,10 @@ export function EditingToolbar({
 							},
 						]}
 					/>
+					<span className="text-xs text-muted-foreground">V to switch</span>
 				</div>
 				{renderMs !== null && !error && (
-					<p className="shrink-0 text-xs text-muted-foreground">
+					<p className="min-w-0 pt-2 text-right text-xs text-muted-foreground">
 						Rendered in{' '}
 						<span className="font-mono text-brand-ink">
 							{renderMs.toFixed(1)} ms
