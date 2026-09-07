@@ -176,11 +176,6 @@ export function EditingToolbar({
 						</div>
 					</div>
 				</div>
-				{mode === 'edit' && !playing && (
-					<p className="text-xs text-muted-foreground md:col-span-2">
-						Drag to select · Cmd/Ctrl-click to toggle · Cmd/Ctrl-drag to add
-					</p>
-				)}
 			</CardContent>
 		</Card>
 	);
