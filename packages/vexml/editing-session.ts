@@ -3,7 +3,7 @@ import {
 	Note as MNote,
 	type Part as MPart,
 } from '@stringsync/mdom';
-import type { Resource } from 'webappwiz/disposable';
+import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
 import { EditingNavigator } from './editing-navigator';
 import type { Element } from './element';
@@ -35,18 +35,22 @@ export type EditingSessionEvents = {
 export class EditingSession
 	implements Eventful<EditingSessionEvents>, Resource
 {
-	private readonly dispatcher = new Dispatcher<EditingSessionEvents>();
+	private readonly disposer = new Disposer();
+	private readonly dispatcher = this.disposer.use(
+		new Dispatcher<EditingSessionEvents>(),
+	);
 	readonly events = this.dispatcher.events;
 	private activeVoice: EditingVoice | null = null;
 	private focus: MNote | null = null;
 	private anchor: MNote | null = null;
 	private selected: MNote[] = [];
-	private readonly unlisten: () => void;
 
 	constructor(readonly document: MDocument) {
-		this.unlisten = document.history.events.on('change', () => {
-			this.dispatcher.dispatch('documentchange');
-		});
+		this.disposer.defer(
+			document.history.events.on('change', () => {
+				this.dispatcher.dispatch('documentchange');
+			}),
+		);
 	}
 
 	/** The document's native mdom history. Use edit() for any supported mutation. */
@@ -56,8 +60,7 @@ export class EditingSession
 
 	/** Release this session's listeners. The caller retains ownership of document history. */
 	dispose(): void {
-		this.unlisten();
-		this.dispatcher.dispose();
+		this.disposer.dispose();
 	}
 
 	/** Voices in first-written order, deduplicated across measures and staves. */
