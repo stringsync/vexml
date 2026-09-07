@@ -5,16 +5,11 @@ import type { Instrument } from './instrument';
 // smplr's volume scale is MIDI-style (0–127). 100 is a comfortable default.
 const VOLUME = 100;
 
-// vexflow key ("C#/4") → smplr note name ("C#4"). smplr handles enharmonics (Db4) itself.
-const toNote = (pitch: string) => pitch.replace('/', '');
-
 /*
  * Sampled instrument via smplr: the named General MIDI instrument, loaded as a Soundfont.
  *
  * Samples stream from smplr's CDN and a note struck before they land cannot be recovered, so
- * preload() warms them. A Soundfont instrument is one file, which is what keeps that window
- * short — smplr's sampled SplendidGrandPiano sounds better and costs a file per note per
- * velocity layer, which reads as a piano that does not work.
+ * call preload() to warm them.
  */
 export class SmplrInstrument implements Instrument {
 	private ctx: AudioContext | null = null;
@@ -26,7 +21,7 @@ export class SmplrInstrument implements Instrument {
 
 	play(pitch: string): Resource {
 		const synth = this.ensure();
-		// Before samples load, an onset can't be recovered — drop it (preload() makes this rare).
+		// Before samples load, an onset can't be recovered, so drop it (preload() makes this rare).
 		if (!synth || !this.ready) {
 			return disposables.noop();
 		}
@@ -93,7 +88,7 @@ export class SmplrInstrument implements Instrument {
 	 * preload() builds the AudioContext before the page has seen a user gesture, so the browser
 	 * starts it suspended and resume() only takes effect a few ms later. A note started in
 	 * between is scheduled against a currentTime that isn't advancing, and by the time the clock
-	 * runs its whole envelope is in the past — the first chord of the first playback goes
+	 * runs its whole envelope is in the past. The first chord of the first playback goes
 	 * missing. Waiting costs those few ms and sounds the note.
 	 */
 	private whenRunning(start: () => void): void {
@@ -112,6 +107,9 @@ export class SmplrInstrument implements Instrument {
 				return null;
 			}
 			this.ctx = new Ctor();
+			// A Soundfont instrument is one file, which keeps the preload window short. smplr's
+			// sampled SplendidGrandPiano sounds better but costs a file per note per velocity layer,
+			// which reads as a piano that does not work.
 			this.synth = Soundfont(this.ctx, { instrument: this.instrument });
 			this.synth.output.volume = this.muted ? 0 : VOLUME;
 			this.synth.ready.then(() => {
@@ -123,4 +121,9 @@ export class SmplrInstrument implements Instrument {
 		}
 		return this.synth;
 	}
+}
+
+// vexflow key ("C#/4") → smplr note name ("C#4"). smplr handles enharmonics (Db4) itself.
+function toNote(pitch: string): string {
+	return pitch.replace('/', '');
 }
