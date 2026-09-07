@@ -702,7 +702,6 @@ export default function App() {
 							playerRef={playerRef}
 							session={session}
 							instrument={model.instrument}
-							instrumentName={instrumentName}
 							muted={muted}
 							playing={playing}
 							timeMs={timeMs}

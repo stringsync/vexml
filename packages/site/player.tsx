@@ -10,14 +10,6 @@ import {
 } from 'lucide-react';
 import { type RefObject, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-	Select,
-	SelectContent,
-	SelectGroup,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import {
 	Tooltip,
@@ -26,7 +18,6 @@ import {
 } from '@/components/ui/tooltip';
 import { fmtTime } from './format';
 import type { InstrumentController } from './instrument-controller';
-import { INSTRUMENTS } from './instruments';
 import type { ScoreSession } from './score-session';
 
 export interface PlayerProps {
@@ -36,7 +27,6 @@ export interface PlayerProps {
 	session: ScoreSession | null;
 	instrument: InstrumentController;
 	/* Read off the two objects above by the caller's projection, so a change re-renders this. */
-	instrumentName: string;
 	muted: boolean;
 	playing: boolean;
 	timeMs: number;
@@ -58,7 +48,6 @@ export function Player({
 	playerRef,
 	session,
 	instrument,
-	instrumentName,
 	muted,
 	playing,
 	timeMs,
@@ -91,8 +80,11 @@ export function Player({
 	);
 
 	const position = (
-		<span className="font-mono text-2xs tabular-nums text-muted-foreground">
-			measure {measure} of {measureCount}
+		<span
+			className="inline-block shrink-0 text-right font-mono text-2xs whitespace-nowrap tabular-nums text-muted-foreground"
+			style={{ width: `${`bar ${measureCount} of ${measureCount}`.length}ch` }}
+		>
+			bar {measure} of {measureCount}
 		</span>
 	);
 
@@ -267,27 +259,6 @@ export function Player({
 				{position}
 				{/* Mirrors the Playback card, so the voice can be changed without opening the
 				    sidebar — or, below md, the sheet. */}
-				<Select
-					value={instrumentName}
-					onValueChange={(name) => instrument.setName(name)}
-				>
-					<SelectTrigger
-						size="sm"
-						className="h-7.5 text-xs font-medium"
-						aria-label="Instrument"
-					>
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectGroup>
-							{INSTRUMENTS.map((i) => (
-								<SelectItem key={i.value} value={i.value}>
-									{i.label}
-								</SelectItem>
-							))}
-						</SelectGroup>
-					</SelectContent>
-				</Select>
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
