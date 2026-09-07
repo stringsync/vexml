@@ -16,9 +16,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { fmtTime } from './format';
-import type { InstrumentController } from './instrument-controller';
-import type { ScoreSession } from './score-session';
+import { fmtTime } from '@/lib/format';
+import type { InstrumentController } from '@/lib/instrument-controller';
+import type { ScoreSession } from '@/lib/score-session';
 
 export interface PlayerProps {
 	navigationFeedback: ScoreSession['feedback'];

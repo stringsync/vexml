@@ -8,6 +8,13 @@ import {
 	UploadIcon,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { ConfigSlider } from '@/components/config-slider';
+import { EditingToolbar } from '@/components/editing-toolbar';
+import { Header } from '@/components/header';
+import { LayoutToggle } from '@/components/layout-toggle';
+import { Player } from '@/components/player';
+import { Section, SectionReset } from '@/components/section';
+import { Segmented, type SegmentedOption } from '@/components/segmented';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -34,7 +41,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ConfigSlider } from './config-slider';
 import {
 	DEFAULT_FIXTURE,
 	DEFAULT_MAX_SYSTEM_FILL,
@@ -43,16 +49,10 @@ import {
 	DEFAULT_SYSTEM_SPACING,
 	DEFAULT_WIDTH,
 	FAST_RENDER_MS,
-} from './constants';
-import { EditingToolbar } from './editing-toolbar';
-import { Header } from './header';
-import { INSTRUMENTS } from './instruments';
-import { LayoutToggle } from './layout-toggle';
-import { Player } from './player';
-import { ScoreFit } from './score-fit';
-import { Section, SectionReset } from './section';
-import { Segmented, type SegmentedOption } from './segmented';
-import { SiteModel } from './site-model';
+} from '@/lib/constants';
+import { INSTRUMENTS } from '@/lib/instruments';
+import { ScoreFit } from '@/lib/score-fit';
+import { SiteModel } from '@/lib/site-model';
 
 // Vite reads the fixtures straight from packages/integration at build time (fs.allow:
 // ['../..'] in vite.config permits it) and hands us the file list — no symlink or manifest.
