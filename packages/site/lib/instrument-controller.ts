@@ -8,26 +8,10 @@ import { SmplrInstrument } from './smplr-instrument';
 type InstrumentControllerEvents = { changed: undefined };
 
 /*
- * The instrument to open with, from whatever the last visit stored.
- *
- * A name the menu no longer offers falls back to OPENING_INSTRUMENT: smplr fetches samples by
- * name, so a stale one 404s and the site plays nothing at all, which looks exactly like broken
- * audio. '' is the one to expect — the grand piano was stored that way before it had a value of
- * its own.
- */
-function openingName(stored: string | null): string {
-	return INSTRUMENTS.some((i) => i.value === stored) && stored
-		? stored
-		: OPENING_INSTRUMENT;
-}
-
-/*
- * The live synth voice, its persisted name, and the mute toggle.
- *
- * The three have to agree: changing the name builds a new instrument, which has to inherit the
- * current mute state, and the old one has to be disposed or its AudioContext leaks (a page gets
- * only a few dozen). Muting must not rebuild, because that re-downloads samples. Holding them
- * together is what makes both true without a mirror ref.
+ * Owns the site's active instrument: which one is selected, whether it is muted, and the live
+ * voice a caller plays through. Read current() for the Instrument to play, call setName() to
+ * switch instruments, and setMuted() or toggleMuted() to mute. Dispose it when the site no
+ * longer needs it.
  */
 export class InstrumentController
 	implements Eventful<InstrumentControllerEvents>, Resource
@@ -55,7 +39,11 @@ export class InstrumentController
 		this.instrument.preload();
 	}
 
-	/* Swap the instrument, disposing the one it replaces. */
+	/*
+	 * Rebuilds the instrument and disposes the one it replaces, or its AudioContext leaks (a
+	 * page gets only a few dozen). The replacement inherits the current mute state so muting
+	 * survives a swap; muting alone must not rebuild, because that re-downloads samples.
+	 */
 	setName(name: string): void {
 		if (name === this.name) {
 			return;
@@ -86,6 +74,20 @@ export class InstrumentController
 		this.instrument.dispose();
 		this.dispatcher.dispose();
 	}
+}
+
+/*
+ * The instrument to open with, from whatever the last visit stored.
+ *
+ * A name the menu no longer offers falls back to OPENING_INSTRUMENT: smplr fetches samples by
+ * name, so a stale one 404s and the site plays nothing at all, which looks exactly like broken
+ * audio. '' is the one to expect: the grand piano was stored that way before it had a value of
+ * its own.
+ */
+function openingName(stored: string | null): string {
+	return INSTRUMENTS.some((i) => i.value === stored) && stored
+		? stored
+		: OPENING_INSTRUMENT;
 }
 
 /* For a caller that wants an Instrument-shaped nothing (no Web Audio available). */
