@@ -18,29 +18,21 @@ import {
 	HOVER_COLOR,
 } from './constants';
 import type { EditingVoices } from './editing-voices';
-import { describe } from './format';
 import type { Instrument } from './instrument';
 
 type ScoreSessionEvents = {
-	/* Anything a component reads has moved: time, playing, tooltip, duration. */
+	/* Anything a component reads has moved: time, playing, selection, duration. */
 	changed: undefined;
 };
-
-/* Where the hover tooltip sits and what it says, in client coordinates. */
-export interface Tooltip {
-	x: number;
-	y: number;
-	text: string;
-}
 
 /*
  * Everything that happens to a rendered score while the user is looking at it: playback position,
  * which notes are sounding and which voices are sounding them, which note is hovered or pinned, and
- * the tooltip that follows.
+ * the selected document note.
  *
  * These are one model, not several. Cursor coloring and the hover halo share a single color channel
  * per note, so `recolor` has to resolve both; a voice has to be released exactly when its note
- * leaves the sounding set; the tooltip follows whatever `apply` last resolved. Splitting them would
+ * leaves the sounding set; the halo follows whatever `apply` last resolved. Splitting them would
  * mean each half reaching into the other.
  *
  * One session owns one Score. Disposing it detaches every listener, releases every voice, and
@@ -54,7 +46,6 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	readonly durationMs: number;
 	timeMs = 0;
 	playing = false;
-	tooltip: Tooltip | null = null;
 
 	private readonly disposer = new Disposer();
 	private readonly timer = new SystemTimer();
@@ -225,6 +216,12 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 				break;
 			case 'ArrowDown':
 				this.editingVoices.move('lower');
+				break;
+			case 'v':
+				this.editingVoices.cycle(1);
+				break;
+			case 'V':
+				this.editingVoices.cycle(-1);
 				break;
 			case 'Escape':
 				this.editingVoices.clear();
@@ -499,7 +496,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		);
 	}
 
-	// Resolve the pinned-or-hovered target into the lit halo, the cursor shape and the tooltip.
+	// Resolve the pinned-or-hovered target into the lit halo, and the cursor shape.
 	private apply(): void {
 		const target = this.pinned ?? this.hovered;
 		let note: Note | null = null;
@@ -523,17 +520,6 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			}
 		}
 		this.container.style.cursor = note ? 'pointer' : '';
-		// Only note-bearing targets get a tooltip; describe() is empty for a measure.
-		if (note && target) {
-			const r = target.getBoundingClientRect();
-			this.tooltip = {
-				x: r.left + r.width / 2,
-				y: r.top,
-				text: describe(target),
-			};
-		} else {
-			this.tooltip = null;
-		}
 		this.dispatcher.dispatch('changed');
 	}
 
@@ -553,6 +539,5 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.halo?.color.off();
 		this.halo = null;
 		this.container.style.cursor = '';
-		this.tooltip = null;
 	}
 }

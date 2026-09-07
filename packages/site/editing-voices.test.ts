@@ -12,6 +12,47 @@ describe('EditingVoices', () => {
 		expect(voices.select('missing')).toBe(false);
 	});
 
+	it('starts with the first written note and cycles voices in both directions with wraparound', () => {
+		const document = MDocument.empty();
+		const measure = document.score.addPart().addMeasure();
+		const first = measure
+			.getOrCreateVoice('1')
+			.addNote({ step: 'C', octave: 5, type: 'quarter' });
+		const second = measure
+			.getOrCreateVoice('2')
+			.addNote({ step: 'E', octave: 4, type: 'quarter' });
+		const third = measure
+			.getOrCreateVoice('3')
+			.addNote({ step: 'G', octave: 3, type: 'quarter' });
+		const editor = new EditingSession(document);
+		const voices = new EditingVoices(editor);
+		expect(editor.getFocus()).toBeNull();
+		expect(voices.move('next')).toBe(true);
+		expect(editor.getFocus()).toBe(first);
+		expect(voices.cycle(1)).toBe(true);
+		expect(editor.getFocus()).toBe(second);
+		expect(voices.cycle(-1)).toBe(true);
+		expect(editor.getFocus()).toBe(first);
+		expect(voices.cycle(-1)).toBe(true);
+		expect(editor.getFocus()).toBe(third);
+		expect(voices.cycle(1)).toBe(true);
+		expect(editor.getFocus()).toBe(first);
+	});
+
+	it('does not select a note when cycling a single voice', () => {
+		const document = MDocument.empty();
+		document.score
+			.addPart()
+			.addMeasure()
+			.getOrCreateVoice('1')
+			.addNote({ step: 'C', octave: 4, type: 'quarter' });
+		const editor = new EditingSession(document);
+		const voices = new EditingVoices(editor);
+		expect(voices.cycle(1)).toBe(false);
+		expect(voices.cycle(-1)).toBe(false);
+		expect(editor.getFocus()).toBeNull();
+	});
+
 	it('lists a voice once across measures and staves', () => {
 		const document = MDocument.empty();
 		const part = document.score.addPart();

@@ -106,7 +106,6 @@ const projection = (model: SiteModel) => ({
 	playing: model.session?.playing ?? false,
 	timeMs: model.session?.timeMs ?? 0,
 	durationMs: model.session?.durationMs ?? 0,
-	tooltip: model.session?.tooltip ?? null,
 	activeVoice: model.session?.editingVoices.getValue() ?? '',
 	selectionDescription: model.session?.selectionDescription ?? 'No selection',
 });
@@ -132,7 +131,6 @@ export default function App() {
 		playing,
 		timeMs,
 		durationMs,
-		tooltip,
 		selectionDescription,
 		activeVoice,
 	} = useReactive(model, projection, ['changed']);
@@ -203,6 +201,20 @@ export default function App() {
 	// Spacebar toggles playback, except while typing in the editor.
 	useEffect(() => {
 		const onKeyDown = (e: KeyboardEvent) => {
+			if (
+				e.target === document.body &&
+				e.key === 'ArrowRight' &&
+				!e.altKey &&
+				!e.ctrlKey &&
+				!e.metaKey &&
+				!e.shiftKey
+			) {
+				if (model.session?.handleKey(e.key)) {
+					containerRef.current?.focus({ preventScroll: true });
+					e.preventDefault();
+				}
+				return;
+			}
 			if (e.code !== 'Space') {
 				return;
 			}
@@ -671,32 +683,29 @@ export default function App() {
 						/>
 					</div>
 
-					<div className="flex flex-wrap items-center justify-between gap-2 px-6 pb-2 text-xs text-muted-foreground md:px-12">
-						<p id="score-keyboard-help">
-							Focus the score · ← → notes · ↑ ↓ chord pitches · Esc unselect
-						</p>
+					<div className="grid shrink-0 grid-cols-1 items-center gap-x-6 border-y border-border bg-card px-6 py-2 md:grid-cols-2 md:px-12">
 						{session && session.editingVoices.options.length > 1 && (
-							<Select
-								value={activeVoice}
-								onValueChange={(value) => session.selectVoice(value)}
-							>
-								<SelectTrigger aria-label="Editing voice" size="sm">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectGroup>
-										{session.editingVoices.options.map((option) => (
-											<SelectItem key={option.value} value={option.value}>
-												{option.label}
-											</SelectItem>
-										))}
-									</SelectGroup>
-								</SelectContent>
-							</Select>
+							<div className="flex h-12 min-w-0 items-center overflow-x-auto">
+								<Segmented
+									label="Editing voice"
+									value={activeVoice}
+									onChange={(value) => session.selectVoice(value)}
+									options={session.editingVoices.options}
+									className="shrink-0"
+								/>
+							</div>
 						)}
-						<p role="status" aria-live="polite">
-							{selectionDescription}
-						</p>
+						<div className="flex h-16 min-w-0 flex-col justify-center">
+							<p role="status" aria-live="polite" aria-label="Selection">
+								<span className="block truncate text-lg font-semibold text-foreground">
+									{selectionDescription.split(' · ')[0]}
+								</span>
+								<span className="block truncate text-sm text-muted-foreground">
+									{selectionDescription.split(' · ').slice(1).join(' · ') ||
+										'\u00a0'}
+								</span>
+							</p>
+						</div>
 					</div>
 					<div className="relative min-h-0 flex-1">
 						{/* biome-ignore lint/a11y/noStaticElementInteractions: drag-drop zone; Choose file is the keyboard-accessible path */}
@@ -717,14 +726,14 @@ export default function App() {
 									tabIndex={0}
 									role="application"
 									aria-label="Score"
-									aria-describedby="score-keyboard-help"
+									aria-keyshortcuts="V Shift+V"
 									onKeyDown={(event) => {
 										if (
 											event.target !== event.currentTarget ||
 											event.altKey ||
 											event.ctrlKey ||
 											event.metaKey ||
-											event.shiftKey
+											(event.shiftKey && event.key !== 'V')
 										) {
 											return;
 										}
@@ -780,15 +789,6 @@ export default function App() {
 					</div>
 				)}
 			</main>
-
-			{tooltip && (
-				<div
-					className="pointer-events-none fixed -translate-x-1/2 -translate-y-full rounded-md bg-foreground px-2 py-1 text-center font-mono text-2xs whitespace-pre-line text-background shadow-lg"
-					style={{ left: tooltip.x, top: tooltip.y - 16 }}
-				>
-					{tooltip.text}
-				</div>
-			)}
 		</div>
 	);
 }

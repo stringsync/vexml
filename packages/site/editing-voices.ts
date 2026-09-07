@@ -62,6 +62,20 @@ export class EditingVoices {
 		return true;
 	}
 
+	cycle(direction: 1 | -1): boolean {
+		if (this.options.length < 2) {
+			return false;
+		}
+		const at = this.options.findIndex(
+			(option) => option.value === this.getValue(),
+		);
+		const next =
+			this.options[
+				(at + direction + this.options.length) % this.options.length
+			];
+		return next ? this.select(next.value) : false;
+	}
+
 	clear(): void {
 		this.active = this.getValue();
 		this.editor.selectNotes([]);
