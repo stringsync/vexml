@@ -59,9 +59,31 @@ export function EditingToolbar({
 			aria-label="Score details"
 		>
 			<CardHeader className="flex min-w-0 flex-col gap-1 px-4 md:flex-row md:items-center md:justify-between md:gap-4 md:px-5">
-				<CardTitle className="min-w-0 truncate" title={title}>
-					{title}
-				</CardTitle>
+				<div className="flex min-w-0 items-center gap-3">
+					<CardTitle className="min-w-0 truncate" title={title}>
+						{title}
+					</CardTitle>
+					<Segmented<ScoreMode>
+						className="shrink-0"
+						value={mode}
+						onChange={onModeChange}
+						label="Interaction mode"
+						options={[
+							{
+								value: 'view',
+								label: 'View',
+								icon: EyeIcon,
+								hint: 'View: move the playback cursor (V to switch)',
+							},
+							{
+								value: 'edit',
+								label: 'Edit',
+								icon: PencilIcon,
+								hint: 'Edit: select and navigate notes (V to switch)',
+							},
+						]}
+					/>
+				</div>
 				{renderMs !== null && !error && (
 					<p className="shrink-0 text-xs text-muted-foreground">
 						Rendered in{' '}
@@ -84,28 +106,7 @@ export function EditingToolbar({
 					</Alert>
 				</div>
 			)}
-			<div className="flex items-center gap-3 px-4 md:px-5">
-				<Segmented<ScoreMode>
-					value={mode}
-					onChange={onModeChange}
-					label="Interaction mode"
-					options={[
-						{
-							value: 'view',
-							label: 'View',
-							icon: EyeIcon,
-							hint: 'View: move the playback cursor (V to switch)',
-						},
-						{
-							value: 'edit',
-							label: 'Edit',
-							icon: PencilIcon,
-							hint: 'Edit: select and navigate notes (V to switch)',
-						},
-					]}
-				/>
-				<span className="text-xs text-muted-foreground">V to switch</span>
-			</div>
+
 			<CardContent className="grid min-w-0 grid-cols-1 gap-4 px-4 md:grid-cols-2 md:gap-8 md:px-5">
 				{voices.length > 1 && (
 					<div className="flex min-w-0 flex-col gap-2">
