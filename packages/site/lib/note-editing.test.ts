@@ -3,14 +3,21 @@ import { MDOMParser, MDocument } from '@stringsync/mdom';
 import { EditingSession } from '@stringsync/vexml';
 import { NoteEditing } from './note-editing';
 
+// TODO: webappwiz/disposable once scoped cleanup continues after a release throws.
 describe('NoteEditing', () => {
 	it('shows mixed pitches and applies a group as one undo step', () => {
+		using resources = new DisposableStack();
 		const document = MDocument.empty();
 		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
 		const first = voice.addNote({ step: 'C', octave: 4, type: 'quarter' });
 		const second = voice.addNote({ step: 'D', octave: 4, type: 'quarter' });
-		const editor = new EditingSession(document);
-		const form = new NoteEditing(editor);
+		resources.adopt(document.history, (history) => history.dispose());
+		const editor = resources.adopt(new EditingSession(document), (editor) =>
+			editor.dispose(),
+		);
+		const form = resources.adopt(new NoteEditing(editor), (form) =>
+			form.dispose(),
+		);
 		editor.selectNotes([first, second]);
 		expect(form).toMatchObject({
 			step: '',
@@ -28,19 +35,23 @@ describe('NoteEditing', () => {
 		expect(second.pitch?.step).toBe('D');
 		expect(editor.history.canUndo).toBe(false);
 		expect(form.step).toBe('');
-		form.dispose();
-		editor.dispose();
 	});
 
 	it('adds staccato to a mixed selection once and removes it without touching other marks', () => {
+		using resources = new DisposableStack();
 		const document = MDocument.empty();
 		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
 		const first = voice.addNote({ step: 'C', octave: 4, type: 'quarter' });
 		const second = voice.addNote({ step: 'D', octave: 4, type: 'quarter' });
 		first.addArticulation('staccato');
 		first.addArticulation('accent');
-		const editor = new EditingSession(document);
-		const form = new NoteEditing(editor);
+		resources.adopt(document.history, (history) => history.dispose());
+		const editor = resources.adopt(new EditingSession(document), (editor) =>
+			editor.dispose(),
+		);
+		const form = resources.adopt(new NoteEditing(editor), (form) =>
+			form.dispose(),
+		);
 		editor.selectNotes([first, second]);
 		expect(form.staccato).toBe('indeterminate');
 		form.toggleStaccato();
@@ -56,17 +67,21 @@ describe('NoteEditing', () => {
 		expect(first.articulations).toEqual(['staccato', 'accent']);
 		expect(second.articulations).toEqual([]);
 		expect(editor.history.canUndo).toBe(false);
-		form.dispose();
-		editor.dispose();
 	});
 
 	it('keeps staccato available when a rest prevents pitch editing', () => {
+		using resources = new DisposableStack();
 		const document = MDocument.empty();
 		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
 		const note = voice.addNote({ step: 'C', octave: 4, type: 'quarter' });
 		const rest = voice.addRest({ type: 'quarter' });
-		const editor = new EditingSession(document);
-		const form = new NoteEditing(editor);
+		resources.adopt(document.history, (history) => history.dispose());
+		const editor = resources.adopt(new EditingSession(document), (editor) =>
+			editor.dispose(),
+		);
+		const form = resources.adopt(new NoteEditing(editor), (form) =>
+			form.dispose(),
+		);
 		editor.selectNotes([note, rest]);
 		expect(form.pitchReason).toContain('ordinary pitched notes');
 		form.setPitchField('step', 'F');
@@ -76,19 +91,23 @@ describe('NoteEditing', () => {
 		form.toggleStaccato();
 		expect(note.articulations).toEqual(['staccato']);
 		expect(rest.articulations).toEqual(['staccato']);
-		form.dispose();
-		editor.dispose();
 	});
 
 	it('exports the edited document and undo restores the original MusicXML', () => {
+		using resources = new DisposableStack();
 		const document = MDocument.empty();
 		const note = document.score
 			.addPart()
 			.addMeasure()
 			.getOrCreateVoice('1')
 			.addNote({ step: 'C', octave: 4, type: 'quarter' });
-		const editor = new EditingSession(document);
-		const form = new NoteEditing(editor);
+		resources.adopt(document.history, (history) => history.dispose());
+		const editor = resources.adopt(new EditingSession(document), (editor) =>
+			editor.dispose(),
+		);
+		const form = resources.adopt(new NoteEditing(editor), (form) =>
+			form.dispose(),
+		);
 		const original = form.serialize();
 		editor.select(note);
 		form.setPitchField('step', 'G');
@@ -104,7 +123,5 @@ describe('NoteEditing', () => {
 		editor.undo();
 		editor.undo();
 		expect(form.serialize()).toBe(original);
-		form.dispose();
-		editor.dispose();
 	});
 });
