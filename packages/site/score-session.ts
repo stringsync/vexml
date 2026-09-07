@@ -140,6 +140,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 				this.editingVoices.clear();
 			}
 			this.container.focus({ preventScroll: true });
+			this.syncPlayhead();
 			this.apply();
 		});
 		// Click or drag anywhere on the score scrubs the cursor to that position's time.
@@ -238,7 +239,21 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.pinned =
 			this.editor.getSelectedElements(this.score.getElements())[0] ?? null;
 		this.hovered = null;
+		this.syncPlayhead();
 		this.apply();
+	}
+
+	private syncPlayhead(): void {
+		const note = this.editor.getSelectedElements(this.score.getElements())[0];
+		if (!note) {
+			return;
+		}
+		const sequence = this.score.getSequence();
+		const index = sequence.getFirstStepOfNote(note);
+		const step = index === null ? null : sequence.getStep(index);
+		if (step) {
+			this.cursor.seekMs(step.startMs);
+		}
 	}
 
 	/* Start or stop the play loop. Starting from the end restarts from the top. */

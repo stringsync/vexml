@@ -20,8 +20,7 @@ const VIEWS: ReadonlyArray<SegmentedOption<LayoutType>> = [
 	},
 ];
 
-// Which view the score is drawn in. It sits above the score on desktop and inside the controls
-// sheet on mobile, which is the only reason it takes a size.
+// The Layout section shares this control between the sidebar and mobile sheet.
 export function LayoutToggle({
 	value,
 	onChange,
@@ -39,6 +38,7 @@ export function LayoutToggle({
 			onChange={onChange}
 			options={VIEWS}
 			label="Score view"
+			stretch
 			size={size}
 			className={className}
 		/>

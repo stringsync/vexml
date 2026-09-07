@@ -439,7 +439,7 @@ export default function App() {
 					<LayoutToggle
 						value={layoutType}
 						onChange={(type) => model.config.setLayoutType(type)}
-						className="w-fit bg-muted"
+						className="w-full bg-muted"
 					/>
 				</Field>
 				<Field
