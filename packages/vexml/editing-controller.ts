@@ -1,6 +1,7 @@
 import { Note as MNote } from '@stringsync/mdom';
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful, type Events } from 'webappwiz/events';
+import { Rect } from 'webappwiz/geometry';
 import { DefaultEditingBindings } from './default-editing-bindings';
 import type {
 	EditingBindings,
@@ -59,6 +60,16 @@ export class EditingController
 	private disposed = false;
 	private enabled: boolean;
 	private presentation: EditingPresentation;
+	private drag: {
+		pointerId: number;
+		start: { x: number; y: number };
+		client: { x: number; y: number };
+		initial: readonly MNote[];
+		additive: boolean;
+		rect: Rect | null;
+		notes: readonly MNote[];
+	} | null = null;
+	private suppressedClick: number | null = null;
 
 	constructor(
 		readonly editor: EditingSession,
@@ -75,6 +86,25 @@ export class EditingController
 			editor.events.on('selectionchange', () => this.refresh()),
 		);
 		if (options.pointer !== false) {
+			this.disposer.defer(
+				deps.events.on('pointerdown', (event) => this.pointerDown(event)),
+			);
+			this.disposer.defer(
+				deps.events.on('pointermove', (event) => this.pointerMove(event)),
+			);
+			this.disposer.defer(
+				deps.events.on('pointerup', (event) => this.pointerUp(event)),
+			);
+			const cancel = (event: Event) => {
+				if ((event as PointerEvent).pointerId === this.drag?.pointerId) {
+					this.endDrag();
+				}
+			};
+			for (const type of ['pointercancel', 'lostpointercapture']) {
+				deps.dom.addEventListener(type, cancel);
+				this.disposer.defer(() => deps.dom.removeEventListener(type, cancel));
+			}
+
 			this.disposer.defer(
 				deps.events.on('click', (event) => this.click(event)),
 			);
@@ -118,6 +148,7 @@ export class EditingController
 		if (this.disposed || this.enabled === enabled) {
 			return;
 		}
+		this.endDrag();
 		this.enabled = enabled;
 		this.renderView();
 	}
@@ -140,6 +171,10 @@ export class EditingController
 	handleKey(key: EditingKey): boolean {
 		if (this.disposed || !this.enabled) {
 			return false;
+		}
+		if (key.key === 'Escape' && this.drag) {
+			this.endDrag();
+			return true;
 		}
 		const command = this.bindings.resolve(key);
 		if (!command) {
@@ -195,14 +230,125 @@ export class EditingController
 		if (this.disposed) {
 			return;
 		}
+		this.endDrag();
 		this.disposed = true;
 		this.disposer.dispose();
 		this.dispatcher.dispatch('dispose');
 		this.dispatcher.dispose();
 	}
 
+	private pointerDown(event: PointerTargetEvent): void {
+		const key = event.native;
+		if (
+			!this.enabled ||
+			key.defaultPrevented ||
+			key.button !== 0 ||
+			key.isPrimary === false ||
+			key.pointerType === 'touch' ||
+			this.drag
+		) {
+			return;
+		}
+		this.suppressedClick = null;
+		this.drag = {
+			pointerId: key.pointerId,
+			start: event.point,
+			client: { x: key.clientX, y: key.clientY },
+			initial: this.editor.getSelection(),
+			additive: key.ctrlKey || key.metaKey,
+			rect: null,
+			notes: [],
+		};
+		const dom = this.domElement();
+		dom?.focus({ preventScroll: true });
+		dom?.setPointerCapture(key.pointerId);
+		key.preventDefault();
+	}
+
+	private pointerMove(event: PointerTargetEvent): void {
+		const drag = this.drag;
+		if (!drag || event.native.pointerId !== drag.pointerId) {
+			return;
+		}
+		if (
+			!drag.rect &&
+			Math.hypot(
+				event.native.clientX - drag.client.x,
+				event.native.clientY - drag.client.y,
+			) < 4
+		) {
+			return;
+		}
+		drag.rect = new Rect(
+			Math.min(drag.start.x, event.point.x),
+			Math.min(drag.start.y, event.point.y),
+			Math.abs(event.point.x - drag.start.x),
+			Math.abs(event.point.y - drag.start.y),
+		);
+		const hits = new Set(
+			this.deps.elements
+				.within(drag.rect)
+				.flatMap((element) =>
+					element
+						.getSources()
+						.filter((source): source is MNote => source instanceof MNote),
+				),
+		);
+		const notes = this.editor.document.score.parts.flatMap((part) =>
+			part.measures.flatMap((measure) =>
+				measure.notes.filter((note) => hits.has(note)),
+			),
+		);
+		drag.notes = [
+			...new Set([...(drag.additive ? drag.initial : []), ...notes]),
+		];
+		if (!drag.notes.length && this.options.allowDeselect === false) {
+			drag.notes = drag.initial;
+		}
+		this.suppressedClick = drag.pointerId;
+		this.refresh();
+	}
+
+	private pointerUp(event: PointerTargetEvent): void {
+		const drag = this.drag;
+		if (!drag || event.native.pointerId !== drag.pointerId) {
+			return;
+		}
+		this.pointerMove(event);
+		if (drag.rect) {
+			this.editor.selectNotes(drag.notes);
+		}
+		this.endDrag();
+	}
+
+	private endDrag(): void {
+		const drag = this.drag;
+		if (!drag) {
+			return;
+		}
+		this.drag = null;
+		const dom = this.domElement();
+		if (dom?.hasPointerCapture(drag.pointerId)) {
+			dom.releasePointerCapture(drag.pointerId);
+		}
+		this.presentation = this.resolve();
+		this.renderView();
+		this.dispatcher.dispatch('change', this.presentation);
+	}
+
+	private domElement(): HTMLElement | null {
+		return typeof HTMLElement !== 'undefined' &&
+			this.deps.dom instanceof HTMLElement
+			? this.deps.dom
+			: null;
+	}
+
 	private click(event: PointerTargetEvent): void {
-		if (!this.enabled) {
+		if (event.native.pointerId === this.suppressedClick) {
+			this.suppressedClick = null;
+			return;
+		}
+		if (!this.enabled || event.native.defaultPrevented) {
 			return;
 		}
 		const note = event.target
@@ -210,7 +356,12 @@ export class EditingController
 			.find((source): source is MNote => source instanceof MNote);
 		const key = event.native;
 		if (!note) {
-			if (this.options.allowDeselect !== false) {
+			if (
+				this.options.allowDeselect !== false &&
+				!key.ctrlKey &&
+				!key.metaKey &&
+				!key.shiftKey
+			) {
 				this.editor.clearSelection();
 			}
 		} else if (key.ctrlKey || key.metaKey) {
@@ -247,6 +398,7 @@ export class EditingController
 		this.renderView();
 		if (
 			this.enabled &&
+			!this.drag &&
 			this.options.follow !== false &&
 			this.presentation.position !== previous
 		) {
@@ -256,6 +408,17 @@ export class EditingController
 	}
 
 	private resolve(): EditingPresentation {
+		if (this.drag?.rect) {
+			return {
+				selected: this.drag.notes.flatMap((note) => {
+					const element = this.deps.elements.noteLookup.get(note);
+					return element ? [element] : [];
+				}),
+				focus: null,
+				position: null,
+				marquee: this.drag.rect,
+			};
+		}
 		const source = this.editor.getFocus();
 		const focus = source
 			? (this.deps.elements.noteLookup.get(source) ?? null)

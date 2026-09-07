@@ -52,6 +52,17 @@ export class SelectionOverlay implements EditingView {
 			ctx.fillRect(rect.x + rect.w - 2, rect.y, 2, rect.h);
 			this.previous.push(rect);
 		}
+		if (state.marquee) {
+			const rect = state.marquee;
+			ctx.globalAlpha = 0.12;
+			ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+			ctx.globalAlpha = 1;
+			ctx.fillRect(rect.x, rect.y, rect.w, 1);
+			ctx.fillRect(rect.x, rect.bottom - 1, rect.w, 1);
+			ctx.fillRect(rect.x, rect.y, 1, rect.h);
+			ctx.fillRect(rect.right - 1, rect.y, 1, rect.h);
+			this.previous.push(rect);
+		}
 		ctx.restore();
 	}
 

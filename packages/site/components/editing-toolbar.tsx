@@ -20,6 +20,7 @@ export function EditingToolbar({
 	activeVoice,
 	onVoiceChange,
 	selection,
+	selectionCount,
 	mode,
 	playing,
 	onModeChange,
@@ -31,6 +32,7 @@ export function EditingToolbar({
 	activeVoice: string;
 	onVoiceChange: (value: string) => void;
 	selection: string;
+	selectionCount: number;
 	mode: ScoreMode;
 	playing: boolean;
 	onModeChange: (mode: ScoreMode) => void;
@@ -153,7 +155,9 @@ export function EditingToolbar({
 					aria-label="Selection"
 				>
 					<span className="text-2xs font-medium text-muted-foreground">
-						Selection
+						{mode === 'edit' && !playing && selectionCount > 1
+							? `${selectionCount} notes selected`
+							: 'Selection'}
 					</span>
 					<div className="flex min-h-14 min-w-0 items-center gap-3">
 						<div className="flex h-14 min-w-14 shrink-0 items-center justify-center rounded-lg bg-brand-wash px-2 font-mono text-lg font-medium whitespace-nowrap text-brand-ink">
@@ -172,6 +176,12 @@ export function EditingToolbar({
 						</div>
 					</div>
 				</div>
+				{mode === 'edit' && !playing && (
+					<p className="text-xs text-muted-foreground md:col-span-2">
+						Drag to select · Cmd/Ctrl-click to toggle · Shift-click to extend in
+						a voice · Cmd/Ctrl-drag to add
+					</p>
+				)}
 			</CardContent>
 		</Card>
 	);

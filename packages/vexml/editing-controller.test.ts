@@ -36,6 +36,22 @@ class Click extends Event {
 		super('click');
 	}
 	readonly metaKey = false;
+	readonly pointerId = 1;
+}
+class Pointer extends Event {
+	constructor(
+		type: string,
+		readonly clientX: number,
+		readonly clientY: number,
+		readonly ctrlKey = false,
+		readonly metaKey = false,
+		readonly pointerId = 1,
+		readonly pointerType = 'mouse',
+		readonly button = 0,
+	) {
+		super(type, { cancelable: true });
+	}
+	readonly isPrimary = true;
 }
 function fixture() {
 	const document = MDocument.empty();
@@ -105,6 +121,114 @@ function fixture() {
 }
 
 describe('EditingController', () => {
+	it('previews a rectangle across voices, commits on release and consumes its click without scrolling', () => {
+		const f = fixture();
+		const { host, controller } = f.create();
+		f.editor.select(f.hidden);
+		const scrolls = host.scroller.calls.length;
+		host.dom.dispatchEvent(new Pointer('pointerdown', 100, 60));
+		host.dom.dispatchEvent(new Pointer('pointermove', 10, 30));
+		expect(controller.getPresentation().marquee).toEqual(
+			new Rect(10, 30, 90, 30),
+		);
+		expect(controller.getPresentation().selected).toHaveLength(3);
+		expect(f.editor.getSelection()).toEqual([f.hidden]);
+		host.dom.dispatchEvent(new Pointer('pointerup', 10, 30));
+		expect(f.editor.getSelection()).toEqual([f.first, f.second, f.other]);
+		expect(controller.getPresentation().marquee).toBeUndefined();
+		host.dom.dispatchEvent(new Click(10, 30));
+		expect(f.editor.getSelection()).toHaveLength(3);
+		expect(host.scroller.calls).toHaveLength(scrolls);
+	});
+
+	it('adds to the starting selection with either platform modifier and removes departed preview hits', () => {
+		for (const modifier of ['ctrl', 'meta']) {
+			const f = fixture();
+			const { host, controller } = f.create();
+			f.editor.select(f.other);
+			host.dom.dispatchEvent(
+				new Pointer(
+					'pointerdown',
+					10,
+					30,
+					modifier === 'ctrl',
+					modifier === 'meta',
+				),
+			);
+			host.dom.dispatchEvent(new Pointer('pointermove', 60, 60));
+			expect(controller.getPresentation().selected).toHaveLength(3);
+			host.dom.dispatchEvent(new Pointer('pointermove', 30, 60));
+			expect(controller.getPresentation().selected).toHaveLength(2);
+			host.dom.dispatchEvent(new Pointer('pointerup', 30, 60));
+			expect(f.editor.getSelection()).toEqual([f.other, f.first]);
+		}
+	});
+
+	it('keeps tiny drags as clicks and respects empty-selection policy', () => {
+		for (const allowDeselect of [true, false]) {
+			const f = fixture();
+			const { host, controller } = f.create(0, { allowDeselect });
+			host.dom.dispatchEvent(new Pointer('pointerdown', 22, 42));
+			host.dom.dispatchEvent(new Pointer('pointerup', 23, 43));
+			host.dom.dispatchEvent(new Click(23, 43));
+			expect(f.editor.getSelection()).toEqual([f.first]);
+			host.dom.dispatchEvent(new Pointer('pointerdown', 100, 60));
+			host.dom.dispatchEvent(new Pointer('pointerup', 150, 80));
+			expect(f.editor.getSelection()).toEqual(allowDeselect ? [] : [f.first]);
+			expect(controller.getPresentation().marquee).toBeUndefined();
+		}
+	});
+
+	it('cancels previews on Escape, capture loss, cancellation, suspension and disposal', () => {
+		for (const action of [
+			'Escape',
+			'pointercancel',
+			'lostpointercapture',
+			'disable',
+			'dispose',
+		]) {
+			const f = fixture();
+			const { host, controller, view } = f.create();
+			f.editor.select(f.other);
+			host.dom.dispatchEvent(new Pointer('pointerdown', 10, 30));
+			host.dom.dispatchEvent(new Pointer('pointermove', 60, 60));
+			if (action === 'disable') {
+				controller.setEnabled(false);
+			} else if (action === 'dispose') {
+				controller.dispose();
+			} else if (action === 'Escape') {
+				host.dom.dispatchEvent(new Key('Escape'));
+			} else {
+				host.dom.dispatchEvent(new Pointer(action, 60, 60));
+			}
+			expect(view.renders.at(-1)?.marquee).toBeUndefined();
+			host.dom.dispatchEvent(new Pointer('pointerup', 60, 60));
+			expect(f.editor.getSelection()).toEqual([f.other]);
+		}
+	});
+
+	it('ignores touch drags, secondary buttons, other pointers and disabled pointer input', () => {
+		const f = fixture();
+		const { host, controller } = f.create();
+		for (const event of [
+			new Pointer('pointerdown', 10, 30, false, false, 1, 'touch'),
+			new Pointer('pointerdown', 10, 30, false, false, 1, 'mouse', 2),
+		]) {
+			host.dom.dispatchEvent(event);
+			host.dom.dispatchEvent(new Pointer('pointermove', 60, 60));
+			expect(controller.getPresentation().marquee).toBeUndefined();
+		}
+		host.dom.dispatchEvent(new Pointer('pointerdown', 10, 30));
+		host.dom.dispatchEvent(new Pointer('pointerup', 60, 60, false, false, 2));
+		expect(f.editor.getSelection()).toEqual([]);
+		host.dom.dispatchEvent(new Pointer('pointerup', 60, 60));
+		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
+		const disabled = f.create(0, { pointer: false });
+		disabled.host.dom.dispatchEvent(new Pointer('pointerdown', 10, 30));
+		disabled.host.dom.dispatchEvent(new Pointer('pointerup', 100, 60));
+		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
+	});
+
 	it('handles scoped keys, extends selection and leaves unhandled/modified/composing keys alone', () => {
 		const f = fixture();
 		const { host, controller } = f.create();

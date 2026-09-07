@@ -148,6 +148,16 @@ available note. `{ note }` limits it to that rendered note, preserving the neare
 repeat occurrence; an absent note returns null. The host decides whether selection
 pauses or seeks playback. Editing focus scrolling does not depend on playback.
 
+Drag with the primary mouse or pen button to preview a selection rectangle. Notes
+and frets fully enclosed by it are selected on release, across parts and voices;
+Command/Ctrl-drag adds to the set held at the start of the gesture. A small movement
+remains a click. Escape, pointer cancellation, lost capture, suspension and disposal
+cancel the preview. Dragging does not trigger focus following. Touch dragging retains
+native scrolling. Modified background clicks leave selection alone.
+
+Custom views receive the optional score-space `presentation.marquee` and preview
+`selected` notes during a drag; the session itself changes only on release.
+
 For manual marquee input, use
 `editor.selectElements(score.getElements().within(scoreSpaceRect))`. Notehead and
 fret hits are deduplicated. Pointer events already supply score-space coordinates
@@ -184,6 +194,6 @@ tablature requires a fingering decision. Selection and navigation support these
 notes even though this pitch command does not edit them.
 
 Insertion positions, create/delete commands, rhythmic edits, annotation targets,
-musical passage ranges across voices and a packaged marquee gesture are subsequent
+musical passage ranges across voices are subsequent
 milestones. The existing playback cursor remains
 independent of this editing session.

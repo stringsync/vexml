@@ -108,6 +108,9 @@ const projection = (model: SiteModel) => ({
 	activeVoice: model.session?.editingVoices.getValue() ?? '',
 	mode: model.session?.mode ?? 'view',
 	selectionDescription: model.session?.selectionDescription ?? 'No selection',
+	selectionCount: model.session?.editing.getPresentation().marquee
+		? model.session.editing.getPresentation().selected.length
+		: (model.session?.editor.getSelection().length ?? 0),
 });
 
 export default function App() {
@@ -132,6 +135,7 @@ export default function App() {
 		timeMs,
 		durationMs,
 		selectionDescription,
+		selectionCount,
 		mode,
 		activeVoice,
 	} = useReactive(model, projection, ['changed']);
@@ -654,6 +658,7 @@ export default function App() {
 								activeVoice={activeVoice}
 								onVoiceChange={(value) => session?.selectVoice(value)}
 								selection={selectionDescription}
+								selectionCount={selectionCount}
 								mode={mode}
 								playing={playing}
 								onModeChange={(value) => {
