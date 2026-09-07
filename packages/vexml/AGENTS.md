@@ -162,7 +162,7 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 
 ## Interaction and playback
 
-- **Empty staff input positions** — `measure.ts` (`getStaves`), collected from vexflow staves in `draw-pass.ts`, cropped by `score-drawer.ts` and attached by `element-factory.ts`. The site uses this geometry for its temporary note-entry layer.
+- **Empty staff input positions**: `measure.ts` (`getStaves`), collected from vexflow staves in `draw-pass.ts`, cropped by `score-drawer.ts` and attached by `element-factory.ts`. The site uses this geometry for its temporary note-entry layer.
 
 
 - **Editing controller activation, selection colors, shaded regions and cursor halo/outline** — `editing-controller.ts`, `selection-overlay.ts`, `color-style.ts`, `halo-style.ts`
