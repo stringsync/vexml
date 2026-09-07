@@ -1,7 +1,7 @@
 import type { Measure, Note } from '@stringsync/mdom';
 import type { EditingVoices } from './editing-voices';
 
-/** System boundaries belong to the current layout; selection belongs to the document. */
+/** Moves the current selection through notes, measures, and voices, including across system breaks in the rendered layout. */
 export class SelectionNavigation {
 	constructor(
 		private readonly voices: EditingVoices,
