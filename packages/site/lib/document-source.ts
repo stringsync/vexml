@@ -12,12 +12,23 @@ export interface Fixtures {
 }
 
 /*
+ * How to read the current `input`. MusicXML covers both plain text and the .mxl zip around it,
+ * which the parser tells apart on its own; a Guitar Pro archive is a different zip that only the
+ * uploaded file's extension identifies, so the answer has to be remembered rather than sniffed.
+ */
+export type DocumentFormat = 'musicxml' | 'guitar-pro';
+
+/* Saved in place of a binary upload, which is not text and so cannot be restored. */
+const BINARY_PLACEHOLDER = /^\[(?:mxl|gp)\] /;
+
+/*
  * What is being rendered, and where it came from.
  *
  * `text` is what the editor shows and `input` is what the renderer is fed; they differ while the
- * user is typing (the render lags by a debounce) and for an .mxl upload, which has no text at all.
- * `fixture` is the picker's selection, cleared as soon as the text is edited or a file is dropped.
- * Keeping the three together is the point: every entry point has to move all of them at once.
+ * user is typing (the render lags by a debounce) and for a binary upload, which has no text at
+ * all. `format` says how to read `input`, and `fixture` is the picker's selection, cleared as soon
+ * as the text is edited or a file is dropped. Keeping the four together is the point: every entry
+ * point has to move all of them at once.
  */
 export class DocumentSource
 	implements Eventful<DocumentSourceEvents>, Resource
@@ -25,10 +36,12 @@ export class DocumentSource
 	private readonly dispatcher = new Dispatcher<DocumentSourceEvents>();
 	readonly events = this.dispatcher.events;
 
-	/* The editor's contents. Empty for an .mxl upload, which is not text. */
+	/* The editor's contents. Empty for a binary upload, which is not text. */
 	text = '';
-	/* What to render: MusicXML text, or an .mxl Blob. Null before anything has loaded. */
+	/* What to render: MusicXML text, or an .mxl or .gp Blob. Null before anything has loaded. */
 	input: string | Blob | null = null;
+	/* Which parser `input` needs. */
+	format: DocumentFormat = 'musicxml';
 	/* The selected fixture's name, or '' when the document did not come from the picker. */
 	fixture = '';
 	/* True while a keystroke's re-render is waiting out the debounce. */
@@ -51,11 +64,12 @@ export class DocumentSource
 	/* Restore the last-edited MusicXML, or open with the default example. */
 	async restore(): Promise<void> {
 		const saved = this.storage.getItem(STORAGE_KEY);
-		// ponytail: .mxl saves a `[mxl] name` placeholder, not the file, so it cannot be
-		// restored; fall through to the default example.
-		if (saved != null && !saved.startsWith('[mxl] ')) {
+		// ponytail: a binary upload saves a `[mxl] name` or `[gp] name` placeholder, not the
+		// file, so it cannot be restored; fall through to the default example.
+		if (saved != null && !BINARY_PLACEHOLDER.test(saved)) {
 			this.text = saved;
 			this.input = saved;
+			this.format = 'musicxml';
 			this.dispatcher.dispatch('changed');
 			return;
 		}
@@ -73,6 +87,7 @@ export class DocumentSource
 		}
 		this.text = xml;
 		this.input = xml;
+		this.format = 'musicxml';
 		// Storage answers "what to open instead of the default", so the default is the one thing
 		// never written: saving it would undo a reset on the very next load.
 		if (name === DEFAULT_FIXTURE) {
@@ -88,6 +103,7 @@ export class DocumentSource
 	edit(value: string, opts: EditOptions): void {
 		this.stopDebouncing();
 		this.text = value;
+		this.format = 'musicxml';
 		this.fixture = '';
 		this.save(value);
 		if (!value.trim()) {
@@ -108,21 +124,26 @@ export class DocumentSource
 		});
 	}
 
-	/* A dropped or picked file. .mxl is a zip, which render() detects from the Blob; MusicXML is
-	 * plain text, which also goes into the editor so it can be tweaked. */
+	/* A dropped or picked file. .mxl and .gp are both zips, told apart by their extension because
+	 * nothing downstream can; MusicXML is plain text, which also goes into the editor so it can be
+	 * tweaked. */
 	async loadFile(file: File): Promise<void> {
 		this.stopDebouncing();
 		this.fixture = '';
-		if (file.name.toLowerCase().endsWith('.mxl')) {
+		const name = file.name.toLowerCase();
+		const guitarPro = name.endsWith('.gp');
+		if (guitarPro || name.endsWith('.mxl')) {
 			this.text = '';
 			this.input = file;
-			this.save(`[mxl] ${file.name}`);
+			this.format = guitarPro ? 'guitar-pro' : 'musicxml';
+			this.save(`[${guitarPro ? 'gp' : 'mxl'}] ${file.name}`);
 			this.dispatcher.dispatch('changed');
 			return;
 		}
 		const text = await file.text();
 		this.text = text;
 		this.input = text;
+		this.format = 'musicxml';
 		this.save(text);
 		this.dispatcher.dispatch('changed');
 	}

@@ -1,9 +1,13 @@
-import { MDOMParser } from '@stringsync/mdom';
+import { GuitarProParser, MDOMParser, type MDocument } from '@stringsync/mdom';
 import { type ConfigInput, EditingSession, render } from '@stringsync/vexml';
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
 import { SystemClock } from 'webappwiz/time';
-import { DocumentSource, type Fixtures } from './document-source';
+import {
+	type DocumentFormat,
+	DocumentSource,
+	type Fixtures,
+} from './document-source';
 import { EditingVoices } from './editing-voices';
 import { InstrumentController } from './instrument-controller';
 import { RenderConfig } from './render-config';
@@ -75,7 +79,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		container: HTMLDivElement,
 		opts: RenderIntoOptions,
 	): Promise<void> {
-		const { input, config } = opts;
+		const { input, format, config } = opts;
 		if (input == null) {
 			return;
 		}
@@ -90,11 +94,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 			let voices =
 				this.editingSource?.input === input ? this.editingSource.voices : null;
 			if (!voices) {
-				const parser = new MDOMParser();
-				const document =
-					typeof input === 'string'
-						? parser.parseFromString(input)
-						: await parser.parseFromBlob(input);
+				const document = await this.parse(input, format);
 				if (at !== this.generation) {
 					return;
 				}
@@ -143,10 +143,32 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		this.session?.dispose();
 		this.session = null;
 	}
+
+	private parse(
+		input: string | Blob,
+		format: DocumentFormat,
+	): Promise<MDocument> {
+		// Text is MusicXML whatever the format says: every entry point that produces text sets
+		// the format back to 'musicxml', and only an upload can be a Guitar Pro archive.
+		if (typeof input === 'string') {
+			return Promise.resolve(new MDOMParser().parseFromString(input));
+		}
+		if (format === 'guitar-pro') {
+			// Bends, harmonics, slides, lyrics and chord diagrams throw by default, and a Guitar
+			// Pro file without any of them is the exception. A playground that refuses most real
+			// files is worse than one that draws the notation it understands, so drop the rest.
+			return new GuitarProParser().parseFromBlob(input, {
+				unsupported: 'omit',
+			});
+		}
+		return new MDOMParser().parseFromBlob(input);
+	}
 }
 
 export interface RenderIntoOptions {
-	/* MusicXML text, or an .mxl Blob. Null renders nothing. */
+	/* MusicXML text, or an .mxl or .gp Blob. Null renders nothing. */
 	input: string | Blob | null;
+	/* Which parser `input` needs; it is a Blob for anything but 'musicxml'. */
+	format: DocumentFormat;
 	config: ConfigInput;
 }

@@ -91,6 +91,7 @@ const buildModel = () => new SiteModel(fixtures, localStorage);
 const projection = (model: SiteModel) => ({
 	text: model.document.text,
 	input: model.document.input,
+	format: model.document.format,
 	fixture: model.document.fixture,
 	error: model.error,
 	initialized: model.initialized,
@@ -120,6 +121,7 @@ export default function App() {
 	const {
 		text,
 		input,
+		format,
 		fixture,
 		error,
 		initialized,
@@ -156,6 +158,10 @@ export default function App() {
 	const maxSystemFill = config.maxSystemFill ?? DEFAULT_MAX_SYSTEM_FILL;
 	const notationFont = config.fonts?.notation?.family ?? 'Bravura';
 	const width = layout?.referenceWidth ?? DEFAULT_WIDTH;
+	// What the toolbar calls a document the picker did not name, which is every upload and
+	// anything pasted into the editor.
+	const scoreTitle =
+		format === 'guitar-pro' ? 'Guitar Pro score' : 'MusicXML score';
 	// Both undefined when the document did not come from the picker, which disables both arrows.
 	const fixtureIndex = fixtureNames.indexOf(fixture);
 	const prevFixture =
@@ -182,9 +188,9 @@ export default function App() {
 	useEffect(() => {
 		const container = containerRef.current;
 		if (container) {
-			model.renderInto(container, { input, config: applied });
+			model.renderInto(container, { input, format, config: applied });
 		}
-	}, [model, input, applied]);
+	}, [model, input, format, applied]);
 
 	// Size the score's scroll box to the gap above the player controls, once both exist.
 	// A disposer effect, not useResource: this really does acquire a ResizeObserver and a window
@@ -290,7 +296,7 @@ export default function App() {
 		<>
 			<Section
 				icon={UploadIcon}
-				title="MusicXML"
+				title="Score"
 				action={
 					<SectionReset
 						onClick={() => model.document.clear()}
@@ -310,10 +316,12 @@ export default function App() {
 				>
 					<label>
 						Choose file
-						<span className="font-normal text-faint">.xml .musicxml .mxl</span>
+						<span className="font-normal text-faint">
+							.xml .musicxml .mxl .gp
+						</span>
 						<input
 							type="file"
-							accept=".xml,.musicxml,.mxl"
+							accept=".xml,.musicxml,.mxl,.gp"
 							className="hidden"
 							onChange={onFile}
 						/>
@@ -651,7 +659,7 @@ export default function App() {
 					<div className="shrink-0 px-4 pt-4 md:px-10">
 						<div className="mx-auto max-w-237.5">
 							<EditingToolbar
-								title={fixture || 'MusicXML score'}
+								title={fixture || scoreTitle}
 								renderMs={renderMs}
 								error={error}
 								voices={session?.editingVoices.options ?? []}
