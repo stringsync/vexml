@@ -55,6 +55,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	readonly cursor: CursorController;
 	readonly durationMs: number;
 	readonly editing: EditingController;
+	readonly entry: NoteEntry | undefined;
 	private readonly follower: PlayheadFollow;
 	private readonly playhead: Playhead;
 	mode: ScoreMode;
@@ -83,8 +84,10 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		private readonly instrument: () => Instrument | null,
 		readonly editingVoices: EditingVoices,
 		mode: ScoreMode = 'view',
-		readonly entry?: NoteEntry,
+		opts: ScoreSessionOptions = {},
 	) {
+		const { entry } = opts;
+		this.entry = entry;
 		this.mode = mode;
 		this.durationMs = score.getDurationMs();
 		this.disposer.use(this.dispatcher);
@@ -608,4 +611,8 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.container.style.cursor = '';
 		this.container.style.touchAction = '';
 	}
+}
+
+export interface ScoreSessionOptions {
+	entry?: NoteEntry;
 }
