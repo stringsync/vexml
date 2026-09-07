@@ -149,7 +149,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 				() => this.instrument.current(),
 				voices,
 				this.mode,
-				this.noteEditing?.entry,
+				{ entry: this.noteEditing?.entry },
 			);
 			this.sessionDisposer.use(this.session);
 			this.sessionDisposer.defer(
