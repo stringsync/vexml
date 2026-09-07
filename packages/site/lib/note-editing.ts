@@ -3,7 +3,7 @@ import type { EditingSession, PitchInput } from '@stringsync/vexml';
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
 
-/** The demo's pitch form and staccato policy, backed by native mdom history. */
+/** Edit selected notes' pitch and staccato markings through the demo's form. */
 export class NoteEditing implements Eventful<{ changed: undefined }>, Resource {
 	private readonly dispatcher = new Dispatcher<{ changed: undefined }>();
 	readonly events = this.dispatcher.events;
