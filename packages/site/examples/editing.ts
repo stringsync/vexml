@@ -1,9 +1,9 @@
 import { MDOMParser } from '@stringsync/mdom';
 import { EditingSession, render, type Score } from '@stringsync/vexml';
 import '@stringsync/vexml/css';
+import { Disposer } from 'webappwiz/disposable';
 import xml from '../editing.musicxml?raw';
 
-const editor = new EditingSession(new MDOMParser().parseFromString(xml));
 const container = document.querySelector<HTMLDivElement>('#score');
 const status = document.querySelector<HTMLParagraphElement>('#status');
 const add = document.querySelector<HTMLButtonElement>('#staccato');
@@ -12,7 +12,12 @@ const redo = document.querySelector<HTMLButtonElement>('#redo');
 if (!container || !status || !add || !undo || !redo) {
 	throw new Error('Missing example controls');
 }
+const disposer = new Disposer();
+const music = new MDOMParser().parseFromString(xml);
+disposer.use(music.history);
+const editor = disposer.use(new EditingSession(music));
 let score: Score | null = null;
+disposer.defer(() => score?.dispose());
 let pending = Promise.resolve();
 let generation = 0;
 
@@ -40,7 +45,9 @@ const redraw = () => {
 			status.textContent = '';
 		})
 		.catch((error) => {
-			status.textContent = String(error);
+			if (requested === generation) {
+				status.textContent = String(error);
+			}
 		});
 };
 const refresh = () => {
@@ -63,26 +70,31 @@ add.onclick = () => {
 		}
 	});
 };
+disposer.defer(() => {
+	add.onclick = null;
+});
 undo.onclick = () => {
 	editor.undo();
 };
+disposer.defer(() => {
+	undo.onclick = null;
+});
 redo.onclick = () => {
 	editor.redo();
 };
-editor.events.on('selectionchange', refresh);
-editor.events.on('documentchange', () => {
-	refresh();
-	redraw();
+disposer.defer(() => {
+	redo.onclick = null;
 });
-window.addEventListener(
-	'pagehide',
-	() => {
-		generation++;
-		score?.dispose();
-		editor.dispose();
-		editor.history.dispose();
-	},
-	{ once: true },
+disposer.defer(editor.events.on('selectionchange', refresh));
+disposer.defer(
+	editor.events.on('documentchange', () => {
+		refresh();
+		redraw();
+	}),
 );
+const pagehide = () => disposer.dispose();
+window.addEventListener('pagehide', pagehide, { once: true });
+disposer.defer(() => window.removeEventListener('pagehide', pagehide));
+disposer.defer(() => generation++);
 refresh();
 redraw();
