@@ -12,7 +12,7 @@ export const CURSOR_WIDTH_PX = 2;
 // A sounding note belongs to the playhead sitting on it, so it takes the playhead's own pink a few
 // steps lighter: the bar reads as the position and the notes under it as what that position is
 // playing, rather than as two unrelated signals. Hovering is the one thing that has to be picked
-// out against both, so it goes warm amber — a third of the wheel away, and never mistakable for
+// out against both, so it goes warm amber, a third of the wheel away, and never mistakable for
 // either the pink or the engraved black.
 //
 // The color a sounding note shows while the cursor is over it (and a grace note while it plays).
