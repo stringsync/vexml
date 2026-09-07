@@ -679,7 +679,7 @@ export default function App() {
 								title={
 									fixture || model.editor?.document.score.title || scoreTitle
 								}
-								onNew={(kind) => model.newNotation(kind)}
+								renderMs={renderMs}
 								error={error}
 								voices={session?.editingVoices.options ?? []}
 								activeVoice={activeVoice}

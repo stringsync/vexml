@@ -1,19 +1,6 @@
-import {
-	ChevronDownIcon,
-	EyeIcon,
-	FilePlus2Icon,
-	PencilIcon,
-} from 'lucide-react';
+import { EyeIcon, PencilIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
 	Select,
 	SelectContent,
@@ -35,7 +22,7 @@ export function EditingToolbar({
 	mode,
 	playing,
 	onModeChange,
-	onNew,
+	renderMs,
 	children,
 }: {
 	title: string;
@@ -46,7 +33,7 @@ export function EditingToolbar({
 	mode: ScoreMode;
 	playing: boolean;
 	onModeChange: (mode: ScoreMode) => void;
-	onNew: (kind: 'staff' | 'tab') => void;
+	renderMs: number | null;
 	children?: ReactNode;
 }) {
 	return (
@@ -55,25 +42,15 @@ export function EditingToolbar({
 			className="flex flex-col gap-2 border-b bg-card px-4 py-3 md:px-6"
 		>
 			<div className="flex flex-wrap items-center gap-2">
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button variant="outline" size="sm">
-							<FilePlus2Icon data-icon="inline-start" />
-							New notation
-							<ChevronDownIcon data-icon="inline-end" />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="start">
-						<DropdownMenuGroup>
-							<DropdownMenuItem onSelect={() => onNew('staff')}>
-								Treble staff
-							</DropdownMenuItem>
-							<DropdownMenuItem onSelect={() => onNew('tab')}>
-								Guitar tablature
-							</DropdownMenuItem>
-						</DropdownMenuGroup>
-					</DropdownMenuContent>
-				</DropdownMenu>
+				<output
+					aria-label="Rendering time"
+					className="shrink-0 text-xs text-muted-foreground"
+				>
+					Rendered in{' '}
+					<span className="font-mono text-brand-ink">
+						{renderMs === null ? '—' : `${renderMs.toFixed(1)} ms`}
+					</span>
+				</output>
 				<span className="hidden min-w-0 flex-1 truncate text-sm text-muted-foreground sm:block">
 					{title}
 				</span>

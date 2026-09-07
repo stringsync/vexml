@@ -135,8 +135,8 @@ Removed notes disappear from the visible selection; focus becomes null when its
 note is detached. Undo makes retained selection references available again.
 Render errors should leave the document and history available so users can undo.
 
-Run `vex dev` to use the playground. Its compact toolbar offers a new blank
-treble staff or guitar tab and view/edit modes. In edit mode, arrow keys navigate
+Run `vex dev` to use the playground. Its compact toolbar shows rendering
+time and view/edit modes. In edit mode, arrow keys navigate
 existing notes; they never change the document. Note entry and duration controls
 are deferred while the editing workflow is being redesigned.
 

@@ -102,27 +102,14 @@ describe('dev site editing', () => {
 			await page.screenshot({
 				path: 'packages/integration/__artifacts__/editing-site-mobile.png',
 			});
-			await page
-				.getByRole('button', { name: 'New notation', exact: true })
-				.click();
-			await page
-				.getByRole('menuitem', { name: 'Guitar tablature', exact: true })
-				.click();
-			await page.waitForFunction(() =>
-				localStorage.getItem('vexml:musicxml')?.includes('<sign>TAB</sign>'),
-			);
-			const blank = await page.evaluate(() =>
-				localStorage.getItem('vexml:musicxml'),
-			);
-			await score.focus();
-			await page.keyboard.press('ArrowRight');
-			await page.keyboard.press('ArrowDown');
-			await page.keyboard.press('1');
-			await page.keyboard.press('2');
-			await page.keyboard.press('Enter');
 			expect(
-				await page.evaluate(() => localStorage.getItem('vexml:musicxml')),
-			).toBe(blank);
+				await page
+					.getByRole('button', { name: 'New notation', exact: true })
+					.count(),
+			).toBe(0);
+			expect(
+				await page.getByLabel('Rendering time', { exact: true }).textContent(),
+			).toMatch(/Rendered in \d+\.\d ms/);
 
 			expect(errors).toEqual([]);
 		} finally {
