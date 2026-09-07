@@ -3,7 +3,10 @@ import type { EditingPresentation, EditingView } from './editing-view';
 import type { Layer } from './layer';
 
 export interface SelectionOverlayOptions {
+	/** Selection wash color, drawn translucently over the engraving. */
 	color?: string;
+	/** Focus outline color; defaults to the selection color. */
+	focusColor?: string;
 }
 
 /** Selection washes and a focus outline, isolated on a score-owned drawing layer. */
@@ -22,7 +25,7 @@ export class SelectionOverlay implements EditingView {
 		this.previous = [];
 		ctx.save();
 		ctx.fillStyle = this.options.color ?? '#155dfc';
-		ctx.globalAlpha = 0.18;
+		ctx.globalAlpha = 0.24;
 		for (const note of state.selected) {
 			for (const element of [note, note.getTabPosition()]) {
 				if (!element) {
@@ -34,6 +37,7 @@ export class SelectionOverlay implements EditingView {
 			}
 		}
 		ctx.globalAlpha = 1;
+		ctx.fillStyle = this.options.focusColor ?? this.options.color ?? '#155dfc';
 		const targets = state.focus
 			? [state.focus.rect, state.focus.getTabPosition()?.rect]
 			: [state.position];
@@ -42,10 +46,10 @@ export class SelectionOverlay implements EditingView {
 				continue;
 			}
 			const rect = this.padded(target);
-			ctx.fillRect(rect.x, rect.y, rect.w, 1);
-			ctx.fillRect(rect.x, rect.y + rect.h - 1, rect.w, 1);
-			ctx.fillRect(rect.x, rect.y, 1, rect.h);
-			ctx.fillRect(rect.x + rect.w - 1, rect.y, 1, rect.h);
+			ctx.fillRect(rect.x, rect.y, rect.w, 2);
+			ctx.fillRect(rect.x, rect.y + rect.h - 2, rect.w, 2);
+			ctx.fillRect(rect.x, rect.y, 2, rect.h);
+			ctx.fillRect(rect.x + rect.w - 2, rect.y, 2, rect.h);
 			this.previous.push(rect);
 		}
 		ctx.restore();

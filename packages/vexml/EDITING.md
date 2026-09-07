@@ -104,7 +104,8 @@ includes both notation and tab targets without changing playback/hover colors.
 - `EditingView.render(presentation)` receives current rendered notes, focus and
   score-space focus geometry. `SelectionOverlay` is the default view. A custom
   `view` is owned and disposed by the controller. `selection: false` disables the
-  default overlay; `keyboard: false`, `pointer: false` and `follow: false` disable
+  default overlay. Set `selection.focusColor` to contrast the focus outline with
+  the translucent `selection.color` wash; `keyboard: false`, `pointer: false` and `follow: false` disable
   those individual behaviors. A framework can call `editing.handleKey(key)` and
   prevent the browser default when it returns true.
 

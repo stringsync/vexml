@@ -18,6 +18,7 @@ import {
 	GRACE_MS,
 	HALO_COLOR,
 	HOVER_COLOR,
+	SELECTION_OUTLINE_COLOR,
 } from './constants';
 import type { EditingVoices } from './editing-voices';
 import { formatPitch } from './format';
@@ -141,7 +142,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 				score.getSequence(),
 				this.cursor,
 			),
-			selection: { color: HOVER_COLOR },
+			selection: { color: CURSOR_COLOR, focusColor: SELECTION_OUTLINE_COLOR },
 			toggleOnClick: true,
 		});
 		this.watch(this.editor.events, 'voicechange', () =>
