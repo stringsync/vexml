@@ -7,7 +7,7 @@ import type {
 	Sequence,
 } from '@stringsync/vexml';
 
-/** Playground policy: arrows switch voices; Shift-horizontal jumps measures.
+/** Playground policy: vertical arrows traverse chords and voices; Shift-horizontal jumps measures.
  * With no selection, start near playback in the remembered voice. */
 export class SiteEditingBindings implements EditingBindings {
 	constructor(
@@ -36,6 +36,12 @@ export class SiteEditingBindings implements EditingBindings {
 			});
 			const note = target?.note.getSources()[0];
 			if (note) {
+				if (key.key === 'ArrowDown') {
+					return { type: 'select', note, chordEdge: 'top' };
+				}
+				if (key.key === 'ArrowUp') {
+					return { type: 'select', note, chordEdge: 'bottom' };
+				}
 				return { type: 'select', note };
 			}
 		}
@@ -44,7 +50,7 @@ export class SiteEditingBindings implements EditingBindings {
 		return {
 			type: 'move',
 			move: {
-				unit: horizontal ? horizontalUnit : 'voice',
+				unit: horizontal ? horizontalUnit : 'vertical',
 				direction: key.key === 'ArrowRight' || key.key === 'ArrowDown' ? 1 : -1,
 			},
 		};

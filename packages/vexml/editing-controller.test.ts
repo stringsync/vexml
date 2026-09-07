@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { MDocument } from '@stringsync/mdom';
 import { disposables } from 'webappwiz/disposable';
 import { Rect } from 'webappwiz/geometry';
+import { DefaultEditingBindings } from './default-editing-bindings';
 import type { EditingControllerOptions } from './editing-controller';
 import { EditingSession } from './editing-session';
 import { ElementFactory } from './element-factory';
@@ -208,5 +209,40 @@ describe('EditingController', () => {
 		expect(layer?.recording.clears.length).toBe(5);
 		score.dispose();
 		expect(layer?.disposed).toBe(true);
+	});
+});
+
+describe('EditingController chord entry commands', () => {
+	it('maps up/down to vertical movement and selects explicit chord edges', () => {
+		const f = fixture();
+		const chord = f.first.measure.getOrCreateVoice('1').addChord(
+			[
+				{ step: 'E', octave: 4 },
+				{ step: 'G', octave: 4 },
+			],
+			{ type: 'whole' },
+		);
+		const high = chord.notes[1];
+		if (!high) {
+			throw new Error('missing upper chord note');
+		}
+		const { controller } = f.create();
+		controller.execute({ type: 'select', note: chord.lead, chordEdge: 'top' });
+		expect(f.editor.getFocus()).toBe(high);
+		const bindings = new DefaultEditingBindings();
+		const down = bindings.resolve(new Key('ArrowDown'));
+		if (!down) {
+			throw new Error('missing Down binding');
+		}
+		controller.execute(down);
+		expect(f.editor.getFocus()).toBe(chord.lead);
+		const up = bindings.resolve(new Key('ArrowUp'));
+		if (!up) {
+			throw new Error('missing Up binding');
+		}
+		controller.execute(up);
+		expect(f.editor.getFocus()).toBe(high);
+		controller.execute({ type: 'select', note: high, chordEdge: 'bottom' });
+		expect(f.editor.getFocus()).toBe(chord.lead);
 	});
 });

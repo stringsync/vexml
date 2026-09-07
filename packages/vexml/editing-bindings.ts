@@ -3,7 +3,7 @@ import type { EditingNavigation } from './editing-navigator';
 
 export type EditingCommand =
 	| { type: 'move'; move: EditingNavigation; extend?: boolean }
-	| { type: 'select'; note: Note }
+	| { type: 'select'; note: Note; chordEdge?: 'top' | 'bottom' }
 	| { type: 'clear' };
 
 /** A key snapshot also usable by framework event adapters. */

@@ -136,8 +136,15 @@ export class EditingController
 				moved = this.navigator.move(command.move, { extend: command.extend });
 				break;
 			case 'select':
-				this.editor.select(command.note);
-				moved = true;
+				if (command.chordEdge) {
+					moved = this.navigator.selectChordEdge(
+						command.note,
+						command.chordEdge,
+					);
+				} else {
+					this.editor.select(command.note);
+					moved = true;
+				}
 				break;
 			case 'clear':
 				moved = this.editor.getSelection().length > 0;

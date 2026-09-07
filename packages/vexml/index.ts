@@ -3,6 +3,7 @@
 export type { Resource } from 'webappwiz/disposable';
 export { Rect } from 'webappwiz/geometry';
 export { ChordDiagram } from './chord-diagram';
+export { ChordNoteOrder } from './chord-note-order';
 export type {
 	Config,
 	ConfigInput,

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'bun:test';
-import { MDocument } from '@stringsync/mdom';
+import { MDocument, type Note } from '@stringsync/mdom';
 import { EditingNavigator } from './editing-navigator';
 import { EditingSession } from './editing-session';
+
+function required(note: Note | undefined): Note {
+	if (!note) {
+		throw new Error('missing chord member');
+	}
+	return note;
+}
 
 describe('EditingNavigator', () => {
 	it('crosses into the next system first voice and reverses into the previous system last note', () => {
@@ -202,5 +209,142 @@ describe('EditingNavigator without layout', () => {
 			),
 		).toBe(false);
 		expect(editor.getSelection()).toEqual([first]);
+	});
+});
+
+describe('EditingNavigator vertical chord traversal', () => {
+	it.each([
+		false,
+		true,
+	])('visits every middle-voice chord tone in both directions (layout=%s)', (withLayout) => {
+		const document = MDocument.empty();
+		const measure = document.score.addPart().addMeasure();
+		const upper = measure
+			.getOrCreateVoice('1')
+			.addNote({ step: 'A', octave: 5, type: 'whole' });
+		const chord = measure.getOrCreateVoice('2').addChord(
+			[
+				{ step: 'E', octave: 4 },
+				{ step: 'B', octave: 4 },
+				{ step: 'G', octave: 4 },
+			],
+			{ type: 'whole' },
+		);
+		const lower = measure
+			.getOrCreateVoice('3')
+			.addNote({ step: 'C', octave: 4, type: 'whole' });
+		const editor = new EditingSession(document);
+		const navigator = new EditingNavigator(
+			editor,
+			withLayout ? { getSystems: () => [[measure]] } : undefined,
+		);
+		const expected = [
+			upper,
+			required(chord.notes[1]),
+			required(chord.notes[2]),
+			required(chord.notes[0]),
+			lower,
+		];
+		editor.select(upper);
+		for (const note of expected.slice(1)) {
+			expect(navigator.move({ unit: 'vertical', direction: 1 })).toBe(true);
+			expect(editor.getFocus()).toBe(note);
+		}
+		expect(navigator.move({ unit: 'vertical', direction: 1 })).toBe(false);
+		for (const note of expected.slice(0, -1).reverse()) {
+			expect(navigator.move({ unit: 'vertical', direction: -1 })).toBe(true);
+			expect(editor.getFocus()).toBe(note);
+		}
+		expect(navigator.move({ unit: 'vertical', direction: -1 })).toBe(false);
+		expect(chord.notes.map((note) => note.pitch?.step)).toEqual([
+			'E',
+			'B',
+			'G',
+		]);
+	});
+
+	it('enters the correct edge of a chord when crossing a system boundary', () => {
+		const document = MDocument.empty();
+		const part = document.score.addPart();
+		const first = part.addMeasure();
+		const last = first.getOrCreateVoice('2').addChord(
+			[
+				{ step: 'G', octave: 4 },
+				{ step: 'E', octave: 4 },
+			],
+			{ type: 'whole' },
+		);
+		const second = part.addMeasure();
+		const next = second.getOrCreateVoice('1').addChord(
+			[
+				{ step: 'C', octave: 4 },
+				{ step: 'B', octave: 4 },
+			],
+			{ type: 'whole' },
+		);
+		const editor = new EditingSession(document);
+		const navigator = new EditingNavigator(editor, {
+			getSystems: () => [[first], [second]],
+		});
+		const lastLow = required(last.notes[1]);
+		if (!lastLow) {
+			throw new Error('missing last chord member');
+		}
+		editor.select(lastLow);
+		navigator.move({ unit: 'vertical', direction: 1 });
+		expect(editor.getFocus()).toBe(required(next.notes[1]));
+		navigator.move({ unit: 'vertical', direction: -1 });
+		expect(editor.getFocus()).toBe(required(last.notes[1]));
+	});
+
+	it('extends within the chord but keeps an anchored range inside its voice', () => {
+		const document = MDocument.empty();
+		const measure = document.score.addPart().addMeasure();
+		const chord = measure.getOrCreateVoice('1').addChord(
+			[
+				{ step: 'E', octave: 4 },
+				{ step: 'G', octave: 4 },
+			],
+			{ type: 'whole' },
+		);
+		measure
+			.getOrCreateVoice('2')
+			.addNote({ step: 'C', octave: 4, type: 'whole' });
+		const editor = new EditingSession(document);
+		const navigator = new EditingNavigator(editor);
+		const high = required(chord.notes[1]);
+		if (!high) {
+			throw new Error('missing upper chord member');
+		}
+		editor.select(high);
+		expect(
+			navigator.move({ unit: 'vertical', direction: 1 }, { extend: true }),
+		).toBe(true);
+		expect(editor.getSelection()).toEqual(chord.notes);
+		expect(
+			navigator.move({ unit: 'vertical', direction: 1 }, { extend: true }),
+		).toBe(false);
+		expect(editor.getFocus()).toBe(chord.lead);
+	});
+});
+
+describe('EditingNavigator vertical entry', () => {
+	it('enters the active voice chord from the correct end after deselection', () => {
+		const document = MDocument.empty();
+		const measure = document.score.addPart().addMeasure();
+		const chord = measure.getOrCreateVoice('1').addChord(
+			[
+				{ step: 'E', octave: 4 },
+				{ step: 'G', octave: 4 },
+			],
+			{ type: 'whole' },
+		);
+		const editor = new EditingSession(document);
+		const navigator = new EditingNavigator(editor);
+		navigator.move({ unit: 'vertical', direction: 1 });
+		expect(editor.getFocus()).toBe(required(chord.notes[1]));
+		editor.clearSelection();
+		navigator.move({ unit: 'vertical', direction: -1 });
+		expect(editor.getFocus()).toBe(chord.lead);
 	});
 });

@@ -1,4 +1,5 @@
 import type { Measure, Note } from '@stringsync/mdom';
+import { ChordNoteOrder } from './chord-note-order';
 import type { EditingLayout } from './editing-layout';
 import type {
 	EditingSession,
@@ -7,12 +8,13 @@ import type {
 } from './editing-session';
 
 export interface EditingNavigation {
-	unit: 'note' | 'measure' | 'voice' | 'chordPitch';
+	unit: 'note' | 'measure' | 'voice' | 'chordPitch' | 'vertical';
 	direction: -1 | 1;
 }
 
 /** Resolves musical targets, independent of keys, pixels, playback and mutation history. */
 export class EditingNavigator {
+	private readonly chordOrder = new ChordNoteOrder();
 	constructor(
 		private readonly editor: EditingSession,
 		private readonly layout?: EditingLayout,
@@ -33,6 +35,9 @@ export class EditingNavigator {
 			case 'voice':
 				target = focus ? this.nextVoice(focus, move.direction) : undefined;
 				break;
+			case 'vertical':
+				target = this.nextVertical(focus, move.direction);
+				break;
 			case 'chordPitch':
 				target = focus ? this.nextPitch(focus, move.direction) : undefined;
 				break;
@@ -45,6 +50,17 @@ export class EditingNavigator {
 			return false;
 		}
 		this.editor.select(target, options);
+		return true;
+	}
+
+	/** Select an explicit chord from the side approached by a vertical gesture. */
+	selectChordEdge(note: Note, edge: 'top' | 'bottom'): boolean {
+		const notes = this.chordOrder.of(note);
+		const target = edge === 'top' ? notes[0] : notes.at(-1);
+		if (!target) {
+			return false;
+		}
+		this.editor.select(target);
 		return true;
 	}
 
@@ -180,6 +196,31 @@ export class EditingNavigator {
 				Math.abs((a.measureBeat ?? 0) - (focus.measureBeat ?? 0)) -
 					Math.abs((b.measureBeat ?? 0) - (focus.measureBeat ?? 0)),
 		)[0];
+	}
+
+	/** Visit every chord member before leaving its voice. Enter the next chord
+	 * from above when descending and below when ascending. */
+	private nextVertical(
+		focus: Note | null,
+		direction: -1 | 1,
+	): Note | undefined {
+		if (!focus) {
+			const initial = this.nextNote(direction);
+			const notes = initial ? this.chordOrder.of(initial) : [];
+			return direction === 1 ? notes[0] : notes.at(-1);
+		}
+		const notes = this.chordOrder.of(focus);
+		const at = notes.indexOf(focus);
+		const adjacent = notes[at + direction];
+		if (at >= 0 && adjacent) {
+			return adjacent;
+		}
+		const voice = this.nextVoice(focus, direction);
+		if (!voice) {
+			return undefined;
+		}
+		const entering = this.chordOrder.of(voice);
+		return direction === 1 ? entering[0] : entering.at(-1);
 	}
 
 	private nextPitch(focus: Note, direction: -1 | 1): Note | undefined {

@@ -61,8 +61,8 @@ selection focuses the container without browser scrolling. The host supplies the
 container's accessible name and any live selection announcement.
 
 Defaults: left/right follow chord leads in the written voice; up/down traverse
-pitches inside the chord; Shift-arrow extends the range. Escape clears selection
-while retaining the active voice. Click selects a note or fret, Shift-click extends
+chord members in staff order, then continue to the neighboring voice. Shift-arrow
+extends the range. Escape clears selection while retaining the active voice. Click selects a note or fret, Shift-click extends
 a range, and Command/Ctrl-click toggles set membership. Shift-click into another
 part or voice starts a fresh selection. Background clicks clear selection.
 `toggleOnClick: true` makes a second plain click on the sole focused note clear it.
@@ -78,7 +78,16 @@ includes both notation and tab targets without changing playback/hover colors.
   mutation history. `getVoices()` enumerates `{ part, voice }` pairs in written
   order. `setActiveVoice()` changes context without moving focus;
   `editing.selectVoice()` selects a nearby onset in the chosen voice.
-- `EditingNavigator` resolves `note`, `measure`, `voice` and `chordPitch` moves.
+- `EditingNavigator` resolves `note`, `measure`, `voice`, `chordPitch` and `vertical` moves.
+  `vertical` (-1 up, +1 down) traverses every chord member before leaving its
+  voice, entering the next chord at its top when descending or bottom when
+  ascending. Without focus it starts at the appropriate edge of the first/last
+  chord in the active voice. A `select` command can set `chordEdge: 'top'` or
+  `'bottom'` to enter a particular chord from playback or another host source.
+  `ChordNoteOrder` orders by staff number, then written diatonic
+  position, ignoring accidentals; equal positions retain document order. Unpitched
+  notes use their display position. `voice` remains an explicit whole-voice jump,
+  and `chordPitch` retains pitch-only movement within the current chord.
   It works without a score. `EditingSession.move()` delegates its existing string
   commands to the same navigator. With no focus, horizontal movement starts at the
   first/last chord lead of the active voice (initially the first written voice).

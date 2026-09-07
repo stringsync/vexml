@@ -163,7 +163,7 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 ## Interaction and playback
 
 - **Editing focus, active voice, range/set selection and undo/redo** — `editing-session.ts`, `pitch-edit.ts`; host integration and current boundaries in `EDITING.md`
-- **Editing navigation in written order and across rendered systems** — `editing-navigator.ts`, `editing-layout.ts`, `score-editing-layout.ts`
+- **Editing navigation in written order and across rendered systems** — `editing-navigator.ts`, `chord-note-order.ts` (staff and written-position order within a chord), `editing-layout.ts`, `score-editing-layout.ts`
 - **Editing keyboard/pointer controller, focus scrolling and selection overlay** — `editing-controller.ts`, `editing-bindings.ts`, `default-editing-bindings.ts`, `editing-view.ts`, `selection-overlay.ts`; default composition in `score.ts`
 - **Rendering an editor-owned mdom document without reparsing** — `render.ts`, `score-parser.ts`, `default-score-parser.ts`, `score-renderer.ts`
 - **What a caller gets from a hit test** — `element.ts`, `element-index.ts`, `note.ts`, `measure.ts`, `measure-box.ts`, `voice.ts`, `part.ts`, `system.ts`
