@@ -26,3 +26,22 @@ export function fmtTime(ms: number): string {
 	const s = Math.floor(ms / 1000);
 	return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
+
+export function formatPitch(pitch: {
+	step: string;
+	alter: number;
+	octave: number;
+}): string {
+	const accidentals: Record<number, string> = {
+		[-2]: '♭♭',
+		[-1]: '♭',
+		0: '',
+		1: '♯',
+		2: '♯♯',
+	};
+	const accidental = accidentals[pitch.alter];
+	if (accidental !== undefined) {
+		return `${pitch.step}${accidental}${pitch.octave}`;
+	}
+	return `${pitch.step}${pitch.octave} (${pitch.alter > 0 ? '+' : ''}${pitch.alter} st)`;
+}

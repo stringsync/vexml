@@ -18,6 +18,7 @@ import {
 	HOVER_COLOR,
 } from './constants';
 import type { EditingVoices } from './editing-voices';
+import { formatPitch } from './format';
 import type { Instrument } from './instrument';
 
 type ScoreSessionEvents = {
@@ -196,10 +197,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		const pitch = focus.pitch;
 		let label = focus.isRest ? 'R' : 'Unpitched note';
 		if (pitch) {
-			const alteration = pitch.alter
-				? ` (${pitch.alter > 0 ? '+' : ''}${pitch.alter})`
-				: '';
-			label = `${pitch.step}${alteration}${pitch.octave}`;
+			label = formatPitch(pitch);
 		}
 		return `${label} · Measure ${focus.measure.number} · Beat ${focus.measureBeat === null ? '?' : focus.measureBeat + 1} · Voice ${focus.voice}`;
 	}

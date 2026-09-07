@@ -113,7 +113,7 @@ export function EditingToolbar({
 						Selection
 					</span>
 					<div className="flex min-h-14 min-w-0 items-center gap-3">
-						<div className="flex size-14 shrink-0 items-center justify-center rounded-lg bg-brand-wash font-mono text-lg font-medium text-brand-ink">
+						<div className="flex h-14 min-w-14 shrink-0 items-center justify-center rounded-lg bg-brand-wash px-2 font-mono text-lg font-medium whitespace-nowrap text-brand-ink">
 							{selected ? pitch : '—'}
 						</div>
 						<div className="flex min-w-0 flex-col gap-1">
