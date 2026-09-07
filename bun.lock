@@ -32,7 +32,7 @@
       "version": "1.3.0",
       "dependencies": {
         "@coderline/alphatab": "^1.8.4",
-        "@stringsync/mdom": "0.3.0",
+        "@stringsync/mdom": "0.4.0",
         "@stringsync/vexml": "workspace:*",
         "opensheetmusicdisplay": "^2.1.1",
         "playwright": "^1.61.1",
@@ -46,7 +46,7 @@
         "@fontsource-variable/anybody": "^5.3.0",
         "@fontsource/ibm-plex-mono": "^5.3.0",
         "@fontsource/ibm-plex-sans": "^5.3.0",
-        "@stringsync/mdom": "0.3.0",
+        "@stringsync/mdom": "0.4.0",
         "@stringsync/vexml": "workspace:*",
         "@webappwiz/react": "0.0.14",
         "class-variance-authority": "^0.7.1",
@@ -76,7 +76,7 @@
         "vex": "./index.ts",
       },
       "dependencies": {
-        "@stringsync/mdom": "0.3.0",
+        "@stringsync/mdom": "0.4.0",
         "@vexml/renderer": "workspace:*",
         "webappwiz": "0.0.14",
       },
@@ -85,7 +85,7 @@
       "name": "@stringsync/vexml",
       "version": "1.3.0",
       "dependencies": {
-        "@stringsync/mdom": "0.3.0",
+        "@stringsync/mdom": "0.4.0",
         "vexflow": "5.0.0",
         "webappwiz": "0.0.14",
       },
@@ -379,7 +379,7 @@
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 
-    "@stringsync/mdom": ["@stringsync/mdom@0.3.0", "", { "dependencies": { "@coderline/alphatab": "1.8.4", "jszip": "^3.10.1", "xml-js": "^1.6.11" } }, "sha512-sm8/SGgMbOiwC0D/PHiIvxdaJ75M7ER4rCvEt/QNXijhQcsgxCbaA6Wl2UCp30TTRcSLIj1G3PhTGutcDTBD2g=="],
+    "@stringsync/mdom": ["@stringsync/mdom@0.4.0", "", { "dependencies": { "jszip": "^3.10.1", "xml-js": "^1.6.11" } }, "sha512-84wrMYlpGqHCvcNxuKM136/MnIifYFVrehcNgDzCD/JgSTM2cOeYXbmKSa+VAvyiDnvDrJs3sWRCiXKDRJ/QGw=="],
 
     "@stringsync/vexml": ["@stringsync/vexml@workspace:packages/vexml"],
 
