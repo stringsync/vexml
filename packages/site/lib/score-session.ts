@@ -33,15 +33,14 @@ type ScoreSessionEvents = {
  * which notes are sounding and which voices are sounding them, which note is hovered or pinned, and
  * the selected document note.
  *
- * These are one model, not several. Cursor coloring and the hover halo share a single color channel
- * per note, so `recolor` has to resolve both; a voice has to be released exactly when its note
- * leaves the sounding set; the halo follows whatever `apply` last resolved. Splitting them would
- * mean each half reaching into the other.
- *
  * One session owns one Score. Disposing it detaches every listener, releases every voice, and
  * disposes the score.
  */
 export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
+	// Playback, hover and selection live in one class because they are one model: a note's cursor
+	// color and its hover halo share a single color channel, and a voice has to be released exactly
+	// when its note leaves the sounding set. Splitting them would mean each half reaching into the
+	// other.
 	private readonly dispatcher = new Dispatcher<ScoreSessionEvents>();
 	readonly events = this.dispatcher.events;
 
@@ -142,7 +141,8 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.apply();
 		});
 		this.watch(this.score.events, 'click', (e) => {
-			// Only notes and frets are pinnable; clicking a measure or empty space unpins.
+			// A pin drives the editor selection, and only a note or a fret resolves to a document note
+			// the editor can select.
 			const target =
 				e.target instanceof Note || e.target instanceof TabPosition
 					? e.target
@@ -157,7 +157,8 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.syncPlayhead();
 			this.apply();
 		});
-		// Click or drag anywhere on the score scrubs the cursor to that position's time.
+		// Scrubbing opens on pointerdown rather than click so a press that becomes a drag seeks from
+		// its first frame instead of waiting for the release.
 		this.watch(this.score.events, 'pointerdown', (e) => {
 			this.beginSeek();
 			this.seekTo(e.point);
@@ -516,8 +517,10 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			return;
 		}
 		// Grace notes steal no timeline time, so sound them as quick plucks staggered just before
-		// the main note, then attack the main note after the run. The returned voice cancels a
-		// still-pending main attack or releases the live one; stopAll is the backstop.
+		// the main note, then attack the main note after the run. The returned voice cancels the
+		// pending plucks and a still-pending main attack, or releases the live one; stopAll is the
+		// backstop.
+		const flashes = new Disposer();
 		let offset = 0;
 		for (const g of graces) {
 			const gp = g.getPitch();
@@ -525,11 +528,21 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 				const at = offset;
 				// Light the grace while it sounds, then clear it as the next one (or the main note)
 				// takes over.
-				this.timer.setTimeout(() => {
-					instrument.pluck(gp, GRACE_MS);
-					g.color.on(ACTIVE_COLOR);
-				}, Duration.ms(at));
-				this.timer.setTimeout(() => g.color.off(), Duration.ms(at + GRACE_MS));
+				flashes.use(
+					this.timer.setTimeout(() => {
+						instrument.pluck(gp, GRACE_MS);
+						g.color.on(ACTIVE_COLOR);
+					}, Duration.ms(at)),
+				);
+				flashes.use(
+					this.timer.setTimeout(
+						() => g.color.off(),
+						Duration.ms(at + GRACE_MS),
+					),
+				);
+				// Cancelling mid-flash skips the timer that would have cleared the color, so clear it
+				// here too.
+				flashes.defer(() => g.color.off());
 				offset += GRACE_MS;
 			}
 		}
@@ -540,13 +553,15 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.voices.set(
 			n,
 			disposables.callback(() => {
+				flashes.dispose();
 				scheduled.dispose();
 				voice.dispose();
 			}),
 		);
 	}
 
-	// Resolve the pinned-or-hovered target into the lit halo, and the cursor shape.
+	// A fret marker stands in for its note, so a TabPosition target lights that note's halo rather
+	// than one of its own.
 	private apply(): void {
 		const target = this.pinned ?? this.hovered;
 		let note: Note | null = null;
