@@ -1,7 +1,14 @@
 import { CircleXIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Segmented, type SegmentedOption } from './segmented';
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
 
 export function EditingToolbar({
 	title,
@@ -15,7 +22,7 @@ export function EditingToolbar({
 	title: string;
 	renderMs: number | null;
 	error: string | null;
-	voices: readonly SegmentedOption<string>[];
+	voices: readonly { value: string; label: string }[];
 	activeVoice: string;
 	onVoiceChange: (value: string) => void;
 	selection: string;
@@ -61,15 +68,33 @@ export function EditingToolbar({
 						<span className="text-2xs font-medium text-muted-foreground">
 							Active voice
 						</span>
-						<div className="min-w-0 overflow-x-auto">
-							<Segmented
-								label="Editing voice"
-								value={activeVoice}
-								onChange={onVoiceChange}
-								options={voices}
-								className="w-max bg-muted"
-							/>
-						</div>
+						<Select value={activeVoice} onValueChange={onVoiceChange}>
+							<SelectTrigger
+								aria-label="Editing voice"
+								className="w-full min-w-0"
+								title={
+									voices.find((voice) => voice.value === activeVoice)?.label
+								}
+							>
+								<SelectValue className="min-w-0 truncate" />
+							</SelectTrigger>
+							<SelectContent
+								position="popper"
+								className="w-(--radix-select-trigger-width) max-w-[calc(100vw-2rem)]"
+							>
+								<SelectGroup>
+									{voices.map((voice) => (
+										<SelectItem
+											key={voice.value}
+											value={voice.value}
+											className="whitespace-normal wrap-anywhere"
+										>
+											{voice.label}
+										</SelectItem>
+									))}
+								</SelectGroup>
+							</SelectContent>
+						</Select>
 						<p className="flex items-center gap-1.5 text-2xs text-muted-foreground">
 							<kbd className="inline-flex size-4.5 items-center justify-center rounded border border-border bg-card font-mono text-[10px] shadow-xs">
 								V

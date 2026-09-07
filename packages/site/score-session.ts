@@ -194,7 +194,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			return 'No selection';
 		}
 		const pitch = focus.pitch;
-		let label = focus.child('rest') !== null ? 'Rest' : 'Unpitched note';
+		let label = focus.isRest ? 'R' : 'Unpitched note';
 		if (pitch) {
 			const alteration = pitch.alter
 				? ` (${pitch.alter > 0 ? '+' : ''}${pitch.alter})`
