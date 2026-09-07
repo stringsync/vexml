@@ -95,14 +95,27 @@ export class EditingController
 			this.disposer.defer(
 				deps.events.on('pointerup', (event) => this.pointerUp(event)),
 			);
-			const cancel = (event: Event) => {
-				if ((event as PointerEvent).pointerId === this.drag?.pointerId) {
+			const captureEnd = (event: Event) => {
+				const pointer = event as PointerEvent;
+				if (pointer.pointerId !== this.drag?.pointerId) {
+					return;
+				}
+				if (
+					event.type === 'lostpointercapture' &&
+					(pointer.buttons & 1) === 0
+				) {
+					// Chrome can release capture before pointerup. Capture-loss coordinates
+					// are unreliable, so commit the last displayed preview.
+					this.commitDrag();
+				} else {
 					this.endDrag();
 				}
 			};
 			for (const type of ['pointercancel', 'lostpointercapture']) {
-				deps.dom.addEventListener(type, cancel);
-				this.disposer.defer(() => deps.dom.removeEventListener(type, cancel));
+				deps.dom.addEventListener(type, captureEnd);
+				this.disposer.defer(() =>
+					deps.dom.removeEventListener(type, captureEnd),
+				);
 			}
 
 			this.disposer.defer(
@@ -315,7 +328,12 @@ export class EditingController
 			return;
 		}
 		this.pointerMove(event);
-		if (drag.rect) {
+		this.commitDrag();
+	}
+
+	private commitDrag(): void {
+		const drag = this.drag;
+		if (drag?.rect) {
 			this.editor.selectNotes(drag.notes);
 		}
 		this.endDrag();

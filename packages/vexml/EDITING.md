@@ -154,8 +154,9 @@ pauses or seeks playback. Editing focus scrolling does not depend on playback.
 Drag with the primary mouse or pen button to preview a selection rectangle. Notes
 and frets fully enclosed by it are selected on release, across parts and voices;
 Command/Ctrl-drag adds to the set held at the start of the gesture. A small movement
-remains a click. Escape, pointer cancellation, lost capture, suspension and disposal
-cancel the preview. Dragging does not trigger focus following. Touch dragging retains
+remains a click. Escape, pointer cancellation, capture loss while the primary button is held,
+suspension and disposal cancel the preview. Capture loss after button release
+commits the displayed preview, even if it arrives before `pointerup`. Dragging does not trigger focus following. Touch dragging retains
 native scrolling. Command/Ctrl background clicks leave selection alone.
 
 Custom views receive the optional score-space `presentation.marquee` and preview

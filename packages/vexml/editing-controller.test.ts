@@ -48,6 +48,7 @@ class Pointer extends Event {
 		readonly pointerId = 1,
 		readonly pointerType = 'mouse',
 		readonly button = 0,
+		readonly buttons = type === 'pointerup' || type === 'pointercancel' ? 0 : 1,
 	) {
 		super(type, { cancelable: true });
 	}
@@ -182,6 +183,30 @@ describe('EditingController', () => {
 			expect(f.editor.getSelection()).toEqual(allowDeselect ? [] : [f.first]);
 			expect(controller.getPresentation().marquee).toBeUndefined();
 		}
+	});
+
+	it('commits the preview once when released capture is lost before pointerup', () => {
+		const f = fixture();
+		const { host, controller } = f.create();
+		f.editor.select(f.other);
+		let commits = 0;
+		f.editor.events.on('selectionchange', () => commits++);
+		host.dom.dispatchEvent(new Pointer('pointerdown', 10, 30));
+		host.dom.dispatchEvent(new Pointer('pointermove', 60, 60));
+		// Capture-loss coordinates may be zero; preserve the displayed preview.
+		host.dom.dispatchEvent(
+			new Pointer('lostpointercapture', 0, 0, false, false, 2, 'mouse', -1, 0),
+		);
+		expect(controller.getPresentation().marquee).toBeDefined();
+		host.dom.dispatchEvent(
+			new Pointer('lostpointercapture', 0, 0, false, false, 1, 'mouse', -1, 0),
+		);
+		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
+		expect(controller.getPresentation().marquee).toBeUndefined();
+		host.dom.dispatchEvent(new Pointer('pointerup', 60, 60));
+		host.dom.dispatchEvent(new Click(60, 60));
+		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
+		expect(commits).toBe(1);
 	});
 
 	it('cancels previews on Escape, capture loss, cancellation, suspension and disposal', () => {
