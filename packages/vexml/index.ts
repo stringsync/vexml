@@ -62,7 +62,7 @@ export type {
 	ScoreScrollEvent,
 } from './events';
 export type { Layer, LayerKind } from './layer';
-export { Measure, type StaffGeometry } from './measure';
+export { Measure } from './measure';
 export { MeasureBox } from './measure-box';
 export { Note } from './note';
 export { Part } from './part';

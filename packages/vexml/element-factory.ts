@@ -115,11 +115,7 @@ export class ElementFactory {
 				const voices = mmeasure.voices.map(
 					(v) => new Voice(v.id, Number(v.staff), v.notes, noteByMnote),
 				);
-				const measure = new Measure(mmeasure, part, box, voices, {
-					staves: geometry.measures
-						.find((raw) => raw.index === box.getIndex())
-						?.staves?.filter((staff) => staff.measure === mmeasure),
-				});
+				const measure = new Measure(mmeasure, part, box, voices);
 				measureList.push(measure);
 				measuresOfBox.get(box.getIndex())?.push(measure);
 				measureByMMeasure.set(mmeasure, measure);

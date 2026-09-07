@@ -6,7 +6,7 @@ import { AsyncDisposer } from 'webappwiz/disposable';
 
 // Vite exercises the same module graph as the dev site, including the workspace library.
 describe('dev site editing', () => {
-	it('previews staff and tab entry, commits, changes duration and exports', async () => {
+	it('keeps the compact toolbar and navigates notes without editing', async () => {
 		const disposer = new AsyncDisposer();
 		const cleanupErrors: unknown[] = [];
 		try {
@@ -41,98 +41,52 @@ describe('dev site editing', () => {
 			);
 			page.setDefaultTimeout(7000);
 			await page.route('https://**', (route) => route.abort());
+			const original = await Bun.file('packages/site/editing.musicxml').text();
+			await page.addInitScript(
+				(xml) => localStorage.setItem('vexml:musicxml', xml),
+				original,
+			);
 			await page.goto(url, { waitUntil: 'domcontentloaded' });
-			await page
-				.getByRole('button', { name: 'New notation', exact: true })
-				.click();
-			await page
-				.getByRole('menuitem', { name: 'Treble staff', exact: true })
-				.click();
+			await page.getByRole('radio', { name: 'Edit', exact: true }).click();
 			const score = page.getByRole('application', {
 				name: 'Score',
 				exact: true,
 			});
-			await page
-				.getByRole('status', { name: 'Note entry' })
-				.getByText('B4', { exact: false })
-				.waitFor();
+			await score.locator('canvas[style*="z-index: 2"]').waitFor();
 			await score.focus();
+			const selectionBefore = await score
+				.locator('canvas[style*="z-index: 2"]')
+				.evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
+			await page.keyboard.press('ArrowRight');
+			const selectionAfter = await score
+				.locator('canvas[style*="z-index: 2"]')
+				.evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
+			expect(selectionAfter).not.toBe(selectionBefore);
+			await page.keyboard.press('ArrowUp');
+			await page.keyboard.press('ArrowDown');
+			await page.keyboard.press('ArrowLeft');
 			await page.keyboard.press('c');
+			await page.keyboard.press('1');
+			await page.keyboard.press('Enter');
+			expect(
+				await page.evaluate(() => localStorage.getItem('vexml:musicxml')),
+			).toBe(original);
 			expect(
 				await page
-					.getByRole('button', { name: 'Undo', exact: true })
-					.isDisabled(),
-			).toBe(true);
-			const preview = score.locator('canvas').last();
+					.getByRole('group', { name: 'Note duration', exact: true })
+					.count(),
+			).toBe(0);
 			expect(
-				await preview.evaluate((canvas) => {
-					const surface = canvas as HTMLCanvasElement;
-					const context = surface.getContext('2d');
-					return context
-						?.getImageData(0, 0, surface.width, surface.height)
-						.data.some((value) => value !== 0);
-				}),
-			).toBe(true);
-			await page.keyboard.press('Escape');
+				await page.getByRole('button', { name: 'Undo', exact: true }).count(),
+			).toBe(0);
 			expect(
-				await preview.evaluate((canvas) => {
-					const surface = canvas as HTMLCanvasElement;
-					const context = surface.getContext('2d');
-					return context
-						?.getImageData(0, 0, surface.width, surface.height)
-						.data.every((value) => value === 0);
-				}),
-			).toBe(true);
-			await page.keyboard.press('c');
-
-			await page.screenshot({
-				path: 'packages/integration/__artifacts__/editing-staff-preview.png',
-			});
-			await page.keyboard.press('Enter');
-			await page.waitForFunction(
-				() =>
-					!document
-						.querySelector('button[aria-label="Undo"]')
-						?.hasAttribute('disabled'),
-			);
-			await page.keyboard.press('d');
-			await page.keyboard.press('Enter');
-			await page.keyboard.press('ArrowLeft');
-			await page.getByRole('radio', { name: 'Half note', exact: true }).click();
-			await page.waitForFunction(
-				() =>
-					document
-						.querySelector('button[aria-label="Undo"]')
-						?.getAttribute('title') === 'Undo Change duration',
-			);
-			const downloadEvent = page.waitForEvent('download');
+				await page
+					.getByRole('status', { name: 'Note entry', exact: true })
+					.count(),
+			).toBe(0);
 			await page
-				.getByRole('button', { name: 'Download MusicXML', exact: true })
-				.click();
-			const downloaded = await downloadEvent;
-			const downloadedPath = ensure.present(
-				await downloaded.path(),
-				'Missing MusicXML download',
-			);
-			const xml = await Bun.file(downloadedPath).text();
-			expect(xml).toContain('<step>C</step>');
-			expect(xml).toContain('<step>D</step>');
-			expect(xml).toContain('<type>half</type>');
-			await score.focus();
-			await page.keyboard.press('Control+z');
-			await page.waitForFunction(
-				() =>
-					document
-						.querySelector('button[aria-label="Redo"]')
-						?.getAttribute('title') === 'Redo Change duration',
-			);
-			await page.keyboard.press('Control+Shift+z');
-			await page.waitForFunction(
-				() =>
-					document
-						.querySelector('button[aria-label="Undo"]')
-						?.getAttribute('title') === 'Undo Change duration',
-			);
+				.getByText('Loading…', { exact: true })
+				.waitFor({ state: 'hidden' });
 			await page.screenshot({
 				path: 'packages/integration/__artifacts__/editing-site-desktop.png',
 			});
@@ -142,6 +96,9 @@ describe('dev site editing', () => {
 					() => document.documentElement.scrollWidth <= window.innerWidth,
 				),
 			).toBe(true);
+			await page
+				.getByText('Loading…', { exact: true })
+				.waitFor({ state: 'hidden' });
 			await page.screenshot({
 				path: 'packages/integration/__artifacts__/editing-site-mobile.png',
 			});
@@ -151,45 +108,21 @@ describe('dev site editing', () => {
 			await page
 				.getByRole('menuitem', { name: 'Guitar tablature', exact: true })
 				.click();
-			await page
-				.getByRole('status', { name: 'Note entry' })
-				.getByText('Choose a fret', { exact: false })
-				.waitFor();
+			await page.waitForFunction(() =>
+				localStorage.getItem('vexml:musicxml')?.includes('<sign>TAB</sign>'),
+			);
+			const blank = await page.evaluate(() =>
+				localStorage.getItem('vexml:musicxml'),
+			);
 			await score.focus();
+			await page.keyboard.press('ArrowRight');
 			await page.keyboard.press('ArrowDown');
-			await page.screenshot({
-				path: 'packages/integration/__artifacts__/editing-tab-placeholder.png',
-			});
 			await page.keyboard.press('1');
 			await page.keyboard.press('2');
-			expect(
-				await page
-					.getByRole('button', { name: 'Undo', exact: true })
-					.isDisabled(),
-			).toBe(true);
-			await page.screenshot({
-				path: 'packages/integration/__artifacts__/editing-tab-preview.png',
-			});
 			await page.keyboard.press('Enter');
-			await page.waitForFunction(
-				() =>
-					!document
-						.querySelector('button[aria-label="Undo"]')
-						?.hasAttribute('disabled'),
-			);
-			const tabDownload = page.waitForEvent('download');
-			await page
-				.getByRole('button', { name: 'Download MusicXML', exact: true })
-				.click();
-			const tabPath = ensure.present(
-				await (await tabDownload).path(),
-				'Missing tab download',
-			);
-			const tabXml = await Bun.file(tabPath).text();
-			expect(tabXml).toContain('<string>2</string>');
-			expect(tabXml).toContain('<fret>12</fret>');
-			expect(tabXml).toContain('<step>B</step>');
-			expect(tabXml).toContain('<octave>4</octave>');
+			expect(
+				await page.evaluate(() => localStorage.getItem('vexml:musicxml')),
+			).toBe(blank);
 
 			expect(errors).toEqual([]);
 		} finally {

@@ -149,7 +149,6 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 				() => this.instrument.current(),
 				voices,
 				this.mode,
-				{ entry: this.noteEditing?.entry },
 			);
 			this.sessionDisposer.use(this.session);
 			this.sessionDisposer.defer(
@@ -160,9 +159,6 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 			this.session.cursor.cancelScroll();
 			container.scrollTop = scrollTop;
 			container.scrollLeft = scrollLeft;
-			if (this.focusNew) {
-				this.noteEditing?.entry.begin();
-			}
 			if (focused || this.focusNew) {
 				container.focus({ preventScroll: true });
 			}

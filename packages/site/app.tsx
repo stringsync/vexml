@@ -12,7 +12,6 @@ import { ConfigSlider } from '@/components/config-slider';
 import { EditingToolbar } from '@/components/editing-toolbar';
 import { Header } from '@/components/header';
 import { LayoutToggle } from '@/components/layout-toggle';
-import { NoteEditingControls } from '@/components/note-editing-controls';
 import { Player } from '@/components/player';
 import { Section, SectionReset } from '@/components/section';
 import { Segmented, type SegmentedOption } from '@/components/segmented';
@@ -112,8 +111,6 @@ const projection = (model: SiteModel) => ({
 	durationMs: model.session?.durationMs ?? 0,
 	activeVoice: model.session?.editingVoices.getValue() ?? '',
 	mode: model.currentMode,
-	noteEditing: model.noteEditing,
-	editorVersion: model.editorVersion,
 });
 
 export default function App() {
@@ -127,7 +124,6 @@ export default function App() {
 		fixture,
 		error,
 		initialized,
-		rendering,
 		session,
 		applied,
 		renderMs,
@@ -141,8 +137,6 @@ export default function App() {
 		durationMs,
 		mode,
 		activeVoice,
-		noteEditing,
-		editorVersion,
 	} = useReactive(model, projection, ['changed']);
 
 	// Purely local view state: nothing outside the component reads any of it.
@@ -243,15 +237,7 @@ export default function App() {
 			}
 			if (
 				e.target === document.body &&
-				(/^[a-gA-G0-9]$/.test(e.key) ||
-					[
-						'ArrowLeft',
-						'ArrowRight',
-						'ArrowUp',
-						'ArrowDown',
-						'Enter',
-						'Escape',
-					].includes(e.key)) &&
+				['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) &&
 				!e.altKey &&
 				!e.ctrlKey &&
 				!e.metaKey
@@ -704,19 +690,7 @@ export default function App() {
 									model.setMode(value);
 									containerRef.current?.focus({ preventScroll: true });
 								}}
-							>
-								{noteEditing && (
-									<NoteEditingControls
-										key={editorVersion}
-										editing={noteEditing}
-										editMode={mode === 'edit'}
-										disabled={playing || rendering}
-										onApplied={() =>
-											containerRef.current?.focus({ preventScroll: true })
-										}
-									/>
-								)}
-							</EditingToolbar>
+							></EditingToolbar>
 						</div>
 					</div>
 					<div className="relative min-h-0 flex-1">

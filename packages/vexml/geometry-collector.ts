@@ -1,14 +1,8 @@
-import type {
-	Chord,
-	Harmony,
-	Measure as MMeasure,
-	Note as MNote,
-} from '@stringsync/mdom';
+import type { Chord, Harmony, Note as MNote } from '@stringsync/mdom';
 import type { StaveNote, TabNote, TabStave } from 'vexflow';
 import { Rect } from 'webappwiz/geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
 import { FRET_HALF_H, FRET_HALF_W, NOTEHEAD_HALF_H } from './constants';
-import type { StaffGeometry } from './measure';
 
 /* A note's engraved glyph, captured so a decoration can re-stamp it in color on an overlay: the
  * SMuFL text, the exact CSS font vexflow drew it with, and its baseline position in score space.
@@ -35,7 +29,6 @@ export interface RawNote {
 }
 
 export interface RawMeasure {
-	staves?: Array<StaffGeometry & { measure: MMeasure }>;
 	rect: Rect;
 	index: number;
 	/* The MusicXML measure number (a string — handles pickups, "X1" etc.). */

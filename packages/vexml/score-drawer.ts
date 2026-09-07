@@ -222,10 +222,6 @@ export class ScoreDrawer {
 			})),
 			measures: pass.rawMeasures.map((mm) => ({
 				...mm,
-				staves: mm.staves?.map((staff) => ({
-					...staff,
-					top: staff.top - cropTop,
-				})),
 				rect: toScore(mm.rect),
 			})),
 			chordDiagrams: pass.rawChordDiagrams.map((d) => ({

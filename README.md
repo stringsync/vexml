@@ -135,13 +135,10 @@ Removed notes disappear from the visible selection; focus becomes null when its
 note is detached. Undo makes retained selection references available again.
 Render errors should leave the document and history available so users can undo.
 
-Run `vex dev` to try the lightweight editor. **New notation** creates a blank
-treble staff or guitar tab. Arrow keys move the pending note, A to G selects a
-staff pitch, and digits enter a fret. Enter commits; Escape cancels. The gray
-preview lives on a separate drawing layer and never enters MusicXML or history.
-Select a note to change its duration with the segmented toolbar. Undo/redo and
-MusicXML download use the same mdom document. `Measure.getStaves()` exposes the
-staff geometry used to place previews, including on an empty staff.
+Run `vex dev` to use the playground. Its compact toolbar offers a new blank
+treble staff or guitar tab and view/edit modes. In edit mode, arrow keys navigate
+existing notes; they never change the document. Note entry and duration controls
+are deferred while the editing workflow is being redesigned.
 
 ## Sizing and centering
 

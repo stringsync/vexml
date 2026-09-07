@@ -83,10 +83,6 @@ export interface DrawPassOptions {
  * DrawPass, so every field below starts clean.
  */
 export class DrawPass {
-	private readonly staffSources = new Map<
-		Stave,
-		{ measure: Measure; staff: string; tab: boolean }
-	>();
 	private readonly measureCount: number;
 	private readonly boxes: MeasureBox[];
 	private readonly totalStaves: number;
@@ -915,11 +911,6 @@ export class DrawPass {
 			this.staveColumn(m),
 		);
 		const { stave } = built;
-		this.staffSources.set(stave, {
-			measure,
-			staff: staffNumber,
-			tab: built.isTab,
-		});
 		// Queued, not drawn: the column's staves are drawn together once they all exist, so a
 		// repeat sign can be aligned across them first (see SystemFormatter.alignBegModifiers).
 		this.columnStaves.push(stave);
@@ -1026,21 +1017,6 @@ export class DrawPass {
 				connector?.bottom ?? -Infinity,
 			);
 			this.geometry.addMeasure({
-				staves: this.columnStaves.flatMap((stave) => {
-					const source = this.staffSources.get(stave);
-					return source
-						? [
-								{
-									...source,
-									top: stave.getYForLine(0),
-									spacing: stave.getSpacingBetweenLines(),
-									lines: stave.getNumLines(),
-									startX: stave.getNoteStartX(),
-									endX: stave.getNoteEndX(),
-								},
-							]
-						: [];
-				}),
 				rect: new Rect(left, top, right - left, Math.max(0, bottom - top)),
 				index: m,
 				number: this.parts[0]?.measures[m]?.number ?? String(m + 1),
