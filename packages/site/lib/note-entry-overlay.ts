@@ -76,7 +76,6 @@ export class NoteEntryOverlay implements Resource {
 		ctx.fillStyle = '#9ca3af';
 		ctx.strokeStyle = '#9ca3af';
 		if (draft.tab) {
-			// With no digits the halo is the placeholder; nothing is written into the score.
 			if (draft.fret) {
 				ctx.font = 'bold 13px sans-serif';
 				ctx.textAlign = 'center';
