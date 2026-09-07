@@ -1,4 +1,5 @@
-import { type ConfigInput, render } from '@stringsync/vexml';
+import { MDOMParser } from '@stringsync/mdom';
+import { type ConfigInput, EditingSession, render } from '@stringsync/vexml';
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
 import { SystemClock } from 'webappwiz/time';
@@ -38,6 +39,10 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	// Bumped per render request. A render that resolves after a newer one started is dropped, so a
 	// late score never leaks a canvas into a container a newer render already owns.
 	private generation = 0;
+	private editingSource: {
+		input: string | Blob;
+		editor: EditingSession;
+	} | null = null;
 
 	private readonly clock = new SystemClock();
 
@@ -80,13 +85,30 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		this.dispatcher.dispatch('changed');
 		const start = this.clock.now();
 		try {
-			const score = await render(input, container, config);
+			let editor =
+				this.editingSource?.input === input ? this.editingSource.editor : null;
+			if (!editor) {
+				const parser = new MDOMParser();
+				const document =
+					typeof input === 'string'
+						? parser.parseFromString(input)
+						: await parser.parseFromBlob(input);
+				if (at !== this.generation) {
+					return;
+				}
+				editor = new EditingSession(document);
+				this.editingSource = { input, editor };
+			}
+			const score = await render(editor.document, container, config);
 			if (at !== this.generation) {
 				score.dispose();
 				return;
 			}
-			this.session = new ScoreSession(score, container, () =>
-				this.instrument.current(),
+			this.session = new ScoreSession(
+				score,
+				container,
+				() => this.instrument.current(),
+				editor,
 			);
 			this.disposer.defer(
 				this.session.events.on('changed', () =>
@@ -109,6 +131,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	}
 
 	dispose(): void {
+		this.generation++;
 		this.disposer.dispose();
 	}
 

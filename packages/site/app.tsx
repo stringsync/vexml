@@ -107,6 +107,7 @@ const projection = (model: SiteModel) => ({
 	timeMs: model.session?.timeMs ?? 0,
 	durationMs: model.session?.durationMs ?? 0,
 	tooltip: model.session?.tooltip ?? null,
+	selectionDescription: model.session?.selectionDescription ?? 'No selection',
 });
 
 export default function App() {
@@ -131,6 +132,7 @@ export default function App() {
 		timeMs,
 		durationMs,
 		tooltip,
+		selectionDescription,
 	} = useReactive(model, projection, ['changed']);
 
 	// Purely local view state: nothing outside the component reads any of it.
@@ -667,6 +669,14 @@ export default function App() {
 						/>
 					</div>
 
+					<div className="flex flex-wrap items-center justify-between gap-2 px-6 pb-2 text-xs text-muted-foreground md:px-12">
+						<p id="score-keyboard-help">
+							Focus the score · ← → notes · ↑ ↓ chord pitches · Esc unselect
+						</p>
+						<p role="status" aria-live="polite">
+							{selectionDescription}
+						</p>
+					</div>
 					<div className="relative min-h-0 flex-1">
 						{/* biome-ignore lint/a11y/noStaticElementInteractions: drag-drop zone; Choose file is the keyboard-accessible path */}
 						<div
@@ -682,6 +692,25 @@ export default function App() {
 								// CSS needed here.
 								<div
 									ref={containerRef}
+									// biome-ignore lint/a11y/noNoninteractiveTabindex: the score application receives keyboard navigation commands.
+									tabIndex={0}
+									role="application"
+									aria-label="Score"
+									aria-describedby="score-keyboard-help"
+									onKeyDown={(event) => {
+										if (
+											event.target !== event.currentTarget ||
+											event.altKey ||
+											event.ctrlKey ||
+											event.metaKey ||
+											event.shiftKey
+										) {
+											return;
+										}
+										if (session?.handleKey(event.key)) {
+											event.preventDefault();
+										}
+									}}
 									// invisible (not hidden) until initialized so the container keeps its
 									// width — the canvas fits against it and would fit against 0 if removed.
 									// Panoramic is the horizontal scroll box itself — vexml's ScrollController

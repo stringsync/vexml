@@ -94,7 +94,7 @@ export class EditingSession {
 		});
 	}
 
-	/** Left/right follow the written voice across measures, including cross-staff notes.
+	/** Left/right follow the written voice across measures, including cross-staff notes, landing on chord leads.
 	 * Up/down visit pitches within the current chord. Boundaries clamp. */
 	move(direction: EditingMove, options: SelectionOptions = {}): boolean {
 		const focus = this.getFocus();
@@ -104,12 +104,17 @@ export class EditingSession {
 				return false;
 			}
 			const notes = this.document.score.parts.flatMap((part) =>
-				part.measures.flatMap((measure) => measure.notes),
+				part.measures.flatMap((measure) =>
+					measure.chords.map((chord) => chord.lead),
+				),
 			);
 			target = direction === 'next' ? notes[0] : notes.at(-1);
 		} else if (direction === 'next' || direction === 'previous') {
-			const notes = this.voiceNotes(focus);
-			target = notes[notes.indexOf(focus) + (direction === 'next' ? 1 : -1)];
+			const chords = focus.part.measures.flatMap((measure) =>
+				measure.chords.filter((chord) => chord.lead.voice === focus.voice),
+			);
+			const at = chords.findIndex((chord) => chord.notes.includes(focus));
+			target = chords[at + (direction === 'next' ? 1 : -1)]?.lead;
 		} else {
 			const chord = focus.measure.chords.find((chord) =>
 				chord.notes.includes(focus),

@@ -1,4 +1,9 @@
-import type { CursorController, Element, Score } from '@stringsync/vexml';
+import type {
+	CursorController,
+	EditingSession,
+	Element,
+	Score,
+} from '@stringsync/vexml';
 import { Note, TabPosition } from '@stringsync/vexml';
 import { AnimationLoop } from 'webappwiz/browser';
 import { Disposer, disposables, type Resource } from 'webappwiz/disposable';
@@ -73,6 +78,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		readonly score: Score,
 		private readonly container: HTMLDivElement,
 		private readonly instrument: () => Instrument | null,
+		readonly editor: EditingSession,
 	) {
 		this.durationMs = score.getDurationMs();
 		this.disposer.use(this.dispatcher);
@@ -136,6 +142,8 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 					? e.target
 					: null;
 			this.pinned = this.pinned === target ? null : target;
+			this.editor.selectElements(this.pinned ? [this.pinned] : []);
+			this.container.focus({ preventScroll: true });
 			this.apply();
 		});
 		// Click or drag anywhere on the score scrubs the cursor to that position's time.
@@ -169,6 +177,55 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		);
 
 		this.paint(this.cursor.getHighlightedElements());
+		this.syncSelection();
+	}
+
+	get selectionDescription(): string {
+		const focus = this.editor.getFocus();
+		if (!focus) {
+			return 'No selection';
+		}
+		const pitch = focus.pitch;
+		let label = focus.child('rest') !== null ? 'Rest' : 'Unpitched note';
+		if (pitch) {
+			const alteration = pitch.alter
+				? ` (${pitch.alter > 0 ? '+' : ''}${pitch.alter})`
+				: '';
+			label = `${pitch.step}${alteration}${pitch.octave}`;
+		}
+		return `${label} · Measure ${focus.measure.number} · Beat ${focus.measureBeat === null ? '?' : focus.measureBeat + 1} · Voice ${focus.voice}`;
+	}
+
+	handleKey(key: string): boolean {
+		switch (key) {
+			case 'ArrowRight':
+				this.editor.move('next');
+				break;
+			case 'ArrowLeft':
+				this.editor.move('previous');
+				break;
+			case 'ArrowUp':
+				this.editor.move('higher');
+				break;
+			case 'ArrowDown':
+				this.editor.move('lower');
+				break;
+			case 'Escape':
+				this.editor.selectNotes([]);
+				break;
+			default:
+				return false;
+		}
+		this.setPlaying(false);
+		this.syncSelection();
+		return true;
+	}
+
+	private syncSelection(): void {
+		this.pinned =
+			this.editor.getSelectedElements(this.score.getElements())[0] ?? null;
+		this.hovered = null;
+		this.apply();
 	}
 
 	/* Start or stop the play loop. Starting from the end restarts from the top. */

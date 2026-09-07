@@ -125,6 +125,74 @@ describe('EditingSession', () => {
 		}
 	});
 
+	it.each([0, 1, 2])('moves horizontally past chord member %i', (member) => {
+		const document = MDocument.empty();
+		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
+		const first = voice.addChord(
+			[
+				{ step: 'C', octave: 4 },
+				{ step: 'E', octave: 4 },
+				{ step: 'G', octave: 4 },
+			],
+			{ type: 'quarter' },
+		);
+		const second = voice.addChord(
+			[
+				{ step: 'D', octave: 4 },
+				{ step: 'F', octave: 4 },
+				{ step: 'A', octave: 4 },
+			],
+			{ type: 'quarter' },
+		);
+		const session = new EditingSession(document);
+		session.select(required(first.notes[member], 'first chord member'));
+		expect(session.move('next')).toBe(true);
+		expect(session.getSelection()).toEqual([second.lead]);
+		const secondMember = required(second.notes[member], 'second chord member');
+		session.select(secondMember);
+		expect(session.move('next')).toBe(false);
+		expect(session.getFocus()).toBe(secondMember);
+		expect(session.move('previous')).toBe(true);
+		expect(session.getSelection()).toEqual([first.lead]);
+	});
+
+	it('starts backwards on the final chord lead', () => {
+		const document = MDocument.empty();
+		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
+		const chord = voice.addChord(
+			[
+				{ step: 'C', octave: 4 },
+				{ step: 'E', octave: 4 },
+			],
+			{ type: 'quarter' },
+		);
+		const session = new EditingSession(document);
+		expect(session.move('previous')).toBe(true);
+		expect(session.getFocus()).toBe(chord.lead);
+	});
+
+	it('keeps a grace chord separate from the following note at the same beat', () => {
+		const document = MDocument.empty();
+		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
+		const chord = voice.addChord(
+			[
+				{ step: 'C', octave: 4 },
+				{ step: 'E', octave: 4 },
+			],
+			{ type: 'eighth' },
+		);
+		chord.lead.convertToGrace();
+		const upper = required(chord.notes[1], 'upper grace note');
+		upper.convertToGrace();
+		const following = voice.addNote({ step: 'D', octave: 4, type: 'quarter' });
+		const session = new EditingSession(document);
+		session.select(upper);
+		expect(session.move('next')).toBe(true);
+		expect(session.getFocus()).toBe(following);
+		expect(session.move('previous')).toBe(true);
+		expect(session.getFocus()).toBe(chord.lead);
+	});
+
 	it('moves vertically by chord pitch even when XML stores pitches in another order', () => {
 		const document = MDocument.empty();
 		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');

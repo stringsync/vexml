@@ -36,8 +36,8 @@ String and Blob rendering retain their existing gap behavior.
 The host handles events, focus, accessibility and redraw scheduling. Bind left and
 right to `move('previous')` / `move('next')`, and pass `{ extend: event.shiftKey }`
 for Shift-arrow selection. These operations follow a voice in written order,
-including individual chord members, rests, grace notes, invisible notes and
-cross-staff notes. Empty measures are skipped, repeats are not expanded, and
+landing on chord leads and skipping their other members. Rests, grace notes, invisible notes and
+cross-staff notes remain navigation targets. Empty measures are skipped, repeats are not expanded, and
 navigation clamps at the ends of the voice.
 
 Up/down can call `move('higher')` / `move('lower')` to navigate pitches within the
