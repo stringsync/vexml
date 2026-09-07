@@ -1,14 +1,36 @@
-import { expect, it } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import { formatPitch } from './format';
 
-it.each([
-	{ step: 'E', alter: -1, octave: 3, label: 'E♭3' },
-	{ step: 'F', alter: 1, octave: 4, label: 'F♯4' },
-	{ step: 'C', alter: 0, octave: 5, label: 'C5' },
-	{ step: 'B', alter: -2, octave: 3, label: 'B♭♭3' },
-	{ step: 'G', alter: 2, octave: 4, label: 'G♯♯4' },
-	{ step: 'C', alter: 0.5, octave: 4, label: 'C4 (+0.5 st)' },
-	{ step: 'D', alter: -0.5, octave: 4, label: 'D4 (-0.5 st)' },
-])('formats $label for pitch selection', ({ step, alter, octave, label }) => {
-	expect(formatPitch({ step, alter, octave })).toBe(label);
+describe('formatPitch', () => {
+	it('formats a flat pitch', () => {
+		expect(formatPitch({ step: 'E', alter: -1, octave: 3 })).toBe('E♭3');
+	});
+
+	it('formats a sharp pitch', () => {
+		expect(formatPitch({ step: 'F', alter: 1, octave: 4 })).toBe('F♯4');
+	});
+
+	it('formats a natural pitch without an accidental', () => {
+		expect(formatPitch({ step: 'C', alter: 0, octave: 5 })).toBe('C5');
+	});
+
+	it('formats a double-flat pitch', () => {
+		expect(formatPitch({ step: 'B', alter: -2, octave: 3 })).toBe('B♭♭3');
+	});
+
+	it('formats a double-sharp pitch', () => {
+		expect(formatPitch({ step: 'G', alter: 2, octave: 4 })).toBe('G♯♯4');
+	});
+
+	it('formats a fractional sharp alteration in semitones', () => {
+		expect(formatPitch({ step: 'C', alter: 0.5, octave: 4 })).toBe(
+			'C4 (+0.5 st)',
+		);
+	});
+
+	it('formats a fractional flat alteration in semitones', () => {
+		expect(formatPitch({ step: 'D', alter: -0.5, octave: 4 })).toBe(
+			'D4 (-0.5 st)',
+		);
+	});
 });
