@@ -114,6 +114,12 @@ export abstract class Element implements Decoratable {
 		ctx.font = glyph.font;
 		ctx.textAlign = 'left';
 		ctx.textBaseline = 'alphabetic';
+		// Cover the original ink at partially transparent antialiased edges. A half-pixel
+		// stroke grows the stamp by a quarter pixel, preserving hollow heads and fret counters.
+		ctx.strokeStyle = color;
+		ctx.lineWidth = 0.5;
+		ctx.lineJoin = 'round';
+		ctx.strokeText(glyph.text, glyph.x, glyph.y);
 		ctx.fillText(glyph.text, glyph.x, glyph.y);
 		ctx.restore();
 	}

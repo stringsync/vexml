@@ -11,6 +11,8 @@ import { testing } from './setup';
 // notes, a tab document lights up both the heads and the frets.
 
 describe('decorations', () => {
+	// Whole, half, and filled blue heads: smooth colored edges without a dark fringe;
+	// open heads keep their counters, and stems, flags, and staff lines stay black.
 	it.concurrent('draws a colored note', async () => {
 		const { result: count, image } = await testing.eval(
 			'note.musicxml',

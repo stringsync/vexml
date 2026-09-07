@@ -59,6 +59,12 @@ export class RecordingContext {
 		this.ops.push(`fill:${this.shape}:${String(this.fillStyle)}`);
 	}
 
+	strokeText(text: string): void {
+		this.ops.push(
+			`strokeText:${text}:${String(this.strokeStyle)}:${this.font}`,
+		);
+	}
+
 	fillText(text: string): void {
 		this.ops.push(`text:${text}:${String(this.fillStyle)}:${this.font}`);
 	}
