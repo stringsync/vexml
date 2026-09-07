@@ -31,6 +31,29 @@ describe('Playhead', () => {
 		]);
 	});
 
+	it('hides immediately, tracks movement while hidden, and restores only the latest bar', () => {
+		const layer = new FakeLayer({});
+		const view = new Playhead(layer);
+		view.render(changeAt(new Rect(10, 0, 1, 100)));
+		view.setVisible(false);
+		expect(layer.recording.clears).toEqual([{ x: 8, y: -1, w: 4, h: 102 }]);
+		view.render(changeAt(new Rect(40, 0, 1, 100)));
+		expect(layer.recording.fills).toHaveLength(1);
+		view.setVisible(true);
+		expect(layer.recording.fills.at(-1)?.x).toBe(39);
+		expect(layer.disposed).toBe(false);
+	});
+
+	it('can start hidden before the first cursor snapshot', () => {
+		const layer = new FakeLayer({});
+		const view = new Playhead(layer);
+		view.setVisible(false);
+		view.render(changeAt(new Rect(10, 0, 1, 100)));
+		expect(layer.recording.fills).toHaveLength(0);
+		view.setVisible(true);
+		expect(layer.recording.fills).toHaveLength(1);
+	});
+
 	it('honors color and width options', () => {
 		const layer = new FakeLayer({});
 		const view = new Playhead(layer, { color: 'red', widthPx: 4 });

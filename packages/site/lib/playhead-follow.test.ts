@@ -17,30 +17,19 @@ describe('PlayheadFollow', () => {
 		});
 	});
 
-	it('does not scroll when paused with no selection move', () => {
-		follower.update(false, false);
+	it('does not scroll when paused', () => {
+		follower.update(false);
 		expect(scrolls).toHaveLength(0);
 	});
 
 	it('scrolls when playing and not visible', () => {
-		follower.update(true, false);
-		expect(scrolls).toHaveLength(1);
-	});
-
-	it('scrolls when the selection moves and not visible', () => {
-		follower.update(false, true);
+		follower.update(true);
 		expect(scrolls).toHaveLength(1);
 	});
 
 	it('does not scroll when playing and already visible', () => {
 		visible = true;
-		follower.update(true, true);
-		expect(scrolls).toHaveLength(0);
-	});
-
-	it('does not scroll when the selection moves and already visible', () => {
-		visible = true;
-		follower.update(false, true);
+		follower.update(true);
 		expect(scrolls).toHaveLength(0);
 	});
 });

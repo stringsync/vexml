@@ -7,8 +7,8 @@ export interface FollowCursor {
 export class PlayheadFollow {
 	constructor(private readonly cursor: FollowCursor) {}
 
-	update(playing: boolean, selectionMoved = false): void {
-		if ((playing || selectionMoved) && !this.cursor.isFullyVisible()) {
+	update(playing: boolean): void {
+		if (playing && !this.cursor.isFullyVisible()) {
 			this.cursor.scrollIntoView({ behavior: 'smooth' });
 		}
 	}

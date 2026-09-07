@@ -180,6 +180,37 @@ describe('EditingController', () => {
 		expect(f.editor.getFocus()).toBe(f.first);
 	});
 
+	it('suspends input and visuals while keeping selection without scrolling on reactivation', () => {
+		const f = fixture();
+		const { host, controller, view } = f.create(0, { enabled: false });
+		host.dom.dispatchEvent(new Key('ArrowRight'));
+		host.dom.dispatchEvent(new Click(22, 42));
+		expect(controller.execute({ type: 'select', note: f.first })).toBe(false);
+		expect(controller.selectVoice({ part: f.first.part, voice: '1' })).toBe(
+			false,
+		);
+		expect(f.editor.getFocus()).toBeNull();
+		f.editor.select(f.second);
+		expect(view.renders.at(-1)).toEqual({
+			selected: [],
+			focus: null,
+			position: null,
+		});
+		expect(host.scroller.calls).toHaveLength(0);
+		controller.setEnabled(true);
+		expect(view.renders.at(-1)?.focus?.getSources()).toEqual([f.second]);
+		expect(host.scroller.calls).toHaveLength(0);
+		controller.setEnabled(false);
+		expect(f.editor.getFocus()).toBe(f.second);
+		controller.setEnabled(true);
+		expect(controller.handleKey(new Key('ArrowLeft'))).toBe(true);
+		expect(f.editor.getFocus()).toBe(f.first);
+		controller.dispose();
+		const count = view.renders.length;
+		controller.setEnabled(false);
+		expect(view.renders).toHaveLength(count);
+	});
+
 	it('allows opting out of native input and following while retaining command execution', () => {
 		const f = fixture();
 		const { host, controller } = f.create(0, {

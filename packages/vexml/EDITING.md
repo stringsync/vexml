@@ -117,13 +117,20 @@ element, navigator, event, DOM, scroller and view dependencies for custom hosts.
 
 The controller's `change` event carries the resolved presentation. `command`
 reports a handled semantic command and whether it moved selection, allowing an
-application to provide transport feedback even at navigation boundaries.
+application to provide navigation feedback even at navigation boundaries.
 
 The session emits `selectionchange` after selection operations, `voicechange` when
 active context changes, and `documentchange` after a successful pitch edit, undo or
 redo. Selection operations do not emit document changes. No-op pitch commands and
 empty history operations do not emit document changes either. Dispose subscriptions
 when their consumer is removed. External document mutations are not observed.
+
+Controllers can be suspended with `setEnabled(false)` (or constructed with
+`enabled: false`). This hides selection and disables keyboard, pointer and command
+input while preserving the session selection and viewport. Re-enable without
+rendering the score again. `Playhead.setVisible(false)` independently hides a synced
+playback bar without changing its time. Hosts can compose these for view/edit modes,
+showing selection while editing and the playhead during playback.
 
 ## Rendering and playback
 

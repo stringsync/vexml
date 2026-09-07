@@ -156,23 +156,3 @@
 		-webkit-font-smoothing: antialiased;
 	}
 }
-
-@keyframes navigation-ripple {
-	from {
-		opacity: 0.85;
-		transform: scale(0.85);
-	}
-	to {
-		opacity: 0;
-		transform: scale(1.55);
-	}
-}
-.navigation-ripple {
-	animation: navigation-ripple 420ms ease-out forwards;
-}
-@media (prefers-reduced-motion: reduce) {
-	.navigation-ripple {
-		animation: none;
-		opacity: 0;
-	}
-}

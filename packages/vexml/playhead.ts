@@ -23,6 +23,8 @@ export class Playhead implements CursorView {
 	private readonly widthPx: number;
 	// The bar as last drawn, so the next render erases exactly it (the only ink on the layer).
 	private last: Rect | null = null;
+	private visible = true;
+	private event: CursorChangeEvent | null = null;
 
 	constructor(
 		private readonly layer: Layer,
@@ -32,7 +34,19 @@ export class Playhead implements CursorView {
 		this.widthPx = options?.widthPx ?? CURSOR_WIDTH_PX;
 	}
 
+	/** Hide the bar without detaching its cursor or changing playback position. */
+	setVisible(visible: boolean): void {
+		if (this.visible === visible) {
+			return;
+		}
+		this.visible = visible;
+		if (this.event) {
+			this.render(this.event);
+		}
+	}
+
 	render(event: CursorChangeEvent): void {
+		this.event = event;
 		const ctx = this.layer.ctx;
 		// 1px pad covers the antialiased edge of a fractionally-positioned bar.
 		if (this.last) {
@@ -42,6 +56,10 @@ export class Playhead implements CursorView {
 				this.last.w + 2,
 				this.last.h + 2,
 			);
+		}
+		this.last = null;
+		if (!this.visible) {
+			return;
 		}
 		const rect = event.position.rect;
 		// Straddle the onset x so the bar sits on the note it marks.

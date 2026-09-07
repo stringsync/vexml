@@ -106,7 +106,7 @@ const projection = (model: SiteModel) => ({
 	timeMs: model.session?.timeMs ?? 0,
 	durationMs: model.session?.durationMs ?? 0,
 	activeVoice: model.session?.editingVoices.getValue() ?? '',
-	navigationFeedback: model.session?.feedback ?? null,
+	mode: model.session?.mode ?? 'view',
 	selectionDescription: model.session?.selectionDescription ?? 'No selection',
 });
 
@@ -132,7 +132,7 @@ export default function App() {
 		timeMs,
 		durationMs,
 		selectionDescription,
-		navigationFeedback,
+		mode,
 		activeVoice,
 	} = useReactive(model, projection, ['changed']);
 
@@ -200,6 +200,27 @@ export default function App() {
 	// Spacebar toggles playback, except while typing in the editor.
 	useEffect(() => {
 		const onKeyDown = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement;
+			if (
+				e.defaultPrevented ||
+				e.isComposing ||
+				target.closest('input, textarea, select, [contenteditable="true"]')
+			) {
+				return;
+			}
+			if (
+				e.key.toLowerCase() === 'v' &&
+				!e.ctrlKey &&
+				!e.metaKey &&
+				!e.altKey &&
+				!e.repeat
+			) {
+				e.preventDefault();
+				const session = model.session;
+				session?.setMode(session.mode === 'view' ? 'edit' : 'view');
+				containerRef.current?.focus({ preventScroll: true });
+				return;
+			}
 			if (
 				e.target === document.body &&
 				['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) &&
@@ -213,7 +234,13 @@ export default function App() {
 				}
 				return;
 			}
-			if (e.code !== 'Space') {
+			if (
+				e.code !== 'Space' ||
+				e.repeat ||
+				e.ctrlKey ||
+				e.metaKey ||
+				e.altKey
+			) {
 				return;
 			}
 			const el = e.target as HTMLElement;
@@ -640,6 +667,12 @@ export default function App() {
 								activeVoice={activeVoice}
 								onVoiceChange={(value) => session?.selectVoice(value)}
 								selection={selectionDescription}
+								mode={mode}
+								playing={playing}
+								onModeChange={(value) => {
+									session?.setMode(value);
+									containerRef.current?.focus({ preventScroll: true });
+								}}
 							/>
 						</div>
 					</div>
@@ -682,7 +715,6 @@ export default function App() {
 
 					{input != null && initialized && (
 						<Player
-							navigationFeedback={navigationFeedback}
 							playerRef={playerRef}
 							session={session}
 							instrument={model.instrument}

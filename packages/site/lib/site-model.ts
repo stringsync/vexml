@@ -7,7 +7,7 @@ import { DocumentSource, type Fixtures } from './document-source';
 import { EditingVoices } from './editing-voices';
 import { InstrumentController } from './instrument-controller';
 import { RenderConfig } from './render-config';
-import { ScoreSession } from './score-session';
+import { type ScoreMode, ScoreSession } from './score-session';
 
 type SiteModelEvents = { changed: undefined };
 
@@ -40,6 +40,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	// Bumped per render request. A render that resolves after a newer one started is dropped, so a
 	// late score never leaks a canvas into a container a newer render already owns.
 	private generation = 0;
+	private mode: ScoreMode = 'view';
 	private editingSource: {
 		input: string | Blob;
 		voices: EditingVoices;
@@ -110,6 +111,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 				container,
 				() => this.instrument.current(),
 				voices,
+				this.mode,
 			);
 			this.disposer.defer(
 				this.session.events.on('changed', () =>
@@ -137,6 +139,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	}
 
 	private disposeSession(): void {
+		this.mode = this.session?.mode ?? this.mode;
 		this.session?.dispose();
 		this.session = null;
 	}

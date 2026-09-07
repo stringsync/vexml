@@ -4,6 +4,7 @@ import type {
 	EditingKey,
 	EditingSession,
 	Element,
+	Playhead,
 	Score,
 } from '@stringsync/vexml';
 import { Note, TabPosition } from '@stringsync/vexml';
@@ -25,6 +26,8 @@ import { formatPitch } from './format';
 import type { Instrument } from './instrument';
 import { PlayheadFollow } from './playhead-follow';
 import { SiteEditingBindings } from './site-editing-bindings';
+
+export type ScoreMode = 'view' | 'edit';
 
 type ScoreSessionEvents = {
 	/* Anything a component reads has moved: time, playing, selection, duration. */
@@ -51,10 +54,8 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	readonly durationMs: number;
 	readonly editing: EditingController;
 	private readonly follower: PlayheadFollow;
-	feedback: {
-		action: 'previous-note' | 'next-note' | 'previous-measure' | 'next-measure';
-		revision: number;
-	} | null = null;
+	private readonly playhead: Playhead;
+	mode: ScoreMode;
 	timeMs = 0;
 	playing = false;
 
@@ -79,7 +80,9 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		private readonly container: HTMLDivElement,
 		private readonly instrument: () => Instrument | null,
 		readonly editingVoices: EditingVoices,
+		mode: ScoreMode = 'view',
 	) {
+		this.mode = mode;
 		this.durationMs = score.getDurationMs();
 		this.disposer.use(this.dispatcher);
 		this.disposer.use(this.loop);
@@ -91,14 +94,12 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		// of the scroll box (by moving, or the user scrolling it away), bring it back.
 		this.cursor = score.createCursor();
 		this.follower = new PlayheadFollow(this.cursor);
-		this.disposer.use(
-			this.cursor.sync(
-				score.createPlayhead({
-					color: CURSOR_COLOR,
-					widthPx: CURSOR_WIDTH_PX,
-				}),
-			),
-		);
+		this.playhead = score.createPlayhead({
+			color: CURSOR_COLOR,
+			widthPx: CURSOR_WIDTH_PX,
+		});
+		this.playhead.setVisible(mode === 'view');
+		this.disposer.use(this.cursor.sync(this.playhead));
 		this.watch(this.cursor.events, 'visibility', (e) => {
 			if (!e.fullyVisible) {
 				this.follower.update(this.playing);
@@ -117,7 +118,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 
 		this.watch(this.cursor.events, 'change', (e) => {
 			this.timeMs = e.timeMs;
-			this.paint(e.highlighted);
+			this.paint(this.mode === 'view' || this.playing ? e.highlighted : []);
 			// Release stopped notes, then attack started ones (only while playing, so seeking and
 			// scrubbing stay silent). Stop before start so a re-strike re-attacks cleanly.
 			for (const n of e.stopped) {
@@ -137,44 +138,26 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.apply();
 		});
 		this.editing = score.createEditingController(this.editor, {
-			bindings: new SiteEditingBindings(
-				this.editor,
-				score.getSequence(),
-				this.cursor,
-			),
+			enabled: mode === 'edit',
+			bindings: new SiteEditingBindings(),
 			selection: { color: CURSOR_COLOR, focusColor: SELECTION_OUTLINE_COLOR },
 			toggleOnClick: true,
 		});
 		this.watch(this.editor.events, 'voicechange', () =>
 			this.dispatcher.dispatch('changed'),
 		);
-		this.watch(this.editing.events, 'change', () => {
-			this.setPlaying(false);
-			this.syncPlayhead();
-			this.dispatcher.dispatch('changed');
-		});
-		this.watch(this.editing.events, 'command', ({ command, moved }) => {
-			this.setPlaying(false);
-			if (
-				moved &&
-				command.type === 'move' &&
-				(command.move.unit === 'note' || command.move.unit === 'measure')
-			) {
-				const action =
-					`${command.move.direction === 1 ? 'next' : 'previous'}-${command.move.unit}` as NonNullable<
-						ScoreSession['feedback']
-					>['action'];
-				this.feedback = {
-					action,
-					revision: (this.feedback?.revision ?? 0) + 1,
-				};
-				this.dispatcher.dispatch('changed');
-			}
-		});
+		this.watch(this.editing.events, 'change', () =>
+			this.dispatcher.dispatch('changed'),
+		);
 
 		// Scrubbing opens on pointerdown rather than click so a press that becomes a drag seeks from
 		// its first frame instead of waiting for the release.
 		this.watch(this.score.events, 'pointerdown', (e) => {
+			if (this.mode !== 'view' || e.native.button !== 0) {
+				return;
+			}
+			this.container.focus({ preventScroll: true });
+			this.container.setPointerCapture(e.native.pointerId);
 			this.beginSeek();
 			this.seekTo(e.point);
 		});
@@ -182,7 +165,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			// buttons === 1 means the primary button is held, so this continues the scrub during a
 			// drag and ignores a plain hover: no manual drag-state flag needed. beginSeek also
 			// catches a drag that started off the score and moved onto it.
-			if (e.native.buttons === 1) {
+			if (this.mode === 'view' && e.native.buttons === 1) {
 				this.beginSeek();
 				this.seekTo(e.point);
 				this.follow();
@@ -192,6 +175,9 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		// off-screen bring it into view (the playing-gated visibility listener above stays quiet
 		// while paused).
 		this.watch(this.score.events, 'pointerup', () => {
+			if (this.mode !== 'view') {
+				return;
+			}
 			this.endSeek();
 			this.follow();
 		});
@@ -199,12 +185,15 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		// is what guarantees the gesture closes. endSeek does nothing when none is open.
 		const onPointerUp = () => this.endSeek();
 		window.addEventListener('pointerup', onPointerUp);
+		window.addEventListener('pointercancel', onPointerUp);
+		this.disposer.defer(() =>
+			window.removeEventListener('pointercancel', onPointerUp),
+		);
 		this.disposer.defer(() =>
 			window.removeEventListener('pointerup', onPointerUp),
 		);
 
-		this.paint(this.cursor.getHighlightedElements());
-		this.syncPlayhead();
+		this.updateMode();
 	}
 
 	get editor(): EditingSession {
@@ -241,16 +230,26 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		return this.editing.handleKey(input);
 	}
 
-	private syncPlayhead(): void {
-		const focus = this.editing.getPresentation().focus;
-		const target = focus
-			? this.score
-					.getSequence()
-					.getNoteNearMs(this.cursor.getTimeMs(), { note: focus })
-			: null;
-		if (target) {
-			this.cursor.seekMs(target.timeMs);
+	setMode(mode: ScoreMode): void {
+		if (this.mode === mode) {
+			return;
 		}
+		this.forgetSeek();
+		this.cursor.cancelScroll();
+		this.mode = mode;
+		this.updateMode();
+		this.dispatcher.dispatch('changed');
+	}
+
+	private updateMode(): void {
+		this.editing.setEnabled(this.mode === 'edit' && !this.playing);
+		this.playhead.setVisible(this.mode === 'view' || this.playing);
+		this.container.style.touchAction = this.mode === 'view' ? 'none' : '';
+		this.paint(
+			this.mode === 'view' || this.playing
+				? this.cursor.getHighlightedElements()
+				: [],
+		);
 	}
 
 	/* Start or stop the play loop. Starting from the end restarts from the top. */
@@ -260,23 +259,17 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.stop();
 			return;
 		}
-		if (this.cursor.isDone()) {
+		if (this.mode === 'edit') {
+			const focus = this.editing.getPresentation().focus;
+			const at = focus
+				? this.score.getSequence().getNoteNearMs(0, { note: focus })
+				: null;
+			this.cursor.seekMs(at?.timeMs ?? 0);
+		} else if (this.cursor.isDone()) {
 			this.cursor.seekMs(0);
 		}
 		// Bring the cursor into view when starting (e.g. after scrolling away while paused).
 		this.start();
-	}
-
-	setPlaying(playing: boolean): void {
-		this.forgetSeek();
-		if (playing === this.playing) {
-			return;
-		}
-		if (playing) {
-			this.start();
-		} else {
-			this.stop();
-		}
 	}
 
 	/* Step to the previous onset, pausing first: stepping is a paused-only move. */
@@ -389,6 +382,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	// AudioContext's currentTime if drift against the synth ever shows.
 	private start(): void {
 		this.playing = true;
+		this.updateMode();
 		this.follower.update(true);
 		// The note under the cursor fired its `started` event while paused (during load or a seek),
 		// so the loop, which moves within that note's duration, never sees it start. Attack the
@@ -406,6 +400,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			return;
 		}
 		this.playing = false;
+		this.updateMode();
 		// Cut the sounding voices: pause, end and teardown all land here.
 		for (const voice of this.voices.values()) {
 			voice.dispose();
@@ -563,5 +558,6 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.halo?.color.off();
 		this.halo = null;
 		this.container.style.cursor = '';
+		this.container.style.touchAction = '';
 	}
 }

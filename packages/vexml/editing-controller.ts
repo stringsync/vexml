@@ -17,6 +17,8 @@ import type { SelectionOverlayOptions } from './selection-overlay';
 
 export interface EditingControllerOptions {
 	bindings?: EditingBindings;
+	/** Disable input, selection visuals and following without losing document selection. */
+	enabled?: boolean;
 	keyboard?: boolean;
 	pointer?: boolean;
 	/** A plain click on the focused note clears selection when enabled. */
@@ -53,6 +55,7 @@ export class EditingController
 	private readonly disposer = new Disposer();
 	private readonly bindings: EditingBindings;
 	private disposed = false;
+	private enabled: boolean;
 	private presentation: EditingPresentation;
 
 	constructor(
@@ -60,6 +63,7 @@ export class EditingController
 		private readonly deps: EditingControllerDeps,
 		private readonly options: EditingControllerOptions = {},
 	) {
+		this.enabled = options.enabled ?? true;
 		this.bindings = options.bindings ?? new DefaultEditingBindings();
 		this.presentation = this.resolve();
 		if (deps.view) {
@@ -104,7 +108,24 @@ export class EditingController
 				});
 			}
 		}
-		deps.view?.render(this.presentation);
+		this.renderView();
+	}
+
+	/** Switching interaction never changes selection, scroll position or the rendered score. */
+	setEnabled(enabled: boolean): void {
+		if (this.disposed || this.enabled === enabled) {
+			return;
+		}
+		this.enabled = enabled;
+		this.renderView();
+	}
+
+	private renderView(): void {
+		this.deps.view?.render(
+			this.enabled
+				? this.presentation
+				: { selected: [], focus: null, position: null },
+		);
 	}
 
 	get navigator(): EditingNavigator {
@@ -115,7 +136,7 @@ export class EditingController
 	}
 
 	handleKey(key: EditingKey): boolean {
-		if (this.disposed) {
+		if (this.disposed || !this.enabled) {
 			return false;
 		}
 		const command = this.bindings.resolve(key);
@@ -127,7 +148,7 @@ export class EditingController
 	}
 
 	execute(command: EditingCommand): boolean {
-		if (this.disposed) {
+		if (this.disposed || !this.enabled) {
 			return false;
 		}
 		let moved = false;
@@ -156,7 +177,7 @@ export class EditingController
 	}
 
 	selectVoice(voice: EditingVoice): boolean {
-		return !this.disposed && this.navigator.selectVoice(voice);
+		return !this.disposed && this.enabled && this.navigator.selectVoice(voice);
 	}
 
 	scrollIntoView(options?: ScrollerOptions): void {
@@ -176,6 +197,9 @@ export class EditingController
 	}
 
 	private click(event: PointerTargetEvent): void {
+		if (!this.enabled) {
+			return;
+		}
 		const note = event.target
 			?.getSources()
 			.find((source): source is MNote => source instanceof MNote);
@@ -206,8 +230,9 @@ export class EditingController
 	private refresh(): void {
 		const previous = this.presentation.position;
 		this.presentation = this.resolve();
-		this.deps.view?.render(this.presentation);
+		this.renderView();
 		if (
+			this.enabled &&
 			this.options.follow !== false &&
 			this.presentation.position !== previous
 		) {
