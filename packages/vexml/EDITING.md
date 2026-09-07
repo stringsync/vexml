@@ -72,12 +72,11 @@ session selection remains under host control.
 
 Scrolling follows focus changes, not viewport events, so manual scrolling stays
 under the user's control. An unindexed focus falls back to its measure box when
-available. The overlay uses the shared circular halo style for selected notes and frets.
+available. The overlay colors selected notes and frets using their engraved glyphs.
 Multiple selected notes also get a translucent enclosure per rendered system,
-avoiding a shaded rectangle across the gaps between score lines. The focused note's
-halo has a separate outline above the engraving and hover halos. Selection halos
-and regions sit behind the engraving on their own layer; playback and hover
-retain their decoration state.
+avoiding a shaded rectangle across the gaps between score lines. Only the cursor note gets a circular halo and outline, and its glyph is colored too.
+The cursor halo and regions sit behind the engraving; selection coloring and the
+cursor outline sit above hover. Playback and hover retain their decoration state.
 
 ## Compositions and customization
 
@@ -112,7 +111,7 @@ retain their decoration state.
   score-space focus geometry. `SelectionOverlay` is the default view. A custom
   `view` is owned and disposed by the controller. `selection: false` disables the
   default overlay. Set `selection.focusColor` to contrast the cursor halo outline with
-  the translucent `selection.color` halos and regions; `keyboard: false`, `pointer: false` and `follow: false` disable
+  the `selection.color` note fills, translucent cursor halo and regions; `keyboard: false`, `pointer: false` and `follow: false` disable
   those individual behaviors. A framework can call `editing.handleKey(key)` and
   prevent the browser default when it returns true.
 

@@ -94,7 +94,12 @@ function fixture() {
 					chord: [mnote],
 					measureIndex: 0,
 					tab: i === 2 ? { string: 2, fret: 3 } : null,
-					glyph: null,
+					glyph: {
+						text: i === 2 ? '3' : 'q',
+						font: '30px Bravura',
+						x: 20 + i * 30 + offset,
+						y: 40,
+					},
 				})),
 				chordDiagrams: [],
 			},
@@ -377,7 +382,7 @@ describe('EditingController', () => {
 		expect(host.scroller.calls.length).toBe(1);
 	});
 
-	it('draws selection halos and a region behind the score, with focus outlines above hover', () => {
+	it('colors selected notes, with a region and cursor-only halo and outline', () => {
 		const f = fixture();
 		const { host, decorations, score } = f.create(0, {
 			view: undefined,
@@ -388,8 +393,16 @@ describe('EditingController', () => {
 		const focus = host.created[1];
 		expect(layer?.kind).toBe('background');
 		expect(focus?.kind).toBe('content');
+		expect(focus?.zIndex).toBe(2);
+		expect(focus?.recording.ops.filter((op) => op.startsWith('text:'))).toEqual(
+			[
+				'text:q:#ff3d9e:30px Bravura',
+				'text:3:#ff3d9e:30px Bravura',
+				'text:3:#ff3d9e:30px Bravura',
+			],
+		);
 		expect(layer?.recording.ops.filter((op) => op.startsWith('fill:'))).toEqual(
-			['fill:arc:#ff3d9e', 'fill:arc:#ff3d9e', 'fill:arc:#ff3d9e'],
+			['fill:arc:#ff3d9e', 'fill:arc:#ff3d9e'],
 		);
 		expect(layer?.recording.fills).toHaveLength(1);
 		expect(
@@ -399,8 +412,8 @@ describe('EditingController', () => {
 		expect(note && decorations.color.has(note)).toBe(false);
 		expect(note && decorations.halo.has(note)).toBe(false);
 		f.editor.clearSelection();
-		expect(layer?.recording.clears.length).toBe(4);
-		expect(focus?.recording.clears.length).toBe(2);
+		expect(layer?.recording.clears.length).toBe(3);
+		expect(focus?.recording.clears.length).toBe(5);
 		score.dispose();
 		expect(layer?.disposed).toBe(true);
 		expect(focus?.disposed).toBe(true);

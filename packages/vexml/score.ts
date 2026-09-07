@@ -189,7 +189,8 @@ export class Score implements Eventful<ScoreEventMap> {
 				: new SelectionOverlay(
 						this.host.createLayer('background'),
 						options.selection,
-						this.host.createLayer('content'),
+						// Keep selected glyphs and the cursor outline above hover coloring.
+						this.host.createLayer('content', 2),
 					));
 		const controller = new EditingController(
 			editor,

@@ -1,4 +1,5 @@
 import type { Rect } from 'webappwiz/geometry';
+import { ColorStyle } from './color-style';
 import type { EditingPresentation, EditingView } from './editing-view';
 import { HaloStyle } from './halo-style';
 import type { Layer } from './layer';
@@ -6,7 +7,7 @@ import type { Note } from './note';
 import type { System } from './system';
 
 export interface SelectionOverlayOptions {
-	/** Selection halo and region color, drawn translucently behind the engraving. */
+	/** Selected note color, also used translucently for the cursor halo and selection region. */
 	color?: string;
 	/** Cursor halo outline color; defaults to the selection color. */
 	focusColor?: string;
@@ -17,6 +18,7 @@ export class SelectionOverlay implements EditingView {
 	private previous: Rect[] = [];
 	private previousFocus: Rect[] = [];
 	private readonly halo = new HaloStyle();
+	private readonly color = new ColorStyle();
 	constructor(
 		private readonly layer: Layer,
 		private readonly options: SelectionOverlayOptions = {},
@@ -49,21 +51,30 @@ export class SelectionOverlay implements EditingView {
 			ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
 			this.previous.push(rect);
 		}
-		ctx.globalAlpha = 0.24;
-		for (const note of state.selected) {
+		const foreground = this.focusLayer.ctx;
+		foreground.save();
+		foreground.globalAlpha = 1;
+		const colored = new Set([
+			...state.selected,
+			...(state.focus ? [state.focus] : []),
+		]);
+		for (const note of colored) {
 			for (const element of [note, note.getTabPosition()]) {
 				if (element) {
-					this.halo.draw(ctx, element, color);
-					this.previous.push(this.halo.bounds(element));
+					this.color.draw(foreground, element, color);
+					this.previousFocus.push(this.color.bounds(element));
 				}
 			}
 		}
-		ctx.globalAlpha = 1;
 		if (state.focus) {
 			for (const element of [state.focus, state.focus.getTabPosition()]) {
 				if (element) {
+					ctx.globalAlpha = 0.24;
+					this.halo.draw(ctx, element, color);
+					this.previous.push(this.halo.bounds(element));
+					foreground.globalAlpha = 1;
 					this.halo.drawOutline(
-						this.focusLayer.ctx,
+						foreground,
 						element,
 						this.options.focusColor ?? color,
 					);
@@ -71,6 +82,8 @@ export class SelectionOverlay implements EditingView {
 				}
 			}
 		}
+		foreground.restore();
+		ctx.globalAlpha = 1;
 		if (state.marquee) {
 			const rect = state.marquee;
 			ctx.fillStyle = color;
