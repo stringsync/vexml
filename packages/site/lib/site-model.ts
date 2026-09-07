@@ -48,7 +48,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	private generation = 0;
 	private mode: ScoreMode = 'view';
 	private editorDisposer = new Disposer();
-	private sessionUnlisten: (() => void) | null = null;
+	private sessionDisposer = new Disposer();
 	noteEditing: NoteEditing | null = null;
 	editorVersion = 0;
 	private editingSource: {
@@ -148,8 +148,11 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 				voices,
 				this.mode,
 			);
-			this.sessionUnlisten = this.session.events.on('changed', () =>
-				this.dispatcher.dispatch('changed'),
+			this.sessionDisposer.use(this.session);
+			this.sessionDisposer.defer(
+				this.session.events.on('changed', () =>
+					this.dispatcher.dispatch('changed'),
+				),
 			);
 			this.session.cursor.cancelScroll();
 			container.scrollTop = scrollTop;
@@ -193,10 +196,9 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	}
 
 	private disposeSession(): void {
-		this.sessionUnlisten?.();
-		this.sessionUnlisten = null;
 		this.mode = this.session?.mode ?? this.mode;
-		this.session?.dispose();
+		this.sessionDisposer.dispose();
+		this.sessionDisposer = new Disposer();
 		this.session = null;
 	}
 
