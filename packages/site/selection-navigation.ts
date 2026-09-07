@@ -8,6 +8,32 @@ export class SelectionNavigation {
 		private readonly systems: readonly (readonly Measure[])[],
 	) {}
 
+	nearPlayhead(
+		timeMs: number,
+		positions: readonly { note: Note; timeMs: number }[],
+	): number | null {
+		const voice = this.voices.options.find(
+			(option) => option.value === this.voices.getValue(),
+		);
+		const preferred = positions.filter(
+			({ note }) => note.part === voice?.part && note.voice === voice.voice,
+		);
+		const candidates = preferred.length ? preferred : positions;
+		const closest = candidates.reduce<(typeof positions)[number] | null>(
+			(best, candidate) =>
+				!best ||
+				Math.abs(candidate.timeMs - timeMs) < Math.abs(best.timeMs - timeMs)
+					? candidate
+					: best,
+			null,
+		);
+		if (!closest) {
+			return null;
+		}
+		this.voices.editor.select(closest.note);
+		return closest.timeMs;
+	}
+
 	note(direction: 1 | -1): boolean {
 		return this.voices.move(direction === 1 ? 'next' : 'previous');
 	}

@@ -216,6 +216,28 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	}
 
 	handleKey(key: string, shift = false): boolean {
+		if (
+			!this.editor.getFocus() &&
+			['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)
+		) {
+			const positions = this.score
+				.getSequence()
+				.getSteps()
+				.flatMap((step) =>
+					step.active.flatMap((note) =>
+						note.getSources().map((note) => ({ note, timeMs: step.startMs })),
+					),
+				);
+			const time = this.navigation.nearPlayhead(
+				this.cursor.getTimeMs(),
+				positions,
+			);
+			this.setPlaying(false);
+			if (time !== null) {
+				this.syncSelection(time);
+			}
+			return true;
+		}
 		let moved = false;
 		let action: NonNullable<ScoreSession['feedback']>['action'] | null = null;
 		switch (key) {
@@ -247,15 +269,15 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		return true;
 	}
 
-	private syncSelection(): void {
+	private syncSelection(timeMs?: number): void {
 		this.pinned =
 			this.editor.getSelectedElements(this.score.getElements())[0] ?? null;
 		this.hovered = null;
-		this.syncPlayhead();
+		this.syncPlayhead(timeMs);
 		this.apply();
 	}
 
-	private syncPlayhead(): void {
+	private syncPlayhead(timeMs?: number): void {
 		const note = this.editor.getSelectedElements(this.score.getElements())[0];
 		if (!note) {
 			return;
@@ -264,8 +286,9 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		const index = sequence.getFirstStepOfNote(note);
 		const step = index === null ? null : sequence.getStep(index);
 		if (step) {
-			const moved = this.cursor.getTimeMs() !== step.startMs;
-			this.cursor.seekMs(step.startMs);
+			const targetTime = timeMs ?? step.startMs;
+			const moved = this.cursor.getTimeMs() !== targetTime;
+			this.cursor.seekMs(targetTime);
 			this.follower.update(this.playing, moved);
 		}
 	}

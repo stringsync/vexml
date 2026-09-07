@@ -202,7 +202,7 @@ export default function App() {
 		const onKeyDown = (e: KeyboardEvent) => {
 			if (
 				e.target === document.body &&
-				(e.key === 'ArrowRight' || e.key === 'ArrowLeft') &&
+				['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) &&
 				!e.altKey &&
 				!e.ctrlKey &&
 				!e.metaKey

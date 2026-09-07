@@ -128,3 +128,60 @@ it('initializes horizontal navigation and safely handles empty scores', () => {
 	expect(navigation.note(-1)).toBe(false);
 	expect(navigation.voice(1)).toBe(false);
 });
+
+it('restores selection near playback in the active voice, including later repeat occurrences', () => {
+	const document = MDocument.empty();
+	const measure = document.score.addPart().addMeasure();
+	const upper = measure
+		.getOrCreateVoice('1')
+		.addNote({ step: 'C', octave: 5, type: 'quarter' });
+	const lower = measure
+		.getOrCreateVoice('2')
+		.addNote({ step: 'C', octave: 3, type: 'quarter' });
+	const later = measure
+		.getOrCreateVoice('2')
+		.addNote({ step: 'D', octave: 3, type: 'quarter' });
+	const editor = new EditingSession(document);
+	const voices = new EditingVoices(editor);
+	editor.select(lower);
+	voices.clear();
+	const navigation = new SelectionNavigation(voices, [[measure]]);
+	expect(
+		navigation.nearPlayhead(2400, [
+			{ note: lower, timeMs: 0 },
+			{ note: upper, timeMs: 2400 },
+			{ note: later, timeMs: 2500 },
+			{ note: lower, timeMs: 4000 },
+		]),
+	).toBe(2500);
+	expect(editor.getFocus()).toBe(later);
+	voices.clear();
+	expect(
+		navigation.nearPlayhead(4100, [
+			{ note: lower, timeMs: 0 },
+			{ note: lower, timeMs: 4000 },
+		]),
+	).toBe(4000);
+	expect(editor.getFocus()).toBe(lower);
+});
+
+it('falls back to an available voice near playback and leaves empty timelines unselected', () => {
+	const document = MDocument.empty();
+	const measure = document.score.addPart().addMeasure();
+	measure
+		.getOrCreateVoice('1')
+		.addNote({ step: 'C', octave: 5, type: 'quarter' });
+	const lower = measure
+		.getOrCreateVoice('2')
+		.addNote({ step: 'C', octave: 3, type: 'quarter' });
+	const editor = new EditingSession(document);
+	const navigation = new SelectionNavigation(new EditingVoices(editor), [
+		[measure],
+	]);
+	expect(navigation.nearPlayhead(1200, [])).toBeNull();
+	expect(editor.getFocus()).toBeNull();
+	expect(navigation.nearPlayhead(1200, [{ note: lower, timeMs: 1000 }])).toBe(
+		1000,
+	);
+	expect(editor.getFocus()).toBe(lower);
+});
