@@ -207,7 +207,7 @@ export default function App() {
 				!e.ctrlKey &&
 				!e.metaKey
 			) {
-				if (model.session?.handleKey(e.key, e.shiftKey)) {
+				if (model.session?.handleKey(e)) {
 					containerRef.current?.focus({ preventScroll: true });
 					e.preventDefault();
 				}
@@ -662,22 +662,6 @@ export default function App() {
 									tabIndex={0}
 									role="application"
 									aria-label="Score"
-									onKeyDown={(event) => {
-										if (
-											event.target !== event.currentTarget ||
-											event.altKey ||
-											event.ctrlKey ||
-											event.metaKey ||
-											(event.shiftKey &&
-												event.key !== 'ArrowLeft' &&
-												event.key !== 'ArrowRight')
-										) {
-											return;
-										}
-										if (session?.handleKey(event.key, event.shiftKey)) {
-											event.preventDefault();
-										}
-									}}
 									// invisible (not hidden) until initialized so the container keeps its
 									// width — the canvas fits against it and would fit against 0 if removed.
 									// Panoramic is the horizontal scroll box itself — vexml's ScrollController

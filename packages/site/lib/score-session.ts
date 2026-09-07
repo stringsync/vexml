@@ -1,5 +1,7 @@
 import type {
 	CursorController,
+	EditingController,
+	EditingKey,
 	EditingSession,
 	Element,
 	Score,
@@ -21,7 +23,7 @@ import type { EditingVoices } from './editing-voices';
 import { formatPitch } from './format';
 import type { Instrument } from './instrument';
 import { PlayheadFollow } from './playhead-follow';
-import { SelectionNavigation } from './selection-navigation';
+import { SiteEditingBindings } from './site-editing-bindings';
 
 type ScoreSessionEvents = {
 	/* Anything a component reads has moved: time, playing, selection, duration. */
@@ -30,14 +32,14 @@ type ScoreSessionEvents = {
 
 /*
  * Everything that happens to a rendered score while the user is looking at it: playback position,
- * which notes are sounding and which voices are sounding them, which note is hovered or pinned, and
+ * which notes are sounding and which voices are sounding them, which note is hovered, and
  * the selected document note.
  *
  * One session owns one Score. Disposing it detaches every listener, releases every voice, and
  * disposes the score.
  */
 export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
-	// Playback, hover and selection live in one class because they are one model: a note's cursor
+	// Playback and hover share decoration state: a note's cursor
 	// color and its hover halo share a single color channel, and a voice has to be released exactly
 	// when its note leaves the sounding set. Splitting them would mean each half reaching into the
 	// other.
@@ -46,7 +48,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 
 	readonly cursor: CursorController;
 	readonly durationMs: number;
-	readonly navigation: SelectionNavigation;
+	readonly editing: EditingController;
 	private readonly follower: PlayheadFollow;
 	feedback: {
 		action: 'previous-note' | 'next-note' | 'previous-measure' | 'next-measure';
@@ -67,9 +69,6 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	// The voice each sounding note owns, keyed by Note (not pitch) so a re-struck pitch, which a
 	// transition reports in both `stopped` and `started`, releases the old voice and attacks fresh.
 	private readonly voices = new Map<Note, Resource>();
-	// A click pins a target; hover is transient. The pinned one wins, so hovering elsewhere never
-	// clears the pin.
-	private pinned: Element | null = null;
 	private hovered: Element | null = null;
 	// The note whose halo is lit, so the next move can turn it back off.
 	private halo: Note | null = null;
@@ -81,10 +80,6 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		readonly editingVoices: EditingVoices,
 	) {
 		this.durationMs = score.getDurationMs();
-		this.navigation = new SelectionNavigation(
-			editingVoices,
-			score.getSystems().map((system) => system.getSources()),
-		);
 		this.disposer.use(this.dispatcher);
 		this.disposer.use(this.loop);
 		this.disposer.adopt(score, (s) => s.dispose());
@@ -140,23 +135,42 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.hovered = e.target;
 			this.apply();
 		});
-		this.watch(this.score.events, 'click', (e) => {
-			// A pin drives the editor selection, and only a note or a fret resolves to a document note
-			// the editor can select.
-			const target =
-				e.target instanceof Note || e.target instanceof TabPosition
-					? e.target
-					: null;
-			this.pinned = this.pinned === target ? null : target;
-			if (this.pinned) {
-				this.editor.selectElements([this.pinned]);
-			} else {
-				this.editingVoices.clear();
-			}
-			this.container.focus({ preventScroll: true });
-			this.syncPlayhead();
-			this.apply();
+		this.editing = score.createEditingController(this.editor, {
+			bindings: new SiteEditingBindings(
+				this.editor,
+				score.getSequence(),
+				this.cursor,
+			),
+			selection: { color: HOVER_COLOR },
+			toggleOnClick: true,
 		});
+		this.watch(this.editor.events, 'voicechange', () =>
+			this.dispatcher.dispatch('changed'),
+		);
+		this.watch(this.editing.events, 'change', () => {
+			this.setPlaying(false);
+			this.syncPlayhead();
+			this.dispatcher.dispatch('changed');
+		});
+		this.watch(this.editing.events, 'command', ({ command, moved }) => {
+			this.setPlaying(false);
+			if (
+				moved &&
+				command.type === 'move' &&
+				(command.move.unit === 'note' || command.move.unit === 'measure')
+			) {
+				const action =
+					`${command.move.direction === 1 ? 'next' : 'previous'}-${command.move.unit}` as NonNullable<
+						ScoreSession['feedback']
+					>['action'];
+				this.feedback = {
+					action,
+					revision: (this.feedback?.revision ?? 0) + 1,
+				};
+				this.dispatcher.dispatch('changed');
+			}
+		});
+
 		// Scrubbing opens on pointerdown rather than click so a press that becomes a drag seeks from
 		// its first frame instead of waiting for the release.
 		this.watch(this.score.events, 'pointerdown', (e) => {
@@ -189,7 +203,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		);
 
 		this.paint(this.cursor.getHighlightedElements());
-		this.syncSelection();
+		this.syncPlayhead();
 	}
 
 	get editor(): EditingSession {
@@ -197,9 +211,11 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	}
 
 	selectVoice(value: string): void {
-		if (this.editingVoices.select(value)) {
-			this.setPlaying(false);
-			this.syncSelection();
+		const voice = this.editingVoices.options.find(
+			(option) => option.value === value,
+		);
+		if (voice) {
+			this.editing.selectVoice(voice);
 		}
 	}
 
@@ -216,81 +232,23 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		return `${label} · Measure ${focus.measure.number} · Beat ${focus.measureBeat === null ? '?' : focus.measureBeat + 1} · Voice ${focus.voice}`;
 	}
 
-	handleKey(key: string, shift = false): boolean {
-		if (
-			!this.editor.getFocus() &&
-			['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)
-		) {
-			const positions = this.score
-				.getSequence()
-				.getSteps()
-				.flatMap((step) =>
-					step.active.flatMap((note) =>
-						note.getSources().map((note) => ({ note, timeMs: step.startMs })),
-					),
-				);
-			const time = this.navigation.nearPlayhead(
-				this.cursor.getTimeMs(),
-				positions,
-			);
-			this.setPlaying(false);
-			if (time !== null) {
-				this.syncSelection(time);
-			}
-			return true;
-		}
-		let moved = false;
-		let action: NonNullable<ScoreSession['feedback']>['action'] | null = null;
-		switch (key) {
-			case 'ArrowRight':
-				moved = shift ? this.navigation.measure(1) : this.navigation.note(1);
-				action = shift ? 'next-measure' : 'next-note';
-				break;
-			case 'ArrowLeft':
-				moved = shift ? this.navigation.measure(-1) : this.navigation.note(-1);
-				action = shift ? 'previous-measure' : 'previous-note';
-				break;
-			case 'ArrowUp':
-				this.navigation.voice(-1);
-				break;
-			case 'ArrowDown':
-				this.navigation.voice(1);
-				break;
-			case 'Escape':
-				this.editingVoices.clear();
-				break;
-			default:
-				return false;
-		}
-		if (moved && action) {
-			this.feedback = { action, revision: (this.feedback?.revision ?? 0) + 1 };
-		}
-		this.setPlaying(false);
-		this.syncSelection();
-		return true;
+	handleKey(key: EditingKey | string, shiftKey = false): boolean {
+		const input =
+			typeof key === 'string'
+				? { key, shiftKey, altKey: false, ctrlKey: false, metaKey: false }
+				: key;
+		return this.editing.handleKey(input);
 	}
 
-	private syncSelection(timeMs?: number): void {
-		this.pinned =
-			this.editor.getSelectedElements(this.score.getElements())[0] ?? null;
-		this.hovered = null;
-		this.syncPlayhead(timeMs);
-		this.apply();
-	}
-
-	private syncPlayhead(timeMs?: number): void {
-		const note = this.editor.getSelectedElements(this.score.getElements())[0];
-		if (!note) {
-			return;
-		}
-		const sequence = this.score.getSequence();
-		const index = sequence.getFirstStepOfNote(note);
-		const step = index === null ? null : sequence.getStep(index);
-		if (step) {
-			const targetTime = timeMs ?? step.startMs;
-			const moved = this.cursor.getTimeMs() !== targetTime;
-			this.cursor.seekMs(targetTime);
-			this.follower.update(this.playing, moved);
+	private syncPlayhead(): void {
+		const focus = this.editing.getPresentation().focus;
+		const target = focus
+			? this.score
+					.getSequence()
+					.getNoteNearMs(this.cursor.getTimeMs(), { note: focus })
+			: null;
+		if (target) {
+			this.cursor.seekMs(target.timeMs);
 		}
 	}
 
@@ -563,7 +521,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	// A fret marker stands in for its note, so a TabPosition target lights that note's halo rather
 	// than one of its own.
 	private apply(): void {
-		const target = this.pinned ?? this.hovered;
+		const target = this.hovered;
 		let note: Note | null = null;
 		if (target instanceof Note) {
 			note = target;

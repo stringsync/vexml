@@ -31,37 +31,108 @@ Rendering a document reuses it without reparsing. `config.gaps` must be empty fo
 document input: the current gap implementation inserts measures into its input.
 String and Blob rendering retain their existing gap behavior.
 
-## Keyboard and pointer integration
+## Default editing UI
 
-The host handles events, focus, accessibility and redraw scheduling. Bind left and
-right to `move('previous')` / `move('next')`, and pass `{ extend: event.shiftKey }`
-for Shift-arrow selection. These operations follow a voice in written order,
-landing on chord leads and skipping their other members. Rests, grace notes, invisible notes and
-cross-staff notes remain navigation targets. Empty measures are skipped, repeats are not expanded, and
-navigation clamps at the ends of the voice.
+Attach an editing controller to each render. The controller installs scoped keyboard
+and pointer listeners, draws selection on a separate layer, and scrolls the focused
+note into view. Programmatic session selection changes refresh the view too.
 
-Up/down can call `move('higher')` / `move('lower')` to navigate pitches within the
-current chord. These operations do not change pitch. The host can choose other
-bindings or select a note in a different voice explicitly.
+```ts
+const editor = new EditingSession(document);
+let score = await render(document, container);
+let editing = score.createEditingController(editor, {
+  selection: { color: '#155dfc' },
+  follow: true,
+});
 
-For a simple click, pass the hit target to `editor.selectElements([target])`.
-For Shift-click, get the note from a `Note` or `TabPosition` target and call
-`editor.select(note, { extend: true })`. For Command/Ctrl-click, call
-`editor.toggle(note)`. Source notes are available through `target.getSources()`.
+// No manual highlighting or selection synchronization.
+editor.move('next');
 
-For a marquee, call
-`editor.selectElements(score.getElements().within(scoreSpaceRect))`. Background
-boxes are ignored, and noteheads and frets with the same source are deduplicated.
-Only indexed glyphs participate in mouse selection: the existing pointer index excludes
-grace notes, invisible notes and suppressed tab glyphs. These remain reachable through
-document navigation. An empty set clears focus and selection. Point and rectangle queries take score
-coordinates; score pointer events already supply a hit target and score point.
+// Keep document identity, selection, active voice and history across layout changes.
+score.dispose(); // Disposes editing and its listeners/view, but not editor.
+score = await render(document, container, nextConfig);
+editing = score.createEditingController(editor);
+```
 
-After a selection-only change, clear old highlights and draw the new selection.
-After a document change, dispose the old score, render the same document again,
-then resolve and highlight the new elements. Reattach score event listeners after
-each render. Serialize asynchronous renders in the host so an older render cannot
-replace a newer edit. The session installs no DOM listeners or global handlers.
+The container becomes keyboard-focusable if it has no tabindex. The controller
+restores the attribute it added on disposal. Keyboard events are handled only when
+that container is the target, leaving nested inputs and controls alone. Pointer
+selection focuses the container without browser scrolling. The host supplies the
+container's accessible name and any live selection announcement.
+
+Defaults: left/right follow chord leads in the written voice; up/down traverse
+pitches inside the chord; Shift-arrow extends the range. Escape clears selection
+while retaining the active voice. Click selects a note or fret, Shift-click extends
+a range, and Command/Ctrl-click toggles set membership. Shift-click into another
+part or voice starts a fresh selection. Background clicks clear selection.
+`toggleOnClick: true` makes a second plain click on the sole focused note clear it.
+
+Scrolling follows focus changes, not viewport events, so manual scrolling stays
+under the user's control. An unindexed focus falls back to its measure box when
+available. The overlay outlines focus separately from the complete selection and
+includes both notation and tab targets without changing playback/hover colors.
+
+## Compositions and customization
+
+- `EditingSession` owns document focus, range/set selection, active voice and
+  mutation history. `getVoices()` enumerates `{ part, voice }` pairs in written
+  order. `setActiveVoice()` changes context without moving focus;
+  `editing.selectVoice()` selects a nearby onset in the chosen voice.
+- `EditingNavigator` resolves `note`, `measure`, `voice` and `chordPitch` moves.
+  It works without a score. `EditingSession.move()` delegates its existing string
+  commands to the same navigator. With no focus, horizontal movement starts at the
+  first/last chord lead of the active voice (initially the first written voice).
+- `EditingLayout` optionally supplies written measures grouped by rendered system.
+  `ScoreEditingLayout` adapts a score. With this adapter, voice navigation crosses
+  into the next system's first voice or the previous system's last voice; without
+  it, voice navigation clamps at the first/last voice in the document. Notes and
+  measures always follow written order, skipping empty measures without expanding
+  repeats. Cross-voice range extension through navigation is a no-op.
+- `EditingBindings.resolve(key)` maps a key snapshot to a semantic `EditingCommand`.
+  Return null to leave the key to the host. Replace the defaults to bind arrows to
+  voice navigation or Shift-arrows to measure jumps. `editing.execute(command)`
+  lets buttons issue the same commands directly.
+- `EditingView.render(presentation)` receives current rendered notes, focus and
+  score-space focus geometry. `SelectionOverlay` is the default view. A custom
+  `view` is owned and disposed by the controller. `selection: false` disables the
+  default overlay; `keyboard: false`, `pointer: false` and `follow: false` disable
+  those individual behaviors. A framework can call `editing.handleKey(key)` and
+  prevent the browser default when it returns true.
+
+`score.createEditingController()` composes the navigator with `ScoreEditingLayout`,
+a default or custom view, the existing score pointer events, and its scroller.
+The score disposes every controller it creates; disposing a controller early also
+unregisters it. `EditingController` can alternatively be constructed over explicit
+element, navigator, event, DOM, scroller and view dependencies for custom hosts.
+
+The controller's `change` event carries the resolved presentation. `command`
+reports a handled semantic command and whether it moved selection, allowing an
+application to provide transport feedback even at navigation boundaries.
+
+The session emits `selectionchange` after selection operations, `voicechange` when
+active context changes, and `documentchange` after a successful pitch edit, undo or
+redo. Selection operations do not emit document changes. No-op pitch commands and
+empty history operations do not emit document changes either. Dispose subscriptions
+when their consumer is removed. External document mutations are not observed.
+
+## Rendering and playback
+
+The host still schedules document rerenders after `documentchange`: dispose the old
+score, render the same document, then attach a new controller. Serialize asynchronous
+renders so an older result cannot replace a newer edit. Selection-only operations
+need no engraving pass. The session itself installs no DOM or global listeners.
+
+Playback policy remains independent. `Sequence.getNoteNearMs(timeMs, { voice })`
+finds the nearest playback position in a preferred part/voice, falling back to any
+available note. `{ note }` limits it to that rendered note, preserving the nearest
+repeat occurrence; an absent note returns null. The host decides whether selection
+pauses or seeks playback. Editing focus scrolling does not depend on playback.
+
+For manual marquee input, use
+`editor.selectElements(score.getElements().within(scoreSpaceRect))`. Notehead and
+fret hits are deduplicated. Pointer events already supply score-space coordinates
+and hit targets. Grace notes, invisible notes and suppressed tab glyphs may lack
+indexed pointer targets but remain reachable by document navigation.
 
 ## Selection and history contracts
 
@@ -93,6 +164,6 @@ tablature requires a fingering decision. Selection and navigation support these
 notes even though this pitch command does not edit them.
 
 Insertion positions, create/delete commands, rhythmic edits, annotation targets,
-musical passage ranges across voices, automatic scrolling and a packaged keyboard/
-mouse controller are subsequent milestones. The existing playback cursor remains
+musical passage ranges across voices and a packaged marquee gesture are subsequent
+milestones. The existing playback cursor remains
 independent of this editing session.

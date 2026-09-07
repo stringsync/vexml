@@ -7,6 +7,12 @@ import {
 } from 'webappwiz/events';
 import { CursorController } from './cursor-controller';
 import { CursorHostAdapter } from './cursor-host-adapter';
+import {
+	EditingController,
+	type EditingControllerOptions,
+} from './editing-controller';
+import { EditingNavigator } from './editing-navigator';
+import type { EditingSession } from './editing-session';
 import type { Element } from './element';
 import type { ElementIndex } from './element-index';
 import type { ScoreEventMap } from './events';
@@ -16,7 +22,9 @@ import { MeasureBox } from './measure-box';
 import { Note } from './note';
 import type { Part } from './part';
 import { Playhead, type PlayheadOptions } from './playhead';
+import { ScoreEditingLayout } from './score-editing-layout';
 import type { Scroller } from './scroller';
+import { SelectionOverlay } from './selection-overlay';
 import type { Sequence } from './sequence';
 import type { System } from './system';
 import { TabPosition } from './tab-position';
@@ -95,6 +103,7 @@ export class Score implements Eventful<ScoreEventMap> {
 	private unlistenScroll: Unlisten | null = null;
 	// Live playback cursors, disposed with the score; each removes itself on its own dispose.
 	private readonly cursors = new Set<CursorController>();
+	private readonly editors = new Set<EditingController>();
 
 	constructor(
 		private readonly host: Host,
@@ -166,6 +175,36 @@ export class Score implements Eventful<ScoreEventMap> {
 		cursor.events.on('dispose', () => this.cursors.delete(cursor));
 		this.cursors.add(cursor);
 		return cursor;
+	}
+
+	/** Compose editing input, written/layout navigation, selection visuals and scrolling. */
+	createEditingController(
+		editor: EditingSession,
+		options: EditingControllerOptions = {},
+	): EditingController {
+		const view =
+			options.view ??
+			(options.selection === false
+				? null
+				: new SelectionOverlay(
+						this.host.createLayer('content'),
+						options.selection,
+					));
+		const controller = new EditingController(
+			editor,
+			{
+				elements: this.elements,
+				navigator: new EditingNavigator(editor, new ScoreEditingLayout(this)),
+				events: this.events,
+				dom: this.host.dom,
+				scroller: this.scroller,
+				view,
+			},
+			options,
+		);
+		controller.events.on('dispose', () => this.editors.delete(controller));
+		this.editors.add(controller);
+		return controller;
 	}
 
 	/* vexml's default cursor visual — a vertical bar on its own content layer. Hand it to a cursor
@@ -275,6 +314,10 @@ export class Score implements Eventful<ScoreEventMap> {
 	}
 
 	dispose(): void {
+		for (const editor of this.editors) {
+			editor.dispose();
+		}
+		this.editors.clear();
 		for (const cursor of [...this.cursors]) {
 			cursor.dispose();
 		}

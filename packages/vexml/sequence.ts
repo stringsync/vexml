@@ -1,3 +1,4 @@
+import type { Note as MNote } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
 import { BAR_WIDTH } from './constants';
 import type { Note } from './note';
@@ -126,6 +127,39 @@ export class Sequence {
 
 	getStep(index: number): Step | null {
 		return this.steps[index] ?? null;
+	}
+
+	/** Closest written-note occurrence to a playback time. A preferred voice falls back
+	 * to available notes; an explicit note filter never falls back to another note. */
+	getNoteNearMs(
+		timeMs: number,
+		options: { voice?: Pick<MNote, 'part' | 'voice'> | null; note?: Note } = {},
+	): { note: Note; timeMs: number } | null {
+		const positions = this.getSteps().flatMap((step) =>
+			step.active
+				.filter((note) => !options.note || note === options.note)
+				.map((note) => ({ note, timeMs: step.startMs })),
+		);
+		const voice = options.voice;
+		const preferred = voice
+			? positions.filter(({ note }) =>
+					note
+						.getSources()
+						.some(
+							(source) =>
+								source.part === voice.part && source.voice === voice.voice,
+						),
+				)
+			: positions;
+		const candidates = preferred.length ? preferred : positions;
+		return candidates.reduce<(typeof positions)[number] | null>(
+			(best, candidate) =>
+				!best ||
+				Math.abs(candidate.timeMs - timeMs) < Math.abs(best.timeMs - timeMs)
+					? candidate
+					: best,
+			null,
+		);
 	}
 
 	getSteps(): readonly Step[] {

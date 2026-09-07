@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'bun:test';
+import { MDocument, type Note as MNote } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
 import type { Note } from './note';
 import { Sequence, type Step } from './sequence';
 import { TempoMap } from './tempo-map';
 
 // Identity tokens — the sequence only uses Note for identity (active sets / tie keys).
-function fakeNote(label: string): Note {
-	return { label } as unknown as Note;
+function fakeNote(label: string, sources: readonly MNote[] = []): Note {
+	return { label, getSources: () => sources } as unknown as Note;
 }
 const SYS = new Rect(0, 0, 1000, 100);
 const A = fakeNote('a');
@@ -109,5 +110,49 @@ describe('Sequence', () => {
 		const r = seq.classify(null, 0);
 		expect(r.started).toEqual([A, B]);
 		expect(r.stopped).toEqual([]);
+	});
+});
+
+describe('Sequence editing playback positions', () => {
+	it('chooses the nearest repeat occurrence for an explicit note and never falls back to another note', () => {
+		const sequence = withActive([[A], [B], [A], [B]]);
+		expect(sequence.getNoteNearMs(1100, { note: A })).toEqual({
+			note: A,
+			timeMs: 1000,
+		});
+		expect(sequence.getNoteNearMs(100, { note: A })).toEqual({
+			note: A,
+			timeMs: 0,
+		});
+		expect(sequence.getNoteNearMs(1100, { note: C })).toBeNull();
+		expect(withActive([]).getNoteNearMs(0)).toBeNull();
+	});
+});
+
+describe('Sequence preferred editing voice', () => {
+	it('prefers the remembered voice near playback and falls back when it has no positions', () => {
+		const document = MDocument.empty();
+		const part = document.score.addPart();
+		const measure = part.addMeasure();
+		const upper = fakeNote('upper', [
+			measure
+				.getOrCreateVoice('1')
+				.addNote({ step: 'C', octave: 5, type: 'quarter' }),
+		]);
+		const lower = fakeNote('lower', [
+			measure
+				.getOrCreateVoice('2')
+				.addNote({ step: 'C', octave: 3, type: 'quarter' }),
+		]);
+		const preferred = { part, voice: '2' };
+		expect(
+			withActive([[lower], [upper], [lower]]).getNoteNearMs(750, {
+				voice: preferred,
+			}),
+		).toEqual({ note: lower, timeMs: 1000 });
+		expect(
+			withActive([[upper]]).getNoteNearMs(750, { voice: preferred }),
+		).toEqual({ note: upper, timeMs: 0 });
+		expect(withActive([]).getNoteNearMs(750, { voice: preferred })).toBeNull();
 	});
 });

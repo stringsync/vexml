@@ -346,3 +346,49 @@ describe('EditingSession', () => {
 		expect(session.undo()).toBe(false);
 	});
 });
+
+describe('EditingSession events and voice context', () => {
+	it('reports selection and document edits separately, including undo/redo and no-ops', () => {
+		const document = createDocument(['C']);
+		const editor = new EditingSession(document);
+		const events: string[] = [];
+		editor.events.on('selectionchange', () => events.push('selection'));
+		editor.events.on('documentchange', () => events.push('document'));
+		editor.move('next');
+		editor.setPitch({ step: 'C', octave: 4 });
+		editor.setPitch({ step: 'D', octave: 4 });
+		editor.undo();
+		editor.redo();
+		editor.clearSelection();
+		expect(events).toEqual([
+			'selection',
+			'document',
+			'document',
+			'document',
+			'selection',
+		]);
+	});
+
+	it('changes voice context without changing focus and rejects foreign voices', () => {
+		const document = createDocument(['C']);
+		const part = required(document.score.parts[0], 'part');
+		part
+			.addMeasure()
+			.getOrCreateVoice('2')
+			.addNote({ step: 'D', octave: 4, type: 'quarter' });
+		const editor = new EditingSession(document);
+		let changes = 0;
+		editor.events.on('voicechange', () => changes++);
+		editor.select(noteAt(document, 0));
+		editor.setActiveVoice({ part, voice: '2' });
+		expect(editor.getFocus()).toBe(noteAt(document, 0));
+		expect(editor.getActiveVoice()).toEqual({ part, voice: '2' });
+		expect(() => editor.setActiveVoice({ part, voice: 'missing' })).toThrow(
+			'voice',
+		);
+		expect(changes).toBe(1);
+		editor.clearSelection();
+		editor.move('next');
+		expect(editor.getFocus()?.voice).toBe('2');
+	});
+});

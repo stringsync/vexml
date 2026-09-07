@@ -1,4 +1,10 @@
-import { type MDocument, Note as MNote } from '@stringsync/mdom';
+import {
+	type MDocument,
+	Note as MNote,
+	type Part as MPart,
+} from '@stringsync/mdom';
+import { Dispatcher, type Eventful } from 'webappwiz/events';
+import { EditingNavigator } from './editing-navigator';
 import type { Element } from './element';
 import type { ElementIndex } from './element-index';
 import type { Note } from './note';
@@ -11,10 +17,24 @@ export interface SelectionOptions {
 
 export type EditingMove = 'next' | 'previous' | 'higher' | 'lower';
 
-/** A note-editing session outlives rendered Scores. The caller owns keyboard bindings,
- * redraw scheduling and overlays; this object owns document focus, selection and history.
+export interface EditingVoice {
+	readonly part: MPart;
+	readonly voice: string;
+}
+
+export type EditingSessionEvents = {
+	selectionchange: undefined;
+	voicechange: undefined;
+	documentchange: undefined;
+};
+
+/** A note-editing session outlives rendered Scores. Optional EditingControllers own
+ * input and overlays; the host schedules rerenders. This object owns document state.
  * Structural edits outside the session require clearHistory(); detached targets are pruned. */
-export class EditingSession {
+export class EditingSession implements Eventful<EditingSessionEvents> {
+	private readonly dispatcher = new Dispatcher<EditingSessionEvents>();
+	readonly events = this.dispatcher.events;
+	private activeVoice: EditingVoice | null = null;
 	private focus: MNote | null = null;
 	private anchor: MNote | null = null;
 	private selected: MNote[] = [];
@@ -22,6 +42,70 @@ export class EditingSession {
 	private readonly future: PitchEdit[] = [];
 
 	constructor(readonly document: MDocument) {}
+
+	/** Voices in first-written order, deduplicated across measures and staves. */
+	getVoices(): readonly EditingVoice[] {
+		return this.document.score.parts.flatMap((part) =>
+			[
+				...new Set(
+					part.measures.flatMap((measure) =>
+						measure.notes.map((note) => note.voice),
+					),
+				),
+			].map((voice) => ({ part, voice })),
+		);
+	}
+
+	getActiveVoice(): EditingVoice | null {
+		const voices = this.getVoices();
+		return (
+			voices.find(
+				(voice) =>
+					voice.part === this.activeVoice?.part &&
+					voice.voice === this.activeVoice.voice,
+			) ??
+			voices[0] ??
+			null
+		);
+	}
+
+	/** Changes navigation context without moving focus or altering selection. */
+	setActiveVoice(voice: EditingVoice): void {
+		const target = this.getVoices().find(
+			(candidate) =>
+				candidate.part === voice.part && candidate.voice === voice.voice,
+		);
+		if (!target) {
+			throw new Error('editing: voice does not belong to this document');
+		}
+		const previous = this.getActiveVoice();
+		this.activeVoice = target;
+		if (previous?.part !== target.part || previous.voice !== target.voice) {
+			this.dispatcher.dispatch('voicechange');
+		}
+	}
+
+	clearSelection(): void {
+		this.selectNotes([]);
+	}
+
+	/** Whether a gesture can extend the existing range without crossing voices. */
+	canExtendTo(note: MNote): boolean {
+		const anchor = this.anchor;
+		return (
+			!anchor ||
+			!this.contains(anchor) ||
+			(anchor.part === note.part && anchor.voice === note.voice)
+		);
+	}
+
+	private selectionChanged(): void {
+		const focus = this.getFocus();
+		if (focus) {
+			this.setActiveVoice({ part: focus.part, voice: focus.voice });
+		}
+		this.dispatcher.dispatch('selectionchange');
+	}
 
 	getFocus(): MNote | null {
 		return this.focus && this.contains(this.focus) ? this.focus : null;
@@ -52,6 +136,7 @@ export class EditingSession {
 			this.selected = [note];
 		}
 		this.focus = note;
+		this.selectionChanged();
 	}
 
 	/** Explicit sets may cross parts/voices. The final supplied note becomes focus and anchor. */
@@ -62,6 +147,7 @@ export class EditingSession {
 		this.selected = [...new Set(notes)];
 		this.focus = this.selected.at(-1) ?? null;
 		this.anchor = this.focus;
+		this.selectionChanged();
 	}
 
 	toggle(note: MNote): void {
@@ -97,41 +183,16 @@ export class EditingSession {
 	/** Left/right follow the written voice across measures, including cross-staff notes, landing on chord leads.
 	 * Up/down visit pitches within the current chord. Boundaries clamp. */
 	move(direction: EditingMove, options: SelectionOptions = {}): boolean {
-		const focus = this.getFocus();
-		let target: MNote | undefined;
-		if (!focus) {
-			if (direction === 'higher' || direction === 'lower') {
-				return false;
-			}
-			const notes = this.document.score.parts.flatMap((part) =>
-				part.measures.flatMap((measure) =>
-					measure.chords.map((chord) => chord.lead),
-				),
-			);
-			target = direction === 'next' ? notes[0] : notes.at(-1);
-		} else if (direction === 'next' || direction === 'previous') {
-			const chords = focus.part.measures.flatMap((measure) =>
-				measure.chords.filter((chord) => chord.lead.voice === focus.voice),
-			);
-			const at = chords.findIndex((chord) => chord.notes.includes(focus));
-			target = chords[at + (direction === 'next' ? 1 : -1)]?.lead;
-		} else {
-			const chord = focus.measure.chords.find((chord) =>
-				chord.notes.includes(focus),
-			);
-			const notes = (chord?.notes ?? [])
-				.filter((note) => note.pitch !== null)
-				.sort((a, b) => this.pitchNumber(a) - this.pitchNumber(b));
-			const at = notes.indexOf(focus);
-			if (at >= 0) {
-				target = notes[at + (direction === 'higher' ? 1 : -1)];
-			}
-		}
-		if (!target) {
-			return false;
-		}
-		this.select(target, options);
-		return true;
+		return new EditingNavigator(this).move(
+			{
+				unit:
+					direction === 'next' || direction === 'previous'
+						? 'note'
+						: 'chordPitch',
+				direction: direction === 'next' || direction === 'higher' ? 1 : -1,
+			},
+			options,
+		);
 	}
 
 	/** One group edit is one undo step. Returns false for an empty or unchanged selection. */
@@ -142,6 +203,7 @@ export class EditingSession {
 		}
 		this.past.push(edit);
 		this.future.length = 0;
+		this.dispatcher.dispatch('documentchange');
 		return true;
 	}
 
@@ -153,6 +215,7 @@ export class EditingSession {
 		edit.undo();
 		this.past.pop();
 		this.future.push(edit);
+		this.dispatcher.dispatch('documentchange');
 		return true;
 	}
 
@@ -164,6 +227,7 @@ export class EditingSession {
 		edit.redo();
 		this.future.pop();
 		this.past.push(edit);
+		this.dispatcher.dispatch('documentchange');
 		return true;
 	}
 
@@ -193,21 +257,5 @@ export class EditingSession {
 		return note.part.measures.flatMap((measure) =>
 			measure.notes.filter((candidate) => candidate.voice === note.voice),
 		);
-	}
-
-	private pitchNumber(note: MNote): number {
-		const pitch = note.pitch;
-		const semitones: Record<string, number> = {
-			C: 0,
-			D: 2,
-			E: 4,
-			F: 5,
-			G: 7,
-			A: 9,
-			B: 11,
-		};
-		return pitch
-			? pitch.octave * 12 + (semitones[pitch.step] ?? 0) + pitch.alter
-			: 0;
 	}
 }

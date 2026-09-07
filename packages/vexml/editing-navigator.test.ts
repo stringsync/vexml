@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'bun:test';
 import { MDocument } from '@stringsync/mdom';
-import { EditingSession } from '@stringsync/vexml';
-import { EditingVoices } from './editing-voices';
-import { SelectionNavigation } from './selection-navigation';
+import { EditingNavigator } from './editing-navigator';
+import { EditingSession } from './editing-session';
 
-describe('SelectionNavigation', () => {
+describe('EditingNavigator', () => {
 	it('crosses into the next system first voice and reverses into the previous system last note', () => {
 		const document = MDocument.empty();
 		const part = document.score.addPart();
@@ -23,20 +22,19 @@ describe('SelectionNavigation', () => {
 			.getOrCreateVoice('2')
 			.addNote({ step: 'E', octave: 3, type: 'quarter' });
 		const editor = new EditingSession(document);
-		const navigation = new SelectionNavigation(new EditingVoices(editor), [
-			[first],
-			[second],
-		]);
+		const navigation = new EditingNavigator(editor, {
+			getSystems: () => [[first], [second]],
+		});
 		editor.select(bottomLast);
-		expect(navigation.voice(1)).toBe(true);
+		expect(navigation.move({ unit: 'voice', direction: 1 })).toBe(true);
 		expect(editor.getFocus()).toBe(nextTop);
-		expect(navigation.voice(-1)).toBe(true);
+		expect(navigation.move({ unit: 'voice', direction: -1 })).toBe(true);
 		expect(editor.getFocus()).toBe(bottomLast);
 		editor.select(top);
-		expect(navigation.voice(-1)).toBe(false);
+		expect(navigation.move({ unit: 'voice', direction: -1 })).toBe(false);
 		expect(editor.getFocus()).toBe(top);
 		editor.select(nextBottom);
-		expect(navigation.voice(1)).toBe(false);
+		expect(navigation.move({ unit: 'voice', direction: 1 })).toBe(false);
 		expect(editor.getFocus()).toBe(nextBottom);
 	});
 
@@ -56,17 +54,17 @@ describe('SelectionNavigation', () => {
 			.getOrCreateVoice('3')
 			.addNote({ step: 'G', octave: 3, type: 'quarter' });
 		const editor = new EditingSession(document);
-		const voices = new EditingVoices(editor);
-		const stacked = new SelectionNavigation(voices, [
-			[first],
-			[second],
-			[third],
-		]);
+
+		const stacked = new EditingNavigator(editor, {
+			getSystems: () => [[first], [second], [third]],
+		});
 		editor.select(start);
-		expect(stacked.voice(1)).toBe(true);
+		expect(stacked.move({ unit: 'voice', direction: 1 })).toBe(true);
 		expect(editor.getFocus()).toBe(next);
-		const panorama = new SelectionNavigation(voices, [[first, second, third]]);
-		expect(panorama.voice(1)).toBe(true);
+		const panorama = new EditingNavigator(editor, {
+			getSystems: () => [[first, second, third]],
+		});
+		expect(panorama.move({ unit: 'voice', direction: 1 })).toBe(true);
 		expect(editor.getFocus()).toBe(last);
 	});
 
@@ -85,11 +83,11 @@ describe('SelectionNavigation', () => {
 			onset: 2,
 		});
 		const editor = new EditingSession(document);
-		const navigation = new SelectionNavigation(new EditingVoices(editor), [
-			[measure],
-		]);
+		const navigation = new EditingNavigator(editor, {
+			getSystems: () => [[measure]],
+		});
 		editor.select(focus);
-		expect(navigation.voice(1)).toBe(true);
+		expect(navigation.move({ unit: 'voice', direction: 1 })).toBe(true);
 		expect(editor.getFocus()).toBe(target);
 	});
 
@@ -113,81 +111,96 @@ describe('SelectionNavigation', () => {
 			{ type: 'quarter' },
 		);
 		const editor = new EditingSession(document);
-		const navigation = new SelectionNavigation(new EditingVoices(editor), [
-			[first, empty, last],
-		]);
+		const navigation = new EditingNavigator(editor, {
+			getSystems: () => [[first, empty, last]],
+		});
 		editor.select(start);
-		expect(navigation.measure(1)).toBe(true);
+		expect(navigation.move({ unit: 'measure', direction: 1 })).toBe(true);
 		expect(editor.getFocus()).toBe(chord.lead);
-		expect(navigation.measure(1)).toBe(false);
+		expect(navigation.move({ unit: 'measure', direction: 1 })).toBe(false);
 		expect(editor.getFocus()).toBe(chord.lead);
-		expect(navigation.measure(-1)).toBe(true);
+		expect(navigation.move({ unit: 'measure', direction: -1 })).toBe(true);
 		expect(editor.getFocus()).toBe(start);
-		expect(navigation.measure(-1)).toBe(false);
+		expect(navigation.move({ unit: 'measure', direction: -1 })).toBe(false);
 	});
 
 	it('initializes horizontal navigation and safely handles empty scores', () => {
 		const editor = new EditingSession(MDocument.empty());
-		const navigation = new SelectionNavigation(new EditingVoices(editor), []);
-		expect(navigation.measure(1)).toBe(false);
-		expect(navigation.note(-1)).toBe(false);
-		expect(navigation.voice(1)).toBe(false);
+		const navigation = new EditingNavigator(editor, { getSystems: () => [] });
+		expect(navigation.move({ unit: 'measure', direction: 1 })).toBe(false);
+		expect(navigation.move({ unit: 'note', direction: -1 })).toBe(false);
+		expect(navigation.move({ unit: 'voice', direction: 1 })).toBe(false);
 	});
+});
 
-	it('restores selection near playback in the active voice, including later repeat occurrences', () => {
+describe('EditingNavigator without layout', () => {
+	it('switches to a nearby onset, remembers the voice after clearing, and clamps', () => {
 		const document = MDocument.empty();
 		const measure = document.score.addPart().addMeasure();
-		const upper = measure
+		const first = measure
 			.getOrCreateVoice('1')
-			.addNote({ step: 'C', octave: 5, type: 'quarter' });
-		const lower = measure
+			.addNote({ step: 'C', octave: 5, type: 'quarter', onset: 2 });
+		const lower = measure.getOrCreateVoice('2');
+		lower.addNote({ step: 'C', octave: 3, type: 'quarter' });
+		const closest = lower.addNote({
+			step: 'D',
+			octave: 3,
+			type: 'quarter',
+			onset: 2,
+		});
+		const editor = new EditingSession(document);
+		const navigator = new EditingNavigator(editor);
+		editor.select(first);
+		expect(navigator.move({ unit: 'voice', direction: 1 })).toBe(true);
+		expect(editor.getFocus()).toBe(closest);
+		expect(navigator.move({ unit: 'voice', direction: 1 })).toBe(false);
+		editor.clearSelection();
+		expect(editor.getActiveVoice()?.voice).toBe('2');
+		expect(editor.move('previous')).toBe(true);
+		expect(editor.getFocus()).toBe(closest);
+	});
+
+	it('uses the nearest populated measure when switching voice explicitly', () => {
+		const document = MDocument.empty();
+		const part = document.score.addPart();
+		const closest = part
+			.addMeasure()
 			.getOrCreateVoice('2')
 			.addNote({ step: 'C', octave: 3, type: 'quarter' });
-		const later = measure
+		const focus = part
+			.addMeasure()
+			.getOrCreateVoice('1')
+			.addNote({ step: 'C', octave: 5, type: 'quarter' });
+		part.addMeasure();
+		part
+			.addMeasure()
 			.getOrCreateVoice('2')
 			.addNote({ step: 'D', octave: 3, type: 'quarter' });
 		const editor = new EditingSession(document);
-		const voices = new EditingVoices(editor);
-		editor.select(lower);
-		voices.clear();
-		const navigation = new SelectionNavigation(voices, [[measure]]);
-		expect(
-			navigation.nearPlayhead(2400, [
-				{ note: lower, timeMs: 0 },
-				{ note: upper, timeMs: 2400 },
-				{ note: later, timeMs: 2500 },
-				{ note: lower, timeMs: 4000 },
-			]),
-		).toBe(2500);
-		expect(editor.getFocus()).toBe(later);
-		voices.clear();
-		expect(
-			navigation.nearPlayhead(4100, [
-				{ note: lower, timeMs: 0 },
-				{ note: lower, timeMs: 4000 },
-			]),
-		).toBe(4000);
-		expect(editor.getFocus()).toBe(lower);
+		editor.select(focus);
+		expect(new EditingNavigator(editor).selectVoice({ part, voice: '2' })).toBe(
+			true,
+		);
+		expect(editor.getFocus()).toBe(closest);
 	});
 
-	it('falls back to an available voice near playback and leaves empty timelines unselected', () => {
+	it('refuses to extend navigation across voices without changing selection', () => {
 		const document = MDocument.empty();
 		const measure = document.score.addPart().addMeasure();
-		measure
+		const first = measure
 			.getOrCreateVoice('1')
 			.addNote({ step: 'C', octave: 5, type: 'quarter' });
-		const lower = measure
+		measure
 			.getOrCreateVoice('2')
 			.addNote({ step: 'C', octave: 3, type: 'quarter' });
 		const editor = new EditingSession(document);
-		const navigation = new SelectionNavigation(new EditingVoices(editor), [
-			[measure],
-		]);
-		expect(navigation.nearPlayhead(1200, [])).toBeNull();
-		expect(editor.getFocus()).toBeNull();
-		expect(navigation.nearPlayhead(1200, [{ note: lower, timeMs: 1000 }])).toBe(
-			1000,
-		);
-		expect(editor.getFocus()).toBe(lower);
+		editor.select(first);
+		expect(
+			new EditingNavigator(editor).move(
+				{ unit: 'voice', direction: 1 },
+				{ extend: true },
+			),
+		).toBe(false);
+		expect(editor.getSelection()).toEqual([first]);
 	});
 });
