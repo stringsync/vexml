@@ -46,6 +46,7 @@ import {
 	DEFAULT_WIDTH,
 	FAST_RENDER_MS,
 } from './constants';
+import { EditingToolbar } from './editing-toolbar';
 import { Header } from './header';
 import { INSTRUMENTS } from './instruments';
 import { LayoutToggle } from './layout-toggle';
@@ -683,28 +684,14 @@ export default function App() {
 						/>
 					</div>
 
-					<div className="grid shrink-0 grid-cols-1 items-center gap-x-6 border-y border-border bg-card px-6 py-2 md:grid-cols-2 md:px-12">
-						{session && session.editingVoices.options.length > 1 && (
-							<div className="flex h-12 min-w-0 items-center overflow-x-auto">
-								<Segmented
-									label="Editing voice"
-									value={activeVoice}
-									onChange={(value) => session.selectVoice(value)}
-									options={session.editingVoices.options}
-									className="shrink-0"
-								/>
-							</div>
-						)}
-						<div className="flex h-16 min-w-0 flex-col justify-center">
-							<p role="status" aria-live="polite" aria-label="Selection">
-								<span className="block truncate text-lg font-semibold text-foreground">
-									{selectionDescription.split(' · ')[0]}
-								</span>
-								<span className="block truncate text-sm text-muted-foreground">
-									{selectionDescription.split(' · ').slice(1).join(' · ') ||
-										'\u00a0'}
-								</span>
-							</p>
+					<div className="shrink-0 px-4 pt-4 md:px-10">
+						<div className="mx-auto max-w-237.5">
+							<EditingToolbar
+								voices={session?.editingVoices.options ?? []}
+								activeVoice={activeVoice}
+								onVoiceChange={(value) => session?.selectVoice(value)}
+								selection={selectionDescription}
+							/>
 						</div>
 					</div>
 					<div className="relative min-h-0 flex-1">
@@ -750,7 +737,7 @@ export default function App() {
 									// (the height cap does the same vertically) and max-w-full stops a long one
 									// from pushing past the space, leaving it to scroll. It also drops the
 									// page-width cap: a panorama has no page to be as wide as.
-									className={`relative mx-auto rounded-t-2xl border border-border bg-card px-6 py-8 shadow-score md:rounded-2xl md:px-12 md:py-14 ${panoramic ? 'w-fit max-w-full overflow-x-auto' : 'w-full max-w-237.5'} ${initialized ? '' : 'invisible'}`}
+									className={`relative mx-auto rounded-t-2xl border border-border bg-card px-6 py-8 shadow-score focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-4 focus-visible:ring-offset-background md:rounded-2xl md:px-12 md:py-14 ${panoramic ? 'w-fit max-w-full overflow-x-auto' : 'w-full max-w-237.5'} ${initialized ? '' : 'invisible'}`}
 								/>
 							)}
 						</div>
