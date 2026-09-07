@@ -107,6 +107,7 @@ const projection = (model: SiteModel) => ({
 	timeMs: model.session?.timeMs ?? 0,
 	durationMs: model.session?.durationMs ?? 0,
 	tooltip: model.session?.tooltip ?? null,
+	activeVoice: model.session?.editingVoices.getValue() ?? '',
 	selectionDescription: model.session?.selectionDescription ?? 'No selection',
 });
 
@@ -133,6 +134,7 @@ export default function App() {
 		durationMs,
 		tooltip,
 		selectionDescription,
+		activeVoice,
 	} = useReactive(model, projection, ['changed']);
 
 	// Purely local view state: nothing outside the component reads any of it.
@@ -673,6 +675,25 @@ export default function App() {
 						<p id="score-keyboard-help">
 							Focus the score · ← → notes · ↑ ↓ chord pitches · Esc unselect
 						</p>
+						{session && session.editingVoices.options.length > 1 && (
+							<Select
+								value={activeVoice}
+								onValueChange={(value) => session.selectVoice(value)}
+							>
+								<SelectTrigger aria-label="Editing voice" size="sm">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectGroup>
+										{session.editingVoices.options.map((option) => (
+											<SelectItem key={option.value} value={option.value}>
+												{option.label}
+											</SelectItem>
+										))}
+									</SelectGroup>
+								</SelectContent>
+							</Select>
+						)}
 						<p role="status" aria-live="polite">
 							{selectionDescription}
 						</p>

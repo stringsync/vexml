@@ -17,6 +17,7 @@ import {
 	HALO_COLOR,
 	HOVER_COLOR,
 } from './constants';
+import type { EditingVoices } from './editing-voices';
 import { describe } from './format';
 import type { Instrument } from './instrument';
 
@@ -78,7 +79,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		readonly score: Score,
 		private readonly container: HTMLDivElement,
 		private readonly instrument: () => Instrument | null,
-		readonly editor: EditingSession,
+		readonly editingVoices: EditingVoices,
 	) {
 		this.durationMs = score.getDurationMs();
 		this.disposer.use(this.dispatcher);
@@ -142,7 +143,11 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 					? e.target
 					: null;
 			this.pinned = this.pinned === target ? null : target;
-			this.editor.selectElements(this.pinned ? [this.pinned] : []);
+			if (this.pinned) {
+				this.editor.selectElements([this.pinned]);
+			} else {
+				this.editingVoices.clear();
+			}
 			this.container.focus({ preventScroll: true });
 			this.apply();
 		});
@@ -180,6 +185,17 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.syncSelection();
 	}
 
+	get editor(): EditingSession {
+		return this.editingVoices.editor;
+	}
+
+	selectVoice(value: string): void {
+		if (this.editingVoices.select(value)) {
+			this.setPlaying(false);
+			this.syncSelection();
+		}
+	}
+
 	get selectionDescription(): string {
 		const focus = this.editor.getFocus();
 		if (!focus) {
@@ -199,19 +215,19 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	handleKey(key: string): boolean {
 		switch (key) {
 			case 'ArrowRight':
-				this.editor.move('next');
+				this.editingVoices.move('next');
 				break;
 			case 'ArrowLeft':
-				this.editor.move('previous');
+				this.editingVoices.move('previous');
 				break;
 			case 'ArrowUp':
-				this.editor.move('higher');
+				this.editingVoices.move('higher');
 				break;
 			case 'ArrowDown':
-				this.editor.move('lower');
+				this.editingVoices.move('lower');
 				break;
 			case 'Escape':
-				this.editor.selectNotes([]);
+				this.editingVoices.clear();
 				break;
 			default:
 				return false;

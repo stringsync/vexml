@@ -4,6 +4,7 @@ import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
 import { SystemClock } from 'webappwiz/time';
 import { DocumentSource, type Fixtures } from './document-source';
+import { EditingVoices } from './editing-voices';
 import { InstrumentController } from './instrument-controller';
 import { RenderConfig } from './render-config';
 import { ScoreSession } from './score-session';
@@ -41,7 +42,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	private generation = 0;
 	private editingSource: {
 		input: string | Blob;
-		editor: EditingSession;
+		voices: EditingVoices;
 	} | null = null;
 
 	private readonly clock = new SystemClock();
@@ -85,9 +86,9 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		this.dispatcher.dispatch('changed');
 		const start = this.clock.now();
 		try {
-			let editor =
-				this.editingSource?.input === input ? this.editingSource.editor : null;
-			if (!editor) {
+			let voices =
+				this.editingSource?.input === input ? this.editingSource.voices : null;
+			if (!voices) {
 				const parser = new MDOMParser();
 				const document =
 					typeof input === 'string'
@@ -96,10 +97,10 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 				if (at !== this.generation) {
 					return;
 				}
-				editor = new EditingSession(document);
-				this.editingSource = { input, editor };
+				voices = new EditingVoices(new EditingSession(document));
+				this.editingSource = { input, voices };
 			}
-			const score = await render(editor.document, container, config);
+			const score = await render(voices.editor.document, container, config);
 			if (at !== this.generation) {
 				score.dispose();
 				return;
@@ -108,7 +109,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 				score,
 				container,
 				() => this.instrument.current(),
-				editor,
+				voices,
 			);
 			this.disposer.defer(
 				this.session.events.on('changed', () =>
