@@ -10,6 +10,7 @@ import {
 } from './document-source';
 import { EditingVoices } from './editing-voices';
 import { InstrumentController } from './instrument-controller';
+import { NewNotation } from './new-notation';
 import { NoteEditing } from './note-editing';
 import { RenderConfig } from './render-config';
 import { type ScoreMode, ScoreSession } from './score-session';
@@ -46,6 +47,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	// Bumped per render request. A render that resolves after a newer one started is dropped, so a
 	// late score never leaks a canvas into a container a newer render already owns.
 	private generation = 0;
+	private focusNew = false;
 	private mode: ScoreMode = 'view';
 	private editorDisposer = new Disposer();
 	private sessionDisposer = new Disposer();
@@ -147,6 +149,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 				() => this.instrument.current(),
 				voices,
 				this.mode,
+				this.noteEditing?.entry,
 			);
 			this.sessionDisposer.use(this.session);
 			this.sessionDisposer.defer(
@@ -157,9 +160,13 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 			this.session.cursor.cancelScroll();
 			container.scrollTop = scrollTop;
 			container.scrollLeft = scrollLeft;
-			if (focused) {
+			if (this.focusNew) {
+				this.noteEditing?.entry.begin();
+			}
+			if (focused || this.focusNew) {
 				container.focus({ preventScroll: true });
 			}
+			this.focusNew = false;
 			this.config.reportRenderMs(this.clock.now().subtract(start).ms);
 		} catch (e: unknown) {
 			if (at !== this.generation) {
@@ -176,6 +183,12 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		}
 	}
 
+	newNotation(kind: 'staff' | 'tab'): void {
+		this.focusNew = true;
+		this.setMode('edit');
+		this.config.patchLayout({ referenceWidth: 500 });
+		this.document.edit(new NewNotation().create(kind), { immediate: true });
+	}
 	dispose(): void {
 		this.generation++;
 		this.disposer.dispose();

@@ -1,13 +1,16 @@
-import { MusicXMLSerializer } from '@stringsync/mdom';
+import { MusicXMLSerializer, type Note } from '@stringsync/mdom';
 import type { EditingSession, PitchInput } from '@stringsync/vexml';
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
+
+import { NoteEntry } from './note-entry';
 
 /** Edit selected notes' pitch and staccato markings through the demo's form. */
 export class NoteEditing implements Eventful<{ changed: undefined }>, Resource {
 	private readonly dispatcher = new Dispatcher<{ changed: undefined }>();
 	readonly events = this.dispatcher.events;
 	private readonly disposer = new Disposer();
+	readonly entry: NoteEntry;
 	step = '';
 	alter = '';
 	octave = '';
@@ -15,6 +18,12 @@ export class NoteEditing implements Eventful<{ changed: undefined }>, Resource {
 
 	constructor(readonly editor: EditingSession) {
 		this.disposer.use(this.dispatcher);
+		this.entry = this.disposer.use(new NoteEntry(editor));
+		this.disposer.defer(
+			this.entry.events.on('changed', () =>
+				this.dispatcher.dispatch('changed'),
+			),
+		);
 		this.disposer.defer(
 			editor.events.on('selectionchange', () => this.refresh()),
 		);
@@ -24,6 +33,25 @@ export class NoteEditing implements Eventful<{ changed: undefined }>, Resource {
 		this.refresh();
 	}
 
+	get duration(): string {
+		if (this.entry.draft && !this.entry.draft.note) {
+			return this.entry.duration;
+		}
+		const notes = this.editor.getSelection();
+		const type = notes[0]?.type;
+		return type && notes.every((note) => note.type === type) ? type : '';
+	}
+	setDuration(type: Parameters<Note['setDuration']>[0]['type']): void {
+		this.entry.setDuration(type);
+		if (this.entry.draft && !this.entry.draft.note) {
+			return;
+		}
+		this.editor.history.edit('Change duration', () => {
+			for (const note of this.editor.getSelection()) {
+				note.setDuration({ type });
+			}
+		});
+	}
 	get pitchReason(): string | null {
 		const notes = this.editor.getSelection();
 		if (!notes.length) {

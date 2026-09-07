@@ -24,6 +24,8 @@ import {
 import type { EditingVoices } from './editing-voices';
 import { formatPitch } from './format';
 import type { Instrument } from './instrument';
+import type { NoteEntry } from './note-entry';
+import { NoteEntryOverlay } from './note-entry-overlay';
 import { PlayheadFollow } from './playhead-follow';
 import { SiteEditingBindings } from './site-editing-bindings';
 
@@ -81,6 +83,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		private readonly instrument: () => Instrument | null,
 		readonly editingVoices: EditingVoices,
 		mode: ScoreMode = 'view',
+		readonly entry?: NoteEntry,
 	) {
 		this.mode = mode;
 		this.durationMs = score.getDurationMs();
@@ -140,9 +143,29 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.editing = score.createEditingController(this.editor, {
 			enabled: false,
 			bindings: new SiteEditingBindings(),
+			keyboard: !entry,
 			selection: { color: CURSOR_COLOR, focusColor: SELECTION_OUTLINE_COLOR },
 			allowDeselect: false,
 		});
+		if (entry) {
+			this.disposer.use(new NoteEntryOverlay(score, entry));
+			const onKey = (event: KeyboardEvent) => {
+				if (
+					event.defaultPrevented ||
+					event.isComposing ||
+					event.target !== container
+				) {
+					return;
+				}
+				if (this.handleKey(event)) {
+					event.preventDefault();
+				}
+			};
+			container.addEventListener('keydown', onKey);
+			this.disposer.defer(() =>
+				container.removeEventListener('keydown', onKey),
+			);
+		}
 		this.watch(this.editor.events, 'voicechange', () =>
 			this.dispatcher.dispatch('changed'),
 		);
@@ -230,6 +253,12 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			typeof key === 'string'
 				? { key, shiftKey, altKey: false, ctrlKey: false, metaKey: false }
 				: key;
+		if (this.mode !== 'edit' || this.playing) {
+			return false;
+		}
+		if (this.entry?.handleKey(input)) {
+			return true;
+		}
 		return this.editing.handleKey(input);
 	}
 
@@ -258,6 +287,9 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	}
 
 	private updateMode(): void {
+		if (this.mode !== 'edit' || this.playing) {
+			this.entry?.cancel();
+		}
 		this.editing.setEnabled(this.mode === 'edit' && !this.playing);
 		this.playhead.setVisible(this.mode === 'view' || this.playing);
 		this.container.style.touchAction = this.mode === 'view' ? 'none' : '';

@@ -54,7 +54,6 @@ import {
 import { INSTRUMENTS } from '@/lib/instruments';
 import { ScoreFit } from '@/lib/score-fit';
 import { SiteModel } from '@/lib/site-model';
-import editingExample from './examples/editing.ts?raw';
 
 // Vite reads the fixtures straight from packages/integration at build time (fs.allow:
 // ['../..'] in vite.config permits it) and hands us the file list — no symlink or manifest.
@@ -115,10 +114,6 @@ const projection = (model: SiteModel) => ({
 	mode: model.currentMode,
 	noteEditing: model.noteEditing,
 	editorVersion: model.editorVersion,
-	selectionDescription: model.session?.selectionDescription ?? 'No selection',
-	selectionCount: model.session?.editing.getPresentation().marquee
-		? model.session.editing.getPresentation().selected.length
-		: (model.session?.editor.getSelection().length ?? 0),
 });
 
 export default function App() {
@@ -144,8 +139,6 @@ export default function App() {
 		playing,
 		timeMs,
 		durationMs,
-		selectionDescription,
-		selectionCount,
 		mode,
 		activeVoice,
 		noteEditing,
@@ -250,7 +243,15 @@ export default function App() {
 			}
 			if (
 				e.target === document.body &&
-				['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) &&
+				(/^[a-gA-G0-9]$/.test(e.key) ||
+					[
+						'ArrowLeft',
+						'ArrowRight',
+						'ArrowUp',
+						'ArrowDown',
+						'Enter',
+						'Escape',
+					].includes(e.key)) &&
 				!e.altKey &&
 				!e.ctrlKey &&
 				!e.metaKey
@@ -686,17 +687,17 @@ export default function App() {
 				</Sheet>
 
 				<div className="flex min-w-0 flex-1 flex-col">
-					<div className="shrink-0 px-4 pt-4 md:px-10">
-						<div className="mx-auto max-w-237.5">
+					<div className="shrink-0">
+						<div>
 							<EditingToolbar
-								title={fixture || scoreTitle}
-								renderMs={renderMs}
+								title={
+									fixture || model.editor?.document.score.title || scoreTitle
+								}
+								onNew={(kind) => model.newNotation(kind)}
 								error={error}
 								voices={session?.editingVoices.options ?? []}
 								activeVoice={activeVoice}
 								onVoiceChange={(value) => session?.selectVoice(value)}
-								selection={selectionDescription}
-								selectionCount={selectionCount}
 								mode={mode}
 								playing={playing}
 								onModeChange={(value) => {
@@ -704,54 +705,17 @@ export default function App() {
 									containerRef.current?.focus({ preventScroll: true });
 								}}
 							>
-								{mode === 'edit' && noteEditing && (
+								{noteEditing && (
 									<NoteEditingControls
 										key={editorVersion}
 										editing={noteEditing}
+										editMode={mode === 'edit'}
 										disabled={playing || rendering}
 										onApplied={() =>
 											containerRef.current?.focus({ preventScroll: true })
 										}
 									/>
 								)}
-								<Collapsible className="px-4 pb-2 md:px-5">
-									<div className="flex items-center gap-2">
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => {
-												model.setMode('edit');
-												model.config.patchLayout({ referenceWidth: 500 });
-												model.document.loadFixture('Try editing');
-											}}
-										>
-											Try editing
-										</Button>
-										<CollapsibleTrigger asChild>
-											<Button variant="ghost" size="sm">
-												Example & help
-											</Button>
-										</CollapsibleTrigger>
-									</div>
-									<CollapsibleContent className="max-h-48 overflow-auto pt-3">
-										<p className="text-xs text-muted-foreground">
-											Select a note, then Shift-click within its voice to select
-											a range. Drag around notes to select a group. Undo:
-											⌘/Ctrl+Z. Redo: ⌘/Ctrl+Shift+Z.
-										</p>
-										<a
-											className="text-xs underline"
-											href="/examples/editing.html"
-											target="_blank"
-											rel="noreferrer"
-										>
-											Open standalone editing example
-										</a>
-										<pre className="overflow-auto p-2 text-xs">
-											<code>{editingExample}</code>
-										</pre>
-									</CollapsibleContent>
-								</Collapsible>
 							</EditingToolbar>
 						</div>
 					</div>

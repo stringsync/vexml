@@ -15,7 +15,13 @@ export class Measure {
 		private readonly part: Part,
 		private readonly box: MeasureBox,
 		private readonly voiceList: readonly Voice[],
+		private readonly staves: readonly StaffGeometry[] = [],
 	) {}
+
+	/** Visible staff lines and note area in score coordinates, including empty staves. */
+	getStaves(): readonly StaffGeometry[] {
+		return this.staves;
+	}
 
 	getSources(): readonly MMeasure[] {
 		return [this.mmeasure];
@@ -44,4 +50,15 @@ export class Measure {
 	getVoices(): Voice[] {
 		return [...this.voiceList];
 	}
+}
+
+/** Geometry for positioning an input preview without adding a document note. */
+export interface StaffGeometry {
+	readonly staff: string;
+	readonly tab: boolean;
+	readonly top: number;
+	readonly spacing: number;
+	readonly lines: number;
+	readonly startX: number;
+	readonly endX: number;
 }

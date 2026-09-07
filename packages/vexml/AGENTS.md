@@ -162,6 +162,9 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 
 ## Interaction and playback
 
+- **Empty staff input positions** — `measure.ts` (`getStaves`), collected from vexflow staves in `draw-pass.ts`, cropped by `score-drawer.ts` and attached by `element-factory.ts`. The site uses this geometry for its temporary note-entry layer.
+
+
 - **Editing controller activation, selection colors, shaded regions and cursor halo/outline** — `editing-controller.ts`, `selection-overlay.ts`, `color-style.ts`, `halo-style.ts`
 - **Editing focus, active voice, range/set selection and undo/redo** — `editing-session.ts`, `pitch-edit.ts`; public usage and limitations in the root `README.md` (Editing)
 - **Editing navigation in written order and across rendered systems** — `editing-navigator.ts`, `chord-note-order.ts` (staff and written-position order within a chord), `editing-layout.ts`, `score-editing-layout.ts`
