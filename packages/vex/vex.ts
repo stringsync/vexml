@@ -6,8 +6,8 @@ import { SystemClock } from 'webappwiz/time';
 import { dev } from './dev';
 import { fix } from './fix';
 import { perf } from './perf';
-import { release } from './release';
 import { render } from './render';
+import { ship } from './ship';
 import { slice } from './slice';
 import { test } from './test';
 import { validate } from './validate';
@@ -158,7 +158,7 @@ vex
 	);
 
 vex
-	.command('release')
+	.command('ship')
 	.description('bump version (patch|minor|major), commit, tag, and publish')
 	.arg('type', t.enum(['patch', 'minor', 'major'] as const))
-	.action((opts, { log, ps }) => release({ bump: opts.type, log, ps }));
+	.action((opts, { log, ps }) => ship({ bump: opts.type, log, ps }));
