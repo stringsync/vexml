@@ -43,7 +43,7 @@ export class EditingVoices {
 		}
 		const focus = this.editor.getFocus();
 		const notes = this.notes(option);
-		// Prefer the current measure, then the closest onset. Written order breaks ties.
+		// Land near where the user was looking, not at the voice's first note.
 		if (focus) {
 			notes.sort(
 				(a, b) =>
