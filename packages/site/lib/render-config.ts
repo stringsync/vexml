@@ -48,7 +48,7 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 		this.disposer.use(this.dispatcher);
 	}
 
-	/* Write a patch over the live config, then schedule (or apply) the render config. */
+	/* Merges into `live` rather than replacing it, so callers only spell out the keys that changed. */
 	patch(patch: ConfigInput): void {
 		this.set({ ...this.live, ...patch });
 	}
@@ -63,7 +63,7 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 	}
 
 	/* The layout knobs live in one nested object, so each writes through the others: setting the
-	 * width must not silently reset the overflow mode. Standard-only — every knob it writes is
+	 * width must not silently reset the overflow mode. Standard-only: every knob it writes is
 	 * ignored by a panoramic layout, and the panel hides them there rather than writing a patch
 	 * that would flip the view back. */
 	patchLayout(patch: Partial<StandardLayout>): void {
@@ -88,7 +88,8 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 		this.set({ ...this.live, layout: rest as StandardLayout });
 	}
 
-	/* Which layout the score is drawn with; standard unless panoramic was chosen. */
+	/* Mirrors vexml's own default: `render` treats an absent `layout` as standard, so this reports
+	 * the same without every caller needing to know that default. */
 	layoutType(): Layout['type'] {
 		return this.live.layout?.type ?? 'standard';
 	}
@@ -111,7 +112,8 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 		this.set({ ...this.live, layout: { type: 'panoramic' } });
 	}
 
-	/* Drop every override, including the whole layout object. */
+	/* A dedicated wipe rather than clear() plus clearLayout() in a loop: clearLayout() only drops
+	 * one layout key at a time, and clear() cannot reach into the nested layout object at all. */
 	resetAll(): void {
 		const { layout } = this.live;
 		this.stashedLayout = undefined;
