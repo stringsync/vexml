@@ -3,6 +3,39 @@ import type { VexmlContext } from '@vexml/renderer';
 import { testing } from './setup';
 
 describe('cursor', () => {
+	// M5's piano triplets share a column with ordinary bass notes/rests. Each
+	// onset must advance to the right, and its midpoint must glide toward the
+	// next onset instead of falling back to the barline.
+	it.concurrent('Mozart An Chloe M5 interpolates between successive notes', async () => {
+		const { result } = await testing.eval(
+			'score_mozart_an_chloe.musicxml',
+			{},
+			({ score }) => {
+				const seq = score.getSequence();
+				// The opening pickup precedes printed measure 1.
+				const steps = seq.getSteps().filter((step) => step.measureIndex === 5);
+				return steps.slice(0, -1).map((step, i) => {
+					const next = steps[i + 1];
+					if (!next) {
+						throw new Error('missing next onset');
+					}
+					return {
+						x: step.x,
+						nextX: next.x,
+						glideToX: step.glideToX,
+						midX: seq.positionAt((step.startMs + step.endMs) / 2)?.x,
+					};
+				});
+			},
+		);
+		expect(result).toHaveLength(9);
+		for (const step of result) {
+			expect(step.nextX).toBeGreaterThan(step.x);
+			expect(step.glideToX).toBe(step.nextX);
+			expect(step.midX).toBeCloseTo((step.x + step.nextX) / 2);
+		}
+	});
+
 	// A playback cursor end to end, the way a caller reaches it: render, add a cursor, attach the
 	// built-in bar view, and seek. Proves the timeline builds from a real score and the bar lands on the
 	// engraving at the sought time. The timeline/cursor/view logic is unit-tested in packages/vexml; this is the

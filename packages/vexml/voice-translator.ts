@@ -7,6 +7,7 @@ import {
 	Modifier,
 	StaveNote,
 	type StemmableNote,
+	type Tickable,
 	Voice,
 } from 'vexflow';
 import type { BarlineTranslator } from './barline-translator';
@@ -236,7 +237,7 @@ export class VoiceTranslator {
 	 * must build their voices identically, or the measured width and the drawn width disagree
 	 * and notes shear; sharing this builder keeps the two passes in lockstep by construction.
 	 */
-	softVoice(tickables: VoiceTickable[], softmaxFactor: number): Voice {
+	softVoice(tickables: Tickable[], softmaxFactor: number): Voice {
 		return new Voice()
 			.setMode(Voice.Mode.SOFT)
 			.setSoftmaxFactor(softmaxFactor)

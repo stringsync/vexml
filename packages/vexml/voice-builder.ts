@@ -343,6 +343,14 @@ export class VoiceBuilder {
 				p.tuplets.push(...this.spanners.buildTuplets(chords, this.byLead));
 			}
 			p.tupletChords.length = 0;
+			// Voice caches its total ticks and resolution denominator when notes are
+			// added. Tuplets just changed those ticks: rebuild the voices so ordinary
+			// beats and tuplet beats share the correct formatter tick contexts.
+			if (p.tuplets.length > 0) {
+				p.vexVoices = p.vexVoices.map((voice) =>
+					this.translator.softVoice(voice.getTickables(), this.softmaxFactor),
+				);
+			}
 		}
 	}
 
@@ -368,30 +376,27 @@ export class VoiceBuilder {
 		// rescales over this map, so a tuplet that opens on a held (fretless) note still
 		// compresses the frets after it instead of letting them drift out from under the beam.
 		const byTabTickable = new Map<Note, StemmableNote>();
-		const vexVoices = voices.map((voice) => {
+		const tickablesByVoice = voices.map((voice) => {
 			const chords = voice.chords;
 			const chordByLead = new Map<Note, Chord>();
 			for (const chord of chords) {
 				chordByLead.set(chord.lead, chord);
 			}
-			return this.translator.softVoice(
-				this.tab.tickables(chords, tuning, (lead, tickable) => {
-					byTabTickable.set(lead, tickable);
-					if (tickable instanceof GhostNote) {
-						return;
-					}
-					const tabNote = tickable as TabNote;
-					this.byTabLead.set(lead, tabNote);
-					const chord = chordByLead.get(lead);
-					if (chord) {
-						(lead.isGrace ? graceTabChords : tabChords).push({
-							note: tabNote,
-							chord,
-						});
-					}
-				}),
-				this.softmaxFactor,
-			);
+			return this.tab.tickables(chords, tuning, (lead, tickable) => {
+				byTabTickable.set(lead, tickable);
+				if (tickable instanceof GhostNote) {
+					return;
+				}
+				const tabNote = tickable as TabNote;
+				this.byTabLead.set(lead, tabNote);
+				const chord = chordByLead.get(lead);
+				if (chord) {
+					(lead.isGrace ? graceTabChords : tabChords).push({
+						note: tabNote,
+						chord,
+					});
+				}
+			});
 		});
 		// Build (but discard) the tab tuplets: their construction rescales the notes'
 		// ticks (Tuplet.attach), which the part's shared formatter needs so a triplet's
@@ -400,6 +405,10 @@ export class VoiceBuilder {
 		for (const voice of voices) {
 			this.spanners.buildTuplets(voice.chords, byTabTickable);
 		}
+		// Wrap only after tuplets have finalized the ticks, as on the notation path.
+		const vexVoices = tickablesByVoice.map((tickables) =>
+			this.translator.softVoice(tickables, this.softmaxFactor),
+		);
 		return {
 			stave,
 			row,
