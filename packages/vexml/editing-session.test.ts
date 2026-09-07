@@ -343,9 +343,7 @@ describe('EditingSession', () => {
 		expect(session.redo()).toBe(false);
 		expect(noteAt(document, 0).pitch?.step).toBe('E');
 	});
-});
 
-describe('EditingSession events and voice context', () => {
 	it('reports selection and document edits separately, including undo/redo and no-ops', () => {
 		const document = createDocument(['C']);
 		const editor = new EditingSession(document);
@@ -389,9 +387,7 @@ describe('EditingSession events and voice context', () => {
 		editor.move('next');
 		expect(editor.getFocus()?.voice).toBe('2');
 	});
-});
 
-describe('EditingSession mdom history', () => {
 	it('observes arbitrary native edits, rollback and undo without losing note identity', () => {
 		const document = createDocument(['C', 'D']);
 		const first = noteAt(document, 0);
