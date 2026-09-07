@@ -3,13 +3,11 @@ import { useDisposerEffect, useReactive, useResource } from '@webappwiz/react';
 import {
 	ChevronLeftIcon,
 	ChevronRightIcon,
-	CircleXIcon,
 	Rows3Icon,
 	SlidersVerticalIcon,
 	UploadIcon,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -139,7 +137,6 @@ export default function App() {
 	// Purely local view state: nothing outside the component reads any of it.
 	const [dragging, setDragging] = useState(false);
 	const [controlsOpen, setControlsOpen] = useState(false);
-	const [renderCount, setRenderCount] = useState(0);
 	const isMobile = useIsMobile();
 
 	const layoutType = config.layout?.type ?? 'standard';
@@ -180,7 +177,6 @@ export default function App() {
 		const container = containerRef.current;
 		if (container) {
 			model.renderInto(container, { input, config: applied });
-			setRenderCount((n) => n + 1);
 		}
 	}, [model, input, applied]);
 
@@ -387,22 +383,6 @@ export default function App() {
 						/>
 					</CollapsibleContent>
 				</Collapsible>
-
-				{/* Below md there is no meta row above the score for the view toggle to sit in,
-				    so it rides along with the document controls instead. */}
-				<Field
-					orientation="horizontal"
-					className="justify-between gap-3 md:hidden"
-				>
-					<FieldLabel className="font-normal text-muted-foreground">
-						View
-					</FieldLabel>
-					<LayoutToggle
-						size="sm"
-						value={layoutType}
-						onChange={(type) => model.config.setLayoutType(type)}
-					/>
-				</Field>
 			</Section>
 
 			<Section icon={SlidersVerticalIcon} title="Playback">
@@ -452,6 +432,16 @@ export default function App() {
 					/>
 				}
 			>
+				<Field className="gap-2">
+					<FieldLabel className="font-normal text-muted-foreground">
+						Score view
+					</FieldLabel>
+					<LayoutToggle
+						value={layoutType}
+						onChange={(type) => model.config.setLayoutType(type)}
+						className="w-fit bg-muted"
+					/>
+				</Field>
 				<Field
 					orientation="horizontal"
 					className="justify-between gap-3"
@@ -639,54 +629,12 @@ export default function App() {
 				</Sheet>
 
 				<div className="flex min-w-0 flex-1 flex-col">
-					{/* The document and how long it took to draw on the left, the view it is drawn
-					    in on the right. */}
-					<div className="flex items-start justify-between gap-3 px-4 pt-3 md:px-10 md:pt-4">
-						<div className="flex min-w-0 flex-1 items-center justify-between gap-3 text-2xs text-muted-foreground md:flex-none md:justify-start">
-							{fixture && (
-								<span className="truncate font-mono text-xs text-foreground md:text-sm">
-									{fixture}
-								</span>
-							)}
-							{error ? (
-								<Alert variant="destructive" className="w-fit">
-									<CircleXIcon />
-									<AlertTitle>Could not render this document</AlertTitle>
-									<AlertDescription>
-										<pre className="font-mono text-2xs whitespace-pre-wrap">
-											{error}
-										</pre>
-									</AlertDescription>
-								</Alert>
-							) : (
-								renderMs != null && (
-									// Remounting on each render is what replays the entrance; the
-									// line holds no state worth keeping across one.
-									<span
-										key={renderCount}
-										className="flex shrink-0 items-center gap-3 duration-300 animate-in fade-in-0 slide-in-from-bottom-2"
-									>
-										{fixture && <span className="hidden md:inline">·</span>}
-										<span>
-											Rendered in{' '}
-											<span className="font-medium text-brand">
-												{renderMs.toFixed(1)} ms
-											</span>
-										</span>
-									</span>
-								)
-							)}
-						</div>
-						<LayoutToggle
-							className="hidden bg-card md:flex"
-							value={layoutType}
-							onChange={(type) => model.config.setLayoutType(type)}
-						/>
-					</div>
-
 					<div className="shrink-0 px-4 pt-4 md:px-10">
 						<div className="mx-auto max-w-237.5">
 							<EditingToolbar
+								title={fixture || 'MusicXML score'}
+								renderMs={renderMs}
+								error={error}
 								voices={session?.editingVoices.options ?? []}
 								activeVoice={activeVoice}
 								onVoiceChange={(value) => session?.selectVoice(value)}
