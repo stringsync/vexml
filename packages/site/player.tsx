@@ -30,6 +30,7 @@ import { INSTRUMENTS } from './instruments';
 import type { ScoreSession } from './score-session';
 
 export interface PlayerProps {
+	navigationFeedback: ScoreSession['feedback'];
 	playerRef: RefObject<HTMLDivElement | null>;
 	/* What the transport drives. Null before the first render lands, which the caller guards. */
 	session: ScoreSession | null;
@@ -43,7 +44,7 @@ export interface PlayerProps {
 }
 
 // The transport buttons, and the play button that sits a size up in the middle of them.
-const STEP = 'size-8.5 rounded-md';
+const STEP = 'relative size-8.5 rounded-md';
 const PLAY = 'size-10 rounded-lg md:size-9.5';
 
 // Docked transport bar across the foot of the score: the two measure jumps outside the two note
@@ -53,6 +54,7 @@ const PLAY = 'size-10 rounded-lg md:size-9.5';
 // the bar's top edge; seeking (there or by scrub-drag) drives the cursor directly, and the
 // "measure i of N" scrub tooltip is local state since nothing outside the bar needs it.
 export function Player({
+	navigationFeedback,
 	playerRef,
 	session,
 	instrument,
@@ -70,13 +72,15 @@ export function Player({
 	const measureCount = score?.getMeasureCount() ?? 0;
 	const measure = (score?.getMeasureIndexAtMs(timeMs) ?? 0) + 1;
 
-	// A measure jump can land outside the scroll box, so every step follows the cursor the way
-	// seeking does.
-	function step(move: () => void) {
-		move();
-		if (session && !session.cursor.isFullyVisible()) {
-			session.cursor.scrollIntoView({ behavior: 'smooth' });
-		}
+	function ripple(action: NonNullable<ScoreSession['feedback']>['action']) {
+		return navigationFeedback?.action === action ? (
+			<span
+				key={navigationFeedback.revision}
+				aria-hidden="true"
+				data-navigation-ripple={action}
+				className={`navigation-ripple pointer-events-none absolute inset-0 rounded-md border-2 border-brand ${action.endsWith('note') ? 'bg-brand/15' : ''}`}
+			/>
+		) : null;
 	}
 
 	const times = (
@@ -101,10 +105,11 @@ export function Player({
 						variant="ghost"
 						size="icon"
 						className={STEP}
-						onClick={() => step(() => session?.previousMeasure())}
+						onClick={() => session?.handleKey('ArrowLeft', true)}
 						aria-label="Previous measure"
 					>
 						<ChevronFirstIcon />
+						{ripple('previous-measure')}
 					</Button>
 				</TooltipTrigger>
 				<TooltipContent>Previous measure</TooltipContent>
@@ -116,10 +121,11 @@ export function Player({
 						variant="ghost"
 						size="icon"
 						className={STEP}
-						onClick={() => step(() => session?.previous())}
+						onClick={() => session?.handleKey('ArrowLeft')}
 						aria-label="Previous note"
 					>
 						<ChevronLeftIcon strokeWidth={1.5} />
+						{ripple('previous-note')}
 					</Button>
 				</TooltipTrigger>
 				<TooltipContent>Previous note</TooltipContent>
@@ -149,10 +155,11 @@ export function Player({
 						variant="ghost"
 						size="icon"
 						className={STEP}
-						onClick={() => step(() => session?.next())}
+						onClick={() => session?.handleKey('ArrowRight')}
 						aria-label="Next note"
 					>
 						<ChevronRightIcon strokeWidth={1.5} />
+						{ripple('next-note')}
 					</Button>
 				</TooltipTrigger>
 				<TooltipContent>Next note</TooltipContent>
@@ -164,10 +171,11 @@ export function Player({
 						variant="ghost"
 						size="icon"
 						className={STEP}
-						onClick={() => step(() => session?.nextMeasure())}
+						onClick={() => session?.handleKey('ArrowRight', true)}
 						aria-label="Next measure"
 					>
 						<ChevronLastIcon />
+						{ripple('next-measure')}
 					</Button>
 				</TooltipTrigger>
 				<TooltipContent>Next measure</TooltipContent>
@@ -225,9 +233,6 @@ export function Player({
 						// the notation behave alike.
 						session.beginSeek();
 						session.seekMs(ms);
-						if (!session.cursor.isFullyVisible()) {
-							session.cursor.scrollIntoView({ behavior: 'smooth' });
-						}
 					}}
 					onPointerMove={(e) => {
 						const rect = e.currentTarget.getBoundingClientRect();

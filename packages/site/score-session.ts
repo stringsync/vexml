@@ -20,6 +20,8 @@ import {
 import type { EditingVoices } from './editing-voices';
 import { formatPitch } from './format';
 import type { Instrument } from './instrument';
+import { PlayheadFollow } from './playhead-follow';
+import { SelectionNavigation } from './selection-navigation';
 
 type ScoreSessionEvents = {
 	/* Anything a component reads has moved: time, playing, selection, duration. */
@@ -45,6 +47,12 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 
 	readonly cursor: CursorController;
 	readonly durationMs: number;
+	readonly navigation: SelectionNavigation;
+	private readonly follower: PlayheadFollow;
+	feedback: {
+		action: 'previous-note' | 'next-note' | 'previous-measure' | 'next-measure';
+		revision: number;
+	} | null = null;
 	timeMs = 0;
 	playing = false;
 
@@ -74,6 +82,10 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		readonly editingVoices: EditingVoices,
 	) {
 		this.durationMs = score.getDurationMs();
+		this.navigation = new SelectionNavigation(
+			editingVoices,
+			score.getSystems().map((system) => system.getSources()),
+		);
 		this.disposer.use(this.dispatcher);
 		this.disposer.use(this.loop);
 		this.disposer.adopt(score, (s) => s.dispose());
@@ -83,6 +95,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		// Headless cursor plus the built-in bar view. Page-turn scrolling: when the bar crosses out
 		// of the scroll box (by moving, or the user scrolling it away), bring it back.
 		this.cursor = score.createCursor();
+		this.follower = new PlayheadFollow(this.cursor);
 		this.disposer.use(
 			this.cursor.sync(
 				score.createPlayhead({
@@ -92,8 +105,8 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			),
 		);
 		this.watch(this.cursor.events, 'visibility', (e) => {
-			if (!e.fullyVisible && this.playing) {
-				this.cursor.scrollIntoView();
+			if (!e.fullyVisible) {
+				this.follower.update(this.playing);
 			}
 		});
 		// The loop only runs between start() and stop(), so a frame here means playing.
@@ -202,25 +215,32 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		return `${label} · Measure ${focus.measure.number} · Beat ${focus.measureBeat === null ? '?' : focus.measureBeat + 1} · Voice ${focus.voice}`;
 	}
 
-	handleKey(key: string): boolean {
+	handleKey(key: string, shift = false): boolean {
+		let moved = false;
+		let action: NonNullable<ScoreSession['feedback']>['action'] | null = null;
 		switch (key) {
 			case 'ArrowRight':
-				this.editingVoices.move('next');
+				moved = shift ? this.navigation.measure(1) : this.navigation.note(1);
+				action = shift ? 'next-measure' : 'next-note';
 				break;
 			case 'ArrowLeft':
-				this.editingVoices.move('previous');
+				moved = shift ? this.navigation.measure(-1) : this.navigation.note(-1);
+				action = shift ? 'previous-measure' : 'previous-note';
 				break;
 			case 'ArrowUp':
-				this.editingVoices.move('higher');
+				this.navigation.voice(-1);
 				break;
 			case 'ArrowDown':
-				this.editingVoices.move('lower');
+				this.navigation.voice(1);
 				break;
 			case 'Escape':
 				this.editingVoices.clear();
 				break;
 			default:
 				return false;
+		}
+		if (moved && action) {
+			this.feedback = { action, revision: (this.feedback?.revision ?? 0) + 1 };
 		}
 		this.setPlaying(false);
 		this.syncSelection();
@@ -244,7 +264,9 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		const index = sequence.getFirstStepOfNote(note);
 		const step = index === null ? null : sequence.getStep(index);
 		if (step) {
+			const moved = this.cursor.getTimeMs() !== step.startMs;
 			this.cursor.seekMs(step.startMs);
+			this.follower.update(this.playing, moved);
 		}
 	}
 
@@ -259,7 +281,6 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.cursor.seekMs(0);
 		}
 		// Bring the cursor into view when starting (e.g. after scrolling away while paused).
-		this.follow();
 		this.start();
 	}
 
@@ -385,6 +406,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	// AudioContext's currentTime if drift against the synth ever shows.
 	private start(): void {
 		this.playing = true;
+		this.follower.update(true);
 		// The note under the cursor fired its `started` event while paused (during load or a seek),
 		// so the loop, which moves within that note's duration, never sees it start. Attack the
 		// already-sounding notes here so the first (or resumed) note actually sounds.
@@ -425,9 +447,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	}
 
 	private follow(): void {
-		if (!this.cursor.isFullyVisible()) {
-			this.cursor.scrollIntoView({ behavior: 'smooth' });
-		}
+		this.follower.update(this.playing);
 	}
 
 	// Cursor coloring and the hover halo share one color channel, so this resolves both: hover wins

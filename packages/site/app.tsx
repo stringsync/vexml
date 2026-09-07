@@ -106,6 +106,7 @@ const projection = (model: SiteModel) => ({
 	timeMs: model.session?.timeMs ?? 0,
 	durationMs: model.session?.durationMs ?? 0,
 	activeVoice: model.session?.editingVoices.getValue() ?? '',
+	navigationFeedback: model.session?.feedback ?? null,
 	selectionDescription: model.session?.selectionDescription ?? 'No selection',
 });
 
@@ -131,6 +132,7 @@ export default function App() {
 		timeMs,
 		durationMs,
 		selectionDescription,
+		navigationFeedback,
 		activeVoice,
 	} = useReactive(model, projection, ['changed']);
 
@@ -200,13 +202,12 @@ export default function App() {
 		const onKeyDown = (e: KeyboardEvent) => {
 			if (
 				e.target === document.body &&
-				e.key === 'ArrowRight' &&
+				(e.key === 'ArrowRight' || e.key === 'ArrowLeft') &&
 				!e.altKey &&
 				!e.ctrlKey &&
-				!e.metaKey &&
-				!e.shiftKey
+				!e.metaKey
 			) {
-				if (model.session?.handleKey(e.key)) {
+				if (model.session?.handleKey(e.key, e.shiftKey)) {
 					containerRef.current?.focus({ preventScroll: true });
 					e.preventDefault();
 				}
@@ -667,11 +668,13 @@ export default function App() {
 											event.altKey ||
 											event.ctrlKey ||
 											event.metaKey ||
-											event.shiftKey
+											(event.shiftKey &&
+												event.key !== 'ArrowLeft' &&
+												event.key !== 'ArrowRight')
 										) {
 											return;
 										}
-										if (session?.handleKey(event.key)) {
+										if (session?.handleKey(event.key, event.shiftKey)) {
 											event.preventDefault();
 										}
 									}}
@@ -695,6 +698,7 @@ export default function App() {
 
 					{input != null && initialized && (
 						<Player
+							navigationFeedback={navigationFeedback}
 							playerRef={playerRef}
 							session={session}
 							instrument={model.instrument}
