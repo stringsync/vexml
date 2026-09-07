@@ -94,6 +94,46 @@ describe('editing', () => {
 		expect(image).toMatchScreenshot('editing_pitch.png');
 	});
 
+	// The selection overlay stamps the focused glyph in color without clipping and clears the
+	// stamp's bounds when focus moves on. Focus the quarter rest in M2, then step to the eighth
+	// rest beside it: the quarter rest must come back fully black. With a notehead-sized rect,
+	// its top and bottom stayed blue after the middle band was cleared.
+	it.concurrent('leaves no color behind when focus moves off a rest', async () => {
+		const xml = await testing.fixture('rest.musicxml');
+		const { image, result } = await testing.eval(
+			'rest.musicxml',
+			{},
+			async (context, xml) => {
+				const document = new context.MDOMParser().parseFromString(xml);
+				const session = new context.EditingSession(document);
+				context.score.dispose();
+				const score = await context.render(document, context.container, {
+					fonts: {
+						notation: { family: 'Bravura' },
+						text: { family: 'Source Sans 3' },
+					},
+				});
+				context.score = score;
+				score.createEditingController(session);
+				const notes = score.getElements().notes();
+				const quarter = notes.findIndex(
+					(note) => note.getPitch() === null && note.getDurationBeats() === 1,
+				);
+				const rest = notes[quarter];
+				const next = notes[quarter + 1];
+				if (!rest || !next) {
+					throw new Error('missing quarter rest or its neighbor');
+				}
+				session.selectElements([rest]);
+				session.selectElements([next]);
+				return { focusMoved: session.getFocus() === next.getSources()[0] };
+			},
+			xml,
+		);
+		expect(result.focusMoved).toBe(true);
+		expect(image).toMatchScreenshot('editing_focus_off_rest.png');
+	});
+
 	it.concurrent('deduplicates notehead and fret selection from a marquee', async () => {
 		const xml = await testing.fixture('tab_notation_durations.musicxml');
 		const { result } = await testing.eval(

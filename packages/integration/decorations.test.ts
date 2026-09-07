@@ -73,6 +73,20 @@ describe('decorations', () => {
 		expect(count).toBeGreaterThan(0);
 		expect(image).toMatchScreenshot('decoration_tab_halo.png');
 	});
+	// Rests recolor too: vexflow engraves a rest as a NoteHead carrying the rest glyph, and the
+	// stamp replays it. A quarter rest stands three staff spaces tall, so the rest's rect (and the
+	// repaint region ColorStyle.bounds builds from it) must span the drawn glyph: sized like a
+	// notehead, it clipped the stamp to a blue band across the rest's middle.
+	it.concurrent('colors every rest completely', async () => {
+		const { result: count, image } = await testing.eval(
+			'rest.musicxml',
+			{},
+			decorateAllTargets,
+			'color',
+		);
+		expect(count).toBeGreaterThan(0);
+		expect(image).toMatchScreenshot('decoration_rest_color.png');
+	});
 });
 
 // Runs in the page via toString(), so it must stay self-contained: no closing over test scope.

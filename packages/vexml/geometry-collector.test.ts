@@ -24,17 +24,35 @@ describe('GeometryCollector', () => {
 		return built;
 	})();
 
+	// A quarter rest in its own voice: vexflow engraves it as a NoteHead carrying the rest glyph.
+	const restChord = ((): Chord => {
+		const voice = MDocument.empty()
+			.score.addPart({ id: 'P2', name: 'R' })
+			.addMeasure()
+			.getOrCreateVoice('1');
+		voice.addRest({ type: 'quarter' });
+		const chord = voice.chords[0];
+		if (!chord) {
+			throw new Error('missing rest chord');
+		}
+		return chord;
+	})();
+
+	// Every drawn head's box is 12 wide and 30 tall around its staff y. A notehead doesn't
+	// measure that tall but a quarter rest does, and the collector must tell them apart.
 	const staveNote = (ys: (number | undefined)[], headXs?: number[]) =>
 		({
 			getNoteHeadBeginX: () => 10,
 			getNoteHeadEndX: () => 22,
 			getYs: () => ys,
-			noteHeads: ys.map((_, i) => ({
+			noteHeads: ys.map((y, i) => ({
 				getText: () => '',
 				getFont: () => '30px Bravura',
 				getBoundingBox: () => ({
 					getX: () => headXs?.[i] ?? 11,
+					getY: () => (y ?? 0) - 15,
 					getW: () => 12,
+					getH: () => 30,
 				}),
 			})),
 		}) as unknown as StaveNote;
@@ -63,6 +81,22 @@ describe('GeometryCollector', () => {
 		expect(notes[0]?.rect.x).toBe(-1);
 		expect(notes[0]?.glyph).toMatchObject({ x: -1 });
 		expect(notes[1]?.rect.x).toBe(11);
+	});
+
+	it('keeps a notehead rect to the standard band around its staff y', () => {
+		const collector = new GeometryCollector();
+		collector.collectStaveNotes(0, [{ note: staveNote([50]), chord }]);
+		expect(collector.notes()[0]?.rect).toMatchObject({ y: 45, h: 10 });
+	});
+
+	it("spans a rest's whole drawn glyph, so a decoration clears what it stamped", () => {
+		const collector = new GeometryCollector();
+		collector.collectStaveNotes(0, [
+			{ note: staveNote([50]), chord: restChord },
+		]);
+		const rest = collector.notes()[0];
+		expect(rest?.rect).toMatchObject({ x: 11, y: 35, w: 12, h: 30 });
+		expect(rest?.glyph).toMatchObject({ x: 11, y: 50 });
 	});
 
 	it('skips a chord note the formatter gave no y', () => {

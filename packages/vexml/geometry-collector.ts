@@ -167,13 +167,18 @@ export class GeometryCollector {
 				// The rect tracks this head's own drawn box, not the chord's normal column
 				// (getNoteHeadBeginX/EndX): a head displaced for a second sits a head-width
 				// off the stem, and a rect that misses it would clip its color stamp.
+				// Vertically a notehead gets the standard band around its staff y, but a
+				// rest is a NoteHead too, carrying a glyph of any height (a quarter rest
+				// spans three staff spaces), so its rect follows the drawn box there as
+				// well: a decoration clears exactly what it stamped.
+				const rest = mnote.isRest && box;
 				this.rawNotes.push({
 					mnote,
 					rect: new Rect(
 						box ? box.getX() : headX,
-						y - NOTEHEAD_HALF_H,
+						rest ? box.getY() : y - NOTEHEAD_HALF_H,
 						box ? box.getW() : headWidth,
-						2 * NOTEHEAD_HALF_H,
+						rest ? box.getH() : 2 * NOTEHEAD_HALF_H,
 					),
 					chord: chord.notes,
 					measureIndex,
