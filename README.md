@@ -45,6 +45,75 @@ score.events.on('pointermove', (e) => {
 
 `on` hands back a function that unsubscribes; call it when you're done listening.
 
+## Editing
+
+`EditingSession` keeps selection and undo/redo history on an mdom document. Render
+that same document and attach a controller for keyboard navigation, click/drag
+selection, highlighting and focus scrolling.
+
+```ts
+import { MDOMParser, MusicXMLSerializer } from '@stringsync/mdom';
+import { EditingSession, render } from '@stringsync/vexml';
+
+const document = new MDOMParser().parseFromString(musicXML);
+const editor = new EditingSession(document);
+let score = await render(document, element);
+let editing = score.createEditingController(editor);
+
+editor.move('next'); // Select the first written note.
+editor.move('next', { extend: true }); // Extend within its voice.
+editor.setPitch({ step: 'F', octave: 5 }); // One undo step for the group.
+
+// Rerender after a document change, keeping the session.
+score.dispose(); // Also disposes the controller, but not the session.
+score = await render(document, element);
+editing = score.createEditingController(editor);
+
+const xml = new MusicXMLSerializer().serializeToString(document);
+```
+
+In an application, schedule rerenders from `editor`'s `documentchange` event,
+including after `undo()` and `redo()`. Serialize asynchronous renders so an older
+result cannot replace a newer edit. Selection changes refresh the controller
+without rerendering. Document input requires an empty `gaps` configuration.
+
+Left/right move between chords in the active voice; up/down move through chord
+members and neighboring voices. Click selects, Command/Ctrl-click toggles a note,
+and dragging selects enclosed notes and frets across voices. Command/Ctrl-drag
+adds to the selection; touch dragging keeps native scrolling. Escape or a
+background click clears selection. Shift does not extend the default arrow or
+pointer selection; use `editor.move(..., { extend: true })` for ranges.
+
+Customize the controller when attaching it:
+
+```ts
+editing.dispose();
+editing = score.createEditingController(editor, {
+  selection: { color: '#155dfc', focusColor: '#1e3a8a' },
+  follow: true,
+  allowDeselect: false,
+});
+```
+
+Use one controller per render. Set `selection`, `keyboard`, `pointer` or `follow`
+to `false` to disable individual behaviors. Custom `bindings` map keys to semantic
+commands; `editing.execute(command)` lets buttons issue them too. A custom `view`
+replaces the selection overlay and is disposed by the controller.
+`editing.setEnabled(false)` hides selection and suspends input while preserving
+the session. The host supplies the container's accessible name and any live
+selection announcements, and decides whether selection should seek or pause playback.
+
+The session also works without a controller: use `select(note)`,
+`selectNotes(notes)` or `selectElements(...)`, and listen for `selectionchange`
+and `voicechange`. Ranges stay within one part and voice; explicit sets can span
+both. Dispose event subscriptions when their consumer is removed.
+
+Pitch edits currently support ordinary pitched notes, rejecting rests, unpitched
+notes, tied notes and string/fret assignments before changing the group. Navigation
+and selection still support those notes. Insertion, deletion and rhythmic edits
+are not supported. External document changes are not observed: call
+`editor.clearHistory()` after them. Reparsing requires a new session.
+
 ## Sizing and centering
 
 The score is scaled to fit its container and centered automatically, with no CSS

@@ -163,7 +163,7 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 ## Interaction and playback
 
 - **Editing controller activation, selection colors, shaded regions and cursor halo/outline** — `editing-controller.ts`, `selection-overlay.ts`, `color-style.ts`, `halo-style.ts`
-- **Editing focus, active voice, range/set selection and undo/redo** — `editing-session.ts`, `pitch-edit.ts`; host integration and current boundaries in `EDITING.md`
+- **Editing focus, active voice, range/set selection and undo/redo** — `editing-session.ts`, `pitch-edit.ts`; public usage and limitations in the root `README.md` (Editing)
 - **Editing navigation in written order and across rendered systems** — `editing-navigator.ts`, `chord-note-order.ts` (staff and written-position order within a chord), `editing-layout.ts`, `score-editing-layout.ts`
 - **Editing keyboard/pointer controller, focus scrolling and selection overlay** — `editing-controller.ts`, `editing-bindings.ts`, `default-editing-bindings.ts`, `editing-view.ts`, `selection-overlay.ts`; default composition in `score.ts`
 - **Rendering an editor-owned mdom document without reparsing** — `render.ts`, `score-parser.ts`, `default-score-parser.ts`, `score-renderer.ts`
@@ -174,6 +174,48 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 - **The moving cursor and playhead visibility** — `cursor-controller.ts`, `cursor-view.ts`, `playhead.ts`, `cursor-host.ts`, `cursor-host-adapter.ts`
 - **Scrolling and the visible window** — `scroller.ts`, `scroll-controller.ts`, `viewport.ts`
 - **The DOM the score lives in (container, canvas, overlays)** — `host.ts`, `stage.ts`, `layer.ts`, `managed-layer.ts`, `recording-context.ts`, `layer-host.ts`, `scroll-host.ts`
+
+## Editing implementation contracts
+
+Public integration guidance lives in [`README.md`](../../README.md#editing).
+Keep the session tied to document notes: rendered wrappers and geometry belong to
+one `Score` and must be resolved again after rendering.
+
+- `editing-session.ts` owns focus, active voice, range/set selection and history;
+  it installs no DOM listeners. Ranges keep a fixed anchor and reject cross-part
+  or cross-voice selection before mutation. Explicit sets use the last distinct
+  note as focus and anchor. Getters return snapshots; detached notes disappear
+  from selection, and selecting detached or foreign notes throws.
+- `pitch-edit.ts` preserves note identity and unrelated notation. A changed pitch
+  removes the explicit accidental; undo restores the original pitch and accidental
+  nodes. Validate the whole group before editing. No-ops preserve redo history;
+  new edits replace it. Cursor movement creates no history, and undo leaves focus
+  alone. Emit `documentchange` only for successful edits, undo or redo, never for
+  selection operations or empty history. Arbitrary external mdom edits are untracked.
+- `editing-navigator.ts` follows written order without expanding repeats and skips
+  empty measures. `chord-note-order.ts` sorts by staff, then written diatonic
+  position (display position for unpitched notes), ignoring accidentals and keeping
+  document order for ties. Vertical moves exhaust chord members before changing
+  voices, entering at the top when descending and bottom when ascending.
+  `ScoreEditingLayout` permits voice navigation across systems; without a layout,
+  voice navigation clamps at document edges. Cross-voice range extension is a no-op.
+- `score.ts` composes and owns its controllers; early controller disposal unregisters
+  it. The controller owns its view and listeners, never the session. Only handle
+  keyboard events targeted at the container, preserving nested controls. Restore
+  any tabindex added by the controller on disposal. Selection changes update the
+  presentation without engraving; focus changes drive scrolling, with measure-box
+  fallback for unindexed notes. Manual scrolling does not trigger focus following.
+- `selection-overlay.ts` puts cursor halos and per-system regions behind engraving,
+  with selection coloring and the cursor outline above hover. Preserve playback
+  and hover decoration state. During marquee dragging, publish preview notes and
+  score-space `presentation.marquee` without changing the session until release.
+  Deduplicate notehead/fret hits and require full enclosure. Escape, cancellation,
+  suspension, disposal or capture loss with the primary button held cancels;
+  capture loss after release commits even before `pointerup`. Dragging does not
+  trigger focus following. Unindexed notes remain reachable through navigation.
+- Document rendering must not reparse the session's document. Reject nonempty gaps
+  for document input because `gaps.ts` inserts measures into its input; preserve
+  string and Blob gap behavior.
 
 ## Conventions
 
