@@ -7,7 +7,7 @@
 		"@fontsource-variable/anybody": "^5.3.0",
 		"@fontsource/ibm-plex-mono": "^5.3.0",
 		"@fontsource/ibm-plex-sans": "^5.3.0",
-		"@stringsync/mdom": "0.2.5",
+		"@stringsync/mdom": "0.3.0",
 		"@stringsync/vexml": "workspace:*",
 		"@webappwiz/react": "0.0.14",
 		"class-variance-authority": "^0.7.1",
