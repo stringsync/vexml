@@ -180,6 +180,31 @@ describe('EditingController', () => {
 		expect(f.editor.getFocus()).toBe(f.first);
 	});
 
+	it('can retain selection across every user deselection gesture', () => {
+		const f = fixture();
+		const { host, controller } = f.create(0, {
+			allowDeselect: false,
+			toggleOnClick: true,
+		});
+		host.dom.dispatchEvent(new Click(22, 42));
+		for (const event of [
+			new Click(22, 42),
+			new Click(150, 80),
+			new Click(22, 42, false, true),
+			new Key('Escape'),
+		]) {
+			host.dom.dispatchEvent(event);
+			expect(f.editor.getSelection()).toEqual([f.first]);
+		}
+		expect(controller.execute({ type: 'clear' })).toBe(false);
+		host.dom.dispatchEvent(new Click(52, 42, false, true));
+		expect(f.editor.getSelection()).toHaveLength(2);
+		host.dom.dispatchEvent(new Click(52, 42, false, true));
+		expect(f.editor.getSelection()).toEqual([f.first]);
+		host.dom.dispatchEvent(new Click(52, 42));
+		expect(f.editor.getSelection()).toEqual([f.second]);
+	});
+
 	it('suspends input and visuals while keeping selection without scrolling on reactivation', () => {
 		const f = fixture();
 		const { host, controller, view } = f.create(0, { enabled: false });

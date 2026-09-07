@@ -40,7 +40,7 @@ export function EditingToolbar({
 	const voiceLabel =
 		voices.find((voice) => voice.value === activeVoice)?.label ?? details[2];
 	let message = 'No note selected';
-	let hint = 'Press ↓ or → to select the first note';
+	let hint = 'No selectable notes';
 	if (mode === 'view') {
 		message = 'View mode';
 		hint = 'Click or drag to move the playhead';
@@ -73,17 +73,16 @@ export function EditingToolbar({
 								value: 'view',
 								label: 'View',
 								icon: EyeIcon,
-								hint: 'View: move the playback cursor (V to switch)',
+								hint: 'View: move the playback cursor',
 							},
 							{
 								value: 'edit',
 								label: 'Edit',
 								icon: PencilIcon,
-								hint: 'Edit: select and navigate notes (V to switch)',
+								hint: 'Edit: select and navigate notes',
 							},
 						]}
 					/>
-					<span className="text-xs text-muted-foreground">V to switch</span>
 				</div>
 				{renderMs !== null && !error && (
 					<p className="min-w-0 pt-2 text-right text-xs text-muted-foreground">

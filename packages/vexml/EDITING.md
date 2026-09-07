@@ -66,6 +66,9 @@ extends the range. Escape clears selection while retaining the active voice. Cli
 a range, and Command/Ctrl-click toggles set membership. Shift-click into another
 part or voice starts a fresh selection. Background clicks clear selection.
 `toggleOnClick: true` makes a second plain click on the sole focused note clear it.
+Set `allowDeselect: false` to retain selection on background clicks, clear commands
+(including Escape), repeated clicks and toggling the final selected note. Programmatic
+session selection remains under host control.
 
 Scrolling follows focus changes, not viewport events, so manual scrolling stays
 under the user's control. An unindexed focus falls back to its measure box when

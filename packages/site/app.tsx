@@ -209,19 +209,6 @@ export default function App() {
 				return;
 			}
 			if (
-				e.key.toLowerCase() === 'v' &&
-				!e.ctrlKey &&
-				!e.metaKey &&
-				!e.altKey &&
-				!e.repeat
-			) {
-				e.preventDefault();
-				const session = model.session;
-				session?.setMode(session.mode === 'view' ? 'edit' : 'view');
-				containerRef.current?.focus({ preventScroll: true });
-				return;
-			}
-			if (
 				e.target === document.body &&
 				['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) &&
 				!e.altKey &&

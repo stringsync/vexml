@@ -138,10 +138,10 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.apply();
 		});
 		this.editing = score.createEditingController(this.editor, {
-			enabled: mode === 'edit',
+			enabled: false,
 			bindings: new SiteEditingBindings(),
 			selection: { color: CURSOR_COLOR, focusColor: SELECTION_OUTLINE_COLOR },
-			toggleOnClick: true,
+			allowDeselect: false,
 		});
 		this.watch(this.editor.events, 'voicechange', () =>
 			this.dispatcher.dispatch('changed'),
@@ -193,6 +193,9 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			window.removeEventListener('pointerup', onPointerUp),
 		);
 
+		if (mode === 'edit' && !this.editor.getFocus()) {
+			this.selectAtPlayhead();
+		}
 		this.updateMode();
 	}
 
@@ -237,8 +240,21 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.forgetSeek();
 		this.cursor.cancelScroll();
 		this.mode = mode;
+		if (mode === 'edit') {
+			this.selectAtPlayhead();
+		}
 		this.updateMode();
 		this.dispatcher.dispatch('changed');
+	}
+
+	private selectAtPlayhead(): void {
+		const target = this.score
+			.getSequence()
+			.getNoteNearMs(this.cursor.getTimeMs());
+		const note = target?.note.getSources()[0];
+		if (note) {
+			this.editor.select(note);
+		}
 	}
 
 	private updateMode(): void {
