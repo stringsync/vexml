@@ -24,7 +24,7 @@ export interface EditingControllerOptions {
 	pointer?: boolean;
 	/** A plain click on the focused note clears selection when enabled. */
 	toggleOnClick?: boolean;
-	/** When false, user input cannot clear the selection or toggle away its final note. */
+	/** When false, dismissing selection retains focus and toggling cannot remove its final note. */
 	allowDeselect?: boolean;
 	/** Follow focus changes, never manual viewport scrolling. Defaults to true. */
 	follow?: boolean;
@@ -225,6 +225,11 @@ export class EditingController
 				break;
 			case 'clear':
 				if (this.options.allowDeselect === false) {
+					const focus = this.editor.getFocus();
+					if (focus && this.editor.getSelection().length > 1) {
+						this.editor.select(focus);
+						moved = true;
+					}
 					break;
 				}
 				moved = this.editor.getSelection().length > 0;
@@ -379,13 +384,19 @@ export class EditingController
 			?.getSources()
 			.find((source): source is MNote => source instanceof MNote);
 		const key = event.native;
-		if (!note) {
-			if (
-				this.options.allowDeselect !== false &&
-				!key.ctrlKey &&
-				!key.metaKey
-			) {
-				this.editor.clearSelection();
+		const selection = this.editor.getSelection();
+		if (
+			this.options.allowDeselect === false &&
+			selection.length > 1 &&
+			(!note || !selection.includes(note)) &&
+			!key.shiftKey &&
+			!key.ctrlKey &&
+			!key.metaKey
+		) {
+			this.execute({ type: 'clear' });
+		} else if (!note) {
+			if (!key.ctrlKey && !key.metaKey) {
+				this.execute({ type: 'clear' });
 			}
 		} else if (key.shiftKey) {
 			if (this.editor.canExtendTo(note)) {

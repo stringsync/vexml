@@ -62,6 +62,30 @@ describe('dev site editing', () => {
 				.locator('canvas[style*="z-index: 2"]')
 				.evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
 			expect(selectionAfter).not.toBe(selectionBefore);
+			// Dismiss a range from either input path without moving its endpoint cursor.
+			const selectionCanvas = score.locator('canvas[style*="z-index: 2"]');
+			for (const dismiss of ['escape', 'outside']) {
+				const cursor = await selectionCanvas.evaluate((canvas) =>
+					(canvas as HTMLCanvasElement).toDataURL(),
+				);
+				await page.keyboard.press('ArrowRight');
+				await page.keyboard.press('Shift+ArrowLeft');
+				expect(
+					await selectionCanvas.evaluate((canvas) =>
+						(canvas as HTMLCanvasElement).toDataURL(),
+					),
+				).not.toBe(cursor);
+				if (dismiss === 'escape') {
+					await page.keyboard.press('Escape');
+				} else {
+					await score.click({ position: { x: 5, y: 5 } });
+				}
+				expect(
+					await selectionCanvas.evaluate((canvas) =>
+						(canvas as HTMLCanvasElement).toDataURL(),
+					),
+				).toBe(cursor);
+			}
 			await page.keyboard.press('ArrowUp');
 			await page.keyboard.press('ArrowDown');
 			await page.keyboard.press('ArrowLeft');

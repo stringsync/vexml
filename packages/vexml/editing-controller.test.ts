@@ -359,6 +359,35 @@ describe('EditingController', () => {
 		expect(f.editor.getSelection()).toEqual([f.second]);
 	});
 
+	it('dismisses multiple notes without moving retained focus or scrolling', () => {
+		for (const event of [
+			() => new Key('Escape'),
+			() => new Click(150, 80),
+			() => new Click(82, 42),
+		]) {
+			for (const range of [true, false]) {
+				const f = fixture();
+				const { host, controller } = f.create(0, { allowDeselect: false });
+				if (range) {
+					f.editor.select(f.first);
+					f.editor.select(f.second, { extend: true });
+				} else {
+					f.editor.selectNotes([f.first, f.second]);
+				}
+				const position = controller.getPresentation().position;
+				const scrolls = host.scroller.calls.length;
+				host.dom.dispatchEvent(event());
+				expect(f.editor.getSelection()).toEqual([f.second]);
+				expect(f.editor.getFocus()).toBe(f.second);
+				expect(controller.getPresentation().position).toBe(position);
+				expect(host.scroller.calls).toHaveLength(scrolls);
+				host.dom.dispatchEvent(new Key('ArrowLeft', true));
+				expect(f.editor.getSelection()).toEqual([f.first, f.second]);
+				controller.dispose();
+			}
+		}
+	});
+
 	it('suspends input and visuals while keeping selection without scrolling on reactivation', () => {
 		const f = fixture();
 		const { host, controller, view } = f.create(0, { enabled: false });

@@ -12,18 +12,12 @@ export const CURSOR_WIDTH_PX = 2;
 // A dark shade of the playhead pink makes editing focus distinct from playback.
 export const SELECTION_OUTLINE_COLOR = '#a80050';
 
-// A sounding note belongs to the playhead sitting on it, so it takes the playhead's own pink a few
-// steps lighter: the bar reads as the position and the notes under it as what that position is
-// playing, rather than as two unrelated signals. Hovering is the one thing that has to be picked
-// out against both, so it goes warm amber, a third of the wheel away, and never mistakable for
-// either the pink or the engraved black.
-//
-// The color a sounding note shows while the cursor is over it (and a grace note while it plays).
+// Sounding notes use a lighter playhead pink; hover uses the cursor pink.
 export const ACTIVE_COLOR = '#ff70b8';
 // A note's fill while it's hovered (wins over ACTIVE_COLOR).
-export const HOVER_COLOR = '#f59e0b';
+export const HOVER_COLOR = CURSOR_COLOR;
 // The halo outline drawn around the hovered note.
-export const HALO_COLOR = 'rgba(180, 83, 9, 0.95)';
+export const HALO_COLOR = CURSOR_COLOR;
 
 // Debounce window for slider/typing-driven re-renders, and the render-time threshold below which we
 // skip the debounce entirely (renders fast enough to keep up with input).
