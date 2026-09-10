@@ -8,7 +8,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 
-const INSTALL = 'npm i @stringsync/vexml';
+const INSTALL = 'npx skills add stringsync/vexml@vexml';
 const REPO = 'https://github.com/stringsync/vexml';
 
 // How long the copy button holds its check before falling back to the copy icon.
