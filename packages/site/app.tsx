@@ -644,7 +644,10 @@ export default function App() {
 	);
 
 	return (
-		<div className="flex h-screen flex-col bg-background text-foreground">
+		// 100dvh rather than 100vh: 100vh is the viewport with a phone's URL bar collapsed, so with
+		// the bar showing the column overshoots the screen and the player ends up below the fold.
+		// The dynamic viewport tracks the bar; ScoreFit re-measures on the resize that follows.
+		<div className="flex h-dvh flex-col bg-background text-foreground">
 			<Header
 				controlsOpen={controlsOpen}
 				onOpenControls={() => setControlsOpen(true)}
