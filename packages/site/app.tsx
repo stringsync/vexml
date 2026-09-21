@@ -1,9 +1,9 @@
 import type { SystemOverflow } from '@stringsync/vexml';
 import { useDisposerEffect, useReactive, useResource } from '@webappwiz/react';
 import {
-	ChevronLeftIcon,
 	ChevronRightIcon,
 	Rows3Icon,
+	ShuffleIcon,
 	SlidersVerticalIcon,
 	UploadIcon,
 } from 'lucide-react';
@@ -159,12 +159,16 @@ export default function App() {
 	// anything pasted into the editor.
 	const scoreTitle =
 		format === 'guitar-pro' ? 'Guitar Pro score' : 'MusicXML score';
-	// Both undefined when the document did not come from the picker, which disables both arrows.
-	const fixtureIndex = fixtureNames.indexOf(fixture);
-	const prevFixture =
-		fixtureIndex > 0 ? fixtureNames[fixtureIndex - 1] : undefined;
-	const nextFixture =
-		fixtureIndex >= 0 ? fixtureNames[fixtureIndex + 1] : undefined;
+	// Every example but the one showing, so the shuffle always lands somewhere new. An upload
+	// or a paste is not a fixture, so nothing is excluded for it.
+	const otherFixtures = fixtureNames.filter((name) => name !== fixture);
+	const loadRandomFixture = () => {
+		const name =
+			otherFixtures[Math.floor(Math.random() * otherFixtures.length)];
+		if (name) {
+			model.document.loadFixture(name);
+		}
+	};
 
 	useEffect(() => {
 		model.document.restore();
@@ -353,19 +357,6 @@ export default function App() {
 						Or pick an example
 					</FieldLabel>
 					<div className="flex items-center gap-1.5">
-						<Button
-							type="button"
-							variant="outline"
-							size="icon-lg"
-							className="bg-muted"
-							disabled={!prevFixture}
-							onClick={() =>
-								prevFixture && model.document.loadFixture(prevFixture)
-							}
-							aria-label="Previous example"
-						>
-							<ChevronLeftIcon />
-						</Button>
 						<Select
 							value={fixture}
 							onValueChange={(name) => model.document.loadFixture(name)}
@@ -391,13 +382,12 @@ export default function App() {
 							variant="outline"
 							size="icon-lg"
 							className="bg-muted"
-							disabled={!nextFixture}
-							onClick={() =>
-								nextFixture && model.document.loadFixture(nextFixture)
-							}
-							aria-label="Next example"
+							disabled={otherFixtures.length === 0}
+							onClick={loadRandomFixture}
+							aria-label="Random example"
+							title="Load a random example"
 						>
-							<ChevronRightIcon />
+							<ShuffleIcon />
 						</Button>
 					</div>
 				</Field>
