@@ -142,7 +142,7 @@ describe('Score', () => {
 		host.scroll = { left: 12, top: 34 };
 		const seen: Array<{ left: number; top: number }> = [];
 		score.events.on('scroll', (e) => seen.push({ left: e.left, top: e.top }));
-		host.dom.dispatchEvent(new Event('scroll'));
+		host.scrollTarget.dispatchEvent(new Event('scroll'));
 		expect(seen).toEqual([{ left: 12, top: 34 }]);
 	});
 

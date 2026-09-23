@@ -71,6 +71,7 @@ export function render(
 		maxWidth: resolved.maxWidth,
 		backgroundColor: resolved.backgroundColor,
 		fit,
+		scrollContainer: resolved.scrollContainer,
 	});
 	const durations = new DurationTranslator();
 	const barlines = new BarlineTranslator();

@@ -21,7 +21,8 @@ export interface HoverEvent {
 	readonly point: { x: number; y: number } | null;
 }
 
-/* The container scrolled: its new scroll offset plus the raw event. */
+/* The container (or Config.scrollContainer, when set) scrolled: its new scroll offset plus the raw
+ * event. */
 export interface ScoreScrollEvent {
 	readonly left: number;
 	readonly top: number;

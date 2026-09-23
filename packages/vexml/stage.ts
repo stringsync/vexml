@@ -11,7 +11,8 @@ import type { Viewport } from './viewport';
  * scroll box on that axis; null leaves the axis to size to its content. backgroundColor paints the
  * container behind the score. `fit` scales the score down to fit the container width (never up past
  * its engraved size) and centers it — the default for a system-stacked layout that isn't a
- * horizontal scroll box (render() derives it). */
+ * horizontal scroll box (render() derives it). `scrollContainer` names a caller-owned ancestor that
+ * does the scrolling instead of the container (see Stage.scrollElement). */
 export interface ScrollBox {
 	height?: number | null;
 	maxHeight?: number | null;
@@ -19,6 +20,7 @@ export interface ScrollBox {
 	maxWidth?: number | null;
 	backgroundColor?: string | null;
 	fit?: boolean;
+	scrollContainer?: HTMLElement | null;
 }
 
 /*
@@ -42,6 +44,9 @@ export class Stage implements Viewport, Host, ScrollHost {
 	private static readonly byContainer = new WeakMap<HTMLDivElement, Stage>();
 
 	readonly base: HTMLCanvasElement;
+	// The element whose scrollport a cursor measures and scrolls: the caller's scrollContainer when
+	// they render into a box inside their own scroller, else the container itself.
+	private readonly scrollElement: HTMLElement;
 	private readonly dispatcher = new Dispatcher<HostEventMap>();
 	readonly events = this.dispatcher.events;
 	// Watches the container and the base canvas; created with the Stage, disconnected on dispose.
@@ -66,6 +71,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 		// re-owns the properties it needs.
 		Stage.byContainer.get(container)?.dispose();
 		Stage.byContainer.set(container, this);
+		this.scrollElement = scroll.scrollContainer ?? container;
 		// A positioned container is the containing block the overlay layers anchor to. Only set it
 		// when the caller left position static, and remember it so dispose restores.
 		this.prevPosition = container.style.position;
@@ -144,6 +150,12 @@ export class Stage implements Viewport, Host, ScrollHost {
 		});
 		this.resizeObserver.observe(container);
 		this.resizeObserver.observe(this.base);
+		// A caller-owned scroller can resize on its own (a window resize), and the cursor must re-test
+		// visibility against it. The report still carries the container's size, so Score's dedupe
+		// keeps a scroller-only resize out of its public 'resize'.
+		if (this.scrollElement !== container) {
+			this.resizeObserver.observe(this.scrollElement);
+		}
 
 		// Capture phase on window catches every scroll container (the score's own or any ancestor),
 		// since scroll events don't bubble. passive: we only read positions, never preventDefault.
@@ -184,13 +196,21 @@ export class Stage implements Viewport, Host, ScrollHost {
 		return this.container;
 	}
 
-	get scroll(): { left: number; top: number } {
-		return { left: this.container.scrollLeft, top: this.container.scrollTop };
+	// The native scroll event doesn't bubble, so it's bound on whichever element scrolls.
+	get scrollTarget(): EventTarget {
+		return this.scrollElement;
 	}
 
-	// The visible scrollport box: the container's own client box (the same box overflow scrolls within).
+	get scroll(): { left: number; top: number } {
+		return {
+			left: this.scrollElement.scrollLeft,
+			top: this.scrollElement.scrollTop,
+		};
+	}
+
+	// The visible scrollport box: the scroll element's own box (the same box overflow scrolls within).
 	viewportRect(): DOMRect {
-		return this.container.getBoundingClientRect();
+		return this.scrollElement.getBoundingClientRect();
 	}
 
 	// The Stage owns the container that scrolls; a lazily-created controller does the scrolling.
@@ -200,21 +220,32 @@ export class Stage implements Viewport, Host, ScrollHost {
 	}
 
 	// The rest of the ScrollHost seam (frame() below completes it): the base canvas's offset within
-	// the scroll content, the container's visible client size, and the scrollTo that moves the
-	// scroll box.
+	// the scroll content, the scroll element's visible client size, and the scrollTo that moves it.
 	baseOffset(): { left: number; top: number } {
-		return { left: this.base.offsetLeft, top: this.base.offsetTop };
+		if (this.scrollElement === this.container) {
+			return { left: this.base.offsetLeft, top: this.base.offsetTop };
+		}
+		// The container isn't the scroll content's origin, and the scroller needn't be the base's
+		// offsetParent, so measure: the base's client offset from the scroller's padding edge (inside
+		// its border), shifted by how far the scroller has already scrolled.
+		const base = this.base.getBoundingClientRect();
+		const el = this.scrollElement;
+		const box = el.getBoundingClientRect();
+		return {
+			left: base.left - box.left - el.clientLeft + el.scrollLeft,
+			top: base.top - box.top - el.clientTop + el.scrollTop,
+		};
 	}
 
 	clientSize(): { width: number; height: number } {
 		return {
-			width: this.container.clientWidth,
-			height: this.container.clientHeight,
+			width: this.scrollElement.clientWidth,
+			height: this.scrollElement.clientHeight,
 		};
 	}
 
 	scrollTo(options: ScrollToOptions): void {
-		this.container.scrollTo(options);
+		this.scrollElement.scrollTo(options);
 	}
 
 	createLayer(kind: LayerKind, zIndex?: number): Layer {

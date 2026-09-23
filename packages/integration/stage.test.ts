@@ -39,6 +39,56 @@ describe('stage', () => {
 		);
 	});
 
+	// A caller rendering into a box inside their own scroller names it as scrollContainer: the box
+	// never scrolls, so the cursor must measure and scroll the outer element. Seek to the end (below
+	// the fold), check it reads as hidden, scroll it into view, and check the outer scroller moved and
+	// the bar now reads as visible, with the transition reported through the visibility event.
+	it.concurrent('measures and scrolls a caller-owned scrollContainer', async () => {
+		const { result } = await testing.eval(
+			'score_mozart_an_chloe.musicxml',
+			{},
+			async ({ render }, xml) => {
+				const scroller = document.createElement('div');
+				scroller.style.cssText = 'height:500px;overflow:auto;border:5px solid';
+				const spacer = document.createElement('div');
+				spacer.style.height = '40px';
+				const box = document.createElement('div');
+				scroller.append(spacer, box);
+				document.body.appendChild(scroller);
+				const score = await render(xml, box, { scrollContainer: scroller });
+				const cursor = score.createCursor();
+				const events: boolean[] = [];
+				cursor.events.on('visibility', (e) => events.push(e.fullyVisible));
+				const scrolls: number[] = [];
+				score.events.on('scroll', (e) => scrolls.push(e.top));
+				cursor.seekMs(score.getDurationMs() - 1);
+				const hiddenAtEnd = !cursor.isFullyVisible();
+				cursor.scrollIntoView({ behavior: 'instant' });
+				// The native scroll event is async; wait a frame for it to land.
+				await new Promise((resolve) => requestAnimationFrame(resolve));
+				const result = {
+					hiddenAtEnd,
+					boxScrollTop: box.scrollTop,
+					scrollerTop: scroller.scrollTop,
+					visibleAfter: cursor.isFullyVisible(),
+					events,
+					scrolls,
+				};
+				score.dispose();
+				scroller.remove();
+				return result;
+			},
+			await testing.fixture('score_mozart_an_chloe.musicxml'),
+		);
+
+		expect(result.hiddenAtEnd).toBe(true);
+		expect(result.boxScrollTop).toBe(0);
+		expect(result.scrollerTop).toBeGreaterThan(0);
+		expect(result.visibleAfter).toBe(true);
+		expect(result.events).toEqual([false, true]);
+		expect(result.scrolls.at(-1)).toBe(result.scrollerTop);
+	});
+
 	// setMaxHeight is a live style write: the cap turns the container into a scroll box and removing
 	// it lets the container size to the score again, all without re-rendering (the canvas element is
 	// the same node before and after).

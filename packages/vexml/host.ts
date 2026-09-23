@@ -29,6 +29,9 @@ export interface Host
 	/* The raw DOM event source pointer/scroll listeners are bound on — distinct from `events`,
 	 * which is the host's own typed event stream. */
 	readonly dom: EventTarget;
+	/* Where the native `scroll` event fires: the element that scrolls the score (the container, or
+	 * the caller's scrollContainer). Scroll events don't bubble, so they can't be bound on `dom`. */
+	readonly scrollTarget: EventTarget;
 	readonly scroll: { left: number; top: number };
 	/* The visible scrollport box in client coords — what a cursor's visibility check compares against. */
 	viewportRect(): DOMRect;

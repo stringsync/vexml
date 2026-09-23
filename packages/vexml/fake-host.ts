@@ -26,6 +26,7 @@ export class FakeHost implements Host {
 		all: (listener, opts) => this.dispatcher.events.all(listener, opts),
 	};
 	readonly dom = new EventTarget();
+	readonly scrollTarget = new EventTarget();
 	readonly created: FakeLayer[] = [];
 	readonly scroller = new FakeScroller();
 	scroll = { left: 0, top: 0 };

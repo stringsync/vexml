@@ -326,7 +326,7 @@ export class Score implements Eventful<ScoreEventMap> {
 		this.cursors.clear();
 		for (const handlers of this.bound.values()) {
 			for (const [domType, handler] of handlers) {
-				this.host.dom.removeEventListener(domType, handler);
+				this.sourceOf(domType).removeEventListener(domType, handler);
 			}
 		}
 		this.bound.clear();
@@ -423,7 +423,7 @@ export class Score implements Eventful<ScoreEventMap> {
 		const handlers = this.bound.get(type);
 		if (handlers) {
 			for (const [domType, handler] of handlers) {
-				this.host.dom.removeEventListener(domType, handler);
+				this.sourceOf(domType).removeEventListener(domType, handler);
 			}
 			this.bound.delete(type);
 		}
@@ -441,10 +441,15 @@ export class Score implements Eventful<ScoreEventMap> {
 		domType: string,
 		handler: EventListener,
 	): void {
-		this.host.dom.addEventListener(domType, handler);
+		this.sourceOf(domType).addEventListener(domType, handler);
 		const handlers = this.bound.get(type) ?? [];
 		handlers.push([domType, handler]);
 		this.bound.set(type, handlers);
+	}
+
+	// Native scroll doesn't bubble to `dom`, so it binds on the element that actually scrolls.
+	private sourceOf(domType: string): EventTarget {
+		return domType === 'scroll' ? this.host.scrollTarget : this.host.dom;
 	}
 
 	// Re-hit-test the last pointer position and emit hover only when the element changes — so a

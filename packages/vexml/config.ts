@@ -203,6 +203,12 @@ export type Config = {
 	/** Max container width in px, or null for none (default: null). The score scrolls horizontally once
 	 * it exceeds this; narrower scores keep their natural width. */
 	maxWidth: number | null;
+	/** An element you own that scrolls the score, or null to use the render container
+	 * (default: null). Set it when you render into a box that sits inside your own scroller:
+	 * a cursor's visibility test, `scrollIntoView()`/`follow()` and the Score's `scroll`
+	 * event then measure and move this element instead of the (non-scrolling) container.
+	 * It must be an ancestor of the container with `overflow: auto` or `scroll`. */
+	scrollContainer: HTMLElement | null;
 };
 
 /** Default fonts: bundled Bravura for notation, Source Sans 3 for text. Families only —
@@ -257,4 +263,5 @@ export const DEFAULT_CONFIG: Config = {
 	maxHeight: null,
 	width: null,
 	maxWidth: null,
+	scrollContainer: null,
 };
