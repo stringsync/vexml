@@ -1,7 +1,7 @@
 ---
 name: webappwiz
-description: "Check whether the webappwiz package already covers a piece of infrastructure before writing it by hand or adding a dependency for it. Read this before writing any of: time, clocks, durations or timers; logging; id generation; HTTP serving; CLI argument parsing; background tasks or queues; web workers; markdown parsing; typed event emitters; 2D geometry or spatial indexes; filesystem, env or process access; typed RPC over fetch; schema validation; AbortSignal plumbing; disposable resources; browser scroll, animation frames or visibility. Also use when asked to update or upgrade webappwiz in a project, and whenever the user says webappwiz."
-version: 0.0.14
+description: "Check whether the webappwiz package already covers a piece of infrastructure before writing it by hand or adding a dependency for it. Read this before writing any of: time, clocks, durations or timers; logging; id generation; CLI argument parsing; background tasks or queues; web workers; markdown parsing; typed event emitters; 2D geometry or spatial indexes; filesystem, env or process access; AbortSignal plumbing; disposable resources; browser scroll, animation frames or visibility. Also use when asked to update or upgrade webappwiz in a project, and whenever the user says webappwiz."
+version: 0.0.19
 ---
 
 # Using webappwiz
@@ -66,9 +66,77 @@ tests.
 
 What broke is read the same way as anything else here: the module's own README
 and the exports of its `index.ts`, not the one-line blurb and not a guess. If
-the new version dropped what this project was using, that is a gap: leave the
+the new version dropped what this project was using, check the migrations below
+first. For removals not covered there, that is a gap: leave the
 local code working, and hand it over with the block above. Do not vendor,
 fork, or patch `node_modules` to get the build green.
+
+### Migrating removed `webappwiz/t` and `webappwiz/config`
+
+These modules have been removed in favor of Zod and ordinary typed settings.
+If the project imports either subpath, migrate those callers as part of the
+update. This is an intentional replacement, so do not request their restoration
+through the gap handoff above.
+
+Add Zod as a direct dependency in each package importing it (`bun add zod`),
+then replace `import { t } from "webappwiz/t"` with
+`import { z } from "zod"`. Primitive, object, array, enum, optional, and
+nullable builders have Zod equivalents. Replace `Infer<typeof schema>` with
+`z.infer<typeof schema>`; replace custom `Schema` implementations and
+`SchemaBase` subclasses with Zod schemas, refinements, or transforms.
+
+Check behavior at each input boundary:
+
+- `.parse()` and `.safeParse()` validate through Zod. Replace
+  `SchemaError.path` and `.reason` with `ZodError.issues`, using each issue's
+  `path` and `message`. For `validate(schema, value)`, use
+  `schema.parse(value)` when the schema is Zod; for other libraries, use
+  their parser or the Standard Schema interface.
+- Zod has no per-schema `.coerce(raw)` method. Use
+  `z.coerce.number().parse(raw)` for numeric strings. Decode JSON strings
+  before validating object or array schemas, handling malformed JSON too.
+- `webappwiz/cmd` still accepts Standard Schema. It passes strings to the
+  schema, so numeric args and options need `z.coerce.number()`. A bare flag
+  arrives as `"true"`. To preserve the old boolean behavior exactly, use
+  `z.string().transform((raw) => raw !== "false")`. `z.stringbool()` is
+  suitable when you want recognized boolean spellings instead.
+  `z.coerce.boolean()` converts `"false"` to true and is not a replacement.
+  Command validation remains synchronous and reports an ordinary `Error`
+  with the first issue's dotted path and message.
+- Zod numbers reject infinity. Object schemas still strip extra keys, but
+  missing optional properties are omitted rather than added as `undefined`;
+  their inferred object keys are optional too. Check callers that enumerate
+  keys or rely on exact error wording.
+
+Replace `Config.factory(shape)` with `z.object(shape)`, `config.get("key")`
+with typed property access, and `config.toRecord()` with the parsed object.
+Use `z.infer<typeof Settings>` instead of `InferConfig`. If freezing matters,
+wrap the parsed object in `Object.freeze()`, which preserves the old shallow
+freeze. For example:
+
+```ts
+import { z } from "zod";
+
+const Settings = z.object({
+  host: z.string(),
+  port: z.number(),
+});
+type Settings = z.infer<typeof Settings>;
+
+const Environment = Settings.extend({ port: z.coerce.number() });
+const settings = Object.freeze(Environment.parse(process.env));
+const updated = Object.freeze(Settings.parse({ ...settings, port: 9090 }));
+```
+
+Keep environment decoding separate from strict settings validation when
+replacing `factory.coerce()` and `config.update()`. Updates merge parsed
+settings and revalidate them; do not rerun input transforms on their output
+unless those transforms accept that output. Boolean and JSON environment
+values need the explicit decoding described above.
+
+After migrating, run the project's typecheck and tests, including invalid
+inputs, absent/defaulted options, boolean flags, and settings updates used by
+the project.
 
 ## Rules
 

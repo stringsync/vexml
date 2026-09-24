@@ -1,7 +1,7 @@
 ---
 name: arbor
 description: Use the @webappwiz/arbor CLI to land your work on trunk, or a base branch given as an argument, from an isolated git worktree without pull requests. Read this before making any code change in an arbor repository, since it decides where the work happens, and whenever you need to add, claim, merge, remove, list, show, locate, or escalate a task.
-version: 0.0.14
+version: 0.0.19
 ---
 
 # Using arbor
@@ -69,7 +69,9 @@ command runs): watch a task's status, never its lease.
    before touching code.
 3. Do the work, updating `ARBOR.md` as you go; commit with git (arbor never
    commits for you).
-4. `arbor merge`. On failure, do what stderr says and merge again.
+4. Squash the branch to one commit whose message describes the net change
+   (see Committing).
+5. `arbor merge`. On failure, do what stderr says and merge again.
 
 A successful merge deletes the worktree, and your working directory with it:
 `cd` to the main tree (merge prints its path) before running anything else.
@@ -90,6 +92,8 @@ the tree you are standing in, so:
   rather than on you.
 - Expect files to appear and change under you. After a part lands, re-read
   what you are about to edit instead of writing it from memory.
+- Squash only once every part has landed. Rewriting your branch while a part
+  is out moves the base from under it.
 
 Split only along lines that make separate tasks: a part is worth handing out
 when saying what it needs is shorter than doing it.
@@ -98,8 +102,12 @@ when saying what it needs is shorter than doing it.
 
 Merge only work you verified yourself. Escalate instead when verification
 needs a person: external services, destructive migrations, anything tests
-cannot confirm. And if the user asked to see the work before it lands,
-escalate regardless.
+cannot confirm. If the user asked to see the work before it lands, escalate
+regardless. And when the user gave no escalation instructions either way,
+escalate any branch whose changes are complex: many files touched, a large
+diff, an intricate algorithm, or a change whose correctness needs a reader
+rather than a test. A small branch with no instructions merges; a complex one
+waits for a look.
 
 1. `arbor escalate <reason>`.
 2. Under `## Blocked` in `ARBOR.md`, state what needs verifying, ending in a
@@ -131,7 +139,7 @@ One sentence blending what the task set out to do with what it now waits on.
 ```markdown
 ### 🛑 Removed `<task>`
 
-One sentence blending what the task set out to do with why you `arbor rm`ed
+One sentence blending what the task set out to do with why you `arbor remove`d
 it instead.
 ```
 
@@ -182,6 +190,20 @@ message.
 
 Plain, human-style commit messages with **no attribution**: no
 `Co-authored-by:` trailers, no "Generated with", no agent or model names, no
-`--author` overrides. Commit as often as it helps you; a task usually takes
-fewer than 5 commits, and wanting many more means the task wants splitting,
-not squashing.
+`--author` overrides. Commit as often as it helps you while working; a task
+usually takes fewer than 5 commits, and wanting many more means the task wants
+splitting.
+
+Before `arbor merge`, squash the branch to a single commit:
+
+```sh
+git reset --soft "$(git merge-base <base> HEAD)" && git commit -m "<message>"
+```
+
+`<base>` is the base `arbor show <task>` prints: `main` unless the task was
+created with `--base`. Write the message for the net change, what the base
+gains once the commit lands, not a recap of the commits that got you there:
+dead ends, reverted attempts and fix-ups to your own earlier commits leave no
+trace. Squashing your own branch is committing, which arbor leaves to you, not
+a transition the rule above covers; `merge` then rebases that one commit onto
+the base.

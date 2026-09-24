@@ -1,7 +1,7 @@
 ---
 name: review
 description: "Review a change against the RULE.md rules in this project's .wiz/rules directory by handing blocks of rules to separate agents, without reading a rule yourself. Use only when the project has a .wiz/rules directory and the user asks to run, check, or apply the rules, the wiz rules, or the webappwiz rules to a change, or asks to write, add, or edit a rule there. Not for a general code review, a pull request review, a security review, or any review that does not name the rules."
-version: 0.0.14
+version: 0.0.19
 ---
 
 # Reviewing against the rules
@@ -55,6 +55,14 @@ time, so a listing sorts oldest first and two reviews of one change never
 collide. Create `.wiz/reviews` if it is not there. Print the same report in
 your reply and print the path with it, since the file is the copy that
 outlives the session.
+
+Keep the directory out of git. Before writing the first report, ask git whether
+it is ignored already with `git check-ignore -q .wiz/reviews`, and when it is
+not, add `.wiz/reviews` to the project's `.gitignore` yourself, under a comment
+that says what it holds. A report is one session's reading of one change, so it
+goes stale the moment the change lands and it is worth nothing to anyone
+reviewing the commit that carries it. Left tracked, the reports arrive in every
+diff, every branch grows its own set, and merging them is work no one wanted.
 
 It opens with the summary line as `rules review` printed it, so the page says
 what it covered. Then the findings, grouped by file and laid out the way a

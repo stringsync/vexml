@@ -27,7 +27,7 @@
 	"dependencies": {
 		"@stringsync/mdom": "0.4.1",
 		"vexflow": "5.0.0",
-		"webappwiz": "0.0.14"
+		"webappwiz": "0.0.19"
 	},
 	"peerDependencies": {
 		"typescript": "^5"
