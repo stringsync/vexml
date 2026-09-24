@@ -1,8 +1,8 @@
 import { cli, type Deps, type Middleware } from 'webappwiz/cmd';
 import { color } from 'webappwiz/log';
 import type { Fs } from 'webappwiz/system';
-import { t } from 'webappwiz/t';
 import { SystemClock } from 'webappwiz/time';
+import { z } from 'zod';
 import { dev } from './dev';
 import { fix } from './fix';
 import { perf } from './perf';
@@ -22,6 +22,9 @@ export interface VexDeps extends Deps {
 	 */
 	invocationDir: string;
 }
+
+// A bare flag arrives as "true"; only an explicit `--x false` turns it off.
+const bool = z.string().transform((raw) => raw !== 'false');
 
 const flag = { default: false };
 
@@ -48,7 +51,7 @@ vex
 vex
 	.command('fix')
 	.description('format and lint')
-	.option('check', t.boolean(), { ...flag, description: "don't write changes" })
+	.option('check', bool, { ...flag, description: "don't write changes" })
 	.action((opts, { log, ps }) => fix({ check: opts.check, log, ps }));
 
 vex
@@ -57,15 +60,15 @@ vex
 		'run unit (vexml) + integration (visual regression) tests; pattern filters by name',
 	)
 	// Positionals bind before flags, so this is `vex test <pattern> --update`.
-	.arg('pattern', t.optional(t.string()), {
+	.arg('pattern', z.string().optional(), {
 		default: undefined,
 		description: 'filter tests by name',
 	})
-	.option('update', t.boolean(), {
+	.option('update', bool, {
 		...flag,
 		description: 'update screenshot baselines',
 	})
-	.option('clean', t.boolean(), {
+	.option('clean', bool, {
 		...flag,
 		description: 'delete orphaned screenshots',
 	})
@@ -86,25 +89,25 @@ vex
 vex
 	.command('render')
 	.description('render a musicxml file to a png')
-	.option('input', t.string(), { description: 'input musicxml file' })
-	.option('output', t.optional(t.string()), {
+	.option('input', z.string(), { description: 'input musicxml file' })
+	.option('output', z.string().optional(), {
 		description: 'output png path (default: ./vexml YYYY-MM-DD HH.MM.SS.png)',
 	})
-	.option('config', t.optional(t.string()), {
+	.option('config', z.string().optional(), {
 		description:
 			'partial render config as JSON, e.g. \'{"noteSpacing":40,"showPartLabels":true}\'',
 	})
-	.option('muse', t.boolean(), {
+	.option('muse', bool, {
 		...flag,
 		description:
 			'render with a dockerized MuseScore instead — a reference, not ground truth',
 	})
-	.option('osmd', t.boolean(), {
+	.option('osmd', bool, {
 		...flag,
 		description:
 			'render with OpenSheetMusicDisplay instead — a reference, not ground truth',
 	})
-	.option('alpha', t.boolean(), {
+	.option('alpha', bool, {
 		...flag,
 		description: 'render with alphaTab instead — a reference, not ground truth',
 	})
@@ -128,7 +131,7 @@ vex
 	.description(
 		'render every musicxml fixture through vexml, osmd, and alphatab once, and tabulate time and output size; pattern filters by filename',
 	)
-	.arg('pattern', t.optional(t.string()), {
+	.arg('pattern', z.string().optional(), {
 		default: undefined,
 		description: 'filter fixtures by filename',
 	})
@@ -138,11 +141,11 @@ vex
 vex
 	.command('slice')
 	.description('extract measures from a musicxml file into a smaller one')
-	.option('input', t.string(), { description: 'input musicxml file' })
-	.option('measures', t.string(), {
+	.option('input', z.string(), { description: 'input musicxml file' })
+	.option('measures', z.string(), {
 		description: "measures to keep, e.g. '1,3-5,8'",
 	})
-	.option('output', t.optional(t.string()), {
+	.option('output', z.string().optional(), {
 		description: 'output musicxml path (default: ./<input>.slice.musicxml)',
 	})
 	.action((opts, { log, fs, invocationDir }) =>
@@ -152,7 +155,7 @@ vex
 vex
 	.command('validate')
 	.description('validate a musicxml file against the MusicXML XSD with xmllint')
-	.option('input', t.string(), { description: 'input musicxml file' })
+	.option('input', z.string(), { description: 'input musicxml file' })
 	.action((opts, { ps, invocationDir }) =>
 		validate({ input: opts.input, cwd: invocationDir, ps }),
 	);
@@ -160,5 +163,5 @@ vex
 vex
 	.command('ship')
 	.description('bump version (patch|minor|major), commit, tag, and publish')
-	.arg('type', t.enum(['patch', 'minor', 'major'] as const))
+	.arg('type', z.enum(['patch', 'minor', 'major'] as const))
 	.action((opts, { log, ps }) => ship({ bump: opts.type, log, ps }));
