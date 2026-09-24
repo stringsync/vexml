@@ -29,8 +29,8 @@ export interface ScrollBox {
  * DOM popups live). The caller hands render() a <div>; the Stage owns the canvas it draws the
  * score onto and never exposes it to callers — they see only the Score.
  *
- * The base canvas is a plain in-flow child, so the container sizes to it exactly as a
- * hand-placed <canvas> did — output stays pixel-identical. Custom layers stack over it as absolute
+ * The base canvas is a plain in-flow child, top-aligned so the container sizes to the engraving
+ * exactly, with no empty descender strip under it. Custom layers stack over it as absolute
  * overlays. The transform falls out of the base canvas's own getBoundingClientRect: score space is
  * its CSS-pixel space with the origin at its top-left. Reading the live rect each call means page
  * scroll and any CSS scaling of the canvas are handled for free.
@@ -52,7 +52,18 @@ export class Stage implements Viewport, Host, ScrollHost {
 	// Watches the container and the base canvas; created with the Stage, disconnected on dispose.
 	private readonly resizeObserver: ResizeObserver;
 	// The window scroll listener behind the `scroll` event, removed on dispose.
-	private readonly onWindowScroll = () => this.dispatcher.dispatch('scroll');
+	private readonly onWindowScroll = () => {
+		// A viewport layer over a caller's scroller tracks its visible box, which slides across the
+		// container as the scroller moves (a container that scrolls itself keeps it where it is).
+		if (this.scrollElement !== this.container) {
+			for (const layer of this.layers) {
+				if (layer.kind === 'viewport') {
+					this.placeLayer(layer);
+				}
+			}
+		}
+		this.dispatcher.dispatch('scroll');
+	};
 	private readonly prevPosition: string;
 	private readonly prevIsolation: string;
 	// Inline styles this stage set on the container, with their prior values, restored on dispose.
@@ -139,20 +150,20 @@ export class Stage implements Viewport, Host, ScrollHost {
 		// canvases (relayoutLayers) or reposition the cursor, none of which affect the base or
 		// container layout, so there's no feedback loop.
 		//
-		// Report the container's visible (client) box regardless of which target fired — that's the
-		// size a viewport layer is given and the "rendered area" a caller cares about. A base-only
-		// change reports the (unchanged) container size; the listener dedupes its public 'resize' on it.
+		// Report the scroll element's visible (client) box regardless of which target fired — that's
+		// the size a viewport layer is given and the "rendered area" a caller cares about (the container
+		// itself unless the caller named a scrollContainer). A base-only change reports the unchanged
+		// size; the listener dedupes its public 'resize' on it.
 		this.resizeObserver = new ResizeObserver(() => {
 			this.dispatcher.dispatch('resize', {
-				width: this.container.clientWidth,
-				height: this.container.clientHeight,
+				width: this.scrollElement.clientWidth,
+				height: this.scrollElement.clientHeight,
 			});
 		});
 		this.resizeObserver.observe(container);
 		this.resizeObserver.observe(this.base);
-		// A caller-owned scroller can resize on its own (a window resize), and the cursor must re-test
-		// visibility against it. The report still carries the container's size, so Score's dedupe
-		// keeps a scroller-only resize out of its public 'resize'.
+		// A caller-owned scroller can resize on its own (a window resize): the cursor re-tests visibility
+		// against it and viewport layers refit to it.
 		if (this.scrollElement !== container) {
 			this.resizeObserver.observe(this.scrollElement);
 		}
@@ -339,7 +350,10 @@ export class Stage implements Viewport, Host, ScrollHost {
 			const { width, height } = this.intrinsicSize();
 			layer.resize(width, height);
 		} else {
-			layer.resize(this.container.clientWidth, this.container.clientHeight);
+			layer.resize(
+				this.scrollElement.clientWidth,
+				this.scrollElement.clientHeight,
+			);
 		}
 	}
 
@@ -357,18 +371,29 @@ export class Stage implements Viewport, Host, ScrollHost {
 	// Position and stretch a layer's on-screen box over the base canvas. A content layer covers the
 	// base's *rendered* box (base.offset*, which reflect whatever CSS scaling the caller applied), so
 	// a score-resolution bitmap lines up 1:1 with the engraving at any size. A viewport layer is
-	// anchored at the base's offset but spans the container's visible box.
+	// anchored at the base's offset but spans the container's visible box; over a caller's scroller it
+	// covers that scroller's visible (padding) box instead, mapped into the container's coordinates.
 	private placeLayer(layer: ManagedLayer): void {
 		const left = this.base.offsetLeft;
 		const top = this.base.offsetTop;
 		if (layer.kind !== 'viewport') {
 			layer.place(left, top, this.base.offsetWidth, this.base.offsetHeight);
-		} else {
+		} else if (this.scrollElement === this.container) {
 			layer.place(
 				left,
 				top,
 				this.container.clientWidth,
 				this.container.clientHeight,
+			);
+		} else {
+			const el = this.scrollElement;
+			const view = el.getBoundingClientRect();
+			const box = this.container.getBoundingClientRect();
+			layer.place(
+				view.left + el.clientLeft - box.left - this.container.clientLeft,
+				view.top + el.clientTop - box.top - this.container.clientTop,
+				el.clientWidth,
+				el.clientHeight,
 			);
 		}
 	}
@@ -392,13 +417,14 @@ export class Stage implements Viewport, Host, ScrollHost {
 	 * with no `!important`. The per-score intrinsic dimensions ride on the --vexml-width/height custom
 	 * properties the drawer sets.
 	 *
-	 * Base rule: render the score at its intrinsic size — what a hand-placed canvas would show, so
-	 * output stays byte-identical. `.vexml-fit` (added when the layout should scale to fit its
+	 * Base rule: render the score at its intrinsic size. `.vexml-fit` (added when the layout should scale to fit its
 	 * container — see Stage) then caps the canvas at the container width and lets its height follow via
 	 * the exact score aspect ratio (--vexml-aspect, not the rounded bitmap ratio), so a narrow viewport
 	 * shrinks the score to fit while a wide one lands on a pixel-identical box (the score<->client scale
 	 * stays exactly 1) and never blows it up past its engraved resolution. The canvas stays `inline`
-	 * throughout (no `display` set), so `text-align: center` on the container centers it. */
+	 * throughout (no `display` set), so `text-align: center` on the container centers it; top-aligning
+	 * it drops the descender strip a baseline-aligned inline box leaves under it, so the container is
+	 * exactly as tall as the engraving. */
 	private ensureCanvasStyles(): void {
 		if (document.head.querySelector('style[data-vexml-canvas-style]')) {
 			return;
@@ -406,7 +432,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 		const style = document.createElement('style');
 		style.setAttribute('data-vexml-canvas-style', '');
 		style.textContent =
-			':where(.vexml-canvas){width:var(--vexml-width);height:var(--vexml-height)}' +
+			':where(.vexml-canvas){width:var(--vexml-width);height:var(--vexml-height);vertical-align:top}' +
 			':where(.vexml-canvas.vexml-fit){max-width:100%;height:auto;aspect-ratio:var(--vexml-aspect)}';
 		document.head.appendChild(style);
 	}

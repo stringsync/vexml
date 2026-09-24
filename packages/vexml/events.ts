@@ -29,7 +29,8 @@ export interface ScoreScrollEvent {
 	readonly native: Event;
 }
 
-/* The rendered area changed size (the caller's container resized): its new content-box size. */
+/* The rendered area changed size (the caller's container resized, or their scrollContainer when
+ * set): its new client-box size. */
 export interface ScoreResizeEvent {
 	readonly width: number;
 	readonly height: number;

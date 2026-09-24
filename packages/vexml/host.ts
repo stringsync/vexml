@@ -4,9 +4,9 @@ import type { LayerHost } from './layer-host';
 import type { Scroller } from './scroller';
 import type { Viewport } from './viewport';
 
-/* What the host raises. `resize` fires whenever the container OR the base canvas changes size, and
- * carries the container's visible (client) box — see Stage for why both are watched and why the
- * container's box is what gets reported. `scroll` fires on any scroll that slides the score within
+/* What the host raises. `resize` fires whenever the container, the base canvas, or a caller's
+ * scrollContainer changes size, and carries the scrolling element's visible (client) box — see Stage
+ * for why each is watched and why that box is what gets reported. `scroll` fires on any scroll that slides the score within
  * the viewport — the container's own, or any ancestor's. It's payload-free: read `scroll` or
  * `viewportRect()` for where things ended up. */
 export type HostEventMap = {
