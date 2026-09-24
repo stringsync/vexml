@@ -166,13 +166,13 @@ export class CursorController implements Eventful<CursorEventMap>, Resource {
 	}
 
 	/* Auto-scroll: on every change, scroll the bar into view when it isn't fully visible. Uses the
-	 * given scroller, or the score's. Scrolls once immediately if needed. Dispose the returned
-	 * Resource to stop following. */
-	follow(scroller?: Scroller): Resource {
+	 * given scroller, or the score's, with `opts` passed to every scroll. Scrolls once immediately if
+	 * needed. Dispose the returned Resource to stop following. */
+	follow(scroller?: Scroller, opts?: ScrollerOptions): Resource {
 		const target = scroller ?? this.scroller;
 		const listener = () => {
 			if (!this.isFullyVisible()) {
-				target.scrollIntoView(this.barRect());
+				target.scrollIntoView(this.barRect(), opts);
 			}
 		};
 		const unfollow = disposables.callback(

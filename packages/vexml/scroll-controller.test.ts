@@ -72,6 +72,31 @@ describe('ScrollController', () => {
 		expect(host.last()).toEqual({ left: 0, top: 146, behavior: undefined });
 	});
 
+	it('turns upward pages with the target near the top when block is start', () => {
+		// The playhead is above the view: 'start' lands its line 16px below the top, as a forward
+		// page turn would, instead of just far enough to show it at the bottom.
+		host.scroll = { left: 0, top: 300 };
+		scroller.scrollIntoView(new Rect(50, 220, 10, 10), { block: 'start' });
+		expect(host.last()).toEqual({ left: 0, top: 204, behavior: undefined });
+	});
+
+	it('turns downward pages with the target near the top when block is start', () => {
+		scroller.scrollIntoView(new Rect(50, 150, 10, 10), { block: 'start' });
+		expect(host.last()).toEqual({ left: 0, top: 134, behavior: undefined });
+	});
+
+	it('does not scroll a visible target when block is start', () => {
+		host.scroll = { left: 0, top: 300 };
+		scroller.scrollIntoView(new Rect(50, 350, 10, 10), { block: 'start' });
+		expect(host.calls).toHaveLength(0);
+	});
+
+	it('keeps pages horizontal at the nearest edge when block is start', () => {
+		host.scroll = { left: 300, top: 0 };
+		scroller.scrollIntoView(new Rect(220, 10, 10, 10), { block: 'start' });
+		expect(host.last()?.left).toBe(146);
+	});
+
 	it('leaves both axes still through focus changes, including viewport edges', async () => {
 		host.scroll = { left: 300, top: 300 };
 		for (const position of [300, 350, 390]) {

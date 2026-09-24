@@ -171,6 +171,22 @@ describe('CursorController', () => {
 		expect(scroller.calls).toHaveLength(before);
 	});
 
+	it('passes its scroll options to every scroll while following', () => {
+		host.vp = new Rect(500, 0, 1000, 1000); // bar off-screen left
+		const unfollow = cursor.follow(undefined, { block: 'start' });
+		cursor.next();
+		expect(scroller.options.length).toBeGreaterThan(0);
+		for (const opts of scroller.options) {
+			expect(opts).toEqual({ block: 'start' });
+		}
+		unfollow.dispose();
+	});
+
+	it('passes its scroll options through a one-off scroll', () => {
+		cursor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		expect(scroller.options).toEqual([{ behavior: 'smooth', block: 'start' }]);
+	});
+
 	it('halts the score scroller on request', () => {
 		cursor.cancelScroll();
 		expect(scroller.cancels).toBe(1);

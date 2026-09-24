@@ -78,14 +78,19 @@ export class ScrollController implements Scroller {
 			right: scroll.left + size.width,
 			bottom: scroll.top + size.height,
 		};
+		const block = opts?.block ?? 'nearest';
 		// Keep an existing page turn when its destination already reveals the new target.
 		if (this.tween) {
 			const destination = this.tween.to;
-			const pending = this.scrollOffsetFor(target, {
-				...destination,
-				right: destination.left + size.width,
-				bottom: destination.top + size.height,
-			});
+			const pending = this.scrollOffsetFor(
+				target,
+				{
+					...destination,
+					right: destination.left + size.width,
+					bottom: destination.top + size.height,
+				},
+				block,
+			);
 			if (
 				pending.left === destination.left &&
 				pending.top === destination.top
@@ -93,7 +98,7 @@ export class ScrollController implements Scroller {
 				return;
 			}
 		}
-		const offset = this.scrollOffsetFor(target, view);
+		const offset = this.scrollOffsetFor(target, view, block);
 		if (offset.left === scroll.left && offset.top === scroll.top) {
 			// A newly focused visible target must not be carried offscreen by an old tween.
 			this.stopTween();
@@ -180,10 +185,12 @@ export class ScrollController implements Scroller {
 	}
 
 	// Resolve each axis independently: visible targets stay put, while offscreen targets return
-	// at the opposite edge, revealing the most content in the direction of travel.
+	// at the opposite edge, revealing the most content in the direction of travel. `block` 'start'
+	// instead lands an offscreen target's top at the view's top, as a forward page turn does.
 	private scrollOffsetFor(
 		target: Box,
 		view: Box,
+		block: 'nearest' | 'start',
 	): { left: number; top: number } {
 		return {
 			left: this.pageOffset(
@@ -192,6 +199,7 @@ export class ScrollController implements Scroller {
 				view.left,
 				view.right,
 				SCROLL_SIDE_PADDING_PX,
+				'nearest',
 			),
 			top: this.pageOffset(
 				target.top,
@@ -199,6 +207,7 @@ export class ScrollController implements Scroller {
 				view.top,
 				view.bottom,
 				SCROLL_TOP_PADDING_PX,
+				block,
 			),
 		};
 	}
@@ -209,13 +218,14 @@ export class ScrollController implements Scroller {
 		viewStart: number,
 		viewEnd: number,
 		padding: number,
+		align: 'nearest' | 'start',
 	): number {
 		if (start >= viewStart && end <= viewEnd) {
 			return viewStart;
 		}
 		const size = viewEnd - viewStart;
 		// Oversized targets cannot fit; consistently show their beginning without oscillating.
-		if (end - start > size) {
+		if (align === 'start' || end - start > size) {
 			return start - padding;
 		}
 		const inset = Math.min(padding, size - (end - start));
