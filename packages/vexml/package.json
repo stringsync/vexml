@@ -1,6 +1,6 @@
 {
 	"name": "@stringsync/vexml",
-	"version": "1.5.0",
+	"version": "1.5.1",
 	"type": "module",
 	"license": "MIT",
 	"sideEffects": false,
