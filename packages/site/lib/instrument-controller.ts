@@ -34,9 +34,13 @@ export class InstrumentController
 		return this.instrument;
 	}
 
-	/* Warm the samples so the first play does not drop onsets while loading. */
+	/*
+	 * Warm the samples so the first play does not wait on them. Safe before any user gesture: the
+	 * context stays suspended (Chrome logs that it "was not allowed to start", which is harmless)
+	 * but still downloads and decodes, and the play click's own load() starts it.
+	 */
 	preload(): void {
-		this.instrument.preload();
+		this.instrument.load().catch(() => {});
 	}
 
 	/*
@@ -53,7 +57,7 @@ export class InstrumentController
 		this.instrument.dispose();
 		this.instrument = new SmplrInstrument(name);
 		this.instrument.setMuted(this.muted);
-		this.instrument.preload();
+		this.preload();
 		this.dispatcher.dispatch('changed');
 	}
 
@@ -95,7 +99,8 @@ export const SILENT: Instrument = {
 	play: () => disposables.noop(),
 	pluck: () => {},
 	stopAll: () => {},
-	preload: () => {},
+	load: () => Promise.resolve(),
+	isLoaded: () => true,
 	setMuted: () => {},
 	dispose: () => {},
 };

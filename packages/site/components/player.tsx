@@ -11,6 +11,7 @@ import {
 import { type RefObject, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Spinner } from '@/components/ui/spinner';
 import {
 	Tooltip,
 	TooltipContent,
@@ -28,6 +29,8 @@ export interface PlayerProps {
 	/* Read off the two objects above by the caller's projection, so a change re-renders this. */
 	muted: boolean;
 	playing: boolean;
+	/* Play was pressed and the instrument is still loading; pressing again cancels. */
+	loading: boolean;
 	timeMs: number;
 	durationMs: number;
 }
@@ -48,12 +51,18 @@ export function Player({
 	instrument,
 	muted,
 	playing,
+	loading,
 	timeMs,
 	durationMs,
 }: PlayerProps) {
 	const [scrubTip, setScrubTip] = useState<{ x: number; text: string } | null>(
 		null,
 	);
+
+	let playLabel = playing ? 'Pause' : 'Play';
+	if (loading) {
+		playLabel = 'Loading';
+	}
 
 	const score = session?.score;
 	const measureCount = score?.getMeasureCount() ?? 0;
@@ -116,16 +125,15 @@ export function Player({
 						size="icon"
 						className={PLAY}
 						onClick={() => session?.togglePlay()}
-						aria-label={playing ? 'Pause' : 'Play'}
+						aria-label={playLabel}
 					>
-						{playing ? (
-							<PauseIcon fill="currentColor" />
-						) : (
-							<PlayIcon fill="currentColor" />
-						)}
+						{/* Spinner and icons share the default icon size, so swapping them never shifts the bar. */}
+						{loading && <Spinner aria-hidden />}
+						{!loading && playing && <PauseIcon fill="currentColor" />}
+						{!loading && !playing && <PlayIcon fill="currentColor" />}
 					</Button>
 				</TooltipTrigger>
-				<TooltipContent>{playing ? 'Pause' : 'Play'}</TooltipContent>
+				<TooltipContent>{playLabel}</TooltipContent>
 			</Tooltip>
 			<Tooltip>
 				<TooltipTrigger asChild>

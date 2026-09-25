@@ -58,6 +58,10 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	mode: ScoreMode;
 	timeMs = 0;
 	playing = false;
+	// Play was pressed but the instrument is still loading, so the clock has not started.
+	private loading = false;
+	// Bumped by every stop, so a load that settles after a pause (or a later play) starts nothing.
+	private attempt = 0;
 
 	private readonly disposer = new Disposer();
 	private readonly timer = new SystemTimer();
@@ -268,10 +272,13 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		);
 	}
 
-	/* Start or stop the play loop. Starting from the end restarts from the top. */
+	/*
+	 * Start or stop the play loop. Starting from the end restarts from the top. Pressed while the
+	 * instrument is loading, it cancels the pending start.
+	 */
 	togglePlay(): void {
 		this.forgetSeek();
-		if (this.playing) {
+		if (this.playing || this.loading) {
 			this.stop();
 			return;
 		}
@@ -285,7 +292,12 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.cursor.seekMs(0);
 		}
 		// Bring the cursor into view when starting (e.g. after scrolling away while paused).
-		this.start();
+		this.begin();
+	}
+
+	/* True between pressing play and the instrument being ready to sound its first note. */
+	isLoading(): boolean {
+		return this.loading;
 	}
 
 	/* Step to the previous onset, pausing first: stepping is a paused-only move. */
@@ -347,7 +359,8 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		if (this.seeking) {
 			return;
 		}
-		const wasPlaying = this.playing;
+		// A play still waiting on the instrument is owed a resume just like a running one.
+		const wasPlaying = this.playing || this.loading;
 		this.stop();
 		this.seeking = true;
 		this.resumeAfterSeek = wasPlaying;
@@ -361,7 +374,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.seeking = false;
 		if (this.resumeAfterSeek) {
 			this.resumeAfterSeek = false;
-			this.start();
+			this.begin();
 			this.dispatcher.dispatch('changed');
 		}
 	}
@@ -394,6 +407,35 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.disposer.dispose();
 	}
 
+	/*
+	 * Start once the instrument can sound the first note at once. Starting the clock before that
+	 * leaves the first notes silent or late: the samples are still downloading, the context is
+	 * still resuming, or the output device is still waking up. load() is called here,
+	 * synchronously, so that its resume lands inside the user's click.
+	 */
+	private begin(): void {
+		const instrument = this.instrument();
+		// Already loaded: start now, so the spinner never flashes.
+		if (!instrument || instrument.isLoaded()) {
+			this.start();
+			return;
+		}
+		if (this.loading) {
+			return;
+		}
+		this.loading = true;
+		const attempt = this.attempt;
+		const go = () => {
+			if (attempt === this.attempt) {
+				this.loading = false;
+				this.start();
+			}
+		};
+		// A failed load plays silently rather than never.
+		instrument.load().then(go, go);
+		this.dispatcher.dispatch('changed');
+	}
+
 	// ponytail: wall-clock RAF, not an audio clock. Good enough for a demo; swap in the
 	// AudioContext's currentTime if drift against the synth ever shows.
 	private start(): void {
@@ -412,6 +454,12 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 
 	private stop(): void {
 		this.loop.stop();
+		// Pause, seek, the steps and dispose all cancel a start still waiting on the instrument.
+		if (this.loading) {
+			this.loading = false;
+			this.attempt++;
+			this.dispatcher.dispatch('changed');
+		}
 		if (!this.playing) {
 			return;
 		}

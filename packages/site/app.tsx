@@ -107,6 +107,7 @@ const projection = (model: SiteModel) => ({
 	instrumentName: model.instrument.name,
 	muted: model.instrument.muted,
 	playing: model.session?.playing ?? false,
+	loading: model.session?.isLoading() ?? false,
 	timeMs: model.session?.timeMs ?? 0,
 	durationMs: model.session?.durationMs ?? 0,
 	activeVoice: model.session?.editingVoices.getValue() ?? '',
@@ -133,6 +134,7 @@ export default function App() {
 		instrumentName,
 		muted,
 		playing,
+		loading,
 		timeMs,
 		durationMs,
 		mode,
@@ -172,6 +174,7 @@ export default function App() {
 
 	useEffect(() => {
 		model.document.restore();
+		// Start the samples downloading now so the first play rarely waits on them.
 		model.instrument.preload();
 	}, [model]);
 
@@ -730,6 +733,7 @@ export default function App() {
 							instrument={model.instrument}
 							muted={muted}
 							playing={playing}
+							loading={loading}
 							timeMs={timeMs}
 							durationMs={durationMs}
 						/>

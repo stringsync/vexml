@@ -11,7 +11,10 @@ export interface Instrument extends Resource {
 	pluck(pitch: string, durationMs: number): void;
 	// Release every sounding voice at once (e.g. on pause).
 	stopAll(): void;
-	// Start fetching samples ahead of the first play so onsets aren't dropped while loading.
-	preload(): void;
+	// Resolves once a note struck now would sound at once: samples decoded, audio running, and
+	// the output actually playing. Repeated calls share one load. Call it inside a user gesture
+	// too, since that call is what lets a suspended context start.
+	load(): Promise<void>;
+	isLoaded(): boolean;
 	setMuted(muted: boolean): void;
 }
