@@ -78,6 +78,31 @@ describe('dev site playback', () => {
 		await page.context().close();
 	}, 30_000);
 
+	it('keeps playing, from the same place, through a re-render', async () => {
+		const { page, served } = await open();
+		await served;
+		await page.getByRole('button', { name: 'Play', exact: true }).click();
+		await page.waitForFunction(() =>
+			document.body.textContent?.includes('0:02 /'),
+		);
+
+		// A shorter window moves the player, so the score re-renders to fit the new gap.
+		const score = page
+			.getByRole('application', { name: 'Score', exact: true })
+			.locator('canvas')
+			.first();
+		const canvas = await score.elementHandle();
+		await page.setViewportSize({ width: 1440, height: 800 });
+		await page.waitForFunction((c) => !c?.isConnected, canvas);
+
+		await page.getByRole('button', { name: 'Pause', exact: true }).waitFor();
+		expect(await elapsed(page)).not.toBe('0:00');
+		await page.waitForFunction(() =>
+			document.body.textContent?.includes('0:04 /'),
+		);
+		await page.context().close();
+	}, 30_000);
+
 	// A fresh page, samples on a slow fake CDN, and a score long enough to still be playing
 	// seconds in. `served` settles once the samples have gone out, and `sent` says whether yet.
 	async function open(): Promise<{
@@ -106,15 +131,8 @@ describe('dev site playback', () => {
 			score(),
 		);
 		await page.goto(url, { waitUntil: 'domcontentloaded' });
-		await page.getByRole('button', { name: 'Play', exact: true }).waitFor();
-		// Once the player mounts, the score re-renders to fit the space above it, and that swaps
-		// in a new session. A play pressed before the swap would go to the discarded one.
-		const first = await page
-			.getByRole('application', { name: 'Score', exact: true })
-			.locator('canvas')
-			.first()
-			.elementHandle();
-		await page.waitForFunction((canvas) => !canvas?.isConnected, first);
+		// Pressed as soon as it shows, which is while the score is re-rendering to fit the space
+		// above the player: that press has to survive the new session replacing the old.
 		await page.getByRole('button', { name: 'Play', exact: true }).waitFor();
 		return { page, served, sent: () => sent };
 	}

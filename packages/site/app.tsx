@@ -107,7 +107,7 @@ const projection = (model: SiteModel) => ({
 	instrumentName: model.instrument.name,
 	muted: model.instrument.muted,
 	playing: model.session?.playing ?? false,
-	loading: model.session?.isLoading() ?? false,
+	loading: model.isPlayPending(),
 	timeMs: model.session?.timeMs ?? 0,
 	durationMs: model.session?.durationMs ?? 0,
 	activeVoice: model.session?.editingVoices.getValue() ?? '',
@@ -273,7 +273,7 @@ export default function App() {
 				return;
 			}
 			e.preventDefault();
-			model.session?.togglePlay();
+			model.togglePlay();
 		};
 		window.addEventListener('keydown', onKeyDown);
 		return () => window.removeEventListener('keydown', onKeyDown);
@@ -734,6 +734,7 @@ export default function App() {
 							muted={muted}
 							playing={playing}
 							loading={loading}
+							onTogglePlay={() => model.togglePlay()}
 							timeMs={timeMs}
 							durationMs={durationMs}
 						/>

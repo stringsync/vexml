@@ -295,6 +295,17 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.begin();
 	}
 
+	/*
+	 * Play on from wherever the cursor is, as a session replacing a playing one does. Unlike
+	 * togglePlay it never pauses and never jumps back to the start or the selection.
+	 */
+	resume(): void {
+		this.forgetSeek();
+		if (!this.playing) {
+			this.begin();
+		}
+	}
+
 	/* True between pressing play and the instrument being ready to sound its first note. */
 	isLoading(): boolean {
 		return this.loading;

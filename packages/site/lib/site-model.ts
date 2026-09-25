@@ -57,6 +57,11 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	} | null = null;
 
 	private readonly clock = new SystemClock();
+	// A re-render swaps in a new session, so what the old one was doing is handed to the new one:
+	// where its cursor was (same document only) and whether to play once it lands. playOnRender
+	// also holds a Play pressed mid-render, when there is no session to press it on.
+	private resumeMs: number | null = null;
+	private playOnRender = false;
 
 	constructor(fixtures: Fixtures, storage: Storage) {
 		this.document = new DocumentSource(fixtures, storage);
@@ -93,6 +98,14 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		const at = ++this.generation;
 		this.rendering = true;
 		const sameDocument = this.editingSource?.input === input;
+		// With no session, a superseded render already took the handoff (or there is none).
+		if (this.session) {
+			this.resumeMs = sameDocument ? this.session.timeMs : null;
+			this.playOnRender =
+				sameDocument && (this.session.playing || this.session.isLoading());
+		} else if (!sameDocument) {
+			this.resumeMs = null;
+		}
 		const scrollTop = sameDocument ? container.scrollTop : 0;
 		const scrollLeft = sameDocument ? container.scrollLeft : 0;
 		const focused = container === container.ownerDocument.activeElement;
@@ -157,6 +170,12 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 			this.session.cursor.cancelScroll();
 			container.scrollTop = scrollTop;
 			container.scrollLeft = scrollLeft;
+			if (this.resumeMs !== null) {
+				this.session.seekMs(this.resumeMs);
+			}
+			if (this.playOnRender) {
+				this.session.resume();
+			}
 			if (focused) {
 				container.focus({ preventScroll: true });
 			}
@@ -169,6 +188,8 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 			this.config.reportRenderMs(null);
 		} finally {
 			if (at === this.generation) {
+				this.resumeMs = null;
+				this.playOnRender = false;
 				this.initialized = true;
 				this.rendering = false;
 				this.dispatcher.dispatch('changed');
@@ -183,6 +204,28 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 
 	get editor(): EditingSession | null {
 		return this.editingSource?.voices.editor ?? null;
+	}
+
+	/*
+	 * Start or stop playback. Mid-render there is no session, so the press is held for the one
+	 * about to land rather than lost.
+	 */
+	togglePlay(): void {
+		if (this.session) {
+			this.session.togglePlay();
+			return;
+		}
+		this.playOnRender = !this.playOnRender;
+		if (this.playOnRender) {
+			// Load inside the press, so its resume() is what lets the audio start.
+			this.instrument.preload();
+		}
+		this.dispatcher.dispatch('changed');
+	}
+
+	/* A play is waiting on the instrument, or on a render to play it through. */
+	isPlayPending(): boolean {
+		return this.session ? this.session.isLoading() : this.playOnRender;
 	}
 
 	get currentMode(): ScoreMode {

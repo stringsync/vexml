@@ -29,8 +29,10 @@ export interface PlayerProps {
 	/* Read off the two objects above by the caller's projection, so a change re-renders this. */
 	muted: boolean;
 	playing: boolean;
-	/* Play was pressed and the instrument is still loading; pressing again cancels. */
+	/* Play was pressed and is waiting on the instrument or a render; pressing again cancels. */
 	loading: boolean;
+	/* Goes through the model rather than the session, which is briefly null mid-render. */
+	onTogglePlay: () => void;
 	timeMs: number;
 	durationMs: number;
 }
@@ -52,6 +54,7 @@ export function Player({
 	muted,
 	playing,
 	loading,
+	onTogglePlay,
 	timeMs,
 	durationMs,
 }: PlayerProps) {
@@ -124,7 +127,7 @@ export function Player({
 						type="button"
 						size="icon"
 						className={PLAY}
-						onClick={() => session?.togglePlay()}
+						onClick={onTogglePlay}
 						aria-label={playLabel}
 					>
 						{/* Spinner and icons share the default icon size, so swapping them never shifts the bar. */}
