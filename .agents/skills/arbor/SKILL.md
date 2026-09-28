@@ -1,7 +1,7 @@
 ---
 name: arbor
 description: Use the @webappwiz/arbor CLI to land your work on trunk, or a base branch given as an argument, from an isolated git worktree without pull requests. Read this before making any code change in an arbor repository, since it decides where the work happens, and whenever you need to add, claim, merge, remove, list, show, locate, or escalate a task.
-version: 0.0.19
+version: 0.0.20
 ---
 
 # Using arbor
@@ -37,8 +37,9 @@ let it land first and your rebase is onto its work rather than against it.
 Waiting is caution, reserved for overlap that warrants it. Escalate
 instead only when the other task is doing something majorly different from
 yours, or contrary to it: rewriting what you are extending, or asked for the
-opposite of what you were. Then `arbor escalate` and ask the user whether to
-wait for it, work alongside it and accept the rebase, or drop yours.
+opposite of what you were. Then escalate (see Escalation) with a Q like
+"Decide: wait for `<task>`, work alongside it and accept the rebase, or drop
+this task?"
 
 Act on how the wait ends:
 
@@ -110,15 +111,35 @@ rather than a test. A small branch with no instructions merges; a complex one
 waits for a look.
 
 1. `arbor escalate <reason>`.
-2. Under `## Blocked` in `ARBOR.md`, state what needs verifying, ending in a
-   question a yes/no or a sentence can answer.
-3. Leave something the human can look at and print its **absolute path**
-   (start from `arbor path <task>`). For anything visual or UX, that means a
-   screenshot; if producing one is expensive or has side effects, ask before
-   starting and say what it will cost.
+2. Leave something the human can look at and put its **absolute path** in the
+   item that asks for it (start from `arbor path <task>`). For anything visual
+   or UX, that means a screenshot; if producing one is expensive or has side
+   effects, ask before starting and say what it will cost.
+3. Record what the reviewer must do under `## Blocked` in `ARBOR.md`, then
+   report it (see Reporting).
 
-If you claim a tree whose `## Blocked` question is unanswered, do not resume
-or merge: ask the user and wait for the answer.
+Number what you did D1, D2, … and what you need Q1, Q2, …. Each Q is one
+command: it starts with a verb (Run, Open, Confirm, Decide) and ends with the
+shape of the answer ("reply pass or fail", "keep or drop?"). Numbers never
+change: an item carried into a later turn keeps its number, and new items
+continue from the highest.
+
+```markdown
+## Blocked
+
+- [x] Q1. Run `bin/wiz dev test --live` against staging. Reply pass or fail. → pass
+- [ ] Q2. Open `/abs/path/shot.png`. Confirm the header wraps to two lines.
+```
+
+Match replies to items by number, ignoring case and punctuation (`q1`, `Q1:`
+and `1.` all mean Q1). Check an item off only when the reply answers it in a
+way you can act on, and write the answer after `→`. Anything else stays open:
+start your next report's Needs you with those items, under their original
+numbers. A reply to a D item is an instruction: act on it, and add a new Q if
+the result needs checking.
+
+Never merge while `## Blocked` has an unchecked item. If you claim a tree that
+has one, do not resume: ask it and wait.
 
 ## Reporting
 
@@ -131,9 +152,13 @@ One sentence blending what the task set out to do with where it ended up.
 ```
 
 ```markdown
-### ⚠️ Escalated `<task>`
+### ⚠️ Escalated `<task>`: <what it waits on, in a few words>
 
-One sentence blending what the task set out to do with what it now waits on.
+Done:
+- D1. One line per change.
+
+Needs you:
+- Q1. One command per item.
 ```
 
 ```markdown
