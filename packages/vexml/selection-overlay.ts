@@ -26,6 +26,16 @@ export class SelectionOverlay implements EditingView {
 	) {}
 
 	render(state: EditingPresentation): void {
+		// Nothing to erase and nothing to draw: leave the layers untouched (a lazy one stays unmade).
+		if (
+			this.previous.length === 0 &&
+			this.previousFocus.length === 0 &&
+			!state.marquee &&
+			!state.focus &&
+			state.selected.length === 0
+		) {
+			return;
+		}
 		const ctx = this.layer.ctx;
 		for (const rect of this.previous) {
 			ctx.clearRect(rect.x - 1, rect.y - 1, rect.w + 2, rect.h + 2);

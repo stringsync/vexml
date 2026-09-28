@@ -3,6 +3,7 @@ import type { Rect } from 'webappwiz/geometry';
 import type { Host, HostEventMap } from './host';
 import type { Layer, LayerKind } from './layer';
 import { ManagedLayer } from './managed-layer';
+import { ManagedMarker, type MarkerFrame } from './managed-marker';
 import { ScrollController } from './scroll-controller';
 import type { ScrollHost } from './scroll-host';
 import type { Viewport } from './viewport';
@@ -69,6 +70,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 	// Inline styles this stage set on the container, with their prior values, restored on dispose.
 	private readonly restoreStyles: Array<[string, string]> = [];
 	private readonly layers = new Set<ManagedLayer>();
+	private readonly markers = new Set<ManagedMarker>();
 	// Owns the smooth-scroll conflation state; created on first use of `scroller`.
 	private scrollController: ScrollController | null = null;
 	private disposed = false;
@@ -284,7 +286,29 @@ export class Stage implements Viewport, Host, ScrollHost {
 		return layer;
 	}
 
+	createMarker(): ManagedMarker {
+		const el = document.createElement('div');
+		// Anchored at the container's top-left and moved by transform, so a move never lays out.
+		// Purely visual, like a layer: pointer events pass through to the container.
+		el.className = 'vexml-marker';
+		el.style.position = 'absolute';
+		el.style.left = '0';
+		el.style.top = '0';
+		el.style.pointerEvents = 'none';
+		el.style.willChange = 'transform';
+		const marker = new ManagedMarker(el, this.markerFrame(), this);
+		this.container.appendChild(el);
+		this.markers.add(marker);
+		return marker;
+	}
+
 	relayoutLayers(): void {
+		if (this.markers.size > 0) {
+			const frame = this.markerFrame();
+			for (const marker of this.markers) {
+				marker.relayout(frame);
+			}
+		}
 		for (const layer of this.layers) {
 			// Viewport layers are tied to the visible box, so refit the bitmap (which clears them —
 			// callers redraw in their resize handler). Content layers keep their fixed score-resolution
@@ -299,6 +323,11 @@ export class Stage implements Viewport, Host, ScrollHost {
 	// Deregister a layer disposing itself (called from ManagedLayer.dispose).
 	forget(layer: ManagedLayer): void {
 		this.layers.delete(layer);
+	}
+
+	// Deregister a marker disposing itself (called from ManagedMarker.dispose).
+	forgetMarker(marker: ManagedMarker): void {
+		this.markers.delete(marker);
 	}
 
 	dispose(): void {
@@ -317,7 +346,14 @@ export class Stage implements Viewport, Host, ScrollHost {
 		for (const layer of [...this.layers]) {
 			layer.dispose();
 		}
+		for (const marker of [...this.markers]) {
+			marker.dispose();
+		}
 		this.base.remove();
+		// Free the engraving's bitmap now, not at the next GC: a re-render has the outgoing and
+		// incoming scores alive together, and iOS WebKit kills the page past its canvas budget.
+		this.base.width = 0;
+		this.base.height = 0;
 		this.container.style.position = this.prevPosition;
 		this.container.style.isolation = this.prevIsolation;
 		for (const [prop, value] of this.restoreStyles) {
@@ -396,6 +432,19 @@ export class Stage implements Viewport, Host, ScrollHost {
 				el.clientHeight,
 			);
 		}
+	}
+
+	// Score space -> the container's coordinates, which is what an absolutely positioned child is
+	// placed in: the base canvas's offset within the container and its CSS scale (content layers are
+	// stretched over the same box in placeLayer).
+	private markerFrame(): MarkerFrame {
+		const { width, height } = this.intrinsicSize();
+		return {
+			left: this.base.offsetLeft,
+			top: this.base.offsetTop,
+			sx: width > 0 ? this.base.offsetWidth / width : 1,
+			sy: height > 0 ? this.base.offsetHeight / height : 1,
+		};
 	}
 
 	/*

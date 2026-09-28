@@ -1,3 +1,4 @@
+import { MAX_CANVAS_AREA } from './constants';
 import type { Layer, LayerKind } from './layer';
 import type { Stage } from './stage';
 
@@ -34,10 +35,15 @@ export class ManagedLayer implements Layer {
 		// engraved score, and a long score at dpr 2 can exceed the cap — which silently drops the
 		// canvas onto the software rasterization path, where every change costs tens of ms of buffer
 		// churn per frame. Under the cap the layer stays GPU-composited; the axis renders at slightly
-		// reduced resolution (overlays only — the engraving itself is untouched), which a translucent
-		// halo, a recolored glyph, or a cursor bar wears invisibly.
-		const sx = Math.min(dpr, cssWidth > 0 ? MAX_BITMAP_PX / cssWidth : dpr);
-		const sy = Math.min(dpr, cssHeight > 0 ? MAX_BITMAP_PX / cssHeight : dpr);
+		// reduced resolution, which a translucent halo or a recolored glyph wears invisibly.
+		// The area cap scales both axes alike, so it never squashes the layer's aspect.
+		const area = cssWidth * cssHeight;
+		const scale = Math.min(
+			dpr,
+			area > 0 ? Math.sqrt(MAX_CANVAS_AREA / area) : dpr,
+		);
+		const sx = Math.min(scale, cssWidth > 0 ? MAX_BITMAP_PX / cssWidth : dpr);
+		const sy = Math.min(scale, cssHeight > 0 ? MAX_BITMAP_PX / cssHeight : dpr);
 		this.canvas.width = Math.max(0, Math.round(cssWidth * sx));
 		this.canvas.height = Math.max(0, Math.round(cssHeight * sy));
 		this.canvas.style.width = `${cssWidth}px`;
@@ -59,6 +65,9 @@ export class ManagedLayer implements Layer {
 
 	dispose(): void {
 		this.canvas.remove();
+		// Free the bitmap now rather than at the next GC (see Stage.dispose).
+		this.canvas.width = 0;
+		this.canvas.height = 0;
 		this.stage.forget(this);
 	}
 }

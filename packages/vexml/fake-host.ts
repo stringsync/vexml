@@ -1,6 +1,7 @@
 import { Dispatcher, type Events } from 'webappwiz/events';
 import type { Rect } from 'webappwiz/geometry';
 import { FakeLayer } from './fake-layer';
+import { FakeMarker } from './fake-marker';
 import { FakeScroller } from './fake-scroller';
 import type { Host, HostEventMap } from './host';
 import type { Layer, LayerKind } from './layer';
@@ -28,6 +29,7 @@ export class FakeHost implements Host {
 	readonly dom = new EventTarget();
 	readonly scrollTarget = new EventTarget();
 	readonly created: FakeLayer[] = [];
+	readonly markers: FakeMarker[] = [];
 	readonly scroller = new FakeScroller();
 	scroll = { left: 0, top: 0 };
 	relayoutLayersCalls = 0;
@@ -56,6 +58,12 @@ export class FakeHost implements Host {
 		const layer = new FakeLayer({ kind, zIndex });
 		this.created.push(layer);
 		return layer;
+	}
+
+	createMarker(): FakeMarker {
+		const marker = new FakeMarker();
+		this.markers.push(marker);
+		return marker;
 	}
 
 	clientRectOf(rect: Rect): DOMRect {

@@ -171,9 +171,9 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 - **Pointer position to element** — `hit-tester.ts`, `default-hit-tester.ts`, `element-index.ts`
 - **Coloring, highlighting, halos** — `decoration.ts`, `default-decoration.ts`, `default-decorations.ts`, `decoration-style.ts`, `color-style.ts`, `halo-style.ts`
 - **Playback timeline, repeats unrolled, swing** — `sequence-factory.ts`, `sequence.ts`, `measure-sequence-iterator.ts` (repeat/volta expansion), `tempo-map.ts`, `swing-warp.ts`
-- **The moving cursor and playhead visibility** — `cursor-controller.ts`, `cursor-view.ts`, `playhead.ts`, `cursor-host.ts`, `cursor-host-adapter.ts`
+- **The moving cursor and playhead visibility** — `cursor-controller.ts`, `cursor-view.ts`, `playhead.ts` (a DOM `marker.ts`/`managed-marker.ts`, not a canvas), `cursor-host.ts`, `cursor-host-adapter.ts`
 - **Scrolling and the visible window** — `scroller.ts`, `scroll-controller.ts`, `viewport.ts`
-- **The DOM the score lives in (container, canvas, overlays, a caller-owned `scrollContainer`)** — `host.ts`, `stage.ts`, `layer.ts`, `managed-layer.ts`, `recording-context.ts`, `layer-host.ts`, `scroll-host.ts`
+- **The DOM the score lives in (container, canvas, overlays, a caller-owned `scrollContainer`)** — `host.ts`, `stage.ts`, `layer.ts`, `managed-layer.ts` (bitmap axis and area caps), `lazy-layer.ts`, `marker.ts`, `managed-marker.ts`, `recording-context.ts`, `layer-host.ts`, `scroll-host.ts`
 
 ## Editing implementation contracts
 

@@ -20,6 +20,9 @@ After making code changes:
 - `vex test --update` update the test snapshots.
 - `bunx @webappwiz/cli judge --print` to view code stlye rules.
 
+`packages/site` has no tests, on purpose: they made `vex test` slow and flaky. Don't add any;
+check site changes in the running app instead.
+
 MusicXML tools:
 
 - `vex validate --input <path>` validate a MusicXML file.

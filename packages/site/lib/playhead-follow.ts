@@ -3,12 +3,13 @@ export interface FollowCursor {
 	scrollIntoView(opts: { behavior: 'smooth' }): void;
 }
 
-/** Manual scrolling while paused never pulls the reader back to the playhead. */
+/** Brings the playhead into view only while something is following it (playback, a scrub), so
+ * manual scrolling while paused never pulls the reader back to the playhead. */
 export class PlayheadFollow {
 	constructor(private readonly cursor: FollowCursor) {}
 
-	update(playing: boolean): void {
-		if (playing && !this.cursor.isFullyVisible()) {
+	update(following: boolean): void {
+		if (following && !this.cursor.isFullyVisible()) {
 			this.cursor.scrollIntoView({ behavior: 'smooth' });
 		}
 	}

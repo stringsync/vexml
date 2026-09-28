@@ -8,7 +8,7 @@ import type {
 	Score,
 } from '@stringsync/vexml';
 import { Note, TabPosition } from '@stringsync/vexml';
-import { AnimationLoop } from 'webappwiz/browser';
+import { AnimationLoop, type Frame, raf } from 'webappwiz/browser';
 import { Disposer, disposables, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful, type Events } from 'webappwiz/events';
 import { Duration, SystemClock, SystemTimer } from 'webappwiz/time';
@@ -65,11 +65,20 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 
 	private readonly disposer = new Disposer();
 	private readonly timer = new SystemTimer();
-	private readonly loop = new AnimationLoop(new SystemClock());
+	private readonly clock = new SystemClock();
+	private readonly loop = new AnimationLoop(this.clock);
 	// Every frame of a drag calls beginSeek, so the flag latches the gesture: the second frame
 	// would otherwise read the state the first one just paused and forget a resume was owed.
 	private seeking = false;
 	private resumeAfterSeek = false;
+	// Whether the open scrub scrolls to keep the cursor in view as it moves. The seek bar's does;
+	// a notation drag's doesn't, since the cursor is already under the finger and scrolling would
+	// slide a different system under it, seeking there and scrolling again.
+	private followSeek = false;
+	// A scrub moves the cursor at most once per frame: touch moves arrive at up to 120Hz, and each
+	// seek repaints note colors on a score-sized canvas. Only the latest seek of a frame runs.
+	private pendingSeek: (() => void) | null = null;
+	private seekFrame: Frame | null = null;
 	// The notes currently sounding, so a change can tell what newly started and what stopped.
 	private readonly lit = new Set<Note>();
 	// The voice each sounding note owns, keyed by Note (not pitch) so a re-struck pitch, which a
@@ -92,6 +101,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.disposer.use(this.loop);
 		this.disposer.adopt(score, (s) => s.dispose());
 		this.disposer.defer(() => this.stop());
+		this.disposer.defer(() => this.seekFrame?.cancel());
 		this.disposer.defer(() => this.clearHighlight());
 
 		// Headless cursor plus the built-in bar view. Page-turn scrolling: when the bar crosses out
@@ -134,6 +144,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 					this.attack(n);
 				}
 			}
+			this.follower.update(this.seeking && this.followSeek);
 			this.dispatcher.dispatch('changed');
 		});
 
@@ -162,28 +173,25 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			}
 			this.container.focus({ preventScroll: true });
 			this.container.setPointerCapture(e.native.pointerId);
-			this.beginSeek();
-			this.seekTo(e.point);
+			this.beginSeek({ follow: false });
+			this.scrub(() => this.seekTo(e.point));
 		});
 		this.watch(this.score.events, 'pointermove', (e) => {
 			// buttons === 1 means the primary button is held, so this continues the scrub during a
 			// drag and ignores a plain hover: no manual drag-state flag needed. beginSeek also
 			// catches a drag that started off the score and moved onto it.
 			if (this.mode === 'view' && e.native.buttons === 1) {
-				this.beginSeek();
-				this.seekTo(e.point);
-				this.follow();
+				this.beginSeek({ follow: false });
+				this.scrub(() => this.seekTo(e.point));
 			}
 		});
-		// Finishing a scrub-drag: hand playback back if the drag took it, and if the cursor landed
-		// off-screen bring it into view (the playing-gated visibility listener above stays quiet
-		// while paused).
+		// Finishing a scrub-drag: hand playback back if the drag took it, and bring the cursor into
+		// view if it landed off-screen (endSeek does both).
 		this.watch(this.score.events, 'pointerup', () => {
 			if (this.mode !== 'view') {
 				return;
 			}
 			this.endSeek();
-			this.follow();
 		});
 		// A drag released off the score never reaches the score's own pointerup, so the window's
 		// is what guarantees the gesture closes. endSeek does nothing when none is open.
@@ -355,8 +363,14 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		}
 	}
 
+	/* Move the cursor. Inside a scrub gesture it lands on the next frame, coalesced with the
+	 * gesture's other seeks. */
 	seekMs(ms: number): void {
-		this.cursor.seekMs(ms);
+		if (this.seeking) {
+			this.scrub(() => this.cursor.seekMs(ms));
+		} else {
+			this.cursor.seekMs(ms);
+		}
 	}
 
 	/*
@@ -364,12 +378,14 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	 * playback and `endSeek` hands it back. Both the notation drag and the transport's seek bar
 	 * go through this pair, so a drag behaves the same wherever it started. Calling it again
 	 * mid-gesture is a no-op: every frame of a drag arrives here, and only the first has the
-	 * pre-seek state to read.
+	 * pre-seek state to read. `follow` scrolls to keep the cursor in view while the gesture moves
+	 * it; either way, closing the gesture brings it into view.
 	 */
-	beginSeek(): void {
+	beginSeek({ follow = true }: { follow?: boolean } = {}): void {
 		if (this.seeking) {
 			return;
 		}
+		this.followSeek = follow;
 		// A play still waiting on the instrument is owed a resume just like a running one.
 		const wasPlaying = this.playing || this.loading;
 		this.stop();
@@ -377,12 +393,15 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.resumeAfterSeek = wasPlaying;
 	}
 
-	/* Closes the gesture, resuming if it was playing when the gesture began. */
+	/* Closes the gesture, resuming if it was playing when the gesture began, and scrolls the cursor
+	 * into view if the gesture left it off-screen. */
 	endSeek(): void {
 		if (!this.seeking) {
 			return;
 		}
+		this.flushSeek();
 		this.seeking = false;
+		this.follower.update(true);
 		if (this.resumeAfterSeek) {
 			this.resumeAfterSeek = false;
 			this.begin();
@@ -493,14 +512,26 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		}
 	}
 
-	/* Drops a pending resume, so an explicit play or pause is the last word on the matter. */
-	private forgetSeek(): void {
-		this.seeking = false;
-		this.resumeAfterSeek = false;
+	private scrub(seek: () => void): void {
+		this.pendingSeek = seek;
+		this.seekFrame ??= raf(this.clock, () => this.flushSeek());
 	}
 
-	private follow(): void {
-		this.follower.update(this.playing);
+	// Run the frame's pending seek now (the gesture is closing, or the frame arrived).
+	private flushSeek(): void {
+		this.seekFrame?.cancel();
+		this.seekFrame = null;
+		const seek = this.pendingSeek;
+		this.pendingSeek = null;
+		seek?.();
+	}
+
+	/* Drops a pending resume, so an explicit play or pause is the last word on the matter. */
+	private forgetSeek(): void {
+		// The last position scrubbed to still counts; only the resume is dropped.
+		this.flushSeek();
+		this.seeking = false;
+		this.resumeAfterSeek = false;
 	}
 
 	// Cursor coloring and the hover halo share one color channel, so this resolves both: hover wins

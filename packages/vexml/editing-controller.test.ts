@@ -436,6 +436,23 @@ describe('EditingController', () => {
 		expect(host.scroller.calls.length).toBe(1);
 	});
 
+	it('makes no selection layers until there is a selection to draw', () => {
+		const f = fixture();
+		const { host, controller } = f.create(0, {
+			view: undefined,
+			enabled: false,
+		});
+		controller.setEnabled(true);
+		controller.setEnabled(false);
+		expect(host.created).toHaveLength(0);
+		controller.setEnabled(true);
+		f.editor.select(f.first);
+		expect(host.created.map((layer) => layer.kind)).toEqual([
+			'background',
+			'content',
+		]);
+	});
+
 	it('colors selected notes, with a region and cursor-only halo and outline', () => {
 		const f = fixture();
 		const { host, decorations, score } = f.create(0, {

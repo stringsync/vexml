@@ -1,6 +1,11 @@
 // Tunable magic numbers, centralized. Spacing/margins are px at the reference layout
 // width; the finished result is then scaled to its container.
 
+/** The bitmap area ceiling for any one canvas vexml makes, in device px². iOS WebKit refuses to
+ * GPU-back a canvas past 4096², and a long score at dpr 3 blows well past it: the engraving alone
+ * reaches ~37M px, and the page is killed for memory once a few canvases that size pile up. */
+export const MAX_CANVAS_AREA = 4096 * 4096;
+
 /** Default standard-layout width. */
 export const DEFAULT_WIDTH = 900;
 

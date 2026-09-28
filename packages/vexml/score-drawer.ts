@@ -6,6 +6,7 @@ import type { ChordTranslator } from './chord-translator';
 import type { Config } from './config';
 import {
 	LEDGER_HEADROOM,
+	MAX_CANVAS_AREA,
 	PAGE_MARGIN_BOTTOM,
 	PAGE_MARGIN_TOP,
 } from './constants';
@@ -164,7 +165,8 @@ export class ScoreDrawer {
 		// Crop to the lowest thing actually drawn so deep ledger lines in the bottom
 		// system aren't clipped and there's no trailing whitespace. Sizing the real
 		// canvas resets it to an identity transform, so the blit copies device pixels
-		// 1:1 from the scratch's top-left; the unused bottom is simply not copied.
+		// from the scratch's top-left (scaled down if the area cap bites); the unused bottom is
+		// simply not copied.
 		// Crop the top slack back out: keep PAGE_MARGIN_TOP above the highest content, but
 		// never crop past the slack (so a normal score keeps its usual top margin — this is
 		// then a pure shift-and-crop, leaving its output unchanged). Only scores whose first
@@ -176,9 +178,18 @@ export class ScoreDrawer {
 		const cssHeight =
 			Math.max(activeFloorHeight + topSlack, pageBottom + PAGE_MARGIN_BOTTOM) -
 			cropTop;
-		const dpr = scratch.width / parseFloat(scratch.style.width);
-		canvas.width = scratch.width;
-		canvas.height = Math.round(cssHeight * dpr);
+		const cssWidth = parseFloat(scratch.style.width);
+		const dpr = scratch.width / cssWidth;
+		// The kept bitmap's pixel ratio: the screen's, lowered just enough to keep it under
+		// MAX_CANVAS_AREA — a long score on a dpr 3 phone would otherwise hold a bitmap iOS kills the
+		// page over. Never below 1, which would blur the score even on a 1x screen. Sized off the
+		// cropped result, not the oversized scratch, so the cap takes no more than it must.
+		const ratio = Math.max(
+			1,
+			Math.min(dpr, Math.sqrt(MAX_CANVAS_AREA / (cssWidth * cssHeight))),
+		);
+		canvas.width = Math.round(cssWidth * ratio);
+		canvas.height = Math.round(cssHeight * ratio);
 		// Publish the score-space (intrinsic) CSS size as custom properties rather than as inline
 		// width/height. The stage's default `:where(.vexml-canvas)` rule consumes them for the on-screen
 		// size, but at zero specificity — so a caller's own `.vexml-canvas { width: 100% }` overrides it
@@ -189,23 +200,30 @@ export class ScoreDrawer {
 		// dims — NOT the integer-rounded bitmap ratio). The fit rule uses it as `aspect-ratio` so a
 		// height:auto canvas keeps a byte-identical box at full size (height resolves back to cssHeight,
 		// so the score<->client scale stays exactly 1) yet still scales proportionally when narrowed.
-		const cssWidth = parseFloat(scratch.style.width);
 		canvas.style.setProperty('--vexml-width', scratch.style.width);
 		canvas.style.setProperty('--vexml-height', `${cssHeight}px`);
 		canvas.style.setProperty('--vexml-aspect', `${cssWidth / cssHeight}`);
-		canvas
-			.getContext('2d')
-			?.drawImage(
+		const target = canvas.getContext('2d');
+		if (target) {
+			// At full ratio this is a 1:1 copy; under the cap it downsamples, smoothed at the best
+			// quality the browser has.
+			target.imageSmoothingQuality = 'high';
+			target.drawImage(
 				scratch,
 				0,
 				Math.round(cropTop * dpr),
 				scratch.width,
-				canvas.height,
+				Math.round(cssHeight * dpr),
 				0,
 				0,
-				scratch.width,
+				canvas.width,
 				canvas.height,
 			);
+		}
+		// Release the scratch bitmap now rather than at the next GC: it's as big as the score, and
+		// iOS WebKit counts a dropped canvas against its memory limit until it's collected.
+		scratch.width = 0;
+		scratch.height = 0;
 
 		// The geometry was collected in scratch space; the blit shifts content up by cropTop, so
 		// translate every box into final score space (the canvas's own coordinates). dpr stays out —

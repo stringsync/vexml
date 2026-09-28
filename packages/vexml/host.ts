@@ -1,6 +1,7 @@
 import type { Resource } from 'webappwiz/disposable';
 import type { Eventful } from 'webappwiz/events';
 import type { LayerHost } from './layer-host';
+import type { MarkerHost } from './marker';
 import type { Scroller } from './scroller';
 import type { Viewport } from './viewport';
 
@@ -23,6 +24,7 @@ export type HostEventMap = {
  */
 export interface Host
 	extends LayerHost,
+		MarkerHost,
 		Viewport,
 		Eventful<HostEventMap>,
 		Resource {
@@ -37,10 +39,10 @@ export interface Host
 	viewportRect(): DOMRect;
 	/* Scrolls a score-space rect into view (axis-aware); a cursor's follow()/scrollIntoView() use it. */
 	readonly scroller: Scroller;
-	/* Re-sync every layer to the container's current geometry (called on resize). Viewport layers
-	 * are refit to the visible box (clearing them); content layers keep their score-resolution bitmap
-	 * (no clear) but re-track the base canvas's rendered box, so they stay aligned however the
-	 * caller's CSS has scaled the score. */
+	/* Re-sync every layer and marker to the container's current geometry (called on resize).
+	 * Viewport layers are refit to the visible box (clearing them); content layers keep their
+	 * score-resolution bitmap (no clear) but re-track the base canvas's rendered box, so they stay
+	 * aligned however the caller's CSS has scaled the score. Markers re-place against that box. */
 	relayoutLayers(): void;
 	/* Change the container's vertical cap live (px, or null to remove it). */
 	setMaxHeight(px: number | null): void;

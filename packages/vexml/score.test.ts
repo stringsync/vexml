@@ -58,6 +58,7 @@ class FakePointerEvent extends Event {
 		type: string,
 		readonly clientX: number,
 		readonly clientY: number,
+		readonly pointerType = 'mouse',
 	) {
 		super(type);
 	}
@@ -181,6 +182,15 @@ describe('Score', () => {
 		expect(host.listeners.get('scroll')).toBe(0); // host-scroll subscription released
 	});
 
+	it('touch pointers never hover', () => {
+		const seen: Array<Element | null> = [];
+		score.events.on('hover', (e) => seen.push(e.target));
+		host.dom.dispatchEvent(new FakePointerEvent('pointerdown', 5, 5, 'touch'));
+		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 6, 6, 'touch'));
+		expect(seen).toEqual([]);
+		expect(index.probes).toHaveLength(0);
+	});
+
 	it('resize is observed from construction and re-fits viewport layers before emitting', () => {
 		// Subscribed eagerly (resize also drives viewport-layer sizing), not lazily on the first
 		// caller: a host resize relayouts even with nobody listening for 'resize'.
@@ -228,10 +238,10 @@ describe('Score', () => {
 		expect(() => score.addLayer('content', Number.NaN)).toThrow();
 	});
 
-	it('gives a new playhead a content layer of its own to draw on', () => {
+	it('gives a new playhead a marker of its own and no score-sized layer', () => {
 		score.createPlayhead();
-		expect(host.created).toHaveLength(1);
-		expect(host.created[0]?.kind).toBe('content');
+		expect(host.markers).toHaveLength(1);
+		expect(host.created).toHaveLength(0);
 	});
 
 	it('hands back the element index it was built with', () => {

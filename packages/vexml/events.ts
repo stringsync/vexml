@@ -15,7 +15,7 @@ export interface PointerTargetEvent {
  * when nothing is under the pointer (empty space, or the pointer left the score); `point` is the
  * pointer in score space, or null once the pointer is off the score. Unlike pointermove, this also
  * fires when scrolling slides a different element under a stationary pointer — so it fires at most
- * once per change, not once per pixel. */
+ * once per change, not once per pixel. Touch pointers never hover. */
 export interface HoverEvent {
 	readonly target: Element | null;
 	readonly point: { x: number; y: number } | null;

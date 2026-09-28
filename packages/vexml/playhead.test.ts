@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { Rect } from 'webappwiz/geometry';
 import type { CursorChangeEvent } from './events';
-import { FakeLayer } from './fake-layer';
+import { FakeMarker } from './fake-marker';
 import { Playhead } from './playhead';
 
 function changeAt(rect: Rect): CursorChangeEvent {
@@ -20,59 +20,56 @@ function changeAt(rect: Rect): CursorChangeEvent {
 }
 
 describe('Playhead', () => {
-	it('draws a vertical bar straddling the onset x, spanning the system', () => {
-		const layer = new FakeLayer({});
-		const view = new Playhead(layer); // default width 2
+	it('shows a vertical bar straddling the onset x, spanning the system', () => {
+		const marker = new FakeMarker();
+		const view = new Playhead(marker); // default width 2
 		view.render(changeAt(new Rect(10, 0, 1, 100)));
-		// Nothing was drawn before, so there's nothing to clear on the first render.
-		expect(layer.recording.clears).toEqual([]);
-		expect(layer.recording.fills).toEqual([
-			{ x: 9, y: 0, w: 2, h: 100, style: '#2563eb' },
-		]);
+		expect(marker.shown).toEqual({
+			rect: new Rect(9, 0, 2, 100),
+			color: '#2563eb',
+		});
 	});
 
 	it('hides immediately, tracks movement while hidden, and restores only the latest bar', () => {
-		const layer = new FakeLayer({});
-		const view = new Playhead(layer);
+		const marker = new FakeMarker();
+		const view = new Playhead(marker);
 		view.render(changeAt(new Rect(10, 0, 1, 100)));
 		view.setVisible(false);
-		expect(layer.recording.clears).toEqual([{ x: 8, y: -1, w: 4, h: 102 }]);
+		expect(marker.shown).toBeNull();
 		view.render(changeAt(new Rect(40, 0, 1, 100)));
-		expect(layer.recording.fills).toHaveLength(1);
+		expect(marker.shown).toBeNull();
 		view.setVisible(true);
-		expect(layer.recording.fills.at(-1)?.x).toBe(39);
-		expect(layer.disposed).toBe(false);
+		expect(marker.shown?.rect.x).toBe(39);
+		expect(marker.disposed).toBe(false);
 	});
 
 	it('can start hidden before the first cursor snapshot', () => {
-		const layer = new FakeLayer({});
-		const view = new Playhead(layer);
+		const marker = new FakeMarker();
+		const view = new Playhead(marker);
 		view.setVisible(false);
 		view.render(changeAt(new Rect(10, 0, 1, 100)));
-		expect(layer.recording.fills).toHaveLength(0);
+		expect(marker.shows).toBe(0);
 		view.setVisible(true);
-		expect(layer.recording.fills).toHaveLength(1);
+		expect(marker.shows).toBe(1);
 	});
 
 	it('honors color and width options', () => {
-		const layer = new FakeLayer({});
-		const view = new Playhead(layer, { color: 'red', widthPx: 4 });
+		const marker = new FakeMarker();
+		const view = new Playhead(marker, { color: 'red', widthPx: 4 });
 		view.render(changeAt(new Rect(10, 5, 1, 80)));
-		expect(layer.recording.fills).toEqual([
-			{ x: 8, y: 5, w: 4, h: 80, style: 'red' },
-		]);
+		expect(marker.shown).toEqual({
+			rect: new Rect(8, 5, 4, 80),
+			color: 'red',
+		});
 	});
 
-	it('erases exactly the previous bar (1px pad) on each render and disposes its layer', () => {
-		const layer = new FakeLayer({});
-		const view = new Playhead(layer);
+	it('moves its marker on each render and disposes it', () => {
+		const marker = new FakeMarker();
+		const view = new Playhead(marker);
 		view.render(changeAt(new Rect(10, 0, 1, 100)));
 		view.render(changeAt(new Rect(20, 0, 1, 100)));
-		// Only the previous bar's region is cleared — never the whole (score-sized) bitmap.
-		expect(layer.recording.clears).toEqual([{ x: 8, y: -1, w: 4, h: 102 }]);
-		expect(layer.recording.fills).toHaveLength(2);
-		expect(layer.recording.fills.at(-1)?.x).toBe(19);
+		expect(marker.shown?.rect.x).toBe(19);
 		view.dispose();
-		expect(layer.disposed).toBe(true);
+		expect(marker.disposed).toBe(true);
 	});
 });

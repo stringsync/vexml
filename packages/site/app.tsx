@@ -8,7 +8,9 @@ import {
 	UploadIcon,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { SystemTimer } from 'webappwiz/time';
 import { ConfigSlider } from '@/components/config-slider';
+import { CrashNotice } from '@/components/crash-notice';
 import { EditingToolbar } from '@/components/editing-toolbar';
 import { Header } from '@/components/header';
 import { LayoutToggle } from '@/components/layout-toggle';
@@ -50,6 +52,8 @@ import {
 	DEFAULT_WIDTH,
 	FAST_RENDER_MS,
 } from '@/lib/constants';
+import { CrashLog } from '@/lib/crash-log';
+import { CrashRecorder } from '@/lib/crash-recorder';
 import { INSTRUMENTS } from '@/lib/instruments';
 import { ScoreFit } from '@/lib/score-fit';
 import { SiteModel } from '@/lib/site-model';
@@ -87,6 +91,10 @@ const OVERFLOWS: ReadonlyArray<SegmentedOption<SystemOverflow>> = [
 // Render-pure, as useResource requires: SiteModel's constructor wires in-memory state and its own
 // dispatchers, and acquires nothing that needs cleanup (the AudioContext is built lazily).
 const buildModel = () => new SiteModel(fixtures, localStorage);
+
+// Module-level, not in a component: reading the log consumes the previous page's breadcrumb, so
+// it must happen exactly once per page load, not once per (strict-mode doubled) render.
+const crashLog = new CrashLog(localStorage);
 
 // What the component reads off the model. Every field is a primitive or a stable reference, so
 // useReactive's shallow comparison decides re-renders.
@@ -144,6 +152,7 @@ export default function App() {
 	// Purely local view state: nothing outside the component reads any of it.
 	const [dragging, setDragging] = useState(false);
 	const [controlsOpen, setControlsOpen] = useState(false);
+	const [crash, setCrash] = useState(crashLog.previous);
 	const isMobile = useIsMobile();
 
 	const layoutType = config.layout?.type ?? 'standard';
@@ -209,6 +218,16 @@ export default function App() {
 			disposer.use(new ScoreFit(container, player, model.config));
 		},
 		[model, initialized],
+	);
+
+	// Keep a breadcrumb of memory and input, so a page iOS kills for memory says why on reload.
+	useDisposerEffect(
+		(disposer) => {
+			disposer.use(
+				new CrashRecorder(crashLog, model.document, new SystemTimer()),
+			);
+		},
+		[model],
 	);
 
 	// Spacebar toggles playback, except while typing in the editor.
@@ -670,6 +689,9 @@ export default function App() {
 
 				<div className="flex min-w-0 flex-1 flex-col">
 					<div className="shrink-0">
+						{crash && (
+							<CrashNotice crumb={crash} onDismiss={() => setCrash(null)} />
+						)}
 						<div>
 							<EditingToolbar
 								title={

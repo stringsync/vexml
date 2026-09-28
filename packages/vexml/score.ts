@@ -18,6 +18,7 @@ import type { ElementIndex } from './element-index';
 import type { ScoreEventMap } from './events';
 import type { Host } from './host';
 import type { Layer, LayerKind } from './layer';
+import { LazyLayer } from './lazy-layer';
 import { MeasureBox } from './measure-box';
 import { Note } from './note';
 import type { Part } from './part';
@@ -187,10 +188,11 @@ export class Score implements Eventful<ScoreEventMap> {
 			(options.selection === false
 				? null
 				: new SelectionOverlay(
-						this.host.createLayer('background'),
+						// Lazy: a viewer that never edits never pays for two score-sized canvases.
+						new LazyLayer(this.host, 'background'),
 						options.selection,
 						// Keep selected glyphs and the cursor outline above hover coloring.
-						this.host.createLayer('content', 2),
+						new LazyLayer(this.host, 'content', 2),
 					));
 		const controller = new EditingController(
 			editor,
@@ -209,11 +211,11 @@ export class Score implements Eventful<ScoreEventMap> {
 		return controller;
 	}
 
-	/* vexml's default cursor visual — a vertical bar on its own content layer. Hand it to a cursor
-	 * with cursor.sync(playhead). Style it with `color`/`widthPx`, or implement CursorView for your
-	 * own. */
+	/* vexml's default cursor visual — a vertical bar, moved as a DOM box rather than repainted.
+	 * Hand it to a cursor with cursor.sync(playhead). Style it with `color`/`widthPx`, or implement
+	 * CursorView for your own. */
 	createPlayhead(options?: PlayheadOptions): Playhead {
-		return new Playhead(this.host.createLayer('content'), options);
+		return new Playhead(this.host.createMarker(), options);
 	}
 
 	/* Total playback time of the score, repeats and voltas expanded. */
@@ -378,6 +380,11 @@ export class Score implements Eventful<ScoreEventMap> {
 			case 'hover': {
 				const track: EventListener = (native) => {
 					const pointer = native as PointerEvent;
+					// A finger has no hover: a touch drag would light a halo under the finger, and
+					// the halo's layer is a score-sized canvas iOS can't spare.
+					if (pointer.pointerType === 'touch') {
+						return;
+					}
 					this.lastClient = { x: pointer.clientX, y: pointer.clientY };
 					this.recomputeHover();
 				};
