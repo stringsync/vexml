@@ -19,8 +19,13 @@ export class ManagedLayer implements Layer {
 
 	constructor(
 		readonly kind: LayerKind,
-		private readonly canvas: HTMLCanvasElement,
+		// Read by a loupe, which magnifies the layer's bitmap; never handed to callers.
+		readonly canvas: HTMLCanvasElement,
 		private readonly stage: Stage,
+		// Where the layer stacks: its effective z-index and its creation (DOM) order among the
+		// stage's overlays. A loupe paints overlays in the same order.
+		readonly zIndex: number,
+		readonly order: number,
 	) {
 		const ctx = canvas.getContext('2d');
 		if (!ctx) {

@@ -20,7 +20,7 @@ export interface PlayheadOptions {
 
 export class Playhead implements CursorView {
 	private readonly color: string;
-	private readonly widthPx: number;
+	private widthPx: number;
 	private visible = true;
 	private event: CursorChangeEvent | null = null;
 
@@ -39,6 +39,15 @@ export class Playhead implements CursorView {
 			return;
 		}
 		this.visible = visible;
+		if (this.event) {
+			this.render(this.event);
+		}
+	}
+
+	/** Change the bar's width (score px) and redraw it where it is — e.g. on a 'resize' that
+	 * rescaled the score, to keep it a constant on-screen width. */
+	setWidthPx(widthPx: number): void {
+		this.widthPx = widthPx;
 		if (this.event) {
 			this.render(this.event);
 		}

@@ -1,16 +1,17 @@
-import type { Rect } from 'webappwiz/geometry';
-import type { Marker, MarkerHost } from './marker';
+import type { Marker, MarkerHost, MarkerOptions, MarkerRect } from './marker';
 
 /* Fake fulfilling the Marker seam (preferred over mocks); records where it is shown (null while
- * hidden) and its disposal. Test-only — excluded from the published package via package.json
- * "files". */
+ * hidden), the z-index it was made at and its disposal. Test-only — excluded from the published
+ * package via package.json "files". */
 export class FakeMarker implements Marker {
-	shown: { rect: Rect; color: string } | null = null;
+	shown: { rect: MarkerRect; color: string; radius?: number } | null = null;
 	shows = 0;
 	disposed = false;
 
-	show(rect: Rect, color: string): void {
-		this.shown = { rect, color };
+	constructor(readonly zIndex?: number) {}
+
+	show(rect: MarkerRect, color: string, options?: MarkerOptions): void {
+		this.shown = { rect, color, radius: options?.radius };
 		this.shows++;
 	}
 
@@ -27,8 +28,8 @@ export class FakeMarker implements Marker {
 export class FakeMarkerHost implements MarkerHost {
 	readonly created: FakeMarker[] = [];
 
-	createMarker(): FakeMarker {
-		const marker = new FakeMarker();
+	createMarker(zIndex?: number): FakeMarker {
+		const marker = new FakeMarker(zIndex);
 		this.created.push(marker);
 		return marker;
 	}

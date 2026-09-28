@@ -62,6 +62,8 @@ export type {
 	ScoreScrollEvent,
 } from './events';
 export type { Layer, LayerKind } from './layer';
+export type { Loupe, LoupeOptions } from './loupe';
+export type { Marker, MarkerOptions, MarkerRect } from './marker';
 export { Measure } from './measure';
 export { MeasureBox } from './measure-box';
 export { Note } from './note';

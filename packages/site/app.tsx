@@ -3,6 +3,7 @@ import { useDisposerEffect, useReactive, useResource } from '@webappwiz/react';
 import {
 	ChevronRightIcon,
 	Rows3Icon,
+	SearchIcon,
 	ShuffleIcon,
 	SlidersVerticalIcon,
 	UploadIcon,
@@ -106,6 +107,8 @@ const projection = (model: SiteModel) => ({
 	canReset: model.config.canReset(),
 	instrumentName: model.instrument.name,
 	muted: model.instrument.muted,
+	loupe: model.loupe.values,
+	loupeCanReset: model.loupe.canReset(),
 	playing: model.session?.playing ?? false,
 	loading: model.isPlayPending(),
 	timeMs: model.session?.timeMs ?? 0,
@@ -133,6 +136,8 @@ export default function App() {
 		canReset,
 		instrumentName,
 		muted,
+		loupe,
+		loupeCanReset,
 		playing,
 		loading,
 		timeMs,
@@ -456,6 +461,84 @@ export default function App() {
 						</SelectContent>
 					</Select>
 				</Field>
+			</Section>
+
+			<Section
+				icon={SearchIcon}
+				title="Drag loupe"
+				gap="lg"
+				action={
+					<SectionReset
+						onClick={() => model.loupe.reset()}
+						disabled={!loupeCanReset}
+					/>
+				}
+			>
+				<Field orientation="horizontal" className="justify-between gap-3">
+					<FieldLabel
+						htmlFor="loupeEnabled"
+						className="font-normal text-muted-foreground"
+						title="Magnify the score above the playhead while dragging it, so a thumb doesn't hide where it's scrubbing."
+					>
+						Show loupe
+					</FieldLabel>
+					<Switch
+						id="loupeEnabled"
+						size="lg"
+						checked={loupe.enabled}
+						onCheckedChange={(checked) =>
+							model.loupe.patch({ enabled: checked === true })
+						}
+					/>
+				</Field>
+				{loupe.enabled && (
+					<>
+						<ConfigSlider
+							id="loupeWidth"
+							label="Width"
+							display={loupe.width}
+							value={loupe.width}
+							min={64}
+							max={400}
+							step={8}
+							onChange={(width) => model.loupe.patch({ width })}
+							description="How wide the loupe is, in CSS px. Wider shows more of the music either side of the thumb."
+						/>
+						<ConfigSlider
+							id="loupeHeight"
+							label="Height"
+							display={loupe.height}
+							value={loupe.height}
+							min={32}
+							max={240}
+							step={8}
+							onChange={(height) => model.loupe.patch({ height })}
+							description="How tall the loupe is, in CSS px. Taller shows more staves above and below the thumb."
+						/>
+						<ConfigSlider
+							id="loupeZoom"
+							label="Zoom"
+							display={`${loupe.zoom.toFixed(2)}×`}
+							value={loupe.zoom}
+							min={1}
+							max={4}
+							step={0.25}
+							onChange={(zoom) => model.loupe.patch({ zoom })}
+							description="How much larger than the score on screen. Lower trades detail for context."
+						/>
+						<ConfigSlider
+							id="loupeGap"
+							label="Gap"
+							display={loupe.gap}
+							value={loupe.gap}
+							min={0}
+							max={48}
+							step={2}
+							onChange={(gap) => model.loupe.patch({ gap })}
+							description="Space between the loupe and the playhead it floats above, in CSS px."
+						/>
+					</>
+				)}
 			</Section>
 
 			<Section

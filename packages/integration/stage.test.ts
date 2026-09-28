@@ -2,6 +2,30 @@ import { describe, expect, it } from 'bun:test';
 import { testing } from './setup';
 
 describe('stage', () => {
+	// A press held on the score must not start a native text selection, and disposing gives the
+	// container back as it was.
+	it.concurrent('turns off text selection over the score, and restores it on dispose', async () => {
+		const { result } = await testing.eval(
+			'structure_single_stave.musicxml',
+			{},
+			async ({ score, container }) => {
+				const canvas = container.querySelector('canvas');
+				if (!canvas) {
+					throw new Error('base canvas not found');
+				}
+				const rendered = {
+					container: getComputedStyle(container).userSelect,
+					canvas: getComputedStyle(canvas).userSelect,
+				};
+				score.dispose();
+				return { rendered, disposed: container.style.userSelect };
+			},
+		);
+
+		expect(result.rendered).toEqual({ container: 'none', canvas: 'none' });
+		expect(result.disposed).toBe('');
+	});
+
 	// Re-rendering into the same container must not lose the scroll-box styling. The keep-old-until-
 	// new-ready pattern mounts a second Stage before disposing the first; disposing the first must not
 	// stomp the second's position/overflow (the LIFO restore bug). Drives two real render() calls and

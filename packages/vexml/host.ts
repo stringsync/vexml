@@ -1,6 +1,7 @@
 import type { Resource } from 'webappwiz/disposable';
 import type { Eventful } from 'webappwiz/events';
 import type { LayerHost } from './layer-host';
+import type { LoupeHost } from './loupe';
 import type { MarkerHost } from './marker';
 import type { Scroller } from './scroller';
 import type { Viewport } from './viewport';
@@ -18,13 +19,14 @@ export type HostEventMap = {
 /*
  * What a Score needs from its host: the score<-client transform (toScoreSpace), a raw event
  * source to bind pointer/scroll listeners on, the current scroll offset, resize/scroll notifications,
- * custom-layer creation/resizing, and teardown. Stage is the production implementer; a Score unit
+ * custom-layer, marker and loupe creation, and teardown. Stage is the production implementer; a Score unit
  * test injects a FakeHost. Kept separate from Viewport (the targets' coordinate seam) so each
  * consumer depends only on what it uses, even though Stage satisfies both.
  */
 export interface Host
 	extends LayerHost,
 		MarkerHost,
+		LoupeHost,
 		Viewport,
 		Eventful<HostEventMap>,
 		Resource {

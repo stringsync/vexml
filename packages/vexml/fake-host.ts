@@ -1,10 +1,12 @@
 import { Dispatcher, type Events } from 'webappwiz/events';
 import type { Rect } from 'webappwiz/geometry';
 import { FakeLayer } from './fake-layer';
+import { FakeLoupe } from './fake-loupe';
 import { FakeMarker } from './fake-marker';
 import { FakeScroller } from './fake-scroller';
 import type { Host, HostEventMap } from './host';
 import type { Layer, LayerKind } from './layer';
+import type { LoupeOptions } from './loupe';
 
 /* Fake fulfilling the Host seam (preferred over mocks); records the layers it made, the listeners
  * it was given and the relayouts/disposal it was told about. Client coords are score coords
@@ -30,6 +32,7 @@ export class FakeHost implements Host {
 	readonly scrollTarget = new EventTarget();
 	readonly created: FakeLayer[] = [];
 	readonly markers: FakeMarker[] = [];
+	readonly loupes: FakeLoupe[] = [];
 	readonly scroller = new FakeScroller();
 	scroll = { left: 0, top: 0 };
 	relayoutLayersCalls = 0;
@@ -60,10 +63,16 @@ export class FakeHost implements Host {
 		return layer;
 	}
 
-	createMarker(): FakeMarker {
-		const marker = new FakeMarker();
+	createMarker(zIndex?: number): FakeMarker {
+		const marker = new FakeMarker(zIndex);
 		this.markers.push(marker);
 		return marker;
+	}
+
+	createLoupe(options: Required<LoupeOptions>): FakeLoupe {
+		const loupe = new FakeLoupe(options);
+		this.loupes.push(loupe);
+		return loupe;
 	}
 
 	clientRectOf(rect: Rect): DOMRect {

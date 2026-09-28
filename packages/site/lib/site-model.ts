@@ -10,6 +10,7 @@ import {
 } from './document-source';
 import { EditingVoices } from './editing-voices';
 import { InstrumentController } from './instrument-controller';
+import { LoupeSettings } from './loupe-settings';
 import { NoteEditing } from './note-editing';
 import { RenderConfig } from './render-config';
 import { type ScoreMode, ScoreSession } from './score-session';
@@ -31,6 +32,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	readonly events = this.dispatcher.events;
 
 	readonly config = new RenderConfig();
+	readonly loupe = new LoupeSettings();
 	readonly document: DocumentSource;
 	readonly instrument: InstrumentController;
 
@@ -67,13 +69,19 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		this.document = new DocumentSource(fixtures, storage);
 		this.instrument = new InstrumentController(storage);
 		this.disposer.use(this.config);
+		this.disposer.use(this.loupe);
 		this.disposer.defer(() => this.editorDisposer.dispose());
 		this.disposer.use(this.document);
 		this.disposer.use(this.instrument);
 		this.disposer.use(this.dispatcher);
 		this.disposer.defer(() => this.disposeSession());
 		// Every part's change is the model's change, so a component reads one object.
-		for (const part of [this.config, this.document, this.instrument]) {
+		for (const part of [
+			this.config,
+			this.document,
+			this.instrument,
+			this.loupe,
+		]) {
 			this.disposer.defer(
 				part.events.on('changed', () => this.dispatcher.dispatch('changed')),
 			);
@@ -159,6 +167,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 				container,
 				() => this.instrument.current(),
 				voices,
+				this.loupe,
 				this.mode,
 			);
 			this.sessionDisposer.use(this.session);

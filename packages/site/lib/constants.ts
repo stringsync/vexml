@@ -8,6 +8,24 @@ export const GRACE_MS = 80;
 // The playhead bar drawn over the score: the brand pink, wide enough to read against a staff.
 export const CURSOR_COLOR = '#ff3d9e';
 export const CURSOR_WIDTH_PX = 2;
+// The round handle capping the playhead while it's dragged, in CSS px.
+export const KNOB_DIAMETER_PX = 12;
+// How far a press has to move before it counts as a drag and the knob and loupe come up, in CSS
+// px: a tap to seek shouldn't flash them. About a platform's touch slop.
+export const DRAG_SLOP_PX = 8;
+// How long a press has to be held still before it counts as a drag all the same, in ms: holding
+// shows the knob, so the reader sees what they are about to drag. About a platform's long press.
+export const DRAG_HOLD_MS = 400;
+// The magnifier shown above the playhead while the score is scrubbed, by default: its size in CSS
+// px, its zoom over the score's on-screen size, and its gap from the playhead. vexml's own
+// defaults; the Drag loupe panel tunes them.
+export const LOUPE = {
+	enabled: true,
+	width: 200,
+	height: 96,
+	zoom: 1.5,
+	gap: 8,
+};
 
 // A dark shade of the playhead pink makes editing focus distinct from playback.
 export const SELECTION_OUTLINE_COLOR = '#a80050';

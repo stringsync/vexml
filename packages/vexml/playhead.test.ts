@@ -63,6 +63,17 @@ describe('Playhead', () => {
 		});
 	});
 
+	it('redraws the current bar at a new width, and draws later bars at it', () => {
+		const marker = new FakeMarker();
+		const view = new Playhead(marker);
+		view.setWidthPx(6);
+		expect(marker.shows).toBe(0);
+		view.render(changeAt(new Rect(10, 0, 1, 100)));
+		expect(marker.shown?.rect).toEqual(new Rect(7, 0, 6, 100));
+		view.setWidthPx(4);
+		expect(marker.shown?.rect).toEqual(new Rect(8, 0, 4, 100));
+	});
+
 	it('moves its marker on each render and disposes it', () => {
 		const marker = new FakeMarker();
 		const view = new Playhead(marker);

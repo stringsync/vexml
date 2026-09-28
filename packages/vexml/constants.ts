@@ -1,3 +1,5 @@
+import type { LoupeOptions } from './loupe';
+
 // Tunable magic numbers, centralized. Spacing/margins are px at the reference layout
 // width; the finished result is then scaled to its container.
 
@@ -498,6 +500,23 @@ export const CURSOR_COLOR = '#2563eb';
 
 /** Default width (px) of the built-in cursor bar. */
 export const CURSOR_WIDTH_PX = 2;
+
+/** Default loupe (CSS px): wide and tall enough to show the music around a thumb, not just the
+ * beat under it. */
+export const LOUPE_OPTIONS: Required<LoupeOptions> = {
+	width: 200,
+	height: 96,
+	zoom: 1.5,
+	radius: 16,
+	gap: 8,
+};
+
+/** How long a loupe takes to grow out of its anchor when shown, and to shrink back into it when
+ * hidden (ms), and the scale it grows from. Short, like the platform magnifiers: it says where the
+ * loupe came from without delaying the drag it serves. */
+export const LOUPE_ENTER_MS = 150;
+export const LOUPE_EXIT_MS = 100;
+export const LOUPE_MIN_SCALE = 0.5;
 
 /** Finite sentinel for half-open collision probe rects (avoids Infinity arithmetic producing NaN). */
 export const FAR = 1e6;

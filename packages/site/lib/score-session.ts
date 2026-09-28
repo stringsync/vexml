@@ -4,6 +4,8 @@ import type {
 	EditingKey,
 	EditingSession,
 	Element,
+	Loupe,
+	Marker,
 	Playhead,
 	Score,
 } from '@stringsync/vexml';
@@ -16,14 +18,18 @@ import {
 	ACTIVE_COLOR,
 	CURSOR_COLOR,
 	CURSOR_WIDTH_PX,
+	DRAG_HOLD_MS,
+	DRAG_SLOP_PX,
 	GRACE_MS,
 	HALO_COLOR,
 	HOVER_COLOR,
+	KNOB_DIAMETER_PX,
 	SELECTION_OUTLINE_COLOR,
 } from './constants';
 import type { EditingVoices } from './editing-voices';
 import { formatPitch } from './format';
 import type { Instrument } from './instrument';
+import type { LoupeSettings } from './loupe-settings';
 import { PlayheadFollow } from './playhead-follow';
 import { SiteEditingBindings } from './site-editing-bindings';
 
@@ -55,6 +61,25 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	readonly editing: EditingController;
 	private readonly follower: PlayheadFollow;
 	private readonly playhead: Playhead;
+	// While the notation is dragged: a round handle on the playhead's top, and a magnifier
+	// anchored above the playhead so a finger doesn't hide what it's scrubbing.
+	private readonly knob: Marker;
+	// Null while the settings turn the loupe off.
+	private loupe: Loupe | null = null;
+	// Where the press went down (client px) and whether a finger made it, until it lifts.
+	private press: { x: number; y: number; touch: boolean } | null = null;
+	// Whether the press has moved past the slop, or been held, into a drag: a tap never shows the
+	// knob or loupe.
+	private dragging = false;
+	// The pending hold that turns a still press into a drag.
+	private hold: Resource | null = null;
+	// The dragging pointer's height (score px): the loupe magnifies the staff the finger is on.
+	private fingerY = 0;
+	// Where the playhead bar last landed (score px), for the knob and the loupe.
+	private bar: { x: number; y: number; w: number; h: number } | null = null;
+	// CSS px per score px: the score shrinks to fit a narrow container, and the playhead and knob
+	// are sized to hold their on-screen size through it.
+	private scale = 1;
 	mode: ScoreMode;
 	timeMs = 0;
 	playing = false;
@@ -93,6 +118,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		private readonly container: HTMLDivElement,
 		private readonly instrument: () => Instrument | null,
 		readonly editingVoices: EditingVoices,
+		private readonly loupeSettings: LoupeSettings,
 		mode: ScoreMode = 'view',
 	) {
 		this.mode = mode;
@@ -102,6 +128,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.disposer.adopt(score, (s) => s.dispose());
 		this.disposer.defer(() => this.stop());
 		this.disposer.defer(() => this.seekFrame?.cancel());
+		this.disposer.defer(() => this.hold?.dispose());
 		this.disposer.defer(() => this.clearHighlight());
 
 		// Headless cursor plus the built-in bar view. Page-turn scrolling: when the bar crosses out
@@ -114,6 +141,12 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		});
 		this.playhead.setVisible(mode === 'view');
 		this.disposer.use(this.cursor.sync(this.playhead));
+		this.knob = score.createMarker(1);
+		this.applyLoupe();
+		this.watch(this.loupeSettings.events, 'changed', () => this.applyLoupe());
+		this.disposer.defer(() => this.loupe?.dispose());
+		this.rescale();
+		this.watch(this.score.events, 'resize', () => this.rescale());
 		this.watch(this.cursor.events, 'visibility', (e) => {
 			if (!e.fullyVisible) {
 				this.follower.update(this.playing);
@@ -132,6 +165,8 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 
 		this.watch(this.cursor.events, 'change', (e) => {
 			this.timeMs = e.timeMs;
+			this.bar = e.position.rect;
+			this.placeDragAids();
 			this.paint(this.mode === 'view' || this.playing ? e.highlighted : []);
 			// Release stopped notes, then attack started ones (only while playing, so seeking and
 			// scrubbing stay silent). Stop before start so a re-strike re-attacks cleanly.
@@ -175,6 +210,18 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.container.setPointerCapture(e.native.pointerId);
 			this.beginSeek({ follow: false });
 			this.scrub(() => this.seekTo(e.point));
+			this.press = {
+				x: e.native.clientX,
+				y: e.native.clientY,
+				touch: e.native.pointerType === 'touch',
+			};
+			this.hold?.dispose();
+			this.hold = this.timer.setTimeout(() => {
+				this.hold = null;
+				this.dragging = true;
+				this.placeDragAids();
+			}, Duration.ms(DRAG_HOLD_MS));
+			this.magnify(e.point, e.native);
 		});
 		this.watch(this.score.events, 'pointermove', (e) => {
 			// buttons === 1 means the primary button is held, so this continues the scrub during a
@@ -183,6 +230,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			if (this.mode === 'view' && e.native.buttons === 1) {
 				this.beginSeek({ follow: false });
 				this.scrub(() => this.seekTo(e.point));
+				this.magnify(e.point, e.native);
 			}
 		});
 		// Finishing a scrub-drag: hand playback back if the drag took it, and bring the cursor into
@@ -396,6 +444,11 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	/* Closes the gesture, resuming if it was playing when the gesture began, and scrolls the cursor
 	 * into view if the gesture left it off-screen. */
 	endSeek(): void {
+		this.press = null;
+		this.dragging = false;
+		this.hold?.dispose();
+		this.hold = null;
+		this.placeDragAids();
 		if (!this.seeking) {
 			return;
 		}
@@ -510,6 +563,71 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.stop();
 			this.cursor.seekMs(at.ms);
 		}
+	}
+
+	// Track the press, and once it has moved past the slop open the drag's visuals, magnifying
+	// whichever staff the pointer is on. A tap just seeks, like the platform magnifiers.
+	private magnify(point: { x: number; y: number }, native: PointerEvent): void {
+		this.fingerY = point.y;
+		const press = this.press;
+		if (
+			press &&
+			Math.hypot(native.clientX - press.x, native.clientY - press.y) >=
+				DRAG_SLOP_PX
+		) {
+			this.dragging = true;
+		}
+		this.placeDragAids();
+	}
+
+	// Make, retune or drop the loupe to match the settings.
+	private applyLoupe(): void {
+		const { enabled, ...options } = this.loupeSettings.values;
+		if (!enabled) {
+			this.loupe?.dispose();
+			this.loupe = null;
+		} else if (this.loupe) {
+			this.loupe.configure(options);
+		} else {
+			this.loupe = this.score.createLoupe(options);
+		}
+	}
+
+	// For as long as a drag lasts, cap the playhead with its handle; for a finger, which covers what
+	// it drags where a mouse or pen doesn't, anchor the loupe above both, so it follows the playhead
+	// rather than the raw finger and covers neither.
+	private placeDragAids(): void {
+		const bar = this.bar;
+		if (!this.dragging || !bar) {
+			this.knob.hide();
+			this.loupe?.hide();
+			return;
+		}
+		const r = KNOB_DIAMETER_PX / 2 / this.scale;
+		this.knob.show(
+			{ x: bar.x - r, y: bar.y - r, w: r * 2, h: r * 2 },
+			CURSOR_COLOR,
+			{ radius: r },
+		);
+		if (!this.press?.touch) {
+			this.loupe?.hide();
+			return;
+		}
+		const y = Math.min(Math.max(this.fingerY, bar.y), bar.y + bar.h);
+		this.loupe?.show(
+			{ x: bar.x - r, y: bar.y - r, w: r * 2, h: bar.h + r },
+			{ x: bar.x, y },
+		);
+	}
+
+	// Re-read the score's on-screen scale from a system's two boxes, then resize what is sized in
+	// CSS px.
+	private rescale(): void {
+		const system = this.score.getSystems()[0];
+		const width = system?.getBoundingClientRect().width ?? 0;
+		this.scale = system && width > 0 ? width / system.rect.w : 1;
+		this.playhead.setWidthPx(CURSOR_WIDTH_PX / this.scale);
+		this.placeDragAids();
 	}
 
 	private scrub(seek: () => void): void {

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { Rect } from 'webappwiz/geometry';
+import { LOUPE_OPTIONS } from './constants';
 import { DefaultDecorations } from './default-decorations';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import type { Element } from './element';
@@ -7,6 +8,8 @@ import { ElementIndex } from './element-index';
 import { FakeHitTester } from './fake-hit-tester';
 import { FakeHost } from './fake-host';
 import type { FakeLayer } from './fake-layer';
+import type { FakeLoupe } from './fake-loupe';
+import type { FakeMarker } from './fake-marker';
 import { FakeViewport } from './fake-viewport';
 import { Gaps } from './gaps';
 import type { HitTester } from './hit-tester';
@@ -277,6 +280,38 @@ describe('Score', () => {
 		score.createPlayhead();
 		expect(host.markers).toHaveLength(1);
 		expect(host.created).toHaveLength(0);
+	});
+
+	it('gets a marker from the host at the requested z-index, and rejects a non-integer one', () => {
+		const marker = score.createMarker(-1);
+		expect(host.markers).toEqual([marker as FakeMarker]);
+		expect(host.markers[0]?.zIndex).toBe(-1);
+		expect(host.created).toHaveLength(0);
+		expect(() => score.createMarker(0.5)).toThrow();
+	});
+
+	it('gets a loupe from the host with defaults filled in, and rejects a bad option', () => {
+		const loupe = score.createLoupe({ zoom: 2 });
+		expect(host.loupes).toEqual([loupe as FakeLoupe]);
+		expect(host.loupes[0]?.options).toEqual({ ...LOUPE_OPTIONS, zoom: 2 });
+		expect(() => score.createLoupe({ zoom: 0 })).toThrow();
+		expect(() => score.createLoupe({ width: -1 })).toThrow();
+		expect(() => score.createLoupe({ height: Number.NaN })).toThrow();
+		expect(() => score.createLoupe({ radius: -1 })).toThrow();
+		expect(() => score.createLoupe({ gap: -1 })).toThrow();
+		expect(host.loupes).toHaveLength(1);
+	});
+
+	it('reconfigures a loupe, keeping what the change leaves out', () => {
+		const loupe = score.createLoupe({ width: 300 });
+		loupe.configure({ zoom: 3, gap: 0 });
+		expect(host.loupes[0]?.options).toEqual({
+			...LOUPE_OPTIONS,
+			width: 300,
+			zoom: 3,
+			gap: 0,
+		});
+		expect(() => loupe.configure({ height: 0 })).toThrow();
 	});
 
 	it('hands back the element index it was built with', () => {

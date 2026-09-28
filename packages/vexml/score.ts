@@ -5,6 +5,7 @@ import {
 	type Events,
 	type Unlisten,
 } from 'webappwiz/events';
+import { LOUPE_OPTIONS } from './constants';
 import { CursorController } from './cursor-controller';
 import { CursorHostAdapter } from './cursor-host-adapter';
 import {
@@ -19,6 +20,8 @@ import type { ScoreEventMap } from './events';
 import type { Host } from './host';
 import type { Layer, LayerKind } from './layer';
 import { LazyLayer } from './lazy-layer';
+import { type Loupe, type LoupeOptions, resolveLoupeOptions } from './loupe';
+import type { Marker } from './marker';
 import { MeasureBox } from './measure-box';
 import { Note } from './note';
 import type { Part } from './part';
@@ -154,6 +157,27 @@ export class Score implements Eventful<ScoreEventMap> {
 			throw new Error('vexml: layer zIndex must be an integer');
 		}
 		return this.host.createLayer(kind, zIndex);
+	}
+
+	/* Add a caller-owned box over the score, placed in score px (see Marker). Unlike a layer it holds
+	 * no bitmap, so moving or restyling it every pointer move stays compositor-only: reach for it over
+	 * a layer for anything that tracks a drag. zIndex orders it against the score canvas exactly as
+	 * addLayer's does — negative sits behind the engraving, so a translucent tint doesn't dull the
+	 * notes. Disposed when the score is. */
+	createMarker(zIndex?: number): Marker {
+		if (zIndex !== undefined && !Number.isInteger(zIndex)) {
+			throw new Error('vexml: marker zIndex must be an integer');
+		}
+		return this.host.createMarker(zIndex);
+	}
+
+	/* Add a magnifier that floats over the page and shows the score enlarged around a point: the
+	 * engraving, content and background layers, and markers (the playhead included). Sizes are CSS
+	 * px; `zoom` is relative to the score's on-screen size; omitted options take vexml's defaults
+	 * (sized for a thumb on a phone), and configure() changes them later. Show it on each pointer
+	 * move — it repaints only its own small canvas. Disposed when the score is. */
+	createLoupe(options: LoupeOptions = {}): Loupe {
+		return this.host.createLoupe(resolveLoupeOptions(LOUPE_OPTIONS, options));
 	}
 
 	/* Change `Config.maxHeight` after the fact: cap the score at `px` (scrolling vertically past it),

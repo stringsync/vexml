@@ -4,7 +4,9 @@ import { FOLD_SHADOW_WIDTH } from './constants';
 import type { Fold } from './fold';
 import type { Host, HostEventMap } from './host';
 import type { Layer, LayerKind } from './layer';
+import type { LoupeOptions } from './loupe';
 import { ManagedLayer } from './managed-layer';
+import { ManagedLoupe } from './managed-loupe';
 import { ManagedMarker, type MarkerFrame } from './managed-marker';
 import { ScrollController } from './scroll-controller';
 import type { ScrollHost } from './scroll-host';
@@ -74,6 +76,10 @@ export class Stage implements Viewport, Host, ScrollHost {
 	private readonly restoreStyles: Array<[string, string]> = [];
 	private readonly layers = new Set<ManagedLayer>();
 	private readonly markers = new Set<ManagedMarker>();
+	private readonly loupes = new Set<ManagedLoupe>();
+	// Counts overlays (layers and markers) as they're appended, so a loupe can paint equal z-indexes
+	// in the DOM order the browser stacks them in.
+	private overlays = 0;
 	// Owns the smooth-scroll conflation state; created on first use of `scroller`.
 	private scrollController: ScrollController | null = null;
 	// The sticky panoramic fold (see setFold), or null when the score has none. `track` wraps the
@@ -116,6 +122,13 @@ export class Stage implements Viewport, Host, ScrollHost {
 		if (!container.style.isolation) {
 			container.style.isolation = 'isolate';
 		}
+		// The score is a picture to point at, not text: a press held on it (the start of a drag on a
+		// touch screen) must not start a native text selection or the iOS callout. Set on the
+		// container so it covers the canvas and every overlay vexml stacks in it. Only the prefixed
+		// name: Safari needs it, the others alias it to user-select, and setting both would record
+		// the alias's already-changed value as the one to restore.
+		this.setStyle('-webkit-user-select', 'none');
+		this.setStyle('-webkit-touch-callout', 'none');
 		// Turn the container into a scroll box on whichever axes have a cap: set the size/cap and
 		// overflow:auto so the content (the in-flow base canvas) scrolls within it. A cursor's
 		// follow()/scrollIntoView() then scroll this same box. overflow per axis is set once.
@@ -381,12 +394,11 @@ export class Stage implements Viewport, Host, ScrollHost {
 		// (negative drops behind, where it shows through the score's transparent pixels); otherwise a
 		// background layer defaults behind and everything else stacks over it. Equal z-indexes fall
 		// back to DOM order, which is creation order since layers are appended as created.
-		if (zIndex !== undefined) {
-			canvas.style.zIndex = String(zIndex);
-		} else if (kind === 'background') {
-			canvas.style.zIndex = '-1';
+		const z = zIndex ?? (kind === 'background' ? -1 : undefined);
+		if (z !== undefined) {
+			canvas.style.zIndex = String(z);
 		}
-		const layer = new ManagedLayer(kind, canvas, this);
+		const layer = new ManagedLayer(kind, canvas, this, z ?? 0, this.overlays++);
 		this.container.appendChild(canvas);
 		this.layers.add(layer);
 		this.sizeBitmap(layer);
@@ -394,7 +406,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 		return layer;
 	}
 
-	createMarker(): ManagedMarker {
+	createMarker(zIndex?: number): ManagedMarker {
 		const el = document.createElement('div');
 		// Anchored at the container's top-left and moved by transform, so a move never lays out.
 		// Purely visual, like a layer: pointer events pass through to the container.
@@ -404,10 +416,73 @@ export class Stage implements Viewport, Host, ScrollHost {
 		el.style.top = '0';
 		el.style.pointerEvents = 'none';
 		el.style.willChange = 'transform';
-		const marker = new ManagedMarker(el, this.markerFrame(), this);
+		// Ordered against the base canvas like a layer: negative sits behind the engraving.
+		if (zIndex !== undefined) {
+			el.style.zIndex = String(zIndex);
+		}
+		const marker = new ManagedMarker(
+			el,
+			this.markerFrame(),
+			this,
+			zIndex ?? 0,
+			this.overlays++,
+		);
 		this.container.appendChild(el);
 		this.markers.add(marker);
 		return marker;
+	}
+
+	createLoupe(options: Required<LoupeOptions>): ManagedLoupe {
+		const canvas = document.createElement('canvas');
+		// On the body, not in the container: fixed to the viewport over the whole page, so neither
+		// the container's overflow nor a transformed ancestor can clip or re-anchor it.
+		canvas.className = 'vexml-loupe';
+		canvas.style.position = 'fixed';
+		canvas.style.left = '0';
+		canvas.style.top = '0';
+		canvas.style.zIndex = '2147483647';
+		canvas.style.pointerEvents = 'none';
+		canvas.style.willChange = 'transform';
+		canvas.style.display = 'none';
+		canvas.style.boxShadow = '0 2px 12px rgba(0, 0, 0, 0.3)';
+		const loupe = new ManagedLoupe(canvas, options, this);
+		document.body.appendChild(canvas);
+		this.loupes.add(loupe);
+		return loupe;
+	}
+
+	/*
+	 * Paint what the score shows over `region` (score px) into a context already mapped to score
+	 * space: the base engraving, the content and background layers, and the markers, stacked as the
+	 * browser stacks them — negative z-indexes behind the in-flow base canvas, the rest over it, equal
+	 * z-indexes in DOM order. Viewport layers and the fold are chrome over the view, not the score.
+	 */
+	paintScore(ctx: CanvasRenderingContext2D, region: Rect): void {
+		const overlays: Array<ManagedLayer | ManagedMarker> = [...this.markers];
+		for (const layer of this.layers) {
+			if (layer.kind !== 'viewport') {
+				overlays.push(layer);
+			}
+		}
+		overlays.sort((a, b) => a.zIndex - b.zIndex || a.order - b.order);
+		const paint = (overlay: ManagedLayer | ManagedMarker) => {
+			if (overlay instanceof ManagedMarker) {
+				overlay.paint(ctx);
+			} else {
+				this.paintBitmap(ctx, overlay.canvas, region);
+			}
+		};
+		let behind = true;
+		for (const overlay of overlays) {
+			if (behind && overlay.zIndex >= 0) {
+				behind = false;
+				this.paintBitmap(ctx, this.base, region);
+			}
+			paint(overlay);
+		}
+		if (behind) {
+			this.paintBitmap(ctx, this.base, region);
+		}
 	}
 
 	relayoutLayers(): void {
@@ -439,6 +514,11 @@ export class Stage implements Viewport, Host, ScrollHost {
 		this.markers.delete(marker);
 	}
 
+	// Deregister a loupe disposing itself (called from ManagedLoupe.dispose).
+	forgetLoupe(loupe: ManagedLoupe): void {
+		this.loupes.delete(loupe);
+	}
+
 	dispose(): void {
 		// Idempotent: a re-render disposes this Stage from the new Stage's constructor, so the caller's
 		// own later dispose() must be a no-op rather than re-restoring stale styles over the new Stage.
@@ -457,6 +537,9 @@ export class Stage implements Viewport, Host, ScrollHost {
 		}
 		for (const marker of [...this.markers]) {
 			marker.dispose();
+		}
+		for (const loupe of [...this.loupes]) {
+			loupe.dispose();
 		}
 		this.clearFold();
 		this.base.remove();
@@ -570,9 +653,10 @@ export class Stage implements Viewport, Host, ScrollHost {
 		this.fold = null;
 	}
 
-	// The paper under the fold: the configured background, else the nearest painted background
-	// behind the container, else white. The fold has to be opaque to cover the music under it.
-	private paperColor(): string {
+	// The paper under the fold (or a loupe): the configured background, else the nearest painted
+	// background behind the container, else white. The fold has to be opaque to cover the music
+	// under it.
+	paperColor(): string {
 		if (this.backgroundColor) {
 			return this.backgroundColor;
 		}
@@ -591,6 +675,40 @@ export class Stage implements Viewport, Host, ScrollHost {
 			}
 		}
 		return '#ffffff';
+	}
+
+	// Draw the part of a score-sized bitmap (the base canvas or a content layer, whatever its
+	// resolution) under `region`, in score px. The source rect is clipped to the bitmap by hand:
+	// older WebKit rejects a drawImage source rect that runs off the image.
+	private paintBitmap(
+		ctx: CanvasRenderingContext2D,
+		bitmap: HTMLCanvasElement,
+		region: Rect,
+	): void {
+		const { width, height } = this.intrinsicSize();
+		if (width <= 0 || height <= 0 || bitmap.width <= 0 || bitmap.height <= 0) {
+			return;
+		}
+		const x0 = Math.max(0, region.x);
+		const y0 = Math.max(0, region.y);
+		const x1 = Math.min(width, region.x + region.w);
+		const y1 = Math.min(height, region.y + region.h);
+		if (x1 <= x0 || y1 <= y0) {
+			return;
+		}
+		const bx = bitmap.width / width;
+		const by = bitmap.height / height;
+		ctx.drawImage(
+			bitmap,
+			x0 * bx,
+			y0 * by,
+			(x1 - x0) * bx,
+			(y1 - y0) * by,
+			x0,
+			y0,
+			x1 - x0,
+			y1 - y0,
+		);
 	}
 
 	// Set a container style, remembering its prior value so dispose restores it (each prop set once).
