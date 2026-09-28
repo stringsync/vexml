@@ -147,6 +147,7 @@ export class SmplrInstrument implements Instrument {
 			if (!Ctor) {
 				return null;
 			}
+			playThroughSilentSwitch();
 			this.ctx = new Ctor();
 			// A Soundfont instrument is one file, which keeps the preload window short. smplr's
 			// sampled SplendidGrandPiano sounds better but costs a file per note per velocity layer,
@@ -216,6 +217,20 @@ function rendered(ctx: AudioContext): Promise<void> {
 		});
 		source.start();
 	});
+}
+
+/*
+ * iOS gives Web Audio the "ambient" audio session, which the ring/silent switch mutes, so a
+ * silenced phone plays nothing. Every iOS browser runs on WebKit, so this holds for iOS Chrome
+ * too. "playback" is the session a media player gets, which plays regardless of the switch. The
+ * Audio Session API is WebKit-only and not yet in TypeScript's DOM types, hence the cast.
+ */
+function playThroughSilentSwitch(): void {
+	const session = (navigator as { audioSession?: { type: string } })
+		.audioSession;
+	if (session) {
+		session.type = 'playback';
+	}
 }
 
 // vexflow key ("C#/4") → smplr note name ("C#4"). smplr handles enharmonics (Db4) itself.
