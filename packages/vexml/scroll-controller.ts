@@ -71,26 +71,11 @@ export class ScrollController implements Scroller {
 			bottom: top + rect.h * sy,
 		};
 		const scroll = this.host.scroll;
-		const size = this.host.clientSize();
-		const view = {
-			left: scroll.left,
-			top: scroll.top,
-			right: scroll.left + size.width,
-			bottom: scroll.top + size.height,
-		};
 		const block = opts?.block ?? 'nearest';
 		// Keep an existing page turn when its destination already reveals the new target.
 		if (this.tween) {
 			const destination = this.tween.to;
-			const pending = this.scrollOffsetFor(
-				target,
-				{
-					...destination,
-					right: destination.left + size.width,
-					bottom: destination.top + size.height,
-				},
-				block,
-			);
+			const pending = this.scrollOffsetFor(target, destination, block);
 			if (
 				pending.left === destination.left &&
 				pending.top === destination.top
@@ -98,7 +83,7 @@ export class ScrollController implements Scroller {
 				return;
 			}
 		}
-		const offset = this.scrollOffsetFor(target, view, block);
+		const offset = this.scrollOffsetFor(target, scroll, block);
 		if (offset.left === scroll.left && offset.top === scroll.top) {
 			// A newly focused visible target must not be carried offscreen by an old tween.
 			this.stopTween();
@@ -186,21 +171,33 @@ export class ScrollController implements Scroller {
 
 	// Resolve each axis independently: visible targets stay put, while offscreen targets return
 	// at the opposite edge, revealing the most content in the direction of travel. `block` 'start'
-	// instead lands an offscreen target's top at the view's top, as a forward page turn does.
+	// instead lands an offscreen target's top at the view's top, as a forward page turn does. The
+	// view at `scroll` starts past what a sticky fold covers, since music under it isn't showing;
+	// the result is a scroll position again, never left of the content's start.
 	private scrollOffsetFor(
 		target: Box,
-		view: Box,
+		scroll: { left: number; top: number },
 		block: 'nearest' | 'start',
 	): { left: number; top: number } {
-		return {
-			left: this.pageOffset(
+		const size = this.host.clientSize();
+		const inset = this.host.leftInset();
+		const view = {
+			left: scroll.left + inset,
+			top: scroll.top,
+			right: scroll.left + size.width,
+			bottom: scroll.top + size.height,
+		};
+		const left =
+			this.pageOffset(
 				target.left,
 				target.right,
 				view.left,
 				view.right,
 				SCROLL_SIDE_PADDING_PX,
 				'nearest',
-			),
+			) - inset;
+		return {
+			left: Math.max(0, left),
 			top: this.pageOffset(
 				target.top,
 				target.bottom,

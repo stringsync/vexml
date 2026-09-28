@@ -37,6 +37,9 @@ export interface Host
 	readonly scroll: { left: number; top: number };
 	/* The visible scrollport box in client coords — what a cursor's visibility check compares against. */
 	viewportRect(): DOMRect;
+	/* Whether a client point lands on something covering the score (a sticky fold), so pointing
+	 * there must not reach the music underneath. */
+	obscures(clientX: number, clientY: number): boolean;
 	/* Scrolls a score-space rect into view (axis-aware); a cursor's follow()/scrollIntoView() use it. */
 	readonly scroller: Scroller;
 	/* Re-sync every layer and marker to the container's current geometry (called on resize).

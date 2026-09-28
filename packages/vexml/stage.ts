@@ -1,5 +1,7 @@
 import { Dispatcher } from 'webappwiz/events';
 import type { Rect } from 'webappwiz/geometry';
+import { FOLD_SHADOW_WIDTH } from './constants';
+import type { Fold } from './fold';
 import type { Host, HostEventMap } from './host';
 import type { Layer, LayerKind } from './layer';
 import { ManagedLayer } from './managed-layer';
@@ -63,6 +65,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 				}
 			}
 		}
+		this.updateFold();
 		this.dispatcher.dispatch('scroll');
 	};
 	private readonly prevPosition: string;
@@ -73,6 +76,20 @@ export class Stage implements Viewport, Host, ScrollHost {
 	private readonly markers = new Set<ManagedMarker>();
 	// Owns the smooth-scroll conflation state; created on first use of `scroller`.
 	private scrollController: ScrollController | null = null;
+	// The sticky panoramic fold (see setFold), or null when the score has none. `track` wraps the
+	// base canvas so the fold's sticky range spans the whole score; `index` is the strip painted.
+	private fold: {
+		fold: Fold;
+		track: HTMLDivElement;
+		element: HTMLDivElement;
+		canvas: HTMLCanvasElement;
+		index: number;
+		shown: boolean;
+		// The scroller's left padding, which the fold's paper reaches back over (see placeFold).
+		pad: number;
+	} | null = null;
+	// The paper color a fold is painted on when the config sets no backgroundColor.
+	private readonly backgroundColor: string | null;
 	private disposed = false;
 
 	constructor(
@@ -85,6 +102,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 		Stage.byContainer.get(container)?.dispose();
 		Stage.byContainer.set(container, this);
 		this.scrollElement = scroll.scrollContainer ?? container;
+		this.backgroundColor = scroll.backgroundColor ?? null;
 		// A positioned container is the containing block the overlay layers anchor to. Only set it
 		// when the caller left position static, and remember it so dispose restores.
 		this.prevPosition = container.style.position;
@@ -221,9 +239,99 @@ export class Stage implements Viewport, Host, ScrollHost {
 		};
 	}
 
-	// The visible scrollport box: the scroll element's own box (the same box overflow scrolls within).
+	// The visible scrollport box: the scroll element's own box (the same box overflow scrolls within),
+	// less the strip a sticky fold covers at its left edge — music under the fold isn't visible.
 	viewportRect(): DOMRect {
-		return this.scrollElement.getBoundingClientRect();
+		const box = this.scrollElement.getBoundingClientRect();
+		const inset = this.fold
+			? this.scrollElement.clientLeft + this.leftInset()
+			: 0;
+		return new DOMRect(
+			box.left + inset,
+			box.top,
+			Math.max(0, box.width - inset),
+			box.height,
+		);
+	}
+
+	// How much of the scrollport's left edge a sticky fold covers, in client px from its padding
+	// edge (0 without one).
+	leftInset(): number {
+		return this.fold
+			? this.fold.pad + this.fold.fold.width * this.frame().sx
+			: 0;
+	}
+
+	// Whether a client point lands on the fold, where the music it covers can't be pointed at.
+	obscures(clientX: number, clientY: number): boolean {
+		if (!this.fold?.shown) {
+			return false;
+		}
+		const r = this.fold.element.getBoundingClientRect();
+		return (
+			clientX >= r.left &&
+			clientX < r.right &&
+			clientY >= r.top &&
+			clientY < r.bottom
+		);
+	}
+
+	/*
+	 * Pin a fold at the scroll box's left edge. The base canvas moves into a max-content wrapper
+	 * beside a `position: sticky` strip: sticky is what keeps the fold still while the browser
+	 * scrolls (a script-moved overlay lags a compositor scroll), and it can only travel as far as
+	 * its parent is wide — the container is only as wide as its scrollport, the wrapper as wide as
+	 * the score. It stays hidden while any of the system's own opening is still in view, then
+	 * paints whichever strip is in effect.
+	 */
+	setFold(fold: Fold): void {
+		this.clearFold();
+		const track = document.createElement('div');
+		track.className = 'vexml-fold-track';
+		track.style.display = 'flex';
+		track.style.alignItems = 'flex-start';
+		track.style.width = 'max-content';
+		const element = document.createElement('div');
+		element.className = 'vexml-fold';
+		element.style.position = 'sticky';
+		element.style.left = '0';
+		// Over the score and every auto-stacked layer and marker, so a cursor slides under it.
+		element.style.zIndex = '1';
+		element.style.flex = 'none';
+		// Sized as its strip plus the padding it reaches over, whatever the page's box-sizing.
+		element.style.boxSizing = 'content-box';
+		element.style.pointerEvents = 'none';
+		element.style.visibility = 'hidden';
+		// Paper and crease are CSS variables so a caller's stylesheet can restyle them from the
+		// container or any ancestor; the fallbacks are what vexml picks on its own.
+		element.style.backgroundColor = `var(--vexml-fold-background, ${this.paperColor()})`;
+		const canvas = document.createElement('canvas');
+		canvas.style.display = 'block';
+		canvas.style.width = '100%';
+		canvas.style.height = '100%';
+		// The fold's shadow on the music beside it: the crease where the page turns under.
+		const shadow = document.createElement('div');
+		shadow.className = 'vexml-fold-shadow';
+		shadow.style.position = 'absolute';
+		shadow.style.top = '0';
+		shadow.style.bottom = '0';
+		shadow.style.left = '100%';
+		shadow.style.width = `var(--vexml-fold-shadow-width, ${FOLD_SHADOW_WIDTH}px)`;
+		shadow.style.background =
+			'var(--vexml-fold-shadow, linear-gradient(to right, rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0)))';
+		element.append(canvas, shadow);
+		this.container.insertBefore(track, this.base);
+		track.append(element, this.base);
+		this.fold = {
+			fold,
+			track,
+			element,
+			canvas,
+			index: -1,
+			shown: false,
+			pad: 0,
+		};
+		this.placeFold();
 	}
 
 	// The Stage owns the container that scrolls; a lazily-created controller does the scrolling.
@@ -303,6 +411,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 	}
 
 	relayoutLayers(): void {
+		this.placeFold();
 		if (this.markers.size > 0) {
 			const frame = this.markerFrame();
 			for (const marker of this.markers) {
@@ -349,6 +458,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 		for (const marker of [...this.markers]) {
 			marker.dispose();
 		}
+		this.clearFold();
 		this.base.remove();
 		// Free the engraving's bitmap now, not at the next GC: a re-render has the outgoing and
 		// incoming scores alive together, and iOS WebKit kills the page past its canvas budget.
@@ -363,6 +473,124 @@ export class Stage implements Viewport, Host, ScrollHost {
 		if (Stage.byContainer.get(this.container) === this) {
 			Stage.byContainer.delete(this.container);
 		}
+	}
+
+	// Size the fold to the base canvas's rendered scale (a caller's CSS may stretch the score), then
+	// repaint it: resizing a canvas clears it. Sticky pins inside the scroller's padding, which would
+	// leave the music scrolling past in a strip beside the fold, so the paper reaches back over the
+	// padding to the scroller's edge while the strip itself stays where the opening sat. It reaches
+	// over the container's top and bottom padding too — and down to its bottom edge when the
+	// container is taller than the score — so the fold runs the whole height of the page rather
+	// than stopping where the engraving does.
+	private placeFold(): void {
+		if (!this.fold) {
+			return;
+		}
+		const { fold, element, canvas } = this.fold;
+		const { sx, sy } = this.frame();
+		const pad =
+			parseFloat(getComputedStyle(this.scrollElement).paddingLeft) || 0;
+		this.fold.pad = pad;
+		const box = getComputedStyle(this.container);
+		const top = parseFloat(box.paddingTop) || 0;
+		const bottom = Math.max(
+			parseFloat(box.paddingBottom) || 0,
+			this.container.clientHeight - top - fold.height * sy,
+		);
+		element.style.left = `${-pad}px`;
+		element.style.paddingLeft = `${pad}px`;
+		// Negative margins cancel the reach, so the wrapper stays exactly as tall as the score.
+		element.style.paddingTop = `${top}px`;
+		element.style.marginTop = `${-top}px`;
+		element.style.paddingBottom = `${bottom}px`;
+		element.style.marginBottom = `${-bottom}px`;
+		element.style.width = `${fold.width * sx}px`;
+		element.style.height = `${fold.height * sy}px`;
+		// In flow the strip starts where the fold does in the score, and takes no room from it.
+		element.style.marginLeft = `${fold.left * sx - pad}px`;
+		element.style.marginRight = `${-(fold.left + fold.width) * sx}px`;
+		const dpr = window.devicePixelRatio || 1;
+		canvas.width = Math.round(fold.width * sx * dpr);
+		canvas.height = Math.round(fold.height * sy * dpr);
+		this.fold.index = -1;
+		this.updateFold();
+	}
+
+	// Show the fold only once the system's own clefs and keys have scrolled wholly out of view, so
+	// the two never show at once, and paint the strip for whatever the fold now covers — the clef
+	// and key in effect at its right edge. A score that barely scrolls never gets a fold.
+	private updateFold(): void {
+		if (!this.fold) {
+			return;
+		}
+		const { fold, element, canvas } = this.fold;
+		const el = this.scrollElement;
+		const edge = el.getBoundingClientRect().left + el.clientLeft;
+		const { left, sx } = this.frame();
+		const pad = this.fold.pad;
+		const shown = left + (fold.left + fold.width) * sx <= edge + 0.5;
+		if (shown !== this.fold.shown) {
+			this.fold.shown = shown;
+			element.style.visibility = shown ? 'visible' : 'hidden';
+		}
+		if (!shown) {
+			return;
+		}
+		const index = fold.indexAt((edge + pad - left) / sx + fold.width);
+		if (index === this.fold.index) {
+			return;
+		}
+		this.fold.index = index;
+		const context = canvas.getContext('2d');
+		if (!context) {
+			return;
+		}
+		context.setTransform(1, 0, 0, 1, 0, 0);
+		context.clearRect(0, 0, canvas.width, canvas.height);
+		// Score space onto the bitmap: device px per score px, with the strip's left edge at 0.
+		const kx = canvas.width / fold.width;
+		const ky = canvas.height / fold.height;
+		context.setTransform(kx, 0, 0, ky, -fold.left * kx, 0);
+		fold.paint(context, index);
+	}
+
+	// Take the fold down and put the base canvas back where it was.
+	private clearFold(): void {
+		if (!this.fold) {
+			return;
+		}
+		const { track, canvas } = this.fold;
+		// The caller may have emptied the container already (a re-render into it does), taking the
+		// wrapper with it; then there's nowhere to put the base back.
+		if (track.parentNode) {
+			track.replaceWith(this.base);
+		}
+		canvas.width = 0;
+		canvas.height = 0;
+		this.fold = null;
+	}
+
+	// The paper under the fold: the configured background, else the nearest painted background
+	// behind the container, else white. The fold has to be opaque to cover the music under it.
+	private paperColor(): string {
+		if (this.backgroundColor) {
+			return this.backgroundColor;
+		}
+		for (
+			let el: HTMLElement | null = this.container;
+			el;
+			el = el.parentElement
+		) {
+			const color = getComputedStyle(el).backgroundColor;
+			if (
+				color &&
+				color !== 'transparent' &&
+				!/^rgba\(.*,\s*0\)$/.test(color)
+			) {
+				return color;
+			}
+		}
+		return '#ffffff';
 	}
 
 	// Set a container style, remembering its prior value so dispose restores it (each prop set once).

@@ -51,7 +51,7 @@ Two rules cut across the draw stage:
 
 ## Staves, measures, and the frame
 
-- **Stave, clef, key signature, time signature** — `stave-builder.ts`, `signature-translator.ts`, `custom-key-signature.ts`, `score-reader.ts`
+- **Stave, clef, key signature, time signature** — `stave-builder.ts`, `stave-factory.ts` (the stave itself and a system's opening clef/key), `signature-translator.ts`, `custom-key-signature.ts`, `score-reader.ts`
 - **Mid-measure clef changes, mid-measure barlines** — `score-reader.ts` (`midClefsOf`, `midBarlinesOf`), `voice-translator.ts`, `signature-translator.ts`, `barline-translator.ts`, `layout-planner.ts`
 - **Barlines, repeat signs, volta (ending) brackets** — `barline-translator.ts`, `stave-builder.ts`, `connector-drawer.ts`, `score-reader.ts`
 - **Measure numbers** — `stave-builder.ts` (`showsMeasureNumber`)
@@ -88,6 +88,7 @@ Two rules cut across the draw stage:
 - **Justifying a complete system to full width; last one left short** — `layout-planner.ts`, `config.ts` (`minLastSystemFill`)
 - **A document line too wide for the page: wrap / allow / widen** — `layout-planner.ts`, `config.ts` (`overflow`)
 - **Panoramic (one endless system) vs standard layout** — `layout-planner.ts`, `config.ts`, `scroll-controller.ts`
+- **Sticky clef/key fold on a scrolled panorama (`stickySignatures`)** — `signature-fold.ts` (which strip, and engraving it), `fold.ts` (the seam), `stage.ts` (the sticky element, showing it, scroll inset, pointer occlusion), `score-drawer.ts` (builds it)
 - **Label columns reserved left of the first system** — `layout-planner.ts` (`labelIndent`, `partLabelIndent`), `connector-drawer.ts`
 - **Stave offsets within a system: gap inside a part vs between parts** — `layout-planner.ts`, `constants.ts` (`INTRA_PART_SPACING`, `INTER_PART_SPACING`)
 - **Widening a stave gap the music outgrows — per x column, per system** — `spill-tracker.ts`, `spill-resolver.ts`

@@ -3,6 +3,7 @@ import { Rect } from 'webappwiz/geometry';
 import type { Config } from './config';
 import { DefaultDecorations } from './default-decorations';
 import type { ElementFactory } from './element-factory';
+import type { Fold } from './fold';
 import type { FontLoader } from './font-loader';
 import type { Gaps } from './gaps';
 import type { Host } from './host';
@@ -21,12 +22,14 @@ const EMPTY_GEOMETRY: RawGeometry = {
 };
 
 /* What the renderer needs from the stage: the container fonts/CSS vars land on, the base canvas
- * the score draws onto, and the Host surface handed to the Score. Stage implements it for real;
- * a unit test injects a fake. */
+ * the score draws onto, where a sticky fold is pinned, and the Host surface handed to the Score.
+ * Stage implements it for real; a unit test injects a fake. */
 export interface RenderStage extends Host {
 	readonly container: HTMLDivElement;
 	readonly base: HTMLCanvasElement;
 	readonly scroller: Scroller & { cancel(): void; suspendForResize(): void };
+	/* Pin a fold at the scroll box's left edge (see Fold). */
+	setFold(fold: Fold): void;
 }
 
 /*
@@ -68,14 +71,18 @@ export class ScoreRenderer {
 		if (parts.length > 0) {
 			this.configuredGaps.insertInto(parts);
 		}
-		const geometry =
+		const drawn =
 			parts.length > 0
 				? this.scoreDrawer.draw(
 						this.stage.base,
 						mdoc.score,
 						this.layoutPlanner.plan(mdoc.score, this.config),
 					)
-				: EMPTY_GEOMETRY;
+				: { geometry: EMPTY_GEOMETRY, fold: null };
+		const { geometry } = drawn;
+		if (drawn.fold) {
+			this.stage.setFold(drawn.fold);
+		}
 
 		// The stage is the Viewport (score<->client transform) the elements map through, and the
 		// decorations are what their color/halo toggles delegate to (drawing on overlay layers the

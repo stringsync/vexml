@@ -3,9 +3,7 @@ import {
 	Barline,
 	MultiMeasureRest,
 	type RenderContext,
-	Stave,
-	StaveModifierPosition,
-	TabStave,
+	type Stave,
 } from 'vexflow';
 import { Rect } from 'webappwiz/geometry';
 import { BAR_STYLE_TYPES, type BarlineDecoration } from './barline-translator';
@@ -16,11 +14,11 @@ import {
 	VOLTA_LABEL_DROP,
 	VOLTA_STAVE_GAP,
 } from './constants';
-import { CustomKeySignature } from './custom-key-signature';
 import type { Gaps } from './gaps';
 import type { PartGroup, ScoreReader } from './score-reader';
 import type { SignatureTranslator } from './signature-translator';
 import type { SpillTracker } from './spill-tracker';
+import { StaveFactory } from './stave-factory';
 import type { StavePlan } from './stave-plan';
 
 /*
@@ -118,6 +116,8 @@ export class StaveBuilder {
 	private readonly gaps: ReadonlyMap<number, Gap>;
 	// Lead measure index -> the number of measures its <multiple-rest> consolidates.
 	private readonly multiRests: ReadonlyMap<number, number>;
+	// The stave itself and the clef/key a system opens with, shared with the sticky fold.
+	private readonly factory: StaveFactory;
 
 	constructor(
 		private readonly signatures: SignatureTranslator,
@@ -142,6 +142,7 @@ export class StaveBuilder {
 		// notes, and the measures it swallows have no box (the layout planner dropped them), so
 		// the measure loop skips them without any extra guard here.
 		this.multiRests = this.reader.multiRestsOf(this.parts).leads;
+		this.factory = new StaveFactory(signatures, staves);
 	}
 
 	/**
@@ -184,40 +185,15 @@ export class StaveBuilder {
 			this.systemStaveOffsets?.get(column.systemIndex) ?? this.staveOffsets;
 		const staveY = column.systemY + (offsets[column.staveRow] ?? 0);
 
-		// A TAB clef draws on a TabStave whose line count matches the
-		// instrument's strings (<staff-lines>: 6 for guitar, 4 for bass).
-		const isTab = this.staves.isTab(part, staffNumber);
-		const tabLines = isTab ? measure.getStaveLines(staffNumber) : 0;
-		const staveLines = measure.getStaveLines(staffNumber);
-		// Half the lines a reduced stave drops come off the top. The whole part of that says
-		// which five-line row it starts on; the leftover half (an even line count can't sit on
-		// the five-line rows) nudges the whole frame — lines and note rows together — down a
-		// half space, which is how an even-line stave centers.
-		const hiddenAbove = Math.max(0, Math.floor((5 - staveLines) / 2));
-		const halfNudge = Math.max(0, (5 - staveLines) / 2 - hiddenAbove);
-		const stave = isTab
-			? new TabStave(column.measureX, staveY, column.measureWidth, {
-					numLines: tabLines,
-				})
-			: new Stave(column.measureX, staveY, column.measureWidth, {
-					// A reduced stave keeps the five-line frame and HIDES the lines it doesn't
-					// draw, rather than declaring fewer of them. vexflow anchors a shorter stave
-					// at the top — its lines come off the bottom, so a 1-line percussion stave
-					// draws where a five-line stave's TOP line goes — while leaving note rows,
-					// ledger lines, clef and time signature in the five-line frame regardless.
-					// Hiding instead centers the drawn lines the way MuseScore and OSMD do (the
-					// single line lands on the middle line, with the percussion clef straddling
-					// it) and leaves everything measured off the stave — note rows, connectors,
-					// part spacing — exactly as it was.
-					spaceAboveStaffLn: 4 + halfNudge,
-				});
-		// Tab is exempt: its line count IS its string count, so a 4-string stave draws four
-		// lines and means it.
-		for (let line = 0; line < 5 && !isTab && staveLines < 5; line++) {
-			stave.setConfigForLine(line, {
-				visible: line >= hiddenAbove && line < hiddenAbove + staveLines,
-			});
-		}
+		const placed = this.factory.create(
+			part,
+			measure,
+			staffNumber,
+			column.measureX,
+			staveY,
+			column.measureWidth,
+		);
+		const { stave, isTab } = placed;
 		// Only draw the end barline. Each measure's end barline is the same line
 		// as the next measure's left edge, so internal measures still get a divider;
 		// only the first measure of a system loses its left barline (intended). The
@@ -290,14 +266,9 @@ export class StaveBuilder {
 		const prevKey = prevMeasure?.getKey(staffNumber) ?? null;
 		const keyChanged =
 			this.reader.keyIdentity(key) !== this.reader.keyIdentity(prevKey);
-		const clefName = clef
-			? this.signatures.vexflowClef(clef.sign, clef.line)
-			: 'treble';
 		// A <key> spelled out accidental by accidental (<key-step>/<key-alter>), which vexflow's
-		// own KeySignature can't take a spec for; empty for an ordinary <fifths> key. The
-		// positions depend on the clef, so this is read per stave.
-		const customKey =
-			key && !isTab ? this.signatures.customKeyAccidentals(key, clefName) : [];
+		// own KeySignature can't take a spec for; empty for an ordinary <fifths> key.
+		const customKey = isTab ? [] : this.factory.customKey(measure, staffNumber);
 		// The key being replaced, so vexflow can print the naturals that cancel it — the
 		// only thing a change TO C major has to draw, and without it M2 of
 		// transpose_change looked like no change happened at all. vexflow applies the
@@ -309,21 +280,6 @@ export class StaveBuilder {
 			keyChanged && prevKey?.rootNote && customKey.length === 0
 				? this.signatures.vexflowKeySpec(prevKey)
 				: undefined;
-		const addKeySignature = () => {
-			if (customKey.length > 0) {
-				stave.addModifier(
-					new CustomKeySignature(customKey).setPosition(
-						StaveModifierPosition.BEGIN,
-					),
-					StaveModifierPosition.BEGIN,
-				);
-			} else if (key?.rootNote) {
-				stave.addKeySignature(
-					this.signatures.vexflowKeySpec(key),
-					cancelKeySpec,
-				);
-			}
-		};
 		// Against the clef in effect at the END of the previous measure, not at its start: a
 		// change stated INSIDE that measure (or as its trailing courtesy clef) has already
 		// been announced, so restating it here would draw the same glyph twice.
@@ -340,25 +296,7 @@ export class StaveBuilder {
 		// small "change clef" size, which is how a mid-piece clef change is engraved —
 		// it reads as a correction to the stave, not a fresh system opening.
 		if (column.isSystemStart) {
-			if (isTab) {
-				const tabStave = stave as TabStave;
-				tabStave.addTabGlyph();
-				this.resizeTabClef(tabStave, tabLines);
-			} else {
-				// A part that declares no <clef> at all is engraved as treble — the same
-				// fallback buildNotes already positions its notes with, and what MuseScore and
-				// OSMD draw. Without it the stave opened with an empty gap where the glyph
-				// belongs (the lead width reserves the room either way).
-				stave.addClef(
-					clefName,
-					undefined,
-					this.signatures.vexflowClefAnnotation(clef?.octaveChange ?? null),
-				);
-			}
-			// Tab staves carry no key signature.
-			if (!isTab) {
-				addKeySignature();
-			}
+			this.factory.addOpening(placed, measure, staffNumber, cancelKeySpec);
 		} else {
 			if (clef && clefChanged && !isTab) {
 				stave.addClef(
@@ -368,7 +306,7 @@ export class StaveBuilder {
 				);
 			}
 			if (keyChanged && !isTab) {
-				addKeySignature();
+				this.factory.addKey(stave, measure, staffNumber, cancelKeySpec);
 			}
 		}
 
@@ -527,28 +465,6 @@ export class StaveBuilder {
 			.setStave(stave)
 			.setContext(this.context)
 			.draw();
-	}
-
-	/*
-	 * The "TAB" glyph is sized and centered for a 6-line staff. For a shorter tab staff
-	 * (e.g. a 4-string bass) shrink and re-center it to fit. Reaches into vexflow's clef
-	 * modifier directly — there's no public API for this.
-	 */
-	private resizeTabClef(stave: TabStave, tabLines: number): void {
-		if (tabLines === 6) {
-			return;
-		}
-		const [tabClef] = stave.getModifiers(
-			undefined,
-			'Clef',
-		) as unknown as Array<{
-			line: number;
-			fontInfo: { size: number };
-		}>;
-		if (tabClef) {
-			tabClef.fontInfo.size *= (tabLines - 1) / 5;
-			tabClef.line = (tabLines - 1) / 2;
-		}
 	}
 
 	/*

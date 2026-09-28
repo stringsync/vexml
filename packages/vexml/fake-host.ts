@@ -70,6 +70,13 @@ export class FakeHost implements Host {
 		return { x: rect.x, y: rect.y, width: rect.w, height: rect.h } as DOMRect;
 	}
 
+	/* Test hook: whether a pointer anywhere lands on something covering the score. */
+	obscured = false;
+
+	obscures(_clientX: number, _clientY: number): boolean {
+		return this.obscured;
+	}
+
 	viewportRect(): DOMRect {
 		return { x: 0, y: 0, width: 0, height: 0 } as DOMRect;
 	}

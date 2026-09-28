@@ -23,6 +23,31 @@ describe('ScrollController', () => {
 		expect(host.calls).toEqual([{ left: 134, top: 0, behavior: undefined }]);
 	});
 
+	it('parks a target that ran off the right just past a fold', () => {
+		// A 30px sticky fold covers the view's left edge, so the page turn lands the target 16px
+		// right of the fold rather than 16px right of the edge, where the fold would hide it.
+		host.inset = 30;
+		scroller.scrollIntoView(new Rect(150, 10, 10, 10));
+		expect(host.last()?.left).toBe(104);
+	});
+
+	it('scrolls a target out from under a fold', () => {
+		// 310..320 is inside the 300..400 box but under the fold's 300..330, so it isn't showing:
+		// it comes back 16px in from the right, with the fold's width taken off the view.
+		host.inset = 30;
+		host.scroll = { left: 300, top: 0 };
+		scroller.scrollIntoView(new Rect(310, 10, 10, 10));
+		expect(host.last()?.left).toBe(236);
+	});
+
+	it('never scrolls left of the content start', () => {
+		// The score's opening sits under where the fold pins, so a target there can't clear it,
+		// and scrolling further left than 0 would only be clamped back to where it is.
+		host.inset = 30;
+		scroller.scrollIntoView(new Rect(10, 10, 10, 10));
+		expect(host.calls).toHaveLength(0);
+	});
+
 	it('does not scroll when the target is already visible', () => {
 		scroller.scrollIntoView(new Rect(50, 50, 10, 10));
 		expect(host.calls).toHaveLength(0);

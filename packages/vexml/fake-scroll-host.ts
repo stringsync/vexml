@@ -7,6 +7,7 @@ import type { ScrollHost } from './scroll-host';
 export class FakeScrollHost implements ScrollHost {
 	readonly calls: ScrollToOptions[] = [];
 	scroll = { left: 0, top: 0 };
+	inset = 0;
 
 	frame(): { sx: number; sy: number } {
 		return { sx: 1, sy: 1 };
@@ -18,6 +19,10 @@ export class FakeScrollHost implements ScrollHost {
 
 	clientSize(): { width: number; height: number } {
 		return { width: 100, height: 100 };
+	}
+
+	leftInset(): number {
+		return this.inset;
 	}
 
 	scrollTo(options: ScrollToOptions): void {

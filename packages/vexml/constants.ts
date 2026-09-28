@@ -12,6 +12,12 @@ export const DEFAULT_WIDTH = 900;
 /** Left/right page margin. Leaves room for the brace/bracket drawn left of the stave. */
 export const PAGE_MARGIN_X = 15;
 
+/** Room a sticky panoramic fold leaves after its widest key signature before its edge. */
+export const FOLD_PADDING = 6;
+
+/** How far the shadow a sticky panoramic fold casts reaches over the music beside it. */
+export const FOLD_SHADOW_WIDTH = 14;
+
 /** Top margin: the first system's y. */
 export const PAGE_MARGIN_TOP = 40;
 

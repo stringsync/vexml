@@ -43,6 +43,34 @@ Capping the container turns it into a scroll box: `width`/`maxWidth` scrolls
 horizontally (pair with `layout: { type: 'panoramic' }` for a single row),
 `height`/`maxHeight` scrolls vertically.
 
+## Sticky clef and key
+
+A panoramic score can keep its clefs and key signatures in view while it scrolls
+sideways. Once the opening clefs and keys have scrolled wholly out of view, a strip
+holding the staff lines, braces, clefs and keys stays pinned at the scroll box's left
+edge, as if the page were folded over there. It switches to the new clef or key when a
+change scrolls under it; the time signature is not repeated.
+
+```ts
+await render(musicXML, element, {
+  layout: { type: 'panoramic', stickySignatures: true },
+  maxWidth: 800, // or scroll in your own box via scrollContainer
+});
+```
+
+The fold covers the container's full height, padding included, and its paper takes
+`backgroundColor` or else the nearest painted background behind the score. The cursor
+scrolls to the right of the fold, and pointer events on it hit nothing. Restyle it with
+CSS variables on the container or any ancestor:
+
+```css
+.score {
+  --vexml-fold-background: #fffdf5;
+  --vexml-fold-shadow: linear-gradient(to right, rgba(0, 0, 0, 0.25), transparent);
+  --vexml-fold-shadow-width: 20px;
+}
+```
+
 ## When a line won't fit
 
 A MusicXML file may carry its own line breaks laid out for a different page. When a

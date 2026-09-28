@@ -97,6 +97,19 @@ export type StandardLayout = {
 /** Lay every measure on one system (horizontal scroll); width is computed from the content. */
 export type PanoramicLayout = {
 	type: 'panoramic';
+	/** Whether the clef and key signature stay in view as the score scrolls right
+	 * (default: false). Once the opening's clefs and keys have scrolled wholly out of view,
+	 * a strip holding the staff lines, braces, clefs and key signatures in effect stays
+	 * pinned to the scroll box's left edge, like the page folded over there, and follows
+	 * clef and key changes as they scroll under it. A score that scrolls less than that
+	 * never shows it. The time signature is not repeated.
+	 *
+	 * The fold's paper runs the full height of the container, over its padding, and takes
+	 * `backgroundColor` or else the nearest painted background behind the score. Restyle it
+	 * with CSS variables on the container or any ancestor: `--vexml-fold-background` (the
+	 * paper), `--vexml-fold-shadow` (the crease's `background`) and
+	 * `--vexml-fold-shadow-width`. */
+	stickySignatures: boolean;
 };
 
 /** How measures are placed across systems. */
@@ -221,11 +234,11 @@ export const DEFAULT_FONT_CONFIG = {
 	// `text` known-present, so the loader reads `.family` without defaulting again.
 } satisfies FontConfig;
 
-/** What a caller may pass as `layout`: a standard layout's knobs are all optional, and
- * `render` fills them from DEFAULT_STANDARD_LAYOUT. */
+/** What a caller may pass as `layout`: either layout's knobs are all optional, and
+ * `render` fills them from DEFAULT_STANDARD_LAYOUT or DEFAULT_PANORAMIC_LAYOUT. */
 export type LayoutInput =
 	| (Partial<StandardLayout> & { type: 'standard' })
-	| PanoramicLayout;
+	| (Partial<PanoramicLayout> & { type: 'panoramic' });
 
 /** What `render` accepts: `Config` with everything optional, except that `layout` is a
  * nested object, so it takes its own partial rather than an all-or-nothing `Layout`. */
@@ -239,6 +252,12 @@ export const DEFAULT_STANDARD_LAYOUT: StandardLayout = {
 	referenceWidth: DEFAULT_WIDTH,
 	honorSystemBreaks: true,
 	overflow: 'wrap',
+};
+
+/** The defaults `render` merges a caller's partial panoramic `layout` onto. */
+export const DEFAULT_PANORAMIC_LAYOUT: PanoramicLayout = {
+	type: 'panoramic',
+	stickySignatures: false,
 };
 
 /** The defaults `render` merges a caller's `ConfigInput` onto. */

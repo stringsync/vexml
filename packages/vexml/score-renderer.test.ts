@@ -7,6 +7,7 @@ import { DynamicGlyphs } from './dynamic-glyphs';
 import { ElementFactory } from './element-factory';
 import { FakeHost } from './fake-host';
 import { FakeScoreParser } from './fake-score-parser';
+import type { Fold } from './fold';
 import { Gaps } from './gaps';
 import { LayoutPlanner } from './layout-planner';
 import { NoopFontLoader } from './noop-font-loader';
@@ -28,6 +29,11 @@ import { VoiceTranslator } from './voice-translator';
 class FakeStage extends FakeHost implements RenderStage {
 	readonly container = {} as HTMLDivElement;
 	readonly base = {} as HTMLCanvasElement;
+	readonly folds: Fold[] = [];
+
+	setFold(fold: Fold): void {
+		this.folds.push(fold);
+	}
 }
 
 // A FontLoader that records its calls, to pin the fonts-before-parse ordering.

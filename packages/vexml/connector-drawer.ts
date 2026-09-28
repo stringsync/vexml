@@ -147,26 +147,7 @@ export class ConnectorDrawer {
 		const { systemTop, systemBottom } = column;
 		if (systemTop && systemBottom && this.totalStaves > 1) {
 			if (column.isSystemStart) {
-				// Every multi-stave system gets a plain left line closing the staves' left
-				// edge. A notation+tab pair split across separate parts also gets a bracket
-				// (the cross-part analog of the single-part bracket), drawn just outside it.
-				new StaveConnector(systemTop, systemBottom)
-					.setType('singleLeft')
-					.setContext(this.context)
-					.draw();
-				if (this.staves.partsPairTabWithNotation(this.parts)) {
-					// The bracket's x comes entirely from its top stave; nudge that 4px left
-					// so the bracket sits just outside the system line with a small gap, then
-					// restore.
-					systemTop.setX(column.measureX - BRACKET_X_SHIFT);
-					new StaveConnector(systemTop, systemBottom)
-						.setType('bracket')
-						.setContext(this.context)
-						.draw();
-					systemTop.setX(column.measureX);
-				}
-				this.drawPartGroupConnectors(column);
-				this.drawPartGroupNames(column);
+				this.drawSystemStart(column);
 			}
 			// A repeat's bars run the full height of the system like any other barline, but its
 			// dots belong to each stave — and no connector type draws dots. So each stave draws
@@ -215,6 +196,65 @@ export class ConnectorDrawer {
 					.draw();
 			}
 		}
+	}
+
+	/*
+	 * The furniture left of a system's first measure that spans parts: the plain left line
+	 * closing the staves' left edge, the bracket of a notation+tab pair split across parts,
+	 * and the <part-group> connectors and names. A lone stave has none of it.
+	 */
+	drawSystemStart(column: ConnectorColumn): void {
+		const { systemTop, systemBottom } = column;
+		if (!systemTop || !systemBottom || this.totalStaves <= 1) {
+			return;
+		}
+		// Every multi-stave system gets a plain left line closing the staves' left
+		// edge. A notation+tab pair split across separate parts also gets a bracket
+		// (the cross-part analog of the single-part bracket), drawn just outside it.
+		new StaveConnector(systemTop, systemBottom)
+			.setType('singleLeft')
+			.setContext(this.context)
+			.draw();
+		if (this.staves.partsPairTabWithNotation(this.parts)) {
+			// The bracket's x comes entirely from its top stave; nudge that 4px left
+			// so the bracket sits just outside the system line with a small gap, then
+			// restore.
+			systemTop.setX(column.measureX - BRACKET_X_SHIFT);
+			new StaveConnector(systemTop, systemBottom)
+				.setType('bracket')
+				.setContext(this.context)
+				.draw();
+			systemTop.setX(column.measureX);
+		}
+		this.drawPartGroupConnectors(column);
+		this.drawPartGroupNames(column);
+	}
+
+	/*
+	 * Join a part's own staves at a system start with the symbol its <part-symbol> names
+	 * (brace by default; bracket for guitar notation+tab pairs; nothing for 'none').
+	 */
+	drawPartSymbol(
+		part: Part,
+		top: Stave,
+		bottom: Stave,
+		measureX: number,
+	): void {
+		const symbol = this.staves.symbolOf(part);
+		if (top === bottom || !symbol) {
+			return;
+		}
+		// Match the cross-part path: a bracket's x comes entirely from its top stave, so
+		// nudge it 4px left to sit just outside the system line with a small gap, then
+		// restore. A brace keeps its own placement.
+		if (symbol === 'bracket') {
+			top.setX(measureX - BRACKET_X_SHIFT);
+		}
+		new StaveConnector(top, bottom)
+			.setType(symbol)
+			.setContext(this.context)
+			.draw();
+		top.setX(measureX);
 	}
 
 	/*

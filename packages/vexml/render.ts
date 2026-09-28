@@ -5,6 +5,7 @@ import {
 	type Config,
 	type ConfigInput,
 	DEFAULT_CONFIG,
+	DEFAULT_PANORAMIC_LAYOUT,
 	DEFAULT_STANDARD_LAYOUT,
 	type Layout,
 } from './config';
@@ -51,7 +52,7 @@ export function render(
 	const layout: Layout =
 		layoutInput.type === 'standard'
 			? { ...DEFAULT_STANDARD_LAYOUT, ...layoutInput }
-			: layoutInput;
+			: { ...DEFAULT_PANORAMIC_LAYOUT, ...layoutInput };
 	const resolved: Config = { ...DEFAULT_CONFIG, ...config, layout };
 	if (input instanceof MDocument && resolved.gaps.length > 0) {
 		throw new Error('render: configured gaps require string or Blob input');

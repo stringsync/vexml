@@ -11,6 +11,7 @@ import {
 	PAGE_MARGIN_TOP,
 } from './constants';
 import { DrawPass, type DrawPassOptions } from './draw-pass';
+import type { Fold } from './fold';
 import type { Gaps } from './gaps';
 import type {
 	RawChordDiagram,
@@ -19,6 +20,7 @@ import type {
 } from './geometry-collector';
 import type { ScoreLayout } from './layout-planner';
 import type { ScoreReader } from './score-reader';
+import { SignatureFold } from './signature-fold';
 import type { SignatureTranslator } from './signature-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillResolver } from './spill-resolver';
@@ -32,6 +34,13 @@ export interface RawGeometry {
 	notes: RawNote[];
 	measures: RawMeasure[];
 	chordDiagrams: RawChordDiagram[];
+}
+
+/* What a draw hands back: the hit-index geometry, and the sticky panoramic fold when the
+ * config asks for one. */
+export interface DrawResult {
+	geometry: RawGeometry;
+	fold: Fold | null;
 }
 
 /*
@@ -59,13 +68,13 @@ export class ScoreDrawer {
 	 * placed at the boxes computed by the layout planner, with clefs/keys/time
 	 * signatures, notes, and the brace/barline connectors that group parts into
 	 * systems. Returns the hit-index geometry (notehead/fret/measure boxes) in final
-	 * score space.
+	 * score space, and the sticky fold when a panoramic layout asks for one.
 	 */
 	draw(
 		canvas: HTMLCanvasElement,
 		score: Score,
 		layout: ScoreLayout,
-	): RawGeometry {
+	): DrawResult {
 		const _parts = score.parts;
 		const { boxes, systemGap, width, floorHeight } = layout;
 
@@ -138,6 +147,8 @@ export class ScoreDrawer {
 				opts,
 			).run();
 
+		// The layout the final pass drew with: pass two re-spaces the staves.
+		let drawnLayout = layout;
 		let pass = runPass(layout, new Map(), scratchHeight, {});
 		const revision = this.spillResolver.revise(
 			layout.staveOffsets,
@@ -150,15 +161,15 @@ export class ScoreDrawer {
 			scratchHeight =
 				layout.top + topSlack + systemCount * (perSystem + grewBy);
 			renderer.resize(width, scratchHeight);
-			pass = runPass(
-				{ ...layout, systemStaveOffsets, floorHeight: activeFloorHeight },
-				pass.observedOverflow,
-				scratchHeight,
-				{
-					lyricDrops: pass.observedLyricDrops,
-					voltaLifts: pass.observedVoltaLifts,
-				},
-			);
+			drawnLayout = {
+				...layout,
+				systemStaveOffsets,
+				floorHeight: activeFloorHeight,
+			};
+			pass = runPass(drawnLayout, pass.observedOverflow, scratchHeight, {
+				lyricDrops: pass.observedLyricDrops,
+				voltaLifts: pass.observedVoltaLifts,
+			});
 		}
 		const { pageTop, pageBottom } = pass;
 
@@ -231,7 +242,7 @@ export class ScoreDrawer {
 		const toScore = (r: Rect) => r.translate(0, -cropTop);
 		const toScoreGlyph = (g: RawNote['glyph']) =>
 			g ? { ...g, y: g.y - cropTop } : null;
-		return {
+		const geometry: RawGeometry = {
 			bounds: new Rect(0, 0, width, cssHeight),
 			notes: pass.rawNotes.map((n) => ({
 				...n,
@@ -247,5 +258,32 @@ export class ScoreDrawer {
 				rect: toScore(d.rect),
 			})),
 		};
+		const { layout: layoutConfig } = this.config;
+		const sticky =
+			layoutConfig.type === 'panoramic' && layoutConfig.stickySignatures;
+		if (!sticky) {
+			return { geometry, fold: null };
+		}
+		// The first system's staves, where the draw pass put them (its top is layout.top +
+		// topSlack), shifted by the same crop as everything else.
+		const offsets =
+			drawnLayout.systemStaveOffsets?.get(0) ?? drawnLayout.staveOffsets;
+		const fold = new SignatureFold(
+			this.signatures,
+			this.reader,
+			this.staves,
+			score,
+			{
+				boxes,
+				rowYs: offsets.map(
+					(offset) => layout.top + topSlack + offset - cropTop,
+				),
+				totalStaves: layout.totalStaves,
+				height: cssHeight,
+				notationColor: this.config.fonts.notation?.color ?? '#000000',
+				textColor: this.config.fonts.text?.color ?? '#000000',
+			},
+		);
+		return { geometry, fold };
 	}
 }

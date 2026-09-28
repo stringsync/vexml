@@ -1,4 +1,9 @@
-import type { ConfigInput, Layout, StandardLayout } from '@stringsync/vexml';
+import type {
+	ConfigInput,
+	Layout,
+	PanoramicLayout,
+	StandardLayout,
+} from '@stringsync/vexml';
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
 import { Debouncer, Duration, SystemTimer } from 'webappwiz/time';
@@ -80,6 +85,17 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 		});
 	}
 
+	/* The panoramic counterpart of patchLayout: a no-op unless the panorama is showing. */
+	patchPanoramic(patch: Partial<PanoramicLayout>): void {
+		if (this.live.layout?.type !== 'panoramic') {
+			return;
+		}
+		this.set({
+			...this.live,
+			layout: { ...this.live.layout, ...patch, type: 'panoramic' },
+		});
+	}
+
 	clearLayout(key: keyof StandardLayout): void {
 		if (this.live.layout?.type !== 'standard') {
 			return;
@@ -118,9 +134,11 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 		const { layout } = this.live;
 		this.stashedLayout = undefined;
 		// The layout type is a view the user is looking at rather than a knob: resetting the
-		// sliders must not kick the score out of the panoramic view. The measured fit is put back
-		// by `set`, so resetting cannot collapse the scroll box either.
-		this.set({ ...(layout?.type === 'panoramic' ? { layout } : {}) });
+		// sliders must not kick the score out of the panoramic view, though its own knobs reset.
+		// The measured fit is put back by `set`, so resetting cannot collapse the scroll box either.
+		this.set(
+			layout?.type === 'panoramic' ? { layout: { type: 'panoramic' } } : {},
+		);
 	}
 
 	/* The measured scroll-box height, from the fit observer. Same value is a no-op, which is what
@@ -149,7 +167,9 @@ export class RenderConfig implements Eventful<RenderConfigEvents>, Resource {
 				: this.stashedLayout;
 		return (
 			SCALAR_KEYS.some((k) => this.live[k] !== undefined) ||
-			LAYOUT_KEYS.some((k) => layout?.[k] !== undefined)
+			LAYOUT_KEYS.some((k) => layout?.[k] !== undefined) ||
+			(this.live.layout?.type === 'panoramic' &&
+				this.live.layout.stickySignatures !== undefined)
 		);
 	}
 

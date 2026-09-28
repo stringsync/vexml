@@ -182,6 +182,41 @@ describe('Score', () => {
 		expect(host.listeners.get('scroll')).toBe(0); // host-scroll subscription released
 	});
 
+	it('points at nothing where something covers the score', () => {
+		// A sticky fold over the music: the note under it is still in the index, but the pointer
+		// is on the fold, so neither a click nor hover reaches it.
+		const target = measureBox(new Rect(0, 0, 10, 10));
+		const host = new FakeHost();
+		const index: HitTester = {
+			hitTest: () => target,
+			hitTestAll: () => [target],
+			hitTestWithin: () => [target],
+		};
+		const score = new Score(
+			host,
+			elementIndex(index),
+			new DefaultDecorations(host),
+			EMPTY_SEQUENCE,
+			host.scroller,
+			[],
+		);
+		const clicked: Array<Element | null> = [];
+		const hovered: Array<Element | null> = [];
+		score.events.on('click', (e) => clicked.push(e.target));
+		score.events.on('hover', (e) => hovered.push(e.target));
+
+		host.obscured = true;
+		host.dom.dispatchEvent(new FakePointerEvent('click', 5, 5));
+		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 5, 5));
+		expect(clicked).toEqual([null]);
+		expect(hovered).toEqual([]);
+
+		// Scrolled out from under the fold, the same point reaches the note again.
+		host.obscured = false;
+		host.scrolled();
+		expect(hovered).toEqual([target]);
+	});
+
 	it('touch pointers never hover', () => {
 		const seen: Array<Element | null> = [];
 		score.events.on('hover', (e) => seen.push(e.target));

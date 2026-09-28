@@ -498,6 +498,31 @@ export default function App() {
 						className="w-full bg-muted"
 					/>
 				</Field>
+				{/* Only a panorama scrolls its opening off the side, so only it can pin one. */}
+				{panoramic && (
+					<Field orientation="horizontal" className="justify-between gap-3">
+						<FieldLabel
+							htmlFor="stickySignatures"
+							className="font-normal text-muted-foreground"
+							title="Keep the clef and key signature pinned at the left edge, folded over the music, as the score scrolls sideways."
+						>
+							Sticky clef &amp; key
+						</FieldLabel>
+						<Switch
+							id="stickySignatures"
+							size="lg"
+							checked={
+								config.layout?.type === 'panoramic' &&
+								config.layout.stickySignatures === true
+							}
+							onCheckedChange={(checked) =>
+								model.config.patchPanoramic({
+									stickySignatures: checked === true,
+								})
+							}
+						/>
+					</Field>
+				)}
 				<Field
 					orientation="horizontal"
 					className="justify-between gap-3"

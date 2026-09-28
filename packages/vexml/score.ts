@@ -412,7 +412,7 @@ export class Score implements Eventful<ScoreEventMap> {
 						pointer.clientY,
 					);
 					this.dispatcher.dispatch(type, {
-						target: this.elements.at(point),
+						target: this.targetAt(pointer.clientX, pointer.clientY, point),
 						point,
 						native: pointer,
 					});
@@ -459,13 +459,24 @@ export class Score implements Eventful<ScoreEventMap> {
 		return domType === 'scroll' ? this.host.scrollTarget : this.host.dom;
 	}
 
+	// The element under a pointer, unless something covering the score (a sticky fold) is.
+	private targetAt(
+		clientX: number,
+		clientY: number,
+		point: { x: number; y: number },
+	): ReturnType<ElementIndex['at']> {
+		return this.host.obscures(clientX, clientY)
+			? null
+			: this.elements.at(point);
+	}
+
 	// Re-hit-test the last pointer position and emit hover only when the element changes — so a
 	// scroll or a move within the same element stays quiet, but sliding onto/off an element fires.
 	private recomputeHover(): void {
-		const point = this.lastClient
-			? this.host.toScoreSpace(this.lastClient.x, this.lastClient.y)
-			: null;
-		const target = point ? this.elements.at(point) : null;
+		const client = this.lastClient;
+		const point = client ? this.host.toScoreSpace(client.x, client.y) : null;
+		const target =
+			client && point ? this.targetAt(client.x, client.y, point) : null;
 		if (target !== this.hovered) {
 			this.hovered = target;
 			this.dispatcher.dispatch('hover', { target, point });

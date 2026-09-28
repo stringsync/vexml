@@ -4,7 +4,6 @@ import {
 	MetricsDefaults,
 	type RenderContext,
 	type Stave,
-	StaveConnector,
 	type StaveNote,
 	type TabNote,
 	type TabStave,
@@ -20,7 +19,6 @@ import { CollisionResolver } from './collision-resolver';
 import type { Config, Gap } from './config';
 import { type ConnectorColumn, ConnectorDrawer } from './connector-drawer';
 import {
-	BRACKET_X_SHIFT,
 	GAP_LABEL_FONT_SIZE,
 	LABEL_FONT_SIZE,
 	LABEL_GAP,
@@ -677,26 +675,13 @@ export class DrawPass {
 
 			// A part's own staves are joined at each system start by the symbol named in
 			// <part-symbol> (brace by default; bracket for guitar notation+tab pairs).
-			// 'none' suppresses the connector entirely.
-			const symbol = this.staves.symbolOf(part);
-			if (
-				partTop &&
-				partBottom &&
-				staves.length > 1 &&
-				this.isSystemStart &&
-				symbol
-			) {
-				// Match the cross-part path: a bracket's x comes entirely from its top
-				// stave, so nudge it 4px left to sit just outside the system line with a
-				// small gap, then restore. A brace keeps its own placement.
-				if (symbol === 'bracket') {
-					partTop.setX(this.measureX - BRACKET_X_SHIFT);
-				}
-				new StaveConnector(partTop, partBottom)
-					.setType(symbol)
-					.setContext(this.context)
-					.draw();
-				partTop.setX(this.measureX);
+			if (partTop && partBottom && staves.length > 1 && this.isSystemStart) {
+				this.connectorDrawer.drawPartSymbol(
+					part,
+					partTop,
+					partBottom,
+					this.measureX,
+				);
 			}
 
 			// Print the instrument name in the first system's reserved left indent,
