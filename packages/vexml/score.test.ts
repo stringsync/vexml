@@ -314,6 +314,14 @@ describe('Score', () => {
 		expect(() => loupe.configure({ height: 0 })).toThrow();
 	});
 
+	it("takes a paper color for a loupe, and null to go back to the score's", () => {
+		const loupe = score.createLoupe({ paper: '#fdf6e3' });
+		expect(host.loupes[0]?.options.paper).toBe('#fdf6e3');
+		loupe.configure({ paper: null });
+		expect(host.loupes[0]?.options.paper).toBeNull();
+		expect(() => loupe.configure({ paper: 1 as unknown as string })).toThrow();
+	});
+
 	it('hands back the element index it was built with', () => {
 		const index = elementIndex(new FakeHitTester(null));
 		const host = new FakeHost();

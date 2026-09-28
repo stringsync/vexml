@@ -20,8 +20,9 @@ export class ManagedLoupe implements Loupe {
 	private readonly ctx: CanvasRenderingContext2D;
 	// The bitmap's device pixel ratio, 0 to force a resize on the next paint.
 	private dpr = 0;
-	// The paper under the magnified score, read once per showing: the engraving itself is
-	// transparent, and resolving the page's background walks computed styles. Null while hidden.
+	// The paper under the magnified score, the paper option or else the stage's, read once per
+	// showing: the engraving itself is transparent, and resolving the page's background walks
+	// computed styles. Null while hidden.
 	private paper: string | null = null;
 	// What the latest show() asked for, painted on the next frame; null once hidden.
 	private shown: {
@@ -63,13 +64,13 @@ export class ManagedLoupe implements Loupe {
 		this.paper = null;
 		const exit = this.animate(false);
 		if (!exit) {
-			this.canvas.style.display = 'none';
+			this.close();
 			return;
 		}
 		this.exit = exit;
 		exit.onfinish = () => {
 			this.exit = null;
-			this.canvas.style.display = 'none';
+			this.close();
 		};
 	}
 
@@ -77,6 +78,9 @@ export class ManagedLoupe implements Loupe {
 		this.options = resolveLoupeOptions(this.options, options);
 		this.style();
 		this.dpr = 0;
+		if (this.paper !== null) {
+			this.paper = this.options.paper ?? this.stage.paperColor();
+		}
 		if (this.shown) {
 			this.frame ??= requestAnimationFrame(() => this.paint());
 		}
@@ -113,16 +117,19 @@ export class ManagedLoupe implements Loupe {
 			this.canvas.height = Math.round(height * dpr);
 		}
 		const entering = this.paper === null;
-		const paper = this.paper ?? this.stage.paperColor();
+		const paper = this.paper ?? this.options.paper ?? this.stage.paperColor();
 		if (entering) {
 			this.paper = paper;
 			this.exit?.cancel();
 			this.exit = null;
-			this.canvas.style.display = '';
+			this.open();
 		}
 		const frame = this.stage.frame();
 		const ctx = this.ctx;
 		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		// Clear first: a paper with any transparency would otherwise leave the last frame showing
+		// through, smearing the score across the loupe as it moves.
+		ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 		ctx.fillStyle = paper;
 		ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 		// Device px per score px: the score's on-screen scale, magnified.
@@ -137,7 +144,6 @@ export class ManagedLoupe implements Loupe {
 		ctx.setTransform(kx, 0, 0, ky, -region.x * kx, -region.y * ky);
 		this.stage.paintScore(ctx, region);
 
-		const doc = document.documentElement;
 		const point = {
 			x: frame.left + center.x * frame.sx,
 			y: frame.top + center.y * frame.sy,
@@ -150,7 +156,7 @@ export class ManagedLoupe implements Loupe {
 				right: frame.left + (anchor.x + anchor.w) * frame.sx,
 			},
 			point,
-			{ width: doc.clientWidth, height: doc.clientHeight },
+			visibleViewport(),
 		);
 		this.canvas.style.transform = `translate(${left}px, ${top}px)`;
 		// Scale about the magnified point, so the loupe grows out of (and shrinks into) what it shows.
@@ -177,10 +183,48 @@ export class ManagedLoupe implements Loupe {
 		});
 	}
 
+	// Put the loupe up: in the top layer where the browser has one (see Stage.createLoupe), above
+	// everything on the page, a modal dialog the score sits in included.
+	private open(): void {
+		this.canvas.style.display = '';
+		if (this.canvas.popover && !this.canvas.matches(':popover-open')) {
+			this.canvas.showPopover();
+		}
+	}
+
+	private close(): void {
+		this.canvas.style.display = 'none';
+		if (this.canvas.popover && this.canvas.matches(':popover-open')) {
+			this.canvas.hidePopover();
+		}
+	}
+
 	private style(): void {
 		const { width, height, radius } = this.options;
 		this.canvas.style.width = `${width}px`;
 		this.canvas.style.height = `${height}px`;
 		this.canvas.style.borderRadius = `${radius}px`;
 	}
+}
+
+// The part of the page on screen, in the client px a fixed-position box is placed in: the visual
+// viewport, which a pinch zoom or a page wider than the screen shrinks and shifts within the
+// layout viewport, else the layout viewport itself.
+function visibleViewport(): {
+	left: number;
+	top: number;
+	width: number;
+	height: number;
+} {
+	const visual = window.visualViewport;
+	if (visual) {
+		return {
+			left: visual.offsetLeft,
+			top: visual.offsetTop,
+			width: visual.width,
+			height: visual.height,
+		};
+	}
+	const doc = document.documentElement;
+	return { left: 0, top: 0, width: doc.clientWidth, height: doc.clientHeight };
 }

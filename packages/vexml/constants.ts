@@ -509,6 +509,7 @@ export const LOUPE_OPTIONS: Required<LoupeOptions> = {
 	zoom: 1.5,
 	radius: 16,
 	gap: 8,
+	paper: null,
 };
 
 /** How long a loupe takes to grow out of its anchor when shown, and to shrink back into it when

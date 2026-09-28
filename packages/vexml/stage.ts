@@ -435,11 +435,19 @@ export class Stage implements Viewport, Host, ScrollHost {
 	createLoupe(options: Required<LoupeOptions>): ManagedLoupe {
 		const canvas = document.createElement('canvas');
 		// On the body, not in the container: fixed to the viewport over the whole page, so neither
-		// the container's overflow nor a transformed ancestor can clip or re-anchor it.
+		// the container's overflow nor a transformed ancestor can clip or re-anchor it. A manual
+		// popover goes in the top layer when shown, above every z-index on the page and any modal
+		// dialog; the popover's own box styles are undone. Without popovers, the highest z-index.
 		canvas.className = 'vexml-loupe';
+		if ('popover' in canvas) {
+			canvas.popover = 'manual';
+			canvas.style.margin = '0';
+			canvas.style.padding = '0';
+			canvas.style.border = 'none';
+			canvas.style.background = 'transparent';
+		}
 		canvas.style.position = 'fixed';
-		canvas.style.left = '0';
-		canvas.style.top = '0';
+		canvas.style.inset = '0 auto auto 0';
 		canvas.style.zIndex = '2147483647';
 		canvas.style.pointerEvents = 'none';
 		canvas.style.willChange = 'transform';
@@ -654,10 +662,11 @@ export class Stage implements Viewport, Host, ScrollHost {
 	}
 
 	// The paper under the fold (or a loupe): the configured background, else the nearest painted
-	// background behind the container, else white. The fold has to be opaque to cover the music
-	// under it.
+	// background behind the container, else white. A transparent background counts as none: a page
+	// that paints its own paper behind the score (e.g. from a pseudo-element, which no walk up the
+	// ancestors can see) passes one. The fold has to be opaque to cover the music under it.
 	paperColor(): string {
-		if (this.backgroundColor) {
+		if (this.backgroundColor && !isClear(this.backgroundColor)) {
 			return this.backgroundColor;
 		}
 		for (
@@ -666,11 +675,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 			el = el.parentElement
 		) {
 			const color = getComputedStyle(el).backgroundColor;
-			if (
-				color &&
-				color !== 'transparent' &&
-				!/^rgba\(.*,\s*0\)$/.test(color)
-			) {
+			if (color && !isClear(color)) {
 				return color;
 			}
 		}
@@ -831,4 +836,27 @@ export class Stage implements Viewport, Host, ScrollHost {
 			':where(.vexml-canvas.vexml-fit){max-width:100%;height:auto;aspect-ratio:var(--vexml-aspect)}';
 		document.head.appendChild(style);
 	}
+}
+
+// A scratch pixel for reading a color's alpha, made on first use.
+let probe: CanvasRenderingContext2D | null = null;
+
+// Whether a CSS color paints nothing: fully transparent in any syntax, or not a color at all.
+// Painting it into a pixel reads its alpha, which no string match over the color syntaxes can.
+function isClear(color: string): boolean {
+	if (!probe) {
+		const canvas = document.createElement('canvas');
+		canvas.width = 1;
+		canvas.height = 1;
+		probe = canvas.getContext('2d', { willReadFrequently: true });
+		if (!probe) {
+			return false;
+		}
+	}
+	probe.clearRect(0, 0, 1, 1);
+	// An invalid color leaves the fill style as it was: transparent, so it counts as clear.
+	probe.fillStyle = 'transparent';
+	probe.fillStyle = color;
+	probe.fillRect(0, 0, 1, 1);
+	return probe.getImageData(0, 0, 1, 1).data[3] === 0;
 }

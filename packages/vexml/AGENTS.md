@@ -174,7 +174,7 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 - **Playback timeline, repeats unrolled, swing** — `sequence-factory.ts`, `sequence.ts`, `measure-sequence-iterator.ts` (repeat/volta expansion), `tempo-map.ts`, `swing-warp.ts`
 - **The moving cursor and playhead visibility** — `cursor-controller.ts`, `cursor-view.ts`, `playhead.ts` (a DOM `marker.ts`/`managed-marker.ts`, not a canvas), `cursor-host.ts`, `cursor-host-adapter.ts`
 - **Scrolling and the visible window** — `scroller.ts`, `scroll-controller.ts`, `viewport.ts`
-- **The DOM the score lives in (container, canvas, overlays, a caller-owned `scrollContainer`)** — `host.ts`, `stage.ts`, `layer.ts`, `managed-layer.ts` (bitmap axis and area caps), `lazy-layer.ts`, `marker.ts`, `managed-marker.ts` (caller markers from `Score.createMarker` too), `loupe.ts`, `managed-loupe.ts` (the magnifier; `Stage.paintScore` draws into it), `loupe-placement.ts` (above its anchor, else to its right, else left), `recording-context.ts`, `layer-host.ts`, `scroll-host.ts`
+- **The DOM the score lives in (container, canvas, overlays, a caller-owned `scrollContainer`)** — `host.ts`, `stage.ts`, `layer.ts`, `managed-layer.ts` (bitmap axis and area caps), `lazy-layer.ts`, `marker.ts`, `managed-marker.ts` (caller markers from `Score.createMarker` too), `loupe.ts`, `managed-loupe.ts` (the magnifier, a top-layer popover; `Stage.paintScore` draws into it over `Stage.paperColor`), `loupe-placement.ts` (above its anchor, else to its right, else left, within the visual viewport), `recording-context.ts`, `layer-host.ts`, `scroll-host.ts`
 
 ## Editing implementation contracts
 

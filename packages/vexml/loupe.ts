@@ -12,6 +12,10 @@ export interface LoupeOptions {
 	radius?: number;
 	/** The space kept between the loupe and the anchor it is shown against. */
 	gap?: number;
+	/** The color behind the magnified score, for a page that paints its own paper behind a
+	 * transparent score. Null (the default) takes the score's backgroundColor, else the nearest
+	 * opaque background behind it, else white. */
+	paper?: string | null;
 }
 
 /* A magnifier floating over the page: a small fixed-position canvas that repaints the score around
@@ -35,8 +39,8 @@ export interface LoupeHost {
 	createLoupe(options: Required<LoupeOptions>): Loupe;
 }
 
-/* Lay `patch` over `base`, rejecting a size or zoom that isn't positive and a negative radius or
- * gap, so a bad value fails where it was passed. */
+/* Lay `patch` over `base`, rejecting a size or zoom that isn't positive, a negative radius or gap,
+ * and a paper that isn't a string or null, so a bad value fails where it was passed. */
 export function resolveLoupeOptions(
 	base: Required<LoupeOptions>,
 	patch: LoupeOptions,
@@ -49,7 +53,7 @@ export function resolveLoupeOptions(
 		...base,
 		...(Object.fromEntries(given) as LoupeOptions),
 	};
-	const { width, height, zoom, radius, gap } = options;
+	const { width, height, zoom, radius, gap, paper } = options;
 	const positive = [width, height, zoom].every(
 		(v) => Number.isFinite(v) && v > 0,
 	);
@@ -58,6 +62,9 @@ export function resolveLoupeOptions(
 		throw new Error(
 			'vexml: loupe width, height and zoom must be positive, radius and gap non-negative',
 		);
+	}
+	if (paper !== null && typeof paper !== 'string') {
+		throw new Error('vexml: loupe paper must be a CSS color or null');
 	}
 	return options;
 }

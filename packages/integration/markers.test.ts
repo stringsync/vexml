@@ -138,4 +138,93 @@ describe('markers', () => {
 		expect(result.hidden).toBe('none');
 		expect(result.removed).toBe(true);
 	});
+
+	// A page painting its own paper behind a transparent score, with the score shrunk to under half
+	// size: each frame must replace the last, and the magnified bitmaps must line up with markers.
+	it.concurrent('repaints cleanly over transparent paper and lines layers up with markers when shrunk', async () => {
+		const { result } = await testing.eval(
+			'note.musicxml',
+			{ backgroundColor: 'transparent' },
+			async ({ score, container }) => {
+				const base = container.querySelector<HTMLCanvasElement>(
+					'canvas:not(.vexml-layer)',
+				);
+				if (!base) {
+					throw new Error('base canvas not found');
+				}
+				base.style.width = `${base.getBoundingClientRect().width * 0.44}px`;
+				base.style.height = 'auto';
+				const note = score.getElements().notes()[0];
+				if (!note) {
+					throw new Error('no note to magnify');
+				}
+				// A content layer's red block with a marker's blue block butted against its right edge.
+				const at = { x: note.rect.x, y: note.rect.y + note.rect.h / 2 };
+				const layer = score.addLayer('content');
+				layer.ctx.fillStyle = 'rgb(255, 0, 0)';
+				layer.ctx.fillRect(at.x - 20, at.y - 20, 20, 40);
+				const block = score.createMarker(1);
+				block.show({ x: at.x, y: at.y - 20, w: 20, h: 40 }, 'rgb(0, 0, 255)');
+				// Off the score, where only markers paint: a translucent tint behind the engraving.
+				const off = { x: -1000, y: -1000 };
+				const tint = score.createMarker(-1);
+				tint.show(
+					{ x: off.x - 50, y: off.y - 50, w: 100, h: 100 },
+					'rgb(0 255 0 / 0.4)',
+				);
+
+				const loupe = score.createLoupe({ width: 40, height: 20, zoom: 2 });
+				const canvas =
+					document.querySelector<HTMLCanvasElement>('.vexml-loupe');
+				const ctx = canvas?.getContext('2d');
+				if (!canvas || !ctx) {
+					throw new Error('loupe canvas not found');
+				}
+				const pixel = (dx: number) =>
+					[
+						...ctx.getImageData(
+							Math.floor(canvas.width / 2) + dx,
+							Math.floor(canvas.height / 2),
+							1,
+							1,
+						).data,
+					].join(',');
+				const paint = async (anchor: { x: number; y: number }) => {
+					loupe.show({ ...anchor, w: 0, h: 0 }, anchor);
+					await new Promise(requestAnimationFrame);
+				};
+
+				await paint(at);
+				const dpr = window.devicePixelRatio;
+				const edge = { left: pixel(-3 * dpr), right: pixel(2 * dpr) };
+				const sx =
+					base.getBoundingClientRect().width /
+					parseFloat(base.style.getPropertyValue('--vexml-width'));
+				tint.hide();
+				await paint(off);
+				// Nothing but paper once the blocks are out of view: white, as nothing behind is painted.
+				const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+				const unpapered = pixels.filter((v) => v !== 255).length;
+				tint.show(
+					{ x: off.x - 50, y: off.y - 50, w: 100, h: 100 },
+					'rgb(0 255 0 / 0.4)',
+				);
+				await paint(off);
+				const tinted = pixel(0);
+				loupe.configure({ paper: 'rgb(0, 0, 0)' });
+				await new Promise(requestAnimationFrame);
+				const papered = pixel(0);
+				const topLayer = canvas.matches(':popover-open');
+				score.dispose();
+				return { edge, sx, unpapered, tinted, papered, topLayer };
+			},
+		);
+
+		expect(result.sx).toBeLessThan(0.5);
+		expect(result.edge).toEqual({ left: '255,0,0,255', right: '0,0,255,255' });
+		expect(result.unpapered).toBe(0);
+		expect(result.tinted).toBe('153,255,153,255');
+		expect(result.papered).toBe('0,102,0,255');
+		expect(result.topLayer).toBe(true);
+	});
 });
