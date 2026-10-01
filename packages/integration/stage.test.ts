@@ -9,9 +9,9 @@ describe('stage', () => {
 			'structure_single_stave.musicxml',
 			{},
 			async ({ score, container }) => {
-				const canvas = container.querySelector('canvas');
+				const canvas = container.querySelector('.vexml-canvas');
 				if (!canvas) {
-					throw new Error('base canvas not found');
+					throw new Error('score element not found');
 				}
 				const rendered = {
 					container: getComputedStyle(container).userSelect,
@@ -161,9 +161,7 @@ describe('stage', () => {
 			'structure_single_stave.musicxml',
 			{},
 			async ({ container }) => {
-				const canvas = container.querySelector(
-					'.vexml-canvas',
-				) as HTMLCanvasElement;
+				const canvas = container.querySelector('.vexml-canvas') as HTMLElement;
 				const intrinsic = parseFloat(
 					canvas.style.getPropertyValue('--vexml-width'),
 				);
@@ -203,9 +201,7 @@ describe('stage', () => {
 			'structure_single_stave.musicxml',
 			{},
 			async ({ container }) => {
-				const canvas = container.querySelector(
-					'.vexml-canvas',
-				) as HTMLCanvasElement;
+				const canvas = container.querySelector('.vexml-canvas') as HTMLElement;
 				const intrinsicW = parseFloat(
 					canvas.style.getPropertyValue('--vexml-width'),
 				);

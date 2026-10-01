@@ -6,13 +6,14 @@ import { DurationTranslator } from './duration-translator';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { ElementFactory } from './element-factory';
 import { FakeHost } from './fake-host';
+import { FakePaintProbe } from './fake-paint-probe';
 import { FakeScoreParser } from './fake-score-parser';
 import type { Fold } from './fold';
 import { Gaps } from './gaps';
 import { LayoutPlanner } from './layout-planner';
 import { NoopFontLoader } from './noop-font-loader';
 import { NotationTranslator } from './notation-translator';
-import { ScoreDrawer } from './score-drawer';
+import { type Engraving, ScoreDrawer } from './score-drawer';
 import { ScoreReader } from './score-reader';
 import { type RenderStage, ScoreRenderer } from './score-renderer';
 import { SequenceFactory } from './sequence-factory';
@@ -23,13 +24,19 @@ import { StavePlan } from './stave-plan';
 import { TabVoiceTranslator } from './tab-voice-translator';
 import { VoiceTranslator } from './voice-translator';
 
-// A headless stage: the Host fake plus the two DOM nodes RenderStage adds. The empty-parts path
+// A headless stage: the Host fake plus what RenderStage adds. The empty-parts path
 // never touches container/base, so inert placeholders are enough — and any layout or draw attempt
 // would crash on them, which is what proves the path was skipped.
 class FakeStage extends FakeHost implements RenderStage {
 	readonly container = {} as HTMLDivElement;
-	readonly base = {} as HTMLCanvasElement;
+	readonly base = {} as HTMLElement;
+	readonly probe = new FakePaintProbe();
 	readonly folds: Fold[] = [];
+	readonly engravings: Engraving[] = [];
+
+	engrave(engraving: Engraving): void {
+		this.engravings.push(engraving);
+	}
 
 	setFold(fold: Fold): void {
 		this.folds.push(fold);

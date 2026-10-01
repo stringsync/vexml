@@ -1,6 +1,7 @@
 import { Dispatcher } from 'webappwiz/events';
-import type { Rect } from 'webappwiz/geometry';
-import { FOLD_SHADOW_WIDTH } from './constants';
+import { Rect } from 'webappwiz/geometry';
+import { CanvasPaintProbe } from './canvas-paint-probe';
+import { FOLD_SHADOW_WIDTH, TILE_BUDGET, TILE_SIZE } from './constants';
 import type { Fold } from './fold';
 import type { Host, HostEventMap } from './host';
 import type { Layer, LayerKind } from './layer';
@@ -8,8 +9,12 @@ import type { LoupeOptions } from './loupe';
 import { ManagedLayer } from './managed-layer';
 import { ManagedLoupe } from './managed-loupe';
 import { ManagedMarker, type MarkerFrame } from './managed-marker';
+import type { PaintProbe } from './paint-probe';
+import type { Engraving } from './score-drawer';
 import { ScrollController } from './scroll-controller';
 import type { ScrollHost } from './scroll-host';
+import { TiledLayer } from './tiled-layer';
+import { TiledSurface, type TiledSurfaceOptions } from './tiled-surface';
 import type { Viewport } from './viewport';
 
 /* The caller's container options from config. A set height/width cap turns the container into a
@@ -31,14 +36,15 @@ export interface ScrollBox {
 /*
  * The host: the DOM vexml builds inside the caller's container, and the coordinate authority
  * between score space (where target rects live) and client/page space (where pointer events and
- * DOM popups live). The caller hands render() a <div>; the Stage owns the canvas it draws the
- * score onto and never exposes it to callers — they see only the Score.
+ * DOM popups live). The caller hands render() a <div>; the Stage owns the element the score is
+ * shown in and never exposes it to callers: they see only the Score.
  *
- * The base canvas is a plain in-flow child, top-aligned so the container sizes to the engraving
- * exactly, with no empty descender strip under it. Custom layers stack over it as absolute
- * overlays. The transform falls out of the base canvas's own getBoundingClientRect: score space is
- * its CSS-pixel space with the origin at its top-left. Reading the live rect each call means page
- * scroll and any CSS scaling of the canvas are handled for free.
+ * The base element (`.vexml-canvas`) is an in-flow inline box, top-aligned so the container sizes
+ * to the engraving exactly, with no empty descender strip under it. The engraving is painted into
+ * it as a tiled surface (see TiledSurface): one canvas can't hold a long score. Custom layers stack
+ * over it as absolute overlays. The transform falls out of the base element's own
+ * getBoundingClientRect: score space is its CSS-pixel space with the origin at its top-left.
+ * Reading the live rect each call means page scroll and any CSS scaling of it are handled for free.
  */
 
 export class Stage implements Viewport, Host, ScrollHost {
@@ -48,7 +54,14 @@ export class Stage implements Viewport, Host, ScrollHost {
 	// restored styles and disposes unwind LIFO instead of stomping the newer Stage's setup.
 	private static readonly byContainer = new WeakMap<HTMLDivElement, Stage>();
 
-	readonly base: HTMLCanvasElement;
+	readonly base: HTMLDivElement;
+	readonly probe: PaintProbe;
+	// The engraving, painted into the base element.
+	private readonly engraving: TiledSurface;
+	// The score-px region tiled surfaces paint, from the last measure of the view (see updateView).
+	private view: Rect | null = null;
+	// A view update waiting on the next frame, so a scroll measures and paints once per frame.
+	private viewRequest: number | null = null;
 	// The element whose scrollport a cursor measures and scrolls: the caller's scrollContainer when
 	// they render into a box inside their own scroller, else the container itself.
 	private readonly scrollElement: HTMLElement;
@@ -68,13 +81,18 @@ export class Stage implements Viewport, Host, ScrollHost {
 			}
 		}
 		this.updateFold();
+		this.requestView();
 		this.dispatcher.dispatch('scroll');
+	};
+	// The part of the score in view follows the window's size too, so a resize repaints like a scroll.
+	private readonly onWindowResize = () => {
+		this.requestView();
 	};
 	private readonly prevPosition: string;
 	private readonly prevIsolation: string;
 	// Inline styles this stage set on the container, with their prior values, restored on dispose.
 	private readonly restoreStyles: Array<[string, string]> = [];
-	private readonly layers = new Set<ManagedLayer>();
+	private readonly layers = new Set<ManagedLayer | TiledLayer>();
 	private readonly markers = new Set<ManagedMarker>();
 	private readonly loupes = new Set<ManagedLoupe>();
 	// Counts overlays (layers and markers) as they're appended, so a loupe can paint equal z-indexes
@@ -162,17 +180,24 @@ export class Stage implements Viewport, Host, ScrollHost {
 		if (scroll.fit) {
 			this.setStyle('text-align', 'center');
 		}
-		this.base = document.createElement('canvas');
+		this.base = document.createElement('div');
 		// `vexml-canvas` is the stable hook callers style to size/scale the rendered score. They style
-		// this class (or the container), never the bare element — that keeps the overlay canvases
+		// this class (or the container), never the bare element, which keeps the overlays
 		// (`vexml-layer`) out of their selectors. The default on-screen size comes from the injected
 		// zero-specificity `:where(.vexml-canvas)` rule, so a caller's own `.vexml-canvas` rule overrides
 		// it without `!important`. `vexml-fit` adds the scale-to-container behavior (see ensureCanvasStyles).
+		// The name predates the tiles: it was one canvas, and callers' stylesheets still select it.
 		this.base.className = scroll.fit
 			? 'vexml-canvas vexml-fit'
 			: 'vexml-canvas';
+		// Inline, not in the overridable rule: the tiles inside are laid out against this box.
+		this.base.style.display = 'inline-block';
+		this.base.style.position = 'relative';
+		this.base.style.overflow = 'hidden';
 		this.ensureCanvasStyles();
 		container.appendChild(this.base);
+		this.probe = new CanvasPaintProbe();
+		this.engraving = new TiledSurface(this.base, this.probe, surfaceOptions());
 
 		// Observe BOTH the container and the base canvas. Placement (placeLayer and the score<->client
 		// frame) is derived from the base canvas's rendered box, which can change *without* the
@@ -207,6 +232,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 			capture: true,
 			passive: true,
 		});
+		window.addEventListener('resize', this.onWindowResize);
 	}
 
 	// The cap is pure container CSS — the engraving doesn't depend on it — so this is a style write,
@@ -383,27 +409,65 @@ export class Stage implements Viewport, Host, ScrollHost {
 	}
 
 	createLayer(kind: LayerKind, zIndex?: number): Layer {
-		const canvas = document.createElement('canvas');
+		// A viewport layer is only as big as the visible box, so one canvas holds it. A content or
+		// background layer spans the score, so it tiles like the engraving does.
+		const element = document.createElement(
+			kind === 'viewport' ? 'canvas' : 'div',
+		);
 		// Overlay absolutely positioned within the (positioned) container. Purely visual: pointer
-		// events pass through to the container, where the Score hit-tests them — layers never capture
+		// events pass through to the container, where the Score hit-tests them; layers never capture
 		// input. `vexml-layer` marks it as vexml-owned so caller `vexml-canvas` styles skip it.
-		canvas.className = 'vexml-layer';
-		canvas.style.position = 'absolute';
-		canvas.style.pointerEvents = 'none';
-		// The base canvas is in-flow at z-index 0. An explicit zIndex orders the layer against it
+		element.className = 'vexml-layer';
+		element.style.position = 'absolute';
+		element.style.pointerEvents = 'none';
+		// The base element sits at z-index 0. An explicit zIndex orders the layer against it
 		// (negative drops behind, where it shows through the score's transparent pixels); otherwise a
 		// background layer defaults behind and everything else stacks over it. Equal z-indexes fall
 		// back to DOM order, which is creation order since layers are appended as created.
 		const z = zIndex ?? (kind === 'background' ? -1 : undefined);
 		if (z !== undefined) {
-			canvas.style.zIndex = String(z);
+			element.style.zIndex = String(z);
 		}
-		const layer = new ManagedLayer(kind, canvas, this, z ?? 0, this.overlays++);
-		this.container.appendChild(canvas);
+		const layer =
+			element instanceof HTMLCanvasElement
+				? new ManagedLayer(kind, element, this, z ?? 0, this.overlays++)
+				: new TiledLayer(
+						kind,
+						element as HTMLDivElement,
+						new TiledSurface(element, this.probe, surfaceOptions()),
+						this,
+						z ?? 0,
+						this.overlays++,
+					);
+		this.container.appendChild(element);
 		this.layers.add(layer);
 		this.sizeBitmap(layer);
 		this.placeLayer(layer);
+		if (layer instanceof TiledLayer && this.view) {
+			layer.surface.show(this.view);
+		}
 		return layer;
+	}
+
+	/* Show the recorded engraving in the base element. */
+	engrave(engraving: Engraving): void {
+		const { ops, width, height, origin } = engraving;
+		// Publish the score-space (intrinsic) CSS size as custom properties rather than as inline
+		// width/height. The stage's default `:where(.vexml-canvas)` rule consumes them for the
+		// on-screen size, but at zero specificity, so a caller's own `.vexml-canvas { width: 100% }`
+		// overrides it without `!important`, letting the score scale to its container.
+		// frame()/sizeBitmap read these same properties for the intrinsic dimensions the
+		// score<->client transform needs.
+		//
+		// --vexml-aspect is the exact score-space width/height ratio. The rules use it as
+		// `aspect-ratio` so a height:auto box keeps exactly the intrinsic size at full width (the
+		// score<->client scale stays exactly 1) yet still scales proportionally when narrowed.
+		this.base.style.setProperty('--vexml-width', `${width}px`);
+		this.base.style.setProperty('--vexml-height', `${height}px`);
+		this.base.style.setProperty('--vexml-aspect', `${width / height}`);
+		this.engraving.load(ops, width, height, origin);
+		this.fitEngraving();
+		this.updateView();
 	}
 
 	createMarker(zIndex?: number): ManagedMarker {
@@ -466,35 +530,36 @@ export class Stage implements Viewport, Host, ScrollHost {
 	 * z-indexes in DOM order. Viewport layers and the fold are chrome over the view, not the score.
 	 */
 	paintScore(ctx: CanvasRenderingContext2D, region: Rect): void {
-		const overlays: Array<ManagedLayer | ManagedMarker> = [...this.markers];
+		const overlays: Array<TiledLayer | ManagedMarker> = [...this.markers];
 		for (const layer of this.layers) {
-			if (layer.kind !== 'viewport') {
+			if (layer instanceof TiledLayer) {
 				overlays.push(layer);
 			}
 		}
 		overlays.sort((a, b) => a.zIndex - b.zIndex || a.order - b.order);
-		const paint = (overlay: ManagedLayer | ManagedMarker) => {
+		const paint = (overlay: TiledLayer | ManagedMarker) => {
 			if (overlay instanceof ManagedMarker) {
 				overlay.paint(ctx);
 			} else {
-				this.paintBitmap(ctx, overlay.canvas, region);
+				overlay.surface.paintInto(ctx, region);
 			}
 		};
 		let behind = true;
 		for (const overlay of overlays) {
 			if (behind && overlay.zIndex >= 0) {
 				behind = false;
-				this.paintBitmap(ctx, this.base, region);
+				this.engraving.paintInto(ctx, region);
 			}
 			paint(overlay);
 		}
 		if (behind) {
-			this.paintBitmap(ctx, this.base, region);
+			this.engraving.paintInto(ctx, region);
 		}
 	}
 
 	relayoutLayers(): void {
 		this.placeFold();
+		this.fitEngraving();
 		if (this.markers.size > 0) {
 			const frame = this.markerFrame();
 			for (const marker of this.markers) {
@@ -510,10 +575,11 @@ export class Stage implements Viewport, Host, ScrollHost {
 			}
 			this.placeLayer(layer);
 		}
+		this.updateView();
 	}
 
-	// Deregister a layer disposing itself (called from ManagedLayer.dispose).
-	forget(layer: ManagedLayer): void {
+	// Deregister a layer disposing itself (called from its dispose).
+	forget(layer: ManagedLayer | TiledLayer): void {
 		this.layers.delete(layer);
 	}
 
@@ -534,10 +600,15 @@ export class Stage implements Viewport, Host, ScrollHost {
 			return;
 		}
 		this.disposed = true;
+		if (this.viewRequest !== null) {
+			cancelAnimationFrame(this.viewRequest);
+			this.viewRequest = null;
+		}
 		this.resizeObserver.disconnect();
 		window.removeEventListener('scroll', this.onWindowScroll, {
 			capture: true,
 		});
+		window.removeEventListener('resize', this.onWindowResize);
 		this.dispatcher.dispose();
 		this.scrollController?.dispose();
 		for (const layer of [...this.layers]) {
@@ -550,11 +621,10 @@ export class Stage implements Viewport, Host, ScrollHost {
 			loupe.dispose();
 		}
 		this.clearFold();
+		// Frees the tile bitmaps now, not at the next GC: a re-render has the outgoing and incoming
+		// scores alive together, and iOS WebKit kills the page past its canvas budget.
+		this.engraving.dispose();
 		this.base.remove();
-		// Free the engraving's bitmap now, not at the next GC: a re-render has the outgoing and
-		// incoming scores alive together, and iOS WebKit kills the page past its canvas budget.
-		this.base.width = 0;
-		this.base.height = 0;
 		this.container.style.position = this.prevPosition;
 		this.container.style.isolation = this.prevIsolation;
 		for (const [prop, value] of this.restoreStyles) {
@@ -682,40 +752,6 @@ export class Stage implements Viewport, Host, ScrollHost {
 		return '#ffffff';
 	}
 
-	// Draw the part of a score-sized bitmap (the base canvas or a content layer, whatever its
-	// resolution) under `region`, in score px. The source rect is clipped to the bitmap by hand:
-	// older WebKit rejects a drawImage source rect that runs off the image.
-	private paintBitmap(
-		ctx: CanvasRenderingContext2D,
-		bitmap: HTMLCanvasElement,
-		region: Rect,
-	): void {
-		const { width, height } = this.intrinsicSize();
-		if (width <= 0 || height <= 0 || bitmap.width <= 0 || bitmap.height <= 0) {
-			return;
-		}
-		const x0 = Math.max(0, region.x);
-		const y0 = Math.max(0, region.y);
-		const x1 = Math.min(width, region.x + region.w);
-		const y1 = Math.min(height, region.y + region.h);
-		if (x1 <= x0 || y1 <= y0) {
-			return;
-		}
-		const bx = bitmap.width / width;
-		const by = bitmap.height / height;
-		ctx.drawImage(
-			bitmap,
-			x0 * bx,
-			y0 * by,
-			(x1 - x0) * bx,
-			(y1 - y0) * by,
-			x0,
-			y0,
-			x1 - x0,
-			y1 - y0,
-		);
-	}
-
 	// Set a container style, remembering its prior value so dispose restores it (each prop set once).
 	private setStyle(prop: string, value: string): void {
 		// Record the caller's original once per property: restoreStyles replays forward on dispose, so
@@ -729,13 +765,13 @@ export class Stage implements Viewport, Host, ScrollHost {
 		this.container.style.setProperty(prop, value);
 	}
 
-	// Size a layer's drawing bitmap. A content layer's bitmap is fixed to the engraved score (the
-	// base canvas's intrinsic CSS box), so the caller always draws in score px — its element is then
+	// Size a layer's drawing surface. A content layer is fixed to the engraved score (the base
+	// element's intrinsic CSS box), so the caller always draws in score px; its element is then
 	// stretched over the base's rendered box by placeLayer. A viewport bitmap matches the visible box.
-	private sizeBitmap(layer: ManagedLayer): void {
-		if (layer.kind !== 'viewport') {
+	private sizeBitmap(layer: ManagedLayer | TiledLayer): void {
+		if (layer instanceof TiledLayer) {
 			const { width, height } = this.intrinsicSize();
-			layer.resize(width, height);
+			layer.surface.resize(width, height);
 		} else {
 			layer.resize(
 				this.scrollElement.clientWidth,
@@ -760,7 +796,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 	// a score-resolution bitmap lines up 1:1 with the engraving at any size. A viewport layer is
 	// anchored at the base's offset but spans the container's visible box; over a caller's scroller it
 	// covers that scroller's visible (padding) box instead, mapped into the container's coordinates.
-	private placeLayer(layer: ManagedLayer): void {
+	private placeLayer(layer: ManagedLayer | TiledLayer): void {
 		const left = this.base.offsetLeft;
 		const top = this.base.offsetTop;
 		if (layer.kind !== 'viewport') {
@@ -812,6 +848,50 @@ export class Stage implements Viewport, Host, ScrollHost {
 		return { left: r.left, top: r.top, sx: r.width / w, sy: r.height / h };
 	}
 
+	// The score-px region the tiled surfaces keep painted: what shows of the score through the
+	// window and the scroll box, and a view's worth on every side, so a scroll lands on painted
+	// tiles. A score that fits its budget is painted whole whatever this says.
+	private updateView(): void {
+		const { left, top, sx, sy } = this.frame();
+		const port = this.viewportRect();
+		const x0 = Math.max(port.left, 0);
+		const y0 = Math.max(port.top, 0);
+		const w = Math.max(0, Math.min(port.right, window.innerWidth) - x0);
+		const h = Math.max(0, Math.min(port.bottom, window.innerHeight) - y0);
+		this.view =
+			sx > 0 && sy > 0
+				? new Rect(
+						(x0 - w - left) / sx,
+						(y0 - h - top) / sy,
+						(3 * w) / sx,
+						(3 * h) / sy,
+					)
+				: Rect.zero();
+		this.engraving.show(this.view);
+		for (const layer of this.layers) {
+			if (layer instanceof TiledLayer) {
+				layer.surface.show(this.view);
+			}
+		}
+	}
+
+	// The base's laid-out size, unrounded: offsetWidth rounds to whole px, and a score 932.4px wide
+	// stretched to 932 would blur every tile under a scale of 0.9996.
+	private fitEngraving(): void {
+		const style = getComputedStyle(this.base);
+		this.engraving.fit(
+			parseFloat(style.width) || 0,
+			parseFloat(style.height) || 0,
+		);
+	}
+
+	private requestView(): void {
+		this.viewRequest ??= requestAnimationFrame(() => {
+			this.viewRequest = null;
+			this.updateView();
+		});
+	}
+
 	/* The managed canvas's default on-screen size, injected once per document. Both rules are wrapped
 	 * in `:where()` so they carry zero specificity: a caller's own `.vexml-canvas { … }` overrides them
 	 * with no `!important`. The per-score intrinsic dimensions ride on the --vexml-width/height custom
@@ -821,10 +901,11 @@ export class Stage implements Viewport, Host, ScrollHost {
 	 * container — see Stage) then caps the canvas at the container width and lets its height follow via
 	 * the exact score aspect ratio (--vexml-aspect, not the rounded bitmap ratio), so a narrow viewport
 	 * shrinks the score to fit while a wide one lands on a pixel-identical box (the score<->client scale
-	 * stays exactly 1) and never blows it up past its engraved resolution. The canvas stays `inline`
-	 * throughout (no `display` set), so `text-align: center` on the container centers it; top-aligning
-	 * it drops the descender strip a baseline-aligned inline box leaves under it, so the container is
-	 * exactly as tall as the engraving. */
+	 * stays exactly 1) and never blows it up past its engraved resolution. The base rule carries the
+	 * aspect ratio too: the box has no intrinsic ratio of its own (it was a canvas once), so a caller's
+	 * `height: auto` needs it to follow their width. The box is `inline-block`, so `text-align: center`
+	 * on the container centers it; top-aligning it drops the descender strip a baseline-aligned inline
+	 * box leaves under it, so the container is exactly as tall as the engraving. */
 	private ensureCanvasStyles(): void {
 		if (document.head.querySelector('style[data-vexml-canvas-style]')) {
 			return;
@@ -832,10 +913,19 @@ export class Stage implements Viewport, Host, ScrollHost {
 		const style = document.createElement('style');
 		style.setAttribute('data-vexml-canvas-style', '');
 		style.textContent =
-			':where(.vexml-canvas){width:var(--vexml-width);height:var(--vexml-height);vertical-align:top}' +
+			':where(.vexml-canvas){width:var(--vexml-width);height:var(--vexml-height);aspect-ratio:var(--vexml-aspect);vertical-align:top}' +
 			':where(.vexml-canvas.vexml-fit){max-width:100%;height:auto;aspect-ratio:var(--vexml-aspect)}';
 		document.head.appendChild(style);
 	}
+}
+
+// Tiles at the screen's resolution: each is small, so there's no cap to lower it for.
+function surfaceOptions(): TiledSurfaceOptions {
+	return {
+		scale: window.devicePixelRatio || 1,
+		tileSize: TILE_SIZE,
+		budget: TILE_BUDGET,
+	};
 }
 
 // A scratch pixel for reading a color's alpha, made on first use.

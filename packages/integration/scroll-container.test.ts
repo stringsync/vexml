@@ -252,7 +252,7 @@ async function probe({ score, container, render }: VexmlContext, c: Case) {
 	const BORDER = 4;
 
 	// The fixture's own render (same config) gives the engraved size to scale the scroller from.
-	const first = container.querySelector('.vexml-canvas') as HTMLCanvasElement;
+	const first = container.querySelector('.vexml-canvas') as HTMLElement;
 	const intrinsic = {
 		width: parseFloat(first.style.getPropertyValue('--vexml-width')),
 		height: parseFloat(first.style.getPropertyValue('--vexml-height')),
@@ -273,7 +273,7 @@ async function probe({ score, container, render }: VexmlContext, c: Case) {
 	});
 	await frame();
 
-	const canvas = box.querySelector('.vexml-canvas') as HTMLCanvasElement;
+	const canvas = box.querySelector('.vexml-canvas') as HTMLElement;
 	const cursor = s.createCursor();
 	const visibleAtStart = cursor.isFullyVisible();
 	const events: boolean[] = [];
@@ -322,14 +322,21 @@ async function probe({ score, container, render }: VexmlContext, c: Case) {
 	cursor.scrollIntoView({ behavior: 'instant' });
 	const again = { left: scroller.scrollLeft, top: scroller.scrollTop };
 
-	// Read the halo layer's pixels at the note's center and at a point well clear of it.
-	const layer = box.querySelector('.vexml-layer') as HTMLCanvasElement;
-	const lr = layer.getBoundingClientRect();
+	// Read the halo layer's pixels at the note's center and at a point well clear of it, from
+	// whichever of its tiles is there (no tile means nothing was painted there).
+	const layer = box.querySelector('.vexml-layer') as HTMLElement;
 	const alphaAt = (x: number, y: number) => {
-		const px = Math.floor((x - lr.left) * (layer.width / lr.width));
-		const py = Math.floor((y - lr.top) * (layer.height / lr.height));
-		const ctx = layer.getContext('2d') as CanvasRenderingContext2D;
-		return ctx.getImageData(px, py, 1, 1).data[3] ?? 0;
+		const tile = Array.from(layer.querySelectorAll('canvas')).find((c) => {
+			const r = c.getBoundingClientRect();
+			return x >= r.left && x < r.right && y >= r.top && y < r.bottom;
+		});
+		if (!tile) {
+			return 0;
+		}
+		const r = tile.getBoundingClientRect();
+		const px = Math.floor((x - r.left) * (tile.width / r.width));
+		const py = Math.floor((y - r.top) * (tile.height / r.height));
+		return tile.getContext('2d')?.getImageData(px, py, 1, 1).data[3] ?? 0;
 	};
 	const nr = note.getBoundingClientRect();
 	const cx = nr.left + nr.width / 2;

@@ -27,9 +27,9 @@ describe('events', () => {
  * wherever the crop places it (robust to the exact engraved height), and reports what the
  * Score's pointerdown listener saw. */
 function scanCenterLine({ score, container }: VexmlContext) {
-	const canvas = container.querySelector('canvas');
+	const canvas = container.querySelector<HTMLElement>('.vexml-canvas');
 	if (!canvas) {
-		throw new Error('canvas not found');
+		throw new Error('score element not found');
 	}
 	const types = new Set<string | null>();
 	const points: Array<{ x: number; y: number }> = [];

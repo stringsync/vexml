@@ -8,8 +8,9 @@ import type { FontLoader } from './font-loader';
 import type { Gaps } from './gaps';
 import type { Host } from './host';
 import type { LayoutPlanner } from './layout-planner';
+import type { PaintProbe } from './paint-probe';
 import { type GapInfo, Score } from './score';
-import type { RawGeometry, ScoreDrawer } from './score-drawer';
+import type { Engraving, RawGeometry, ScoreDrawer } from './score-drawer';
 import type { ScoreParser } from './score-parser';
 import type { Scroller } from './scroller';
 import type { SequenceFactory } from './sequence-factory';
@@ -21,12 +22,16 @@ const EMPTY_GEOMETRY: RawGeometry = {
 	chordDiagrams: [],
 };
 
-/* What the renderer needs from the stage: the container fonts/CSS vars land on, the base canvas
- * the score draws onto, where a sticky fold is pinned, and the Host surface handed to the Score.
- * Stage implements it for real; a unit test injects a fake. */
+/* What the renderer needs from the stage: the container fonts/CSS vars land on, the base element
+ * the engraving is shown in, the probe its recording measures text with, where the engraving and
+ * a sticky fold go, and the Host surface handed to the Score. Stage implements it for real; a
+ * unit test injects a fake. */
 export interface RenderStage extends Host {
 	readonly container: HTMLDivElement;
-	readonly base: HTMLCanvasElement;
+	readonly base: HTMLElement;
+	readonly probe: PaintProbe;
+	/* Show the recorded engraving (see Engraving). */
+	engrave(engraving: Engraving): void;
 	readonly scroller: Scroller & { cancel(): void; suspendForResize(): void };
 	/* Pin a fold at the scroll box's left edge (see Fold). */
 	setFold(fold: Fold): void;
@@ -59,7 +64,7 @@ export class ScoreRenderer {
 			throw new RangeError('render: minLastSystemFill must be between 0 and 1');
 		}
 		// Fonts before ANY layout or drawing: load() puts the fonts and CSS vars on the container
-		// (the managed canvas inherits them) and sets VexFlow's global glyph fonts, which both the
+		// (the base element inherits them) and sets VexFlow's global glyph fonts, which both the
 		// planner's measurements and the drawer's engraving read.
 		await this.fontLoader.load(this.stage.container, this.config.fonts);
 
@@ -75,11 +80,15 @@ export class ScoreRenderer {
 			parts.length > 0
 				? this.scoreDrawer.draw(
 						this.stage.base,
+						this.stage.probe,
 						mdoc.score,
 						this.layoutPlanner.plan(mdoc.score, this.config),
 					)
-				: { geometry: EMPTY_GEOMETRY, fold: null };
+				: { geometry: EMPTY_GEOMETRY, engraving: null, fold: null };
 		const { geometry } = drawn;
+		if (drawn.engraving) {
+			this.stage.engrave(drawn.engraving);
+		}
 		if (drawn.fold) {
 			this.stage.setFold(drawn.fold);
 		}

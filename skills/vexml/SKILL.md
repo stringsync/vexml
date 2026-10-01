@@ -167,9 +167,11 @@ passed. Playback treats a gap like any other measure.
 
 ## Canvas layers
 
-A layer is a `<canvas>` you draw on freely; vexml controls its size and position.
-The score itself sits at `zIndex` 0: positive draws in front, negative behind, and
-equal values stack in creation order.
+A layer is a surface you draw on freely with a 2D context; vexml controls its size
+and position. The score itself sits at `zIndex` 0: positive draws in front, negative
+behind, and equal values stack in creation order. A `content` layer is tiled so it
+stays sharp on a score of any length: `ctx.canvas` is the layer's element, not a
+`<canvas>`, and draws through a `Path2D` or with a `filter` are slower on long scores.
 
 ```ts
 const background = score.addLayer('content', -1);

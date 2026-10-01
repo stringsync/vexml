@@ -146,11 +146,9 @@ describe('markers', () => {
 			'note.musicxml',
 			{ backgroundColor: 'transparent' },
 			async ({ score, container }) => {
-				const base = container.querySelector<HTMLCanvasElement>(
-					'canvas:not(.vexml-layer)',
-				);
+				const base = container.querySelector<HTMLElement>('.vexml-canvas');
 				if (!base) {
-					throw new Error('base canvas not found');
+					throw new Error('score element not found');
 				}
 				base.style.width = `${base.getBoundingClientRect().width * 0.44}px`;
 				base.style.height = 'auto';

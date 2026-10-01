@@ -21,7 +21,28 @@ export class PlaywrightTab implements Tab {
 	}
 
 	async screenshot(selector: string): Promise<Buffer> {
-		return this.page.locator(selector).screenshot();
+		// An element screenshot reaches past the viewport without resizing it, so a page that paints
+		// only what's in view (vexml's tiles on a long score) would leave the rest blank. Grow the
+		// viewport over the element for the shot, let a frame paint it, then put the size back.
+		const locator = this.page.locator(selector);
+		const prior = this.page.viewportSize();
+		const box = await locator.boundingBox();
+		const bottom = Math.ceil((box?.y ?? 0) + (box?.height ?? 0));
+		if (!prior || bottom <= prior.height) {
+			return locator.screenshot();
+		}
+		await this.page.setViewportSize({ width: prior.width, height: bottom });
+		await this.page.evaluate(
+			() =>
+				new Promise((resolve) =>
+					requestAnimationFrame(() => requestAnimationFrame(resolve)),
+				),
+		);
+		try {
+			return await locator.screenshot();
+		} finally {
+			await this.page.setViewportSize(prior);
+		}
 	}
 
 	async resize(width: number, height: number): Promise<void> {

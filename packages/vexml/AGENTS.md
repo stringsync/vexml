@@ -25,7 +25,7 @@ come from `webappwiz/geometry`, not this repo. Every feature has a fixture in
 | Parse | MusicXML text to an mdom document | `score-parser.ts`, `default-score-parser.ts` |
 | Gaps | Inserts the caller's silent measures | `gaps.ts` |
 | Layout | Measure widths, system breaks, stave offsets — no drawing | `layout-planner.ts` |
-| Draw | Two passes over the canvas; everything engraved | `score-drawer.ts`, `draw-pass.ts` + collaborators below |
+| Draw | Two passes recorded as paint ops (no canvas); everything engraved | `score-drawer.ts`, `draw-pass.ts` + collaborators below |
 | Elements | Raw geometry to hit-testable wrappers | `element-factory.ts`, `element-index.ts` |
 | Playback | Beats to ms, repeats unrolled, swing applied | `sequence-factory.ts`, `measure-sequence-iterator.ts`, `sequence.ts` |
 | Result | What `render()` hands back | `score.ts` |
@@ -94,7 +94,8 @@ Two rules cut across the draw stage:
 - **Widening a stave gap the music outgrows — per x column, per system** — `spill-tracker.ts`, `spill-resolver.ts`
 - **Gap between stacked systems; notes rising above a system's top stave** — `spill-tracker.ts`, `spill-resolver.ts`, `constants.ts` (`SYSTEM_GAP`)
 - **Why there are two draw passes** — `score-drawer.ts` (driver), `spill-resolver.ts` (the redraw decision)
-- **Page margins, ledger headroom, the final crop and blit** — `score-drawer.ts`, `constants.ts`
+- **Page margins, ledger headroom, the final crop** — `score-drawer.ts`, `constants.ts`
+- **Long scores past the browser's canvas limits (tiles)** — `paint-context.ts` (the recording `CanvasRenderingContext2D` vexflow and `Layer.ctx` draw on, and each op's bounds), `paint-op.ts`, `paint-state.ts`, `affine.ts`, `paint-sink.ts`, `paint-list.ts` (the engraving's ops), `paint-probe.ts`, `canvas-paint-probe.ts` (text metrics and hit tests a recording can't answer), `fake-paint-probe.ts`, `paint-replayer.ts` (ops back onto a real canvas), `tile-grid.ts` (ops per tile, clear pruning), `tiled-surface.ts` (tile canvases, painted whole or only near the view), `tile-budget.ts` (the LRU when painting lazily), `tiled-layer.ts`, `constants.ts` (`TILE_SIZE`, `TILE_BUDGET`)
 - **Keeping two marks from printing through each other** — `collision-resolver.ts` (section below)
 
 ## Spanners (things that connect two notes)
@@ -174,7 +175,7 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 - **Playback timeline, repeats unrolled, swing** — `sequence-factory.ts`, `sequence.ts`, `measure-sequence-iterator.ts` (repeat/volta expansion), `tempo-map.ts`, `swing-warp.ts`
 - **The moving cursor and playhead visibility** — `cursor-controller.ts`, `cursor-view.ts`, `playhead.ts` (a DOM `marker.ts`/`managed-marker.ts`, not a canvas), `cursor-host.ts`, `cursor-host-adapter.ts`
 - **Scrolling and the visible window** — `scroller.ts`, `scroll-controller.ts`, `viewport.ts`
-- **The DOM the score lives in (container, canvas, overlays, a caller-owned `scrollContainer`)** — `host.ts`, `stage.ts`, `layer.ts`, `managed-layer.ts` (bitmap axis and area caps), `lazy-layer.ts`, `marker.ts`, `managed-marker.ts` (caller markers from `Score.createMarker` too), `loupe.ts`, `managed-loupe.ts` (the magnifier, a top-layer popover; `Stage.paintScore` draws into it over `Stage.paperColor`), `loupe-placement.ts` (above its anchor, else to its right, else left, within the visual viewport), `recording-context.ts`, `layer-host.ts`, `scroll-host.ts`
+- **The DOM the score lives in (container, canvas, overlays, a caller-owned `scrollContainer`)** — `host.ts`, `stage.ts`, `layer.ts`, `tiled-layer.ts` (content and background layers), `managed-layer.ts` (viewport layers; bitmap axis and area caps), `lazy-layer.ts`, `marker.ts`, `managed-marker.ts` (caller markers from `Score.createMarker` too), `loupe.ts`, `managed-loupe.ts` (the magnifier, a top-layer popover; `Stage.paintScore` draws into it over `Stage.paperColor`), `loupe-placement.ts` (above its anchor, else to its right, else left, within the visual viewport), `recording-context.ts`, `layer-host.ts`, `scroll-host.ts`
 
 ## Editing implementation contracts
 

@@ -114,7 +114,7 @@ async function probe({ score, container }: VexmlContext) {
 	const boxTop = box.top + container.clientTop;
 	const fr = fold.getBoundingClientRect();
 	const rect = score.getSequence().positionAt(cursor.getTimeMs());
-	const canvas = container.querySelector('.vexml-canvas') as HTMLCanvasElement;
+	const canvas = container.querySelector('.vexml-canvas') as HTMLElement;
 	const cr = canvas.getBoundingClientRect();
 	const barLeft = cr.left + (rect?.x ?? 0);
 

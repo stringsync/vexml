@@ -9,21 +9,22 @@ import type { Stage } from './stage';
 const MAX_BITMAP_PX = 16384;
 
 /*
- * A managed overlay canvas — the production Layer. Absolutely positioned over the base canvas, dpr
- * scaled so the caller's ctx draws in CSS pixels, and sized by its kind. Resizing resets the
- * bitmap (which clears it) and re-applies the dpr transform. Back-references its Stage only to
- * deregister on dispose (both live here and are disposed together).
+ * A viewport layer: one overlay canvas the size of the visible box, absolutely positioned over the
+ * score and dpr scaled so the caller's ctx draws in CSS pixels. (Content and background layers span
+ * the score, which one canvas can't hold; they're TiledLayers.) Resizing resets the bitmap (which
+ * clears it) and re-applies the dpr transform. Back-references its Stage only to deregister on
+ * dispose (both live here and are disposed together).
  */
 export class ManagedLayer implements Layer {
 	readonly ctx: CanvasRenderingContext2D;
 
 	constructor(
 		readonly kind: LayerKind,
-		// Read by a loupe, which magnifies the layer's bitmap; never handed to callers.
+		// Never handed to callers: they get the ctx.
 		readonly canvas: HTMLCanvasElement,
 		private readonly stage: Stage,
 		// Where the layer stacks: its effective z-index and its creation (DOM) order among the
-		// stage's overlays. A loupe paints overlays in the same order.
+		// stage's overlays.
 		readonly zIndex: number,
 		readonly order: number,
 	) {
@@ -36,12 +37,10 @@ export class ManagedLayer implements Layer {
 
 	resize(cssWidth: number, cssHeight: number): void {
 		const dpr = window.devicePixelRatio || 1;
-		// Cap each bitmap axis at the common GPU max texture size. A content layer spans the whole
-		// engraved score, and a long score at dpr 2 can exceed the cap — which silently drops the
-		// canvas onto the software rasterization path, where every change costs tens of ms of buffer
-		// churn per frame. Under the cap the layer stays GPU-composited; the axis renders at slightly
-		// reduced resolution, which a translucent halo or a recolored glyph wears invisibly.
-		// The area cap scales both axes alike, so it never squashes the layer's aspect.
+		// Cap each bitmap axis at the common GPU max texture size. A caller's scroll box can be huge,
+		// and a canvas past the cap silently drops onto the software rasterization path, where every
+		// change costs tens of ms of buffer churn per frame. Under the cap the layer stays
+		// GPU-composited at slightly reduced resolution.
 		const area = cssWidth * cssHeight;
 		const scale = Math.min(
 			dpr,
@@ -59,8 +58,7 @@ export class ManagedLayer implements Layer {
 	}
 
 	// Position and stretch the element's on-screen box, independent of the bitmap resolution resize()
-	// set. For a content layer this lets a fixed score-resolution bitmap be displayed at the base
-	// canvas's (possibly CSS-scaled) rendered size, so the overlay tracks it without a clearing resize.
+	// set.
 	place(left: number, top: number, width: number, height: number): void {
 		this.canvas.style.left = `${left}px`;
 		this.canvas.style.top = `${top}px`;

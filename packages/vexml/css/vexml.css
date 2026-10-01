@@ -13,15 +13,18 @@
 	--vexml-font-text: "Source Sans 3", sans-serif;
 }
 
-/* Default on-screen size of the rendered score. The --vexml-width/height custom properties are set
-   per-render on the canvas; this rule turns them into its displayed size. Wrapped in :where() so it
-   has zero specificity — override it with your own `.vexml-canvas { … }` (no !important needed). */
+/* Default on-screen size of the rendered score. The --vexml-width/height/aspect custom properties
+   are set per-render on the score's box; this rule turns them into its displayed size. The aspect
+   ratio lets a `height: auto` override follow the width. Wrapped in :where() so it has zero
+   specificity: override it with your own `.vexml-canvas { … }` (no !important needed). */
 :where(.vexml-canvas) {
 	width: var(--vexml-width);
 	height: var(--vexml-height);
+	aspect-ratio: var(--vexml-aspect);
+	vertical-align: top;
 }
 
-/* Scale-to-fit. render() adds `vexml-fit` to the canvas for a system-stacked layout that isn't a
+/* Scale-to-fit. render() adds `vexml-fit` to the score's box for a system-stacked layout that isn't a
    horizontal scroll box, and sets `text-align: center` on the container to center it. The score
    then shrinks to fit a narrow container and never grows past its engraved width. --vexml-aspect is
    the exact score ratio, so at full size the box is pixel-identical to the intrinsic one. */

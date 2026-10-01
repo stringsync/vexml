@@ -8,6 +8,15 @@ import type { LoupeOptions } from './loupe';
  * reaches ~37M px, and the page is killed for memory once a few canvases that size pile up. */
 export const MAX_CANVAS_AREA = 4096 * 4096;
 
+/** How many device px² of tiles one surface (the engraving, or a content layer) keeps painted.
+ * A surface whose painted tiles fit is painted whole; a bigger one keeps the tiles in view and
+ * as many recent ones as fit, and repaints the rest as they scroll back in. */
+export const TILE_BUDGET = MAX_CANVAS_AREA;
+
+/** A tile's side in CSS px: 512-1536 device px from dpr 1 to 3, well under every browser's
+ * per-canvas limits and small enough that a view paints only what it shows. */
+export const TILE_SIZE = 512;
+
 /** Default standard-layout width. */
 export const DEFAULT_WIDTH = 900;
 

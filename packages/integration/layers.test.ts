@@ -11,9 +11,9 @@ describe('layers', () => {
 			'structure_single_stave.musicxml',
 			{},
 			async ({ score, container }) => {
-				const base = container.querySelector('canvas');
+				const base = container.querySelector<HTMLElement>('.vexml-canvas');
 				if (!base) {
-					throw new Error('base canvas not found');
+					throw new Error('score element not found');
 				}
 				const content = score.addLayer('content');
 				const viewport = score.addLayer('viewport');

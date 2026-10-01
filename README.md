@@ -261,7 +261,7 @@ Read the resulting timing with `score.getGaps()`, which returns `{ measureIndex,
 
 ## Adding a canvas layer
 
-A layer is a `<canvas>` that you can draw arbitrary content on without affecting the sheet music. vexml controls its size and position.
+A layer is a drawing surface that you can draw arbitrary content on without affecting the sheet music. vexml controls its size and position.
 
 ```ts
 const score = await render(musicXML, element);
@@ -276,7 +276,9 @@ foreground.ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
 foreground.ctx.fillRect(50, 50, 100, 80);
 ```
 
-Pass an optional `zIndex` to order a layer relative to the canvas the score is drawn on, which sits at `zIndex` 0. A positive value draws in front; a negative value draws behind, showing through the score's transparent pixels. Layers with the same `zIndex` stack in the order they were created.
+A `content` layer spans the whole score at full resolution, however long the score is. Browsers cap how big one canvas can be, so it's made of many small canvases, and `ctx` is a 2D context that draws on whichever of them each call touches. Two differences follow: `ctx.canvas` is the layer's element, not a `<canvas>`, and a draw through a `Path2D` or with a `filter` set can't be narrowed to the canvases it touches, so it is slower on a long score.
+
+Pass an optional `zIndex` to order a layer relative to the score, which sits at `zIndex` 0. A positive value draws in front; a negative value draws behind, showing through the score's transparent pixels. Layers with the same `zIndex` stack in the order they were created.
 
 ## Cleaning up
 
