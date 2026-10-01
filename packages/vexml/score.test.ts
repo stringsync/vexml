@@ -11,6 +11,7 @@ import type { FakeLayer } from './fake-layer';
 import type { FakeLoupe } from './fake-loupe';
 import type { FakeMarker } from './fake-marker';
 import { FakeViewport } from './fake-viewport';
+import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
 import type { HitTester } from './hit-tester';
 import { MeasureBox } from './measure-box';
@@ -23,7 +24,7 @@ import { System } from './system';
 /* An empty timeline: these tests exercise events/layers/hover, not playback. */
 const EMPTY_SEQUENCE = new SequenceFactory(
 	new ScoreReader(new DynamicGlyphs()),
-	new Gaps([]),
+	new Gaps([], new GapInserter(new ScoreReader(new DynamicGlyphs()))),
 ).createFromInput({ measures: [], notes: [] });
 
 const viewport = new FakeViewport();
@@ -341,7 +342,7 @@ describe('Score', () => {
 		// A measure at index 0 with two quarter notes (x 10 @ beat 0, x 20 @ beat 1) at 120bpm.
 		const sequence = new SequenceFactory(
 			new ScoreReader(new DynamicGlyphs()),
-			new Gaps([]),
+			new Gaps([], new GapInserter(new ScoreReader(new DynamicGlyphs()))),
 		).createFromInput({
 			measures: [
 				{

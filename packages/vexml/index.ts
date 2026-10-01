@@ -10,6 +10,8 @@ export type {
 	FontConfig,
 	FontOverride,
 	Gap,
+	GapPlacement,
+	GapPosition,
 	GapStyle,
 	Layout,
 	LayoutInput,
@@ -62,6 +64,7 @@ export type {
 	ScoreResizeEvent,
 	ScoreScrollEvent,
 } from './events';
+export { insertGaps } from './insert-gaps';
 export type { Layer, LayerKind } from './layer';
 export type { Loupe, LoupeOptions } from './loupe';
 export type { Marker, MarkerOptions, MarkerRect } from './marker';

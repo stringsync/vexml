@@ -2,6 +2,7 @@ import { MDOMParser } from '@stringsync/mdom';
 import {
 	type ConfigInput,
 	EditingSession,
+	insertGaps,
 	render,
 	type Score,
 } from '@stringsync/vexml';
@@ -44,7 +45,14 @@ class VexmlPage implements EnginePage<VexmlInput, VexmlContext> {
 				: (input.musicXML ?? '');
 		const score = await render(source, container, input.config);
 		this.score = score;
-		return { score, container, render, MDOMParser, EditingSession };
+		return {
+			score,
+			container,
+			render,
+			insertGaps,
+			MDOMParser,
+			EditingSession,
+		};
 	}
 }
 

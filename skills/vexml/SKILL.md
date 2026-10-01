@@ -162,6 +162,12 @@ const score = await render(musicXML, element, {
 });
 ```
 
+Place a gap with `beforeMeasureIndex` (document order; plays on every pass of a repeat)
+or `beforeBarIndex` (playback order, repeats and voltas unrolled, gaps not counted; a bar
+inside a repeat throws). An `MDocument` is never edited by `render`: insert the gap
+measures with `insertGaps(document, positions)` (inside `document.history.edit` when an
+`EditingSession` is on) and pass `gaps: [{ measure, durationMs }]` naming them.
+
 `score.getGaps()` returns `{ measureIndex, label, startMs, endMs }` per gap in the order
 passed. Playback treats a gap like any other measure.
 

@@ -3,6 +3,7 @@ import type { MDOMParser } from '@stringsync/mdom';
 import type {
 	ConfigInput,
 	EditingSession,
+	insertGaps,
 	render,
 	Score,
 } from '@stringsync/vexml';
@@ -16,6 +17,7 @@ export interface VexmlContext {
 	score: Score;
 	container: HTMLDivElement;
 	render: typeof render;
+	insertGaps: typeof insertGaps;
 	MDOMParser: typeof MDOMParser;
 	EditingSession: typeof EditingSession;
 }

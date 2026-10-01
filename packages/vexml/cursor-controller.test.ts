@@ -6,6 +6,7 @@ import type { CursorChangeEvent } from './events';
 import { FakeCursorHost } from './fake-cursor-host';
 import { FakeCursorView } from './fake-cursor-view';
 import { FakeScroller } from './fake-scroller';
+import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
 import type { Note } from './note';
 import { ScoreReader } from './score-reader';
@@ -30,7 +31,7 @@ function fourQuarters() {
 	}));
 	return new SequenceFactory(
 		new ScoreReader(new DynamicGlyphs()),
-		new Gaps([]),
+		new Gaps([], new GapInserter(new ScoreReader(new DynamicGlyphs()))),
 	).createFromInput({
 		measures: [
 			{

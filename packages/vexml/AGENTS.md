@@ -23,7 +23,7 @@ come from `webappwiz/geometry`, not this repo. Every feature has a fixture in
 | --- | --- | --- |
 | Fonts | Loads Bravura + text face as CSS vars, awaits residency before layout | `font-loader.ts`, `default-font-loader.ts` |
 | Parse | MusicXML text to an mdom document | `score-parser.ts`, `default-score-parser.ts` |
-| Gaps | Inserts the caller's silent measures | `gaps.ts` |
+| Gaps | Finds the caller's silent measures, inserting positioned ones into vexml's own parse | `gaps.ts`, `gap-inserter.ts` |
 | Layout | Measure widths, system breaks, stave offsets — no drawing | `layout-planner.ts` |
 | Draw | Two passes recorded as paint ops (no canvas); everything engraved | `score-drawer.ts`, `draw-pass.ts` + collaborators below |
 | Elements | Raw geometry to hit-testable wrappers | `element-factory.ts`, `element-index.ts` |
@@ -163,9 +163,9 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 ## Reading the document
 
 - **Divisions, ticks, beats, pickup measures, `<senza-misura>`** — `score-reader.ts` (`meterBeats`)
-- **Repeat structure, endings, how many passes** — `score-reader.ts` (`measureRepeats`, `endingPasses`)
+- **Repeat structure, endings, how many passes** — `score-reader.ts` (`measureRepeats`, `measureJumps`, `endingPasses`)
 - **Directions routed to the right staff** — `score-reader.ts`
-- **Silent gap measures the caller asked for** — `gaps.ts`
+- **Silent gap measures the caller asked for** — `gaps.ts` (which measures are gaps), `gap-inserter.ts` (inserting them; `beforeBarIndex` in playback order, refused inside a repeat), `insert-gaps.ts` (the public `insertGaps` for a caller's own document)
 
 ## Interaction and playback
 
@@ -222,9 +222,9 @@ one `Score` and must be resolved again after rendering.
   suspension, disposal or capture loss with the primary button held cancels;
   capture loss after release commits even before `pointerup`. Dragging does not
   trigger focus following. Unindexed notes remain reachable through navigation.
-- Document rendering must not reparse the session's document. Reject nonempty gaps
-  for document input because `gaps.ts` inserts measures into its input; preserve
-  string and Blob gap behavior.
+- Document rendering must not reparse or edit the session's document. Its gaps must
+  name measures already in it (`insertGaps`, run by the caller inside a history edit);
+  `render.ts` rejects positioned gaps for document input before touching the container.
 
 ## Conventions
 

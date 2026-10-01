@@ -1,3 +1,4 @@
+import type { Measure } from '@stringsync/mdom';
 import { DEFAULT_WIDTH, SYSTEM_GAP } from './constants';
 
 export interface FontOverride {
@@ -30,14 +31,10 @@ export type GapStyle = {
 	fill?: string;
 };
 
-/** A non-musical measure inserted into the score: it occupies horizontal space and a
- * fixed playback duration (independent of tempo), for syncing notation to media where
- * nothing is being played. See `Config.gaps`. */
-export type Gap = {
-	/** Source-document measure index to insert before (0 inserts before the first
-	 * measure; the measure count appends after the last). Indexes refer to the
-	 * MusicXML as written — gaps never shift each other. */
-	beforeMeasureIndex: number;
+/** A non-musical measure in the score: it occupies horizontal space and a fixed playback
+ * duration (independent of tempo), for syncing notation to media where nothing is being
+ * played. See `Config.gaps`. */
+export type Gap = GapPlacement & {
 	/** Playback time the gap occupies, in ms. Fixed — tempo marks don't affect it. */
 	durationMs: number;
 	/** Text printed centered in the gap (e.g. "What are pitches?"). Omit for a silent
@@ -49,6 +46,40 @@ export type Gap = {
 	minWidth?: number;
 	style?: GapStyle;
 };
+
+/** Which measure is the gap. Rendering an `MDocument`, name a measure already in it
+ * (typically one `insertGaps` returned) — vexml never edits a caller's document. Rendering
+ * MusicXML text or an .mxl Blob, give a `GapPosition` and vexml inserts the measure into
+ * its own parse. */
+export type GapPlacement =
+	| (GapPosition & { measure?: never })
+	| {
+			/** The gap measure, in the document being rendered. Any part's measure names
+			 * the whole column. */
+			measure: Measure;
+			beforeMeasureIndex?: never;
+			beforeBarIndex?: never;
+	  };
+
+/** Where `insertGaps` puts a gap measure: exactly one of the two indexes, read against the
+ * document before any gap of the same call is inserted, so gaps never shift each other. */
+export type GapPosition =
+	| {
+			/** Measure index to insert before (0 inserts before the first measure; the
+			 * measure count appends after the last), as the document is written. Inside a
+			 * repeat, the gap plays on every pass. */
+			beforeMeasureIndex: number;
+			beforeBarIndex?: never;
+	  }
+	| {
+			/** Playback bar index to insert before: measures counted as they play, with
+			 * repeats and voltas unrolled (0 is before the first bar; the bar count appends
+			 * after the last). A bar inside a repeat throws — a plain measure there would
+			 * play on every pass — but a gap before a repeat's first bar, or after its last,
+			 * is fine. */
+			beforeBarIndex: number;
+			beforeMeasureIndex?: never;
+	  };
 
 /** What gives when a system's music cannot fit the page at its collision-free minimum —
  * i.e. when the document's engraved line and the reference width disagree. The notes are
@@ -166,11 +197,11 @@ export type Config = {
 	 * (default: null). Pair with `fonts.notation.color`/`fonts.text.color` for a dark theme.
 	 * Canvas layers added at negative z-index still draw over it. */
 	backgroundColor: string | null;
-	/** Non-musical measures to insert into the score (default: none). Each occupies
-	 * space on the page and a fixed ms of playback time — for syncing notation to media
-	 * where the music pauses (e.g. an instructor talking). `beforeMeasureIndex` is a
-	 * source-document index; the rendered score's measure indexes include the inserted
-	 * gaps (measure *numbers* skip them). Retrieve their timing with `Score.getGaps()`. */
+	/** Non-musical measures in the score (default: none). Each occupies space on the page
+	 * and a fixed ms of playback time — for syncing notation to media where the music
+	 * pauses (e.g. an instructor talking). See `GapPlacement` for naming them; the rendered
+	 * score's measure indexes include the gaps (measure *numbers* skip them). Retrieve
+	 * their timing with `Score.getGaps()`. */
 	gaps: Gap[];
 	/** How measures are placed across systems (default: standard at 8.5in / 816px), and for
 	 * a standard layout, how it resolves a document line that won't fit that width. */

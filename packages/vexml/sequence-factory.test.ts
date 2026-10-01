@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { Rect } from 'webappwiz/geometry';
 import { DefaultScoreParser } from './default-score-parser';
 import { DynamicGlyphs } from './dynamic-glyphs';
+import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
 import type { Note } from './note';
 import { ScoreReader } from './score-reader';
@@ -67,7 +68,7 @@ async function measureOf(prefix: string) {
 const build = (input: SequenceInput) =>
 	new SequenceFactory(
 		new ScoreReader(new DynamicGlyphs()),
-		new Gaps([]),
+		new Gaps([], new GapInserter(new ScoreReader(new DynamicGlyphs()))),
 	).createFromInput(input);
 
 describe('SequenceFactory', () => {
@@ -414,7 +415,10 @@ describe('SequenceFactory', () => {
 			jumps: [],
 			systemRect: SYS,
 		}));
-		const seq = new SequenceFactory(reader, new Gaps([])).createFromInput({
+		const seq = new SequenceFactory(
+			reader,
+			new Gaps([], new GapInserter(new ScoreReader(new DynamicGlyphs()))),
+		).createFromInput({
 			measures,
 			// Whole notes, so each measure is filled and its single onset is its only step.
 			notes: [0, 1].map((index) => ({

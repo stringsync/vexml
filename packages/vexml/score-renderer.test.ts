@@ -14,6 +14,7 @@ import { FakeHost } from './fake-host';
 import { FakePaintProbe } from './fake-paint-probe';
 import { FakeScoreParser } from './fake-score-parser';
 import type { Fold } from './fold';
+import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
 import { LayoutPlanner } from './layout-planner';
 import { NoopFontLoader } from './noop-font-loader';
@@ -91,7 +92,7 @@ describe('ScoreRenderer', () => {
 		const chords = new ChordTranslator(durations, new NotationTranslator());
 		const reader = new ScoreReader(new DynamicGlyphs());
 		const translator = new VoiceTranslator(chords, durations, barlines, reader);
-		const gaps = new Gaps([]);
+		const gaps = new Gaps([], new GapInserter(reader));
 		return new ScoreRenderer(
 			config,
 			stage,

@@ -180,7 +180,92 @@ describe('editing', () => {
 		expect(result.resolved).toBe(result.expected);
 	});
 
-	it.concurrent('rejects playback gaps before modifying an editor document or its container', async () => {
+	// sound2score's flow: gaps inserted into the session's own document as an undoable edit,
+	// placed in playback order, then rendered by naming those measures. repeats.musicxml plays
+	// 1 2 1 2 3 4 5 3 ..., so bar 4 is the first pass of measure 3, after the opening repeat.
+	it.concurrent('edits a document whose gap measures were inserted into it', async () => {
+		const xml = await testing.fixture('repeats.musicxml');
+		const { result } = await testing.eval(
+			'repeats.musicxml',
+			{},
+			async (context, xml) => {
+				const { MDOMParser, EditingSession, render, insertGaps, container } =
+					context;
+				const document = new MDOMParser().parseFromString(xml);
+				const session = new EditingSession(document);
+				const measureCount = () => document.score.parts[0]?.measures.length;
+				const before = measureCount();
+				let insideRepeat = '';
+				try {
+					insertGaps(document, [{ beforeBarIndex: 2 }]);
+				} catch (error) {
+					insideRepeat = error instanceof Error ? error.message : String(error);
+				}
+				const [intro, solo] = session.history.edit('Insert gaps', () =>
+					insertGaps(document, [{ beforeBarIndex: 0 }, { beforeBarIndex: 4 }]),
+				);
+				if (!intro || !solo) {
+					throw new Error('insertGaps returned no measures');
+				}
+				const config = {
+					gaps: [
+						{ measure: intro, durationMs: 1000 },
+						{ measure: solo, durationMs: 500, label: 'Solo break' },
+					],
+				};
+				context.score.dispose();
+				let score = await render(document, container, config);
+				const gaps = score.getGaps().map((gap) => ({
+					measureIndex: gap.measureIndex,
+					label: gap.label,
+					durationMs: Math.round(gap.endMs - gap.startMs),
+				}));
+				const first = score
+					.getElements()
+					.notes()
+					.find((note) => note.getPitch() !== null);
+				if (!first) {
+					throw new Error('missing pitched note');
+				}
+				session.selectElements([first]);
+				const selected = session.getFocus() === first.getSources()[0];
+				session.setPitch({ step: 'F', octave: 5 });
+				score.dispose();
+				score = await render(document, container, config);
+				const edited = session
+					.getSelectedElements(score.getElements())[0]
+					?.getPitch();
+				session.undo();
+				session.undo();
+				score.dispose();
+				score = await render(document, container, {});
+				context.score = score;
+				return {
+					insideRepeat,
+					gaps,
+					selected,
+					edited,
+					restored: measureCount() === before,
+					gapsDetached: intro.index === -1 && solo.index === -1,
+				};
+			},
+			xml,
+		);
+		expect(result).toEqual({
+			insideRepeat:
+				'insertGaps: beforeBarIndex 2 falls inside a repeat (measures 0-1)',
+			gaps: [
+				{ measureIndex: 0, label: null, durationMs: 1000 },
+				{ measureIndex: 3, label: 'Solo break', durationMs: 500 },
+			],
+			selected: true,
+			edited: 'F/5',
+			restored: true,
+			gapsDetached: true,
+		});
+	});
+
+	it.concurrent('rejects positioned gaps for a document before touching it or its container', async () => {
 		const xml = await testing.fixture('note.musicxml');
 		const { result } = await testing.eval(
 			'note.musicxml',
@@ -189,16 +274,31 @@ describe('editing', () => {
 				const document = new context.MDOMParser().parseFromString(xml);
 				const before = document.score.parts[0]?.measures.length;
 				const markup = context.container.innerHTML;
-				let message = '';
-				try {
-					await context.render(document, context.container, {
+				const messageOf = async (run: () => Promise<unknown>) => {
+					try {
+						await run();
+						return '';
+					} catch (error) {
+						return error instanceof Error ? error.message : String(error);
+					}
+				};
+				const positioned = await messageOf(() =>
+					context.render(document, context.container, {
 						gaps: [{ beforeMeasureIndex: 0, durationMs: 1000 }],
-					});
-				} catch (error) {
-					message = error instanceof Error ? error.message : String(error);
+					}),
+				);
+				const measure = document.score.parts[0]?.measures[0];
+				if (!measure) {
+					throw new Error('missing measure');
 				}
+				const named = await messageOf(() =>
+					context.render(xml, context.container, {
+						gaps: [{ measure, durationMs: 1000 }],
+					}),
+				);
 				return {
-					message,
+					positioned,
+					named,
 					sameMeasures: document.score.parts[0]?.measures.length === before,
 					sameContainer: context.container.innerHTML === markup,
 				};
@@ -206,7 +306,9 @@ describe('editing', () => {
 			xml,
 		);
 		expect(result).toEqual({
-			message: 'render: configured gaps require string or Blob input',
+			positioned:
+				'render: gaps for an MDocument must name measures in it (see insertGaps)',
+			named: 'render: a gap naming a measure needs its MDocument as input',
 			sameMeasures: true,
 			sameContainer: true,
 		});

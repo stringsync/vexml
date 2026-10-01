@@ -1,4 +1,4 @@
-import type { Measure, Note as MNote, Part } from '@stringsync/mdom';
+import type { Note as MNote, Part } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
 import { DEFAULT_TEMPO_BPM } from './constants';
 import type { Gaps } from './gaps';
@@ -7,7 +7,6 @@ import type { Note } from './note';
 import type { RawGeometry } from './score-drawer';
 import type { ScoreReader, Swing } from './score-reader';
 import {
-	type Jump,
 	type MeasureInfo,
 	Sequence,
 	type SequenceInput,
@@ -286,7 +285,7 @@ export class SequenceFactory {
 		const gaps = this.gaps.byMeasureIndex();
 		const measureCount = parts[0]?.measures.length ?? 0;
 		// Repeats and endings apply across the system, so they're read from the first part.
-		const jumps = this.jumpsByMeasure(parts[0]?.measures ?? []);
+		const jumps = this.reader.measureJumps(parts[0]?.measures ?? []);
 		// Swing warps the beat axis per measure; identity everywhere no <sound><swing> is in force.
 		const swings = this.swingWarps(parts);
 		const swung = (index: number, beat: number): number =>
@@ -405,35 +404,6 @@ export class SequenceFactory {
 		return this.reader.meterBeats(parts[0]?.measures[index]?.getTime() ?? null);
 	}
 
-	/* The repeat/volta jumps for every measure, mapped from the shared repeat structure
-	 * (ScoreReader.measureRepeats, which the renderer reads too). An ending supersedes a co-located backward
-	 * repeat — the iterator drives the back-jump off the ending instead. */
-	private jumpsByMeasure(measures: readonly Measure[]): Jump[][] {
-		const reader = this.reader;
-		return reader
-			.measureRepeats(measures)
-			.map(({ repeatBegin, repeatEnd, repeatTimes, ending }) => {
-				const jumps: Jump[] = [];
-				if (repeatBegin) {
-					jumps.push({ type: 'repeatstart' });
-				}
-				if (ending) {
-					jumps.push({
-						type: 'repeatending',
-						times: this.endingPasses(ending.number),
-						last: ending.last,
-						number: this.endingFirstPass(ending.number),
-					});
-				} else if (repeatEnd) {
-					jumps.push({
-						type: 'repeatend',
-						times: Math.max(0, (repeatTimes ?? 2) - 1),
-					});
-				}
-				return jumps;
-			});
-	}
-
 	/* Two notes at the same pitch (a tie's two ends always match). */
 	private samePitch(a: MNote, b: MNote): boolean {
 		return (
@@ -472,31 +442,5 @@ export class SequenceFactory {
 			}
 		}
 		return null;
-	}
-
-	/** How many passes an ending covers, from its `<ending number>` ("1", "1,2", "1-3"). */
-	private endingPasses(numberAttr: string | null): number {
-		if (!numberAttr) {
-			return 1;
-		}
-		let total = 0;
-		for (const part of numberAttr.split(',')) {
-			const range = part.trim().match(/^(\d+)\s*-\s*(\d+)$/);
-			if (range) {
-				total += Math.max(1, Number(range[2]) - Number(range[1]) + 1);
-			} else if (part.trim()) {
-				total += 1;
-			}
-		}
-		return Math.max(1, total);
-	}
-
-	/** The FIRST pass an ending covers ("1" -> 1, "2,3" -> 2, "3-4" -> 3). Playback compares
-	 * this across adjacent runs: a number that doesn't climb means the volta group restarted,
-	 * i.e. the new run belongs to an enclosing repeat block. Defaults to 1 for a malformed or
-	 * absent attribute, which reads as a restart and so errs toward splitting rather than
-	 * merging two unrelated groups. */
-	private endingFirstPass(numberAttr: string | null): number {
-		return Number(numberAttr?.split(/[,-]/)[0]?.trim()) || 1;
 	}
 }

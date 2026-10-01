@@ -1,12 +1,20 @@
 import { describe, expect, it } from 'bun:test';
-import { MDocument, type Part } from '@stringsync/mdom';
+import { MDocument } from '@stringsync/mdom';
 import type { Gap } from './config';
+import { DynamicGlyphs } from './dynamic-glyphs';
+import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
+import { insertGaps } from './insert-gaps';
+import { ScoreReader } from './score-reader';
+
+const gapsOf = (gaps: Gap[]): Gaps =>
+	new Gaps(gaps, new GapInserter(new ScoreReader(new DynamicGlyphs())));
 
 /* A two-part, two-measure score: the smallest thing a gap can be inserted into that still
  * has signatures to carry across the cut and a second part to keep in step. */
-function parts(): Part[] {
-	const score = MDocument.empty().score;
+function document(): MDocument {
+	const doc = MDocument.empty();
+	const score = doc.score;
 
 	const treble = score.addPart({ id: 'P1', name: 'A' });
 	const first = treble.addMeasure();
@@ -28,7 +36,7 @@ function parts(): Part[] {
 			.addNote({ step: 'C', octave: 3, type: 'whole' });
 	}
 
-	return score.parts;
+	return doc;
 }
 
 const gap = (beforeMeasureIndex: number, durationMs: number): Gap => ({
@@ -37,75 +45,89 @@ const gap = (beforeMeasureIndex: number, durationMs: number): Gap => ({
 });
 
 describe('Gaps', () => {
-	it('inserts an empty, unnumbered measure into every part, shifting indexes but not numbers', () => {
-		const ps = parts();
-		new Gaps([gap(1, 1000)]).insertInto(ps);
-		for (const part of ps) {
-			expect(part.measures).toHaveLength(3);
-			expect(part.measures[1]?.notes).toHaveLength(0);
-			expect(part.measures[1]?.number).toBe('');
-			expect(part.measures.map((m) => m.number)).toEqual(['1', '', '2']);
+	it('inserts positioned gaps, reporting their document indexes in config order', () => {
+		const doc = document();
+		const gaps = gapsOf([gap(1, 1000), gap(0, 2000)]);
+		gaps.resolve(doc);
+		expect(doc.score.parts[0]?.measures.map((m) => m.number)).toEqual([
+			'',
+			'1',
+			'',
+			'2',
+		]);
+		expect(gaps.documentIndexes()).toEqual([
+			{ gap: gap(1, 1000), measureIndex: 2 },
+			{ gap: gap(0, 2000), measureIndex: 0 },
+		]);
+		expect([...gaps.byMeasureIndex().keys()].sort()).toEqual([0, 2]);
+	});
+
+	it('finds gaps naming measures already in the document, inserting nothing', () => {
+		const doc = document();
+		const [intro, outro] = insertGaps(doc, [
+			{ beforeMeasureIndex: 0 },
+			{ beforeMeasureIndex: 2 },
+		]);
+		if (!intro || !outro) {
+			throw new Error('insertGaps returned no measures');
+		}
+		const gaps = gapsOf([
+			{ measure: outro, durationMs: 500 },
+			{ measure: intro, durationMs: 1000, label: 'Intro' },
+		]);
+		gaps.resolve(doc);
+		expect(doc.score.parts[0]?.measures).toHaveLength(4);
+		expect(gaps.documentIndexes().map((d) => d.measureIndex)).toEqual([3, 0]);
+	});
+
+	it("accepts any part's measure as the gap's column", () => {
+		const doc = document();
+		insertGaps(doc, [{ beforeMeasureIndex: 1 }]);
+		const measure = doc.score.parts[1]?.measures[1];
+		if (!measure) {
+			throw new Error('no gap measure in the second part');
+		}
+		const gaps = gapsOf([{ measure, durationMs: 1000 }]);
+		gaps.resolve(doc);
+		expect(gaps.documentIndexes().map((d) => d.measureIndex)).toEqual([1]);
+	});
+
+	it('rejects a gap measure no longer in the document, or in another one', () => {
+		const doc = document();
+		const [removed] = insertGaps(doc, [{ beforeMeasureIndex: 0 }]);
+		removed?.remove();
+		const [foreign] = insertGaps(document(), [{ beforeMeasureIndex: 0 }]);
+		for (const measure of [removed, foreign]) {
+			if (!measure) {
+				throw new Error('insertGaps returned no measure');
+			}
+			expect(() =>
+				gapsOf([{ measure, durationMs: 1000 }]).resolve(doc),
+			).toThrow(/not in the rendered document/);
 		}
 	});
 
-	it("a leading gap copies its right neighbor's clef/key/time per part", () => {
-		const ps = parts();
-		new Gaps([gap(0, 1000)]).insertInto(ps);
-		const [p1, p2] = ps;
-		expect(p1?.measures[0]?.getClef('1')?.sign).toBe('G');
-		expect(p1?.measures[0]?.getKey('1')?.fifths).toBe(2);
-		expect(p1?.measures[0]?.getTime('1')?.beats).toBe('4');
-		expect(p2?.measures[0]?.getClef('1')?.sign).toBe('F');
+	it('rejects two gaps naming one measure, or a non-positive duration', () => {
+		const doc = document();
+		const [measure] = insertGaps(doc, [{ beforeMeasureIndex: 0 }]);
+		if (!measure) {
+			throw new Error('insertGaps returned no measure');
+		}
+		expect(() =>
+			gapsOf([
+				{ measure, durationMs: 1000 },
+				{ measure, durationMs: 1000 },
+			]).resolve(doc),
+		).toThrow(RangeError);
+		expect(() => gapsOf([gap(0, 0)]).resolve(document())).toThrow(RangeError);
 	});
 
-	it('an appended gap inherits its signature by carry-forward', () => {
-		const ps = parts();
-		new Gaps([gap(2, 1000)]).insertInto(ps);
-		expect(ps[0]?.measures).toHaveLength(3);
-		expect(ps[0]?.measures[2]?.notes).toHaveLength(0);
-		expect(ps[0]?.measures[2]?.getClef('1')?.sign).toBe('G');
-	});
-
-	it("multiple gaps land at documentIndexes' positions", () => {
-		const ps = parts();
-		const gaps = new Gaps([gap(1, 1000), gap(0, 1000)]);
-		gaps.insertInto(ps);
-		expect(ps[0]?.measures.map((m) => m.number)).toEqual(['', '1', '', '2']);
-		expect(
-			gaps.documentIndexes().map(({ measureIndex }) => measureIndex),
-		).toEqual([2, 0]);
-	});
-
-	it('rejects an out-of-range index or a non-positive duration', () => {
-		expect(() => new Gaps([gap(3, 1000)]).insertInto(parts())).toThrow(
-			RangeError,
-		);
-		expect(() => new Gaps([gap(-1, 1000)]).insertInto(parts())).toThrow(
-			RangeError,
-		);
-		expect(() => new Gaps([gap(0, 0)]).insertInto(parts())).toThrow(RangeError);
-	});
-
-	it('maps caller indexes to shifted document indexes, preserving config order', () => {
-		expect(
-			new Gaps([gap(4, 1000), gap(0, 1000), gap(0, 1000)]).documentIndexes(),
-		).toEqual([
-			{ gap: gap(4, 1000), measureIndex: 6 },
-			{ gap: gap(0, 1000), measureIndex: 0 },
-			{ gap: gap(0, 1000), measureIndex: 1 },
+	it('resolving no gaps leaves the document untouched', () => {
+		const doc = document();
+		gapsOf([]).resolve(doc);
+		expect(doc.score.parts[0]?.measures.map((m) => m.number)).toEqual([
+			'1',
+			'2',
 		]);
-	});
-
-	it('keys byMeasureIndex on the shifted document indexes', () => {
-		const byIndex = new Gaps([gap(4, 1000), gap(0, 1000)]).byMeasureIndex();
-		expect([...byIndex.keys()].sort((a, b) => a - b)).toEqual([0, 5]);
-		expect(byIndex.get(0)).toEqual(gap(0, 1000));
-		expect(byIndex.get(5)).toEqual(gap(4, 1000));
-	});
-
-	it('inserting no gaps leaves the parts untouched', () => {
-		const ps = parts();
-		new Gaps([]).insertInto(ps);
-		expect(ps[0]?.measures.map((m) => m.number)).toEqual(['1', '2']);
 	});
 });

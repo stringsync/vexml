@@ -87,13 +87,12 @@ export class ScoreRenderer {
 		await this.fontLoader.load(this.stage.container, this.config.fonts);
 
 		const mdoc = await this.parser.parse(input);
-
-		const parts = mdoc.score.parts;
-		// Gap measures go into the parsed document itself, so everything downstream
-		// (layout, draw, elements, sequence) sees them as ordinary empty measures.
-		if (parts.length > 0) {
-			this.configuredGaps.insertInto(parts);
+		// A gap is an ordinary measure of the document: found where the caller put it, or
+		// inserted into vexml's own parse.
+		if (mdoc.score.parts.length > 0) {
+			this.configuredGaps.resolve(mdoc);
 		}
+		const parts = mdoc.score.parts;
 		const drawn =
 			parts.length > 0
 				? this.scoreDrawer.draw(

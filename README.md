@@ -279,6 +279,24 @@ const score = await render(musicXML, element, {
 });
 ```
 
+Place a gap with `beforeMeasureIndex` (where it sits in the document as written; inside a repeat it plays on every pass) or `beforeBarIndex` (when it plays: bars counted in playback order with repeats and voltas unrolled, other gaps not counted). A `beforeBarIndex` inside a repeat throws, since a plain measure there would play on every pass; before a repeat's first bar or after its last is fine.
+
+vexml never edits a document you pass in, so to render an `MDocument` with gaps, put the gap measures into it yourself with `insertGaps` and name them in `gaps`. They are ordinary measures of your document from then on: an `EditingSession` keeps working, undo removes them, and they are saved with the document. With history on (any `EditingSession`), insert them inside an edit:
+
+```ts
+import { insertGaps, render } from '@stringsync/vexml';
+
+const [intro, solo] = document.history.edit('Insert gaps', () =>
+  insertGaps(document, [{ beforeBarIndex: 0 }, { beforeBarIndex: 17 }]),
+);
+const score = await render(document, element, {
+  gaps: [
+    { measure: intro, durationMs: 12400 },
+    { measure: solo, durationMs: 8000, label: 'Solo break' },
+  ],
+});
+```
+
 Read the resulting timing with `score.getGaps()`, which returns `{ measureIndex, label, startMs, endMs }` per gap in the same order they were passed, so join by position to line the score up with your media. Playback treats a gap like any other measure: the cursor glides across it and `getMeasureIndexAtMs` resolves into it.
 
 ## Adding a canvas layer

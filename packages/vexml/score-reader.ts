@@ -18,6 +18,7 @@ import type { ChordFrame } from './chord-diagram-glyph';
 import { DEFAULT_TEMPO_BPM, EPSILON } from './constants';
 import type { DynamicGlyphs } from './dynamic-glyphs';
 import type { ModulationNote, TempoModulation } from './metronome-glyph';
+import type { Jump } from './sequence';
 
 /**
  * A metronome mark: the beat-unit's vexflow duration code plus its bpm. The optional
@@ -1108,6 +1109,58 @@ export class ScoreReader {
 		return out;
 	}
 
+	/* The repeat/volta jumps for every measure, mapped from the shared repeat structure
+	 * (measureRepeats, which the renderer reads too). An ending supersedes a co-located backward
+	 * repeat — the iterator drives the back-jump off the ending instead. */
+	measureJumps(measures: readonly Measure[]): Jump[][] {
+		return this.measureRepeats(measures).map(
+			({ repeatBegin, repeatEnd, repeatTimes, ending }) => {
+				const jumps: Jump[] = [];
+				if (repeatBegin) {
+					jumps.push({ type: 'repeatstart' });
+				}
+				if (ending) {
+					jumps.push({
+						type: 'repeatending',
+						times: this.endingPasses(ending.number),
+						last: ending.last,
+						number: this.endingFirstPass(ending.number),
+					});
+				} else if (repeatEnd) {
+					jumps.push({
+						type: 'repeatend',
+						times: Math.max(0, (repeatTimes ?? 2) - 1),
+					});
+				}
+				return jumps;
+			},
+		);
+	}
+
+	/** How many passes an ending covers, from its `<ending number>` ("1", "1,2", "1-3"). */
+	private endingPasses(numberAttr: string | null): number {
+		if (!numberAttr) {
+			return 1;
+		}
+		let total = 0;
+		for (const part of numberAttr.split(',')) {
+			const range = part.trim().match(/^(\d+)\s*-\s*(\d+)$/);
+			if (range) {
+				total += Math.max(1, Number(range[2]) - Number(range[1]) + 1);
+			} else if (part.trim()) {
+				total += 1;
+			}
+		}
+		return Math.max(1, total);
+	}
+	/** The FIRST pass an ending covers ("1" -> 1, "2,3" -> 2, "3-4" -> 3). Playback compares
+	 * this across adjacent runs: a number that doesn't climb means the volta group restarted,
+	 * i.e. the new run belongs to an enclosing repeat block. Defaults to 1 for a malformed or
+	 * absent attribute, which reads as a restart and so errs toward splitting rather than
+	 * merging two unrelated groups. */
+	private endingFirstPass(numberAttr: string | null): number {
+		return Number(numberAttr?.split(/[,-]/)[0]?.trim()) || 1;
+	}
 	/**
 	 * One side of a metric modulation, as the drawing side wants it. Beams are counted rather
 	 * than tracked as a run: a 'begin'/'continue' marker means that beam level carries on to the

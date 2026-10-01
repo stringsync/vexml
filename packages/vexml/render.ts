@@ -16,6 +16,7 @@ import { DefaultScoreParser } from './default-score-parser';
 import { DurationTranslator } from './duration-translator';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { ElementFactory } from './element-factory';
+import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
 import { LayoutPlanner } from './layout-planner';
 import { NotationTranslator } from './notation-translator';
@@ -34,7 +35,7 @@ import { VoiceTranslator } from './voice-translator';
 
 /*
  * Render a MusicXML score into a container: parse text or a compressed .mxl Blob, or reuse an
- * editor-owned MDocument. Document input requires empty config.gaps to avoid source mutation.
+ * editor-owned MDocument, which is never edited: its gaps must name measures already in it.
  * Build the stage inside the div, lay the score out, and draw it onto the stage's
  * managed canvas. The caller never sees the canvas — only the returned Score, which owns the DOM
  * and is the handle for events/decorations/layers (and dispose).
@@ -52,8 +53,16 @@ export function render(
 	// knobs a caller left out of `{ type: 'standard' }`. Fill it from its own defaults first.
 	const layout = resolveLayout(config?.layout ?? DEFAULT_CONFIG.layout);
 	const resolved: Config = { ...DEFAULT_CONFIG, ...config, layout };
-	if (input instanceof MDocument && resolved.gaps.length > 0) {
-		throw new Error('render: configured gaps require string or Blob input');
+	const reader = new ScoreReader(new DynamicGlyphs());
+	const gaps = new Gaps(resolved.gaps, new GapInserter(reader));
+	// Before the stage touches the container: a caller's document is never edited, so its gaps
+	// are measures already in it, and a parse vexml makes holds none of the caller's measures.
+	if (input instanceof MDocument ? gaps.inserts() : gaps.names()) {
+		throw new Error(
+			input instanceof MDocument
+				? 'render: gaps for an MDocument must name measures in it (see insertGaps)'
+				: 'render: a gap naming a measure needs its MDocument as input',
+		);
 	}
 	// Scale-to-fit + center by default for a system-stacked layout that isn't a horizontal scroll
 	// box: the score is engraved once at its reference width, then shrunk to fit a narrower container
@@ -84,9 +93,7 @@ export function render(
 	const chords = new ChordTranslator(durations, new NotationTranslator());
 	// ONE translator instance shared by layout and draw: both must build identical vexflow
 	// voices for the measured widths to match the drawn ones.
-	const reader = new ScoreReader(new DynamicGlyphs());
 	const translator = new VoiceTranslator(chords, durations, barlines, reader);
-	const gaps = new Gaps(resolved.gaps);
 	return new ScoreRenderer(
 		resolved,
 		stage,

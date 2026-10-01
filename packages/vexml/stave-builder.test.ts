@@ -4,6 +4,7 @@ import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
 import type { MeasureNumbering } from './config';
 import { DynamicGlyphs } from './dynamic-glyphs';
+import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
 import { ScoreReader } from './score-reader';
 import { SignatureTranslator } from './signature-translator';
@@ -22,7 +23,7 @@ describe('StaveBuilder', () => {
 			{} as RenderContext,
 			new CollisionResolver(new Rect(0, 0, 1000, 1000), {}),
 			new SpillTracker(),
-			new Gaps([]),
+			new Gaps([], new GapInserter(new ScoreReader(new DynamicGlyphs()))),
 			{
 				parts: [],
 				partGroups: [],
