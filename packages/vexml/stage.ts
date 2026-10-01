@@ -208,6 +208,21 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 			this.probe,
 			surfaceOptions(this.pixelRatio),
 		);
+		// The box's only in-flow child, giving it the intrinsic sizes the single canvas it once was
+		// had: a canvas is a replaced element, so under a percentage max-width it contributes its
+		// width to a max-content size but nothing to a min-content one. A grid's auto track or a
+		// shrink-to-fit parent then holds the score at its engraved width when there's room and lets
+		// it shrink when there isn't; a sized div would force its full width on them. It follows the
+		// tile plane, so a caller's `querySelector('canvas')` still finds the first tile.
+		const strut = document.createElement('canvas');
+		strut.className = 'vexml-strut';
+		strut.width = 0;
+		strut.height = 0;
+		strut.style.display = 'block';
+		strut.style.width = 'var(--vexml-width)';
+		strut.style.maxWidth = '100%';
+		strut.style.height = '0';
+		this.base.appendChild(strut);
 
 		// Observe BOTH the container and the base canvas. Placement (placeLayer and the score<->client
 		// frame) is derived from the base canvas's rendered box, which can change *without* the
@@ -941,7 +956,9 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 	 * container — see Stage) then caps the canvas at the container width and lets its height follow via
 	 * the exact score aspect ratio (--vexml-aspect, not the rounded bitmap ratio), so a narrow viewport
 	 * shrinks the score to fit while a wide one lands on a pixel-identical box (the score<->client scale
-	 * stays exactly 1) and never blows it up past its engraved resolution. The base rule carries the
+	 * stays exactly 1) and never blows it up past its engraved resolution. Its width is auto, taken from
+	 * the strut (see the constructor), so it shrinks in a grid track or a flex row as a canvas would.
+	 * The base rule carries the
 	 * aspect ratio too: the box has no intrinsic ratio of its own (it was a canvas once), so a caller's
 	 * `height: auto` needs it to follow their width. The box is `inline-block`, so `text-align: center`
 	 * on the container centers it; top-aligning it drops the descender strip a baseline-aligned inline
@@ -954,7 +971,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		style.setAttribute('data-vexml-canvas-style', '');
 		style.textContent =
 			':where(.vexml-canvas){width:var(--vexml-width);height:var(--vexml-height);aspect-ratio:var(--vexml-aspect);vertical-align:top}' +
-			':where(.vexml-canvas.vexml-fit){max-width:100%;height:auto;aspect-ratio:var(--vexml-aspect)}';
+			':where(.vexml-canvas.vexml-fit){width:auto;max-width:100%;height:auto;aspect-ratio:var(--vexml-aspect)}';
 		document.head.appendChild(style);
 	}
 }

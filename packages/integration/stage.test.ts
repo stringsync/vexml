@@ -246,4 +246,104 @@ describe('stage', () => {
 		expect(result.gapLeft).toBeGreaterThan(0);
 		expect(result.gapLeft).toBeCloseTo(result.gapRight, 0);
 	});
+
+	// A grid container half the engraved width, inside a scroller named as scrollContainer: the
+	// shape of a page that lays the score out in a grid cell. A grid's auto track takes an item's
+	// min-content size, so the score box must contribute none of its width there, as the single
+	// canvas it once was did; otherwise the track holds it at full size and the music runs off
+	// the right edge. Everything riding on the box (tiles, playhead, hit-testing) shrinks with it.
+	it.concurrent('fits a score to a grid container half its engraved width', async () => {
+		const xml = await testing.fixture('score_mozart_an_chloe.musicxml');
+		const { image, result } = await testing.eval(
+			'structure_single_stave.musicxml',
+			{},
+			async ({ container, render }, musicXML: string) => {
+				const scroller = document.createElement('div');
+				scroller.style.overflowY = 'auto';
+				const cell = document.createElement('div');
+				cell.style.display = 'grid';
+				cell.style.width = '360px';
+				cell.style.backgroundColor = '#ffffff';
+				scroller.appendChild(cell);
+				container.replaceChildren(scroller);
+				const score = await render(musicXML, cell, {
+					scrollContainer: scroller,
+					layout: { type: 'standard', referenceWidth: 720 },
+					fonts: {
+						notation: { family: 'Bravura' },
+						text: { family: 'Source Sans 3' },
+					},
+				});
+				const cursor = score.createCursor();
+				cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
+				cursor.seekMs(score.getDurationMs() * 0.4);
+				await new Promise((resolve) =>
+					requestAnimationFrame(() => requestAnimationFrame(resolve)),
+				);
+
+				const box = cell.querySelector('.vexml-canvas') as HTMLElement;
+				const intrinsic = parseFloat(
+					box.style.getPropertyValue('--vexml-width'),
+				);
+				const shown = box.getBoundingClientRect();
+				const tiles = (
+					cell.querySelector('.vexml-tiles') as HTMLElement
+				).getBoundingClientRect();
+				const marker = (
+					cell.querySelector('.vexml-marker') as HTMLElement
+				).getBoundingClientRect();
+
+				// Point at a note's on-screen middle: the hit lands on that note and its time.
+				const note = score.getElements().notes()[5];
+				if (!note) {
+					throw new Error('note not found');
+				}
+				const rect = note.getBoundingClientRect();
+				const hits: unknown[] = [];
+				score.events.on('pointerdown', (e) => {
+					hits.push(e.target);
+					const time = score.getTimeAt(e.point);
+					hits.push(time?.stepIndex ?? null);
+				});
+				box.dispatchEvent(
+					new PointerEvent('pointerdown', {
+						clientX: rect.left + rect.width / 2,
+						clientY: rect.top + rect.height / 2,
+						bubbles: true,
+					}),
+				);
+				const noteTime = score.getTimeAt({
+					x: note.rect.x + note.rect.w / 2,
+					y: note.rect.y + note.rect.h / 2,
+				});
+
+				return {
+					intrinsic,
+					cell: cell.clientWidth,
+					shown: { left: shown.left, right: shown.right, width: shown.width },
+					tilesWidth: tiles.width,
+					markerInside:
+						marker.left >= shown.left - 1 && marker.right <= shown.right + 1,
+					noteInside: rect.left >= shown.left && rect.right <= shown.right,
+					noteScale: rect.width / note.rect.w,
+					hitNote: hits[0] === note,
+					hitStep: hits[1],
+					noteStep: noteTime?.stepIndex ?? null,
+				};
+			},
+			xml,
+		);
+
+		// The box shrank to the cell, about half size, and the tiles with it.
+		expect(result.intrinsic).toBeGreaterThan(result.cell * 1.5);
+		expect(result.shown.width).toBeCloseTo(result.cell, 0);
+		expect(result.tilesWidth).toBeCloseTo(result.shown.width, 0);
+		// Elements, the playhead, and pointer hits follow the shrunk box.
+		expect(result.noteScale).toBeCloseTo(result.cell / result.intrinsic, 2);
+		expect(result.noteInside).toBe(true);
+		expect(result.markerInside).toBe(true);
+		expect(result.hitNote).toBe(true);
+		expect(result.hitStep).toBe(result.noteStep);
+		expect(image).toMatchScreenshot('fit_grid_half_width.png');
+	});
 });

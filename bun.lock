@@ -14,11 +14,11 @@
     },
     "packages/integration": {
       "name": "@vexml/integration",
-      "version": "1.6.1",
+      "version": "1.7.0",
       "dependencies": {
         "@stringsync/vexml": "workspace:*",
         "@vexml/renderer": "workspace:*",
-        "webappwiz": "0.0.25",
+        "webappwiz": "0.0.26",
       },
       "devDependencies": {
         "@types/pngjs": "^6.0.5",
@@ -29,26 +29,26 @@
     },
     "packages/renderer": {
       "name": "@vexml/renderer",
-      "version": "1.6.1",
+      "version": "1.7.0",
       "dependencies": {
         "@coderline/alphatab": "^1.8.4",
         "@stringsync/mdom": "0.5.0",
         "@stringsync/vexml": "workspace:*",
         "opensheetmusicdisplay": "^2.1.1",
         "playwright": "^1.61.1",
-        "webappwiz": "0.0.25",
+        "webappwiz": "0.0.26",
       },
     },
     "packages/site": {
       "name": "@vexml/site",
-      "version": "1.6.1",
+      "version": "1.7.0",
       "dependencies": {
         "@fontsource-variable/anybody": "^5.3.0",
         "@fontsource/ibm-plex-mono": "^5.3.0",
         "@fontsource/ibm-plex-sans": "^5.3.0",
         "@stringsync/mdom": "0.5.0",
         "@stringsync/vexml": "workspace:*",
-        "@webappwiz/react": "0.0.25",
+        "@webappwiz/react": "0.0.26",
         "class-variance-authority": "^0.7.1",
         "cn": "^0.2.5",
         "lucide-react": "^1.41.0",
@@ -58,7 +58,7 @@
         "shadcn": "^4.21.0",
         "smplr": "^1.0.0",
         "tw-animate-css": "^1.4.0",
-        "webappwiz": "0.0.25",
+        "webappwiz": "0.0.26",
       },
       "devDependencies": {
         "@tailwindcss/vite": "^4.3.1",
@@ -71,24 +71,24 @@
     },
     "packages/vex": {
       "name": "@vexml/vex",
-      "version": "1.6.1",
+      "version": "1.7.0",
       "bin": {
         "vex": "./index.ts",
       },
       "dependencies": {
         "@stringsync/mdom": "0.5.0",
         "@vexml/renderer": "workspace:*",
-        "webappwiz": "0.0.25",
+        "webappwiz": "0.0.26",
         "zod": "^4.6.5",
       },
     },
     "packages/vexml": {
       "name": "@stringsync/vexml",
-      "version": "1.6.1",
+      "version": "1.7.0",
       "dependencies": {
         "@stringsync/mdom": "0.5.0",
         "vexflow": "5.0.0",
-        "webappwiz": "0.0.25",
+        "webappwiz": "0.0.26",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -442,7 +442,7 @@
 
     "@vitejs/plugin-react": ["@vitejs/plugin-react@6.0.3", "", { "dependencies": { "@rolldown/pluginutils": "^1.0.1" }, "peerDependencies": { "@rolldown/plugin-babel": "^0.1.7 || ^0.2.0", "babel-plugin-react-compiler": "^1.0.0", "vite": "^8.0.0" }, "optionalPeers": ["@rolldown/plugin-babel", "babel-plugin-react-compiler"] }, "sha512-vmFvco5/QuC2f9Oj+wTk0+9XeDFkHxSamwZKYc7MxYwKICfvUvlMhqKI0VuICPltGqh1neqBKDvO4kes1ya8vg=="],
 
-    "@webappwiz/react": ["@webappwiz/react@0.0.25", "", { "dependencies": { "webappwiz": "^0.0.25" }, "peerDependencies": { "react": "^19" } }, "sha512-TFfjKemZ+l7WPLojzYW42XaIMRlHHtN10nQTMmtwSZloT0cKgvVNogyZ9x8pJ4jIBPoULzP2+utHtNbTibvGrw=="],
+    "@webappwiz/react": ["@webappwiz/react@0.0.26", "", { "dependencies": { "webappwiz": "^0.0.26" }, "peerDependencies": { "react": "^19" } }, "sha512-4ae8FK+FK2F/5zXn/8ABefN47Y/4VA9ehi0kbwZmAP8wBhOW08i8hSi9zsL0l2R5cyPqKEATADIlhjJxbaLQ7g=="],
 
     "abbrev": ["abbrev@4.0.0", "", {}, "sha512-a1wflyaL0tHtJSmLSOVybYhy22vRih4eduhhrkcjgrWGnRfrZtovJ2FRjxuTtkkj47O/baf0R86QU5OuYpz8fA=="],
 
@@ -1114,7 +1114,7 @@
 
     "vite": ["vite@8.1.0", "", { "dependencies": { "lightningcss": "^1.32.0", "picomatch": "^4.0.4", "postcss": "^8.5.15", "rolldown": "~1.1.2", "tinyglobby": "^0.2.17" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^20.19.0 || >=22.12.0", "@vitejs/devtools": "^0.3.0", "esbuild": "^0.27.0 || ^0.28.0", "jiti": ">=1.21.0", "less": "^4.0.0", "sass": "^1.70.0", "sass-embedded": "^1.70.0", "stylus": ">=0.54.8", "sugarss": "^5.0.0", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "@vitejs/devtools", "esbuild", "jiti", "less", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-BuJcQK/56NQTWDGn4ABea3q4SSBdNPWwNZKTkkUpcMPnLoquSYH8llRtSUIgoL1KSCpHt5eghLShn50mH36y7Q=="],
 
-    "webappwiz": ["webappwiz@0.0.25", "", { "dependencies": { "@standard-schema/spec": "^1.1.0" } }, "sha512-jIVHShDwytPiAVmZQYjaeSnY+JfpWD1lDI7N6Q4ClrSZsjykusyFZxFzUvFfvusP4FWUDrGbOv7Ei6Qaw5ghHw=="],
+    "webappwiz": ["webappwiz@0.0.26", "", { "dependencies": { "@standard-schema/spec": "^1.1.0" } }, "sha512-RIRHrL22F2d3dRt0Zfn4A2CAr43sZv6Wc+GXkQPjrcve6SGDPjGCYU4CbE1PNZlCEbZw3hArppHzN73c7T50FQ=="],
 
     "which": ["which@4.0.0", "", { "dependencies": { "isexe": "^3.1.1" }, "bin": { "node-which": "bin/which.js" } }, "sha512-GlaYyEb07DPxYCKhKzplCWBJtvxZcZMrL+4UkrTSJHHPyZU4mYYTv3qaOe77H7EODLSSopAUFAc6W8U4yqvscg=="],
 

@@ -26,8 +26,8 @@ export interface TiledSurfaceOptions {
  * painted; past it, only those in or near the view are, and the rest wait in their op lists.
  *
  * `ctx` records onto it: an op lands in the grid and is replayed at once onto any painted tile it
- * touches. The tiles sit on a plane laid out at the surface's CSS size, scaled by fit() to
- * whatever box the host is shown at.
+ * touches. The tiles sit on a plane laid out at the surface's CSS size, or at whatever box
+ * fit() is given to show it at.
  */
 export class TiledSurface implements PaintSink, Resource {
 	readonly ctx: CanvasRenderingContext2D;
@@ -38,6 +38,8 @@ export class TiledSurface implements PaintSink, Resource {
 	// The region in or near view, in surface px; null until the stage first measures it.
 	private view: Rect | null = null;
 	private whole = true;
+	// How much fit() stretches the surface on screen, per axis.
+	private shown = { sx: 1, sy: 1 };
 
 	constructor(
 		readonly host: HTMLElement,
@@ -50,7 +52,6 @@ export class TiledSurface implements PaintSink, Resource {
 		style.position = 'absolute';
 		style.left = '0';
 		style.top = '0';
-		style.transformOrigin = '0 0';
 		style.pointerEvents = 'none';
 		host.appendChild(this.plane);
 		this.budget = new TileBudget(opts.budget);
@@ -86,8 +87,7 @@ export class TiledSurface implements PaintSink, Resource {
 			this.close(tile);
 		}
 		this.grid = new TileGrid(width, height, this.opts.tileSize, origin);
-		this.plane.style.width = `${width}px`;
-		this.plane.style.height = `${height}px`;
+		this.placePlane();
 	}
 
 	/* Replace everything with already recorded ops: the engraving, once its crop is known. */
@@ -107,11 +107,20 @@ export class TiledSurface implements PaintSink, Resource {
 	/* Stretch the tiles over the box the host is shown at, in CSS px. */
 	fit(width: number, height: number): void {
 		// A box at full size can come back a rounding error off (a height derived from
-		// aspect-ratio), and any scale at all has the compositor resample every tile.
+		// aspect-ratio), and any scale at all resamples every tile. The tiles are laid out at the
+		// scaled size rather than transformed: a transform makes the plane a composited layer,
+		// which Chrome resamples one way or another depending on load, so a fit score drew
+		// differently from run to run.
 		const sx = scaleOf(width, this.width);
 		const sy = scaleOf(height, this.height);
-		this.plane.style.transform =
-			sx === 1 && sy === 1 ? '' : `scale(${sx}, ${sy})`;
+		if (sx === this.shown.sx && sy === this.shown.sy) {
+			return;
+		}
+		this.shown = { sx, sy };
+		this.placePlane();
+		for (const [index, tile] of this.tiles) {
+			this.place(index, tile.canvas);
+		}
 	}
 
 	/* Paint the tiles a surface-px region needs and let the budget drop the others. */
@@ -243,13 +252,9 @@ export class TiledSurface implements PaintSink, Resource {
 		const canvas = document.createElement('canvas');
 		canvas.width = Math.round(rect.right * s) - x0;
 		canvas.height = Math.round(rect.bottom * s) - y0;
-		const style = canvas.style;
-		style.position = 'absolute';
-		style.display = 'block';
-		style.left = `${x0 / s}px`;
-		style.top = `${y0 / s}px`;
-		style.width = `${canvas.width / s}px`;
-		style.height = `${canvas.height / s}px`;
+		canvas.style.position = 'absolute';
+		canvas.style.display = 'block';
+		this.place(index, canvas);
 		const ctx = canvas.getContext('2d');
 		if (!ctx) {
 			throw new Error('vexml: 2D context unavailable for a tile');
@@ -267,6 +272,28 @@ export class TiledSurface implements PaintSink, Resource {
 		this.plane.appendChild(canvas);
 		this.tiles.set(index, { canvas, replayer });
 		this.budget.use(index, canvas.width * canvas.height);
+	}
+
+	// Lay the plane out at the surface's size as fit() shows it.
+	private placePlane(): void {
+		const { sx, sy } = this.shown;
+		this.plane.style.width = `${this.grid.width * sx}px`;
+		this.plane.style.height = `${this.grid.height * sy}px`;
+	}
+
+	// Lay a tile out over its part of the plane: its device-snapped edges (see open), scaled as
+	// fit() shows the surface.
+	private place(index: number, canvas: HTMLCanvasElement): void {
+		const rect = this.grid.tileRect(index);
+		const s = this.scale;
+		const { sx, sy } = this.shown;
+		const x0 = Math.round(rect.x * s);
+		const y0 = Math.round(rect.y * s);
+		const style = canvas.style;
+		style.left = `${(x0 / s) * sx}px`;
+		style.top = `${(y0 / s) * sy}px`;
+		style.width = `${(canvas.width / s) * sx}px`;
+		style.height = `${(canvas.height / s) * sy}px`;
 	}
 
 	private close(index: number): void {
