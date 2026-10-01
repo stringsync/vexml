@@ -1,7 +1,7 @@
 ---
 name: arbor
 description: Use the @webappwiz/arbor CLI to land your work on trunk, or a base branch given as an argument, from an isolated git worktree without pull requests. Read this before making any code change in an arbor repository, since it decides where the work happens, and whenever you need to add, claim, merge, remove, list, show, locate, escalate, or defer a task.
-version: 0.0.23
+version: 0.0.26
 ---
 
 # Using arbor
@@ -26,23 +26,26 @@ retry, another agent owns the tree.
    rebase, noting it in `ARBOR.md`. Only when conflicts would be hard to
    resolve, `arbor wait <task>` for the other task to land first. If it is
    doing the opposite of what you were asked, escalate instead.
-2. **Start.** `arbor add <task>`, `arbor add <task> --todo <id>` to take up a
-   todo, or `arbor claim <task>` to resume one. Pass `--base <branch>` only
-   when invoked with a branch (`/arbor feature/auth`) or the user names one;
-   never guess a base from the checked-out branch.
+2. **Start.** `arbor add <task>`, or `arbor claim <task>` to resume one.
+   Read `arbor todo list` first and take up every open todo your work will
+   settle: `arbor add <task> --todo 3,5`. Pass `--base <branch>` only when
+   invoked with a branch (`/arbor feature/auth`) or the user names one; never
+   guess a base from the checked-out branch.
 3. **Plan.** Fill in the `ARBOR.md` stub before touching code (see below).
 4. **Work.** Commit with git as you go; arbor never commits for you. Defer
    anything outside your Goal with `arbor todo add "<text>"` and move on.
-   Between steps, run `arbor replies`: your human may have followed up an
-   answer (see Follow-ups).
-5. **Squash** to one commit (see Committing), then **`arbor merge`**. On
-   failure, do what stderr says and merge again.
+   Ask about any call the request does not settle as you make it, and keep
+   going (see Asking as you go). Between steps, run `arbor replies`: the
+   user may have answered one or followed up an answer (see Follow-ups).
+5. **Settle todos** (see Deferring work), **squash** to one commit (see
+   Committing), then **`arbor merge`**. On failure, do what stderr says and
+   merge again.
 
 A successful merge deletes the worktree and your working directory with it:
 `cd` to the main tree it prints before running anything else.
 
 `wait` ends on `removed` (landed or dropped: redo the overlap check),
-`escalated` (the other task needs a person: tell the user you are blocked on
+`escalated` (the other task needs the user: tell them you are blocked on
 it), a broken status (`wait` once more, then ask), or exit 14 `timeout` (wait
 again or work alongside). A `stale` lease on a `working` task is normal: watch
 status, never the lease.
@@ -51,8 +54,21 @@ status, never the lease.
 
 When something comes up that is not your Goal (a bug next door, a follow-up,
 a reply that widens the task), `arbor todo add "<one line>"` from your
-worktree and keep going. Do not grow the task. `merge` recommends the next
-todo when you land; mention it in your report (see Reporting).
+worktree and keep going. Do not grow the task.
+
+A task can hold any number of todos, and merging removes every one it holds.
+When an open todo turns out to be part of your work, `arbor todo take <id>`
+from your worktree and add it to your Goal. Before merging, read
+`arbor todo list` again: take any your change also settles, and for one you
+hold but only partly did, `arbor todo update <id> "<what is left>"` then
+`arbor todo release <id>`, so it stays on the list.
+
+After a merge, pick the next todo so the context this conversation built up
+gets used before it is gone. First, one you added in this conversation, from
+any of its tasks, oldest first. Failing that, read `arbor todo list` for the
+open todo closest to the work you just did: the same files, feature, or
+problem. Only when none is related, the one `merge` recommends. Name it in
+your report (see Reporting).
 
 ## Handing out part of your task
 
@@ -62,10 +78,24 @@ tree committed (a part lands by fast-forwarding your checkout), re-read files
 before editing them, and squash only after every part has landed. Hand a
 part out only when describing it is shorter than doing it.
 
+## Asking as you go
+
+Do not save questions for escalation. Whenever you make a decision that does
+not clearly follow from what the user asked (a name, a default, behavior they
+never mentioned, one reading of an ambiguous ask), write a question under
+`## Blocked` in `ARBOR.md` right away, in the format under Escalation, saying
+what you chose and what else you could have done. Then move on to the rest of
+the request without waiting. The inbox shows every unchecked question, whether
+the task is escalated or not, so the user can answer while you work. When
+an answer overturns a choice, redo that part.
+
+`arbor merge` refuses while a question is unchecked: when everything else is
+done and some are still open, escalate and wait for them (see Escalation).
+
 ## Escalation
 
-Merge only work you verified yourself. Escalate when verification needs a
-person (external services, destructive migrations, visual changes), when the
+Merge only work you verified yourself. Escalate when verification needs the
+user (external services, destructive migrations, visual changes), when the
 user asked to see the work first, or, absent instructions, when the change is
 complex enough that correctness needs a reader rather than a test.
 
@@ -77,7 +107,8 @@ complex enough that correctness needs a reader rather than a test.
 2. Leave something to look at, by **absolute path** (start from
    `arbor path <task>`): a screenshot for anything visual. Ask first if
    producing it is expensive.
-3. Write each question under `## Blocked` in `ARBOR.md`, then report.
+3. Write each question not already there under `## Blocked` in `ARBOR.md`,
+   then report.
 4. Wait for answers. If your harness can run a command in the background and
    wake you when it exits (Claude Code's `run_in_background` can), start
    `arbor wait <task> --answered` that way; the user may answer from the inbox
@@ -117,18 +148,22 @@ Replies arrive in chat or in the inbox. Read inbox replies only through
 `arbor wait <task> --answered` or `arbor replies <task>`: either claims them,
 writing each after `→` on its question's line, and a claimed reply can no
 longer change under you. Never read them any other way. Write a chat reply
-after `→` yourself, matching it by number (`q1`, `Q1:` and `1.` all mean Q1). Check an item off only when the answer is one you can act on, and
+after `→` yourself, matching it by number (`q1`, `Q1:` and `1.` all mean Q1).
+A conversation can answer a question without naming it: whenever anything
+the user says settles an open question, write that answer after `→` and
+check it off, so it leaves the inbox instead of being asked again. Check an
+item off only when the answer is one you can act on, and
 write it after `→`; anything else stays open and leads your next report. A
 reply to a D item is an instruction. "Deferred to todo 7" and "Skip this"
 mean leave it out and carry on: check the item off. "Approved: merge it."
 answers a review: check it off and merge. `arbor merge` refuses with exit 16
 `blocked` while `## Blocked` has an unchecked item, and exit 15 `unread`
 while a reply waits unclaimed. `arbor claim` resumes an escalated task. `arbor retry` is only
-for `budget_exhausted`, and is the human's to run, before you claim.
+for `budget_exhausted`, and is the user's to run, before you claim.
 
 ## Follow-ups
 
-Your human can follow up any answer you already read, even one you checked
+The user can follow up any answer you already read, even one you checked
 off. `arbor replies` (and `arbor wait --answered`) writes a follow-up on a
 `→ ` line of its own under its question and unchecks the question. Treat it
 as an instruction from the user: act on it, then check the question off
@@ -147,7 +182,7 @@ One sentence blending what the task set out to do with where it ended up.
 Next: todo <id>, <its text>. Stale: todo <id> (remove?).
 ```
 
-Leave out the `Next` line when merge recommended nothing.
+Leave out the `Next` line when no todo is open.
 
 ```markdown
 ### ⚠️ Escalated `<task>`: <what it waits on, in a few words>
