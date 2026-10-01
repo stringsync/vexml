@@ -32,6 +32,9 @@ export class Hairpin {
 		this.offset = offset;
 		return this;
 	}
+	getOffset(): number {
+		return this.offset;
+	}
 	get stave(): Stave {
 		return this.from.checkStave();
 	}

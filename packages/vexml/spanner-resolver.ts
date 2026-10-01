@@ -5,8 +5,10 @@ import {
 	type RenderContext,
 	type Stave,
 	type StaveNote,
+	type StaveTie,
 	type TabNote,
 	TextBracket,
+	type Tuplet,
 } from 'vexflow';
 import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
@@ -152,12 +154,23 @@ export class SpannerResolver {
 	 * measures). Drawn last, on top of the notes.
 	 */
 	resolve(anchors: SpannerAnchors): void {
+		// The bows, kept for the hairpin pass below: a wedge parks at a fixed gap from the
+		// staff, which is the same band a slur or tie bowing the same way lands in.
+		const bows: { stave: Stave; rect: Rect }[] = [];
 		for (const tie of this.spanners.buildTies(this.allChords, anchors.byLead)) {
 			tie.setContext(this.context).draw();
+			// A tie off a note above or below the staff arcs further out than the notehead,
+			// and one running to the end of a system stretches that arc over every note to
+			// the barline — the band a hairpin or the neighbouring stave sits in.
+			const stave = (
+				tie.getNotes().firstNote ?? tie.getNotes().lastNote
+			)?.checkStave();
+			if (stave) {
+				const rect = this.tieRect(tie);
+				this.reportBow(stave, rect, false);
+				bows.push({ stave, rect });
+			}
 		}
-		// The bows, kept for the hairpin pass below: a wedge parks at a fixed gap from the
-		// staff, which is the same band a slur bowing the same way lands in.
-		const slurBows: { stave: Stave; rect: Rect }[] = [];
 		for (const slur of this.spanners.buildSlurs(
 			this.allChords,
 			anchors.byLead,
@@ -165,51 +178,18 @@ export class SpannerResolver {
 			// drawWithStyle, not draw: Curve.draw never applies its own style, and a
 			// <slur line-type> rides on the element as a lineDash (see buildSlurs).
 			slur.curve.setContext(this.context).drawWithStyle();
-			// The bow is ink like any other, so the page has to cover it: a slur arcing over
-			// the top stave of the first system rises into the cropped top slack, and one
-			// dipping under the last system's bottom stave hangs past the floor. Without this
-			// the crop cuts the arc off mid-air.
-			this.reporter.growPageTop(slur.top);
-			this.reporter.growPageBottom(slur.bottom);
-			// A bow arcs past the notes it joins, so it can reach further off the stave than
-			// anything the note pass measured — a slur over a beamed group climbs over the
-			// beam, and in a song that lands on the singer's lyrics. Report it as spill so
-			// pass two opens the gap instead (the arc is pinned to its noteheads and has
-			// nowhere else to go).
-			//
-			// Except a cross-stave bow, which is a passenger in the gap rather than a thing
-			// the gap has to hold: its height IS the distance between the two staves, so
-			// reporting it would have the gap widen to make room for a curve that then grows
-			// to match. Same reason crossStaveNotes drops a cross-staff stem tip.
-			const placement = slur.stave && this.staveRows.get(slur.stave);
-			if (slur.stave && placement && !slur.crossStave) {
-				this.spill.recordStave(
-					placement.system,
-					placement.row,
-					slur.stave,
-					new Rect(
-						slur.left,
-						slur.top,
-						slur.right - slur.left,
-						slur.bottom - slur.top,
-					),
-				);
-			}
-			// And against the system above: a bow over a middle system's top stave has nothing
-			// but the previous system over it, so report it the way an above-placed wedge does.
-			if (placement) {
-				this.spill.growHighestTop(placement.system, slur.top);
-			}
+			const rect = new Rect(
+				slur.left,
+				slur.top,
+				slur.right - slur.left,
+				slur.bottom - slur.top,
+			);
 			if (slur.stave) {
-				slurBows.push({
-					stave: slur.stave,
-					rect: new Rect(
-						slur.left,
-						slur.top,
-						slur.right - slur.left,
-						slur.bottom - slur.top,
-					),
-				});
+				this.reportBow(slur.stave, rect, slur.crossStave);
+				bows.push({ stave: slur.stave, rect });
+			} else {
+				this.reporter.growPageTop(slur.top);
+				this.reporter.growPageBottom(slur.bottom);
 			}
 		}
 		// Tablature hammer-ons/pull-offs and slides, likewise resolved over the whole score.
@@ -284,11 +264,12 @@ export class SpannerResolver {
 		// Hairpins, like the pedals below them, are resolved over the whole score so a wedge
 		// can open in one measure and close in another. A below-stave one reaches under the
 		// staff, so grow the bottom crop to its drawn extent.
-		for (const wedge of this.spanners.buildWedges(
-			this.allWedges,
-			anchors.byLead,
-		)) {
-			this.clearWedge(wedge, slurBows);
+		const wedges = this.spanners.buildWedges(this.allWedges, anchors.byLead);
+		for (const wedge of wedges) {
+			this.clearWedge(wedge, bows, anchors.byLead.values());
+		}
+		this.alignWedgeChains(wedges);
+		for (const wedge of wedges) {
 			wedge.setContext(this.context).draw();
 			this.reporter.growPageTop(wedge.bounds.top);
 			this.reporter.growPageBottom(wedge.bounds.bottom);
@@ -364,17 +345,19 @@ export class SpannerResolver {
 	}
 
 	/*
-	 * Move a hairpin further from the staff until it clears any slur bowing into its band. A
-	 * wedge parks at a fixed gap from the staff, which is exactly where a slur on the same
-	 * side lands — an under-slur over low notes dips straight through a below-stave crescendo.
-	 * The slur can't yield (it's pinned to its noteheads), so the wedge is the one that moves.
+	 * Move a hairpin further from the staff until it clears what reaches into its band: the
+	 * notes it spans, their tuplet numbers, and any slur bowing the same way. A wedge parks at
+	 * a fixed gap from the staff, which is exactly where ledger-line notes, a below-placed
+	 * triplet's "3" and an under-slur over low notes all land. None of them can yield (each is
+	 * pinned to its notes), so the wedge is the one that moves.
 	 *
 	 * Scoped like {@link dropPedalClear}: the shared index is per-system and wedges resolve
-	 * after the last one, so this indexes only the bows drawn over this wedge's own stave.
+	 * after the last one, so this indexes only what was drawn over this wedge's own stave.
 	 */
 	private clearWedge(
 		wedge: Hairpin,
 		bows: { stave: Stave; rect: Rect }[],
+		notes: Iterable<StaveNote>,
 	): void {
 		const natural = wedge.rect;
 		const scoped = new CollisionResolver(this.scratchViewport, {});
@@ -383,10 +366,125 @@ export class SpannerResolver {
 				scoped.add({ rect: bow.rect, kind: 'tie' });
 			}
 		}
+		const tuplets = new Set<Tuplet>();
+		for (const note of notes) {
+			if (note.getStave() !== wedge.stave) {
+				continue;
+			}
+			const rect = this.reporter.noteObstacle(note);
+			if (rect.right < natural.left || rect.left > natural.right) {
+				continue;
+			}
+			scoped.add({ rect, kind: 'note' });
+			const tuplet = note.getTuplet();
+			if (tuplet) {
+				tuplets.add(tuplet);
+			}
+		}
+		for (const tuplet of tuplets) {
+			scoped.add({ rect: this.translator.tupletRect(tuplet), kind: 'note' });
+		}
 		const placed = wedge.above
 			? scoped.liftClear(natural, WORDS_NOTE_CLEARANCE, {})
 			: scoped.dropClear(natural, WORDS_NOTE_CLEARANCE, {});
 		wedge.setOffset(wedge.above ? natural.y - placed.y : placed.y - natural.y);
+	}
+
+	/*
+	 * Put hairpins that run end to end on one line: a crescendo straight into a diminuendo
+	 * reads as one swell, so each cleared on its own — one dropped under low notes, the next
+	 * left at the staff — would draw the swell as a step. Every wedge in a chain takes the
+	 * furthest offset any of them needed, which still clears what each one cleared.
+	 */
+	private alignWedgeChains(wedges: readonly Hairpin[]): void {
+		const touch = 2 * this.translator.noteheadHalfWidth();
+		const sorted = [...wedges].sort((a, b) => a.rect.left - b.rect.left);
+		const chained = new Set<Hairpin>();
+		for (const head of sorted) {
+			if (chained.has(head)) {
+				continue;
+			}
+			const chain = [head];
+			let tail = head;
+			for (const next of sorted) {
+				if (
+					!chained.has(next) &&
+					next !== tail &&
+					next.stave === tail.stave &&
+					next.above === tail.above &&
+					Math.abs(next.rect.left - tail.rect.right) <= touch
+				) {
+					chain.push(next);
+					tail = next;
+				}
+			}
+			const offset = Math.max(...chain.map((wedge) => wedge.getOffset()));
+			for (const wedge of chain) {
+				wedge.setOffset(offset);
+				chained.add(wedge);
+			}
+		}
+	}
+
+	/*
+	 * Report a drawn bow (slur or tie) as ink the layout has to make room for.
+	 *
+	 * The page has to cover it: a bow arcing over the top stave of the first system rises
+	 * into the cropped top slack, and one dipping under the last system's bottom stave hangs
+	 * past the floor. Without this the crop cuts the arc off mid-air.
+	 *
+	 * A bow arcs past the notes it joins, so it can reach further off the stave than anything
+	 * the note pass measured — a slur over a beamed group climbs over the beam, and in a song
+	 * that lands on the singer's lyrics. Report it as spill so pass two opens the gap instead
+	 * (the arc is pinned to its noteheads and has nowhere else to go).
+	 *
+	 * Except a cross-stave bow, which is a passenger in the gap rather than a thing the gap
+	 * has to hold: its height IS the distance between the two staves, so reporting it would
+	 * have the gap widen to make room for a curve that then grows to match. Same reason
+	 * crossStaveNotes drops a cross-staff stem tip.
+	 */
+	private reportBow(stave: Stave, rect: Rect, crossStave: boolean): void {
+		this.reporter.growPageTop(rect.top);
+		this.reporter.growPageBottom(rect.bottom);
+		const placement = this.staveRows.get(stave);
+		if (!placement) {
+			return;
+		}
+		if (!crossStave) {
+			this.spill.recordStave(placement.system, placement.row, stave, rect);
+		}
+		// And against the system above: a bow over a middle system's top stave has nothing
+		// but the previous system over it, so report it the way an above-placed wedge does.
+		this.spill.growHighestTop(placement.system, rect.top);
+	}
+
+	/*
+	 * The band a tie's ribbon is drawn in. vexflow gives a tie no bounding box, so this
+	 * rebuilds it the way StaveTie.renderTie draws it: each end starts yShift off its
+	 * notehead, and the outer curve peaks halfway to its control point (cp2, or cp2Short for
+	 * a tie too short to bow fully).
+	 */
+	private tieRect(tie: StaveTie): Rect {
+		const firstX = tie.getFirstX();
+		const lastX = tie.getLastX();
+		const options = tie.renderOptions;
+		const cp =
+			Math.abs(lastX - firstX) < options.shortTieCutoff
+				? options.cp2Short
+				: options.cp2;
+		const direction = tie.getDirection();
+		const ends = [...tie.getFirstYs(), ...tie.getLastYs()].map(
+			(y) => y + options.yShift * direction,
+		);
+		const apexes = ends.map((y) => y + (cp / 2) * direction);
+		const top = Math.min(...ends, ...apexes);
+		const bottom = Math.max(...ends, ...apexes);
+		return new Rect(
+			Math.min(firstX, lastX),
+			top,
+			Math.abs(lastX - firstX),
+			bottom - top,
+		);
 	}
 
 	/*

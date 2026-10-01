@@ -795,6 +795,10 @@ describe('render', () => {
 	//   text's default band, but the bow arcs up through it, so the text is lifted clear of
 	//   the CURVE, and the whole line prints above the arc rather than being struck through by
 	//   it. Cut from a real bass score (Bass-LP-05-Fretboard M9).
+	// - M8: "decresc." placement="above" on the first of four beamed B4 eighth triplets
+	//   (divisions 3). The stems hang down, so each triplet's "3" prints above the staff with
+	//   no bracket, in the text's default band. The numeral can't move off its notes, so the
+	//   text lifts clear over the first "3" (Schubert, Der Lindenbaum m. 80).
 	it.concurrent('renders words.png', async () => {
 		expect(await testing.render('words.musicxml')).toMatchScreenshot(
 			'words.png',
@@ -847,12 +851,32 @@ describe('render', () => {
 	// - M7: the same clash above the staff. C5, A5, C5 are stem-down so the slur bows ABOVE,
 	//   arcing over the ledger-lined A5, and the placement="above" crescendo lifts over the
 	//   arc instead of crossing it.
+	// - M8: hairpins under notes that reach below the staff (Schubert, Der Lindenbaum m. 81):
+	//   triplet 16ths G3-E4-G3 at divisions 6, the G3s on ledger lines, each triplet's "3"
+	//   placed below with no bracket. A crescendo over the first three triplets runs straight
+	//   into a diminuendo over the last three. Both wedges sit below the ledger-line noteheads
+	//   and the "3"s, clear of both, and on one line, so the pair reads as a single swell
+	//   rather than a step. Wraps to its own system.
 	// ponytail: a hairpin that wraps across a system break isn't split into two partials the
 	// way a tie or slur is; no fixture reaches that yet.
 	it.concurrent('renders wedges.png', async () => {
 		expect(await testing.render('wedges.musicxml')).toMatchScreenshot(
 			'wedges.png',
 		);
+	});
+
+	// Grand staff (treble over bass), 3/4: a hairpin between the staves sharing the gap with
+	// a tie bowing up out of the bass staff (Schubert, Der Lindenbaum m. 79).
+	// - M1: treble, three G3 quarters on ledger lines under a below-placed crescendo that
+	//   opens from the first to the third. Bass, a dotted-half D4 on the ledger line above
+	//   the staff, stem down, tied into M2. The tie arcs up into the gap under the hairpin,
+	//   so the gap opens to hold both: hairpin, then the tie's arc, then the bass staff, the
+	//   arc nowhere touching the wedge.
+	// - M2: treble, three B4 quarters; bass, the dotted-half D4 the tie lands on.
+	it.concurrent('renders wedges_grand_staff.png', async () => {
+		expect(
+			await testing.render('wedges_grand_staff.musicxml'),
+		).toMatchScreenshot('wedges_grand_staff.png');
 	});
 
 	// Treble stave, common time (lilypond_33d-Spanners-OctaveShifts M1): <octave-shift>, the
@@ -1489,6 +1513,11 @@ describe('render', () => {
 	//   D5. Those two G5s lie where the bow is pinned nearly flat against its endpoints, so
 	//   the arc cannot clear them by inflating; the slur's ends lift off their noteheads
 	//   instead and the whole curve passes above all eight heads. No notehead touches it.
+	// - M3-4: one slur across sixteen eighths, C5 C5 E6 E6 then C5s to the end of M4. The
+	//   E6 pair sits near the start, where a bow of the usual shape stands off its chord
+	//   least, so clearing it would dome the whole arc high over the C5s. The bow stops at
+	//   its depth ceiling and flattens instead: it climbs steeply off the first C5, clears
+	//   the E6 ledger-line heads, and runs level to a gentle drop onto the last C5.
 	it.concurrent('renders slur_beamed.png', async () => {
 		expect(await testing.render('slur_beamed.musicxml')).toMatchScreenshot(
 			'slur_beamed.png',

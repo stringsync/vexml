@@ -24,7 +24,9 @@ import {
 	SLUR_GRACE_Y_SHIFT,
 	SLUR_MARGIN,
 	SLUR_MAX_ASPECT,
+	SLUR_MAX_CP_Y,
 	SLUR_MIN_CP_Y,
+	SLUR_MIN_SHOULDER,
 	SLUR_STEM_TIP_SLANT,
 	SLUR_WIDTH_FACTOR,
 	SLUR_Y_SHIFT,
@@ -903,7 +905,33 @@ export class SpannerBuilder {
 				// drawn ends) at horizontal fraction `s` of the span, per unit of cpY. vexflow
 				// lifts both control points off the chord by the same cpY, so the cubic reduces
 				// to 3s(1-s): 0.75 at the midpoint, tapering to nothing at either end.
-				const riseFactor = (s: number) => 3 * s * (1 - s);
+				//
+				// A flattened bow (`shoulder` nearer the ends than vexflow's quarter, see
+				// shapeFor) reaches each x sooner along the curve, so it stands further off there.
+				// Scaled by how much further: the rise at bezier parameter t is 3t(1-t) whatever
+				// the shoulder, and x(t) only climbs, so solve x(t) = s for each shoulder and
+				// take the ratio. At the quarter the ratio is 1 and this is 3s(1-s) exactly.
+				const riseAt = (s: number, shoulder: number) => {
+					const xAt = (t: number) =>
+						3 * t * (1 - t) * ((1 - t) * shoulder + t * (1 - shoulder)) +
+						t ** 3;
+					let lo = 0;
+					let hi = 1;
+					for (let i = 0; i < 30; i++) {
+						const mid = (lo + hi) / 2;
+						if (xAt(mid) < s) {
+							lo = mid;
+						} else {
+							hi = mid;
+						}
+					}
+					const t = (lo + hi) / 2;
+					return 3 * t * (1 - t);
+				};
+				const riseFactor = (s: number, shoulder = 0.25) =>
+					shoulder === 0.25
+						? 3 * s * (1 - s)
+						: (3 * s * (1 - s) * riseAt(s, shoulder)) / riseAt(s, 0.25);
 
 				// How the curve clears every note it passes over, given where its two ends are
 				// drawn (xL/yL to xR/yR). Two independent knobs, and which one does the work
@@ -990,16 +1018,34 @@ export class SpannerBuilder {
 					// clear everything a span might hold (a second voice, the stem of a run
 					// beamed into the other hand) and shouldn't deform itself pretending to.
 					const reach = width * SLUR_MAX_ASPECT;
-					const cpY = Math.max(floor, Math.min(reach, inflation));
+					const cpY = Math.max(
+						floor,
+						Math.min(reach, inflation, isGrace ? Infinity : SLUR_MAX_CP_Y),
+					);
+					// A bow held under the ceiling flattens instead: its control points slide
+					// toward the ends, as little as clears the notes the depth was for. Only the
+					// ceiling does this — a short slur the aspect cap stopped keeps its shape.
+					const capped = cpY === SLUR_MAX_CP_Y && inflation > cpY;
+					const middle = clearances.filter(
+						(c) => c.s >= SLUR_END_ZONE && c.s <= 1 - SLUR_END_ZONE,
+					);
+					let shoulder = 0.25;
+					while (
+						capped &&
+						shoulder > SLUR_MIN_SHOULDER &&
+						middle.some((c) => c.need > riseFactor(c.s, shoulder) * cpY)
+					) {
+						shoulder = Math.max(SLUR_MIN_SHOULDER, shoulder - 0.01);
+					}
 					// Whatever that bow still doesn't reach, the endpoints make up by rising,
 					// out of what's left of the same budget.
 					const shortfall = Math.max(
 						0,
-						...clearances.map((c) => c.need - riseFactor(c.s) * cpY),
+						...clearances.map((c) => c.need - riseFactor(c.s, shoulder) * cpY),
 					);
 					const yShift =
 						baseYShift + Math.min(shortfall, Math.max(0, reach - 0.75 * cpY));
-					return { cpY, yShift };
+					return { cpY, yShift, shoulder, width };
 				};
 
 				const pushCurve = (
@@ -1007,7 +1053,12 @@ export class SpannerBuilder {
 					curveTo: StaveNote | undefined,
 					position: number,
 					positionEnd: number,
-					{ cpY, yShift }: { cpY: number; yShift: number },
+					{
+						cpY,
+						yShift,
+						shoulder,
+						width,
+					}: { cpY: number; yShift: number; shoulder: number; width: number },
 				) => {
 					// vexflow offsets each control point from its OWN endpoint by the same cps.y, so
 					// on a slur whose two ends sit at very different heights both points land the
@@ -1026,15 +1077,18 @@ export class SpannerBuilder {
 					const only = (curveFrom ?? curveTo) as StaveNote;
 					const y0 = endpointY(curveFrom ?? only);
 					const y1 = endpointY(curveTo ?? only);
-					const slant = (y1 - y0) / 4;
+					// vexflow puts the control points a quarter of the way in from each end;
+					// a flattened bow (see shapeFor) moves them out to `shoulder`.
+					const slant = (y1 - y0) * shoulder;
+					const pull = (shoulder - 0.25) * width;
 					const options: CurveOptions = {
 						position,
 						positionEnd,
 						openingDirection: bulgeUp ? 'down' : 'up',
 						yShift,
 						cps: [
-							{ x: 0, y: cpY + dir * slant },
-							{ x: 0, y: cpY - dir * slant },
+							{ x: pull, y: cpY + dir * slant },
+							{ x: -pull, y: cpY - dir * slant },
 						],
 					};
 					const curve = isGrace

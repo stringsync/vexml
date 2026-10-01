@@ -355,6 +355,11 @@ export const TECHNICAL_EDGE_GAP = 9;
  * line, so without this an outer "3" and an inner "5" print through each other. */
 export const TUPLET_NESTING_EXTRA_GAP = 10;
 
+/** Half the height of the band a tuplet's numeral fills around its bracket line, for
+ * anything that has to clear it (a hairpin under a below-placed triplet). The "3" stands
+ * about 12px; the rest is air. */
+export const TUPLET_NUMERAL_HALF_HEIGHT = 8;
+
 /** Rehearsal-mark (section header, e.g. "A" or "Chorus") text size — bigger and bolder than
  * the other above-stave annotations, since it's the label a player navigates the chart by. */
 export const REHEARSAL_FONT_SIZE = 14;
@@ -404,6 +409,18 @@ export const SLUR_MIN_CP_Y = 16;
  * long slur is drawn FLAT, not as a deep dome — the bow over a whole measure should
  * still read as roughly two staff spaces deep, not four. */
 export const SLUR_WIDTH_FACTOR = 0.03;
+
+/** Ceiling on a slur's control-point rise, whatever its width: the bow stands at most
+ * 0.75 of this (about five staff spaces) off its chord. SLUR_MAX_ASPECT alone lets a slur
+ * across a whole system dome ten spaces high to clear one beam near its end; a long slur
+ * that needs more room flattens its shoulders instead (SLUR_MIN_SHOULDER). */
+export const SLUR_MAX_CP_Y = 64;
+
+/** How close to its ends a capped slur may pull its control points, as a fraction of its
+ * width (vexflow's default is a quarter). Nearer the ends, the bow climbs steeply off each
+ * notehead and runs level across the middle — the flat-topped long slur an engraver draws —
+ * so it clears a beam near one end without growing deeper. */
+export const SLUR_MIN_SHOULDER = 0.05;
 
 /** How much of each end of a slur's span is exempt from setting the bow's DEPTH, as a
  * fraction of its width. The bow is pinned to its endpoints, so buying clearance for a

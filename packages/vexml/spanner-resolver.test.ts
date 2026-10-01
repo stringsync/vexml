@@ -52,6 +52,21 @@ describe('SpannerResolver', () => {
 		crossStave: opts.crossStave ?? false,
 	});
 
+	// A tie the way buildTies reports one: a StaveTie from one B4 notehead (y=100) to the next,
+	// bowing up (direction -1) with vexflow's default ribbon geometry.
+	const tie = (drawn: string[], opts: { stave?: Stave } = {}) => ({
+		setContext: () => ({ draw: () => drawn.push('tie') }),
+		getNotes: () => ({
+			firstNote: opts.stave && { checkStave: () => opts.stave },
+		}),
+		getFirstX: () => 10,
+		getLastX: () => 60,
+		getFirstYs: () => [100],
+		getLastYs: () => [100],
+		getDirection: () => -1,
+		renderOptions: { cp2: 12, cp2Short: 8, shortTieCutoff: 10, yShift: 7 },
+	});
+
 	// Every builder method answers empty so a test only overrides the paths it exercises.
 	const builder = (overrides: Partial<SpannerBuilder> = {}) =>
 		({
@@ -118,7 +133,7 @@ describe('SpannerResolver', () => {
 			buildTies: (chords: Chord[], map: Map<Note, StaveNote>) => {
 				seen.push([...chords]);
 				expect(map).toBe(byLead);
-				return [drawable(drawn, 'tie')];
+				return [tie(drawn)];
 			},
 			buildGlissandos: () => [drawable(drawn, 'gliss')],
 			buildWavyLines: () => [drawable(drawn, 'wavy')],
@@ -178,6 +193,22 @@ describe('SpannerResolver', () => {
 		expect(page.bottom).toBe(150);
 	});
 
+	it("reports a tie's arc as spill on its stave", () => {
+		const drawn: string[] = [];
+		const s = stave({ y: 90, lineTop: 100 });
+		const { resolver, spill, page } = harness({
+			buildTies: () => [tie(drawn, { stave: s })],
+		} as unknown as Partial<SpannerBuilder>);
+		resolver.registerStave(s, 2, 1);
+		resolver.resolve(anchors());
+		expect(drawn).toEqual(['tie']);
+		// Each end starts yShift (7) over its notehead and the arc peaks cp2/2 (6) further:
+		// 13px over the top staff line.
+		const rise = spill.observedStaveSpill().get(1)?.get(2)?.rise;
+		expect(rise ? Math.max(...rise.values()) : undefined).toBe(13);
+		expect(page.top).toBe(87);
+	});
+
 	it('keeps a cross-stave bow out of the stave spill but in the page and headroom', () => {
 		const drawn: string[] = [];
 		const s = stave();
@@ -206,6 +237,7 @@ describe('SpannerResolver', () => {
 			setOffset: (o: number) => {
 				offset = o;
 			},
+			getOffset: () => offset ?? 0,
 			setContext() {
 				return this;
 			},
@@ -233,6 +265,7 @@ describe('SpannerResolver', () => {
 			setOffset: (o: number) => {
 				offset = o;
 			},
+			getOffset: () => offset ?? 0,
 			setContext() {
 				return this;
 			},
@@ -246,6 +279,68 @@ describe('SpannerResolver', () => {
 		} as unknown as Partial<SpannerBuilder>);
 		resolver.resolve(anchors());
 		expect(offset).toBe(0);
+	});
+
+	it('drops a below-stave wedge under a ledger-line note it spans', () => {
+		const s = stave();
+		const note = {
+			getStave: () => s,
+			getTuplet: () => undefined,
+		} as unknown as StaveNote;
+		let offset: number | undefined;
+		const wedge = {
+			stave: s,
+			above: false,
+			rect: new Rect(20, 210, 30, 10),
+			bounds: { top: 210, bottom: 220 },
+			setOffset: (o: number) => {
+				offset = o;
+			},
+			getOffset: () => offset ?? 0,
+			setContext() {
+				return this;
+			},
+			draw() {},
+		} as unknown as Hairpin;
+		const { resolver, obstacles } = harness({
+			buildWedges: () => [wedge],
+		} as unknown as Partial<SpannerBuilder>);
+		// The note hangs to y=225 inside the wedge's column.
+		obstacles.set(note, new Rect(30, 180, 10, 45));
+		resolver.resolve(anchors(new Map([[{} as Note, note]])));
+		expect(offset).toBe(225 + WORDS_NOTE_CLEARANCE - 210);
+	});
+
+	it('puts a crescendo and the diminuendo it runs into on one line', () => {
+		const s = stave();
+		const offsets = new Map<string, number>();
+		const wedge = (name: string, left: number) =>
+			({
+				stave: s,
+				above: false,
+				rect: new Rect(left, 210, 30, 10),
+				bounds: { top: 210, bottom: 220 },
+				setOffset: (o: number) => {
+					offsets.set(name, o);
+				},
+				getOffset: () => offsets.get(name) ?? 0,
+				setContext() {
+					return this;
+				},
+				draw() {},
+			}) as unknown as Hairpin;
+		const note = {
+			getStave: () => s,
+			getTuplet: () => undefined,
+		} as unknown as StaveNote;
+		const { resolver, obstacles } = harness({
+			buildWedges: () => [wedge('cresc', 20), wedge('dim', 50)],
+		} as unknown as Partial<SpannerBuilder>);
+		// Only the crescendo's column has a low note; the diminuendo follows it down anyway.
+		obstacles.set(note, new Rect(30, 180, 10, 45));
+		resolver.resolve(anchors(new Map([[{} as Note, note]])));
+		expect(offsets.get('cresc')).toBe(225 + WORDS_NOTE_CLEARANCE - 210);
+		expect(offsets.get('dim')).toBe(offsets.get('cresc'));
 	});
 
 	it('drops a pedal band below its own low notes and grows the crop under it', () => {

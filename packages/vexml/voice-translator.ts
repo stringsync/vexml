@@ -9,11 +9,17 @@ import {
 	StaveNote,
 	type StemmableNote,
 	type Tickable,
+	type Tuplet,
 	Voice,
 } from 'vexflow';
+import { Rect } from 'webappwiz/geometry';
 import type { BarlineTranslator } from './barline-translator';
 import type { ChordTranslator } from './chord-translator';
-import { EPSILON, GRACE_SPACING } from './constants';
+import {
+	EPSILON,
+	GRACE_SPACING,
+	TUPLET_NUMERAL_HALF_HEIGHT,
+} from './constants';
 import type { DurationTranslator } from './duration-translator';
 import type { ScoreReader } from './score-reader';
 import type { MidClefSpec } from './signature-translator';
@@ -321,6 +327,25 @@ export class VoiceTranslator {
 				new StaveNote({ keys: ['c/4'], duration: 'q' }).getGlyphWidth() / 2;
 		}
 		return this.noteheadHalfWidthCache;
+	}
+
+	/*
+	 * The band a tuplet's bracket and numeral are drawn in. vexflow never positions a Tuplet's
+	 * own bounding box, so this rebuilds it from getYPosition — the line Tuplet.draw puts the
+	 * bracket on and centers the numeral over — spanning the notes the bracket reaches.
+	 */
+	tupletRect(tuplet: Tuplet): Rect {
+		const notes = tuplet.getNotes();
+		const xs = notes.map((note) => note.getAbsoluteX());
+		const hw = this.noteheadHalfWidth();
+		const left = Math.min(...xs) - hw;
+		const y = tuplet.getYPosition();
+		return new Rect(
+			left,
+			y - TUPLET_NUMERAL_HALF_HEIGHT,
+			Math.max(...xs) + hw - left,
+			2 * TUPLET_NUMERAL_HALF_HEIGHT,
+		);
 	}
 
 	/*

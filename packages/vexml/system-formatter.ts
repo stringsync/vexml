@@ -371,6 +371,13 @@ export class SystemFormatter {
 			}
 			for (const tuplet of p.tuplets) {
 				tuplet.setContext(this.context).draw();
+				// The numeral (and bracket) sits in the band the above- and below-stave text
+				// drawn next lands in, and it can't move off its notes, so it's an obstacle.
+				this.collisionResolver.add({
+					rect: this.translator.tupletRect(tuplet),
+					kind: 'note',
+					band: p.row,
+				});
 			}
 			for (const note of p.staveNotes) {
 				const box = note.getBoundingBox();
