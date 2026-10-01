@@ -2753,6 +2753,21 @@ describe('render', () => {
 		).toMatchScreenshot('tuplet_cross_stave.png');
 	});
 
+	// tuplet_cross_stave again, narrowed to referenceWidth 720 (Schubert, Der Lindenbaum m. 51
+	// at the width it was reported at): the one measure fits the page with room to spare, its
+	// right barline at the reference width and the image no wider than any other 720px
+	// render. The bass's held C2 under a run of 16ths, and the zero-width stand-ins holding
+	// the run's treble notes' time on the bass, used to read to vexflow's spacing heuristic
+	// as wildly uneven music, padding the measure's minimum to ~680px and pushing this
+	// system ~50px past the page edge.
+	it.concurrent('renders tuplet_cross_stave_narrow.png', async () => {
+		expect(
+			await testing.render('tuplet_cross_stave.musicxml', {
+				layout: { type: 'standard', referenceWidth: 720 },
+			}),
+		).toMatchScreenshot('tuplet_cross_stave_narrow.png');
+	});
+
 	// Voice part (treble, B4 quarters each sung "la") over a piano grand staff, 3/4: the
 	// gap between the voice and the piano holds both the lyrics and the piano's tuplet
 	// brackets (Schubert, Der Lindenbaum mm. 51-52).
@@ -2761,7 +2776,8 @@ describe('render', () => {
 	//   voice stave, with the brackets below them, nothing touching. Bass, a held
 	//   dotted-half C2 on ledger lines below the staff.
 	// - M2: cross-staff triplets, G3 (bass, stem up) E4 (treble, stem down) G3, beamed up in
-	//   the treble with the bracket above it, over the held C2 again in a second bass voice. The bracket is drawn by the bass stave but stands over the treble, so it's the
+	//   the treble with the bracket above it, over the held C2 again in a second bass voice.
+	//   The bracket is drawn by the bass stave but stands over the treble, so it's the
 	//   voice-to-piano gap that holds it: the two piano staves keep their usual spacing.
 	it.concurrent('renders lyrics_voice_and_piano.png', async () => {
 		expect(

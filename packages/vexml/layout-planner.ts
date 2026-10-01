@@ -1,5 +1,11 @@
 import type { Measure, Part, Score } from '@stringsync/mdom';
-import { Formatter, GraceNoteGroup } from 'vexflow';
+import {
+	Formatter,
+	GhostNote,
+	GraceNoteGroup,
+	Metrics,
+	type Voice,
+} from 'vexflow';
 import type { Config } from './config';
 import {
 	BASE_VOICE_WIDTH,
@@ -263,9 +269,7 @@ export class LayoutPlanner {
 			}
 			minNotes = Math.max(
 				minNotes,
-				new Formatter({ softmaxFactor })
-					.joinVoices(vexVoices)
-					.preCalculateMinTotalWidth(vexVoices),
+				this.minNoteWidth(vexVoices, softmaxFactor),
 			);
 			// Floor a tab measure's width by its note count so dense rhythms stay legible.
 			if (isTab) {
@@ -289,6 +293,59 @@ export class LayoutPlanner {
 		}
 		const min = Math.max(floor, minNotes);
 		return { min, ideal: Math.max(min, logWidth) };
+	}
+
+	/*
+	 * The narrowest a stave's voices fit without crowding: vexflow's
+	 * preCalculateMinTotalWidth, with its spread padding measured on the notes a reader sees.
+	 *
+	 * vexflow pads the contexts' summed widths by the larger of two terms: its unaligned-note
+	 * padding for each context only some voices sound in, or the spread (coefficient of
+	 * variation) of the notes' widths and durations times the context count. That spread
+	 * runs away on two things the notes never need room for — the zero-width ghosts that
+	 * stand in for a cross-staff run's notes on the other stave, and one long held note in
+	 * another voice under a fast run, pooled into a single duration sample. Together they
+	 * asked Der Lindenbaum's bar 51 for 678px where its notes fit in about 400. So the spread
+	 * skips ghosts, and duration spread is taken within each voice (the busiest wins). A
+	 * single voice with no ghosts gets vexflow's own number.
+	 */
+	private minNoteWidth(voices: Voice[], softmaxFactor: number): number {
+		const formatter = new Formatter({ softmaxFactor }).joinVoices(voices);
+		formatter.preCalculateMinTotalWidth(voices);
+		const contexts = formatter.getTickContexts();
+		const ticks = contexts?.list ?? [];
+		let unaligned = 0;
+		for (const tick of ticks) {
+			if ((contexts?.map[tick]?.getTickables().length ?? 0) < voices.length) {
+				unaligned += 1;
+			}
+		}
+		// Coefficient of variation, as vexflow computes it (population deviation over mean).
+		const spread = (values: number[]) => {
+			if (values.length === 0) {
+				return 0;
+			}
+			const mean = values.reduce((a, b) => a + b, 0) / values.length;
+			const variance =
+				values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
+			return mean > 0 ? Math.sqrt(variance) / mean : 0;
+		};
+		const seen = voices.map((voice) =>
+			voice.getTickables().filter((t) => !(t instanceof GhostNote)),
+		);
+		const widths = seen.flat().map((t) => t.getMetrics().width);
+		const durations = Math.max(
+			0,
+			...seen.map((ts) => spread(ts.map((t) => t.getTicks().value()))),
+		);
+		const padding = Metrics.get('Stave.unalignedNotePadding');
+		return (
+			formatter.getMinTotalWidth() +
+			Math.max(
+				unaligned * padding,
+				Math.max(spread(widths), durations) * ticks.length * padding,
+			)
+		);
 	}
 
 	/*
