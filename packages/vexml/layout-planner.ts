@@ -312,7 +312,10 @@ export class LayoutPlanner {
 		for (const measure of measures) {
 			for (const voice of measure.voices) {
 				for (const chord of voice.chords) {
-					lastOnset = Math.max(lastOnset, chord.measureBeat ?? 0);
+					lastOnset = Math.max(
+						lastOnset,
+						this.reader.measureBeatOf(chord.lead) ?? 0,
+					);
 				}
 			}
 		}
@@ -320,11 +323,14 @@ export class LayoutPlanner {
 		for (const measure of measures) {
 			for (const { text, lead } of this.reader.wordsOf(measure)) {
 				// A directive naming no note anchors at the measure's first one instead.
-				if (!lead || (lead.measureBeat ?? 0) + EPSILON < lastOnset) {
+				if (
+					!lead ||
+					(this.reader.measureBeatOf(lead) ?? 0) + EPSILON < lastOnset
+				) {
 					continue;
 				}
 				const room = this.noteLogWidth(
-					(lead.beats ?? 0) * QUARTER_NOTE_TICKS,
+					(this.reader.beatsOf(lead) ?? 0) * QUARTER_NOTE_TICKS,
 					noteSpacing,
 				);
 				pad = Math.max(pad, text.length * WORDS_CHAR_WIDTH - room);
@@ -351,7 +357,10 @@ export class LayoutPlanner {
 		for (const part of parts) {
 			for (const voice of part.measures[m]?.voices ?? []) {
 				for (const chord of voice.chords) {
-					firstOnset = Math.min(firstOnset, chord.measureBeat ?? 0);
+					firstOnset = Math.min(
+						firstOnset,
+						this.reader.measureBeatOf(chord.lead) ?? 0,
+					);
 				}
 			}
 		}
@@ -363,7 +372,10 @@ export class LayoutPlanner {
 			}
 			for (const { text, staffNumber, lead } of this.reader.wordsOf(measure)) {
 				// A directive naming no note anchors at the measure's first one instead.
-				if (lead && (lead.measureBeat ?? 0) > firstOnset + EPSILON) {
+				if (
+					lead &&
+					(this.reader.measureBeatOf(lead) ?? 0) > firstOnset + EPSILON
+				) {
 					continue;
 				}
 				if (!this.staves.isTab(part, staffNumber)) {

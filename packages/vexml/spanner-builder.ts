@@ -102,6 +102,11 @@ type SlurConnector = {
 };
 
 export class SpannerBuilder {
+	private readonly connectors = new Map<
+		Note,
+		{ slurs: SlurConnector[]; techniques: SlurConnector[] }
+	>();
+
 	/*
 	 * Beams: map each beam group's notes to their StaveNotes. Built before formatting
 	 * so the beamed notes drop their flags.
@@ -347,6 +352,10 @@ export class SpannerBuilder {
 			for (const note of chord.notes) {
 				const from = placement.get(note);
 				for (const tie of note.ties) {
+					// Only a start draws, and pairing a tie re-pairs every tie in the part.
+					if (tie.tieType !== 'start' || !from) {
+						continue;
+					}
 					// A tie always joins two notes of the same pitch. When the partner is a
 					// chord, mdom can't tell which member it lands on — chord <tied>s usually
 					// share number "1", so partner() pairs every start to the chord's first
@@ -357,7 +366,7 @@ export class SpannerBuilder {
 							this.samePitchMember(note, chordOf.get(tie.partner.note))) ??
 						tie.partner?.note;
 					const to = partnerNote && placement.get(partnerNote);
-					if (tie.tieType !== 'start' || !from || !to) {
+					if (!to) {
 						continue;
 					}
 					// A chord member's tie bows away from the chord's center: upper-half
@@ -714,6 +723,7 @@ export class SpannerBuilder {
 	): SlurCurve[] {
 		const slurs: SlurCurve[] = [];
 		const spans = this.slurSpans(chords);
+		const indexOf = new Map(chords.map((chord, i) => [chord.lead, i]));
 		chords.forEach((chord, i) => {
 			const from = byLead.get(chord.lead);
 			const isGrace = chord.lead.isGrace;
@@ -726,7 +736,7 @@ export class SpannerBuilder {
 				if (!to) {
 					continue;
 				}
-				const j = chords.findIndex((c) => c.lead === partner);
+				const j = indexOf.get(partner) ?? -1;
 				// `chords` is the whole score in document order, so the slice between two
 				// notes also sweeps up every other part, stave and voice that happens to be
 				// notated in between — the last note of a bass-stave voice and the first note
@@ -1224,39 +1234,71 @@ export class SpannerBuilder {
 	}
 
 	private slurConnectors(note: Note, spans: Array<Set<Note>>): SlurConnector[] {
-		const slurTargets = new Set(note.slurs.map((s) => s.partner?.note ?? null));
-		const techniques: SlurConnector[] = [
-			...note.hammerOns.map((h) => ({
-				slurType: h.hammerOnType,
-				partner: h.partner,
-				placement: null,
-				dash: null,
-			})),
-			...note.pullOffs.map((p) => ({
-				slurType: p.pullOffType,
-				partner: p.partner,
-				placement: null,
-				dash: null,
-			})),
-		].filter((t) => {
-			const partner = t.partner?.note ?? null;
-			return (
-				!slurTargets.has(partner) &&
-				!spans.some((span) => span.has(note) && !!partner && span.has(partner))
-			);
-		});
+		const { slurs, techniques } = this.connectorsOf(note);
+		const slurTargets = new Set(slurs.map((s) => s.partner?.note ?? null));
 		return [
-			...note.slurs.map((s) => {
-				const partner = s.partner?.note ?? null;
-				return {
-					slurType: s.slurType,
-					partner: partner && { note: partner },
-					placement: s.placement,
-					dash: LINE_TYPE_DASH[s.lineType ?? 'solid'] ?? null,
-				};
+			...slurs,
+			...techniques.filter((t) => {
+				const partner = t.partner?.note ?? null;
+				return (
+					!slurTargets.has(partner) &&
+					!spans.some(
+						(span) => span.has(note) && !!partner && span.has(partner),
+					)
+				);
 			}),
-			...techniques,
 		];
+	}
+
+	/*
+	 * A note's <slur>s and hammer-on/pull-offs with their partners resolved, read once per
+	 * note. mdom pairs a marker by re-pairing every marker of its kind in the part, so each
+	 * `partner` read costs the whole part — and the slur passes run per measure and per pass,
+	 * over the whole score. A SpannerBuilder lives for one render, over a document that
+	 * doesn't change under it. Starts only: every connector is drawn from its start, and a
+	 * stop's partner costs as much to find as a start's.
+	 */
+	private connectorsOf(note: Note): {
+		slurs: SlurConnector[];
+		techniques: SlurConnector[];
+	} {
+		const cached = this.connectors.get(note);
+		if (cached) {
+			return cached;
+		}
+		const resolved = {
+			slurs: note.slurs
+				.filter((s) => s.slurType === 'start')
+				.map((s) => {
+					const partner = s.partner?.note ?? null;
+					return {
+						slurType: s.slurType,
+						partner: partner && { note: partner },
+						placement: s.placement,
+						dash: LINE_TYPE_DASH[s.lineType ?? 'solid'] ?? null,
+					};
+				}),
+			techniques: [
+				...note.hammerOns
+					.filter((h) => h.hammerOnType === 'start')
+					.map((h) => ({
+						slurType: h.hammerOnType,
+						partner: h.partner,
+						placement: null,
+						dash: null,
+					})),
+				...note.pullOffs
+					.filter((p) => p.pullOffType === 'start')
+					.map((p) => ({
+						slurType: p.pullOffType,
+						partner: p.partner,
+						placement: null,
+						dash: null,
+					})),
+			],
+		};
+		this.connectors.set(note, resolved);
+		return resolved;
 	}
 
 	/*
@@ -1269,7 +1311,7 @@ export class SpannerBuilder {
 		const index = new Map(leads.map((note, i) => [note, i]));
 		const spans: Array<Set<Note>> = [];
 		leads.forEach((note, i) => {
-			for (const slur of note.slurs) {
+			for (const slur of this.connectorsOf(note).slurs) {
 				const j =
 					slur.slurType === 'start' && slur.partner
 						? (index.get(slur.partner.note) ?? -1)

@@ -89,8 +89,8 @@ describe('ScoreRenderer', () => {
 		const staves = new StavePlan({ showTabs: true, showNotation: true });
 		const tab = new TabVoiceTranslator(durations, 'none');
 		const chords = new ChordTranslator(durations, new NotationTranslator());
-		const translator = new VoiceTranslator(chords, durations, barlines);
 		const reader = new ScoreReader(new DynamicGlyphs());
+		const translator = new VoiceTranslator(chords, durations, barlines, reader);
 		const gaps = new Gaps([]);
 		return new ScoreRenderer(
 			config,

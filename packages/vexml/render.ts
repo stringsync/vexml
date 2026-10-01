@@ -84,8 +84,8 @@ export function render(
 	const chords = new ChordTranslator(durations, new NotationTranslator());
 	// ONE translator instance shared by layout and draw: both must build identical vexflow
 	// voices for the measured widths to match the drawn ones.
-	const translator = new VoiceTranslator(chords, durations, barlines);
 	const reader = new ScoreReader(new DynamicGlyphs());
+	const translator = new VoiceTranslator(chords, durations, barlines, reader);
 	const gaps = new Gaps(resolved.gaps);
 	return new ScoreRenderer(
 		resolved,

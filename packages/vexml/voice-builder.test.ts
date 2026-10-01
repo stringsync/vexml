@@ -139,7 +139,10 @@ describe('VoiceBuilder', () => {
 		new VoiceBuilder(
 			(overrides.translator ?? fakeTranslator()) as VoiceTranslator,
 			(overrides.tab ?? {}) as TabVoiceTranslator,
-			{ endBeatOf: () => overrides.endBeat ?? 0 } as unknown as ScoreReader,
+			{
+				endBeatOf: () => overrides.endBeat ?? 0,
+				measureBeatOf: (note: Note) => note.measureBeat,
+			} as unknown as ScoreReader,
 			(overrides.spanners ?? fakeSpanners()) as unknown as SpannerBuilder,
 			{
 				softmaxFactor: 100,

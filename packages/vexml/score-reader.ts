@@ -236,9 +236,32 @@ type BarlineRead = {
 };
 
 export class ScoreReader {
+	private readonly measureBeats = new Map<Note, number | null>();
+	private readonly lengths = new Map<Note, number | null>();
+
 	// Only to answer whether a dynamic marking can be drawn as music (see dynamicsOf). The
 	// spelling itself belongs to the draw pass, not to a read.
 	constructor(private readonly dynamics: DynamicGlyphs) {}
+
+	/*
+	 * Note.measureBeat and Note.beats, read once per note. mdom finds a note's <divisions> by
+	 * gathering the <attributes> of every earlier measure in the part, so each read costs the
+	 * part's length — and layout, both draw passes and playback all ask about every note. A
+	 * ScoreReader lives for one render, over a document that doesn't change under it.
+	 */
+	measureBeatOf(note: Note): number | null {
+		if (!this.measureBeats.has(note)) {
+			this.measureBeats.set(note, note.measureBeat);
+		}
+		return this.measureBeats.get(note) ?? null;
+	}
+
+	beatsOf(note: Note): number | null {
+		if (!this.lengths.has(note)) {
+			this.lengths.set(note, note.beats);
+		}
+		return this.lengths.get(note) ?? null;
+	}
 
 	/*
 	 * One staff's renderable content from a measure's voices — see {@link StaffVoice}.
@@ -938,7 +961,7 @@ export class ScoreReader {
 			if (!text && !frame) {
 				continue;
 			}
-			const key = `${lead.measureBeat ?? 0}|${text}|${JSON.stringify(frame)}`;
+			const key = `${this.measureBeatOf(lead) ?? 0}|${text}|${JSON.stringify(frame)}`;
 			if (seen.has(key)) {
 				continue;
 			}
@@ -959,7 +982,10 @@ export class ScoreReader {
 		for (const { chords } of voices) {
 			const last = chords.at(-1);
 			if (last) {
-				end = Math.max(end, (last.measureBeat ?? 0) + (last.lead.beats ?? 0));
+				end = Math.max(
+					end,
+					(this.measureBeatOf(last.lead) ?? 0) + (this.beatsOf(last.lead) ?? 0),
+				);
 			}
 		}
 		return end;

@@ -263,7 +263,10 @@ export class VoiceBuilder {
 				if (!chord.lead.isChordMember) {
 					continue;
 				}
-				const key = splitKey(chord.lead.voice, chord.measureBeat);
+				const key = splitKey(
+					chord.lead.voice,
+					this.reader.measureBeatOf(chord.lead),
+				);
 				const halves = splitHalves.get(key);
 				if (halves) {
 					halves.push(note);
@@ -283,7 +286,7 @@ export class VoiceBuilder {
 					const notesByLead = new Map<Note, StaveNote[]>();
 					for (const lead of group.notes) {
 						const halves = splitHalves.get(
-							splitKey(lead.voice, lead.measureBeat),
+							splitKey(lead.voice, this.reader.measureBeatOf(lead)),
 						);
 						const main = this.byLead.get(lead);
 						if (halves && main) {

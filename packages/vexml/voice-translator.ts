@@ -14,6 +14,7 @@ import type { BarlineTranslator } from './barline-translator';
 import type { ChordTranslator } from './chord-translator';
 import { EPSILON, GRACE_SPACING } from './constants';
 import type { DurationTranslator } from './duration-translator';
+import type { ScoreReader } from './score-reader';
 import type { MidClefSpec } from './signature-translator';
 
 /** What a vexflow voice holds: its notes/rests/ghosts, plus the zero-duration BarNotes and
@@ -69,6 +70,7 @@ export class VoiceTranslator {
 		private readonly chords: ChordTranslator,
 		private readonly durations: DurationTranslator,
 		private readonly barlines: BarlineTranslator,
+		private readonly reader: ScoreReader,
 	) {}
 
 	/*
@@ -165,7 +167,7 @@ export class VoiceTranslator {
 				});
 				continue;
 			}
-			const onset = chord.measureBeat ?? cursor;
+			const onset = this.reader.measureBeatOf(chord.lead) ?? cursor;
 			// Before any ghost padding, so a divider on an empty stretch sits at the moment it
 			// falls on rather than being pushed to the next note's edge.
 			flushBarlines(onset);
@@ -214,7 +216,7 @@ export class VoiceTranslator {
 			}
 			record?.(chord.lead, staveNote);
 			tickables.push(staveNote);
-			cursor = onset + (chord.lead.beats ?? 0);
+			cursor = onset + (this.reader.beatsOf(chord.lead) ?? 0);
 		}
 		// Graces still pending at the end have no note left to lead, so they're after-graces of
 		// the last one. Flushed before the trailing ghosts so they anchor to a real note rather

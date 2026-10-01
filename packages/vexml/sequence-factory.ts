@@ -329,8 +329,8 @@ export class SequenceFactory {
 		const notes: SequenceNote[] = [];
 		for (const rn of geometry.notes) {
 			const note = notesByMnote.get(rn.mnote);
-			const measureBeat = rn.mnote.measureBeat;
-			const beats = rn.mnote.beats;
+			const measureBeat = this.reader.measureBeatOf(rn.mnote);
+			const beats = this.reader.beatsOf(rn.mnote);
 			if (!note || measureBeat === null || beats === null) {
 				continue;
 			}
@@ -392,8 +392,8 @@ export class SequenceFactory {
 				continue;
 			}
 			for (const note of measure.notes) {
-				const onset = note.measureBeat;
-				const beats = note.beats;
+				const onset = this.reader.measureBeatOf(note);
+				const beats = this.reader.beatsOf(note);
 				if (onset !== null && beats !== null) {
 					maxEnd = Math.max(maxEnd, onset + beats);
 				}

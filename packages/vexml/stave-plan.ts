@@ -17,6 +17,13 @@ export interface StaveVisibility {
  * brackets keyed off them — stay aligned.
  */
 export class StavePlan {
+	/* Both answers walk every measure of the part, and mdom reads each measure's attributes by
+	 * walking back to the last one that set them, so one uncached question costs the part's
+	 * length squared — and layout and draw ask per stave per measure. A StavePlan lives for
+	 * one render, over a document that doesn't change under it, so answering once is enough. */
+	private readonly tunings = new Map<Part, Map<string, number[] | null>>();
+	private readonly tabs = new Map<Part, Map<string, boolean>>();
+
 	constructor(private readonly visibility: StaveVisibility) {}
 
 	/**
@@ -29,6 +36,12 @@ export class StavePlan {
 	 * callers keep their explicit-fret-only behavior rather than guessing a tuning.
 	 */
 	tuningOf(part: Part, staffNumber: string): number[] | null {
+		return memo(this.tunings, part, staffNumber, () =>
+			this.readTuning(part, staffNumber),
+		);
+	}
+
+	private readTuning(part: Part, staffNumber: string): number[] | null {
 		for (const measure of part.measures) {
 			const tunings = measure.getStaffTunings(staffNumber);
 			if (tunings.length === 0) {
@@ -49,6 +62,12 @@ export class StavePlan {
 	 * octave-down treble clef, so the clef sign alone doesn't settle it. A staff's clef is
 	 * stable across a part, so the first measure that declares either settles it. */
 	isTab(part: Part, staffNumber: string): boolean {
+		return memo(this.tabs, part, staffNumber, () =>
+			this.readIsTab(part, staffNumber),
+		);
+	}
+
+	private readIsTab(part: Part, staffNumber: string): boolean {
 		for (const measure of part.measures) {
 			if (this.hasStaffTuning(measure, staffNumber)) {
 				return true;
@@ -170,4 +189,21 @@ export class StavePlan {
 			details.staffLines !== null
 		);
 	}
+}
+
+function memo<T>(
+	cache: Map<Part, Map<string, T>>,
+	part: Part,
+	staffNumber: string,
+	read: () => T,
+): T {
+	let byStaff = cache.get(part);
+	if (!byStaff) {
+		byStaff = new Map();
+		cache.set(part, byStaff);
+	}
+	if (!byStaff.has(staffNumber)) {
+		byStaff.set(staffNumber, read());
+	}
+	return byStaff.get(staffNumber) as T;
 }
