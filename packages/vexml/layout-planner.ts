@@ -247,6 +247,7 @@ export class LayoutPlanner {
 					? this.tab.tickables(voice.chords, tuning)
 					: this.translator.tickables(voice.chords, clef, {
 							endBeat,
+							run: voice.run,
 							// Matches buildNotes: the dividers and clef glyphs ride on the first
 							// voice only, but the clef changes re-aim every voice's notes.
 							barlines: voiceIndex === 0 ? barlines : [],

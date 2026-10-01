@@ -51,6 +51,9 @@ export type Swing = { first: number; second: number; unit: number };
 export type StaffVoice = {
 	chords: Chord[];
 	beamChords: Chord[] | null;
+	/* The whole voice, every staff's share of it — what a staff it only partly sits on
+	 * holds the rest of its time with (see VoiceTickablesOptions.run). */
+	run: Chord[];
 };
 
 /** Which side of the staff a `<direction>` prints on. */
@@ -301,6 +304,7 @@ export class ScoreReader {
 					// each voice's beams — the run is grouped once and spans whatever staves its
 					// notes landed on.
 					beamChords: voice.staff === staffNumber ? voice.chords : null,
+					run: voice.chords,
 				});
 			}
 		}

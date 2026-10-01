@@ -65,7 +65,7 @@ Two rules cut across the draw stage:
 - **Noteheads, accidentals, stems, flags, rests, dots, ledger lines** — `chord-translator.ts`
 - **Voices on one stave, stem direction, voice-level layout** — `voice-builder.ts`
 - **Beams, tuplets, grace notes** — `voice-builder.ts` (grouping), `spanner-builder.ts` (construction), `system-formatter.ts` (grace spacing)
-- **Cross-staff notes and beams** — `voice-builder.ts`
+- **Cross-staff notes, beams and tuplets; the ghosts holding a crossed note's time on the other staff** — `voice-builder.ts`, `voice-translator.ts` (`gapFill`), `score-reader.ts` (`staffVoices`)
 - **Articulations, fermatas, ornaments, trills, tremolos, arpeggios, harmonics** — `notation-translator.ts`
 - **Invisible notes (`print-object="no"`), note colors** — `chord-translator.ts`
 - **Formatting a measure column: note x, note extents, alignment** — `system-formatter.ts`

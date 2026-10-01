@@ -70,6 +70,9 @@ export class VoiceBuilder {
 	// own length. The noteheads still count: a note written far outside its stave (M1's B4
 	// on the bass staff) genuinely needs the clearance.
 	private readonly crossStave = new Set<StaveNote>();
+	// The ghosts each staff put in for a note its voice drew on another staff (see
+	// VoiceTickablesOptions.run), by that note's lead, until the part's tuplets exist.
+	private readonly standIns = new Map<Note, GhostNote[]>();
 
 	constructor(
 		private readonly translator: VoiceTranslator,
@@ -152,6 +155,15 @@ export class VoiceBuilder {
 			}
 			const tickables = this.translator.tickables(chords, clef, {
 				endBeat,
+				run: voice.run,
+				recordStandIn: (lead, ghost) => {
+					const ghosts = this.standIns.get(lead);
+					if (ghosts) {
+						ghosts.push(ghost);
+					} else {
+						this.standIns.set(lead, [ghost]);
+					}
+				},
 				record: (lead, note) => {
 					this.byLead.set(lead, note);
 					staveNotes.push(note);
@@ -221,7 +233,13 @@ export class VoiceBuilder {
 			beams: [],
 			beamPlans,
 			tuplets: [],
-			tupletChords: voices.map((v) => v.chords),
+			// Off the full run, like the beams, and so only on the staff that owns the voice: a
+			// triplet whose markers sit on the bass notes still times the notes it crossed up to
+			// the treble with. Read off this staff's projection, those notes carry no marker, so
+			// they'd keep a plain 16th's ticks and that staff's timeline would overrun the bar.
+			tupletChords: voices.flatMap((v) =>
+				v.beamChords === null ? [] : [v.beamChords],
+			),
 			staveNotes,
 			tiedNotes,
 			noteChords,
@@ -346,10 +364,24 @@ export class VoiceBuilder {
 				p.tuplets.push(...this.spanners.buildTuplets(chords, this.byLead));
 			}
 			p.tupletChords.length = 0;
-			// Voice caches its total ticks and resolution denominator when notes are
-			// added. Tuplets just changed those ticks: rebuild the voices so ordinary
-			// beats and tuplet beats share the correct formatter tick contexts.
-			if (p.tuplets.length > 0) {
+		}
+		// A stand-in counts its note's time on another staff, so it takes that note's tuplet
+		// too — otherwise it holds a plain 16th where the note it stands for holds a triplet.
+		for (const [lead, ghosts] of this.standIns) {
+			const tuplet = this.byLead.get(lead)?.getTuplet();
+			if (tuplet) {
+				for (const ghost of ghosts) {
+					ghost.setTuplet(tuplet);
+				}
+			}
+		}
+		this.standIns.clear();
+		// Voice caches its total ticks and resolution denominator when notes are added.
+		// Tuplets just changed those ticks — on any of the part's staves, since a cross-staff
+		// tuplet rescales notes another stave drew: rebuild the voices so ordinary beats and
+		// tuplet beats share the correct formatter tick contexts.
+		if (pending.some((p) => p.tuplets.length > 0)) {
+			for (const p of pending) {
 				p.vexVoices = p.vexVoices.map((voice) =>
 					this.translator.softVoice(voice.getTickables(), this.softmaxFactor),
 				);

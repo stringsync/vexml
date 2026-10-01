@@ -2712,6 +2712,18 @@ describe('render', () => {
 		);
 	});
 
+	// A tuplet whose voice crosses staves (Schubert, Der Lindenbaum m. 51): one piano voice of
+	// triplet 16ths, G3 on the bass staff, E4 on the treble, G3 back on the bass, six times, the
+	// <tuplet> markers on the bass notes; a held dotted-half C2 under it in voice 2. Each
+	// triplet's bracket spans its three notes and the 18 notes run evenly across the whole bar,
+	// the treble E4s midway between their two G3s. The bar is no wider than a single-staff bar
+	// of the same figure would be, and nothing bunches against the left barline.
+	it.concurrent('renders tuplet_cross_stave.png', async () => {
+		expect(
+			await testing.render('tuplet_cross_stave.musicxml'),
+		).toMatchScreenshot('tuplet_cross_stave.png');
+	});
+
 	// A different key signature on each staff of one part, normal for transposing scores
 	// and for some contemporary piano writing. One braced two-stave part, 4/4, one whole
 	// note per stave, each staff declaring its own <key number> and <clef number>.

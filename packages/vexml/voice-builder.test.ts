@@ -41,7 +41,7 @@ describe('VoiceBuilder', () => {
 	const staffVoice = (
 		chords: Chord[],
 		beamChords: Chord[] | null = null,
-	): StaffVoice => ({ chords, beamChords });
+	): StaffVoice => ({ chords, beamChords, run: beamChords ?? chords });
 
 	// A built note the way buildPartBeams sees one: identity plus a recorded stem set.
 	const staveNote = (mods: unknown[] = []) => {
@@ -165,7 +165,9 @@ describe('VoiceBuilder', () => {
 		const grace = lead({ isGrace: true });
 		const chords = [chordOf(plain, 0), chordOf(tied, 0), chordOf(grace, 0)];
 		const byLead = new Map<Note, StaveNote>();
-		const pending = buildNotes(makeBuilder({ byLead }), [staffVoice(chords)]);
+		const pending = buildNotes(makeBuilder({ byLead }), [
+			staffVoice(chords, chords),
+		]);
 
 		expect(pending.stave).toBe(stave);
 		expect(pending.row).toBe(3);

@@ -2,6 +2,7 @@ import type { Chord, Note } from '@stringsync/mdom';
 import {
 	type BarNote,
 	ClefNote,
+	GhostNote,
 	type GraceNote,
 	GraceNoteGroup,
 	Modifier,
@@ -40,6 +41,16 @@ export interface VoiceTickablesOptions {
 	/* Per-note octave shift, since a mid-measure clef change can vary it note by note
 	 * rather than it being one value for the stave. */
 	octaveShiftOf?: (lead: Note) => number;
+	/* The whole voice, across every staff, when `chords` is only this staff's share of it.
+	 * A note the voice drew on another staff leaves a hole here, held by a ghost of that
+	 * note's own written value (see standIns) rather than by a dyadic fill: a triplet 16th
+	 * isn't dyadic, and each staff has to count the voice's time in the same notes the
+	 * voice is written in. */
+	run?: readonly Chord[];
+	/* Called with each stand-in ghost and the lead it holds the place of, so a caller can
+	 * put it under the same tuplet as that note. */
+	// rule-ignore objects-over-callbacks: per-call, for the reason `record` is.
+	recordStandIn?: (lead: Note, ghost: GhostNote) => void;
 	/* Stem direction for notes without an explicit <stem>. */
 	defaultStem?: 'up' | 'down';
 	/* The measure's mid-measure dividers (see ScoreReader.midBarlinesOf), each inserted as
@@ -90,6 +101,8 @@ export class VoiceTranslator {
 	): VoiceTickable[] {
 		const {
 			endBeat = 0,
+			run = [],
+			recordStandIn,
 			record,
 			octaveShiftOf = () => 0,
 			defaultStem,
@@ -173,7 +186,7 @@ export class VoiceTranslator {
 			flushBarlines(onset);
 			flushClefs(onset);
 			if (onset > cursor + EPSILON) {
-				tickables.push(...this.durations.ghostNotes(onset - cursor));
+				tickables.push(...this.gapFill(cursor, onset, run, recordStandIn));
 			}
 			const staveNote = this.chords.staveNote(chord, activeClef, {
 				alignCenter: centerWholeRest,
@@ -228,9 +241,52 @@ export class VoiceTranslator {
 		// before the trailing ghosts, so it sits inside the measure rather than past its fill.
 		flushClefs(Number.POSITIVE_INFINITY);
 		if (endBeat > cursor + EPSILON) {
-			tickables.push(...this.durations.ghostNotes(endBeat - cursor));
+			tickables.push(...this.gapFill(cursor, endBeat, run, recordStandIn));
 		}
 		return tickables;
+	}
+
+	/*
+	 * Ghosts holding the beats from `from` to `to`: first a stand-in for each of the voice's
+	 * notes sounding there on another staff, then a dyadic fill for whatever's left (a
+	 * <forward>, or a voice that stops early).
+	 */
+	private gapFill(
+		from: number,
+		to: number,
+		run: readonly Chord[],
+		recordStandIn: ((lead: Note, ghost: GhostNote) => void) | undefined,
+	): GhostNote[] {
+		const ghosts: GhostNote[] = [];
+		let cursor = from;
+		for (const chord of run) {
+			const lead = chord.lead;
+			const onset = this.reader.measureBeatOf(lead);
+			const beats = this.reader.beatsOf(lead);
+			// Only a note starting right where the fill stands, so a stand-in never skips time,
+			// and only one whose written value is known — the fallback code is a guess.
+			if (
+				lead.isGrace ||
+				lead.type === null ||
+				onset === null ||
+				beats === null ||
+				Math.abs(onset - cursor) > EPSILON ||
+				onset + beats > to + EPSILON
+			) {
+				continue;
+			}
+			const ghost = new GhostNote({
+				duration: this.durations.code(lead),
+				dots: lead.dots,
+			});
+			ghosts.push(ghost);
+			recordStandIn?.(lead, ghost);
+			cursor = onset + beats;
+		}
+		if (to > cursor + EPSILON) {
+			ghosts.push(...this.durations.ghostNotes(to - cursor));
+		}
+		return ghosts;
 	}
 
 	/*
