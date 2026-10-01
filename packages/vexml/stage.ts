@@ -9,6 +9,7 @@ import type { LoupeOptions } from './loupe';
 import { ManagedLayer } from './managed-layer';
 import { ManagedLoupe } from './managed-loupe';
 import { ManagedMarker, type MarkerFrame } from './managed-marker';
+import type { PagePainter } from './page-painter';
 import type { PaintProbe } from './paint-probe';
 import type { Engraving } from './score-drawer';
 import { ScrollController } from './scroll-controller';
@@ -29,6 +30,8 @@ export interface ScrollBox {
 	width?: number | null;
 	maxWidth?: number | null;
 	backgroundColor?: string | null;
+	// Device px per CSS px the score is painted at; null follows window.devicePixelRatio.
+	pixelRatio?: number | null;
 	fit?: boolean;
 	scrollContainer?: HTMLElement | null;
 }
@@ -47,7 +50,7 @@ export interface ScrollBox {
  * Reading the live rect each call means page scroll and any CSS scaling of it are handled for free.
  */
 
-export class Stage implements Viewport, Host, ScrollHost {
+export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 	// At most one Stage owns a container's styles at a time. A re-render can mount the new Stage
 	// before disposing the old (to avoid a blank flash), leaving two bound to one container; the
 	// constructor uses this to tear the prior one down first, so each Stage captures the truly
@@ -114,6 +117,8 @@ export class Stage implements Viewport, Host, ScrollHost {
 	} | null = null;
 	// The paper color a fold is painted on when the config sets no backgroundColor.
 	private readonly backgroundColor: string | null;
+	// The configured pixel ratio, or null to follow the screen's.
+	private readonly fixedPixelRatio: number | null;
 	private disposed = false;
 
 	constructor(
@@ -127,6 +132,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 		Stage.byContainer.set(container, this);
 		this.scrollElement = scroll.scrollContainer ?? container;
 		this.backgroundColor = scroll.backgroundColor ?? null;
+		this.fixedPixelRatio = scroll.pixelRatio ?? null;
 		// A positioned container is the containing block the overlay layers anchor to. Only set it
 		// when the caller left position static, and remember it so dispose restores.
 		this.prevPosition = container.style.position;
@@ -197,7 +203,11 @@ export class Stage implements Viewport, Host, ScrollHost {
 		this.ensureCanvasStyles();
 		container.appendChild(this.base);
 		this.probe = new CanvasPaintProbe();
-		this.engraving = new TiledSurface(this.base, this.probe, surfaceOptions());
+		this.engraving = new TiledSurface(
+			this.base,
+			this.probe,
+			surfaceOptions(this.pixelRatio),
+		);
 
 		// Observe BOTH the container and the base canvas. Placement (placeLayer and the score<->client
 		// frame) is derived from the base canvas's rendered box, which can change *without* the
@@ -373,6 +383,12 @@ export class Stage implements Viewport, Host, ScrollHost {
 		this.placeFold();
 	}
 
+	/* Device px per CSS px everything vexml paints is drawn at: the configured pixelRatio, else the
+	 * screen's. */
+	get pixelRatio(): number {
+		return this.fixedPixelRatio ?? (window.devicePixelRatio || 1);
+	}
+
 	// The Stage owns the container that scrolls; a lazily-created controller does the scrolling.
 	get scroller(): ScrollController {
 		this.scrollController ??= new ScrollController(this);
@@ -434,7 +450,11 @@ export class Stage implements Viewport, Host, ScrollHost {
 				: new TiledLayer(
 						kind,
 						element as HTMLDivElement,
-						new TiledSurface(element, this.probe, surfaceOptions()),
+						new TiledSurface(
+							element,
+							this.probe,
+							surfaceOptions(this.pixelRatio),
+						),
 						this,
 						z ?? 0,
 						this.overlays++,
@@ -557,6 +577,18 @@ export class Stage implements Viewport, Host, ScrollHost {
 		}
 	}
 
+	/* Paint the engraving alone, no overlays, over `region` (see PagePainter). */
+	paintEngraving(
+		ctx: CanvasRenderingContext2D,
+		region: Rect,
+		scale: number,
+	): void {
+		if (this.disposed) {
+			throw new Error('vexml: the score was disposed');
+		}
+		this.engraving.paintInto(ctx, region, scale);
+	}
+
 	relayoutLayers(): void {
 		this.placeFold();
 		this.fitEngraving();
@@ -670,7 +702,7 @@ export class Stage implements Viewport, Host, ScrollHost {
 		// In flow the strip starts where the fold does in the score, and takes no room from it.
 		element.style.marginLeft = `${fold.left * sx - pad}px`;
 		element.style.marginRight = `${-(fold.left + fold.width) * sx}px`;
-		const dpr = window.devicePixelRatio || 1;
+		const dpr = this.pixelRatio;
 		canvas.width = Math.round(fold.width * sx * dpr);
 		canvas.height = Math.round(fold.height * sy * dpr);
 		this.fold.index = -1;
@@ -919,10 +951,10 @@ export class Stage implements Viewport, Host, ScrollHost {
 	}
 }
 
-// Tiles at the screen's resolution: each is small, so there's no cap to lower it for.
-function surfaceOptions(): TiledSurfaceOptions {
+// Tiles at the stage's resolution: each is small, so there's no cap to lower it for.
+function surfaceOptions(scale: number): TiledSurfaceOptions {
 	return {
-		scale: window.devicePixelRatio || 1,
+		scale,
 		tileSize: TILE_SIZE,
 		budget: TILE_BUDGET,
 	};

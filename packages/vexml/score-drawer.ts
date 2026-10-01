@@ -8,6 +8,7 @@ import {
 	LEDGER_HEADROOM,
 	PAGE_MARGIN_BOTTOM,
 	PAGE_MARGIN_TOP,
+	PAGE_MARGIN_X,
 } from './constants';
 import { DrawPass, type DrawPassOptions } from './draw-pass';
 import type { Fold } from './fold';
@@ -18,6 +19,7 @@ import type {
 	RawNote,
 } from './geometry-collector';
 import type { ScoreLayout } from './layout-planner';
+import { PagePlanner } from './page-planner';
 import { PaintContext } from './paint-context';
 import { PaintList } from './paint-list';
 import type { PaintOp } from './paint-op';
@@ -49,12 +51,13 @@ export interface Engraving {
 	origin: GridOrigin;
 }
 
-/* What a draw hands back: the hit-index geometry, the engraving, and the sticky panoramic fold
- * when the config asks for one. */
+/* What a draw hands back: the hit-index geometry, the engraving, the sticky panoramic fold
+ * when the config asks for one, and each page's box in score space (none unless paged). */
 export interface DrawResult {
 	geometry: RawGeometry;
 	engraving: Engraving;
 	fold: Fold | null;
+	pages: Rect[];
 }
 
 /*
@@ -169,7 +172,10 @@ export class ScoreDrawer {
 
 		// The layout the final pass drew with: pass two re-spaces the staves.
 		let drawnLayout = layout;
-		let pass = runPass(layout, new Map(), pageHeight, {});
+		// What the final pass was given, so a paged layout can redraw it with systems pushed down.
+		let drawnOverflow = new Map<number, number>();
+		let drawnOpts: DrawPassOptions = {};
+		let pass = runPass(layout, drawnOverflow, pageHeight, drawnOpts);
 		const revision = this.spillResolver.revise(
 			layout.staveOffsets,
 			pass,
@@ -185,10 +191,37 @@ export class ScoreDrawer {
 				systemStaveOffsets,
 				floorHeight: activeFloorHeight,
 			};
-			pass = runPass(drawnLayout, pass.observedOverflow, pageHeight, {
+			drawnOverflow = pass.observedOverflow;
+			drawnOpts = {
 				lyricDrops: pass.observedLyricDrops,
 				voltaLifts: pass.observedVoltaLifts,
-			});
+			};
+			pass = runPass(drawnLayout, drawnOverflow, pageHeight, drawnOpts);
+		}
+		const { layout: layoutConfig } = this.config;
+		if (layoutConfig.type === 'paged') {
+			// Fit the systems onto pages: one that would cross a page's bottom margin is pushed to
+			// the next page by widening the gap above it, and a third pass draws them there. The
+			// push changes no system's own drawing, only where it sits.
+			const plan = new PagePlanner(
+				layoutConfig.pageHeight,
+				layoutConfig.margin,
+			).plan(
+				[...pass.systemExtents]
+					.sort(([a], [b]) => a - b)
+					.map(([, extent]) => extent),
+			);
+			if (plan.pushes.size > 0) {
+				const overflow = new Map(drawnOverflow);
+				let pushed = 0;
+				for (const [system, push] of plan.pushes) {
+					overflow.set(system, (overflow.get(system) ?? 0) + push);
+					pushed += push;
+				}
+				list.reset();
+				pass = runPass(drawnLayout, overflow, pageHeight + pushed, drawnOpts);
+			}
+			return this.paged(list.ops, pass, plan.cropTop, plan.pageCount);
 		}
 		const { pageTop, pageBottom } = pass;
 
@@ -207,7 +240,7 @@ export class ScoreDrawer {
 			cropTop;
 		// The pixels shift by whole device pixels so an engraving lands on the same pixel grid at
 		// any crop; the geometry below keeps the exact crop, which is in CSS px.
-		const dpr = window.devicePixelRatio || 1;
+		const dpr = this.pixelRatio();
 		const engraving: Engraving = {
 			ops: list.ops,
 			width,
@@ -236,11 +269,10 @@ export class ScoreDrawer {
 				rect: toScore(d.rect),
 			})),
 		};
-		const { layout: layoutConfig } = this.config;
 		const sticky =
 			layoutConfig.type === 'panoramic' && layoutConfig.stickySignatures;
 		if (!sticky) {
-			return { geometry, engraving, fold: null };
+			return { geometry, engraving, fold: null, pages: [] };
 		}
 		// The first system's staves, where the draw pass put them (its top is layout.top +
 		// topSlack), shifted by the same crop as everything else.
@@ -262,6 +294,66 @@ export class ScoreDrawer {
 				textColor: this.config.fonts.text?.color ?? '#000000',
 			},
 		);
-		return { geometry, engraving, fold };
+		return { geometry, engraving, fold, pages: [] };
+	}
+
+	/*
+	 * The paged result: score space is the pages stacked edge to edge, each pageWidth wide. The
+	 * drawing shifts right so its staves sit between the side margins (it was laid out with its own
+	 * PAGE_MARGIN_X), and up by the plan's crop so the first system starts at the top margin.
+	 */
+	private paged(
+		ops: readonly PaintOp[],
+		pass: ReturnType<DrawPass['run']>,
+		cropTop: number,
+		pageCount: number,
+	): DrawResult {
+		const { layout } = this.config;
+		if (layout.type !== 'paged') {
+			throw new Error('vexml: not a paged layout');
+		}
+		const { pageWidth, pageHeight, margin } = layout;
+		const dx = margin - PAGE_MARGIN_X;
+		const dpr = this.pixelRatio();
+		const height = pageCount * pageHeight;
+		const toScore = (r: Rect) => r.translate(dx, -cropTop);
+		return {
+			geometry: {
+				bounds: new Rect(0, 0, pageWidth, height),
+				notes: pass.rawNotes.map((n) => ({
+					...n,
+					rect: toScore(n.rect),
+					glyph: n.glyph
+						? { ...n.glyph, x: n.glyph.x + dx, y: n.glyph.y - cropTop }
+						: null,
+				})),
+				measures: pass.rawMeasures.map((mm) => ({
+					...mm,
+					rect: toScore(mm.rect),
+				})),
+				chordDiagrams: pass.rawChordDiagrams.map((d) => ({
+					...d,
+					rect: toScore(d.rect),
+				})),
+			},
+			engraving: {
+				ops,
+				width: pageWidth,
+				height,
+				origin: {
+					x: Math.round(dx * dpr) / dpr,
+					y: -Math.round(cropTop * dpr) / dpr,
+				},
+			},
+			fold: null,
+			pages: Array.from(
+				{ length: pageCount },
+				(_, index) => new Rect(0, index * pageHeight, pageWidth, pageHeight),
+			),
+		};
+	}
+
+	private pixelRatio(): number {
+		return this.config.pixelRatio ?? (window.devicePixelRatio || 1);
 	}
 }

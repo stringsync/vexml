@@ -184,6 +184,28 @@ variables on the container or any ancestor:
 }
 ```
 
+## Printing pages
+
+A `paged` layout fits the systems onto pages of a fixed size, never splitting a system across
+two, and shows the pages stacked on screen. Each page draws itself on a canvas of its own, so
+a long score prints sharp at any `pixelRatio`. Letter is 816×1056 CSS px, A4 794×1123.
+
+```ts
+const score = await render(musicXML, element, {
+  layout: { type: 'paged', pageWidth: 816, pageHeight: 1056, margin: 48 },
+  pixelRatio: 3, // print resolution, independent of window.devicePixelRatio
+  backgroundColor: '#ffffff',
+});
+const pngs = await Promise.all(score.getPages().map((page) => page.toBlob('image/png')));
+score.dispose();
+```
+
+`page.toBlob()` returns the page, margins included, on opaque paper (`backgroundColor`, else
+the background behind the score, else white), without layers, markers or cursors.
+`page.toCanvas()` hands back the canvas instead, e.g. for a PDF library. The element can be
+hidden (`visibility: hidden`, positioned off screen) as long as it's in the document. The rest
+of the `Score` (sequence, cursors, hit testing) works as usual, in the stacked pages' space.
+
 ## When a line won't fit
 
 A MusicXML file can engrave its own line breaks, laid out for whatever page the file

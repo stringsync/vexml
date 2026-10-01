@@ -381,7 +381,19 @@ export class LayoutPlanner {
 	 * scaled to fit its container. */
 	plan(score: Score, config: Config): ScoreLayout {
 		const parts = score.parts;
-		const layout = config.layout;
+		// A paged layout flows like a standard one whose reference width puts the staves exactly
+		// between the page's side margins; the drawer fits its systems onto pages afterwards.
+		const layout =
+			config.layout.type === 'paged'
+				? {
+						...config.layout,
+						type: 'standard' as const,
+						referenceWidth:
+							config.layout.pageWidth -
+							2 * config.layout.margin +
+							2 * PAGE_MARGIN_X,
+					}
+				: config.layout;
 		const layoutMode = layout.type;
 		// Standard lays out at its reference width; panoramic starts there and grows the page
 		// to fit its single system. Not const: an overflow: 'widen' layout raises it below,

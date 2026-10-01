@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { BarlineTranslator } from './barline-translator';
 import { ChordTranslator } from './chord-translator';
-import { DEFAULT_CONFIG, type FontConfig } from './config';
+import {
+	type Config,
+	DEFAULT_CONFIG,
+	DEFAULT_PAGED_LAYOUT,
+	type FontConfig,
+} from './config';
 import { DurationTranslator } from './duration-translator';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { ElementFactory } from './element-factory';
@@ -41,6 +46,14 @@ class FakeStage extends FakeHost implements RenderStage {
 	setFold(fold: Fold): void {
 		this.folds.push(fold);
 	}
+
+	readonly pixelRatio = 1;
+
+	paperColor(): string {
+		return '#ffffff';
+	}
+
+	paintEngraving(): void {}
 }
 
 // A FontLoader that records its calls, to pin the fonts-before-parse ordering.
@@ -68,7 +81,7 @@ describe('ScoreRenderer', () => {
 
 	// The config is the only thing a test varies, and it reaches three collaborators, so the
 	// renderer is built per test rather than in beforeEach.
-	const renderer = (overrides?: { minLastSystemFill?: number }) => {
+	const renderer = (overrides?: Partial<Config>) => {
 		const config = { ...DEFAULT_CONFIG, ...overrides };
 		const durations = new DurationTranslator();
 		const barlines = new BarlineTranslator();
@@ -116,6 +129,27 @@ describe('ScoreRenderer', () => {
 		await expect(scoreRenderer.render('<xml/>')).rejects.toThrow(RangeError);
 		expect(fontLoader.calls).toHaveLength(0);
 		expect(parser.parses).toBe(0);
+	});
+
+	it('rejects a pixelRatio that is not positive before doing any work', async () => {
+		const scoreRenderer = renderer({ pixelRatio: 0 });
+		await expect(scoreRenderer.render('<xml/>')).rejects.toThrow(RangeError);
+		expect(fontLoader.calls).toHaveLength(0);
+	});
+
+	it('rejects a page no larger than its margins before doing any work', async () => {
+		const scoreRenderer = renderer({
+			layout: { ...DEFAULT_PAGED_LAYOUT, pageHeight: 96, margin: 48 },
+		});
+		await expect(scoreRenderer.render('<xml/>')).rejects.toThrow(RangeError);
+		expect(fontLoader.calls).toHaveLength(0);
+	});
+
+	it('gives a score with no parts no pages', async () => {
+		const score = await renderer({ layout: DEFAULT_PAGED_LAYOUT }).render(
+			'<xml/>',
+		);
+		expect(score.getPages()).toEqual([]);
 	});
 
 	it('loads fonts (with the config fonts) before parsing', async () => {

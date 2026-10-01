@@ -72,6 +72,12 @@ export interface DrawPassOptions {
 	voltaLifts?: Map<number, number>;
 }
 
+/* How far a system's ink reaches up and down, in the pass's scratch space. */
+export interface SystemExtent {
+	top: number;
+	bottom: number;
+}
+
 /*
  * Draw every measure once. `topOverflow` maps a systemIndex to extra space to reserve
  * above that system so its notes (which rise above its own top stave) clear the system
@@ -124,6 +130,8 @@ export class DrawPass {
 	private readonly geometry = new GeometryCollector();
 	private systemTopY: number;
 	private systemContentBottom: number;
+	// Each finished system's content bottom, for pagination (see run's systemExtents).
+	private readonly systemBottoms = new Map<number, number>();
 	private currentSystem = -1;
 	// Per-system collision index of everything already drawn (notes, high ties, placed
 	// chord symbols/words/diagrams). The above-stave annotations query it to nudge clear of
@@ -449,6 +457,7 @@ export class DrawPass {
 		lyricsStepped: boolean;
 		observedVoltaLifts: Map<number, number>;
 		voltasLifted: boolean;
+		systemExtents: Map<number, SystemExtent>;
 		rawNotes: RawNote[];
 		rawMeasures: RawMeasure[];
 		rawChordDiagrams: RawChordDiagram[];
@@ -858,6 +867,7 @@ export class DrawPass {
 	private beginSystem(): void {
 		if (this.systemIndex !== this.currentSystem) {
 			if (this.currentSystem >= 0) {
+				this.systemBottoms.set(this.currentSystem, this.systemContentBottom);
 				// Gap below the previous system, plus room reserved for this system's own
 				// upward overflow (high notes/ledger lines) so they clear it, not collide.
 				this.systemTopY =
@@ -1065,6 +1075,7 @@ export class DrawPass {
 		lyricsStepped: boolean;
 		observedVoltaLifts: Map<number, number>;
 		voltasLifted: boolean;
+		systemExtents: Map<number, SystemExtent>;
 		rawNotes: RawNote[];
 		rawMeasures: RawMeasure[];
 		rawChordDiagrams: RawChordDiagram[];
@@ -1072,6 +1083,9 @@ export class DrawPass {
 		// The last system's content is never followed by a system-change reset, so check it
 		// for clipped content here.
 		this.warnEscapes();
+		if (this.currentSystem >= 0) {
+			this.systemBottoms.set(this.currentSystem, this.systemContentBottom);
+		}
 
 		this.geometry.applyDecorationTops(this.spill);
 
@@ -1090,6 +1104,7 @@ export class DrawPass {
 			observedLyricDrops: this.lyricPlacer.observedDrops(),
 			lyricsStepped: this.lyricPlacer.stepped(),
 			observedVoltaLifts: this.observedVoltaLifts,
+			systemExtents: this.systemExtents(),
 			voltasLifted: [...this.observedVoltaLifts].some(
 				([system, lift]) => lift !== (this.voltaLifts.get(system) ?? 0),
 			),
@@ -1141,6 +1156,18 @@ export class DrawPass {
 	 * the current system IS its system. */
 	private systemOf(stave: Stave): number {
 		return this.spannerResolver.systemOf(stave) ?? this.systemIndex;
+	}
+
+	// Each system's ink top (its stave top and anything that rose above it) and content bottom.
+	private systemExtents(): Map<number, SystemExtent> {
+		const extents = new Map<number, SystemExtent>();
+		for (const [system, top] of this.spill.systemTops()) {
+			extents.set(system, {
+				top,
+				bottom: this.systemBottoms.get(system) ?? top,
+			});
+		}
+		return extents;
 	}
 
 	private warnEscapes(): void {

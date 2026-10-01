@@ -173,8 +173,13 @@ export class TiledSurface implements PaintSink, Resource {
 	}
 
 	/* Paint a surface-px region into a context whose transform already maps surface px to its
-	 * pixels: straight from the ops, so a magnified view stays sharp. */
-	paintInto(ctx: CanvasRenderingContext2D, region: Rect): void {
+	 * pixels: straight from the ops, so a magnified view stays sharp. `scale` is that context's
+	 * device px per surface px, where the ops need it (the surface's own by default). */
+	paintInto(
+		ctx: CanvasRenderingContext2D,
+		region: Rect,
+		scale = this.scale,
+	): void {
 		const t = ctx.getTransform();
 		const base = new Affine(t.a, t.b, t.c, t.d, t.e, t.f).multiply(
 			Affine.translate(this.grid.origin.x, this.grid.origin.y),
@@ -183,10 +188,7 @@ export class TiledSurface implements PaintSink, Resource {
 		ctx.beginPath();
 		ctx.rect(region.x, region.y, region.w, region.h);
 		ctx.clip();
-		const replayer = new PaintReplayer(ctx, base, {
-			scale: this.scale,
-			device: null,
-		});
+		const replayer = new PaintReplayer(ctx, base, { scale, device: null });
 		for (const op of this.grid.opsIn(region)) {
 			replayer.replay(op);
 		}

@@ -24,6 +24,7 @@ import { type Loupe, type LoupeOptions, resolveLoupeOptions } from './loupe';
 import type { Marker } from './marker';
 import { MeasureBox } from './measure-box';
 import { Note } from './note';
+import type { Page } from './page';
 import type { Part } from './part';
 import { Playhead, type PlayheadOptions } from './playhead';
 import { ScoreEditingLayout } from './score-editing-layout';
@@ -119,6 +120,7 @@ export class Score implements Eventful<ScoreEventMap> {
 			suspendForResize(): void;
 		},
 		private readonly gaps: readonly GapInfo[],
+		private readonly pages: readonly Page[] = [],
 	) {
 		// Fires on any change to the container OR the base canvas's rendered box (e.g. a web-font
 		// reflow growing the engraving without the container resizing). Re-sync the layers to the
@@ -292,6 +294,12 @@ export class Score implements Eventful<ScoreEventMap> {
 	/* The layout axis: one System per engraved line, each System -> MeasureBox, top to bottom. */
 	getSystems(): System[] {
 		return this.elements.systems();
+	}
+
+	/* The pages of a score rendered with a paged layout, top to bottom; none for any other layout.
+	 * Each draws itself on its own canvas (see Page.toBlob). */
+	getPages(): Page[] {
+		return [...this.pages];
 	}
 
 	/* The playback time at a score-space point (jump-aware: a repeated spot maps to its first pass),

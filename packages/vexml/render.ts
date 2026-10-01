@@ -5,9 +5,11 @@ import {
 	type Config,
 	type ConfigInput,
 	DEFAULT_CONFIG,
+	DEFAULT_PAGED_LAYOUT,
 	DEFAULT_PANORAMIC_LAYOUT,
 	DEFAULT_STANDARD_LAYOUT,
 	type Layout,
+	type LayoutInput,
 } from './config';
 import { DefaultFontLoader } from './default-font-loader';
 import { DefaultScoreParser } from './default-score-parser';
@@ -48,11 +50,7 @@ export function render(
 ): Promise<Score> {
 	// `layout` is the one nested config object, so the top-level spread would blow away the
 	// knobs a caller left out of `{ type: 'standard' }`. Fill it from its own defaults first.
-	const layoutInput = config?.layout ?? DEFAULT_CONFIG.layout;
-	const layout: Layout =
-		layoutInput.type === 'standard'
-			? { ...DEFAULT_STANDARD_LAYOUT, ...layoutInput }
-			: { ...DEFAULT_PANORAMIC_LAYOUT, ...layoutInput };
+	const layout = resolveLayout(config?.layout ?? DEFAULT_CONFIG.layout);
 	const resolved: Config = { ...DEFAULT_CONFIG, ...config, layout };
 	if (input instanceof MDocument && resolved.gaps.length > 0) {
 		throw new Error('render: configured gaps require string or Blob input');
@@ -62,7 +60,7 @@ export function render(
 	// (never blown up past that width) and centered. A panoramic layout, or one the caller capped into
 	// a horizontal scroll box, wants its intrinsic width and to scroll — so it opts out.
 	const fit =
-		resolved.layout.type === 'standard' &&
+		resolved.layout.type !== 'panoramic' &&
 		resolved.width == null &&
 		resolved.maxWidth == null;
 	const stage = new Stage(container, {
@@ -71,6 +69,7 @@ export function render(
 		width: resolved.width,
 		maxWidth: resolved.maxWidth,
 		backgroundColor: resolved.backgroundColor,
+		pixelRatio: resolved.pixelRatio,
 		fit,
 		scrollContainer: resolved.scrollContainer,
 	});
@@ -111,4 +110,15 @@ export function render(
 		new SequenceFactory(reader, gaps),
 		gaps,
 	).render(input);
+}
+
+function resolveLayout(input: LayoutInput): Layout {
+	switch (input.type) {
+		case 'standard':
+			return { ...DEFAULT_STANDARD_LAYOUT, ...input };
+		case 'panoramic':
+			return { ...DEFAULT_PANORAMIC_LAYOUT, ...input };
+		case 'paged':
+			return { ...DEFAULT_PAGED_LAYOUT, ...input };
+	}
 }

@@ -134,6 +134,23 @@ export class SpillTracker {
 		return overflow;
 	}
 
+	/* The highest (smallest) y anything in each system reached, its placed top included: where
+	 * its ink starts, which pagination keeps inside a page. */
+	systemTops(): Map<number, number> {
+		const tops = new Map<number, number>();
+		for (const [idx, topY] of this.systemTopByIndex) {
+			tops.set(
+				idx,
+				Math.min(
+					topY,
+					this.systemHighestTop.get(idx) ?? Infinity,
+					this.systemDecorationTop.get(idx) ?? Infinity,
+				),
+			);
+		}
+		return tops;
+	}
+
 	/* This row's spill record on this system, seeded on first sight with where the staff
 	 * lines sit relative to the stave's y (which is what a stave offset positions). */
 	private spillOf(system: number, row: number, stave: SpillStave): StaveSpill {

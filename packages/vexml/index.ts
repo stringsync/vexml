@@ -14,6 +14,7 @@ export type {
 	Layout,
 	LayoutInput,
 	MeasureNumbering,
+	PagedLayout,
 	PanoramicLayout,
 	StandardLayout,
 	SystemOverflow,
@@ -67,6 +68,7 @@ export type { Marker, MarkerOptions, MarkerRect } from './marker';
 export { Measure } from './measure';
 export { MeasureBox } from './measure-box';
 export { Note } from './note';
+export { Page } from './page';
 export { Part } from './part';
 export type { PitchInput } from './pitch-edit';
 export {

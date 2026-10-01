@@ -36,7 +36,7 @@ export class ManagedLayer implements Layer {
 	}
 
 	resize(cssWidth: number, cssHeight: number): void {
-		const dpr = window.devicePixelRatio || 1;
+		const dpr = this.stage.pixelRatio;
 		// Cap each bitmap axis at the common GPU max texture size. A caller's scroll box can be huge,
 		// and a canvas past the cap silently drops onto the software rasterization path, where every
 		// change costs tens of ms of buffer churn per frame. Under the cap the layer stays

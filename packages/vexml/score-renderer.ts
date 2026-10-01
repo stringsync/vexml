@@ -8,6 +8,8 @@ import type { FontLoader } from './font-loader';
 import type { Gaps } from './gaps';
 import type { Host } from './host';
 import type { LayoutPlanner } from './layout-planner';
+import { Page } from './page';
+import type { PagePainter } from './page-painter';
 import type { PaintProbe } from './paint-probe';
 import { type GapInfo, Score } from './score';
 import type { Engraving, RawGeometry, ScoreDrawer } from './score-drawer';
@@ -24,9 +26,9 @@ const EMPTY_GEOMETRY: RawGeometry = {
 
 /* What the renderer needs from the stage: the container fonts/CSS vars land on, the base element
  * the engraving is shown in, the probe its recording measures text with, where the engraving and
- * a sticky fold go, and the Host surface handed to the Score. Stage implements it for real; a
- * unit test injects a fake. */
-export interface RenderStage extends Host {
+ * a sticky fold go, the Host surface handed to the Score, and the painter its pages draw with.
+ * Stage implements it for real; a unit test injects a fake. */
+export interface RenderStage extends Host, PagePainter {
 	readonly container: HTMLDivElement;
 	readonly base: HTMLElement;
 	readonly probe: PaintProbe;
@@ -63,6 +65,22 @@ export class ScoreRenderer {
 		) {
 			throw new RangeError('render: minLastSystemFill must be between 0 and 1');
 		}
+		const { pixelRatio, layout } = this.config;
+		if (pixelRatio != null && !(pixelRatio > 0)) {
+			throw new RangeError('render: pixelRatio must be positive');
+		}
+		if (
+			layout.type === 'paged' &&
+			!(
+				layout.margin >= 0 &&
+				layout.pageWidth > 2 * layout.margin &&
+				layout.pageHeight > 2 * layout.margin
+			)
+		) {
+			throw new RangeError(
+				'render: a page must be larger than its margins on both axes',
+			);
+		}
 		// Fonts before ANY layout or drawing: load() puts the fonts and CSS vars on the container
 		// (the base element inherits them) and sets VexFlow's global glyph fonts, which both the
 		// planner's measurements and the drawer's engraving read.
@@ -84,7 +102,12 @@ export class ScoreRenderer {
 						mdoc.score,
 						this.layoutPlanner.plan(mdoc.score, this.config),
 					)
-				: { geometry: EMPTY_GEOMETRY, engraving: null, fold: null };
+				: {
+						geometry: EMPTY_GEOMETRY,
+						engraving: null,
+						fold: null,
+						pages: [],
+					};
 		const { geometry } = drawn;
 		if (drawn.engraving) {
 			this.stage.engrave(drawn.engraving);
@@ -126,6 +149,20 @@ export class ScoreRenderer {
 						};
 					})
 				: [];
+		// Each page holds the systems whose top lands on it (a system never straddles two).
+		const systems = elements.systems();
+		const pages = drawn.pages.map(
+			(rect, index) =>
+				new Page(
+					index,
+					rect,
+					systems.filter(
+						(system) =>
+							system.rect.y >= rect.y && system.rect.y < rect.y + rect.h,
+					),
+					this.stage,
+				),
+		);
 		return new Score(
 			this.stage,
 			elements,
@@ -133,6 +170,7 @@ export class ScoreRenderer {
 			sequence,
 			this.stage.scroller,
 			gaps,
+			pages,
 		);
 	}
 }

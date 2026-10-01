@@ -110,7 +110,7 @@ export class ManagedLoupe implements Loupe {
 			y: anchor.y + anchor.h / 2,
 		};
 		const { width, height, zoom, gap } = this.options;
-		const dpr = window.devicePixelRatio || 1;
+		const dpr = this.stage.pixelRatio;
 		if (dpr !== this.dpr) {
 			this.dpr = dpr;
 			this.canvas.width = Math.round(width * dpr);

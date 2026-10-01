@@ -95,6 +95,7 @@ Two rules cut across the draw stage:
 - **Gap between stacked systems; notes rising above a system's top stave** — `spill-tracker.ts`, `spill-resolver.ts`, `constants.ts` (`SYSTEM_GAP`)
 - **Why there are two draw passes** — `score-drawer.ts` (driver), `spill-resolver.ts` (the redraw decision)
 - **Page margins, ledger headroom, the final crop** — `score-drawer.ts`, `constants.ts`
+- **Paged layout: systems fitted onto fixed-size pages, each page exported on its own canvas** — `page-planner.ts` (which system starts a page, the push down to it), `score-drawer.ts` (the third pass that draws the pushes, page rects), `draw-pass.ts` (`systemExtents`), `layout-planner.ts` (the page's reference width), `page.ts` (`toBlob`/`toCanvas`), `page-painter.ts` (the seam; `Stage.paintEngraving`)
 - **Long scores past the browser's canvas limits (tiles)** — `paint-context.ts` (the recording `CanvasRenderingContext2D` vexflow and `Layer.ctx` draw on, and each op's bounds), `paint-op.ts`, `paint-state.ts`, `affine.ts`, `paint-sink.ts`, `paint-list.ts` (the engraving's ops), `paint-probe.ts`, `canvas-paint-probe.ts` (text metrics and hit tests a recording can't answer), `fake-paint-probe.ts`, `paint-replayer.ts` (ops back onto a real canvas), `tile-grid.ts` (ops per tile, clear pruning), `tiled-surface.ts` (tile canvases, painted whole or only near the view), `tile-budget.ts` (the LRU when painting lazily), `tiled-layer.ts`, `constants.ts` (`TILE_SIZE`, `TILE_BUDGET`)
 - **Keeping two marks from printing through each other** — `collision-resolver.ts` (section below)
 

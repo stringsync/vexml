@@ -112,8 +112,31 @@ export type PanoramicLayout = {
 	stickySignatures: boolean;
 };
 
+/** Wrap measures onto stacked systems, then fit the systems onto pages of a fixed size, for
+ * print. A system is never split across pages: one that would cross a page's bottom margin
+ * starts the next page. The score is shown as its pages stacked edge to edge, and each page can
+ * be drawn on its own canvas with `Score.getPages()` — so a long score prints sharp at any
+ * `pixelRatio`, page by page. Letter is 816×1056 CSS px, A4 794×1123. */
+export type PagedLayout = {
+	type: 'paged';
+	/** Page width in CSS px (default: 816, US Letter). */
+	pageWidth: number;
+	/** Page height in CSS px (default: 1056, US Letter). */
+	pageHeight: number;
+	/** Blank space kept inside every edge of the page, in CSS px (default: 48). The staves span
+	 * the width between the side margins; a system taller than the space between the top and
+	 * bottom margins runs into the bottom one. */
+	margin: number;
+	/** As StandardLayout.honorSystemBreaks (default: true). A `new-page="yes"` only starts a
+	 * new system, not a new page. */
+	honorSystemBreaks: boolean;
+	/** As StandardLayout.overflow (default: 'wrap'). Anything wider than the page is cut off
+	 * at the page's edge. */
+	overflow: SystemOverflow;
+};
+
 /** How measures are placed across systems. */
-export type Layout = StandardLayout | PanoramicLayout;
+export type Layout = StandardLayout | PanoramicLayout | PagedLayout;
 
 /** Whether and where to draw stems on tablature notes. */
 export type TabStemPlacement = 'none' | 'above' | 'below';
@@ -135,6 +158,10 @@ export type Config = {
 	 * drawn in it: `notation.color` the engraved glyphs (noteheads, stems, staves, clefs),
 	 * `text.color` the words vexml types (part labels, measure numbers, chord symbols). */
 	fonts: FontConfig;
+	/** Device pixels per CSS pixel the score is painted at, or null for the screen's
+	 * `window.devicePixelRatio` (default: null). Set it to print sharper than the screen, e.g. 2–3
+	 * for pages exported with `Page.toBlob`; it costs canvas memory on screen too. */
+	pixelRatio: number | null;
 	/** CSS color painted on the container behind the score, or null for transparent
 	 * (default: null). Pair with `fonts.notation.color`/`fonts.text.color` for a dark theme.
 	 * Canvas layers added at negative z-index still draw over it. */
@@ -238,7 +265,8 @@ export const DEFAULT_FONT_CONFIG = {
  * `render` fills them from DEFAULT_STANDARD_LAYOUT or DEFAULT_PANORAMIC_LAYOUT. */
 export type LayoutInput =
 	| (Partial<StandardLayout> & { type: 'standard' })
-	| (Partial<PanoramicLayout> & { type: 'panoramic' });
+	| (Partial<PanoramicLayout> & { type: 'panoramic' })
+	| (Partial<PagedLayout> & { type: 'paged' });
 
 /** What `render` accepts: `Config` with everything optional, except that `layout` is a
  * nested object, so it takes its own partial rather than an all-or-nothing `Layout`. */
@@ -260,9 +288,21 @@ export const DEFAULT_PANORAMIC_LAYOUT: PanoramicLayout = {
 	stickySignatures: false,
 };
 
+/** The defaults `render` merges a caller's partial paged `layout` onto: US Letter, half-inch
+ * margins. */
+export const DEFAULT_PAGED_LAYOUT: PagedLayout = {
+	type: 'paged',
+	pageWidth: 816,
+	pageHeight: 1056,
+	margin: 48,
+	honorSystemBreaks: true,
+	overflow: 'wrap',
+};
+
 /** The defaults `render` merges a caller's `ConfigInput` onto. */
 export const DEFAULT_CONFIG: Config = {
 	fonts: DEFAULT_FONT_CONFIG,
+	pixelRatio: null,
 	backgroundColor: null,
 	gaps: [],
 	layout: DEFAULT_STANDARD_LAYOUT,
