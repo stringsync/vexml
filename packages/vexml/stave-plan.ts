@@ -17,12 +17,15 @@ export interface StaveVisibility {
  * brackets keyed off them — stay aligned.
  */
 export class StavePlan {
-	/* Both answers walk every measure of the part, and mdom reads each measure's attributes by
+	/* The tuning and tab answers walk every measure of the part, and mdom reads each measure's attributes by
 	 * walking back to the last one that set them, so one uncached question costs the part's
 	 * length squared — and layout and draw ask per stave per measure. A StavePlan lives for
 	 * one render, over a document that doesn't change under it, so answering once is enough. */
 	private readonly tunings = new Map<Part, Map<string, number[] | null>>();
 	private readonly tabs = new Map<Part, Map<string, boolean>>();
+	// Likewise the part's connector: mdom finds <part-symbol> by scanning the part's
+	// measures, all of them when it's never declared, and buildStave asks every measure.
+	private readonly symbols = new Map<Part, 'brace' | 'bracket' | null>();
 
 	constructor(private readonly visibility: StaveVisibility) {}
 
@@ -159,6 +162,13 @@ export class StavePlan {
 	 * isn't one — and everything else (piano grand staves, …) braces.
 	 */
 	symbolOf(part: Part): 'brace' | 'bracket' | null {
+		if (!this.symbols.has(part)) {
+			this.symbols.set(part, this.readSymbol(part));
+		}
+		return this.symbols.get(part) ?? null;
+	}
+
+	private readSymbol(part: Part): 'brace' | 'bracket' | null {
 		const symbol = part.partSymbol;
 		if (symbol === null) {
 			if (this.pairsTabWithNotation(part)) {

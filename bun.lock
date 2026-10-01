@@ -32,7 +32,7 @@
       "version": "1.6.1",
       "dependencies": {
         "@coderline/alphatab": "^1.8.4",
-        "@stringsync/mdom": "0.4.1",
+        "@stringsync/mdom": "0.5.0",
         "@stringsync/vexml": "workspace:*",
         "opensheetmusicdisplay": "^2.1.1",
         "playwright": "^1.61.1",
@@ -46,7 +46,7 @@
         "@fontsource-variable/anybody": "^5.3.0",
         "@fontsource/ibm-plex-mono": "^5.3.0",
         "@fontsource/ibm-plex-sans": "^5.3.0",
-        "@stringsync/mdom": "0.4.1",
+        "@stringsync/mdom": "0.5.0",
         "@stringsync/vexml": "workspace:*",
         "@webappwiz/react": "0.0.23",
         "class-variance-authority": "^0.7.1",
@@ -76,7 +76,7 @@
         "vex": "./index.ts",
       },
       "dependencies": {
-        "@stringsync/mdom": "0.4.1",
+        "@stringsync/mdom": "0.5.0",
         "@vexml/renderer": "workspace:*",
         "webappwiz": "0.0.23",
         "zod": "^4.6.5",
@@ -86,7 +86,7 @@
       "name": "@stringsync/vexml",
       "version": "1.6.1",
       "dependencies": {
-        "@stringsync/mdom": "0.4.1",
+        "@stringsync/mdom": "0.5.0",
         "vexflow": "5.0.0",
         "webappwiz": "0.0.23",
       },
@@ -380,7 +380,7 @@
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 
-    "@stringsync/mdom": ["@stringsync/mdom@0.4.1", "", { "dependencies": { "jszip": "^3.10.1", "webappwiz": "^0.0.14", "xml-js": "^1.6.11" } }, "sha512-+LsNoSHfvZivwtU59u8qtiZivkquEdTQeqlKV/n4KoDgBOVoOjX68BOaGclE1Kf6U/nGipi3Qdi6Hf24ibh1pw=="],
+    "@stringsync/mdom": ["@stringsync/mdom@0.5.0", "", { "dependencies": { "jszip": "^3.10.1", "webappwiz": "0.0.24", "xml-js": "^1.6.11" } }, "sha512-AGjZcnX41lGgmaSRbwjaIGz3N6MT5gYe+1Yq1HHHwQlywcY7ymrEME/1R5N+J6e+d22PTIY7MmN+yDEnJUc7Aw=="],
 
     "@stringsync/vexml": ["@stringsync/vexml@workspace:packages/vexml"],
 
@@ -1144,7 +1144,7 @@
 
     "@modelcontextprotocol/sdk/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
-    "@stringsync/mdom/webappwiz": ["webappwiz@0.0.14", "", { "dependencies": { "@standard-schema/spec": "^1.1.0" } }, "sha512-YUNIGov3QpNH1uUc+xB/f8bOhRxCxrA+Uo3RQre3hcytEXIu3RNDG3/h+2zmKHq5yQCcz4J8LxEcA3ChwOdEwQ=="],
+    "@stringsync/mdom/webappwiz": ["webappwiz@0.0.24", "", { "dependencies": { "@standard-schema/spec": "^1.1.0" } }, "sha512-GVDCbKDGkO1/BLbaCJivsU/5PYga7odRvaxkHkkZDQ8UPnUQT+n2KjV9CE8eJrx87/CL/pCTGv1vphoIfzHY+w=="],
 
     "@tailwindcss/oxide-wasm32-wasi/@emnapi/core": ["@emnapi/core@1.11.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.2", "tslib": "^2.4.0" }, "bundled": true }, "sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ=="],
 
