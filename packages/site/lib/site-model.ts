@@ -13,6 +13,7 @@ import { InstrumentController } from './instrument-controller';
 import { LoupeSettings } from './loupe-settings';
 import { NoteEditing } from './note-editing';
 import { RenderConfig } from './render-config';
+import { RenderGuard } from './render-guard';
 import { type ScoreMode, ScoreSession } from './score-session';
 
 type SiteModelEvents = { changed: undefined };
@@ -59,6 +60,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	} | null = null;
 
 	private readonly clock = new SystemClock();
+	private readonly guard: RenderGuard;
 	// A re-render swaps in a new session, so what the old one was doing is handed to the new one:
 	// where its cursor was (same document only) and whether to play once it lands. playOnRender
 	// also holds a Play pressed mid-render, when there is no session to press it on.
@@ -67,6 +69,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 
 	constructor(fixtures: Fixtures, storage: Storage) {
 		this.document = new DocumentSource(fixtures, storage);
+		this.guard = new RenderGuard(storage);
 		this.instrument = new InstrumentController(storage);
 		this.disposer.use(this.config);
 		this.disposer.use(this.loupe);
@@ -86,6 +89,14 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 				part.events.on('changed', () => this.dispatcher.dispatch('changed')),
 			);
 		}
+	}
+
+	/* Open the saved score, holding it back if the last session never finished rendering. */
+	restore(opts: { reset?: boolean } = {}): Promise<void> {
+		return this.document.restore({
+			reset: opts.reset,
+			unfinished: this.guard.tripped,
+		});
 	}
 
 	/*
@@ -123,6 +134,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		this.error = null;
 		this.dispatcher.dispatch('changed');
 		const start = this.clock.now();
+		this.guard.begin(at);
 		try {
 			let voices =
 				this.editingSource?.input === input ? this.editingSource.voices : null;
@@ -196,6 +208,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 			this.error = e instanceof Error ? e.message : String(e);
 			this.config.reportRenderMs(null);
 		} finally {
+			this.guard.end(at);
 			if (at === this.generation) {
 				this.resumeMs = null;
 				this.playOnRender = false;

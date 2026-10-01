@@ -1,7 +1,12 @@
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
 import { Debouncer, Duration, SystemTimer } from 'webappwiz/time';
-import { DEBOUNCE_MS, DEFAULT_FIXTURE, STORAGE_KEY } from './constants';
+import {
+	DEBOUNCE_MS,
+	DEFAULT_FIXTURE,
+	LARGE_SCORE_CHARS,
+	STORAGE_KEY,
+} from './constants';
 
 type DocumentSourceEvents = { changed: undefined };
 
@@ -17,6 +22,10 @@ export interface Fixtures {
  * uploaded file's extension identifies, so the answer has to be remembered rather than sniffed.
  */
 export type DocumentFormat = 'musicxml' | 'guitar-pro';
+
+/* Why a restored score sits in the editor unrendered: the last render of it never finished, or
+ * it is long enough that rendering would freeze the page for a while. */
+export type HoldReason = 'unfinished' | 'large';
 
 /* Saved in place of a binary upload, which is not text and so cannot be restored. */
 const BINARY_PLACEHOLDER = /^\[(?:mxl|gp)\] /;
@@ -46,6 +55,8 @@ export class DocumentSource
 	fixture = '';
 	/* True while a keystroke's re-render is waiting out the debounce. */
 	debouncing = false;
+	/* Set while a restored score is held back from rendering (`input` is null), until release(). */
+	held: HoldReason | null = null;
 
 	private readonly disposer = new Disposer();
 	private readonly debouncer = new Debouncer(
@@ -61,24 +72,39 @@ export class DocumentSource
 		this.disposer.use(this.dispatcher);
 	}
 
-	/* Restore the last-edited MusicXML, or open with the default example. */
-	async restore(): Promise<void> {
+	/* Restore the last-edited MusicXML, or open with the default example. A score that might
+	 * freeze the page goes into the editor without rendering, so a reload can always get back in. */
+	async restore(opts: RestoreOptions = {}): Promise<void> {
+		if (opts.reset) {
+			this.storage.removeItem(STORAGE_KEY);
+		}
 		const saved = this.storage.getItem(STORAGE_KEY);
 		// ponytail: a binary upload saves a `[mxl] name` or `[gp] name` placeholder, not the
 		// file, so it cannot be restored; fall through to the default example.
 		if (saved != null && !BINARY_PLACEHOLDER.test(saved)) {
 			this.text = saved;
-			this.input = saved;
 			this.format = 'musicxml';
+			this.held = holdReason(saved, opts);
+			this.input = this.held ? null : saved;
 			this.dispatcher.dispatch('changed');
 			return;
 		}
 		await this.loadFixture(DEFAULT_FIXTURE);
 	}
 
+	/* Render a held-back score after all. */
+	release(): void {
+		if (!this.held) {
+			return;
+		}
+		this.held = null;
+		this.input = this.text;
+		this.dispatcher.dispatch('changed');
+	}
+
 	/* Load a fixture by name, into both the editor and the score. */
 	async loadFixture(name: string): Promise<void> {
-		this.stopDebouncing();
+		this.replacing();
 		this.fixture = name;
 		this.dispatcher.dispatch('changed');
 		const xml = await this.fixtures.load(name);
@@ -101,7 +127,7 @@ export class DocumentSource
 	/* An edit in the textarea. Renders on every keystroke while renders are fast enough to keep
 	 * up, and waits out the typing once they are not. */
 	edit(value: string, opts: EditOptions): void {
-		this.stopDebouncing();
+		this.replacing();
 		this.text = value;
 		this.format = 'musicxml';
 		this.fixture = '';
@@ -126,7 +152,7 @@ export class DocumentSource
 
 	/** Reflect an mdom edit without scheduling a parse or a typing debounce. */
 	acceptEdit(xml: string): void {
-		this.stopDebouncing();
+		this.replacing();
 		this.text = xml;
 		this.input = xml;
 		this.format = 'musicxml';
@@ -138,7 +164,7 @@ export class DocumentSource
 	 * nothing downstream can; MusicXML is plain text, which also goes into the editor so it can be
 	 * tweaked. */
 	async loadFile(file: File): Promise<void> {
-		this.stopDebouncing();
+		this.replacing();
 		this.fixture = '';
 		const name = file.name.toLowerCase();
 		const guitarPro = name.endsWith('.gp');
@@ -172,6 +198,13 @@ export class DocumentSource
 		this.disposer.dispose();
 	}
 
+	// Every entry point but restore replaces the document outright, dropping a pending keystroke
+	// render and any hold on what was there.
+	private replacing(): void {
+		this.stopDebouncing();
+		this.held = null;
+	}
+
 	// The flag is the loading indicator, and it is not the Debouncer's to know about, so the
 	// two are only ever cleared together.
 	private stopDebouncing(): void {
@@ -184,8 +217,22 @@ export class DocumentSource
 	}
 }
 
+export interface RestoreOptions {
+	/* Forget the saved score and open the default example. */
+	reset?: boolean;
+	/* The last session left a render unfinished: hold the saved score back. */
+	unfinished?: boolean;
+}
+
 export interface EditOptions {
 	/* Skip the debounce and render this keystroke now. The caller decides, because only it knows
 	 * how long the last render took. */
 	immediate?: boolean;
+}
+
+function holdReason(saved: string, opts: RestoreOptions): HoldReason | null {
+	if (opts.unfinished) {
+		return 'unfinished';
+	}
+	return saved.length > LARGE_SCORE_CHARS ? 'large' : null;
 }

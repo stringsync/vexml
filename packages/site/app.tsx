@@ -96,6 +96,7 @@ const projection = (model: SiteModel) => ({
 	input: model.document.input,
 	format: model.document.format,
 	fixture: model.document.fixture,
+	held: model.document.held,
 	error: model.error,
 	initialized: model.initialized,
 	rendering: model.rendering,
@@ -126,6 +127,7 @@ export default function App() {
 		input,
 		format,
 		fixture,
+		held,
 		error,
 		initialized,
 		session,
@@ -178,7 +180,15 @@ export default function App() {
 	};
 
 	useEffect(() => {
-		model.document.restore();
+		// `?reset` is the way back in when a saved score keeps locking the page up: it forgets the
+		// score before anything renders. Dropped from the URL so a reload doesn't reset again.
+		const url = new URL(window.location.href);
+		const reset = url.searchParams.has('reset');
+		if (reset) {
+			url.searchParams.delete('reset');
+			window.history.replaceState(null, '', url);
+		}
+		model.restore({ reset });
 		// Start the samples downloading now so the first play rarely waits on them.
 		model.instrument.preload();
 	}, [model]);
@@ -805,6 +815,34 @@ export default function App() {
 							onDrop={onDrop}
 							className={`h-full overflow-auto border-2 border-dashed px-4 pt-3 md:px-10 md:py-5 ${dragging ? 'border-brand bg-brand/5' : 'border-transparent'}`}
 						>
+							{held && (
+								<Card className="mx-auto mt-10 max-w-md gap-3 px-6 py-5">
+									<p className="font-medium">
+										Your saved score wasn't rendered
+									</p>
+									<p className="text-sm text-muted-foreground">
+										{held === 'unfinished'
+											? "The last render of it didn't finish, so it may freeze the page."
+											: `It's ${Math.round(text.length / 1024)} KB, long enough that rendering it may freeze the page for a while.`}{' '}
+										It's still in the MusicXML editor.
+									</p>
+									<div className="flex gap-2">
+										<Button
+											type="button"
+											onClick={() => model.document.release()}
+										>
+											Render anyway
+										</Button>
+										<Button
+											type="button"
+											variant="outline"
+											onClick={() => model.document.clear()}
+										>
+											Reset to default
+										</Button>
+									</div>
+								</Card>
+							)}
 							{input != null && (
 								// vexml appends its managed canvas here; React manages only this div's
 								// attributes, never its children. vexml sizes the score to fit this container
@@ -854,7 +892,7 @@ export default function App() {
 				    to main rather than to the scroll content, so it covers the panel, the player
 				    and the padding between them, and stays put while the score scrolls under it.
 				    pointer-events-none: the overlay reports, it does not trap. */}
-				{(!initialized || debouncing) && (
+				{((!initialized && !held) || debouncing) && (
 					<div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-foreground/35">
 						<Card className="flex-row items-center gap-3 px-6 py-5 shadow-lg">
 							<Spinner />

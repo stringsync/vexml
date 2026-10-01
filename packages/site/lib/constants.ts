@@ -1,6 +1,11 @@
 // Namespaced so a playground on a shared origin can't collide with another app's keys.
 export const STORAGE_KEY = 'vexml:musicxml';
 export const INSTRUMENT_KEY = 'vexml:instrument';
+// Set while a render is in flight; still set at load means the last one never finished.
+export const RENDERING_KEY = 'vexml:rendering';
+// A restored score longer than this (in characters, about bytes for XML) opens without rendering. Above every example (the largest is
+// about 240 KB); a 1000-measure score is 1.4 MB and renders for minutes.
+export const LARGE_SCORE_CHARS = 512 * 1024;
 
 // How long each grace note sounds before the main note, in ms. Short enough to read as an ornament.
 export const GRACE_MS = 80;
