@@ -2753,6 +2753,22 @@ describe('render', () => {
 		).toMatchScreenshot('tuplet_cross_stave.png');
 	});
 
+	// Voice part (treble, B4 quarters each sung "la") over a piano grand staff, 3/4: the
+	// gap between the voice and the piano holds both the lyrics and the piano's tuplet
+	// brackets (Schubert, Der Lindenbaum mm. 51-52).
+	// - M1: piano treble, three bracketed eighth triplets of C5, stems down, so each bracket
+	//   and its "3" sit above the treble staff. The lyrics print on their own line under the
+	//   voice stave, with the brackets below them, nothing touching. Bass, a held
+	//   dotted-half C2 on ledger lines below the staff.
+	// - M2: cross-staff triplets, G3 (bass, stem up) E4 (treble, stem down) G3, beamed up in
+	//   the treble with the bracket above it, over the held C2 again in a second bass voice. The bracket is drawn by the bass stave but stands over the treble, so it's the
+	//   voice-to-piano gap that holds it: the two piano staves keep their usual spacing.
+	it.concurrent('renders lyrics_voice_and_piano.png', async () => {
+		expect(
+			await testing.render('lyrics_voice_and_piano.musicxml'),
+		).toMatchScreenshot('lyrics_voice_and_piano.png');
+	});
+
 	// A different key signature on each staff of one part, normal for transposing scores
 	// and for some contemporary piano writing. One braced two-stave part, 4/4, one whole
 	// note per stave, each staff declaring its own <key number> and <clef number>.

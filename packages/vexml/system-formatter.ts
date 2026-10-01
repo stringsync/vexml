@@ -17,6 +17,7 @@ import {
 	type TabNote,
 	type TabStave,
 	TimeSignature,
+	type Tuplet,
 	Vibrato,
 	type Voice,
 } from 'vexflow';
@@ -373,11 +374,13 @@ export class SystemFormatter {
 				tuplet.setContext(this.context).draw();
 				// The numeral (and bracket) sits in the band the above- and below-stave text
 				// drawn next lands in, and it can't move off its notes, so it's an obstacle.
-				this.collisionResolver.add({
-					rect: this.translator.tupletRect(tuplet),
-					kind: 'note',
-					band: p.row,
-				});
+				// It also stands past the stem tips and beam the note boxes below measure, so
+				// report it as spill too: the gap to the neighbouring stave (and the lyrics
+				// hanging under it) has to hold the bracket.
+				const rect = this.translator.tupletRect(tuplet);
+				const host = this.tupletHost(rect, tuplet, pending, p);
+				this.collisionResolver.add({ rect, kind: 'note', band: host.row });
+				this.recordStaveSpill(host, rect);
 			}
 			for (const note of p.staveNotes) {
 				const box = note.getBoundingBox();
@@ -851,6 +854,38 @@ export class SystemFormatter {
 			p.stave,
 			rect,
 		);
+	}
+
+	/*
+	 * The stave a tuplet's bracket stands over. Usually the stave that drew it, but a
+	 * cross-staff run is drawn by its owning stave while its bracket can sit over the other
+	 * one — bass notes beamed up into the treble put the "3" above the treble staff, in the
+	 * gap to the stave above, not the one under the bass. So of the staves its notes sit on,
+	 * take the one the bracket is nearest to.
+	 */
+	private tupletHost(
+		rect: Rect,
+		tuplet: Tuplet,
+		pending: PendingStave[],
+		owner: PendingStave,
+	): PendingStave {
+		const staves = new Set(tuplet.getNotes().map((note) => note.getStave()));
+		const distance = (stave: Stave) =>
+			Math.max(
+				0,
+				stave.getYForLine(0) - rect.bottom,
+				rect.top - stave.getBottomLineY(),
+			);
+		let host = owner;
+		for (const candidate of pending) {
+			if (
+				staves.has(candidate.stave) &&
+				distance(candidate.stave) < distance(host.stave)
+			) {
+				host = candidate;
+			}
+		}
+		return host;
 	}
 
 	/* Push every modifier in `group` out to the rightmost x any of them reached. */

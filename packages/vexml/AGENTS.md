@@ -143,7 +143,9 @@ Deliberately NOT collisions, do not "migrate" them: deterministic engraving
 placement (page margins, `LEAD_*` reservations, part labels and brackets,
 chord-diagram internals, tab centering, slur control points); and stave/system
 spill (`spill-tracker.ts`, `spill-resolver.ts`), which moves a whole row —
-slur and tie arcs report there (`spanner-resolver.ts`, `reportBow`), so a bow
+tuplet brackets report there against the stave they stand over
+(`system-formatter.ts`, `tupletHost`), and slur and tie arcs (`spanner-resolver.ts`,
+`reportBow`), so a bracket or a bow
 reaching into the gap between staves widens it. The
 volta bracket resolves against the index like anything else, but a pass late:
 it draws with the stave, before the notes are formatted, so the lift is
