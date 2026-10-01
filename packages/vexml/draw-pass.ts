@@ -164,6 +164,8 @@ export class DrawPass {
 	private systemIndex = 0;
 	private isSystemStart = false;
 	private isLastMeasure = false;
+	private opensScore = false;
+	private edge: MeasureBox['edge'] = null;
 	// This measure's right <bar-style>, or null when it declares none. See BAR_STYLE_TYPES
 	// for which values vexflow draws itself and drawCustomBarline for the rest.
 	private barStyle: string | null = null;
@@ -495,12 +497,16 @@ export class DrawPass {
 		this.measureLeadingPad = box.leadingPad;
 		this.systemIndex = box.systemIndex;
 		this.isSystemStart = box.isSystemStart;
+		this.edge = box.edge;
 		// The last measure DRAWN, not the last in the document: a <multiple-rest> run reaching
 		// the end of the score leaves the measures after its lead boxless, and the thin-thick
-		// end barline belongs on the lead.
+		// end barline belongs on the lead. A trailing gap's box stands outside the staves, so
+		// the end barline closes the music before it.
 		this.isLastMeasure = !this.boxes.some(
-			(later, index) => index > m && later !== undefined,
+			(later, index) => index > m && later !== undefined && !later.edge,
 		);
+		this.opensScore =
+			m === this.boxes.findIndex((b) => b !== undefined && !b.edge);
 		// An explicit right <barline> with a <bar-style> replaces this measure's end divider
 		// (normally a plain single line, or the thin-thick end on the final measure). Read
 		// from the first part — a barline is a boundary of the whole system, not of one staff.
@@ -728,7 +734,8 @@ export class DrawPass {
 		// than to one stave — the opening repeat, the time signature — can be squared up
 		// across its staves before any of them is committed to the canvas.
 		this.begRepeatX = this.systemFormatter.alignBegModifiers(this.columnStaves);
-		for (const stave of this.columnStaves) {
+		// An edge gap's staves only place its box (see drawEdgeGap); none of them prints.
+		for (const stave of this.edge ? [] : this.columnStaves) {
 			stave.setContext(this.context).draw();
 			this.connectorDrawer.drawCustomBarline(stave, this.connectorColumn());
 		}
@@ -753,6 +760,10 @@ export class DrawPass {
 		this.pageTop = Math.min(this.pageTop, noteExtent.top);
 
 		this.collectGeometry(m, noteExtent.top);
+		if (this.edge) {
+			this.drawEdgeGap(m);
+			return;
+		}
 		this.drawGapOverlay(m);
 
 		if (noteExtent.top < Infinity) {
@@ -849,6 +860,7 @@ export class DrawPass {
 			systemY: this.systemY,
 			staveRow: this.staveRow,
 			isSystemStart: this.isSystemStart,
+			opensScore: this.opensScore,
 			isLastMeasure: this.isLastMeasure,
 			barStyle: this.barStyle,
 			decoration: this.decoration,
@@ -1035,7 +1047,10 @@ export class DrawPass {
 		const startX = this.systemTop.getNoteStartX();
 		const endX = this.measureX + this.measureWidth;
 		const top = this.systemTop.getYForLine(0);
-		const bottom = this.systemBottom.getBottomLineY();
+		// vexflow's getBottomLineY sits a space below the last line; the box stops on it.
+		const bottom = this.systemBottom.getYForLine(
+			this.systemBottom.getNumLines() - 1,
+		);
 		this.context.save();
 		if (gap.style?.fill) {
 			this.context.setFillStyle(gap.style.fill);
@@ -1046,20 +1061,74 @@ export class DrawPass {
 				bottom - top,
 			);
 		}
-		if (gap.label) {
-			const fontSize = gap.style?.fontSize ?? GAP_LABEL_FONT_SIZE;
-			this.context.setFont(gap.style?.fontFamily ?? this.labelFont, fontSize);
-			this.context.setFillStyle(gap.style?.fontColor ?? this.textColor);
-			const tw = this.context.measureText(gap.label).width;
-			// Baseline sits ~0.35em below the vertical center, landing the cap-height
-			// visual center on the midline (the part-label +1.5px trick, size-relative).
-			this.context.fillText(
-				gap.label,
-				(startX + endX) / 2 - tw / 2,
-				(top + bottom) / 2 + fontSize * 0.35,
+		this.context.restore();
+		this.drawGapLabel(gap, startX, endX, top, bottom);
+	}
+
+	// A gap's label, centered in the area from left to right and top to bottom.
+	private drawGapLabel(
+		gap: Gap,
+		left: number,
+		right: number,
+		top: number,
+		bottom: number,
+	): void {
+		if (!gap.label) {
+			return;
+		}
+		const fontSize = gap.style?.fontSize ?? GAP_LABEL_FONT_SIZE;
+		this.context.save();
+		this.context.setFont(gap.style?.fontFamily ?? this.labelFont, fontSize);
+		this.context.setFillStyle(gap.style?.fontColor ?? this.textColor);
+		const tw = this.context.measureText(gap.label).width;
+		// Baseline sits ~0.35em below the vertical center, landing the cap-height
+		// visual center on the midline (the part-label +1.5px trick, size-relative).
+		this.context.fillText(
+			gap.label,
+			(left + right) / 2 - tw / 2,
+			(top + bottom) / 2 + fontSize * 0.35,
+		);
+		this.context.restore();
+	}
+
+	/*
+	 * Draw a gap before the first measure of music or after the last (see MeasureBox.edge):
+	 * a box spanning the whole measure box, from the top line of the system's top stave to
+	 * the bottom line of its bottom stave, with no staff lines, barlines or connectors of
+	 * its own. Fill first, then the outline, then the label centered over both.
+	 */
+	private drawEdgeGap(m: number): void {
+		const gap = this.gaps.get(m);
+		if (!gap || !this.systemTop || !this.systemBottom) {
+			return;
+		}
+		const left = this.measureX;
+		const right = this.measureX + this.measureWidth;
+		const top = this.systemTop.getYForLine(0);
+		// vexflow's getBottomLineY sits a space below the last line; the box stops on it.
+		const bottom = this.systemBottom.getYForLine(
+			this.systemBottom.getNumLines() - 1,
+		);
+		this.context.save();
+		if (gap.style?.fill) {
+			this.context.setFillStyle(gap.style.fill);
+			this.context.fillRect(left, top, right - left, bottom - top);
+		}
+		if (gap.style?.border) {
+			// Inset half the line width so the 1px outline lands inside the box.
+			this.context.setStrokeStyle(gap.style.border);
+			this.context.setLineWidth(1);
+			this.context.beginPath();
+			this.context.rect(
+				left + 0.5,
+				top + 0.5,
+				right - left - 1,
+				bottom - top - 1,
 			);
+			this.context.stroke();
 		}
 		this.context.restore();
+		this.drawGapLabel(gap, left, right, top, bottom);
 	}
 
 	/*

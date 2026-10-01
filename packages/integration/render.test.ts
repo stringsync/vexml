@@ -1285,11 +1285,12 @@ describe('render', () => {
 	// columns on one system: a leading labeled gap, then M1, then an unlabeled gap, then
 	// M2. Measure numbering is 'every' to prove gaps are skipped: "1" over the second
 	// column and "2" over the last, nothing over either gap.
-	// - Gap 1 (leading): inherits the treble clef and 4/4 time from its right neighbor
-	//   (drawn at the line start, left of the gap), then a wide empty stave (minWidth
-	//   250) whose staff lines are dimmed by a translucent white fill, with
-	//   "What are pitches?" centered on the stave.
-	// - M1 ("1"): the original first measure, whole note C5.
+	// - Gap 1 (leading, an edge gap): a 250px box flush against the page margin with no
+	//   staff lines, barlines or clef of its own. Its translucent white fill is invisible
+	//   on the white page, so only "What are pitches?" shows, centered on the stave's
+	//   height. The stave starts right after it.
+	// - M1 ("1"): the original first measure, opening the stave with the treble clef and
+	//   4/4 time, whole note C5.
 	// - Gap 2: a narrower plain empty measure: no label, no fill, staff lines at full
 	//   strength, no clef/key/time restated.
 	// - M2 ("2"): the original second measure, whole note C5, thin-thick end barline.
@@ -2020,6 +2021,40 @@ describe('render', () => {
 		expect(
 			await testing.render('tab_notation_durations.musicxml'),
 		).toMatchScreenshot('tab_notation_durations.png');
+	});
+
+	// Same fixture with edge gaps (config.gaps before the first measure and after the last),
+	// which draw as boxes outside the staves rather than as measures on them. Two systems
+	// of the bracketed notation+tab pair.
+	// - Leading gap: a light-gray box with a 1px gray outline, "0:26" centered in it,
+	//   spanning from the top line of the notation stave to the bottom line of the tab
+	//   stave. It sits at the left margin with no staff lines, and its right edge touches
+	//   the bracket's left edge. The bracket, treble clef and 4/4 open M1 to its right.
+	// - M1-M4: as in tab_notation_durations, wrapping to a second system.
+	// - Trailing gap: the same box, "50:36", right of M4's thin-thick final barline on the
+	//   last system, its left edge touching the barline. No staff lines run through it.
+	it.concurrent('renders measures_gap_edges.png', async () => {
+		const style = { fill: '#f2f2f2', border: '#d9d9d9' };
+		expect(
+			await testing.render('tab_notation_durations.musicxml', {
+				gaps: [
+					{
+						beforeMeasureIndex: 0,
+						durationMs: 26000,
+						label: '0:26',
+						minWidth: 100,
+						style,
+					},
+					{
+						beforeMeasureIndex: 4,
+						durationMs: 4000,
+						label: '50:36',
+						minWidth: 100,
+						style,
+					},
+				],
+			}),
+		).toMatchScreenshot('measures_gap_edges.png');
 	});
 
 	// Same fixture with tabStemPlacement: 'below'. The TAB stave now draws a rhythm stem (and a

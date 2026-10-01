@@ -38,6 +38,7 @@ function boxesOf(count: number): MeasureBox[] {
 		systemIndex: 0,
 		isSystemStart: i === 0,
 		isSystemEnd: i === count - 1,
+		edge: null,
 	}));
 }
 

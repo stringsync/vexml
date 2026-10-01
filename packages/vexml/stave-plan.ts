@@ -1,4 +1,9 @@
 import type { Measure, Part } from '@stringsync/mdom';
+import {
+	BRACE_LEFT_OVERHANG,
+	BRACKET_GLYPH_OVERHANG,
+	BRACKET_X_SHIFT,
+} from './constants';
 
 /* Which kinds of stave the caller asked to see. See Config.showTabs/showNotation. */
 export interface StaveVisibility {
@@ -166,6 +171,39 @@ export class StavePlan {
 			this.symbols.set(part, this.readSymbol(part));
 		}
 		return this.symbols.get(part) ?? null;
+	}
+
+	/* The symbol opening a system's left edge: a bracket (a notation+tab pair split across
+	 * parts, or any part's own bracket) outranks a brace; null when no symbol joins staves. */
+	systemSymbol(parts: Part[]): 'brace' | 'bracket' | null {
+		let bracket = this.partsPairTabWithNotation(parts);
+		let brace = false;
+		for (const part of parts) {
+			if (this.visibleNumbers(part).length <= 1) {
+				continue;
+			}
+			const symbol = this.symbolOf(part);
+			bracket ||= symbol === 'bracket';
+			brace ||= symbol === 'brace';
+		}
+		if (bracket) {
+			return 'bracket';
+		}
+		return brace ? 'brace' : null;
+	}
+
+	/* How far left of a system's first stave its opening symbol reaches (0 with none).
+	 * Layout reserves it in front of the system when a gap sits there; draw measures the
+	 * system's left furniture with it. */
+	systemOverhang(parts: Part[]): number {
+		switch (this.systemSymbol(parts)) {
+			case 'bracket':
+				return BRACKET_X_SHIFT + BRACKET_GLYPH_OVERHANG;
+			case 'brace':
+				return BRACE_LEFT_OVERHANG;
+			case null:
+				return 0;
+		}
 	}
 
 	private readSymbol(part: Part): 'brace' | 'bracket' | null {

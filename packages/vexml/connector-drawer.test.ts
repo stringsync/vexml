@@ -212,7 +212,13 @@ describe('ConnectorDrawer', () => {
 	});
 
 	it('grows the extent around the cross-part bracket and its overhangs', () => {
-		const { drawer } = makeDrawer({}, { partsPairTabWithNotation: () => true });
+		const { drawer } = makeDrawer(
+			{},
+			{
+				systemSymbol: () => 'bracket',
+				systemOverhang: () => BRACKET_X_SHIFT + BRACKET_GLYPH_OVERHANG,
+			},
+		);
 		const extent = drawer.connectorExtent(
 			column({
 				isSystemStart: true,
@@ -232,9 +238,8 @@ describe('ConnectorDrawer', () => {
 		const { drawer } = makeDrawer(
 			{ parts: [{} as Part] },
 			{
-				partsPairTabWithNotation: () => false,
-				visibleNumbers: () => ['1', '2'],
-				symbolOf: () => 'brace',
+				systemSymbol: () => 'brace',
+				systemOverhang: () => BRACE_LEFT_OVERHANG,
 			},
 		);
 		const extent = drawer.connectorExtent(
@@ -256,11 +261,7 @@ describe('ConnectorDrawer', () => {
 		// A single-staff part draws no brace/bracket, and the plain line sits on measureX.
 		const { drawer } = makeDrawer(
 			{ parts: [{} as Part] },
-			{
-				partsPairTabWithNotation: () => false,
-				visibleNumbers: () => ['1'],
-				symbolOf: () => 'brace',
-			},
+			{ systemSymbol: () => null, systemOverhang: () => 0 },
 		);
 		expect(
 			drawer.connectorExtent(

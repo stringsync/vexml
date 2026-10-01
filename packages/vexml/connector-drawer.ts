@@ -6,8 +6,6 @@ import {
 	type StaveConnectorType,
 } from 'vexflow';
 import {
-	BRACE_LEFT_OVERHANG,
-	BRACKET_GLYPH_OVERHANG,
 	BRACKET_X_SHIFT,
 	CONNECTOR_VERTICAL_OVERHANG,
 	LABEL_FONT_SIZE,
@@ -366,29 +364,19 @@ export class ConnectorDrawer {
 		if (!column.isSystemStart || !column.systemTop || !column.systemBottom) {
 			return null;
 		}
-		let bracket = this.staves.partsPairTabWithNotation(this.parts);
-		let brace = false;
-		for (const part of this.parts) {
-			if (this.staves.visibleNumbers(part).length <= 1) {
-				continue;
-			}
-			const symbol = this.staves.symbolOf(part);
-			bracket ||= symbol === 'bracket';
-			brace ||= symbol === 'brace';
+		const symbol = this.staves.systemSymbol(this.parts);
+		if (symbol === null) {
+			return null;
 		}
 		const top = column.systemTop.getYForLine(0);
 		const bottom = column.systemBottom.getBottomLineY();
-		if (bracket) {
-			return {
-				left: column.measureX - BRACKET_X_SHIFT - BRACKET_GLYPH_OVERHANG,
-				top: top - CONNECTOR_VERTICAL_OVERHANG,
-				bottom: bottom + CONNECTOR_VERTICAL_OVERHANG,
-			};
-		}
-		if (brace) {
-			return { left: column.measureX - BRACE_LEFT_OVERHANG, top, bottom };
-		}
-		return null;
+		// The bracket's curls reach past the staves; a brace stops at their outer lines.
+		const curl = symbol === 'bracket' ? CONNECTOR_VERTICAL_OVERHANG : 0;
+		return {
+			left: column.measureX - this.staves.systemOverhang(this.parts),
+			top: top - curl,
+			bottom: bottom + curl,
+		};
 	}
 
 	/*

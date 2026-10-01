@@ -6,7 +6,7 @@ import {
 	Metrics,
 	type Voice,
 } from 'vexflow';
-import type { Config } from './config';
+import type { Config, Gap } from './config';
 import {
 	BASE_VOICE_WIDTH,
 	DEFAULT_WIDTH,
@@ -54,8 +54,13 @@ export type MeasureBox = {
 	 * 0 for measures with no such directive. */
 	leadingPad: number;
 	systemIndex: number;
+	/** First / last measure of its system that is music: a leading or trailing gap is not. */
 	isSystemStart: boolean;
 	isSystemEnd: boolean;
+	/** A gap before the score's first measure ('leading') or after its last ('trailing'):
+	 * drawn as a box outside the staves, `x`/`width` being exactly that box. Null for every
+	 * other measure, gaps between measures included. */
+	edge: 'leading' | 'trailing' | null;
 };
 
 /** Where everything goes: parts laid out at a reference width, ready for the draw
@@ -162,11 +167,13 @@ export class LayoutPlanner {
 	 *
 	 * Left alone are the boundaries this isn't entitled to move: one the document forced with
 	 * <print new-system="yes">, and the score's trailing system, which is meant to be short.
+	 * A system keeps at least one measure of music, so a leading gap never sits alone.
 	 * A pair the breaker already balanced never improves on the first try, so it doesn't move.
 	 */
 	private evenOutSystems(
 		systems: number[][],
 		forcedStarts: Set<number>,
+		isMusic: (m: number) => boolean,
 		measure: (
 			measures: number[],
 			systemIndex: number,
@@ -200,6 +207,9 @@ export class LayoutPlanner {
 			let worst = Math.max(misfit(head, s), misfit(tail, s + 1));
 			while (head.length > 1) {
 				const nextHead = head.slice(0, -1);
+				if (!nextHead.some(isMusic)) {
+					break;
+				}
 				const nextTail = head.slice(-1).concat(tail);
 				// The tail is the one growing, so it's the only one that can newly overrun.
 				if (overruns(nextTail, s + 1)) {
@@ -345,6 +355,20 @@ export class LayoutPlanner {
 				unaligned * padding,
 				Math.max(spread(widths), durations) * ticks.length * padding,
 			)
+		);
+	}
+
+	// The width a gap's label needs, padded on both sides; 0 for an unlabeled gap.
+	// ponytail: estimated from the part-label ~7.5px/char@13px ratio, scaled to the gap's
+	// font size; measure exactly if a font change drifts.
+	private gapLabelWidth(gap: Gap): number {
+		if (!gap.label) {
+			return 0;
+		}
+		const fontSize = gap.style?.fontSize ?? GAP_LABEL_FONT_SIZE;
+		return (
+			gap.label.length * LABEL_CHAR_WIDTH * (fontSize / LABEL_FONT_SIZE) +
+			2 * LABEL_GAP
 		);
 	}
 
@@ -557,6 +581,49 @@ export class LayoutPlanner {
 		const usableOf = (systemIndex: number) =>
 			width - 2 * x - (systemIndex === 0 ? labelIndent : 0);
 
+		// --- Edge gaps -----------------------------------------------------------------
+		// A gap before the first measure of music or after the last is an edge gap: a fixed box
+		// outside the staves rather than a measure on them. The system's bracket, clef and
+		// signatures open on the first measure of music instead, so the box sits left of the
+		// bracket; the final barline closes the last, so the box sits right of it. A score of
+		// nothing but gaps has no music to stand outside of, so its gaps stay on the staves.
+		const music = Array.from({ length: measureCount }, (_, m) => m).filter(
+			(m) => !gaps.has(m),
+		);
+		const firstMusic = music[0];
+		const lastMusic = music[music.length - 1];
+		const edgeOf = (m: number): MeasureBox['edge'] => {
+			if (firstMusic === undefined || lastMusic === undefined) {
+				return null;
+			}
+			if (m < firstMusic) {
+				return 'leading';
+			}
+			return m > lastMusic ? 'trailing' : null;
+		};
+		const isMusic = (m: number) => edgeOf(m) === null;
+		// The edge box's width: the label has to fit, and the caller's minWidth is honored
+		// exactly, since an edge box never stretches or squeezes with the music.
+		const edgeWidthOf = (m: number) => {
+			const gap = gaps.get(m);
+			return gap ? Math.max(this.gapLabelWidth(gap), gap.minWidth ?? 0) : 0;
+		};
+		// The last leading box butts against whatever opens the system: the part labels, or
+		// the bracket/brace reaching left of the staves, whichever is wider. That room replaces
+		// the first system's label indent, so it counts here only by what it adds to it.
+		const systemOverhang = this.staves.systemOverhang(parts);
+		const lastLeading = firstMusic === undefined ? -1 : firstMusic - 1;
+		const edgeLeadOf = (m: number) =>
+			edgeWidthOf(m) +
+			(m === lastLeading ? Math.max(0, systemOverhang - labelIndent) : 0);
+		// Index of a system's first and last measure of music, which open and close it.
+		const musicStartOf = (measures: number[]) =>
+			Math.max(0, measures.findIndex(isMusic));
+		const musicEndOf = (measures: number[]) => {
+			const i = measures.findLastIndex(isMusic);
+			return i === -1 ? measures.length - 1 : i;
+		};
+
 		// --- Spacing (content only) ---------------------------------------------------
 		// A measure's note area is a pure function of its music: an `ideal` width (the sum of its
 		// notes' logarithmic widths — noteSpacing per quarter, sub-linear in duration) and a `min`
@@ -569,21 +636,18 @@ export class LayoutPlanner {
 		const { leads: multiRestLeads, hidden: multiRestHidden } =
 			this.reader.multiRestsOf(parts);
 		const noteAreas = Array.from({ length: measureCount }, (_, m) => {
+			// An edge gap's box is all lead (see edgeLeadOf): nothing to stretch.
+			if (!isMusic(m)) {
+				return { min: 0, ideal: 0 };
+			}
 			// A gap has no notes to size it: floor its (empty) note area at the caller's
 			// minWidth and at the label's estimated width so the text fits. It stretches
 			// with its system like any measure — minWidth is a floor, not an exact width.
 			const gap = gaps.get(m);
 			if (gap) {
-				// ponytail: label width estimated from the part-label ~7.5px/char@13px ratio,
-				// scaled to the gap's font size — measure exactly if a font change drifts.
-				const fontSize = gap.style?.fontSize ?? GAP_LABEL_FONT_SIZE;
-				const labelWidth = gap.label
-					? gap.label.length * LABEL_CHAR_WIDTH * (fontSize / LABEL_FONT_SIZE) +
-						2 * LABEL_GAP
-					: 0;
 				// The label has to fit, so it sets the gap's hard minimum; the caller's minWidth is
 				// a preference, so it only raises the ideal and squeezes away like note spacing.
-				const min = Math.max(BASE_VOICE_WIDTH, labelWidth);
+				const min = Math.max(BASE_VOICE_WIDTH, this.gapLabelWidth(gap));
 				return { min, ideal: Math.max(min, gap.minWidth ?? 0) };
 			}
 			const staves: StaveSpec[] = [];
@@ -668,7 +732,7 @@ export class LayoutPlanner {
 				LEAD_BARLINE +
 				LEAD_CLEF +
 				(hasKey ? LEAD_KEY : 0) +
-				(m === 0 ? LEAD_TIME : 0)
+				(m === (firstMusic ?? 0) ? LEAD_TIME : 0)
 			);
 		};
 		const clefChangesAt = (m: number) =>
@@ -699,14 +763,17 @@ export class LayoutPlanner {
 		const leadingPadOf = (m: number, systemStart: boolean) =>
 			Math.max(0, (leadingPads[m] ?? 0) - leadGlyphs(m, systemStart));
 		const leadOf = (m: number, systemStart: boolean) =>
-			leadGlyphs(m, systemStart) + padOf(m) + leadingPadOf(m, systemStart);
+			isMusic(m)
+				? leadGlyphs(m, systemStart) + padOf(m) + leadingPadOf(m, systemStart)
+				: edgeLeadOf(m);
 
 		// A system's width at each of the two note-area sizes: `ideal` is what it wants,
 		// `min` is the narrowest it can be drawn without its notes colliding. Leads are fixed
 		// glyph widths, so they count the same in both.
 		const spanOf = (measures: number[], key: 'min' | 'ideal') =>
 			measures.reduce(
-				(sum, m, i) => sum + leadOf(m, i === 0) + areaOf(m)[key],
+				(sum, m, i) =>
+					sum + leadOf(m, i === musicStartOf(measures)) + areaOf(m)[key],
 				0,
 			);
 
@@ -759,7 +826,10 @@ export class LayoutPlanner {
 				// documented hole in 'wrap'. Needs a tiny referenceWidth or a huge noteSpacing
 				// to reach; splitting a measure across systems is the only real fix and no
 				// caller has wanted one.
-				if (row.length > 0 && (forcedBreak || overruns)) {
+				// Edge gaps stay with the music they frame: a system never ends before a trailing
+				// gap, nor holds only leading ones.
+				const canBreak = isMusic(m) && row.some(isMusic);
+				if (canBreak && (forcedBreak || overruns)) {
 					if (forcedBreak) {
 						forcedStarts.add(m);
 					}
@@ -768,7 +838,7 @@ export class LayoutPlanner {
 					rowWidth = 0;
 					rowMinWidth = 0;
 				}
-				const lead = leadOf(m, row.length === 0);
+				const lead = leadOf(m, !row.some(isMusic));
 				rowWidth += lead + area.ideal;
 				rowMinWidth += lead + area.min;
 				row.push(m);
@@ -776,11 +846,16 @@ export class LayoutPlanner {
 			if (row.length > 0) {
 				systems.push(row);
 			}
-			this.evenOutSystems(systems, forcedStarts, (measures, systemIndex) => ({
-				intrinsic: spanOf(measures, 'ideal'),
-				minimum: spanOf(measures, 'min'),
-				usable: usableOf(systemIndex),
-			}));
+			this.evenOutSystems(
+				systems,
+				forcedStarts,
+				isMusic,
+				(measures, systemIndex) => ({
+					intrinsic: spanOf(measures, 'ideal'),
+					minimum: spanOf(measures, 'min'),
+					usable: usableOf(systemIndex),
+				}),
+			);
 			return systems;
 		};
 
@@ -822,7 +897,9 @@ export class LayoutPlanner {
 		const boxes: MeasureBox[] = [];
 		let naturalWidth = width;
 		systems.forEach((measures, systemIndex) => {
-			const leads = measures.map((m, i) => leadOf(m, i === 0));
+			const start = musicStartOf(measures);
+			const end = musicEndOf(measures);
+			const leads = measures.map((m, i) => leadOf(m, i === start));
 			const areas = measures.map((m) => areaOf(m));
 			const areaSum = areas.reduce((sum, a) => sum + a.ideal, 0);
 			const intrinsic = leads.reduce((sum, l) => sum + l, 0) + areaSum;
@@ -866,20 +943,27 @@ export class LayoutPlanner {
 				areaTarget >= areaSum
 					? a.ideal * stretch
 					: a.ideal - (a.ideal - a.min) * squeeze;
-			let cx = x + (systemIndex === 0 ? labelIndent : 0);
+			// Leading boxes start at the margin, ahead of the label indent they stand in for.
+			const indent = systemIndex === 0 && start === 0 ? labelIndent : 0;
+			let cx = x + indent;
 			measures.forEach((m, i) => {
 				const area = areas[i];
-				const w = (leads[i] ?? 0) + (area ? areaWidth(area) : 0);
+				const edge = edgeOf(m);
+				const w = edge
+					? edgeWidthOf(m)
+					: (leads[i] ?? 0) + (area ? areaWidth(area) : 0);
 				boxes[m] = {
 					x: cx,
 					width: w,
 					trailingPad: padOf(m),
-					leadingPad: leadingPadOf(m, i === 0),
+					leadingPad: edge ? 0 : leadingPadOf(m, i === start),
 					systemIndex,
-					isSystemStart: i === 0,
-					isSystemEnd: i === measures.length - 1,
+					isSystemStart: i === start && !edge,
+					isSystemEnd: i === end && !edge,
+					edge,
 				};
-				cx += w;
+				cx +=
+					w + (m === lastLeading ? Math.max(labelIndent, systemOverhang) : 0);
 			});
 			// The page box always covers what was actually drawn. Short lines sit left with
 			// margin and never widen it; panoramic grows it to fit its single long system,

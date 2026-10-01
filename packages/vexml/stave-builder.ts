@@ -38,6 +38,9 @@ export interface StaveColumn {
 	/** Which stave row (counted over the whole system) this stave lands on. */
 	staveRow: number;
 	isSystemStart: boolean;
+	/** Whether this is the score's first measure of music, which prints the time signature.
+	 * Not measure 0 when leading gaps sit before it. */
+	opensScore: boolean;
 	/** Whether this is the last measure DRAWN (it closes with the thin-thick end line). */
 	isLastMeasure: boolean;
 	/** The measure's right <bar-style>, or null when it declares none. */
@@ -324,11 +327,15 @@ export class StaveBuilder {
 		const time = measure.getTime(staffNumber);
 		const timeSpec =
 			this.signatures.timeSignatureSpec(time) ??
-			(m === 0 && !time ? '4/4' : null);
+			(column.opensScore && !time ? '4/4' : null);
 		const prevTimeSpec = this.signatures.timeSignatureSpec(
 			prevMeasure?.getTime(staffNumber) ?? null,
 		);
-		if (timeSpec && !isTab && (m === 0 || timeSpec !== prevTimeSpec)) {
+		if (
+			timeSpec &&
+			!isTab &&
+			(column.opensScore || timeSpec !== prevTimeSpec)
+		) {
 			stave.addTimeSignature(timeSpec);
 		}
 

@@ -166,6 +166,7 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 - **Repeat structure, endings, how many passes** — `score-reader.ts` (`measureRepeats`, `measureJumps`, `endingPasses`)
 - **Directions routed to the right staff** — `score-reader.ts`
 - **Silent gap measures the caller asked for** — `gaps.ts` (which measures are gaps), `gap-inserter.ts` (inserting them; `beforeBarIndex` in playback order, refused inside a repeat), `insert-gaps.ts` (the public `insertGaps` for a caller's own document)
+- **Gaps before the first measure or after the last, drawn as boxes outside the staves** — `layout-planner.ts` (`MeasureBox.edge`, fixed box widths, flush against the bracket or final barline), `stave-plan.ts` (`systemOverhang`), `draw-pass.ts` (`drawEdgeGap`; the time signature and end barline move to the music via `opensScore`/`isLastMeasure`)
 
 ## Interaction and playback
 

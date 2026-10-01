@@ -29,6 +29,8 @@ export type GapStyle = {
 	/** CSS color painted over the gap's note area, e.g. to dim the staff lines
 	 * (`'rgba(255, 255, 255, 0.8)'`). Omit for none. */
 	fill?: string;
+	/** CSS color of a 1px outline around that area (`'#e5e5e5'`). Omit for none. */
+	border?: string;
 };
 
 /** A non-musical measure in the score: it occupies horizontal space and a fixed playback
@@ -200,8 +202,11 @@ export type Config = {
 	/** Non-musical measures in the score (default: none). Each occupies space on the page
 	 * and a fixed ms of playback time — for syncing notation to media where the music
 	 * pauses (e.g. an instructor talking). See `GapPlacement` for naming them; the rendered
-	 * score's measure indexes include the gaps (measure *numbers* skip them). Retrieve
-	 * their timing with `Score.getGaps()`. */
+	 * score's measure indexes include the gaps (measure *numbers* skip them). A gap before
+	 * the first measure or after the last is drawn as a box outside the staves: the system's
+	 * bracket, clef and signatures open on the first measure, and the final barline closes
+	 * the last. Gaps between measures sit on the staves. Retrieve their timing with
+	 * `Score.getGaps()`. */
 	gaps: Gap[];
 	/** How measures are placed across systems (default: standard at 8.5in / 816px), and for
 	 * a standard layout, how it resolves a document line that won't fit that width. */
