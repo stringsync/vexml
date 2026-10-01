@@ -832,7 +832,8 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		const left = this.base.offsetLeft;
 		const top = this.base.offsetTop;
 		if (layer.kind !== 'viewport') {
-			layer.place(left, top, this.base.offsetWidth, this.base.offsetHeight);
+			const { width, height } = this.renderedSize();
+			layer.place(left, top, width, height);
 		} else if (this.scrollElement === this.container) {
 			layer.place(
 				left,
@@ -858,11 +859,12 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 	// stretched over the same box in placeLayer).
 	private markerFrame(): MarkerFrame {
 		const { width, height } = this.intrinsicSize();
+		const shown = this.renderedSize();
 		return {
 			left: this.base.offsetLeft,
 			top: this.base.offsetTop,
-			sx: width > 0 ? this.base.offsetWidth / width : 1,
-			sy: height > 0 ? this.base.offsetHeight / height : 1,
+			sx: width > 0 ? shown.width / width : 1,
+			sy: height > 0 ? shown.height / height : 1,
 		};
 	}
 
@@ -907,14 +909,20 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		}
 	}
 
-	// The base's laid-out size, unrounded: offsetWidth rounds to whole px, and a score 932.4px wide
-	// stretched to 932 would blur every tile under a scale of 0.9996.
 	private fitEngraving(): void {
+		const { width, height } = this.renderedSize();
+		this.engraving.fit(width, height);
+	}
+
+	// The base's laid-out size, unrounded: offsetWidth rounds to whole px, and a score 932.4px wide
+	// stretched to 932 would blur every tile under a scale of 0.9996. Content layers and markers
+	// read it too, so they line up with the engraving exactly rather than a rounding error off.
+	private renderedSize(): { width: number; height: number } {
 		const style = getComputedStyle(this.base);
-		this.engraving.fit(
-			parseFloat(style.width) || 0,
-			parseFloat(style.height) || 0,
-		);
+		return {
+			width: parseFloat(style.width) || 0,
+			height: parseFloat(style.height) || 0,
+		};
 	}
 
 	private requestView(): void {

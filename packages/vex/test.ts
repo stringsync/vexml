@@ -38,22 +38,24 @@ export async function test(opts: TestOptions) {
 	if (opts.clean) {
 		args.push('-e', 'CLEANUP_ORPHANED_SCREENSHOTS=1');
 	}
-	// Anything after the image name is forwarded to the container's test command.
-	args.push('vexml-tests', ...testArgs);
+	// Anything after the image is forwarded to the container's test command.
+	args.push(await buildSilently(opts), ...testArgs);
 
-	await buildSilently(opts);
 	const { exitCode } = await opts.ps.spawn(['docker', ...args]);
 	if (exitCode !== 0) {
 		throw new Error('tests failed');
 	}
 }
 
-async function buildSilently(opts: TestOptions) {
+/** Builds the test image and returns the image to run: by ID, not the shared `vexml-tests`
+ * tag, which every worktree builds. Running the tag let a concurrent `vex test` in another
+ * worktree retag it between build and run, so this run tested that worktree's source. */
+async function buildSilently(opts: TestOptions): Promise<string> {
 	// CI pre-builds the vexml-tests image with layer caching, then sets this to
 	// reuse it instead of rebuilding from scratch every run.
 	if (opts.ps.env('VEX_TEST_SKIP_BUILD')) {
 		opts.log.info('Skipping build (VEX_TEST_SKIP_BUILD set)');
-		return;
+		return 'vexml-tests';
 	}
 	opts.log.info('Building...');
 	const start = Date.now();
@@ -62,6 +64,8 @@ async function buildSilently(opts: TestOptions) {
 	const { exitCode, stdout, stderr } = await opts.ps.spawnCapture([
 		'docker',
 		'build',
+		// Prints only the image ID on stdout; errors still go to stderr.
+		'-q',
 		'-t',
 		'vexml-tests',
 		'.',
@@ -71,4 +75,5 @@ async function buildSilently(opts: TestOptions) {
 		throw new Error('docker build failed');
 	}
 	opts.log.info(`Built in ${((Date.now() - start) / 1000).toFixed(1)}s`);
+	return stdout.trim();
 }
