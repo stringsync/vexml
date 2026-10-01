@@ -5,7 +5,7 @@ files: "**/{*.test,testing}.ts"
 level: error
 effort: low
 recommended: true
-version: 0.0.20
+version: 0.0.23
 ---
 # Test setup names what it makes
 

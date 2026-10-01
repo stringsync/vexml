@@ -1,7 +1,7 @@
 ---
 name: scry
 description: "Write, update, and remove the scry rules in this project's .wiz/scry, which `wiz scry` checks a change against like a linter. Use when the user explicitly asks for a rule, or asks for a style or convention change across the codebase that a rule could enforce from now on (\"stop using default exports\", \"comments should say why\"). Also use when asked to scry a change or run `wiz scry`."
-version: 0.0.20
+version: 0.0.23
 ---
 
 # Scry

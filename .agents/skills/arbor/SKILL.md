@@ -1,7 +1,7 @@
 ---
 name: arbor
-description: Use the @webappwiz/arbor CLI to land your work on trunk, or a base branch given as an argument, from an isolated git worktree without pull requests. Read this before making any code change in an arbor repository, since it decides where the work happens, and whenever you need to add, claim, merge, remove, list, show, locate, or escalate a task.
-version: 0.0.20
+description: Use the @webappwiz/arbor CLI to land your work on trunk, or a base branch given as an argument, from an isolated git worktree without pull requests. Read this before making any code change in an arbor repository, since it decides where the work happens, and whenever you need to add, claim, merge, remove, list, show, locate, escalate, or defer a task.
+version: 0.0.23
 ---
 
 # Using arbor
@@ -12,134 +12,128 @@ trunk without pull requests. Run it with `bunx @webappwiz/arbor <command>` (or
 only what the CLI cannot tell you.
 
 **Rule:** never use raw git for state transitions arbor covers. Every landing
-goes through `arbor merge`. The only exception is finishing an in-progress
-rebase (`git add`, `git rebase --continue`), then merging again.
+goes through `arbor merge`. The exception is finishing an in-progress rebase
+(`git add`, `git rebase --continue`), then merging again.
 
 A failed command prints `{reason}` JSON on stdout and instructions on stderr:
-do what stderr says. The one case to memorize is exit 4 `lease_lost`: stop,
-do not retry, another agent owns the tree.
-
-## Before you start
-
-Other agents may already be working. Before creating anything, list the files
-you expect to touch, then `arbor list`, and for each task in flight compare with
-its changed files:
-`git -C "$(arbor path <task>)" diff --name-only main...task/<task>`
-(`arbor show <task>` for its plan; neither takes its lease).
-
-If nothing overlaps, carry on. If something does, `arbor add` your task if you
-have not already and record the overlap in `ARBOR.md` (which task, which
-files). Some overlap is normal: work alongside and accept the rebase. Only
-when the overlap is significant and you expect merge conflicts that would be
-hard to resolve, `arbor wait <task>` on the task you overlap with instead:
-let it land first and your rebase is onto its work rather than against it.
-
-Waiting is caution, reserved for overlap that warrants it. Escalate
-instead only when the other task is doing something majorly different from
-yours, or contrary to it: rewriting what you are extending, or asked for the
-opposite of what you were. Then escalate (see Escalation) with a Q like
-"Decide: wait for `<task>`, work alongside it and accept the rebase, or drop
-this task?"
-
-Act on how the wait ends:
-
-- `removed`: it landed or was dropped. Redo the overlap check (trunk moved)
-  and carry on.
-- `escalated`: your work is blocked on a person too. Tell the human what it
-  is blocked on and wait.
-- `orphaned`, `stray`, `unrecorded` or `unknown`: that tree is broken. A tree
-  mid-merge can read as `orphaned` for a moment, so `wait` once more before
-  believing it, then say so and ask.
-- exit 14 `timeout`, still `working` or `merging`: `wait` again (with
-  `--timeout-secs` if the task looks close), or offer the choice of
-  working alongside it or picking up something else, saying what you have not
-  started.
-
-A `stale` lease on a `working` task is normal (arbor only heartbeats while a
-command runs): watch a task's status, never its lease.
+do what stderr says. Memorize one: exit 4 `lease_lost` means stop, do not
+retry, another agent owns the tree.
 
 ## Workflow
 
-1. `arbor add <task>`, or `arbor claim <task>` to resume one. When this skill
-   is invoked with a branch argument (`/arbor feature/auth`), or the user
-   names the branch the work should land on, pass it as `--base` to every
-   task you create for that request. Otherwise omit `--base`; never guess a
-   base from the currently checked-out branch, unless you are handing out part
-   of your own task (below).
-2. Fill in the `ARBOR.md` stub `add` wrote at the worktree root (see below)
-   before touching code.
-3. Do the work, updating `ARBOR.md` as you go; commit with git (arbor never
-   commits for you).
-4. Squash the branch to one commit whose message describes the net change
-   (see Committing).
-5. `arbor merge`. On failure, do what stderr says and merge again.
+1. **Check for overlap.** List the files you expect to touch and compare with
+   `arbor list --files`. Some overlap is normal: work alongside and accept the
+   rebase, noting it in `ARBOR.md`. Only when conflicts would be hard to
+   resolve, `arbor wait <task>` for the other task to land first. If it is
+   doing the opposite of what you were asked, escalate instead.
+2. **Start.** `arbor add <task>`, `arbor add <task> --todo <id>` to take up a
+   todo, or `arbor claim <task>` to resume one. Pass `--base <branch>` only
+   when invoked with a branch (`/arbor feature/auth`) or the user names one;
+   never guess a base from the checked-out branch.
+3. **Plan.** Fill in the `ARBOR.md` stub before touching code (see below).
+4. **Work.** Commit with git as you go; arbor never commits for you. Defer
+   anything outside your Goal with `arbor todo add "<text>"` and move on.
+   Between steps, run `arbor replies`: your human may have followed up an
+   answer (see Follow-ups).
+5. **Squash** to one commit (see Committing), then **`arbor merge`**. On
+   failure, do what stderr says and merge again.
 
-A successful merge deletes the worktree, and your working directory with it:
-`cd` to the main tree (merge prints its path) before running anything else.
+A successful merge deletes the worktree and your working directory with it:
+`cd` to the main tree it prints before running anything else.
+
+`wait` ends on `removed` (landed or dropped: redo the overlap check),
+`escalated` (the other task needs a person: tell the user you are blocked on
+it), a broken status (`wait` once more, then ask), or exit 14 `timeout` (wait
+again or work alongside). A `stale` lease on a `working` task is normal: watch
+status, never the lease.
+
+## Deferring work
+
+When something comes up that is not your Goal (a bug next door, a follow-up,
+a reply that widens the task), `arbor todo add "<one line>"` from your
+worktree and keep going. Do not grow the task. `merge` recommends the next
+todo when you land; mention it in your report (see Reporting).
 
 ## Handing out part of your task
 
-arbor runs from inside a worktree as well as from the main tree, so you can
-hand part of your own task to other agents from within yours. Each part gets
-its own task based on yours: `arbor add <part> --base task/<your task>`, then
-`arbor merge` as usual. It lands on your branch rather than trunk, and you
-land the lot with your own merge.
-
-A part lands by fast-forwarding your branch where it is checked out, which is
-the tree you are standing in, so:
-
-- Keep your tree committed while parts are out. Git refuses a merge that would
-  overwrite uncommitted changes, and that failure lands on the other agent
-  rather than on you.
-- Expect files to appear and change under you. After a part lands, re-read
-  what you are about to edit instead of writing it from memory.
-- Squash only once every part has landed. Rewriting your branch while a part
-  is out moves the base from under it.
-
-Split only along lines that make separate tasks: a part is worth handing out
-when saying what it needs is shorter than doing it.
+`arbor add <part> --base task/<your task>` from inside your tree makes a task
+that lands on your branch instead of trunk. While parts are out, keep your
+tree committed (a part lands by fast-forwarding your checkout), re-read files
+before editing them, and squash only after every part has landed. Hand a
+part out only when describing it is shorter than doing it.
 
 ## Escalation
 
-Merge only work you verified yourself. Escalate instead when verification
-needs a person: external services, destructive migrations, anything tests
-cannot confirm. If the user asked to see the work before it lands, escalate
-regardless. And when the user gave no escalation instructions either way,
-escalate any branch whose changes are complex: many files touched, a large
-diff, an intricate algorithm, or a change whose correctness needs a reader
-rather than a test. A small branch with no instructions merges; a complex one
-waits for a look.
+Merge only work you verified yourself. Escalate when verification needs a
+person (external services, destructive migrations, visual changes), when the
+user asked to see the work first, or, absent instructions, when the change is
+complex enough that correctness needs a reader rather than a test.
 
-1. `arbor escalate <reason>`.
-2. Leave something the human can look at and put its **absolute path** in the
-   item that asks for it (start from `arbor path <task>`). For anything visual
-   or UX, that means a screenshot; if producing one is expensive or has side
-   effects, ask before starting and say what it will cost.
-3. Record what the reviewer must do under `## Blocked` in `ARBOR.md`, then
-   report it (see Reporting).
+1. `arbor escalate <reason>`. When the only thing left is the user's
+   approval, `arbor escalate --review "<what to look at>"` instead: it asks
+   `✅ Ready to merge?` for you, and the page shows Approve and Request
+   changes. Settle every other question first; it refuses while one is
+   unchecked.
+2. Leave something to look at, by **absolute path** (start from
+   `arbor path <task>`): a screenshot for anything visual. Ask first if
+   producing it is expensive.
+3. Write each question under `## Blocked` in `ARBOR.md`, then report.
+4. Wait for answers. If your harness can run a command in the background and
+   wake you when it exits (Claude Code's `run_in_background` can), start
+   `arbor wait <task> --answered` that way; the user may answer from the inbox
+   or in chat, whichever comes first. If it cannot, do not run it: end your
+   turn, and run `arbor replies <task>` when you are back.
 
-Number what you did D1, D2, … and what you need Q1, Q2, …. Each Q is one
-command: it starts with a verb (Run, Open, Confirm, Decide) and ends with the
-shape of the answer ("reply pass or fail", "keep or drop?"). Numbers never
-change: an item carried into a later turn keeps its number, and new items
-continue from the highest.
+Number what you did D1, D2, … and what you need Q1, Q2, …. A Q's line is its
+subject: short enough to scan in an inbox, led by one emoji for what it is
+about (🎨 ui, 🗄️ db, 🔐 auth, 🧪 tests), or ❓ when none fits (repeats are
+fine), and ending in the question.
+Everything else goes in lines indented under it, which render as markdown:
+detail, code blocks, and screenshots as `![what](/abs/path.png)`, which the
+inbox shows inline. Ask for what is wrong rather than a bare yes or no. When
+the answer is one of a few, list `- (a) ...` lines last (pick one, or none);
+for "all that apply", `- [a] ...` lines. A reply names its picks spelled out
+(`a (Email), c (Push)`), may add words after a colon, or may answer in words
+alone. Numbers never change; new ones continue from the highest.
 
-```markdown
+````markdown
 ## Blocked
 
-- [x] Q1. Run `bin/wiz dev test --live` against staging. Reply pass or fail. → pass
-- [ ] Q2. Open `/abs/path/shot.png`. Confirm the header wraps to two lines.
-```
+- [x] Q1. 🧪 Do the live tests pass against staging? → yes
+- [ ] Q2. 🎨 Does the header wrap to two lines?
+  ![header at 390px](/abs/path/shot.png)
+- [ ] Q3. 🔐 How should existing sessions move to the new tokens?
+  Sessions are keyed by the old cookie:
 
-Match replies to items by number, ignoring case and punctuation (`q1`, `Q1:`
-and `1.` all mean Q1). Check an item off only when the reply answers it in a
-way you can act on, and write the answer after `→`. Anything else stays open:
-start your next report's Needs you with those items, under their original
-numbers. A reply to a D item is an instruction: act on it, and add a new Q if
-the result needs checking.
+  ```ts
+  const session = await sessions.find(cookie);
+  ```
 
-Never merge while `## Blocked` has an unchecked item. If you claim a tree that
-has one, do not resume: ask it and wait.
+  - (a) Sign everyone out once
+  - (b) Migrate each session on its next request
+````
+
+Replies arrive in chat or in the inbox. Read inbox replies only through
+`arbor wait <task> --answered` or `arbor replies <task>`: either claims them,
+writing each after `→` on its question's line, and a claimed reply can no
+longer change under you. Never read them any other way. Write a chat reply
+after `→` yourself, matching it by number (`q1`, `Q1:` and `1.` all mean Q1). Check an item off only when the answer is one you can act on, and
+write it after `→`; anything else stays open and leads your next report. A
+reply to a D item is an instruction. "Deferred to todo 7" and "Skip this"
+mean leave it out and carry on: check the item off. "Approved: merge it."
+answers a review: check it off and merge. `arbor merge` refuses with exit 16
+`blocked` while `## Blocked` has an unchecked item, and exit 15 `unread`
+while a reply waits unclaimed. `arbor claim` resumes an escalated task. `arbor retry` is only
+for `budget_exhausted`, and is the human's to run, before you claim.
+
+## Follow-ups
+
+Your human can follow up any answer you already read, even one you checked
+off. `arbor replies` (and `arbor wait --answered`) writes a follow-up on a
+`→ ` line of its own under its question and unchecks the question. Treat it
+as an instruction from the user: act on it, then check the question off
+again. You never answer questions, yours or another agent's: say what you
+need in your report or under `## Blocked`.
 
 ## Reporting
 
@@ -149,7 +143,11 @@ However a task ends, say so in one block; only a merge names a base:
 ### ✅ Merged `<task>` onto `<base>`
 
 One sentence blending what the task set out to do with where it ended up.
+
+Next: todo <id>, <its text>. Stale: todo <id> (remove?).
 ```
+
+Leave out the `Next` line when merge recommended nothing.
 
 ```markdown
 ### ⚠️ Escalated `<task>`: <what it waits on, in a few words>
@@ -158,23 +156,22 @@ Done:
 - D1. One line per change.
 
 Needs you:
-- Q1. One command per item.
+- Q1. One subject line per item.
 ```
 
 ```markdown
 ### 🛑 Removed `<task>`
 
-One sentence blending what the task set out to do with why you `arbor remove`d
-it instead.
+One sentence on what the task set out to do and why you removed it.
 ```
 
-Anything else worth saying goes after this block, not instead of it.
+Anything else worth saying goes after the block, not instead of it.
 
 ## ARBOR.md
 
 Your session can die at any moment; `ARBOR.md` is what lets a stranger
-`arbor claim` the task and continue. Fill in the stub `add` wrote to this
-shape:
+`arbor claim` the task and continue. Size it to the task: a few lines for a
+small change, a full record for a long one.
 
 ````markdown
 # <task>
@@ -189,8 +186,7 @@ One or two lines on what done means.
 
 ## Done
 
-- [x] finished steps move here: these checkboxes are the only progress the
-      task reports
+- [x] finished steps: the only progress the task reports
 
 ## Next
 
@@ -201,34 +197,24 @@ One or two lines on what done means.
 Decisions, dead ends, and how to verify.
 ````
 
-Keep the whole file current throughout implementation, not at the end: after
-each step lands, check it off and move it to `## Done`, and when the set of
-files you are touching changes, change `## Files` to match. A stale plan is
-worse than none, and a session that dies mid-task reports nothing.
-
-`arbor show <task>` prints the file and every way it departs from the
-expected shape; run it on your own task after writing the file. `add` excludes
-`ARBOR.md` from git for you: never commit it, and never mention it in a commit
+Keep it current as you go, not at the end: move steps to `## Done` as they
+land and keep `## Files` matching what you touch, since `arbor list --files`
+shows it to other agents. Run `arbor show <task>` after writing it to check
+the shape. It is excluded from git: never commit it or mention it in a commit
 message.
 
 ## Committing
 
-Plain, human-style commit messages with **no attribution**: no
-`Co-authored-by:` trailers, no "Generated with", no agent or model names, no
-`--author` overrides. Commit as often as it helps you while working; a task
-usually takes fewer than 5 commits, and wanting many more means the task wants
-splitting.
+Plain, human-style messages with **no attribution**: no `Co-authored-by:`,
+no "Generated with", no agent or model names, no `--author`. Commit as often
+as helps; wanting many more than 5 commits means the task wants splitting.
 
-Before `arbor merge`, squash the branch to a single commit:
+Before `arbor merge`, squash to one commit describing the net change, what
+the base gains, not the path you took:
 
 ```sh
 git reset --soft "$(git merge-base <base> HEAD)" && git commit -m "<message>"
 ```
 
-`<base>` is the base `arbor show <task>` prints: `main` unless the task was
-created with `--base`. Write the message for the net change, what the base
-gains once the commit lands, not a recap of the commits that got you there:
-dead ends, reverted attempts and fix-ups to your own earlier commits leave no
-trace. Squashing your own branch is committing, which arbor leaves to you, not
-a transition the rule above covers; `merge` then rebases that one commit onto
-the base.
+`<base>` is what `arbor show <task>` prints: trunk unless the task was created
+with `--base`.
