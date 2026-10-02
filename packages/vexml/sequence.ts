@@ -64,7 +64,8 @@ export interface SequenceInput {
 
 /* One stop in playback order: the onset of a tickable. The active set is constant across
  * `[startBeat, endBeat)`. `x`/`glideToX` are the bar's onset position and where it glides to by the
- * step's end (the next onset on the same system, or the system's right edge at a line break);
+ * step's end (the next onset on the same system, or the measure box's right edge at a line break
+ * and for a gap);
  * `systemRect` is its vertical span. */
 export interface Step {
 	readonly index: number;
@@ -241,9 +242,12 @@ export class Sequence {
 	}
 
 	/* Inverse of positionAt over a step range: the step whose `[x, glideToX]` segment contains the
-	 * score-space `x`, and the exact beat interpolated within it. Steps in a range are left-to-right
-	 * contiguous (`step[i].glideToX === step[i+1].x` on the same system), so `x` left of the first
-	 * clamps to frac 0 and right of the last to frac 1. Null if the range is empty/invalid. */
+	 * score-space `x`, and the exact beat interpolated within it. Steps in a range run left to right,
+	 * contiguous (`step[i].glideToX === step[i+1].x` on the same system) except after a gap, which
+	 * stops at its box's right edge: an `x` in the jump from there to the next onset (signatures, a
+	 * barline) falls to the next step at frac 0, its start, where positionAt lands after the gap. An
+	 * `x` left of the first step clamps to frac 0 and right of the last to frac 1. Null if the range
+	 * is empty/invalid. */
 	resolveX(
 		x: number,
 		startStep: number,

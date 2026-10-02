@@ -2,6 +2,17 @@ import { describe, expect, it } from 'bun:test';
 import type { VexmlContext } from '@vexml/renderer';
 import { testing } from './setup';
 
+// A leading 5s gap and a 2s gap between the two measures, as in measures_gap.png.
+const GLIDE_GAPS = [
+	{
+		beforeMeasureIndex: 0,
+		durationMs: 5000,
+		label: 'What are pitches?',
+		minWidth: 250,
+	},
+	{ beforeMeasureIndex: 1, durationMs: 2000 },
+];
+
 describe('cursor', () => {
 	// M5's piano triplets share a column with ordinary bass notes/rests. Each
 	// onset must advance to the right, and its midpoint must glide toward the
@@ -52,6 +63,73 @@ describe('cursor', () => {
 			},
 		);
 		expect(image).toMatchScreenshot('cursor_bar.png');
+	});
+
+	// Gap measures (config.gaps) in the two-whole-note fixture, as in measures_gap.png: a leading
+	// 5s edge gap, M1, a 2s gap, M2. Each gap's playhead glides across its own box only, then jumps
+	// to the next measure's first onset, the way it jumps at a line break: the leading gap's never
+	// crosses M1's clef and 4/4, the middle gap's never crosses the barline and the space before
+	// M2's note. A point over M1's clef and 4/4 maps to M1's start, where the playhead lands.
+	it.concurrent('a gap playhead glides only across its own box', async () => {
+		const { result } = await testing.eval(
+			'measures_two.musicxml',
+			{ gaps: GLIDE_GAPS },
+			({ score }) => {
+				const seq = score.getSequence();
+				const boxes = score.getElements().measureBoxes();
+				return score.getGaps().map((gap) => {
+					const box = boxes.find((b) => b.getIndex() === gap.measureIndex);
+					const next = seq.getStep(
+						seq.getFirstStepOfMeasure(gap.measureIndex + 1) ?? -1,
+					);
+					if (!box || !next) {
+						throw new Error('missing gap box or next onset');
+					}
+					const y = box.rect.y + box.rect.h / 2;
+					return {
+						left: box.rect.x,
+						right: box.rect.right,
+						nextX: next.x,
+						nextMs: next.startMs,
+						midX: seq.positionAt((gap.startMs + gap.endMs) / 2)?.x,
+						endX: seq.positionAt(gap.endMs)?.x,
+						// Between the gap's right edge and the next onset: signatures or a barline.
+						jumpMs: score.getTimeAt({ x: (box.rect.right + next.x) / 2, y })
+							?.ms,
+						// A quarter of the way into the box maps back to a quarter of the gap's time.
+						quarterMs: score.getTimeAt({
+							x: box.rect.x + box.rect.w / 4,
+							y,
+						})?.ms,
+						quarterOfGapMs: gap.startMs + (gap.endMs - gap.startMs) / 4,
+					};
+				});
+			},
+		);
+		expect(result).toHaveLength(2);
+		for (const gap of result) {
+			// The next onset sits past the gap's box, so there is a jump to make.
+			expect(gap.nextX).toBeGreaterThan(gap.right);
+			expect(gap.midX).toBeCloseTo((gap.left + gap.right) / 2);
+			expect(gap.endX).toBeCloseTo(gap.nextX);
+			expect(gap.jumpMs).toBeCloseTo(gap.nextMs);
+			expect(gap.quarterMs).toBeCloseTo(gap.quarterOfGapMs);
+		}
+	});
+
+	// The playhead halfway through the leading gap of measures_gap.png: a blue bar in the middle of
+	// the 250px box, under the centered "What are pitches?" label, not over M1's clef or 4/4.
+	it.concurrent('a playhead mid leading gap sits mid box', async () => {
+		const { image } = await testing.eval(
+			'measures_two.musicxml',
+			{ gaps: GLIDE_GAPS },
+			({ score }) => {
+				const cursor = score.createCursor();
+				cursor.sync(score.createPlayhead({ color: '#2962ff', widthPx: 3 }));
+				cursor.seekMs(2500);
+			},
+		);
+		expect(image).toMatchScreenshot('cursor_gap.png');
 	});
 
 	// Coloring the highlighted notes of a tied tab chord must not stamp phantom blips on the tab

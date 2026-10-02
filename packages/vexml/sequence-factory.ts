@@ -70,7 +70,13 @@ export class SequenceFactory {
 		// each note occurrence's absolute [startBeat, endBeat) interval plus the onsets that seed steps.
 		type Interval = { note: Note; startBeat: number; endBeat: number };
 		// `x: null` marks an onset seeded by a note *end* rather than a notehead; it's filled in below.
-		type Onset = { x: number | null; systemRect: Rect; measureIndex: number };
+		// `gap` marks a gap measure's synthesized step, which glides across its own box only.
+		type Onset = {
+			x: number | null;
+			systemRect: Rect;
+			measureIndex: number;
+			gap?: boolean;
+		};
 		const intervals: Interval[] = [];
 		const onsets = new Map<number, Onset>();
 		const ends: Array<{
@@ -96,7 +102,7 @@ export class SequenceFactory {
 			// beats to that time, without touching the carried tempo (the next measure
 			// resumes at the rate in effect before the gap). Its step is synthesized here —
 			// a gap has no notes to seed one — spanning the measure with nothing active, so
-			// the cursor glides across it and everything sounding before it stops.
+			// the cursor glides across its box and everything sounding before it stops.
 			if (measure.gapMs !== undefined) {
 				segments.push({
 					startBeat: totalBeats,
@@ -107,6 +113,7 @@ export class SequenceFactory {
 					x: measure.systemRect.x,
 					systemRect: measure.systemRect,
 					measureIndex: measure.index,
+					gap: true,
 				});
 				totalBeats += measure.beats;
 				continue;
@@ -229,7 +236,9 @@ export class SequenceFactory {
 				)
 				.map((iv) => iv.note);
 			// Glide toward the next onset on the same system; at a line break, to the system's right
-			// edge.
+			// edge. A gap glides across its own box only: the clef, signatures or barline between its
+			// right edge and the next onset are crossed in a jump, as at a line break, so the cursor
+			// spends the gap's whole time over the gap.
 			const next = nextBeat === undefined ? undefined : onsets.get(nextBeat);
 			// Every x is resolved by now (seeds were filled in above); the fallbacks only satisfy types.
 			const x = onset.x ?? onset.systemRect.x;
@@ -238,7 +247,9 @@ export class SequenceFactory {
 				next.systemRect.y === onset.systemRect.y &&
 				next.x > x;
 			const glideToX =
-				sameSystem && next?.x != null ? next.x : onset.systemRect.right;
+				!onset.gap && sameSystem && next?.x != null
+					? next.x
+					: onset.systemRect.right;
 			steps.push({
 				index: i,
 				measureIndex: onset.measureIndex,

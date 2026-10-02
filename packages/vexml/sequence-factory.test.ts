@@ -226,6 +226,134 @@ describe('SequenceFactory', () => {
 		expect(seq.classify(0, 1).stopped).toEqual([a]);
 	});
 
+	// A leading gap (box x 0..48) before a bar whose clef, key and time signatures fill x
+	// 48..120, so its first notehead sits at x 120.
+	const leadingGap = () =>
+		build({
+			measures: [
+				{
+					index: 0,
+					beats: 1,
+					tempoBpm: null,
+					jumps: [],
+					systemRect: new Rect(0, 0, 48, 100),
+					gapMs: 3000,
+				},
+				{
+					index: 1,
+					beats: 2,
+					tempoBpm: 120,
+					jumps: [],
+					systemRect: new Rect(48, 0, 352, 100),
+				},
+			],
+			notes: [
+				quarter(fakeNote('a'), 1, 0, 120),
+				quarter(fakeNote('b'), 1, 1, 200),
+			],
+		});
+
+	it('a leading gap glides across its own box, not over the signatures', () => {
+		const seq = leadingGap();
+		expect(seq.getStep(0)?.x).toBe(0);
+		expect(seq.getStep(0)?.glideToX).toBe(48);
+		// Half the gap's time sits mid-box.
+		expect(seq.positionAt(1500)?.x).toBeCloseTo(24);
+		// At the gap's end the cursor jumps to bar 1's first onset.
+		expect(seq.positionAt(3000)?.x).toBe(120);
+		// Bar 1 glides as before.
+		expect(seq.getStep(1)?.glideToX).toBe(200);
+	});
+
+	it('resolveX: inside a gap maps linearly within its time; over the signatures, to the next bar start', () => {
+		const seq = leadingGap();
+		const gapStep = seq.getStepRangeOfMeasure(0);
+		const bar = seq.getStepRangeOfMeasure(1);
+		if (!gapStep || !bar) {
+			throw new Error('expected both measures to have steps');
+		}
+		// Round trip: the x positionAt gives at 1500ms resolves back to 1500ms.
+		const mid = seq.positionAt(1500)?.x ?? Number.NaN;
+		const resolved = seq.resolveX(mid, gapStep.start, gapStep.end);
+		expect(resolved?.stepIndex).toBe(0);
+		expect(seq.beatsToMs(resolved?.beat ?? Number.NaN)).toBeCloseTo(1500);
+		expect(seq.resolveX(12, 0, 0)?.beat).toBeCloseTo(0.25);
+		// An x over the signatures lands on bar 1's start, whether the range is the bar's or both.
+		expect(seq.resolveX(80, bar.start, bar.end)).toEqual({
+			stepIndex: 1,
+			beat: 1,
+		});
+		expect(seq.resolveX(80, 0, 2)).toEqual({ stepIndex: 1, beat: 1 });
+	});
+
+	it('a gap between two bars glides only across its box', () => {
+		const seq = build({
+			measures: [
+				{
+					index: 0,
+					beats: 1,
+					tempoBpm: 120,
+					jumps: [],
+					systemRect: new Rect(0, 0, 100, 100),
+				},
+				{
+					index: 1,
+					beats: 1,
+					tempoBpm: null,
+					jumps: [],
+					systemRect: new Rect(100, 0, 60, 100),
+					gapMs: 2000,
+				},
+				{
+					index: 2,
+					beats: 1,
+					tempoBpm: null,
+					jumps: [],
+					systemRect: new Rect(160, 0, 100, 100),
+				},
+			],
+			notes: [
+				quarter(fakeNote('a'), 0, 0, 20),
+				quarter(fakeNote('b'), 2, 0, 185),
+			],
+		});
+		// The bar before the gap still glides to the gap's left edge.
+		expect(seq.getStep(0)?.glideToX).toBe(100);
+		expect(seq.getStep(1)?.x).toBe(100);
+		expect(seq.getStep(1)?.glideToX).toBe(160);
+		// Gap runs 500..2500ms: mid-gap is mid-box, and its end jumps to b.
+		expect(seq.positionAt(1500)?.x).toBeCloseTo(130);
+		expect(seq.positionAt(2500)?.x).toBe(185);
+		// The barline and space before b map to b's start.
+		expect(seq.resolveX(170, 1, 2)).toEqual({ stepIndex: 2, beat: 2 });
+	});
+
+	it('a closing gap after the last bar glides across its own box', () => {
+		const seq = build({
+			measures: [
+				{
+					index: 0,
+					beats: 1,
+					tempoBpm: 120,
+					jumps: [],
+					systemRect: new Rect(0, 0, 100, 100),
+				},
+				{
+					index: 1,
+					beats: 1,
+					tempoBpm: null,
+					jumps: [],
+					systemRect: new Rect(100, 0, 60, 100),
+					gapMs: 2000,
+				},
+			],
+			notes: [quarter(fakeNote('a'), 0, 0, 20)],
+		});
+		expect(seq.getStep(1)?.x).toBe(100);
+		expect(seq.getStep(1)?.glideToX).toBe(160);
+		expect(seq.positionAt(1500)?.x).toBeCloseTo(130);
+	});
+
 	it('assembly: a repeated measure replays its steps at later times, earliest-first lookup', () => {
 		const a = fakeNote('a');
 		const seq = build({
