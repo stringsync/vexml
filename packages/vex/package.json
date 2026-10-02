@@ -8,7 +8,7 @@
 		"vex": "./index.ts"
 	},
 	"dependencies": {
-		"@stringsync/mdom": "0.5.0",
+		"@stringsync/mdom": "0.5.1",
 		"@vexml/renderer": "workspace:*",
 		"webappwiz": "0.0.26",
 		"zod": "^4.6.5"
