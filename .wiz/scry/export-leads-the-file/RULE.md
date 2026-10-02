@@ -5,7 +5,7 @@ files: "**/*.ts"
 level: error
 effort: low
 recommended: true
-version: 0.0.26
+version: 0.0.29
 ---
 # Export leads the file
 

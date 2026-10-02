@@ -1,7 +1,7 @@
 ---
 name: arbor
-description: Use the @webappwiz/arbor CLI to land your work on trunk, or a base branch given as an argument, from an isolated git worktree without pull requests. Read this before making any code change in an arbor repository, since it decides where the work happens, and whenever you need to add, claim, merge, remove, list, show, locate, escalate, or defer a task.
-version: 0.0.26
+description: Use the @webappwiz/arbor CLI to land your work on trunk, or a base branch given as an argument, from an isolated git worktree without pull requests. Read this before making any code change in an arbor repository, since it decides where the work happens, and whenever you need to add, claim, merge, remove, list, show, locate, escalate, or defer a task, or add, pick up, or reorder a todo.
+version: 0.0.29
 ---
 
 # Using arbor
@@ -28,16 +28,16 @@ retry, another agent owns the tree.
    doing the opposite of what you were asked, escalate instead.
 2. **Start.** `arbor add <task>`, or `arbor claim <task>` to resume one.
    Read `arbor todo list` first and take up every open todo your work will
-   settle: `arbor add <task> --todo 3,5`. Pass `--base <branch>` only when
+   settle: `arbor add <task> --todo 3,5` (see Todos). Pass `--base <branch>` only when
    invoked with a branch (`/arbor feature/auth`) or the user names one; never
    guess a base from the checked-out branch.
 3. **Plan.** Fill in the `ARBOR.md` stub before touching code (see below).
 4. **Work.** Commit with git as you go; arbor never commits for you. Defer
-   anything outside your Goal with `arbor todo add "<text>"` and move on.
+   anything outside your Goal with `arbor todo add "<subject>"` and move on.
    Ask about any call the request does not settle as you make it, and keep
-   going (see Asking as you go). Between steps, run `arbor replies`: the
-   user may have answered one or followed up an answer (see Follow-ups).
-5. **Settle todos** (see Deferring work), **squash** to one commit (see
+   going (see Asking as you go). Before each step, bring `## Blocked` up to
+   date (see Keeping Blocked current).
+5. **Settle todos** (see Todos), **squash** to one commit (see
    Committing), then **`arbor merge`**. On failure, do what stderr says and
    merge again.
 
@@ -50,25 +50,59 @@ it), a broken status (`wait` once more, then ask), or exit 14 `timeout` (wait
 again or work alongside). A `stale` lease on a `working` task is normal: watch
 status, never the lease.
 
-## Deferring work
+## Todos
+
+Todos are work deferred for later, shared by every task. Each has an id that
+never changes, a one-line subject, optional detail, and a position: its
+priority, 1 at the top of the list.
+
+Write a subject the way you write a question's, short enough to scan:
+`arbor todo add "Upload retries forever on a 413"`. Put the why, the where,
+and anything else in the detail, written as markdown: the `arbor dev` page
+renders it. Use paragraphs, lists, `- [ ]` steps, inline code for paths and
+commands, and fenced blocks for snippets. Single quotes keep the shell off
+the backticks:
+
+```sh
+arbor todo add "Upload retries forever on a 413" 'The client retries on any 4xx in `src/upload.ts`.
+
+- [ ] stop retrying on 413
+- [ ] tell the user the file is too big'
+```
+
+- `arbor todo list` shows them in position order; `arbor todo show <id>`
+  prints one whole, detail and attached files included.
+- `arbor todo add "<subject>" ["<detail>"]` from your worktree records the
+  task it came up in. It goes to the bottom unless you pass `--position <n>`,
+  which only the user's priorities should decide. `--file a.png,b.log`
+  attaches files.
+- `arbor todo update <id> ["<detail>"] --subject "<subject>"` rewords one,
+  `--position <n>` moves it, `--file` and `--remove-file` change its files.
+- `arbor todo take <id>` makes it part of your task; `arbor todo release <id>`
+  puts it back; `arbor todo remove <id>` drops one that is done or moot.
+
+`[ARBOR TODO #N]` in a message means todo N, copied from the `arbor dev`
+page: run `arbor todo show N` and treat it as the request. When your task
+covers it, take it with `arbor add <task> --todo N` or `arbor todo take N`.
 
 When something comes up that is not your Goal (a bug next door, a follow-up,
-a reply that widens the task), `arbor todo add "<one line>"` from your
-worktree and keep going. Do not grow the task.
+a reply that widens the task), `arbor todo add` it from your worktree and keep
+going. Do not grow the task.
 
 A task can hold any number of todos, and merging removes every one it holds.
 When an open todo turns out to be part of your work, `arbor todo take <id>`
 from your worktree and add it to your Goal. Before merging, read
 `arbor todo list` again: take any your change also settles, and for one you
-hold but only partly did, `arbor todo update <id> "<what is left>"` then
+hold but only partly did, `arbor todo update <id>` with what is left, then
 `arbor todo release <id>`, so it stays on the list.
 
 After a merge, pick the next todo so the context this conversation built up
-gets used before it is gone. First, one you added in this conversation, from
-any of its tasks, oldest first. Failing that, read `arbor todo list` for the
-open todo closest to the work you just did: the same files, feature, or
-problem. Only when none is related, the one `merge` recommends. Name it in
-your report (see Reporting).
+gets used before it is gone: the open todo most relevant to the work you just
+did (the same files, feature, or problem; `arbor todo show` one to be sure),
+preferring one that came up in the task that just landed. Among equally
+relevant ones, and when none is related, take the lowest position. `merge`
+recommends the landed task's own todos first, then the lowest position. Name
+it in your report (see Reporting).
 
 ## Handing out part of your task
 
@@ -85,12 +119,26 @@ not clearly follow from what the user asked (a name, a default, behavior they
 never mentioned, one reading of an ambiguous ask), write a question under
 `## Blocked` in `ARBOR.md` right away, in the format under Escalation, saying
 what you chose and what else you could have done. Then move on to the rest of
-the request without waiting. The inbox shows every unchecked question, whether
-the task is escalated or not, so the user can answer while you work. When
-an answer overturns a choice, redo that part.
+the request without waiting. The user can answer in chat while you work, and
+sees every open question in your report once you escalate. When an answer
+overturns a choice, redo that part.
 
 `arbor merge` refuses while a question is unchecked: when everything else is
 done and some are still open, escalate and wait for them (see Escalation).
+
+## Keeping Blocked current
+
+`## Blocked` is what the user sees and answers, so it must say what you need
+right now. Before you continue with any work (after the user replies, after
+`arbor claim` returns, and between steps), bring it up to date:
+
+- write every answer the user gave after `→` on its question's line;
+- check off each question you have acted on;
+- check off any that no longer applies, with why after `→`
+  (`→ moot: the header was removed`), rather than deleting it;
+- add each question you now need, numbered after the highest.
+
+Only then go on.
 
 ## Escalation
 
@@ -101,39 +149,35 @@ complex enough that correctness needs a reader rather than a test.
 
 1. `arbor escalate <reason>`. When the only thing left is the user's
    approval, `arbor escalate --review "<what to look at>"` instead: it asks
-   `✅ Ready to merge?` for you, and the page shows Approve and Request
-   changes. Settle every other question first; it refuses while one is
-   unchecked.
+   `Ready to merge?` for you. Settle every other question first; it
+   refuses while one is unchecked.
 2. Leave something to look at, by **absolute path** (start from
    `arbor path <task>`): a screenshot for anything visual. Ask first if
    producing it is expensive.
 3. Write each question not already there under `## Blocked` in `ARBOR.md`,
    then report.
-4. Wait for answers. If your harness can run a command in the background and
-   wake you when it exits (Claude Code's `run_in_background` can), start
-   `arbor wait <task> --answered` that way; the user may answer from the inbox
-   or in chat, whichever comes first. If it cannot, do not run it: end your
-   turn, and run `arbor replies <task>` when you are back.
+4. End your turn and wait for the user to answer in chat. Do not run
+   `arbor wait` or poll `ARBOR.md` for answers: they only come in chat.
 
-Number what you did D1, D2, … and what you need Q1, Q2, …. A Q's line is its
-subject: short enough to scan in an inbox, led by one emoji for what it is
-about (🎨 ui, 🗄️ db, 🔐 auth, 🧪 tests), or ❓ when none fits (repeats are
-fine), and ending in the question.
+Number questions 1, 2, … in the order you ask them; numbers never change,
+and new ones continue from the highest. They are `ARBOR.md`'s, not the
+user's: reports number questions afresh (see Reporting). A question's
+line is its subject: short enough to scan in a list, and ending in the
+question.
 Everything else goes in lines indented under it, which render as markdown:
-detail, code blocks, and screenshots as `![what](/abs/path.png)`, which the
-inbox shows inline. Ask for what is wrong rather than a bare yes or no. When
+detail, code blocks, and screenshots as `![what](/abs/path.png)`. Ask for what is wrong rather than a bare yes or no. When
 the answer is one of a few, list `- (a) ...` lines last (pick one, or none);
 for "all that apply", `- [a] ...` lines. A reply names its picks spelled out
 (`a (Email), c (Push)`), may add words after a colon, or may answer in words
-alone. Numbers never change; new ones continue from the highest.
+alone.
 
 ````markdown
 ## Blocked
 
-- [x] Q1. 🧪 Do the live tests pass against staging? → yes
-- [ ] Q2. 🎨 Does the header wrap to two lines?
+- [x] 1. Do the live tests pass against staging? → yes
+- [ ] 2. Does the header wrap to two lines?
   ![header at 390px](/abs/path/shot.png)
-- [ ] Q3. 🔐 How should existing sessions move to the new tokens?
+- [ ] 3. How should existing sessions move to the new tokens?
   Sessions are keyed by the old cookie:
 
   ```ts
@@ -144,60 +188,81 @@ alone. Numbers never change; new ones continue from the highest.
   - (b) Migrate each session on its next request
 ````
 
-Replies arrive in chat or in the inbox. Read inbox replies only through
-`arbor wait <task> --answered` or `arbor replies <task>`: either claims them,
-writing each after `→` on its question's line, and a claimed reply can no
-longer change under you. Never read them any other way. Write a chat reply
-after `→` yourself, matching it by number (`q1`, `Q1:` and `1.` all mean Q1).
-A conversation can answer a question without naming it: whenever anything
-the user says settles an open question, write that answer after `→` and
-check it off, so it leaves the inbox instead of being asked again. Check an
-item off only when the answer is one you can act on, and
-write it after `→`; anything else stays open and leads your next report. A
-reply to a D item is an instruction. "Deferred to todo 7" and "Skip this"
-mean leave it out and carry on: check the item off. "Approved: merge it."
-answers a review: check it off and merge. `arbor merge` refuses with exit 16
-`blocked` while `## Blocked` has an unchecked item, and exit 15 `unread`
-while a reply waits unclaimed. `arbor claim` resumes an escalated task. `arbor retry` is only
-for `budget_exhausted`, and is the user's to run, before you claim.
+Answers arrive in chat; write each one into `ARBOR.md` after `→` yourself.
+The user answers a report with a markdown list matching its numbers: `2.` means the
+second question in your latest report, whatever number it has in `ARBOR.md`.
+Items left out stay open. When a reply does not fit your latest report, ask
+rather than guess. A conversation can answer a question without naming it:
+whenever anything the user says settles an open question, write that answer
+after `→` and check it off, so it is not asked again. Check an item off only when the answer is one you can act on;
+anything else stays open and leads your next report. A reply about something
+you did is an instruction. A reply to defer or skip a question means leave it
+out and carry on (for a defer, `arbor todo add` it first): check the item
+off. An approval answers a review: check it off and merge. `arbor merge` refuses with exit 16 `blocked` while
+`## Blocked` has an unchecked item. `arbor claim` resumes an escalated task.
+`arbor retry` is only for `budget_exhausted`, and is the user's to run,
+before you claim.
 
 ## Follow-ups
 
-The user can follow up any answer you already read, even one you checked
-off. `arbor replies` (and `arbor wait --answered`) writes a follow-up on a
-`→ ` line of its own under its question and unchecks the question. Treat it
-as an instruction from the user: act on it, then check the question off
-again. You never answer questions, yours or another agent's: say what you
-need in your report or under `## Blocked`.
+The user can follow up any answer in chat, even one you checked off. Write
+the follow-up on a `→ ` line of its own under its question
+and uncheck it. Treat it as an instruction from the user: act on it, then
+check the question off again. You never answer questions, yours or
+another agent's: say what you need in your report or under `## Blocked`.
 
 ## Reporting
 
-However a task ends, say so in one block; only a merge names a base:
+However a task ends, say so in one block: a `##` title, a blank line, and one
+plain sentence on what changed. The title is the emoji, the outcome, and the
+bare task name, then what matters most about the ending: the base for a
+merge, otherwise what it waits on or why it went, after a colon. That part
+leads with what it needs from the user (a review, a decision, access, a test
+only they can run), not the work done, which is the sentence's job. Keep the
+title to about eight words, lowercase after the colon, with no ending
+punctuation.
 
 ```markdown
-### ✅ Merged `<task>` onto `<base>`
+## ✅ Merged <task> onto <base>
 
-One sentence blending what the task set out to do with where it ended up.
+One sentence on what changed.
 
-Next: todo <id>, <its text>. Stale: todo <id> (remove?).
+Next: todo <id>, <its subject>. Stale: todo <id> (remove?).
 ```
 
 Leave out the `Next` line when no todo is open.
 
 ```markdown
-### ⚠️ Escalated `<task>`: <what it waits on, in a few words>
+## ⚠️ Escalated <task>: waiting on your review of the todo board
 
-Done:
-- D1. One line per change.
+One sentence on what changed.
 
-Needs you:
-- Q1. One subject line per item.
+1. Does dragging a card feel right on a phone?
+   Press and hold a card, then drag it.
+   ![dragging a card](/abs/path/drag.png)
+2. How should a stale todo be shown?
+   - (a) A muted card
+   - (b) A "stale" badge
+3. Ready to merge?
+   Drag a todo at http://localhost:4269
 ```
 
-```markdown
-### 🛑 Removed `<task>`
+An escalation lists every open question as a markdown list numbered from 1,
+the questions left open from earlier reports first. Chat is the only place
+the user reads them, so each item carries everything needed to answer it.
+The item's line is the question's subject. Indented under
+it goes whatever the answer depends on: the body cut to a line or two,
+choices exactly as in `ARBOR.md` (`- (a) ...` or `- [a] ...`, so a reply of
+`2. b` names one), and each screenshot or file by its absolute path. Inline a
+screenshot as `![what](/abs/path.png)` when your harness shows images in
+chat; otherwise link it as `[what](/abs/path.png)`. A review's lines say what
+to look at and where. Leave an item bare when its
+subject says it all.
 
-One sentence on what the task set out to do and why you removed it.
+```markdown
+## 🛑 Removed <task>: superseded by a fix on main
+
+One sentence on what the task set out to do.
 ```
 
 Anything else worth saying goes after the block, not instead of it.
