@@ -25,7 +25,7 @@
 		"!*-harness.ts"
 	],
 	"dependencies": {
-		"@stringsync/mdom": "0.5.1",
+		"@stringsync/mdom": "0.6.0",
 		"vexflow": "5.0.0",
 		"webappwiz": "0.0.29"
 	},

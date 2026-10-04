@@ -13,6 +13,10 @@ Read `packages/vexml/AGENTS.md` before hunting through the library: it maps each
 of notation (slur, volta, lyric, fret) to the files that decide it. Keep it current — a
 file added, moved, or renamed under `packages/vexml/` updates the map in the same commit.
 
+Use the arbor skill for every change unless told otherwise: do the work in an arbor task's
+worktree and land it with `arbor merge`. Inside a worktree, run `./bin/vex`, not bare `vex`,
+which checks the main tree instead.
+
 After making code changes:
 
 - `vex fix` typecheck, format, and lint the project.

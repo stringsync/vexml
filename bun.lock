@@ -14,7 +14,7 @@
     },
     "packages/integration": {
       "name": "@vexml/integration",
-      "version": "1.7.2",
+      "version": "1.7.3",
       "dependencies": {
         "@stringsync/vexml": "workspace:*",
         "@vexml/renderer": "workspace:*",
@@ -29,10 +29,10 @@
     },
     "packages/renderer": {
       "name": "@vexml/renderer",
-      "version": "1.7.2",
+      "version": "1.7.3",
       "dependencies": {
         "@coderline/alphatab": "^1.8.4",
-        "@stringsync/mdom": "0.5.1",
+        "@stringsync/mdom": "0.6.0",
         "@stringsync/vexml": "workspace:*",
         "opensheetmusicdisplay": "^2.1.1",
         "playwright": "^1.61.1",
@@ -41,12 +41,12 @@
     },
     "packages/site": {
       "name": "@vexml/site",
-      "version": "1.7.2",
+      "version": "1.7.3",
       "dependencies": {
         "@fontsource-variable/anybody": "^5.3.0",
         "@fontsource/ibm-plex-mono": "^5.3.0",
         "@fontsource/ibm-plex-sans": "^5.3.0",
-        "@stringsync/mdom": "0.5.1",
+        "@stringsync/mdom": "0.6.0",
         "@stringsync/vexml": "workspace:*",
         "@webappwiz/react": "0.0.29",
         "class-variance-authority": "^0.7.1",
@@ -71,12 +71,12 @@
     },
     "packages/vex": {
       "name": "@vexml/vex",
-      "version": "1.7.2",
+      "version": "1.7.3",
       "bin": {
         "vex": "./index.ts",
       },
       "dependencies": {
-        "@stringsync/mdom": "0.5.1",
+        "@stringsync/mdom": "0.6.0",
         "@vexml/renderer": "workspace:*",
         "webappwiz": "0.0.29",
         "zod": "^4.6.5",
@@ -84,9 +84,9 @@
     },
     "packages/vexml": {
       "name": "@stringsync/vexml",
-      "version": "1.7.2",
+      "version": "1.7.3",
       "dependencies": {
-        "@stringsync/mdom": "0.5.1",
+        "@stringsync/mdom": "0.6.0",
         "vexflow": "5.0.0",
         "webappwiz": "0.0.29",
       },
@@ -380,7 +380,7 @@
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 
-    "@stringsync/mdom": ["@stringsync/mdom@0.5.1", "", { "dependencies": { "jszip": "^3.10.1", "webappwiz": "0.0.29", "xml-js": "^1.6.11" } }, "sha512-lUx1byh6artpBVcVl9/34OFd8viJcr0Iv/zYfIL3VzfXAKXMgaoHJ2ciR+NFzv/+WlxZAGHebHeRMTMzDADqOA=="],
+    "@stringsync/mdom": ["@stringsync/mdom@0.6.0", "", { "dependencies": { "jszip": "^3.10.1", "webappwiz": "0.0.31", "xml-js": "^1.6.11" } }, "sha512-H5cxDbUx7ZKTTS1LAxK32gdpY3a6J8q/RBoFlfEsWcn18FJ8O2CxEqju7mqPBSliMjJ7f9ZV1J56DT6f4shgJA=="],
 
     "@stringsync/vexml": ["@stringsync/vexml@workspace:packages/vexml"],
 
@@ -1143,6 +1143,8 @@
     "@dotenvx/dotenvx/open": ["open@8.4.2", "", { "dependencies": { "define-lazy-prop": "^2.0.0", "is-docker": "^2.1.1", "is-wsl": "^2.2.0" } }, "sha512-7x81NCL719oNbsq/3mh+hVrAWmFuEYUqrq/Iw3kUzH8ReypT9QQ0BLoJS7/G9k6N81XjW4qHWtjWwe/9eLy1EQ=="],
 
     "@modelcontextprotocol/sdk/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
+
+    "@stringsync/mdom/webappwiz": ["webappwiz@0.0.31", "", { "dependencies": { "@standard-schema/spec": "^1.1.0" } }, "sha512-s+5uvlU9HOzSHMQTm8d9RxVAGQBq/ckNjDu7eP8OvXCo8LoExjqbtE3NIOi5wMK7q7EWp7qs9sPT4L6u63YXoA=="],
 
     "@tailwindcss/oxide-wasm32-wasi/@emnapi/core": ["@emnapi/core@1.11.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.2", "tslib": "^2.4.0" }, "bundled": true }, "sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ=="],
 
