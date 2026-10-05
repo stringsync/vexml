@@ -2674,9 +2674,9 @@ describe('render', () => {
 	// vary; every grace is a 16th at G5 or A5 (A5 on its own ledger line above the stave).
 	// - M25: a plain E5 half note. Then three 16th graces (G5, A5, A5) BEAMED into one
 	//   cluster snug against the second E5 half note, which they lead. Then that half note.
-	//   Then a G5/A5 pair, also beamed, drawn to the RIGHT of it: the measure ends there, so
-	//   they have nothing to lead and belong to the note before them. Before this they were
-	//   dropped entirely.
+	//   Then a G5/A5 pair, also beamed, at the END of that half note's time, just before the
+	//   barline: the measure ends there, so they have nothing to lead and close out the note
+	//   before them (where MuseScore and Soundslice draw them too).
 	// Matches MuseScore's engraving of the same file measure for measure (checked against
 	// `vex render --muse`), including the three-note cluster: MusicXML marks the first of those
 	// graces <grace steal-time-previous>, but an after-grace that still has a note in front of

@@ -28,10 +28,8 @@ const QUARTERS_PER_UNIT: Record<string, number> = {
 	'128th': 0.03125,
 };
 const BEAT_EPSILON = 1e-6;
-// How long an acciaccatura sounds, as MuseScore plays it: a fixed flick, whatever the tempo.
+// How long every grace note sounds: a fixed flick, whatever the tempo (MuseScore's acciaccatura).
 const GRACE_MS = 65;
-// The share of its anchor an appoggiatura takes, by the anchor's dot count.
-const APPOGGIATURA_SHARE = [1 / 2, 2 / 3, 4 / 7];
 
 type Span = { onset: number; end: number };
 
@@ -355,7 +353,7 @@ export class SequenceFactory {
 
 		// Graces take their time from a neighbor, so a chord can play shorter than written: `starts`
 		// delays a chord past the graces before it, `ends` cuts a chord short ahead of graces that
-		// play before the next beat. Both are keyed by chord lead. A run that makes time instead
+		// play before the next beat or close it out as after-graces. Both are keyed by chord lead. A run that makes time instead
 		// adds beats to its measure at its anchor's onset (`made`, per measure: onset -> beats,
 		// the longest when parts make time at one onset), and is placed after the shift below.
 		const graceSpans = new Map<MNote, Span>();
@@ -365,43 +363,77 @@ export class SequenceFactory {
 		const made = new Map<number, Map<number, number>>();
 		for (const part of parts) {
 			for (const [measureIndex, measure] of part.measures.entries()) {
+				const bpm = bpms[measureIndex] ?? DEFAULT_TEMPO_BPM;
 				const previousByVoice = new Map<string, MNote>();
+				// Graces not yet followed by a note in their voice; those left at the measure's end
+				// are after-graces of the note before them.
+				const pendingByVoice = new Map<string, MNote[]>();
 				for (const n of measure.notes) {
-					if (n.isGrace || n.isChordMember) {
+					if (n.isGrace) {
+						pendingByVoice.set(n.voice, [
+							...(pendingByVoice.get(n.voice) ?? []),
+							n,
+						]);
 						continue;
 					}
+					if (n.isChordMember) {
+						continue;
+					}
+					const graces = pendingByVoice.get(n.voice) ?? [];
+					pendingByVoice.delete(n.voice);
 					const previous = previousByVoice.get(n.voice) ?? null;
 					previousByVoice.set(n.voice, n);
 					const anchorSpan = span(n, measureIndex);
-					if (n.gracesBefore.length === 0 || !anchorSpan) {
+					if (graces.length === 0 || !anchorSpan) {
 						continue;
 					}
 					const previousSpan = previous ? span(previous, measureIndex) : null;
+					const makeTime = graces[0]?.graceMakeTime != null;
+					// Ahead of the beat, out of the previous note, only when asked and there is one.
+					const ahead =
+						!makeTime &&
+						previousSpan !== null &&
+						graces[0]?.graceStealTimePrevious != null;
+					const victim = ahead && previousSpan ? previousSpan : anchorSpan;
 					const run = this.placeGraces(
-						n,
-						anchorSpan,
-						previousSpan,
-						bpms[measureIndex] ?? DEFAULT_TEMPO_BPM,
+						graces,
+						victim,
+						ahead ? 'end' : 'start',
+						bpm,
+						makeTime,
 					);
-					if (run.made > 0) {
+					for (const [grace, graceSpan] of run) {
+						graceSpans.set(grace, graceSpan);
+					}
+					const runStart = run.get(graces[0] as MNote)?.onset ?? victim.onset;
+					const runEnd = run.get(graces.at(-1) as MNote)?.end ?? victim.onset;
+					if (makeTime) {
 						const inMeasure =
 							made.get(measureIndex) ?? new Map<number, number>();
 						const at = anchorSpan.onset;
-						inMeasure.set(at, Math.max(inMeasure.get(at) ?? 0, run.made));
+						inMeasure.set(at, Math.max(inMeasure.get(at) ?? 0, runEnd - at));
 						made.set(measureIndex, inMeasure);
-						for (const [grace, graceSpan] of run.graces) {
+						for (const [grace, graceSpan] of run) {
 							madeGraces.set(grace, { at, offset: graceSpan.onset - at });
 						}
+					} else if (ahead && previous) {
+						ends.set(previous, runStart);
+					} else {
+						starts.set(n, runEnd);
 					}
-					for (const [grace, graceSpan] of run.graces) {
+				}
+				// After-graces close out the note they follow, stealing the end of its time.
+				for (const [voice, graces] of pendingByVoice) {
+					const host = previousByVoice.get(voice);
+					const hostSpan = host ? span(host, measureIndex) : null;
+					if (!host || !hostSpan) {
+						continue;
+					}
+					const run = this.placeGraces(graces, hostSpan, 'end', bpm, false);
+					for (const [grace, graceSpan] of run) {
 						graceSpans.set(grace, graceSpan);
 					}
-					if (run.anchorStart !== null) {
-						starts.set(n, run.anchorStart);
-					}
-					if (previous && run.previousEnd !== null) {
-						ends.set(previous, run.previousEnd);
-					}
+					ends.set(host, run.get(graces[0] as MNote)?.onset ?? hostSpan.end);
 				}
 			}
 		}
@@ -494,81 +526,33 @@ export class SequenceFactory {
 	}
 
 	/*
-	 * Where the graces before `anchor` play, as MuseScore plays them: on the beat, taking their time
-	 * from the start of the anchor. An acciaccatura (slashed) is a flick of GRACE_MS, never more than
-	 * half the anchor; an appoggiatura leans on the anchor for half of it (two-thirds of a dotted
-	 * one, four-sevenths of a double-dotted one). A run shares that time. MusicXML can say
-	 * otherwise per grace: steal-time-following takes that percent of the anchor, and
-	 * steal-time-previous (read off the run's first grace) moves the run ahead of the beat, taking
-	 * that percent from the end of the previous note in the voice. With no previous note in the
-	 * measure, the run stays on the beat. A run whose first grace has make-time steals nothing: it
-	 * plays for its graces' make-time (a grace without one borrows the first's), on time `made` at
-	 * the anchor's onset, which the caller inserts for every part.
+	 * Where a run of graces plays: every grace is a fast flick of GRACE_MS, whatever its written
+	 * value or steal-time percent, so it reads as an ornament rather than a note. The run takes its
+	 * time from `victim`: from its `start` (on the beat, the usual case), or from its `end` (ahead
+	 * of the next beat: steal-time-previous, and after-graces closing out their note), squeezed to
+	 * at most half of it so the victim still sounds. A make-time run steals nothing: it starts at
+	 * the victim's start and the caller inserts its time for every part.
 	 */
 	private placeGraces(
-		anchor: MNote,
-		anchorSpan: Span,
-		previousSpan: Span | null,
+		graces: readonly MNote[],
+		victim: Span,
+		from: 'start' | 'end',
 		bpm: number,
-	): {
-		graces: Map<MNote, Span>;
-		anchorStart: number | null;
-		previousEnd: number | null;
-		made: number;
-	} {
-		const graces = anchor.gracesBefore;
-		const makeTime = graces[0]?.graceMakeTime;
-		if (makeTime != null) {
-			const placed = new Map<MNote, Span>();
-			let at = anchorSpan.onset;
-			for (const grace of graces) {
-				const beats = Math.max(0, grace.graceMakeTime ?? makeTime);
-				placed.set(grace, { onset: at, end: at + beats });
-				at += beats;
-			}
-			return {
-				graces: placed,
-				anchorStart: null,
-				previousEnd: null,
-				made: at - anchorSpan.onset,
-			};
-		}
-		const ahead =
-			previousSpan !== null && graces[0]?.graceStealTimePrevious != null;
-		const victim = ahead ? previousSpan : anchorSpan;
-		const victimBeats = victim.end - victim.onset;
-		const anchorBeats = anchorSpan.end - anchorSpan.onset;
-		const lean = APPOGGIATURA_SHARE[anchor.dots] ?? 0.5;
-		const lengths = graces.map((grace) => {
-			const percent = ahead
-				? grace.graceStealTimePrevious
-				: grace.graceStealTimeFollowing;
-			if (percent != null) {
-				return (Math.min(100, Math.max(0, percent)) / 100) * victimBeats;
-			}
-			if (grace.graceSlash) {
-				return (
-					Math.min((GRACE_MS * bpm) / 60000, anchorBeats / 2) / graces.length
-				);
-			}
-			return (anchorBeats * lean) / graces.length;
-		});
-		const total = lengths.reduce((sum, beats) => sum + beats, 0);
-		const scale = total > victimBeats ? victimBeats / total : 1;
-		const start = ahead ? victim.end - total * scale : anchorSpan.onset;
+		makeTime: boolean,
+	): Map<MNote, Span> {
+		const flick = (GRACE_MS * bpm) / 60000;
+		const room = (victim.end - victim.onset) / 2;
+		const beats = makeTime
+			? flick
+			: Math.min(flick, room / Math.max(1, graces.length));
+		let at =
+			from === 'start' ? victim.onset : victim.end - beats * graces.length;
 		const placed = new Map<MNote, Span>();
-		let at = start;
-		for (const [i, grace] of graces.entries()) {
-			const beats = (lengths[i] ?? 0) * scale;
+		for (const grace of graces) {
 			placed.set(grace, { onset: at, end: at + beats });
 			at += beats;
 		}
-		return {
-			graces: placed,
-			anchorStart: ahead ? null : at,
-			previousEnd: ahead ? start : null,
-			made: 0,
-		};
+		return placed;
 	}
 
 	/* Per measure index, the beat-axis warp swing puts on that measure — identity where none is

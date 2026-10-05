@@ -27,6 +27,7 @@ import type { CollisionResolver } from './collision-resolver';
 import type { ConnectorDrawer } from './connector-drawer';
 import {
 	GRACE_GROUP_SPACING_STAVE,
+	GRACE_SPACING,
 	LYRIC_NOTE_CLEARANCE,
 	LYRIC_Y_OFFSET,
 	TAB_CURVE_RISE,
@@ -249,6 +250,7 @@ export class SystemFormatter {
 			noteEndX - startX - Stave.defaultPadding - column.measureTrailingPad;
 		formatter.format(allVoices, justifyWidth, { context: this.context });
 		this.closeGraceGaps(allVoices);
+		this.pushAfterGraces(allVoices, noteEndX);
 
 		let bottom = 0;
 		// Track how high content rises above the staves from each note's noteheads and its
@@ -553,6 +555,44 @@ export class SystemFormatter {
 					leading.getSpacingFromNextModifier() +
 						note.checkTickContext().getMetrics().modRightPx,
 				);
+			}
+		}
+	}
+
+	/*
+	 * Slide each after-grace cluster right until it ends just short of whatever follows its note
+	 * (the next tickable, or `areaEndX`, the stave's note end, for the measure's last note), where
+	 * an engraver puts it: after-graces close out their note's time, so they sit at
+	 * its end rather than against its head. vexflow places a RIGHT group at the note's x plus its
+	 * spacing once per grace, so the spacing is what moves it. Never pulls a cluster left.
+	 */
+	private pushAfterGraces(voices: Voice[], areaEndX: number): void {
+		for (const voice of voices) {
+			const tickables = voice.getTickables();
+			for (const [i, note] of tickables.entries()) {
+				for (const group of note.getModifiers()) {
+					if (
+						!(group instanceof GraceNoteGroup) ||
+						group.getPosition() !== Modifier.Position.RIGHT
+					) {
+						continue;
+					}
+					const count = group.getGraceNotes().length;
+					const next = tickables[i + 1];
+					const endX = next ? next.getAbsoluteX() : areaEndX;
+					// vexflow's own offset past the note before the per-grace spacing.
+					const lead = 10;
+					const spacing =
+						(endX -
+							GRACE_SPACING -
+							group.getWidth() -
+							lead -
+							note.getAbsoluteX()) /
+						count;
+					if (count > 0 && spacing > group.getSpacingFromNextModifier()) {
+						group.setSpacingFromNextModifier(spacing);
+					}
+				}
 			}
 		}
 	}

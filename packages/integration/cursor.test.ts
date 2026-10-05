@@ -205,16 +205,14 @@ describe('cursor', () => {
 	});
 
 	// A grace note plays in its own step, so the playhead lights it as it passes over the grace
-	// rather than as the anchor arrives. Graces play on the beat, timed as MuseScore plays them, at
-	// the default 120 BPM. grace_notes M1 is four C5 quarters, each after a grace: an appoggiatura
-	// (unslashed 16th D5) takes half the quarter, an acciaccatura (slashed) a 65 ms flick (0.13
-	// beats), a pair of unslashed 16ths (E5, D5) share half the quarter, and an unslashed 8th D5
-	// takes half too: its written value plays no part. M11 overrides the timing: a
-	// steal-time-following="25" grace takes a quarter of its C5, and a steal-time-previous="50"
-	// grace plays ahead of the beat in the back half of the C5 before it. M12's make-time="1" grace
-	// adds an eighth to the bar instead: everything from its beat on waits for it (V1's C5 and rest,
-	// V2's second E4), and V2's first E4 holds through it. Every bar sits left of the next one's.
-	it.concurrent('a grace note plays in its own step, timed as MuseScore plays it', async () => {
+	// rather than as the anchor arrives. Every grace is a 65 ms flick (0.13 beats at the default
+	// 120 BPM), whatever its written value, slash or steal-time percent, never more than half its
+	// note. grace_notes M1 is four C5 quarters, each after one or two graces on the beat. M11's
+	// steal-time-following grace is no longer than any other, and its steal-time-previous grace
+	// plays ahead of the beat at the end of the C5 before it. M12's make-time grace adds its flick
+	// to the bar instead: everything from its beat on waits for it (V1's C5 and rest, V2's second
+	// E4), and V2's first E4 holds through it. Every bar sits left of the next one's.
+	it.concurrent('a grace note plays in its own step as a fast flick', async () => {
 		const { result } = await testing.eval(
 			'grace_notes.musicxml',
 			{},
@@ -237,32 +235,64 @@ describe('cursor', () => {
 			steps.map(({ beat, active }) => ({ beat, active }));
 		expect(timing(result.m1)).toEqual([
 			{ beat: 0, active: ['D/5'] },
-			{ beat: 0.5, active: ['C/5'] },
+			{ beat: 0.13, active: ['C/5'] },
 			{ beat: 1, active: ['D/5'] },
 			{ beat: 1.13, active: ['C/5'] },
 			{ beat: 2, active: ['E/5'] },
-			{ beat: 2.25, active: ['D/5'] },
-			{ beat: 2.5, active: ['C/5'] },
+			{ beat: 2.13, active: ['D/5'] },
+			{ beat: 2.26, active: ['C/5'] },
 			{ beat: 3, active: ['D/5'] },
-			{ beat: 3.5, active: ['C/5'] },
+			{ beat: 3.13, active: ['C/5'] },
 		]);
 		expect(timing(result.m11)).toEqual([
 			{ beat: 0, active: ['D/5'] },
-			{ beat: 0.25, active: ['C/5'] },
-			{ beat: 0.5, active: ['D/5'] },
+			{ beat: 0.13, active: ['C/5'] },
+			{ beat: 0.87, active: ['D/5'] },
 			{ beat: 1, active: ['C/5'] },
 			{ beat: 2, active: [null] },
 		]);
 		expect(timing(result.m12)).toEqual([
 			{ beat: 0, active: ['C/5', 'E/4'] },
 			{ beat: 1, active: ['D/5', 'E/4'] },
-			{ beat: 1.5, active: ['C/5', 'E/4'] },
-			{ beat: 2.5, active: ['E/4', null] },
+			{ beat: 1.13, active: ['C/5', 'E/4'] },
+			{ beat: 2.13, active: ['E/4', null] },
 		]);
 		for (const steps of [result.m1, result.m11, result.m12]) {
 			const xs = steps.map((step) => step.x);
 			expect(xs).toEqual([...xs].sort((a, b) => a - b));
 		}
+	});
+
+	// After-graces close out the note they follow: grace_after M25's trailing G5/A5 pair has no
+	// note left to lead, so it steals the last two flicks (0.13 beats each) of the second E5 half,
+	// sounding just before the barline where it is drawn. The G5/A5/A5 cluster before that E5
+	// carries steal-time-previous, so it plays ahead of the beat, out of the first E5's end.
+	it.concurrent('after-graces sound at the end of the note they follow', async () => {
+		const { result } = await testing.eval(
+			'grace_after.musicxml',
+			{},
+			({ score }) =>
+				score
+					.getSequence()
+					.getSteps()
+					.map((step) => ({
+						beat: Math.round(step.startBeat * 1000) / 1000,
+						x: step.x,
+						active: step.active.map((n) => n.getPitch()),
+					})),
+		);
+
+		expect(result.map(({ beat, active }) => ({ beat, active }))).toEqual([
+			{ beat: 0, active: ['E/5'] },
+			{ beat: 1.61, active: ['G/5'] },
+			{ beat: 1.74, active: ['A/5'] },
+			{ beat: 1.87, active: ['A/5'] },
+			{ beat: 2, active: ['E/5'] },
+			{ beat: 3.74, active: ['G/5'] },
+			{ beat: 3.87, active: ['A/5'] },
+		]);
+		const xs = result.map((step) => step.x);
+		expect(xs).toEqual([...xs].sort((a, b) => a - b));
 	});
 
 	// A tie must not re-attack the note: the tied-to onset sustains the sounding pitch rather than
