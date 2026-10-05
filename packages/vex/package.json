@@ -10,7 +10,7 @@
 	"dependencies": {
 		"@stringsync/mdom": "0.6.0",
 		"@vexml/renderer": "workspace:*",
-		"webappwiz": "0.0.29",
+		"webappwiz": "0.0.36",
 		"zod": "^4.6.5"
 	}
 }

@@ -1,0 +1,2 @@
+// increment the counter
+counter++;

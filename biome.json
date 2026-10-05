@@ -11,6 +11,7 @@
 			"!dist",
 			"!**/*.musicxml",
 			"!.agents",
+			"!.wiz",
 			"!skills-lock.json"
 		]
 	},

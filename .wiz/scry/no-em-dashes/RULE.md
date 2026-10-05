@@ -1,14 +1,6 @@
 ---
-name: no-em-dashes
-description: No em dashes, and no en dashes between words, in code, comments or prose.
-files: "**/*.{ts,md}"
-level: error
-effort: low
-recommended: true
-version: 0.0.29
+version: 0.0.36
 ---
-<!-- scry-ignore-file no-em-dashes: the Bad examples have to show one -->
-
 # No em dashes
 
 Em dashes are the surest tell that a machine wrote the text, and a reader who
@@ -23,43 +15,5 @@ better for it.
 This covers the en dash between words too. Between numbers, an en dash is a
 range and stays.
 
-## Good
-
-```ts
-// stderr, not stdout: the report has to stay parseable
-this.log.error(message);
-```
-
-```ts
-/** Parses a raw CLI string into a typed value. Throws on bad input. */
-export function parse(raw: string): Value {
-	return table.get(raw) ?? fail(raw);
-}
-```
-
-A range keeps its en dash:
-
-```ts
-const RETRY_WINDOW = "5–10 seconds";
-```
-
-## Bad
-
-```ts
-// stderr — the report has to stay parseable
-this.log.error(message);
-```
-
-```ts
-/** Parses a raw CLI string — throws on bad input — into a typed value. */
-export function parse(raw: string): Value {
-	return table.get(raw) ?? fail(raw);
-}
-```
-
-Between words, an en dash is the same mistake:
-
-```ts
-// the report – parseable or not – is what matters
-this.log.error(message);
-```
+Its cases are in `evals/`: each `.good.` file follows the rule, and each
+`.bad.` file breaks it.

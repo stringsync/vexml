@@ -1,7 +1,7 @@
 ---
 name: webappwiz
-description: "Check whether the webappwiz package already covers a piece of infrastructure before writing it by hand or adding a dependency for it. Read this before writing any of: time, clocks, durations or timers; logging; id generation; CLI argument parsing; background tasks or queues; web workers; markdown parsing; typed event emitters; 2D geometry or spatial indexes; filesystem, env or process access; AbortSignal plumbing; disposable resources; browser scroll, animation frames or visibility. Also use when asked to update or upgrade webappwiz in a project, and whenever the user says webappwiz."
-version: 0.0.29
+description: "Check whether the webappwiz package already covers a piece of infrastructure before writing it by hand or adding a dependency for it. Read this before writing any of: time, clocks, durations or timers; logging; id generation; CLI argument parsing; background tasks or queues; web workers; markdown parsing; typed event emitters; 2D geometry or spatial indexes; filesystem, env or process access; API keys, tokens, secrets or credentials; AbortSignal plumbing; disposable resources; browser scroll, animation frames or visibility. Also use when asked to update or upgrade webappwiz in a project, and whenever the user says webappwiz."
+version: 0.0.36
 ---
 
 # Using webappwiz
@@ -51,6 +51,105 @@ style guide and a review, and neither of them is here.
 One line naming the subpath you read and why it is not the one, then write it
 here. A wrong module taken up is worse than one written twice.
 
+## Credentials
+
+An API key, token or other secret a project's code needs comes from
+`webappwiz/creds`. Code reads it through `Credentials`, over a list of
+sources it chooses for each place the app runs; the first source with a
+value wins. Never put a secret in source, a config file, a test, or a
+command line, never write a `.env` file yourself, and never ask for one in
+chat.
+
+### Which source, where
+
+From most to least locked down:
+
+1. **The system's secret store**, `SystemSecretStore`: the Keychain,
+   Credential Manager, or a Linux secret service. Encrypted at rest, held
+   apart from files and the environment, so no file read, `env` dump, child
+   process, or agent sees a value. Use it on a person's machine, and only it.
+   - `SystemSecretStore.forProject()`, kept as `webappwiz:<project>`: keys
+     the app itself uses, like a Stripe test key. One project's keys are
+     never another's.
+   - `SystemSecretStore.device()`, kept as `webappwiz`: keys that belong to
+     the person and serve many projects, like the tokens scry runs on. Wider
+     reach, so only for keys that really are shared.
+2. **A hosted secrets manager** (1Password, Vault, AWS or GCP Secret
+   Manager), as a source of the app's own: any object with a `label` and an
+   async `get(name)`. Fetched at runtime and access-controlled. Use it where
+   the app is deployed, when the project has one.
+3. **The environment**, `Environment`: how CI, containers and hosting
+   platforms hand a deployed app its secrets. Every child process inherits
+   it, and it shows up in crash reports and debug dumps. Use it where the
+   app is deployed. On a person's machine it means exports in a shell
+   profile, which every program they run can read, so leave it out of the
+   development list.
+4. **A `.env` file**, `DotenvFile(path)`: plaintext on disk, one mistake
+   from being committed, and read by any tool or agent that opens it. Use it
+   only where a deploy target insists on one, never on a person's machine.
+   Under Bun, `.env` files are loaded into the environment already, so
+   `Environment` covers them there.
+
+How the app tells development from production, and which sources each
+lists, is the project's choice: ask the user when the project does not
+already say. The usual lists:
+
+```ts
+import {
+	Credentials,
+	Environment,
+	SystemSecretStore,
+} from "webappwiz/creds";
+
+const credentials =
+	process.env.APP_ENV === "development"
+		? new Credentials([
+				await SystemSecretStore.forProject(),
+				SystemSecretStore.device(),
+			])
+		: new Credentials([new Environment()]);
+const key = await credentials.require("STRIPE_SECRET_KEY");
+```
+
+A tool that reads only its environment, like Prisma, Vite or `wrangler`,
+never calls `Credentials`. In development, run it through
+`bunx @webappwiz/cli creds run -- <command>`, which hands it the stored
+keys for that run alone, usually from a `package.json` script; never reach
+for a `.env` file or an export to feed it.
+
+`Credentials` is a source itself, so a fallback pattern of the project's
+own is a list of lists: `new Credentials([vault, new
+Credentials([new Environment(), new DotenvFile(".env")])])` reads the
+vault, then the environment, then the file. `forProject()` finds the
+store's name itself, so never write a project name into code. Take the
+`Credentials` as a dependency, so a test hands in one over
+`FakeSecretStore` from `webappwiz/creds/testing`.
+
+### Adding one
+
+1. Name it in `.wiz/config.ts`, by its environment variable name, with what
+   it is for. `creds add` takes any name, but a named one shows as missing
+   until someone keeps it, so whoever clones the project knows it is needed:
+
+   ```ts
+   export default {
+   	credentials: { names: { STRIPE_SECRET_KEY: "Stripe, for checkout" } },
+   };
+   ```
+
+2. Run `bunx @webappwiz/cli creds list` to see which are missing. It
+   never prints a value. For each missing one, ask the user to run
+   `bunx @webappwiz/cli creds add <NAME>` themselves, with `--device` for a
+   key that is theirs rather than the project's: it asks for the value at a
+   prompt that shows nothing, and refuses when there is no terminal, so you
+   cannot and should not run it for them. `creds remove <NAME>` deletes
+   one.
+
+Nothing reads a value back out for you to see, and nothing should: do not
+print one, log one, or look one up with the system's own tools
+(`security`, `secret-tool`, `cmdkey`). Code that needs a value reads it
+itself.
+
 ## Updating
 
 `bunx @webappwiz/cli update` rewrites every webappwiz dependency under the
@@ -96,11 +195,11 @@ Check behavior at each input boundary:
   `z.coerce.number().parse(raw)` for numeric strings. Decode JSON strings
   before validating object or array schemas, handling malformed JSON too.
 - `webappwiz/cmd` still accepts Standard Schema. It passes strings to the
-  schema, so numeric args and options need `z.coerce.number()`. A bare flag
-  arrives as `"true"`. To preserve the old boolean behavior exactly, use
-  `z.string().transform((raw) => raw !== "false")`. `z.stringbool()` is
-  suitable when you want recognized boolean spellings instead.
-  `z.coerce.boolean()` converts `"false"` to true and is not a replacement.
+  schema, so numeric args and options need `z.coerce.number()`. Declare an
+  on/off switch as `.option("name", z.boolean(), { default: false })`: it is
+  false unless given, `--name=false` turns it off, and a bare `--name` never
+  takes the next argument as its value. `z.coerce.boolean()` converts
+  `"false"` to true and is not a replacement.
   Command validation remains synchronous and reports an ordinary `Error`
   with the first issue's dotted path and message.
 - Zod numbers reject infinity. Object schemas still strip extra keys, but

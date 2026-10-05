@@ -127,7 +127,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		this.disposer.use(this.loop);
 		this.disposer.adopt(score, (s) => s.dispose());
 		this.disposer.defer(() => this.stop());
-		this.disposer.defer(() => this.seekFrame?.cancel());
+		this.disposer.defer(() => this.seekFrame?.dispose());
 		this.disposer.defer(() => this.hold?.dispose());
 		this.disposer.defer(() => this.clearHighlight());
 
@@ -637,7 +637,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 
 	// Run the frame's pending seek now (the gesture is closing, or the frame arrived).
 	private flushSeek(): void {
-		this.seekFrame?.cancel();
+		this.seekFrame?.dispose();
 		this.seekFrame = null;
 		const seek = this.pendingSeek;
 		this.pendingSeek = null;

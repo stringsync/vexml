@@ -1,11 +1,5 @@
 ---
-name: one-class-per-file
-description: A file declares one top-level class.
-files: "**/*.ts"
-level: error
-effort: low
-recommended: true
-version: 0.0.29
+version: 0.0.36
 ---
 # One class per file
 
@@ -16,34 +10,5 @@ holding two answers to that search with neither.
 Class expressions do not count, and helpers alongside the one class share its
 file freely: the rule is about top-level declarations.
 
-## Good
-
-```ts
-export class Stamper {
-	constructor(private clock: Clock) {}
-}
-
-const pad = (n: number): string => String(n).padStart(2, "0");
-```
-
-A class expression is not a second declaration:
-
-```ts
-const Anonymous = class {};
-
-export class Registry {}
-```
-
-## Bad
-
-```ts
-export class Stamper {
-	constructor(private clock: Clock) {}
-}
-
-export class Formatter {
-	format(stamp: string): string {
-		return stamp.trim();
-	}
-}
-```
+Its cases are in `evals/`: each `.good.` file follows the rule, and each
+`.bad.` file breaks it.
