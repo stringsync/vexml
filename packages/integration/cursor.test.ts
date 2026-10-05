@@ -211,8 +211,9 @@ describe('cursor', () => {
 	// beats), a pair of unslashed 16ths (E5, D5) share half the quarter, and an unslashed 8th D5
 	// takes half too: its written value plays no part. M11 overrides the timing: a
 	// steal-time-following="25" grace takes a quarter of its C5, and a steal-time-previous="50"
-	// grace plays ahead of the beat in the back half of the C5 before it. Every bar sits left of
-	// the next one's.
+	// grace plays ahead of the beat in the back half of the C5 before it. M12's make-time="1" grace
+	// adds an eighth to the bar instead: everything from its beat on waits for it (V1's C5 and rest,
+	// V2's second E4), and V2's first E4 holds through it. Every bar sits left of the next one's.
 	it.concurrent('a grace note plays in its own step, timed as MuseScore plays it', async () => {
 		const { result } = await testing.eval(
 			'grace_notes.musicxml',
@@ -225,10 +226,10 @@ describe('cursor', () => {
 					return inMeasure.map((step) => ({
 						beat: Math.round((step.startBeat - start) * 1000) / 1000,
 						x: step.x,
-						active: step.active.map((n) => n.getPitch()),
+						active: step.active.map((n) => n.getPitch()).sort(),
 					}));
 				};
-				return { m1: measure(0), m11: measure(10) };
+				return { m1: measure(0), m11: measure(10), m12: measure(11) };
 			},
 		);
 
@@ -252,7 +253,13 @@ describe('cursor', () => {
 			{ beat: 1, active: ['C/5'] },
 			{ beat: 2, active: [null] },
 		]);
-		for (const steps of [result.m1, result.m11]) {
+		expect(timing(result.m12)).toEqual([
+			{ beat: 0, active: ['C/5', 'E/4'] },
+			{ beat: 1, active: ['D/5', 'E/4'] },
+			{ beat: 1.5, active: ['C/5', 'E/4'] },
+			{ beat: 2.5, active: ['E/4', null] },
+		]);
+		for (const steps of [result.m1, result.m11, result.m12]) {
 			const xs = steps.map((step) => step.x);
 			expect(xs).toEqual([...xs].sort((a, b) => a - b));
 		}

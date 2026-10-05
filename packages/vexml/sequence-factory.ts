@@ -307,21 +307,15 @@ export class SequenceFactory {
 		const swings = this.swingWarps(parts);
 		const swung = (index: number, beat: number): number =>
 			swings[index]?.at(beat) ?? beat;
-		const measures: MeasureInfo[] = [];
-		for (let i = 0; i < measureCount; i++) {
-			const m0 = parts[0]?.measures[i];
-			const gap = gaps.get(i);
-			// A gap's beats are nominal (1): createFromInput maps them to gapMs through the
-			// gap's own tempo segment, so its musical length never depends on the meter the
-			// empty measure inherits.
-			measures.push({
-				index: i,
-				beats: gap ? 1 : swung(i, this.measureBeats(parts, i)),
-				tempoBpm: gap || !m0 ? null : this.quarterBpm(m0),
-				jumps: jumps[i] ?? [],
-				systemRect: systemRectByIndex.get(i) ?? new Rect(0, 0, 0, 0),
-				...(gap ? { gapMs: gap.durationMs } : {}),
-			});
+		// The quarter BPM each measure's tempo mark sets (null carries the previous; a gap sets none),
+		// and the BPM in effect there in document order, to turn a grace's fixed time into beats.
+		const tempoBpms =
+			parts[0]?.measures.map((m0, i) =>
+				gaps.get(i) ? null : this.quarterBpm(m0),
+			) ?? [];
+		const bpms: number[] = [];
+		for (const tempoBpm of tempoBpms) {
+			bpms.push(tempoBpm ?? bpms.at(-1) ?? DEFAULT_TEMPO_BPM);
 		}
 
 		// Each note -> its chord's members, so a chord tie can re-resolve to the matching pitch. A
@@ -359,19 +353,16 @@ export class SequenceFactory {
 			return { onset: warp(measureBeat), end: warp(measureBeat + beats) };
 		};
 
-		// The quarter BPM in effect at each measure in document order, to turn a grace's fixed
-		// time into beats.
-		const bpms: number[] = [];
-		for (const measure of measures) {
-			bpms.push(measure.tempoBpm ?? bpms.at(-1) ?? DEFAULT_TEMPO_BPM);
-		}
-
 		// Graces take their time from a neighbor, so a chord can play shorter than written: `starts`
 		// delays a chord past the graces before it, `ends` cuts a chord short ahead of graces that
-		// play before the next beat. Both are keyed by chord lead.
+		// play before the next beat. Both are keyed by chord lead. A run that makes time instead
+		// adds beats to its measure at its anchor's onset (`made`, per measure: onset -> beats,
+		// the longest when parts make time at one onset), and is placed after the shift below.
 		const graceSpans = new Map<MNote, Span>();
+		const madeGraces = new Map<MNote, { at: number; offset: number }>();
 		const starts = new Map<MNote, number>();
 		const ends = new Map<MNote, number>();
+		const made = new Map<number, Map<number, number>>();
 		for (const part of parts) {
 			for (const [measureIndex, measure] of part.measures.entries()) {
 				const previousByVoice = new Map<string, MNote>();
@@ -392,6 +383,16 @@ export class SequenceFactory {
 						previousSpan,
 						bpms[measureIndex] ?? DEFAULT_TEMPO_BPM,
 					);
+					if (run.made > 0) {
+						const inMeasure =
+							made.get(measureIndex) ?? new Map<number, number>();
+						const at = anchorSpan.onset;
+						inMeasure.set(at, Math.max(inMeasure.get(at) ?? 0, run.made));
+						made.set(measureIndex, inMeasure);
+						for (const [grace, graceSpan] of run.graces) {
+							madeGraces.set(grace, { at, offset: graceSpan.onset - at });
+						}
+					}
 					for (const [grace, graceSpan] of run.graces) {
 						graceSpans.set(grace, graceSpan);
 					}
@@ -405,6 +406,45 @@ export class SequenceFactory {
 			}
 		}
 
+		// The beats made earlier in a measure than `beat`: strictly before it for an end (a note
+		// ending where time is made is released, not held through it), and at it too for an onset (a
+		// note starting there waits out the made time).
+		const madeBefore = (
+			measureIndex: number,
+			beat: number,
+			inclusive: boolean,
+		) => {
+			let beats = 0;
+			for (const [at, extra] of made.get(measureIndex) ?? []) {
+				if (
+					at < beat - BEAT_EPSILON ||
+					(inclusive && at <= beat + BEAT_EPSILON)
+				) {
+					beats += extra;
+				}
+			}
+			return beats;
+		};
+
+		const measures: MeasureInfo[] = [];
+		for (let i = 0; i < measureCount; i++) {
+			const gap = gaps.get(i);
+			// A gap's beats are nominal (1): createFromInput maps them to gapMs through the
+			// gap's own tempo segment, so its musical length never depends on the meter the
+			// empty measure inherits.
+			measures.push({
+				index: i,
+				beats: gap
+					? 1
+					: swung(i, this.measureBeats(parts, i)) +
+						madeBefore(i, Number.POSITIVE_INFINITY, false),
+				tempoBpm: tempoBpms[i] ?? null,
+				jumps: jumps[i] ?? [],
+				systemRect: systemRectByIndex.get(i) ?? new Rect(0, 0, 0, 0),
+				...(gap ? { gapMs: gap.durationMs } : {}),
+			});
+		}
+
 		const notes: SequenceNote[] = [];
 		for (const rn of geometry.notes) {
 			const note = notesByMnote.get(rn.mnote);
@@ -412,14 +452,28 @@ export class SequenceFactory {
 				continue;
 			}
 			let played: Span | null;
-			if (rn.mnote.isGrace) {
-				played = graceSpans.get(rn.mnote) ?? null;
+			const madeGrace = madeGraces.get(rn.mnote);
+			const graceSpan = graceSpans.get(rn.mnote);
+			if (madeGrace && graceSpan) {
+				const onset =
+					madeGrace.at +
+					madeBefore(rn.measureIndex, madeGrace.at, false) +
+					madeGrace.offset;
+				played = { onset, end: onset + graceSpan.end - graceSpan.onset };
+			} else if (rn.mnote.isGrace) {
+				played = graceSpan ?? null;
 			} else {
 				const written = span(rn.mnote, rn.measureIndex);
 				const lead = chordSiblings.get(rn.mnote)?.[0] ?? rn.mnote;
 				played = written && {
 					onset: Math.max(written.onset, starts.get(lead) ?? written.onset),
 					end: Math.min(written.end, ends.get(lead) ?? written.end),
+				};
+			}
+			if (played && !madeGrace) {
+				played = {
+					onset: played.onset + madeBefore(rn.measureIndex, played.onset, true),
+					end: played.end + madeBefore(rn.measureIndex, played.end, false),
 				};
 			}
 			// Graces stealing from both ends of one note can leave it no time at all.
@@ -447,8 +501,9 @@ export class SequenceFactory {
 	 * otherwise per grace: steal-time-following takes that percent of the anchor, and
 	 * steal-time-previous (read off the run's first grace) moves the run ahead of the beat, taking
 	 * that percent from the end of the previous note in the voice. With no previous note in the
-	 * measure, the run stays on the beat. make-time is not played: making time would hold up every
-	 * other part.
+	 * measure, the run stays on the beat. A run whose first grace has make-time steals nothing: it
+	 * plays for its graces' make-time (a grace without one borrows the first's), on time `made` at
+	 * the anchor's onset, which the caller inserts for every part.
 	 */
 	private placeGraces(
 		anchor: MNote,
@@ -459,8 +514,25 @@ export class SequenceFactory {
 		graces: Map<MNote, Span>;
 		anchorStart: number | null;
 		previousEnd: number | null;
+		made: number;
 	} {
 		const graces = anchor.gracesBefore;
+		const makeTime = graces[0]?.graceMakeTime;
+		if (makeTime != null) {
+			const placed = new Map<MNote, Span>();
+			let at = anchorSpan.onset;
+			for (const grace of graces) {
+				const beats = Math.max(0, grace.graceMakeTime ?? makeTime);
+				placed.set(grace, { onset: at, end: at + beats });
+				at += beats;
+			}
+			return {
+				graces: placed,
+				anchorStart: null,
+				previousEnd: null,
+				made: at - anchorSpan.onset,
+			};
+		}
 		const ahead =
 			previousSpan !== null && graces[0]?.graceStealTimePrevious != null;
 		const victim = ahead ? previousSpan : anchorSpan;
@@ -495,6 +567,7 @@ export class SequenceFactory {
 			graces: placed,
 			anchorStart: ahead ? null : at,
 			previousEnd: ahead ? start : null,
+			made: 0,
 		};
 	}
 

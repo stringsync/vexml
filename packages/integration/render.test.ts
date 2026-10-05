@@ -2601,6 +2601,8 @@ describe('render', () => {
 	//   slants up from the lower grace notehead to the main notehead.
 	// - M11: playback overrides that draw like plain graces: a 16th D5 grace before a C5 quarter,
 	//   twice, then a half rest.
+	// - M12: a grace that makes time: V1 a C5 quarter, a 16th D5 grace before a C5 quarter, then a
+	//   half rest; V2 (stems down) two E4 halves under it.
 	it.concurrent('renders grace_notes.png', async () => {
 		expect(await testing.render('grace_notes.musicxml')).toMatchScreenshot(
 			'grace_notes.png',
