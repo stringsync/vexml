@@ -42,8 +42,9 @@ export interface MeasureInfo {
 	gapMs?: number;
 }
 
-/* A rendered, time-bearing note (a notation notehead or rest — grace notes and tab ghosts are not
- * rendered as tickables, so they never appear here). `note` is the element identity used in active
+/* A rendered, time-bearing note (a notation notehead or rest). A grace note appears here with the
+ * slot it plays in, taken from a neighbor that plays shorter for it (see
+ * SequenceFactory.placeGraces); tab ghosts never do. `note` is the element identity used in active
  * sets; `tiedFrom` is the note this one continues from across a tie, so a tied continuation reads as
  * a sustain rather than a re-attack. */
 export interface SequenceNote {

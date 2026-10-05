@@ -172,9 +172,9 @@ describe('cursor', () => {
 		expect(image).toMatchScreenshot('cursor_chord_diagram.png');
 	});
 
-	// Grace notes aren't tickables, so they never enter the timeline, but they must still be reachable
-	// as Note targets (with real engraved geometry) so the player can sound and light them. graceNoteStats
-	// walks the cursor over every onset and aggregates the grace notes attached to each started note.
+	// Grace notes start on cursor steps of their own, as Note targets with real engraved geometry so
+	// the player can sound and light them. graceNoteStats walks the cursor over every onset and
+	// aggregates the grace notes each step starts.
 	it.concurrent('grace notes resolve to targets with real geometry off their host onsets', async () => {
 		const { result: graces } = await testing.eval(
 			'grace_notes.musicxml',
@@ -202,6 +202,60 @@ describe('cursor', () => {
 		expect(graces.missingFret).toBe(0);
 		expect(graces.minW).toBeGreaterThan(0);
 		expect(graces.minX).toBeGreaterThan(10);
+	});
+
+	// A grace note plays in its own step, so the playhead lights it as it passes over the grace
+	// rather than as the anchor arrives. Graces play on the beat, timed as MuseScore plays them, at
+	// the default 120 BPM. grace_notes M1 is four C5 quarters, each after a grace: an appoggiatura
+	// (unslashed 16th D5) takes half the quarter, an acciaccatura (slashed) a 65 ms flick (0.13
+	// beats), a pair of unslashed 16ths (E5, D5) share half the quarter, and an unslashed 8th D5
+	// takes half too: its written value plays no part. M11 overrides the timing: a
+	// steal-time-following="25" grace takes a quarter of its C5, and a steal-time-previous="50"
+	// grace plays ahead of the beat in the back half of the C5 before it. Every bar sits left of
+	// the next one's.
+	it.concurrent('a grace note plays in its own step, timed as MuseScore plays it', async () => {
+		const { result } = await testing.eval(
+			'grace_notes.musicxml',
+			{},
+			({ score }) => {
+				const steps = score.getSequence().getSteps();
+				const measure = (index: number) => {
+					const inMeasure = steps.filter((step) => step.measureIndex === index);
+					const start = inMeasure[0]?.startBeat ?? 0;
+					return inMeasure.map((step) => ({
+						beat: Math.round((step.startBeat - start) * 1000) / 1000,
+						x: step.x,
+						active: step.active.map((n) => n.getPitch()),
+					}));
+				};
+				return { m1: measure(0), m11: measure(10) };
+			},
+		);
+
+		const timing = (steps: typeof result.m1) =>
+			steps.map(({ beat, active }) => ({ beat, active }));
+		expect(timing(result.m1)).toEqual([
+			{ beat: 0, active: ['D/5'] },
+			{ beat: 0.5, active: ['C/5'] },
+			{ beat: 1, active: ['D/5'] },
+			{ beat: 1.13, active: ['C/5'] },
+			{ beat: 2, active: ['E/5'] },
+			{ beat: 2.25, active: ['D/5'] },
+			{ beat: 2.5, active: ['C/5'] },
+			{ beat: 3, active: ['D/5'] },
+			{ beat: 3.5, active: ['C/5'] },
+		]);
+		expect(timing(result.m11)).toEqual([
+			{ beat: 0, active: ['D/5'] },
+			{ beat: 0.25, active: ['C/5'] },
+			{ beat: 0.5, active: ['D/5'] },
+			{ beat: 1, active: ['C/5'] },
+			{ beat: 2, active: [null] },
+		]);
+		for (const steps of [result.m1, result.m11]) {
+			const xs = steps.map((step) => step.x);
+			expect(xs).toEqual([...xs].sort((a, b) => a - b));
+		}
 	});
 
 	// A tie must not re-attack the note: the tied-to onset sustains the sounding pitch rather than
@@ -381,7 +435,7 @@ describe('cursor', () => {
 // Runs in the page via toString(), so it must stay self-contained: no closing over test
 // scope, and a test's fn cannot call it (that would be a closure). Only pass it AS the fn.
 
-/** Walk the cursor over every onset and aggregate every grace note encountered. */
+/** Walk the cursor over every onset and aggregate every grace note a step starts. */
 function graceNoteStats({ score }: VexmlContext) {
 	const cursor = score.createCursor();
 	const found: Array<{
@@ -391,8 +445,8 @@ function graceNoteStats({ score }: VexmlContext) {
 		w: number;
 	}> = [];
 	cursor.events.on('change', (e) => {
-		for (const n of e.started) {
-			for (const g of n.getGraceNotes()) {
+		for (const g of e.started) {
+			if (g.isGrace()) {
 				found.push({
 					pitch: g.getPitch(),
 					hasFret: g.getTabPosition() !== null,

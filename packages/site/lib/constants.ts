@@ -7,9 +7,6 @@ export const RENDERING_KEY = 'vexml:rendering';
 // about 240 KB); a 1000-measure score is 1.4 MB and renders for minutes.
 export const LARGE_SCORE_CHARS = 512 * 1024;
 
-// How long each grace note sounds before the main note, in ms. Short enough to read as an ornament.
-export const GRACE_MS = 80;
-
 // The playhead bar drawn over the score: the brand pink, wide enough to read against a staff.
 export const CURSOR_COLOR = '#ff3d9e';
 export const CURSOR_WIDTH_PX = 2;

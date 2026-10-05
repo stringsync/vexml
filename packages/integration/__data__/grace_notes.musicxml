@@ -302,5 +302,35 @@
         <dot />
       </note>
     </measure>
+    <!-- M11: playback overrides that draw like plain graces — a 16th D5 grace with
+         steal-time-following="25" before a C5 quarter, then a 16th D5 grace with
+         steal-time-previous="50" before a second C5 quarter; a half rest fills the bar. -->
+    <measure number="11">
+      <note>
+        <grace steal-time-following="25" />
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <type>16th</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <grace steal-time-previous="50" />
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <type>16th</type>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <rest />
+        <duration>4</duration>
+        <type>half</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>

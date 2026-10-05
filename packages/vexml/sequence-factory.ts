@@ -28,6 +28,12 @@ const QUARTERS_PER_UNIT: Record<string, number> = {
 	'128th': 0.03125,
 };
 const BEAT_EPSILON = 1e-6;
+// How long an acciaccatura sounds, as MuseScore plays it: a fixed flick, whatever the tempo.
+const GRACE_MS = 65;
+// The share of its anchor an appoggiatura takes, by the anchor's dot count.
+const APPOGGIATURA_SHARE = [1 / 2, 2 / 3, 4 / 7];
+
+type Span = { onset: number; end: number };
 
 /*
  * Builds the playback timeline: bridges the parsed document (onsets, meter, tempo, repeats, ties)
@@ -336,32 +342,160 @@ export class SequenceFactory {
 			}
 		}
 
+		// A note's played span within its measure, warped by swing. Warp onset and end through the
+		// same function, then take the duration as the difference: a swung note's length falls out
+		// of where its neighbors land, so it can never drift out of step with them or with the
+		// measure's own length.
+		const span = (mnote: MNote, measureIndex: number): Span | null => {
+			const measureBeat = this.reader.measureBeatOf(mnote);
+			const beats = this.reader.beatsOf(mnote);
+			const note = notesByMnote.get(mnote);
+			if (!note || measureBeat === null || beats === null) {
+				return null;
+			}
+			const warp = note.isSwingExempt()
+				? (beat: number) => beat
+				: (beat: number) => swung(measureIndex, beat);
+			return { onset: warp(measureBeat), end: warp(measureBeat + beats) };
+		};
+
+		// The quarter BPM in effect at each measure in document order, to turn a grace's fixed
+		// time into beats.
+		const bpms: number[] = [];
+		for (const measure of measures) {
+			bpms.push(measure.tempoBpm ?? bpms.at(-1) ?? DEFAULT_TEMPO_BPM);
+		}
+
+		// Graces take their time from a neighbor, so a chord can play shorter than written: `starts`
+		// delays a chord past the graces before it, `ends` cuts a chord short ahead of graces that
+		// play before the next beat. Both are keyed by chord lead.
+		const graceSpans = new Map<MNote, Span>();
+		const starts = new Map<MNote, number>();
+		const ends = new Map<MNote, number>();
+		for (const part of parts) {
+			for (const [measureIndex, measure] of part.measures.entries()) {
+				const previousByVoice = new Map<string, MNote>();
+				for (const n of measure.notes) {
+					if (n.isGrace || n.isChordMember) {
+						continue;
+					}
+					const previous = previousByVoice.get(n.voice) ?? null;
+					previousByVoice.set(n.voice, n);
+					const anchorSpan = span(n, measureIndex);
+					if (n.gracesBefore.length === 0 || !anchorSpan) {
+						continue;
+					}
+					const previousSpan = previous ? span(previous, measureIndex) : null;
+					const run = this.placeGraces(
+						n,
+						anchorSpan,
+						previousSpan,
+						bpms[measureIndex] ?? DEFAULT_TEMPO_BPM,
+					);
+					for (const [grace, graceSpan] of run.graces) {
+						graceSpans.set(grace, graceSpan);
+					}
+					if (run.anchorStart !== null) {
+						starts.set(n, run.anchorStart);
+					}
+					if (previous && run.previousEnd !== null) {
+						ends.set(previous, run.previousEnd);
+					}
+				}
+			}
+		}
+
 		const notes: SequenceNote[] = [];
 		for (const rn of geometry.notes) {
 			const note = notesByMnote.get(rn.mnote);
-			const measureBeat = this.reader.measureBeatOf(rn.mnote);
-			const beats = this.reader.beatsOf(rn.mnote);
-			if (!note || measureBeat === null || beats === null) {
+			if (!note) {
 				continue;
 			}
-			// Warp onset and end through the same function, then take the duration as the
-			// difference — a swung note's length falls out of where its neighbors land, so it
-			// can never drift out of step with them or with the measure's own length.
-			const warp = note.isSwingExempt()
-				? (beat: number) => beat
-				: (beat: number) => swung(rn.measureIndex, beat);
-			const onset = warp(measureBeat);
+			let played: Span | null;
+			if (rn.mnote.isGrace) {
+				played = graceSpans.get(rn.mnote) ?? null;
+			} else {
+				const written = span(rn.mnote, rn.measureIndex);
+				const lead = chordSiblings.get(rn.mnote)?.[0] ?? rn.mnote;
+				played = written && {
+					onset: Math.max(written.onset, starts.get(lead) ?? written.onset),
+					end: Math.min(written.end, ends.get(lead) ?? written.end),
+				};
+			}
+			// Graces stealing from both ends of one note can leave it no time at all.
+			if (!played || played.end <= played.onset) {
+				continue;
+			}
 			notes.push({
 				note,
 				measureIndex: rn.measureIndex,
-				measureBeat: onset,
-				beats: warp(measureBeat + beats) - onset,
+				measureBeat: played.onset,
+				beats: played.end - played.onset,
 				x: rn.rect.x,
 				tiedFrom: this.tiedFromOf(rn.mnote, notesByMnote, chordSiblings),
 			});
 		}
 
 		return { measures, notes };
+	}
+
+	/*
+	 * Where the graces before `anchor` play, as MuseScore plays them: on the beat, taking their time
+	 * from the start of the anchor. An acciaccatura (slashed) is a flick of GRACE_MS, never more than
+	 * half the anchor; an appoggiatura leans on the anchor for half of it (two-thirds of a dotted
+	 * one, four-sevenths of a double-dotted one). A run shares that time. MusicXML can say
+	 * otherwise per grace: steal-time-following takes that percent of the anchor, and
+	 * steal-time-previous (read off the run's first grace) moves the run ahead of the beat, taking
+	 * that percent from the end of the previous note in the voice. With no previous note in the
+	 * measure, the run stays on the beat. make-time is not played: making time would hold up every
+	 * other part.
+	 */
+	private placeGraces(
+		anchor: MNote,
+		anchorSpan: Span,
+		previousSpan: Span | null,
+		bpm: number,
+	): {
+		graces: Map<MNote, Span>;
+		anchorStart: number | null;
+		previousEnd: number | null;
+	} {
+		const graces = anchor.gracesBefore;
+		const ahead =
+			previousSpan !== null && graces[0]?.graceStealTimePrevious != null;
+		const victim = ahead ? previousSpan : anchorSpan;
+		const victimBeats = victim.end - victim.onset;
+		const anchorBeats = anchorSpan.end - anchorSpan.onset;
+		const lean = APPOGGIATURA_SHARE[anchor.dots] ?? 0.5;
+		const lengths = graces.map((grace) => {
+			const percent = ahead
+				? grace.graceStealTimePrevious
+				: grace.graceStealTimeFollowing;
+			if (percent != null) {
+				return (Math.min(100, Math.max(0, percent)) / 100) * victimBeats;
+			}
+			if (grace.graceSlash) {
+				return (
+					Math.min((GRACE_MS * bpm) / 60000, anchorBeats / 2) / graces.length
+				);
+			}
+			return (anchorBeats * lean) / graces.length;
+		});
+		const total = lengths.reduce((sum, beats) => sum + beats, 0);
+		const scale = total > victimBeats ? victimBeats / total : 1;
+		const start = ahead ? victim.end - total * scale : anchorSpan.onset;
+		const placed = new Map<MNote, Span>();
+		let at = start;
+		for (const [i, grace] of graces.entries()) {
+			const beats = (lengths[i] ?? 0) * scale;
+			placed.set(grace, { onset: at, end: at + beats });
+			at += beats;
+		}
+		return {
+			graces: placed,
+			anchorStart: ahead ? null : at,
+			previousEnd: ahead ? start : null,
+		};
 	}
 
 	/* Per measure index, the beat-axis warp swing puts on that measure — identity where none is

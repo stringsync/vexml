@@ -2599,6 +2599,8 @@ describe('render', () => {
 	//   diagonal line slanting down from the grace notehead to the main notehead (no arrowhead, no label).
 	// - M10: the mirror of M9: an 8th A4 grace sliding UP to the C5 quarter, so the diagonal line
 	//   slants up from the lower grace notehead to the main notehead.
+	// - M11: playback overrides that draw like plain graces: a 16th D5 grace before a C5 quarter,
+	//   twice, then a half rest.
 	it.concurrent('renders grace_notes.png', async () => {
 		expect(await testing.render('grace_notes.musicxml')).toMatchScreenshot(
 			'grace_notes.png',

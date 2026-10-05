@@ -11,7 +11,7 @@ import type {
 } from '@stringsync/vexml';
 import { Note, TabPosition } from '@stringsync/vexml';
 import { AnimationLoop, type Frame, raf } from 'webappwiz/browser';
-import { Disposer, disposables, type Resource } from 'webappwiz/disposable';
+import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful, type Events } from 'webappwiz/events';
 import { Duration, SystemClock, SystemTimer } from 'webappwiz/time';
 import {
@@ -20,7 +20,6 @@ import {
 	CURSOR_WIDTH_PX,
 	DRAG_HOLD_MS,
 	DRAG_SLOP_PX,
-	GRACE_MS,
 	HALO_COLOR,
 	HOVER_COLOR,
 	KNOB_DIAMETER_PX,
@@ -689,53 +688,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		if (!instrument || !pitch || this.voices.has(n)) {
 			return;
 		}
-		const graces = n.getGraceNotes();
-		if (graces.length === 0) {
-			this.voices.set(n, instrument.play(pitch));
-			return;
-		}
-		// Grace notes steal no timeline time, so sound them as quick plucks staggered just before
-		// the main note, then attack the main note after the run. The returned voice cancels the
-		// pending plucks and a still-pending main attack, or releases the live one; stopAll is the
-		// backstop.
-		const flashes = new Disposer();
-		let offset = 0;
-		for (const g of graces) {
-			const gp = g.getPitch();
-			if (gp) {
-				const at = offset;
-				// Light the grace while it sounds, then clear it as the next one (or the main note)
-				// takes over.
-				flashes.use(
-					this.timer.setTimeout(() => {
-						instrument.pluck(gp, GRACE_MS);
-						g.color.on(ACTIVE_COLOR);
-					}, Duration.ms(at)),
-				);
-				flashes.use(
-					this.timer.setTimeout(
-						() => g.color.off(),
-						Duration.ms(at + GRACE_MS),
-					),
-				);
-				// Cancelling mid-flash skips the timer that would have cleared the color, so clear it
-				// here too.
-				flashes.defer(() => g.color.off());
-				offset += GRACE_MS;
-			}
-		}
-		let voice: Resource = disposables.noop();
-		const scheduled = this.timer.setTimeout(() => {
-			voice = instrument.play(pitch);
-		}, Duration.ms(offset));
-		this.voices.set(
-			n,
-			disposables.callback(() => {
-				flashes.dispose();
-				scheduled.dispose();
-				voice.dispose();
-			}),
-		);
+		this.voices.set(n, instrument.play(pitch));
 	}
 
 	// A fret marker stands in for its note, so a TabPosition target lights that note's halo rather

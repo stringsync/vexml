@@ -107,9 +107,9 @@ export class Note extends Element implements Highlightable, Playable {
 	}
 
 	/* The grace notes ornamenting this note, in play order: the run of grace notes immediately
-	 * preceding it in the measure (grace notes steal no timeline time, so they never surface as a
-	 * cursor onset on their own). Empty for most notes; a caller can sound them just before this
-	 * one. ponytail: a grace chord comes back as a fast run, not a simultaneity. */
+	 * preceding it in the measure. Each plays in its own cursor step, usually on this note's beat
+	 * (see SequenceFactory.placeGraces). Empty for most notes. ponytail: a grace chord comes back as a fast run, not a
+	 * simultaneity. */
 	getGraceNotes(): Note[] {
 		return this.deps.mnote.gracesBefore
 			.map((g) => this.deps.notes.get(g))
