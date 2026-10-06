@@ -82,7 +82,7 @@ export function render(
 		fit,
 		scrollContainer: resolved.scrollContainer,
 	});
-	const durations = new DurationTranslator();
+	const durations = new DurationTranslator(reader);
 	const barlines = new BarlineTranslator();
 	const signatures = new SignatureTranslator();
 	const staves = new StavePlan({

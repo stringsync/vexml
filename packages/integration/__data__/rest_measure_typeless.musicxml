@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1: a <rest measure="yes"/> with no <type> filling a 3/4 bar. -->
+    <measure number="1">
+      <attributes>
+        <divisions>3</divisions>
+        <time>
+          <beats>3</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <rest measure="yes" />
+        <duration>9</duration>
+      </note>
+    </measure>
+    <!-- M2: a typeless rest filling a 6/8 bar. -->
+    <measure number="2">
+      <attributes>
+        <time>
+          <beats>6</beats>
+          <beat-type>8</beat-type>
+        </time>
+      </attributes>
+      <note>
+        <rest />
+        <duration>9</duration>
+      </note>
+    </measure>
+    <!-- M3: back in 3/4, a typeless one-beat rest before a half note stays a quarter rest. -->
+    <measure number="3">
+      <attributes>
+        <time>
+          <beats>3</beats>
+          <beat-type>4</beat-type>
+        </time>
+      </attributes>
+      <note>
+        <rest />
+        <duration>3</duration>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>6</duration>
+        <type>half</type>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

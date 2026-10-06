@@ -1,6 +1,7 @@
 import type { Note } from '@stringsync/mdom';
 import { GhostNote } from 'vexflow';
 import { EPSILON } from './constants';
+import type { ScoreReader } from './score-reader';
 
 // MusicXML <type> -> vexflow duration code; rests append 'r'.
 const DURATION_CODES: Record<string, string> = {
@@ -45,23 +46,33 @@ const GHOST_DURATIONS: [code: string, beats: number][] = [
  * this.
  */
 export class DurationTranslator {
+	constructor(private readonly reader: ScoreReader) {}
+
 	/**
 	 * A note's vexflow duration code. <type> is optional in MusicXML — Finale omits it on the
-	 * rests it inserts to hold a voice open — so fall back to the note's own <duration>, which
-	 * is what makes a typeless bar-filling rest a whole rest instead of a quarter. An
-	 * unrecognized type, or a duration matching no plain note value, falls back to 'q'.
-	 * ponytail: only exact powers of two match, so a bar-filling rest in 3/4 (3 beats) still
-	 * comes out a quarter. Map the measure's own beat count to 'w' if that case turns up.
+	 * rests it inserts to hold a voice open, and on a `<rest measure="yes"/>` — so fall back to
+	 * the note's own <duration>. A rest lasting its whole meter is a whole-measure rest, drawn
+	 * as a whole rest whatever the meter (3 beats in 3/4 is no plain note value); otherwise the
+	 * duration maps to the note value it equals. An unrecognized type, or a duration matching
+	 * no plain note value, falls back to 'q'.
 	 */
 	code(lead: Note): string {
 		if (lead.type) {
 			return DURATION_CODES[lead.type] ?? 'q';
 		}
-		const beats = lead.beats;
+		const beats = this.reader.beatsOf(lead);
 		if (beats === null) {
 			return 'q';
 		}
+		if (lead.isRest && this.fillsMeter(lead, beats)) {
+			return 'w';
+		}
 		return BEAT_CODES.find(([b]) => Math.abs(b - beats) < EPSILON)?.[1] ?? 'q';
+	}
+
+	private fillsMeter(lead: Note, beats: number): boolean {
+		const meter = this.reader.meterBeats(lead.time);
+		return meter > 0 && Math.abs(meter - beats) < EPSILON;
 	}
 
 	/**

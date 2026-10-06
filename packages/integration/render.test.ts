@@ -602,6 +602,17 @@ describe('render', () => {
 		expect(await testing.render('rest.musicxml')).toMatchScreenshot('rest.png');
 	});
 
+	// Treble stave: rests with no <type>, which leave the duration to say what to draw.
+	// - M1 (3/4): a <rest measure="yes"/>, three beats long — no plain note value, but it fills
+	//   the bar, so it draws as a whole rest centered in the measure.
+	// - M2 (6/8): the same for a bare <rest/> lasting the 6/8 bar.
+	// - M3 (3/4): a one-beat typeless rest before a half note draws as a quarter rest.
+	it.concurrent('renders rest_measure_typeless.png', async () => {
+		expect(
+			await testing.render('rest_measure_typeless.musicxml'),
+		).toMatchScreenshot('rest_measure_typeless.png');
+	});
+
 	// Treble stave, 5/4: five quarter rests, identical but for where they are displayed. The
 	// first carries a bare <rest/> and takes the default centered position; the other four add
 	// <display-step>/<display-octave>, which name a staff POSITION rather than a pitch, so the

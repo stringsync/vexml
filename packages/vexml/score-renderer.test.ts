@@ -84,13 +84,13 @@ describe('ScoreRenderer', () => {
 	// renderer is built per test rather than in beforeEach.
 	const renderer = (overrides?: Partial<Config>) => {
 		const config = { ...DEFAULT_CONFIG, ...overrides };
-		const durations = new DurationTranslator();
+		const reader = new ScoreReader(new DynamicGlyphs());
+		const durations = new DurationTranslator(reader);
 		const barlines = new BarlineTranslator();
 		const signatures = new SignatureTranslator();
 		const staves = new StavePlan({ showTabs: true, showNotation: true });
 		const tab = new TabVoiceTranslator(durations, 'none');
 		const chords = new ChordTranslator(durations, new NotationTranslator());
-		const reader = new ScoreReader(new DynamicGlyphs());
 		const translator = new VoiceTranslator(chords, durations, barlines, reader);
 		const gaps = new Gaps([], new GapInserter(reader));
 		return new ScoreRenderer(
