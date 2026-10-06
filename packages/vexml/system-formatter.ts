@@ -38,6 +38,7 @@ import type { LyricPlacer } from './lyric-placer';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
 import { isTechnicalMark } from './technical-mark';
+import { VoiceArticulationPlacer } from './voice-articulation-placer';
 import type { VoiceTranslator } from './voice-translator';
 
 // One stave's notes, built but not yet formatted or drawn. A part's staves are
@@ -94,6 +95,7 @@ export class SystemFormatter {
 	private readonly notationColor: string;
 	private readonly byLead: ReadonlyMap<Note, StaveNote>;
 	private readonly crossStaveNotes: ReadonlySet<StaveNote>;
+	private readonly articulationPlacer = new VoiceArticulationPlacer();
 
 	constructor(
 		private readonly context: RenderContext,
@@ -202,6 +204,7 @@ export class SystemFormatter {
 		// was sized to a global px-per-tick, so spacing stays consistent across measures.
 		const formatter = new Formatter({ softmaxFactor: this.softmaxFactor });
 		for (const p of pending) {
+			this.articulationPlacer.place(p.vexVoices);
 			formatter.joinVoices(p.vexVoices);
 		}
 		const allVoices = pending.flatMap((p) => p.vexVoices);

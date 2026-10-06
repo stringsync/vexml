@@ -2186,6 +2186,9 @@ describe('render', () => {
 	// - M2: four E4 quarters (stems up), articulations sit below the noteheads.
 	// - M3: a C5+G4 beamed eighth pair: the beam forces stems up (driven by the low
 	//   G4), so the C5's staccato sits below its notehead, not above the beam.
+	// - M4: two voices. V1 two accented F4 halves, stems up; V2 a D4 half, stem down, then
+	//   nothing (a <forward>). The first accent would fall below its F4 onto V2's D4, so it
+	//   moves above the stem tip; the second has no other voice under it and stays below.
 	it.concurrent('renders articulations.png', async () => {
 		expect(await testing.render('articulations.musicxml')).toMatchScreenshot(
 			'articulations.png',

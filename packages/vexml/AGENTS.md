@@ -66,7 +66,7 @@ Two rules cut across the draw stage:
 - **Voices on one stave, stem direction, voice-level layout**: `voice-builder.ts`
 - **Beams, tuplets, grace notes**: `voice-builder.ts` (grouping), `spanner-builder.ts` (construction), `system-formatter.ts` (grace spacing)
 - **Cross-staff notes, beams and tuplets; the ghosts holding a crossed note's time on the other staff**: `voice-builder.ts`, `voice-translator.ts` (`gapFill`), `score-reader.ts` (`staffVoices`)
-- **Articulations, fermatas, ornaments, trills, tremolos, arpeggios, harmonics**: `notation-translator.ts`, `stave-articulation.ts` (the lift clear of a beam), `notehead-articulation.ts` (the side opposite the stem), `non-arpeggio-bracket.ts` (the `<non-arpeggiate>` bracket)
+- **Articulations, fermatas, ornaments, trills, tremolos, arpeggios, harmonics**: `notation-translator.ts`, `stave-articulation.ts` (the lift clear of a beam), `notehead-articulation.ts` (the side opposite the stem), `voice-articulation-placer.ts` (past the stem when another voice crowds that side), `non-arpeggio-bracket.ts` (the `<non-arpeggiate>` bracket)
 - **Invisible notes (`print-object="no"`), note colors**: `chord-translator.ts`, `invisible-stave-note.ts` (the hidden StaveNote)
 - **Formatting a measure column: note x, note extents, alignment**: `system-formatter.ts`
 

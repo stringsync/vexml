@@ -21,8 +21,11 @@ export class NoteheadArticulation extends StaveArticulation {
 		this.codes = codes;
 	}
 
-	setSide(staveNote: StaveNote): this {
-		const above = staveNote.getStemDirection() !== Stem.UP;
+	/* `side` 'stem' puts the mark past the stem tip instead: the way out when another
+	 * voice's notehead sits where the mark would go (see VoiceArticulationPlacer). */
+	setSide(staveNote: StaveNote, side: 'notehead' | 'stem' = 'notehead'): this {
+		const stemUp = staveNote.getStemDirection() === Stem.UP;
+		const above = side === 'stem' ? stemUp : !stemUp;
 		this.setPosition(above ? Modifier.Position.ABOVE : Modifier.Position.BELOW);
 		// setPosition resets the glyph off vexflow's own table, which mirrors the codes it
 		// names. A raw SMuFL code has no mirror there, so swap in the other face by hand.
