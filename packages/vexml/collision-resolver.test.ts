@@ -56,6 +56,14 @@ describe('CollisionResolver', () => {
 		expect(placed.bottom).toBe(82); // 90 - 8, the diagram was ignored
 	});
 
+	it('lifts clear of an obstacle it only abuts when given a side margin', () => {
+		const d = detector();
+		d.add({ rect: new Rect(0, 85, 20, 15), kind: 'annotation' }); // ends at x=20
+		const natural = new Rect(20, 85, 10, 15); // starts at x=20: touching, not overlapping
+		expect(d.liftClear(natural, 8, {})).toBe(natural);
+		expect(d.liftClear(natural, 8, { xMargin: 4 }).bottom).toBe(77); // 85 - 8
+	});
+
 	it('lowers a rect to sit `gap` below the lowest obstacle in its column', () => {
 		const d = detector();
 		d.add({ rect: new Rect(5, 90, 10, 30), kind: 'note' }); // bottom at y=120

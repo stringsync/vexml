@@ -26,6 +26,7 @@ import {
 	HARMONY_PADDING,
 	HARMONY_Y_OFFSET,
 	NAVIGATION_FONT_SIZE,
+	NAVIGATION_TEXT_GAP,
 	PAGE_MARGIN_X,
 	REHEARSAL_FONT_SIZE,
 	REHEARSAL_NOTE_CLEARANCE,
@@ -86,6 +87,9 @@ type SideTextStyle = {
 	 * phrase reading rightward from its note; a dynamic centers on its notehead, and a
 	 * repeat-times label ends at the barline it labels. */
 	align?: 'left' | 'center' | 'right';
+	/** Side clearance the string keeps from other marks it would otherwise abut (see
+	 * ClearOptions.xMargin). 0 when absent. */
+	sideGap?: number;
 };
 
 /**
@@ -116,6 +120,9 @@ export type WordsTask = {
 	placement: Placement;
 	/* The direction falls on the bar's first beat (see wordsAnchor). Absent means it doesn't. */
 	opensBar?: boolean;
+	/* The direction falls at the bar's end, so it ends at the right barline. Absent means it
+	 * doesn't. */
+	closesBar?: boolean;
 };
 
 /** A queued dynamics marking: a words task plus whether the marking spells out of SMuFL's
@@ -282,14 +289,12 @@ export class DirectionPlacer {
 				w.text,
 				this.wordsAnchor(w),
 				w.placement,
-				w.anchor instanceof TabNote
-					? {
-							font: this.labelFont,
-							size: WORDS_FONT_SIZE,
-							italic: true,
-							align: 'center',
-						}
-					: { font: this.labelFont, size: WORDS_FONT_SIZE, italic: true },
+				{
+					font: this.labelFont,
+					size: WORDS_FONT_SIZE,
+					italic: true,
+					align: this.wordsAlign(w),
+				},
 			);
 			// A below-stave directive grows the crop downward instead (drawWords already
 			// reported the drop); only above-stave text lifts the measure box's top.
@@ -532,6 +537,7 @@ export class DirectionPlacer {
 						size: NAVIGATION_FONT_SIZE,
 						italic: false,
 						color: this.notationColor,
+						sideGap: NAVIGATION_TEXT_GAP,
 					},
 				);
 				this.reporter.growPageTop(placed.y);
@@ -830,9 +836,22 @@ export class DirectionPlacer {
 		task: WordsTask,
 	): StaveNote | TabNote | number | undefined {
 		const { anchor, stave } = task;
+		if (task.closesBar) {
+			return stave.getX() + stave.getWidth();
+		}
 		return task.opensBar && anchor?.isCenterAligned()
 			? stave.getNoteStartX()
 			: anchor;
+	}
+
+	/* Right-aligned on the barline for text closing the bar (the way a "D.S. al Coda" is
+	 * engraved, ending where the jump happens), centered over a tab fret (see placeColumn), and
+	 * left-anchored at a notehead otherwise. */
+	private wordsAlign(task: WordsTask): SideTextStyle['align'] {
+		if (task.closesBar) {
+			return 'right';
+		}
+		return task.anchor instanceof TabNote ? 'center' : 'left';
 	}
 
 	/*
@@ -889,10 +908,12 @@ export class DirectionPlacer {
 			? this.collisionResolver.dropClear(natural, WORDS_NOTE_CLEARANCE, {
 					kinds: TEXT_CLEAR_KINDS,
 					band,
+					xMargin: style.sideGap,
 				})
 			: this.collisionResolver.liftClear(natural, WORDS_NOTE_CLEARANCE, {
 					kinds: TEXT_CLEAR_KINDS,
 					band,
+					xMargin: style.sideGap,
 				});
 		// The stave's opening modifiers own everything left of the note start x — clef, key,
 		// time, and a begin-repeat's bars, which on a multi-stave system a connector carries

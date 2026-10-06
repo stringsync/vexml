@@ -452,11 +452,15 @@ export class LayoutPlanner {
 			if (!measure) {
 				continue;
 			}
-			for (const { text, staffNumber, lead } of this.reader.wordsOf(measure)) {
-				// A directive naming no note anchors at the measure's first one instead.
+			for (const { text, staffNumber, lead, closesBar } of this.reader.wordsOf(
+				measure,
+			)) {
+				// A directive naming no note anchors at the measure's first one instead, unless
+				// it closes the bar, which ends at the right barline instead.
 				if (
-					lead &&
-					(this.reader.measureBeatOf(lead) ?? 0) > firstOnset + EPSILON
+					closesBar ||
+					(lead &&
+						(this.reader.measureBeatOf(lead) ?? 0) > firstOnset + EPSILON)
 				) {
 					continue;
 				}

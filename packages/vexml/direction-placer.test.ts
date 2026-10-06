@@ -265,6 +265,27 @@ describe('DirectionPlacer', () => {
 		]);
 	});
 
+	it('ends a directive closing the bar at the right barline', () => {
+		const { placer, texts } = makePlacer();
+		placer.placeColumn(
+			column({
+				words: [
+					{
+						stave: stave(),
+						text: 'D.S. al Coda',
+						anchor: undefined,
+						placement: 'above',
+						closesBar: true,
+					},
+				],
+			}),
+		);
+		// The barline is at 340 (stave x 40 + width 300) and the text is 120 wide.
+		expect(texts).toEqual([
+			{ text: 'D.S. al Coda', x: 220, y: 86, fill: '#000002' },
+		]);
+	});
+
 	it('drops a below-placement directive under the stave without lifting the crop', () => {
 		const { placer, texts, drops, spills, pageTops } = makePlacer();
 		placer.placeColumn(

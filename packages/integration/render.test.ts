@@ -813,6 +813,9 @@ describe('render', () => {
 	// - M9: "Andantino" over a bar holding only a whole-measure rest. The rest is centered in
 	//   the bar, but the text starts at the bar's first note position, where the music it
 	//   marks begins, not over the rest (Faure, Apres un reve m. 1).
+	// - M10: "D.S. al Coda" written after the bar's four B4 quarters, so it falls at the bar's
+	//   end: it ends at the right barline, where the jump happens, instead of starting over
+	//   the first note.
 	it.concurrent('renders words.png', async () => {
 		expect(await testing.render('words.musicxml')).toMatchScreenshot(
 			'words.png',
@@ -958,8 +961,11 @@ describe('render', () => {
 	//   which is the source score's own doing.
 	// - M2: "to coda" as ordinary italic words over its first note: a words direction, not a
 	//   glyph, and unchanged by this case.
-	// - M3: "D.S. al Coda" the same way, over the note the direction precedes.
-	// - M4: the coda (the crossed circle) at that measure's left edge, level with the segno.
+	// - M3: "D.S. al Coda", written after the treble staff's last note (before the <backup> to
+	//   the bass rest), so it falls at the bar's end and ends at the right barline.
+	// - M4: the coda (the crossed circle) at that measure's left edge. M3's "D.S. al Coda" ends
+	//   on the barline beside it, so the coda lifts a line above the text, as MuseScore stacks
+	//   them, and lands level with the segno (which the metronome mark lifts the same way).
 	// - M5: an empty measure that wraps to a second system on its own.
 	// SCOPE NOTE: the playback side is deliberately out of scope. Per the playback-cursor
 	// design, jumps are repeats+voltas only and D.C./D.S. are deferred, so this case is about

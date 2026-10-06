@@ -48,6 +48,10 @@ export interface ClearOptions {
 	kinds?: CollisionKind[];
 	/* Restricts the move to obstacles in that band (plus bandless ones); see Collidable. */
 	band?: number;
+	/* Widens the x-column searched by this much on each side, so an obstacle that only abuts
+	 * the rect still counts. 0 when absent: ordinary text may sit edge to edge with its
+	 * neighbor. */
+	xMargin?: number;
 }
 
 export class CollisionResolver {
@@ -96,10 +100,15 @@ export class CollisionResolver {
 	 * See {@link ClearOptions} for how to narrow which obstacles count.
 	 */
 	liftClear(rect: Rect, gap: number, opts: ClearOptions): Rect {
-		const { kinds, band } = opts;
+		const { kinds, band, xMargin = 0 } = opts;
 		// A tall, thin probe down the rect's x-column, ending at the rect's bottom: catches
 		// every obstacle in the column whose top is at/above where the rect currently sits.
-		const probe = new Rect(rect.x, -FAR, rect.w, FAR + rect.bottom);
+		const probe = new Rect(
+			rect.x - xMargin,
+			-FAR,
+			rect.w + 2 * xMargin,
+			FAR + rect.bottom,
+		);
 		let topMost = Infinity;
 		for (const c of this.query(probe)) {
 			if (kinds && !kinds.includes(c.other.kind)) {
@@ -128,10 +137,10 @@ export class CollisionResolver {
 	 * text stacks upward, so the two share one policy with the sign flipped.
 	 */
 	dropClear(rect: Rect, gap: number, opts: ClearOptions): Rect {
-		const { kinds, band } = opts;
+		const { kinds, band, xMargin = 0 } = opts;
 		// A tall, thin probe down the rect's x-column, starting at the rect's top: catches
 		// every obstacle in the column whose bottom is at/below where the rect currently sits.
-		const probe = new Rect(rect.x, rect.y, rect.w, FAR);
+		const probe = new Rect(rect.x - xMargin, rect.y, rect.w + 2 * xMargin, FAR);
 		let bottomMost = -Infinity;
 		for (const c of this.query(probe)) {
 			if (kinds && !kinds.includes(c.other.kind)) {

@@ -623,6 +623,7 @@ export class DrawPass {
 				lead,
 				placement,
 				opensBar,
+				closesBar,
 			} of this.reader.wordsOf(measure)) {
 				const target =
 					this.pendingStaves[staves.indexOf(staffNumber)] ?? topStave;
@@ -636,6 +637,7 @@ export class DrawPass {
 						anchor: anchor ?? target.staveNotes[0],
 						placement,
 						opensBar,
+						closesBar,
 					});
 				}
 			}

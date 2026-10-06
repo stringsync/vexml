@@ -593,12 +593,14 @@ export class ScoreReader {
 	 * `lead` is the note the directive applies to — the next non-chord note after it, the
 	 * same binding a pedal start uses — so per-note directives (guitar p-i-m-a fingering,
 	 * picking marks) print over their own note instead of stacking on the measure's first.
-	 * null when the direction trails the measure's last note.
+	 * null when the direction trails the measure's last note, or falls at the bar's end.
 	 * `placement` is the direction's placement attribute: 'below' prints under the staff (the
 	 * convention for piano expression marks), anything else — including an absent attribute —
 	 * keeps the above-staff default.
 	 * `opensBar` says the direction falls on the measure's first beat, so it marks where the bar
-	 * begins.
+	 * begins. `closesBar` says it falls where the bar's content runs out: written after a
+	 * staff's last note (a "D.S. al Coda" before a <backup>), it applies to the barline, not to
+	 * the next note in the file, which is another staff's from the bar's start.
 	 * ponytail: font-style attributes still ignored — every words direction prints in italics;
 	 * add a style field if a fixture needs upright words.
 	 */
@@ -608,16 +610,24 @@ export class ScoreReader {
 		lead: Note | null;
 		placement: Placement;
 		opensBar: boolean;
+		closesBar: boolean;
 	}[] {
 		return measure.directions.flatMap((d) => {
 			const staffNumber = d.staff;
-			const lead = d.nextNote;
 			const placement = this.placementOf(d, 'above');
 			const beat = d.measureBeat;
 			const opensBar = beat !== null && Math.abs(beat) < EPSILON;
-			return d.words
-				.filter(Boolean)
-				.map((text) => ({ text, staffNumber, lead, placement, opensBar }));
+			const closesBar =
+				beat !== null && !opensBar && beat > measure.endBeat - EPSILON;
+			const lead = closesBar ? null : d.nextNote;
+			return d.words.filter(Boolean).map((text) => ({
+				text,
+				staffNumber,
+				lead,
+				placement,
+				opensBar,
+				closesBar,
+			}));
 		});
 	}
 

@@ -293,6 +293,12 @@ export const DYNAMICS_FONT_SIZE = 24;
  * it wants to be at least as visible as an "mf". */
 export const NAVIGATION_FONT_SIZE = 24;
 
+/** Air a segno/coda keeps beside other above-stave text. A sign sharing a baseline with
+ * text it only abuts reads as part of it: "D.S. al Coda" ending on the barline runs straight
+ * into the coda that opens the next bar. So text within this distance of the sign's side
+ * lifts the sign above it, the way MuseScore stacks the two. */
+export const NAVIGATION_TEXT_GAP = 4;
+
 /** How tall a crescendo/diminuendo hairpin's open mouth is. */
 export const HAIRPIN_HEIGHT = 10;
 

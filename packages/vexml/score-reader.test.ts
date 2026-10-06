@@ -23,7 +23,7 @@ function scoreOf(...barlines: string[]): string {
 
 /* A one-part 4/4 measure of quarter notes, prefixed with the directions under test: what the
  * tempo, swing and modulation readers are asked about. */
-async function measureOf(prefix: string) {
+async function measureOf(prefix: string, suffix = '') {
 	const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
 <score-partwise version="4.0">
 	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
@@ -31,6 +31,7 @@ async function measureOf(prefix: string) {
 		<attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
 		${prefix}
 		${'<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>'.repeat(4)}
+		${suffix}
 	</measure></part>
 </score-partwise>`);
 	const [measure] = mdoc.score.parts[0]?.measures ?? [];
@@ -355,6 +356,26 @@ describe('ScoreReader', () => {
 			first: true,
 			last: true,
 			open: true,
+		});
+	});
+
+	it('closes the bar with words written after its last note, binding them to no note', async () => {
+		const reader = new ScoreReader(new DynamicGlyphs());
+		const words = (text: string) =>
+			`<direction><direction-type><words>${text}</words></direction-type></direction>`;
+		const measure = await measureOf(words('Andante'), words('D.S. al Coda'));
+		const [opening, closing] = reader.wordsOf(measure);
+		expect(opening).toMatchObject({
+			text: 'Andante',
+			opensBar: true,
+			closesBar: false,
+		});
+		expect(opening?.lead).not.toBeNull();
+		expect(closing).toMatchObject({
+			text: 'D.S. al Coda',
+			lead: null,
+			opensBar: false,
+			closesBar: true,
 		});
 	});
 });
