@@ -438,6 +438,10 @@ export const SLUR_Y_SHIFT = 12;
 
 /** Extra clearance the arc keeps above/below the most extreme note it spans. */
 export const SLUR_MARGIN = 14;
+/** The air a slur end keeps past an articulation on its own note (a staccato it starts or
+ * ends over), in px. Tighter than SLUR_MARGIN: the end is meant to read as attached to the
+ * note, just clear of the mark. */
+export const SLUR_MARK_GAP = 3;
 
 /** Minimum control-point rise, so even short slurs bow off the noteheads. */
 export const SLUR_MIN_CP_Y = 16;

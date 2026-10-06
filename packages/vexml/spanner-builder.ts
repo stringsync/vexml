@@ -1,8 +1,10 @@
 import type { BeamRun, Chord, Tuplet as MTuplet, Note } from '@stringsync/mdom';
 import {
+	Articulation,
 	Beam,
 	Curve,
 	type CurveOptions,
+	Modifier,
 	PedalMarking,
 	type Stave,
 	type StaveNote,
@@ -23,6 +25,7 @@ import {
 	SLUR_GRACE_MARGIN,
 	SLUR_GRACE_Y_SHIFT,
 	SLUR_MARGIN,
+	SLUR_MARK_GAP,
 	SLUR_MAX_ASPECT,
 	SLUR_MAX_CP_Y,
 	SLUR_MIN_CP_Y,
@@ -842,12 +845,43 @@ export class SpannerBuilder {
 						const y = anchorY(n);
 						return { top: y, bottom: y };
 					}
-					return this.noteExtents(n);
+					const extents = this.noteExtents(n);
+					const marks = this.marksOnSide(n, bulgeUp);
+					return marks
+						? {
+								top: Math.min(extents.top, marks.top),
+								bottom: Math.max(extents.bottom, marks.bottom),
+							}
+						: extents;
 				};
 				// A grace-to-main curve hugs directly under the two noteheads with a small
 				// tight bow instead of the fuller slur arc (see the SLUR_GRACE_* constants).
 				const baseYShift = isGrace ? SLUR_GRACE_Y_SHIFT : SLUR_Y_SHIFT;
 				const dir = bulgeUp ? -1 : 1;
+
+				// How much further out an end has to start to clear its own note's marks on the
+				// bow's side: a staccato or tenuto sits inside the slur, so the end leaves from
+				// just past the mark rather than from the notehead, cutting through it. Each
+				// end takes only its own lift, so a mark on one end doesn't float the other
+				// off its note. A cross-stave bow over a beamed run keeps its ends, like it
+				// keeps its shape (see clearanceOf).
+				// Where vexflow's Curve puts an end on its own: the anchor `metric` picked.
+				const noteEndY = (note: StaveNote) => {
+					const { topY, baseY } = note.getStemExtents();
+					return metric(note) === Curve.Position.NEAR_TOP ? topY : baseY;
+				};
+				const markLift = (note: StaveNote) => {
+					if (isGrace || (crossStave && bulgeUp)) {
+						return 0;
+					}
+					const marks = this.marksOnSide(note, bulgeUp);
+					if (!marks) {
+						return 0;
+					}
+					const edge = bulgeUp ? marks.top : marks.bottom;
+					const end = noteEndY(note) + dir * baseYShift;
+					return Math.max(0, dir * (edge - end) + SLUR_MARK_GAP);
+				};
 
 				// The exact Y each end of the curve will be drawn at: what HeadCurve was handed
 				// for a grace, and what vexflow reads off getStemExtents() for everything else.
@@ -855,8 +889,7 @@ export class SpannerBuilder {
 					if (isGrace) {
 						return anchorY(note);
 					}
-					const { topY, baseY } = note.getStemExtents();
-					return metric(note) === Curve.Position.NEAR_TOP ? topY : baseY;
+					return noteEndY(note) + dir * markLift(note);
 				};
 
 				// How far the bow stands off its chord (the straight line joining the two
@@ -1049,9 +1082,16 @@ export class SpannerBuilder {
 							{ x: -pull + lean, y: cpY - dir * slant },
 						],
 					};
-					const curve = isGrace
-						? new HeadCurve(curveFrom, curveTo, y0, y1, options)
-						: new CrispCurve(curveFrom, curveTo, options);
+					// An end lifted off its marks is pinned at its own Y, which vexflow's Curve
+					// can't take (it reads the end off the note), so it draws as a HeadCurve
+					// too.
+					const lifted = [curveFrom, curveTo].some(
+						(n) => n !== undefined && markLift(n) > 0,
+					);
+					const curve =
+						isGrace || lifted
+							? new HeadCurve(curveFrom, curveTo, y0, y1, options)
+							: new CrispCurve(curveFrom, curveTo, options);
 					// Where the bow will actually reach. vexflow shifts both endpoints by
 					// `yShift` and lands both control points at `depth`, so the cubic's midpoint
 					// sits at mid(y0,y1) + dir*(yShift + 0.75*cpY): the arc's far side, plus the
@@ -1340,6 +1380,29 @@ export class SpannerBuilder {
 	 * The highest (smallest y) and lowest (largest y) drawn point of a note,
 	 * covering both its noteheads and, when present, its stem tip.
 	 */
+	/*
+	 * How far a note's articulations reach on one side, or null when it has none there. Read
+	 * off the drawn marks: vexflow only settles where a mark sits (stacked over its
+	 * neighbours, lifted off a beam) while drawing it, and both slur passes run after the
+	 * notes have drawn.
+	 */
+	private marksOnSide(
+		note: StaveNote,
+		above: boolean,
+	): { top: number; bottom: number } | null {
+		const side = above ? Modifier.Position.ABOVE : Modifier.Position.BELOW;
+		let top = Infinity;
+		let bottom = -Infinity;
+		for (const mod of note.getModifiers()) {
+			if (mod instanceof Articulation && mod.getPosition() === side) {
+				const box = mod.getBoundingBox();
+				top = Math.min(top, box.getY());
+				bottom = Math.max(bottom, box.getY() + box.getH());
+			}
+		}
+		return top === Infinity ? null : { top, bottom };
+	}
+
 	private noteExtents(note: StaveNote): { top: number; bottom: number } {
 		const { yTop, yBottom } = note.getNoteHeadBounds();
 		let top = yTop;

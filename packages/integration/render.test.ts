@@ -1545,6 +1545,19 @@ describe('render', () => {
 		);
 	});
 
+	// Treble stave, 4/4: slurs over notes carrying articulations on the slur's side. Each
+	// measure is four quarters under one slur, an articulation on every note.
+	// - M1: C5-D5-C5-D5, stems down, staccatos above. The dots sit inside the slur: each
+	//   end leaves from just past its note's dot, and the bow arches over the middle dots.
+	// - M2: E4-F4-E4-F4, stems up, staccatos below: the mirror image under the notes.
+	// - M3: as M1 with accents: the bow and its ends clear the wider accent glyphs.
+	// - M4: as M1 with tenutos: the bow and its ends clear the tenuto lines.
+	it.concurrent('renders slur_articulations.png', async () => {
+		expect(
+			await testing.render('slur_articulations.musicxml'),
+		).toMatchScreenshot('slur_articulations.png');
+	});
+
 	// Treble stave, 4/4: four quarters carrying two separate two-note slurs (C5-D5 and
 	// E5-D5) using distinct slur numbers: two short independent arcs above.
 	it.concurrent('renders slur_multiple.png', async () => {
