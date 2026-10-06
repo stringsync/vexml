@@ -209,7 +209,7 @@
       </note>
     </measure>
     <measure number="4">
-      <!-- No <stem> elements anywhere (e.g. a Soundslice export): the voices must still
+      <!-- No <stem> elements anywhere (as some exporters write): the voices must still
            stem apart by default — voice 1 up, voice 2 down — not auto-stem by position. -->
       <note>
         <pitch><step>D</step><octave>5</octave></pitch>

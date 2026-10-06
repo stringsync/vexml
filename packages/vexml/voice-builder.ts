@@ -332,7 +332,7 @@ export class VoiceBuilder {
 					// (a split chord included); when most chords side with the bottom stave the
 					// stems rise from it and the beam parks over the top stave, otherwise (a tie
 					// too) the beam parks under the bottom one. That keeps the stems short, and it
-					// is how Soundslice reads these groups. The exception is a lower voice on the
+					// is how other engravers read these groups. The exception is a lower voice on the
 					// group's own stave: the beam can't park below a stave another voice already
 					// occupies, so the whole group flips up and beams over the TOP stave instead.
 					// That case is already decided by `defaultStem` (voices sharing a stave stem

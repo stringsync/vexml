@@ -66,7 +66,7 @@ export class StavePlan {
 	}
 
 	/** A staff is tablature when its clef sign is TAB, or when `<staff-details>` gives it
-	 * string tunings, some exporters (Guitar Pro, Soundslice) notate a tab staff with an
+	 * string tunings, some exporters (Guitar Pro among them) notate a tab staff with an
 	 * octave-down treble clef, so the clef sign alone doesn't settle it. A staff's clef is
 	 * stable across a part, so the first measure that declares either settles it. */
 	isTab(part: Part, staffNumber: string): boolean {

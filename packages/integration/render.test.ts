@@ -2696,7 +2696,7 @@ describe('render', () => {
 	//   cluster snug against the second E5 half note, which they lead. Then that half note.
 	//   Then a G5/A5 pair, also beamed, at the END of that half note's time, just before the
 	//   barline: the measure ends there, so they have nothing to lead and close out the note
-	//   before them (where MuseScore and Soundslice draw them too).
+	//   before them (where MuseScore draws them too).
 	// Matches MuseScore's engraving of the same file measure for measure (checked against
 	// `vex render --muse`), including the three-note cluster: MusicXML marks the first of those
 	// graces <grace steal-time-previous>, but an after-grace that still has a note in front of
@@ -2730,7 +2730,7 @@ describe('render', () => {
 	//   (packages/vexml/notes.ts passes `dots` to the StaveNote), so V1's beat-3 note stays
 	//   vertically aligned with V2's beat-3 note rather than drifting half a beat / a beat
 	//   early.
-	// - M4: same texture as M2 but with NO <stem> elements (e.g. a Soundslice export):
+	// - M4: same texture as M2 but with NO <stem> elements (as some exporters write):
 	//   the voices still stem apart by default: V1 (dotted-half D5 + quarter C5) stems up
 	//   even though auto-stemming would point those down, V2 (quarters G4, B4, A4 and a
 	//   beamed A4/G4 eighth pair, beam below) stems down even though auto-stemming would

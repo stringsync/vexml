@@ -283,7 +283,7 @@ export class ChordTranslator {
 	 * Honor an explicit <stem>up|down (e.g. to separate two voices on one stave), or
 	 * <stem>none (bare noteheads, as in a rhythm/chord chart). Absent, fall back to the
 	 * voice's default direction (multi-voice staves stem apart even when the exporter
-	 * omits <stem>, e.g. Soundslice), else auto-pick from staff position (see
+	 * omits <stem>), else auto-pick from staff position (see
 	 * staveNote's auto_stem).
 	 */
 	private applyStem(
