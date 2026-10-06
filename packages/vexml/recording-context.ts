@@ -5,7 +5,7 @@ type Clear = { x: number; y: number; w: number; h: number };
  * canvas, so this stands in for one and logs what was painted: `ops` in call order for tests that
  * care about sequence, `fills`/`clears` with their rects for tests that care about geometry. Only
  * the members vexml's own drawing touches are implemented, so it is cast to
- * CanvasRenderingContext2D at the seam. Test-only — excluded from the published package via
+ * CanvasRenderingContext2D at the seam. Test-only, excluded from the published package via
  * package.json "files". */
 export class RecordingContext {
 	fillStyle: string | CanvasGradient | CanvasPattern = '#000000';

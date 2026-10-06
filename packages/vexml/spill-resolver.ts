@@ -36,7 +36,7 @@ export interface PassRevision {
  *
  * Within a system, gaps planned at the same size stay the same size: the planned size is
  * what says whether a gap is within a part or between two of them, so widening one for a
- * single stave's chord symbol — and leaving its siblings alone — would read as uneven
+ * single stave's chord symbol (and leaving its siblings alone) would read as uneven
  * part spacing rather than as room made for the symbol. Different planned sizes stay
  * independent, so a grand staff's inner gap doesn't drag the gaps around it open with it.
  */
@@ -44,7 +44,7 @@ export interface PassRevision {
 export class SpillResolver {
 	/*
 	 * Weigh a first pass: re-spaced offsets plus whether any of the four redraw triggers
-	 * fired — a gap that had to widen, a system that rose above its own top (only
+	 * fired: a gap that had to widen, a system that rose above its own top (only
 	 * meaningful with a system above it to collide with, hence systemCount), a stepped
 	 * lyric verse, or a volta bracket the notes climbed through.
 	 */
@@ -64,7 +64,7 @@ export class SpillResolver {
 			systemCount > 1 &&
 			[...report.observedOverflow.values()].some((v) => v > 0);
 		// A verse hangs at one height per system, but each measure column is formatted alone
-		// and can only see its own notes — so a system whose columns wanted different heights
+		// and can only see its own notes, so a system whose columns wanted different heights
 		// drew a stepped verse, and pass two pins the whole row to the deepest of them.
 		const needsLyricPin = report.lyricsStepped;
 		// A volta bracket is drawn with its stave, before the notes it spans are formatted, so
@@ -72,7 +72,7 @@ export class SpillResolver {
 		// redraws the brackets lifted clear.
 		const needsVoltaLift = report.voltasLifted;
 		// Re-spacing makes a system taller, so the page floor and the scratch canvas both
-		// have to grow before the redraw. Sized off the system that grew MOST — systems
+		// have to grow before the redraw. Sized off the system that grew MOST: systems
 		// grow by different amounts, and every one of them has to fit. Over-allocating
 		// costs nothing: the final crop trims back to the content actually drawn.
 		const grewBy = Math.max(
@@ -113,7 +113,7 @@ export class SpillResolver {
 			const below = spill.get(i);
 			const plannedGap = (planned[i] ?? 0) - (planned[i - 1] ?? 0);
 			// Content bottom of the upper stave, and content top of the lower one, both
-			// relative to their own stave y — so their difference is the gap they need.
+			// relative to their own stave y, so their difference is the gap they need.
 			const needed =
 				above && below
 					? above.lineBottom +
@@ -144,7 +144,7 @@ export class SpillResolver {
 	 *
 	 * Summed per column, not overall: the whole point is that a deep stem hanging over an empty
 	 * patch of the stave below costs nothing. Taking the two maxima independently would size
-	 * every gap for a collision that never happens — the run beamed low in bar 3 against the
+	 * every gap for a collision that never happens: the run beamed low in bar 3 against the
 	 * chord reaching high in bar 9. Columns absent from a map contribute 0, so a lone extreme
 	 * still gets its own clearance and a gap with nothing in it comes out at 0 (the caller
 	 * floors that at the planned spacing).

@@ -49,7 +49,6 @@ export class DocumentSource
 	text = '';
 	/* What to render: MusicXML text, or an .mxl or .gp Blob. Null before anything has loaded. */
 	input: string | Blob | null = null;
-	/* Which parser `input` needs. */
 	format: DocumentFormat = 'musicxml';
 	/* The selected fixture's name, or '' when the document did not come from the picker. */
 	fixture = '';
@@ -102,7 +101,8 @@ export class DocumentSource
 		this.dispatcher.dispatch('changed');
 	}
 
-	/* Load a fixture by name, into both the editor and the score. */
+	/* For the fixture picker: the named fixture replaces the editor text and the score together.
+	 * If another load starts before this one's fixture arrives, the newer one wins. */
 	async loadFixture(name: string): Promise<void> {
 		this.replacing();
 		this.fixture = name;

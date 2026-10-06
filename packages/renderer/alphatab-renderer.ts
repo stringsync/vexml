@@ -1,7 +1,8 @@
 import * as path from 'node:path';
 import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
-import { type TabPool, tabPools } from './pool';
+import type { TabPool } from './pool';
+import { tabPools } from './tab-pools';
 
 export interface AlphatabInput {
 	musicXML: string;

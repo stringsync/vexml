@@ -11,7 +11,7 @@ export interface MarkerFrame {
 
 /*
  * The production Marker: an absolutely positioned <div> over the base canvas. The Stage hands it
- * the score-to-container frame on every relayout, so show() never reads layout — a per-frame
+ * the score-to-container frame on every relayout, so show() never reads layout: a per-frame
  * getBoundingClientRect after the page has changed would force a synchronous reflow. Position
  * rides on `transform` so a move is composited without layout; width/height and the corner radius
  * are only written when they change (a playhead's height changes once per system).
@@ -33,9 +33,9 @@ export class ManagedMarker implements Marker {
 		readonly order: number,
 	) {}
 
-	show(rect: MarkerRect, color: string, options?: MarkerOptions): void {
+	show(rect: MarkerRect, color: string, opts?: MarkerOptions): void {
 		this.rect = rect;
-		this.radius = options?.radius ?? 0;
+		this.radius = opts?.radius ?? 0;
 		if (color !== this.color) {
 			this.color = color;
 			this.el.style.backgroundColor = color;

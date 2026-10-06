@@ -194,6 +194,7 @@ export class PaintContext {
 		}
 	}
 
+	// scry-ignore named-options-last: mirrors the CanvasRenderingContext2D signature.
 	arc(
 		x: number,
 		y: number,
@@ -256,6 +257,7 @@ export class PaintContext {
 		}
 	}
 
+	// scry-ignore named-options-last: mirrors the CanvasRenderingContext2D signature.
 	roundRect(
 		x: number,
 		y: number,

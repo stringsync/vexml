@@ -22,9 +22,7 @@ describe('SpannerResolver', () => {
 	});
 
 	// The stave surface the real SpillTracker (and the pedal drop) reads.
-	const stave = (
-		opts: { y?: number; lineTop?: number; lineBottom?: number } = {},
-	) =>
+	const stave = (opts: StaveOptions = {}) =>
 		({
 			getY: () => opts.y ?? 90,
 			getYForLine: () => opts.lineTop ?? 100,
@@ -33,16 +31,14 @@ describe('SpannerResolver', () => {
 			getSpacingBetweenLines: () => 10,
 		}) as unknown as Stave;
 
+	interface StaveOptions {
+		y?: number;
+		lineTop?: number;
+		lineBottom?: number;
+	}
+
 	// A slur the way buildSlurs reports one: a curve to draw plus the bow's extent.
-	const slur = (
-		drawn: string[],
-		opts: {
-			stave?: Stave;
-			top?: number;
-			bottom?: number;
-			crossStave?: boolean;
-		} = {},
-	) => ({
+	const slur = (drawn: string[], opts: SlurOptions = {}) => ({
 		curve: { setContext: () => ({ drawWithStyle: () => drawn.push('slur') }) },
 		stave: opts.stave,
 		top: opts.top ?? 80,
@@ -52,9 +48,16 @@ describe('SpannerResolver', () => {
 		crossStave: opts.crossStave ?? false,
 	});
 
+	interface SlurOptions {
+		stave?: Stave;
+		top?: number;
+		bottom?: number;
+		crossStave?: boolean;
+	}
+
 	// A tie the way buildTies reports one: a StaveTie from one B4 notehead (y=100) to the next,
 	// bowing up (direction -1) with vexflow's default ribbon geometry.
-	const tie = (drawn: string[], opts: { stave?: Stave } = {}) => ({
+	const tie = (drawn: string[], opts: TieOptions = {}) => ({
 		setContext: () => ({ draw: () => drawn.push('tie') }),
 		getNotes: () => ({
 			firstNote: opts.stave && { checkStave: () => opts.stave },
@@ -66,6 +69,10 @@ describe('SpannerResolver', () => {
 		getDirection: () => -1,
 		renderOptions: { cp2: 12, cp2Short: 8, shortTieCutoff: 10, yShift: 7 },
 	});
+
+	interface TieOptions {
+		stave?: Stave;
+	}
 
 	// Every builder method answers empty so a test only overrides the paths it exercises.
 	const builder = (overrides: Partial<SpannerBuilder> = {}) =>
@@ -81,7 +88,7 @@ describe('SpannerResolver', () => {
 			...overrides,
 		}) as unknown as SpannerBuilder;
 
-	const harness = (
+	const resolverOf = (
 		spanners: Partial<SpannerBuilder> = {},
 		opts: Partial<SpannerResolverOptions> = {},
 	) => {
@@ -129,7 +136,7 @@ describe('SpannerResolver', () => {
 		const drawn: string[] = [];
 		const seen: Chord[][] = [];
 		const byLead = new Map<Note, StaveNote>();
-		const { resolver } = harness({
+		const { resolver } = resolverOf({
 			buildTies: (chords: Chord[], map: Map<Note, StaveNote>) => {
 				seen.push([...chords]);
 				expect(map).toBe(byLead);
@@ -153,7 +160,7 @@ describe('SpannerResolver', () => {
 		const byTabLead = new Map<Note, TabNote>();
 		const tab = {} as Chord;
 		let slideText: boolean | undefined;
-		const { resolver } = harness({
+		const { resolver } = resolverOf({
 			buildHammerPulls: (chords: Chord[], map: Map<Note, TabNote>) => {
 				expect(chords).toEqual([tab]);
 				expect(map).toBe(byTabLead);
@@ -177,7 +184,7 @@ describe('SpannerResolver', () => {
 	it('reports a slur bow as spill on its registered row and headroom on its system', () => {
 		const drawn: string[] = [];
 		const s = stave({ y: 90, lineTop: 100 });
-		const { resolver, spill, page } = harness({
+		const { resolver, spill, page } = resolverOf({
 			buildSlurs: () => [slur(drawn, { stave: s, top: 80, bottom: 150 })],
 		} as unknown as Partial<SpannerBuilder>);
 		resolver.registerStave(s, 2, 1);
@@ -196,7 +203,7 @@ describe('SpannerResolver', () => {
 	it("reports a tie's arc as spill on its stave", () => {
 		const drawn: string[] = [];
 		const s = stave({ y: 90, lineTop: 100 });
-		const { resolver, spill, page } = harness({
+		const { resolver, spill, page } = resolverOf({
 			buildTies: () => [tie(drawn, { stave: s })],
 		} as unknown as Partial<SpannerBuilder>);
 		resolver.registerStave(s, 2, 1);
@@ -212,7 +219,7 @@ describe('SpannerResolver', () => {
 	it('keeps a cross-stave bow out of the stave spill but in the page and headroom', () => {
 		const drawn: string[] = [];
 		const s = stave();
-		const { resolver, spill, page } = harness({
+		const { resolver, spill, page } = resolverOf({
 			buildSlurs: () => [
 				slur(drawn, { stave: s, top: 80, bottom: 150, crossStave: true }),
 			],
@@ -243,7 +250,7 @@ describe('SpannerResolver', () => {
 			},
 			draw() {},
 		} as unknown as Hairpin;
-		const { resolver } = harness({
+		const { resolver } = resolverOf({
 			// The bow dips to y=220 in the wedge's column, so the wedge must drop below it.
 			buildSlurs: () => [slur(drawn, { stave: s, top: 190, bottom: 220 })],
 			buildWedges: () => [wedge],
@@ -271,7 +278,7 @@ describe('SpannerResolver', () => {
 			},
 			draw() {},
 		} as unknown as Hairpin;
-		const { resolver } = harness({
+		const { resolver } = resolverOf({
 			buildSlurs: () => [
 				slur(drawn, { stave: stave(), top: 190, bottom: 220 }),
 			],
@@ -302,7 +309,7 @@ describe('SpannerResolver', () => {
 			},
 			draw() {},
 		} as unknown as Hairpin;
-		const { resolver, obstacles } = harness({
+		const { resolver, obstacles } = resolverOf({
 			buildWedges: () => [wedge],
 		} as unknown as Partial<SpannerBuilder>);
 		// The note hangs to y=225 inside the wedge's column.
@@ -333,7 +340,7 @@ describe('SpannerResolver', () => {
 			getStave: () => s,
 			getTuplet: () => undefined,
 		} as unknown as StaveNote;
-		const { resolver, obstacles } = harness({
+		const { resolver, obstacles } = resolverOf({
 			buildWedges: () => [wedge('cresc', 20), wedge('dim', 50)],
 		} as unknown as Partial<SpannerBuilder>);
 		// Only the crescendo's column has a low note; the diminuendo follows it down anyway.
@@ -359,14 +366,14 @@ describe('SpannerResolver', () => {
 			},
 			draw() {},
 		};
-		const { resolver, page, obstacles } = harness({
+		const { resolver, page, obstacles } = resolverOf({
 			buildPedals: () => [{ marking, notes: [note] }],
 		} as unknown as Partial<SpannerBuilder>);
 		// A low note reaching to y=190, well under the pedal's natural band (136..160).
 		obstacles.set(note, new Rect(95, 130, 10, 60));
 		resolver.resolve(anchors());
 		// The band top lands a clearance gap under the note (204), 68px below its natural
-		// top at 136 — 6.8 stave lines at 10px spacing.
+		// top at 136: 6.8 stave lines at 10px spacing.
 		expect(line).toBe(6.8);
 		// placed bottom (204 + 24 rise) plus the pedal bottom margin.
 		expect(page.bottom).toBe(240);
@@ -376,7 +383,7 @@ describe('SpannerResolver', () => {
 		const s = stave({ lineBottom: 140 }); // bottom text baseline = 160
 		const lead = {} as Note;
 		const note = { getStave: () => s } as unknown as StaveNote;
-		const { resolver, page } = harness();
+		const { resolver, page } = resolverOf();
 		resolver.addPedals([{ lead } as PedalMark]);
 		resolver.resolve(anchors(new Map([[lead, note]])));
 		expect(page.bottom).toBe(160 + 12);
@@ -387,7 +394,7 @@ describe('SpannerResolver', () => {
 		const to = {} as Note;
 		const start = {} as StaveNote;
 		const span = { from, to } as DirectionLineSpan;
-		const { resolver, directionLines } = harness(
+		const { resolver, directionLines } = resolverOf(
 			{},
 			{ directionLineSpans: [span] },
 		);
@@ -397,7 +404,7 @@ describe('SpannerResolver', () => {
 	});
 
 	it('answers system lookups only for registered staves', () => {
-		const { resolver } = harness();
+		const { resolver } = resolverOf();
 		const s = stave();
 		expect(resolver.systemOf(s)).toBeUndefined();
 		resolver.registerStave(s, 0, 3);

@@ -21,10 +21,10 @@ come from `webappwiz/geometry`, not this repo. Every feature has a fixture in
 
 | Stage | Does | Files |
 | --- | --- | --- |
-| Fonts | Loads Bravura + text face as CSS vars, awaits residency before layout | `font-loader.ts`, `default-font-loader.ts` |
+| Fonts | Loads Bravura + text face as CSS vars, awaits residency before layout | `font-loader.ts`, `default-font-loader.ts`, `recording-font-loader.ts` (test fake that records loads) |
 | Parse | MusicXML text to an mdom document | `score-parser.ts`, `default-score-parser.ts` |
 | Gaps | Finds the caller's silent measures, inserting positioned ones into vexml's own parse | `gaps.ts`, `gap-inserter.ts` |
-| Layout | Measure widths, system breaks, stave offsets — no drawing | `layout-planner.ts` |
+| Layout | Measure widths, system breaks, stave offsets, no drawing | `layout-planner.ts` |
 | Draw | Two passes recorded as paint ops (no canvas); everything engraved | `score-drawer.ts`, `draw-pass.ts` + collaborators below |
 | Elements | Raw geometry to hit-testable wrappers | `element-factory.ts`, `element-index.ts` |
 | Playback | Beats to ms, repeats unrolled, swing applied | `sequence-factory.ts`, `measure-sequence-iterator.ts`, `sequence.ts` |
@@ -33,17 +33,17 @@ come from `webappwiz/geometry`, not this repo. Every feature has a fixture in
 Two rules cut across the draw stage:
 
 - `score-reader.ts` is the only place that reads mdom attributes (clefs, keys,
-  times, part groups, repeats, directions, endings) — nothing else reads the
+  times, part groups, repeats, directions, endings); nothing else reads the
   document directly. Questions that also need the caller's config live in
   `stave-plan.ts` (which staves a part shows, which are tablature).
 - The translators turn one mdom chord into vexflow objects. A single wrong
   note is one of these:
-  - `chord-translator.ts` — the StaveNote itself: keys, noteheads,
+  - `chord-translator.ts`: the StaveNote itself: keys, noteheads,
     accidentals, dots, stems.
-  - `notation-translator.ts` — what hangs off it: articulations, ornaments,
+  - `notation-translator.ts`: what hangs off it: articulations, ornaments,
     technical marks, fermatas, arpeggios, lyrics.
-  - `tab-voice-translator.ts` — fret positions and styling, bends, tab graces.
-  - `voice-translator.ts` — a whole voice of tickables: onsets, ghost padding,
+  - `tab-voice-translator.ts`: fret positions and styling, bends, tab graces.
+  - `voice-translator.ts`: a whole voice of tickables: onsets, ghost padding,
     grace groups, mid-measure dividers and clef changes.
   - `signature-translator.ts` (clef/key/time specs), `barline-translator.ts`
     (repeat dots, voltas, mid-measure dividers), `duration-translator.ts`
@@ -51,73 +51,73 @@ Two rules cut across the draw stage:
 
 ## Staves, measures, and the frame
 
-- **Stave, clef, key signature, time signature** — `stave-builder.ts`, `stave-factory.ts` (the stave itself and a system's opening clef/key), `signature-translator.ts`, `custom-key-signature.ts`, `score-reader.ts`
-- **Mid-measure clef changes, mid-measure barlines** — `score-reader.ts` (`midClefsOf`, `midBarlinesOf`), `voice-translator.ts`, `signature-translator.ts`, `barline-translator.ts`, `layout-planner.ts`
-- **Barlines, repeat signs, volta (ending) brackets** — `barline-translator.ts`, `stave-builder.ts`, `connector-drawer.ts`, `score-reader.ts`
-- **Measure numbers** — `stave-builder.ts` (`showsMeasureNumber`)
-- **Multi-measure rests** — `stave-builder.ts` (`drawMultiRest`), `layout-planner.ts`
-- **Braces, brackets, part-group connectors, part names** — `connector-drawer.ts`, `score-reader.ts`
-- **Percussion staves, unpitched notes** — `stave-builder.ts`, `chord-translator.ts`
-- **Transposing parts** — `stave-builder.ts`, `system-formatter.ts`
+- **Stave, clef, key signature, time signature**: `stave-builder.ts`, `stave-factory.ts` (the stave itself and a system's opening clef/key), `signature-translator.ts`, `custom-key-signature.ts`, `score-reader.ts`
+- **Mid-measure clef changes, mid-measure barlines**: `score-reader.ts` (`midClefsOf`, `midBarlinesOf`), `voice-translator.ts`, `signature-translator.ts`, `barline-translator.ts`, `layout-planner.ts`
+- **Barlines, repeat signs, volta (ending) brackets**: `barline-translator.ts`, `stave-builder.ts`, `connector-drawer.ts`, `score-reader.ts`
+- **Measure numbers**: `stave-builder.ts` (`showsMeasureNumber`)
+- **Multi-measure rests**: `stave-builder.ts` (`drawMultiRest`), `layout-planner.ts`
+- **Braces, brackets, part-group connectors, part names**: `connector-drawer.ts`, `score-reader.ts`
+- **Percussion staves, unpitched notes**: `stave-builder.ts`, `chord-translator.ts`
+- **Transposing parts**: `stave-builder.ts`, `system-formatter.ts`
 
 ## Notes and voices
 
-- **Noteheads, accidentals, stems, flags, rests, dots, ledger lines** — `chord-translator.ts`
-- **Voices on one stave, stem direction, voice-level layout** — `voice-builder.ts`
-- **Beams, tuplets, grace notes** — `voice-builder.ts` (grouping), `spanner-builder.ts` (construction), `system-formatter.ts` (grace spacing)
-- **Cross-staff notes, beams and tuplets; the ghosts holding a crossed note's time on the other staff** — `voice-builder.ts`, `voice-translator.ts` (`gapFill`), `score-reader.ts` (`staffVoices`)
-- **Articulations, fermatas, ornaments, trills, tremolos, arpeggios, harmonics** — `notation-translator.ts`
-- **Invisible notes (`print-object="no"`), note colors** — `chord-translator.ts`
-- **Formatting a measure column: note x, note extents, alignment** — `system-formatter.ts`
+- **Noteheads, accidentals, stems, flags, rests, dots, ledger lines**: `chord-translator.ts`
+- **Voices on one stave, stem direction, voice-level layout**: `voice-builder.ts`
+- **Beams, tuplets, grace notes**: `voice-builder.ts` (grouping), `spanner-builder.ts` (construction), `system-formatter.ts` (grace spacing)
+- **Cross-staff notes, beams and tuplets; the ghosts holding a crossed note's time on the other staff**: `voice-builder.ts`, `voice-translator.ts` (`gapFill`), `score-reader.ts` (`staffVoices`)
+- **Articulations, fermatas, ornaments, trills, tremolos, arpeggios, harmonics**: `notation-translator.ts`, `stave-articulation.ts` (the lift clear of a beam), `notehead-articulation.ts` (the side opposite the stem), `non-arpeggio-bracket.ts` (the `<non-arpeggiate>` bracket)
+- **Invisible notes (`print-object="no"`), note colors**: `chord-translator.ts`, `invisible-stave-note.ts` (the hidden StaveNote)
+- **Formatting a measure column: note x, note extents, alignment**: `system-formatter.ts`
 
 ## Horizontal spacing (how wide a measure is, where a note sits in it)
 
-- **Intra-voice note spacing: denser measure wider, longer note more room, sub-linearly** — `layout-planner.ts` (`noteLogWidth`, `measureNoteArea`), `constants.ts` (`BASE_VOICE_WIDTH`, `LOG_SPACING_RATIO`, `MIN_LOG_FACTOR`), `config.ts` (`noteSpacing`, `softmaxFactor`)
-- **A measure's two widths: the `ideal` the curve wants, the `min` below which notes collide** — `layout-planner.ts` (`measureNoteArea`)
-- **Where notes actually land, justified into the planned box at draw time** — `system-formatter.ts` (`formatAndDraw`), `voice-translator.ts` (`softVoice`)
-- **Room reserved at a measure's left for clef/key/time/repeat** — `layout-planner.ts`, `constants.ts` (`LEAD_*`)
-- **Room held open for a words directive overrunning the barline** — `layout-planner.ts` (`trailingWordsPad`, `leadingWordsPad`)
-- **Grace-note room** — `layout-planner.ts` (`graceWidthOf`), `system-formatter.ts` (`closeGraceGaps`)
-- **Minimum tab note spacing, minimum multi-rest width** — `layout-planner.ts`, `constants.ts`
-- **Squaring opening repeats and time signatures across a system's staves** — `system-formatter.ts` (`alignBegModifiers`)
+- **Intra-voice note spacing: denser measure wider, longer note more room, sub-linearly**: `layout-planner.ts` (`noteLogWidth`, `measureNoteArea`), `constants.ts` (`BASE_VOICE_WIDTH`, `LOG_SPACING_RATIO`, `MIN_LOG_FACTOR`), `config.ts` (`noteSpacing`, `softmaxFactor`)
+- **A measure's two widths: the `ideal` the curve wants, the `min` below which notes collide**: `layout-planner.ts` (`measureNoteArea`)
+- **Where notes actually land, justified into the planned box at draw time**: `system-formatter.ts` (`formatAndDraw`), `voice-translator.ts` (`softVoice`)
+- **Room reserved at a measure's left for clef/key/time/repeat**: `layout-planner.ts`, `constants.ts` (`LEAD_*`)
+- **Room held open for a words directive overrunning the barline**: `layout-planner.ts` (`trailingWordsPad`, `leadingWordsPad`)
+- **Grace-note room**: `layout-planner.ts` (`graceWidthOf`), `system-formatter.ts` (`closeGraceGaps`)
+- **Minimum tab note spacing, minimum multi-rest width**: `layout-planner.ts`, `constants.ts`
+- **Squaring opening repeats and time signatures across a system's staves**: `system-formatter.ts` (`alignBegModifiers`)
 
 ## System and page layout (vertical, and across the line)
 
-- **Breaking measures into systems: greedy packing, then evening a lopsided pair** — `layout-planner.ts` (`evenOutSystems`)
-- **A break the document forced (`<print new-system="yes">`)** — `layout-planner.ts` (read off the mdom measure), `config.ts` (`honorSystemBreaks`)
-- **Justifying a complete system to full width; last one left short** — `layout-planner.ts`, `config.ts` (`minLastSystemFill`)
-- **A document line too wide for the page: wrap / allow / widen** — `layout-planner.ts`, `config.ts` (`overflow`)
-- **Panoramic (one endless system) vs standard layout** — `layout-planner.ts`, `config.ts`, `scroll-controller.ts`
-- **Sticky clef/key fold on a scrolled panorama (`stickySignatures`)** — `signature-fold.ts` (which strip, and engraving it), `fold.ts` (the seam), `stage.ts` (the sticky element, showing it, scroll inset, pointer occlusion), `score-drawer.ts` (builds it)
-- **Label columns reserved left of the first system** — `layout-planner.ts` (`labelIndent`, `partLabelIndent`), `connector-drawer.ts`
-- **Stave offsets within a system: gap inside a part vs between parts** — `layout-planner.ts`, `constants.ts` (`INTRA_PART_SPACING`, `INTER_PART_SPACING`)
-- **Widening a stave gap the music outgrows — per x column, per system** — `spill-tracker.ts`, `spill-resolver.ts`
-- **Gap between stacked systems; notes rising above a system's top stave** — `spill-tracker.ts`, `spill-resolver.ts`, `constants.ts` (`SYSTEM_GAP`)
-- **Why there are two draw passes** — `score-drawer.ts` (driver), `spill-resolver.ts` (the redraw decision)
-- **Page margins, ledger headroom, the final crop** — `score-drawer.ts`, `constants.ts`
-- **Paged layout: systems fitted onto fixed-size pages, each page exported on its own canvas** — `page-planner.ts` (which system starts a page, the push down to it), `score-drawer.ts` (the third pass that draws the pushes, page rects), `draw-pass.ts` (`systemExtents`), `layout-planner.ts` (the page's reference width), `page.ts` (`toBlob`/`toCanvas`), `page-painter.ts` (the seam; `Stage.paintEngraving`)
-- **Long scores past the browser's canvas limits (tiles)** — `paint-context.ts` (the recording `CanvasRenderingContext2D` vexflow and `Layer.ctx` draw on, and each op's bounds), `paint-op.ts`, `paint-state.ts`, `affine.ts`, `paint-sink.ts`, `paint-list.ts` (the engraving's ops), `paint-probe.ts`, `canvas-paint-probe.ts` (text metrics and hit tests a recording can't answer), `fake-paint-probe.ts`, `paint-replayer.ts` (ops back onto a real canvas), `tile-grid.ts` (ops per tile, clear pruning), `tiled-surface.ts` (tile canvases, painted whole or only near the view), `tile-budget.ts` (the LRU when painting lazily), `tiled-layer.ts`, `constants.ts` (`TILE_SIZE`, `TILE_BUDGET`)
-- **Keeping two marks from printing through each other** — `collision-resolver.ts` (section below)
+- **Breaking measures into systems: greedy packing, then evening a lopsided pair**: `layout-planner.ts` (`evenOutSystems`)
+- **A break the document forced (`<print new-system="yes">`)**: `layout-planner.ts` (read off the mdom measure), `config.ts` (`honorSystemBreaks`)
+- **Justifying a complete system to full width; last one left short**: `layout-planner.ts`, `config.ts` (`minLastSystemFill`)
+- **A document line too wide for the page: wrap / allow / widen**: `layout-planner.ts`, `config.ts` (`overflow`)
+- **Panoramic (one endless system) vs standard layout**: `layout-planner.ts`, `config.ts`, `scroll-controller.ts`
+- **Sticky clef/key fold on a scrolled panorama (`stickySignatures`)**: `signature-fold.ts` (which strip, and engraving it), `fold.ts` (the seam), `stage.ts` (the sticky element, showing it, scroll inset, pointer occlusion), `score-drawer.ts` (builds it)
+- **Label columns reserved left of the first system**: `layout-planner.ts` (`labelIndent`, `partLabelIndent`), `connector-drawer.ts`
+- **Stave offsets within a system: gap inside a part vs between parts**: `layout-planner.ts`, `constants.ts` (`INTRA_PART_SPACING`, `INTER_PART_SPACING`)
+- **Widening a stave gap the music outgrows, per x column, per system**: `spill-tracker.ts`, `spill-resolver.ts`
+- **Gap between stacked systems; notes rising above a system's top stave**: `spill-tracker.ts`, `spill-resolver.ts`, `constants.ts` (`SYSTEM_GAP`)
+- **Why there are two draw passes**: `score-drawer.ts` (driver), `spill-resolver.ts` (the redraw decision)
+- **Page margins, ledger headroom, the final crop**: `score-drawer.ts`, `constants.ts`
+- **Paged layout: systems fitted onto fixed-size pages, each page exported on its own canvas**: `page-planner.ts` (which system starts a page, the push down to it), `score-drawer.ts` (the third pass that draws the pushes, page rects), `draw-pass.ts` (`systemExtents`), `layout-planner.ts` (the page's reference width), `page.ts` (`toBlob`/`toCanvas`), `page-painter.ts` (the seam; `Stage.paintEngraving`)
+- **Long scores past the browser's canvas limits (tiles)**: `paint-context.ts` (the recording `CanvasRenderingContext2D` vexflow and `Layer.ctx` draw on, and each op's bounds), `paint-op.ts`, `paint-state.ts`, `affine.ts`, `paint-sink.ts`, `paint-list.ts` (the engraving's ops), `paint-probe.ts`, `canvas-paint-probe.ts` (text metrics and hit tests a recording can't answer), `fake-paint-probe.ts`, `paint-replayer.ts` (ops back onto a real canvas), `tile-grid.ts` (ops per tile, clear pruning), `tiled-surface.ts` (tile canvases, painted whole or only near the view), `tile-budget.ts` (the LRU when painting lazily), `tiled-layer.ts`, `constants.ts` (`TILE_SIZE`, `TILE_BUDGET`)
+- **Keeping two marks from printing through each other**: `collision-resolver.ts` (section below)
 
 ## Spanners (things that connect two notes)
 
-- **Ties, slurs** — `spanner-builder.ts`, `spanner-resolver.ts`, `crisp-curve.ts`, `head-curve.ts`, `tab-curve.ts` (the arcs)
-- **Hammer-ons, pull-offs, slides, glissandos** — `spanner-builder.ts`, `spanner-resolver.ts`, `notation-slide.ts`, `single-slide.ts`, `crisp-tab-slide.ts`, `tab-slide-line.ts` (the lines)
-- **Ottava (8va) brackets, pedal lines, hairpins/wedges, bracket-and-dashes lines** — `spanner-resolver.ts`, `score-reader.ts`, `hairpin.ts` (the wedge glyph)
+- **Ties, slurs**: `spanner-builder.ts`, `spanner-resolver.ts`, `crisp-curve.ts`, `head-curve.ts`, `tab-curve.ts` (the arcs)
+- **Hammer-ons, pull-offs, slides, glissandos**: `spanner-builder.ts`, `spanner-resolver.ts`, `notation-slide.ts`, `single-slide.ts`, `crisp-tab-slide.ts`, `tab-slide-line.ts` (the lines)
+- **Ottava (8va) brackets, pedal lines, hairpins/wedges, bracket-and-dashes lines**: `spanner-resolver.ts`, `score-reader.ts`, `hairpin.ts` (the wedge glyph)
 
 ## Text and marks around the stave
 
-- **Dynamics, words directions, rehearsal marks, segno/coda, figured bass** — `direction-placer.ts`, `score-reader.ts`, `dynamic-glyphs.ts`
-- **Tempo and metronome marks** — `direction-placer.ts`, `metronome-glyph.ts` (the note-group form)
-- **Chord symbols (`<harmony>`)** — `direction-placer.ts`
-- **Chord diagrams (fret boxes)** — `chord-diagram-glyph.ts` (drawing), `direction-placer.ts` (placement), `chord-diagram.ts` (the element)
-- **Lyrics, verses, melisma lines** — `lyric-placer.ts`, `lyric-mark.ts`, `lyric-annotation.ts`
-- **Fingerings, string numbers, other technical marks** — `technical-mark.ts`, `technical-annotation.ts`, `notation-translator.ts`, `system-formatter.ts` (stacking)
+- **Dynamics, words directions, rehearsal marks, segno/coda, figured bass**: `direction-placer.ts`, `score-reader.ts`, `dynamic-glyphs.ts`
+- **Tempo and metronome marks**: `direction-placer.ts`, `metronome-glyph.ts` (the note-group form)
+- **Chord symbols (`<harmony>`)**: `direction-placer.ts`
+- **Chord diagrams (fret boxes)**: `chord-diagram-glyph.ts` (drawing), `direction-placer.ts` (placement), `chord-diagram.ts` (the element)
+- **Lyrics, verses, melisma lines**: `lyric-placer.ts`, `lyric-mark.ts`, `lyric-annotation.ts`
+- **Fingerings, string numbers, other technical marks**: `technical-mark.ts`, `technical-annotation.ts`, `fingering-annotation.ts`, `string-number-annotation.ts` (the ringed digit), `notation-translator.ts`, `system-formatter.ts` (stacking)
 
 ## Collisions and nudges
 
 `collision-resolver.ts` is the one mechanism for "move this so it clears
-that". **Any new clearance logic goes through it** — no new bespoke magic
+that". **Any new clearance logic goes through it**: no new bespoke magic
 offsets.
 
 Per element: compute its natural `Rect`, resolve it against everything already
@@ -132,17 +132,17 @@ there, then `add` the placed rect. `kinds` narrows which obstacles count;
 | Chord symbols, words, rehearsal marks, tempo marks | notes, ties, slur bows, tuplet numbers, lyrics, technical marks, volta brackets, other placed text (`placement="below"` words drop instead of lifting) | `direction-placer.ts` |
 | Chord diagrams | lift off notes, pull inside the page edge (leaving room for the column's later boxes, so a crowded row packs leftward in chord order), push right of the previous diagrams (iterated until clear), lift again | `direction-placer.ts` |
 | Hairpins, pedal lines, ottava brackets | slur bows and beam-extended stem tips (hairpins also the notes they span, their tuplet numbers and tie arcs, and a crescendo running into a diminuendo shares one line), via a resolver scoped to their own stave (they resolve after the per-system index) | `spanner-resolver.ts` |
-| Volta (ending) brackets | noteheads, stem tips and slur bows on the top stave — resolved a pass late, see below | `draw-pass.ts` (`observeVoltaLift`) |
+| Volta (ending) brackets | noteheads, stem tips and slur bows on the top stave (resolved a pass late, see below) | `draw-pass.ts` (`observeVoltaLift`) |
 
 Registered as obstacles: noteheads/stem tips, tie apexes, tab bend arcs, slur
 bows, tuplet numbers, technical marks (`system-formatter.ts`); lyrics and melisma lines
-(`lyric-placer.ts`); volta brackets — including the next measure's, a column
-early — and measure numbers (`stave-builder.ts`).
+(`lyric-placer.ts`); volta brackets (including the next measure's, a column
+early) and measure numbers (`stave-builder.ts`).
 
 Deliberately NOT collisions, do not "migrate" them: deterministic engraving
 placement (page margins, `LEAD_*` reservations, part labels and brackets,
 chord-diagram internals, tab centering, slur control points); and stave/system
-spill (`spill-tracker.ts`, `spill-resolver.ts`), which moves a whole row —
+spill (`spill-tracker.ts`, `spill-resolver.ts`), which moves a whole row:
 tuplet brackets report there against the stave they stand over
 (`system-formatter.ts`, `tupletHost`), and slur and tie arcs (`spanner-resolver.ts`,
 `reportBow`), so a bracket or a bow
@@ -151,38 +151,38 @@ volta bracket resolves against the index like anything else, but a pass late:
 it draws with the stave, before the notes are formatted, so the lift is
 measured after the format pass and applied on the NEXT draw pass
 (`draw-pass.ts`, `observedVoltaLifts`), one shared height per system. `<bracket>`/`<dashes>` spans take
-vexflow's fixed text line — drawn in the finish pass, after the index clears.
+vexflow's fixed text line, drawn in the finish pass, after the index clears.
 
 ## Tablature
 
-- **Tab staves, tunings, whether a part is tab** — `score-reader.ts`, `stave-builder.ts`
-- **Fret numbers, tab stems, bends** — `tab-voice-translator.ts`, `voice-builder.ts`, `stave-plan.ts` (which staves are tab)
-- **Tab note geometry for the hit index** — `geometry-collector.ts`
-- **The `TabPosition` a caller gets back** — `tab-position.ts`
+- **Tab staves, tunings, whether a part is tab**: `score-reader.ts`, `stave-builder.ts`
+- **Fret numbers, tab stems, bends**: `tab-voice-translator.ts`, `voice-builder.ts`, `stave-plan.ts` (which staves are tab)
+- **Tab note geometry for the hit index**: `geometry-collector.ts`
+- **The `TabPosition` a caller gets back**: `tab-position.ts`
 
 ## Reading the document
 
-- **Divisions, ticks, beats, pickup measures, `<senza-misura>`** — `score-reader.ts` (`meterBeats`)
-- **Repeat structure, endings, how many passes** — `score-reader.ts` (`measureRepeats`, `measureJumps`, `endingPasses`)
-- **Directions routed to the right staff** — `score-reader.ts`
-- **Silent gap measures the caller asked for** — `gaps.ts` (which measures are gaps), `gap-inserter.ts` (inserting them; `beforeBarIndex` in playback order, refused inside a repeat), `insert-gaps.ts` (the public `insertGaps` for a caller's own document)
-- **Gaps before the first measure or after the last, drawn as boxes outside the staves** — `layout-planner.ts` (`MeasureBox.edge`, fixed box widths, flush against the bracket or final barline), `stave-plan.ts` (`systemOverhang`), `draw-pass.ts` (`drawEdgeGap`; the time signature and end barline move to the music via `opensScore`/`isLastMeasure`)
+- **Divisions, ticks, beats, pickup measures, `<senza-misura>`**: `score-reader.ts` (`meterBeats`)
+- **Repeat structure, endings, how many passes**: `score-reader.ts` (`measureRepeats`, `measureJumps`, `endingPasses`)
+- **Directions routed to the right staff**: `score-reader.ts`
+- **Silent gap measures the caller asked for**: `gaps.ts` (which measures are gaps), `gap-inserter.ts` (inserting them; `beforeBarIndex` in playback order, refused inside a repeat), `insert-gaps.ts` (the public `insertGaps` for a caller's own document)
+- **Gaps before the first measure or after the last, drawn as boxes outside the staves**: `layout-planner.ts` (`MeasureBox.edge`, fixed box widths, flush against the bracket or final barline), `stave-plan.ts` (`systemOverhang`), `draw-pass.ts` (`drawEdgeGap`; the time signature and end barline move to the music via `opensScore`/`isLastMeasure`)
 
 ## Interaction and playback
 
-- **Editing controller activation, selection colors, shaded regions and cursor halo/outline** — `editing-controller.ts`, `selection-overlay.ts`, `color-style.ts`, `halo-style.ts`
-- **Editing focus, active voice, range/set selection and undo/redo** — `editing-session.ts`, `pitch-edit.ts`; public usage and limitations in the root `README.md` (Editing)
-- **Editing navigation in written order and across rendered systems** — `editing-navigator.ts`, `chord-note-order.ts` (staff and written-position order within a chord), `editing-layout.ts`, `score-editing-layout.ts`
-- **Editing keyboard/pointer controller, focus scrolling and selection overlay** — `editing-controller.ts`, `editing-bindings.ts`, `default-editing-bindings.ts`, `editing-view.ts`, `selection-overlay.ts`; default composition in `score.ts`
-- **Rendering an editor-owned mdom document without reparsing** — `render.ts`, `score-parser.ts`, `default-score-parser.ts`, `score-renderer.ts`
-- **What a caller gets from a hit test** — `element.ts`, `element-index.ts`, `note.ts`, `measure.ts`, `measure-box.ts`, `voice.ts`, `part.ts`, `system.ts`
+- **Editing controller activation, selection colors, shaded regions and cursor halo/outline**: `editing-controller.ts`, `selection-overlay.ts`, `color-style.ts`, `halo-style.ts`
+- **Editing focus, active voice, range/set selection and undo/redo**: `editing-session.ts`, `pitch-edit.ts`; public usage and limitations in the root `README.md` (Editing)
+- **Editing navigation in written order and across rendered systems**: `editing-navigator.ts`, `chord-note-order.ts` (staff and written-position order within a chord), `editing-layout.ts`, `score-editing-layout.ts`
+- **Editing keyboard/pointer controller, focus scrolling and selection overlay**: `editing-controller.ts`, `editing-bindings.ts`, `default-editing-bindings.ts`, `editing-view.ts`, `selection-overlay.ts`; default composition in `score.ts`
+- **Rendering an editor-owned mdom document without reparsing**: `render.ts`, `score-parser.ts`, `default-score-parser.ts`, `score-renderer.ts`
+- **What a caller gets from a hit test**: `element.ts`, `toggle.ts` (the `color`/`halo` switches), `element-index.ts`, `note.ts`, `measure.ts`, `measure-box.ts`, `voice.ts`, `part.ts`, `system.ts`
 - **A note's boxes: `Note.rect` (the head alone) and `getInkRect` (head plus accidentals, arpeggio, dots, flag, graces)**: `geometry-collector.ts` (`inkOf`), `note.ts`
-- **Pointer position to element** — `hit-tester.ts`, `default-hit-tester.ts`, `element-index.ts`
-- **Coloring, highlighting, halos** — `decoration.ts`, `default-decoration.ts`, `default-decorations.ts`, `decoration-style.ts`, `color-style.ts`, `halo-style.ts`
-- **Playback timeline, repeats unrolled, swing** — `sequence-factory.ts`, `sequence.ts`, `measure-sequence-iterator.ts` (repeat/volta expansion), `tempo-map.ts`, `swing-warp.ts`
-- **The moving cursor and playhead visibility** — `cursor-controller.ts`, `cursor-view.ts`, `playhead.ts` (a DOM `marker.ts`/`managed-marker.ts`, not a canvas), `cursor-host.ts`, `cursor-host-adapter.ts`
-- **Scrolling and the visible window** — `scroller.ts`, `scroll-controller.ts`, `viewport.ts`
-- **The DOM the score lives in (container, canvas, overlays, a caller-owned `scrollContainer`)** — `host.ts`, `stage.ts` (also scale-to-fit: the `.vexml-fit` rule and the strut canvas that lets the box shrink in a grid or shrink-to-fit parent), `layer.ts`, `tiled-layer.ts` (content and background layers), `managed-layer.ts` (viewport layers; bitmap axis and area caps), `lazy-layer.ts`, `marker.ts`, `managed-marker.ts` (caller markers from `Score.createMarker` too), `loupe.ts`, `managed-loupe.ts` (the magnifier, a top-layer popover; `Stage.paintScore` draws into it over `Stage.paperColor`), `loupe-placement.ts` (above its anchor, else to its right, else left, within the visual viewport), `recording-context.ts`, `layer-host.ts`, `scroll-host.ts`
+- **Pointer position to element**: `hit-tester.ts`, `default-hit-tester.ts`, `element-index.ts`
+- **Coloring, highlighting, halos**: `decoration.ts`, `default-decoration.ts`, `default-decorations.ts`, `decoration-style.ts`, `color-style.ts`, `halo-style.ts`
+- **Playback timeline, repeats unrolled, swing**: `sequence-factory.ts`, `sequence.ts`, `measure-sequence-iterator.ts` (repeat/volta expansion), `tempo-map.ts`, `swing-warp.ts`
+- **The moving cursor and playhead visibility**: `cursor-controller.ts`, `cursor-position.ts` (the box a cursor event reports), `cursor-view.ts`, `playhead.ts` (a DOM `marker.ts`/`managed-marker.ts`, not a canvas), `cursor-host.ts`, `cursor-host-adapter.ts`
+- **Scrolling and the visible window**: `scroller.ts`, `scroll-controller.ts`, `viewport.ts`
+- **The DOM the score lives in (container, canvas, overlays, a caller-owned `scrollContainer`)**: `host.ts`, `stage.ts` (also scale-to-fit: the `.vexml-fit` rule and the strut canvas that lets the box shrink in a grid or shrink-to-fit parent), `layer.ts`, `tiled-layer.ts` (content and background layers), `managed-layer.ts` (viewport layers; bitmap axis and area caps), `lazy-layer.ts`, `marker.ts`, `managed-marker.ts` (caller markers from `Score.createMarker` too), `loupe.ts`, `managed-loupe.ts` (the magnifier, a top-layer popover; `Stage.paintScore` draws into it over `Stage.paperColor`), `loupe-placement.ts` (above its anchor, else to its right, else left, within the visual viewport), `recording-context.ts`, `layer-host.ts`, `scroll-host.ts`
 
 ## Editing implementation contracts
 
@@ -231,7 +231,7 @@ one `Score` and must be resolved again after rendering.
 ## Conventions
 
 - One concept per file, named after the class it exports. Every file sits
-  flat in the package root — no subdirectories. An interface and its implementations are
+  flat in the package root, with no subdirectories. An interface and its implementations are
   siblings (`font-loader.ts`, `default-font-loader.ts`, `noop-font-loader.ts`),
   fakes included.
 - The draw pass owns no shared blackboard: `draw-pass.ts` constructs each

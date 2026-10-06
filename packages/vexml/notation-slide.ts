@@ -8,7 +8,7 @@ import { SLIDE_MIN_SLANT, SLIDE_PADDING } from './constants';
  * floored at SLIDE_MIN_SLANT so a near-unison slide still reads instead of going flat (and a
  * chord's near-equal slides stay ~parallel like the tab), and capped to the horizontal run so
  * a wide interval over a short grace-to-main gap doesn't spike near-vertical. (vexflow's
- * StaveLine can't do either — it just connects the heads flatly.) Drawn like the other
+ * StaveLine can't do either: it just connects the heads flatly.) Drawn like the other
  * spanners via setContext().draw().
  */
 export class NotationSlide {
@@ -30,7 +30,7 @@ export class NotationSlide {
 		}
 		// getModifierStartXY(...).y is each note's notehead Y (ys[index]). Start the line clear
 		// of the start notehead's outer edge plus a gap (its center plus half its glyph width
-		// plus 2*SLIDE_PADDING — the extra clears its stem so the line doesn't look like it grows
+		// plus 2*SLIDE_PADDING: the extra clears its stem so the line doesn't look like it grows
 		// out of the note), and end it just into the target notehead (its center minus
 		// SLIDE_PADDING) so the slide reads as running into the note. The start note is always
 		// left of the target, so x1 < x2 holds.

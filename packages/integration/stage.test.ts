@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import type { Note } from '@stringsync/vexml';
 import { testing } from './setup';
 
 describe('stage', () => {
@@ -9,10 +10,7 @@ describe('stage', () => {
 			'structure_single_stave.musicxml',
 			{},
 			async ({ score, container }) => {
-				const canvas = container.querySelector('.vexml-canvas');
-				if (!canvas) {
-					throw new Error('score element not found');
-				}
+				const canvas = container.querySelector('.vexml-canvas') as Element;
 				const rendered = {
 					container: getComputedStyle(container).userSelect,
 					canvas: getComputedStyle(canvas).userSelect,
@@ -294,10 +292,7 @@ describe('stage', () => {
 				).getBoundingClientRect();
 
 				// Point at a note's on-screen middle: the hit lands on that note and its time.
-				const note = score.getElements().notes()[5];
-				if (!note) {
-					throw new Error('note not found');
-				}
+				const note = score.getElements().notes()[5] as Note;
 				const rect = note.getBoundingClientRect();
 				const hits: unknown[] = [];
 				score.events.on('pointerdown', (e) => {

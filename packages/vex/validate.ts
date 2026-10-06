@@ -10,7 +10,6 @@ export interface ValidateOptions {
 }
 
 export async function validate(opts: ValidateOptions) {
-	// index.ts chdir'd to the repo root, so resolve the user path against their cwd.
 	const at = isAbsolute(opts.input)
 		? opts.input
 		: resolve(opts.cwd, opts.input);

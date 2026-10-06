@@ -3,60 +3,6 @@ import { DefaultScoreParser } from './default-score-parser';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { ScoreReader } from './score-reader';
 
-/* A one-part score whose measures carry exactly the given <barline>s (and a note, so the
- * measure is well-formed). Each entry is the raw inner XML of that measure's barlines. */
-function scoreOf(...barlines: string[]): string {
-	const measures = barlines
-		.map(
-			(b, i) => `<measure number="${i + 1}">
-			${b}
-			<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
-		</measure>`,
-		)
-		.join('');
-	return `<?xml version="1.0"?>
-<score-partwise version="4.0">
-	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
-	<part id="P1">${measures}</part>
-</score-partwise>`;
-}
-
-/* A one-part 4/4 measure of quarter notes, prefixed with the directions under test: what the
- * tempo, swing and modulation readers are asked about. */
-async function measureOf(prefix: string, suffix = '') {
-	const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
-<score-partwise version="4.0">
-	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
-	<part id="P1"><measure number="1">
-		<attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
-		${prefix}
-		${'<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>'.repeat(4)}
-		${suffix}
-	</measure></part>
-</score-partwise>`);
-	const [measure] = mdoc.score.parts[0]?.measures ?? [];
-	if (!measure) {
-		throw new Error('fixture parsed no measures');
-	}
-	return measure;
-}
-
-async function repeatsOf(xml: string) {
-	const mdoc = await new DefaultScoreParser().parse(xml);
-	return new ScoreReader(new DynamicGlyphs()).measureRepeats(
-		mdoc.score.parts[0]?.measures ?? [],
-	);
-}
-
-const FORWARD =
-	'<barline location="left"><repeat direction="forward"/></barline>';
-const BACKWARD =
-	'<barline location="right"><repeat direction="backward"/></barline>';
-const start = (n: string) =>
-	`<barline location="left"><ending number="${n}" type="start"/></barline>`;
-const stop = (n: string, type: string) =>
-	`<barline location="right"><ending number="${n}" type="${type}"/></barline>`;
-
 describe('ScoreReader', () => {
 	/*
 	 * A <metronome>'s printed shape, which the barline_styles/tempo_beat_unit_dot screenshots
@@ -157,7 +103,7 @@ describe('ScoreReader', () => {
 		expect(reader.swingOf(m)).toMatchObject({ first: 2, second: 1 });
 	});
 
-	it('does not swing off the <metronome> figure alone — that is notation, not timing', async () => {
+	it('does not swing off the <metronome> figure alone: that is notation, not timing', async () => {
 		const m = await measureOf(
 			'<direction><direction-type><metronome>' +
 				'<metronome-note><metronome-type>eighth</metronome-type></metronome-note>' +
@@ -224,7 +170,7 @@ describe('ScoreReader', () => {
 		).toBeNull();
 	});
 
-	it('is null without a relation — one group equates to nothing', async () => {
+	it('is null without a relation: one group equates to nothing', async () => {
 		expect(
 			await modulationOf(
 				'<metronome-note><metronome-type>eighth</metronome-type></metronome-note>',
@@ -315,7 +261,7 @@ describe('ScoreReader', () => {
 
 	it('leaves an ending with no backward repeat open on the right', async () => {
 		// A final ending has nothing jumping back from it, so its bracket runs on into the
-		// music with no down hook — even though exporters still write `type="stop"` on it.
+		// music with no down hook, even though exporters still write `type="stop"` on it.
 		const result = await repeatsOf(
 			scoreOf(
 				start('1') + stop('1', 'stop') + BACKWARD,
@@ -379,3 +325,57 @@ describe('ScoreReader', () => {
 		});
 	});
 });
+
+/* A one-part score whose measures carry exactly the given <barline>s (and a note, so the
+ * measure is well-formed). Each entry is the raw inner XML of that measure's barlines. */
+function scoreOf(...barlines: string[]): string {
+	const measures = barlines
+		.map(
+			(b, i) => `<measure number="${i + 1}">
+			${b}
+			<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+		</measure>`,
+		)
+		.join('');
+	return `<?xml version="1.0"?>
+<score-partwise version="4.0">
+	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+	<part id="P1">${measures}</part>
+</score-partwise>`;
+}
+
+/* A one-part 4/4 measure of quarter notes, prefixed with the directions under test: what the
+ * tempo, swing and modulation readers are asked about. */
+async function measureOf(prefix: string, suffix = '') {
+	const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
+<score-partwise version="4.0">
+	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+	<part id="P1"><measure number="1">
+		<attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+		${prefix}
+		${'<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>'.repeat(4)}
+		${suffix}
+	</measure></part>
+</score-partwise>`);
+	const [measure] = mdoc.score.parts[0]?.measures ?? [];
+	if (!measure) {
+		throw new Error('fixture parsed no measures');
+	}
+	return measure;
+}
+
+async function repeatsOf(xml: string) {
+	const mdoc = await new DefaultScoreParser().parse(xml);
+	return new ScoreReader(new DynamicGlyphs()).measureRepeats(
+		mdoc.score.parts[0]?.measures ?? [],
+	);
+}
+
+const FORWARD =
+	'<barline location="left"><repeat direction="forward"/></barline>';
+const BACKWARD =
+	'<barline location="right"><repeat direction="backward"/></barline>';
+const start = (n: string) =>
+	`<barline location="left"><ending number="${n}" type="start"/></barline>`;
+const stop = (n: string, type: string) =>
+	`<barline location="right"><ending number="${n}" type="${type}"/></barline>`;

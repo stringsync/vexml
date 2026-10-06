@@ -12,27 +12,9 @@ import { Rect } from 'webappwiz/geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
 import { FRET_HALF_H, FRET_HALF_W, NOTEHEAD_HALF_H } from './constants';
 
-/* The side modifiers one notehead owns (attached at its index) that count toward its ink. A
- * Stroke (arpeggio) is drawn once for the whole chord, so it counts for every head. Grace
- * groups and annotations (lyrics, fingerings above/below) stay out: graces are notes of their
- * own, and text above or below the stave is not on the note's line. */
-const INK_CATEGORIES = new Set([
-	'Accidental',
-	'Dot',
-	'Parenthesis',
-	'FretHandFinger',
-]);
-
-/* The strokes whose arrowhead hangs below the bottom head (Stroke.draw). */
-const ARROW_BELOW = new Set<number>([
-	Stroke.Type.BRUSH_UP,
-	Stroke.Type.ROLL_UP,
-	Stroke.Type.RASGUEADO_UP,
-]);
-
 /* A note's engraved glyph, captured so a decoration can re-stamp it in color on an overlay: the
  * SMuFL text, the exact CSS font vexflow drew it with, and its baseline position in score space.
- * Replaying vexflow's own fillText reproduces the notehead precisely — hollow notes stay hollow. */
+ * Replaying vexflow's own fillText reproduces the notehead precisely: hollow notes stay hollow. */
 export interface NoteGlyph {
 	readonly text: string;
 	readonly font: string;
@@ -54,29 +36,8 @@ export interface RawNote {
 	chord: MNote[];
 	measureIndex: number;
 	tab: { string: number; fret: number } | null;
-	/* The engraved glyph for recoloring — a notehead, or a tab fret; null for a rest. */
+	/* The engraved glyph for recoloring: a notehead, or a tab fret; null for a rest. */
 	glyph: NoteGlyph | null;
-}
-
-export interface RawMeasure {
-	rect: Rect;
-	index: number;
-	/* The MusicXML measure number (a string — handles pickups, "X1" etc.). */
-	number: string;
-	/* The system (line) this measure column was laid out on. */
-	systemIndex: number;
-}
-
-/* A chord diagram (fret box) the draw pass placed, in score space. The rect spans the whole
- * drawn extent (title included). */
-export interface RawChordDiagram {
-	rect: Rect;
-	/* The <harmony> that produced this diagram. */
-	harmonySource: Harmony;
-	measureIndex: number;
-	frame: ChordFrame;
-	/* The harmony text drawn as the diagram's title, or null when it drew untitled. */
-	title: string | null;
 }
 
 /*
@@ -103,7 +64,7 @@ export class GeometryCollector {
 		for (const { note, chord } of chords) {
 			const x = note.getAbsoluteX();
 			// The drawn fret glyphs, parallel to getPositions() (one per struck string), so a
-			// decoration can replay the exact fret text vexflow drew — "<12>", "(2)", "✕" —
+			// decoration can replay the exact fret text vexflow drew ("<12>", "(2)", "✕")
 			// in color. The tab analog of the notation path's note.noteHeads.
 			const positions = note.getPositions();
 			const fretEls = (
@@ -167,7 +128,7 @@ export class GeometryCollector {
 	): void {
 		for (const { note, chord } of chords) {
 			// The normal notehead column's x-span (getAbsoluteX is the tick anchor, left of
-			// the notehead — centering on it puts decorations off the note); the fallback
+			// the notehead: centering on it puts decorations off the note); the fallback
 			// when a note drew no head. y per notehead comes from getYs; noteHeads is
 			// indexed in the same (chord.notes) order, so heads[i] is this note's glyph.
 			const headX = note.getNoteHeadBeginX();
@@ -180,7 +141,7 @@ export class GeometryCollector {
 					return;
 				}
 				// Capture the exact stamp vexflow drew (text + font + baseline) so a
-				// decoration can replay it in color — see Decorations. Scratch space; the
+				// decoration can replay it in color: see Decorations. Scratch space; the
 				// caller shifts y by cropTop into score space alongside the rect. Read x
 				// from the bounding box (this.x + xShift), not getX(): a NoteHead borrows
 				// its StaveNote's tick context, so the inherited Tickable.getX() throws.
@@ -322,8 +283,8 @@ export class GeometryCollector {
 
 	/*
 	 * Grow each measure box up to the topmost above-stave text decoration (chord symbol,
-	 * words) in its system, so the measure's bounding box — and the playback cursor and
-	 * auto-scroll that ride on it — cover those extras instead of clipping them. Chord
+	 * words) in its system, so the measure's bounding box (and the playback cursor and
+	 * auto-scroll that ride on it) cover those extras instead of clipping them. Chord
 	 * diagrams are excluded (they don't feed the decoration ceiling), so the cursor bar
 	 * stops at the stave, not the fret box. Called once, at the end of the pass.
 	 */
@@ -353,4 +314,43 @@ export class GeometryCollector {
 	chordDiagrams(): RawChordDiagram[] {
 		return this.rawChordDiagrams;
 	}
+}
+
+/* The side modifiers one notehead owns (attached at its index) that count toward its ink. A
+ * Stroke (arpeggio) is drawn once for the whole chord, so it counts for every head. Grace
+ * groups and annotations (lyrics, fingerings above/below) stay out: graces are notes of their
+ * own, and text above or below the stave is not on the note's line. */
+const INK_CATEGORIES = new Set([
+	'Accidental',
+	'Dot',
+	'Parenthesis',
+	'FretHandFinger',
+]);
+
+/* The strokes whose arrowhead hangs below the bottom head (Stroke.draw). */
+const ARROW_BELOW = new Set<number>([
+	Stroke.Type.BRUSH_UP,
+	Stroke.Type.ROLL_UP,
+	Stroke.Type.RASGUEADO_UP,
+]);
+
+export interface RawMeasure {
+	rect: Rect;
+	index: number;
+	/* The MusicXML measure number (a string; handles pickups, "X1" etc.). */
+	number: string;
+	/* The system (line) this measure column was laid out on. */
+	systemIndex: number;
+}
+
+/* A chord diagram (fret box) the draw pass placed, in score space. The rect spans the whole
+ * drawn extent (title included). */
+export interface RawChordDiagram {
+	rect: Rect;
+	/* The <harmony> that produced this diagram. */
+	harmonySource: Harmony;
+	measureIndex: number;
+	frame: ChordFrame;
+	/* The harmony text drawn as the diagram's title, or null when it drew untitled. */
+	title: string | null;
 }

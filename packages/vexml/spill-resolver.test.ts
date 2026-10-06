@@ -3,7 +3,7 @@ import { STAVE_CLEARANCE } from './constants';
 import { SpillResolver } from './spill-resolver';
 import type { StaveSpill } from './spill-tracker';
 
-// Staff lines 40px below the stave's y and 40px tall — a plain 5-line notation stave.
+// Staff lines 40px below the stave's y and 40px tall: a plain 5-line notation stave.
 // Spill is columned by x; `column` says which one it sits over, so two staves can be given
 // content that shares an x or content that never does. Zero extents are left out, matching
 // what bandSpill records.
@@ -60,7 +60,7 @@ describe('SpillResolver', () => {
 			[1, spill(60, 0, 99)], // lower stave rises 60px, way off at column 99
 		];
 		// Neither reaches into the other's column, so the gap holds the deeper of the two
-		// (60) rather than their sum (110) — and that fits inside the planned 120.
+		// (60) rather than their sum (110), and that fits inside the planned 120.
 		expect(offsets([0, 120], rows)).toEqual([0, 120]);
 		expect(offsets([0, 80], rows)?.[1]).toBe(80 + 60 + STAVE_CLEARANCE - 40);
 	});
@@ -117,7 +117,7 @@ describe('SpillResolver', () => {
 		const resolved = new SpillResolver().spacedOffsets(
 			[0, 80],
 			new Map([
-				// System 0 is plain — its staves stay where they were planned.
+				// System 0 is plain: its staves stay where they were planned.
 				[
 					0,
 					new Map([

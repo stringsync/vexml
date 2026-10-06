@@ -37,71 +37,11 @@ import { CrispTabSlide } from './crisp-tab-slide';
 import { Hairpin } from './hairpin';
 import { HeadCurve } from './head-curve';
 import { NotationSlide } from './notation-slide';
-import { NoteheadArticulation } from './notation-translator';
+import { NoteheadArticulation } from './notehead-articulation';
 import { LINE_TYPE_DASH, type PedalMark, type WedgeMark } from './score-reader';
 import { SingleSlide } from './single-slide';
 import { TabCurve } from './tab-curve';
 import { TabSlideLine } from './tab-slide-line';
-
-/*
- * A built slur, with the vertical extent it will be drawn at. A slur is not movable — it's
- * pinned to its two noteheads — so the only way it can stop printing through a neighbouring
- * part's lyrics is for the draw pass to reserve the room its bow needs (it feeds this to
- * recordStaveSpill).
- */
-export type SlurCurve = {
-	curve: Curve;
-	/* The stave the bow is drawn over; absent only if an endpoint lost its stave. */
-	stave: Stave | undefined;
-	top: number;
-	bottom: number;
-	left: number;
-	right: number;
-	/* Whether the bow joins two staves of the same system. Such a curve LIVES in the gap
-	 * between them, so it doesn't report spill: it would ask the gap to widen to hold a
-	 * curve whose height that same gap sets, and the two would chase each other. It takes
-	 * whatever room the notes leave. */
-	crossStave: boolean;
-};
-
-/*
- * How a <tuplet> start marker asks to be PRINTED, which MusicXML keeps separate from the
- * <time-modification> that compresses the durations: <tuplet-actual>/<tuplet-normal> give the
- * printed pair their own numbers (a "7:5" label over a 3:2 compression), show-number="both"
- * prints the second half of that pair, and `bracket` settles the bracket instead of leaving
- * vexflow to infer it from whether the group is beamed. Nulls mean "not stated" — the caller
- * falls back to the <time-modification> ratio and vexflow's own bracket rule.
- *
- * ponytail: show-number="none" (a bracket with no numeral) and show-type (the note-value
- * glyphs some publishers print beside the number) are ignored. vexflow's Tuplet always draws
- * its text and splits the bracket around it, so either would need a draw() override; no
- * fixture asks for them yet.
- */
-type TupletDisplay = {
-	numNotes: number | null;
-	notesOccupied: number | null;
-	ratioed: boolean;
-	bracketed: boolean | null;
-};
-
-/*
- * The slur-like connectors starting/stopping on a note: its <slur> markers plus any
- * <hammer-on>/<pull-off> in <technical>. In standard notation a hammer-on/pull-off IS
- * just a slur curve (the "H"/"P" label is a tab-only convention), so buildSlurs draws
- * them the same way — including grace-to-main graces. A technique a real <slur> already
- * covers is dropped, so an exporter that emits both doesn't double the arc: either the
- * slur reaches the same partner, or (`spans`) one slur arcs over both of the technique's
- * ends. The second case is a legato run written as one long <slur> plus a hammer-on/pull-off
- * per adjacent pair — the run gets its one arc, not that arc plus a bump over every pair.
- */
-type SlurConnector = {
-	slurType: string;
-	partner: { note: Note } | null;
-	placement: string | null;
-	/* The canvas dash array from <slur line-type>, or null for a solid curve. A
-	 * hammer-on/pull-off has no line-type, so it is always solid. */
-	dash: number[] | null;
-};
 
 export class SpannerBuilder {
 	private readonly connectors = new Map<
@@ -167,7 +107,7 @@ export class SpannerBuilder {
 
 	/*
 	 * Beam slope follows the group's contour (Gould, Behind Bars): a beam slants only
-	 * when the run moves consistently one way, and is horizontal otherwise — equal outer
+	 * when the run moves consistently one way, and is horizontal otherwise: equal outer
 	 * pitches, a contour that reverses direction, or a peak/trough sitting in the middle
 	 * (the classic "the highest note isn't an outer note, so the beam is flat").
 	 *
@@ -235,18 +175,18 @@ export class SpannerBuilder {
 	 * marker prints its own (see tupletDisplay).
 	 *
 	 * The bracket goes where the start marker's `placement` says, and otherwise on
-	 * the stem side of the group — the engraving default, and what MuseScore does.
+	 * the stem side of the group, which is the engraving default and what MuseScore does.
 	 * Beams are built before tuplets, so the stem directions are already settled.
 	 *
 	 * Spans can NEST (a triplet inside a quintuplet), so the open starts are kept by the
-	 * marker's `number` rather than as one slot — an inner start arriving before the outer
+	 * marker's `number` rather than as one slot: an inner start arriving before the outer
 	 * stop would otherwise overwrite it and lose the outer bracket entirely. MusicXML
 	 * defaults an omitted number to "1", which is also what a flat run of unnumbered
 	 * tuplets uses, so they share the slot and pair in order either way.
 	 *
 	 * vexflow staggers nested brackets itself (Tuplet.getNestedTupletCount), but by a step
 	 * shorter than the numeral it centers on each bracket line, so the two numbers print
-	 * through each other — hence the extra yOffset, sized by how deep the nesting under this
+	 * through each other, hence the extra yOffset, sized by how deep the nesting under this
 	 * span goes (the same max-minus-min depth vexflow measures).
 	 */
 	buildTuplets<T extends StemmableNote>(
@@ -295,7 +235,7 @@ export class SpannerBuilder {
 					const ratio = chords[start]?.lead.timeModification;
 					const numNotes = display?.numNotes ?? ratio?.actual;
 					const notesOccupied = display?.notesOccupied ?? ratio?.normal;
-					// ponytail: the first non-rest speaks for the group — a mixed-stem
+					// ponytail: the first non-rest speaks for the group; a mixed-stem
 					// tuplet would need a majority vote.
 					const stemmed = group.find((n) => !n.isRest()) ?? group[0];
 					const isBelow =
@@ -311,7 +251,7 @@ export class SpannerBuilder {
 							// Signed the way vexflow's own nesting offset is: away from the stave.
 							yOffset:
 								(maxDepth - depth) * TUPLET_NESTING_EXTRA_GAP * -location,
-							// MusicXML's default is show-number="actual" — just the count.
+							// MusicXML's default is show-number="actual": just the count.
 							// vexflow's own default prints the ratio whenever the two numbers
 							// differ by more than one, which turns a plain sextuplet into "6:4".
 							ratioed: display?.ratioed ?? false,
@@ -334,7 +274,7 @@ export class SpannerBuilder {
 	 */
 	buildTies(chords: Chord[], byLead: Map<Note, StaveNote>): StaveTie[] {
 		// Each chord member can carry its own tie, so map every note (not just the lead)
-		// to its StaveNote and notehead index — the tie must land on the right notehead,
+		// to its StaveNote and notehead index: the tie must land on the right notehead,
 		// and its partner may itself be a chord member.
 		const placement = new Map<Note, { staveNote: StaveNote; index: number }>();
 		const chordOf = new Map<Note, Chord>();
@@ -359,8 +299,8 @@ export class SpannerBuilder {
 						continue;
 					}
 					// A tie always joins two notes of the same pitch. When the partner is a
-					// chord, mdom can't tell which member it lands on — chord <tied>s usually
-					// share number "1", so partner() pairs every start to the chord's first
+					// chord, mdom can't tell which member it lands on (chord <tied>s usually
+					// share number "1"), so partner() pairs every start to the chord's first
 					// stop. Re-resolve to the same-pitch member so the tie hits the right
 					// notehead.
 					const partnerNote =
@@ -402,11 +342,11 @@ export class SpannerBuilder {
 
 	/*
 	 * Hammer-ons and pull-offs on a TAB stave. Both are notated with a plain <slur> and draw
-	 * as a TabCurve — the same bow the notation stave's slurs get, rather than vexflow's
+	 * as a TabCurve: the same bow the notation stave's slurs get, rather than vexflow's
 	 * flatter TabTie arc. Which of the two it is doesn't change the drawing: the arc plus the
 	 * fret motion says it (higher target = hammer-on, lower = pull-off), so the "H"/"P" letters
 	 * vexflow prints are left off. Reads the same slurConnectors buildSlurs does, so a
-	 * <hammer-on>/<pull-off> written WITHOUT a companion <slur> draws on the tab stave too —
+	 * <hammer-on>/<pull-off> written WITHOUT a companion <slur> draws on the tab stave too;
 	 * otherwise the notation stave shows an arc the tab is missing.
 	 */
 	buildHammerPulls(chords: Chord[], byTabLead: Map<Note, TabNote>): TabCurve[] {
@@ -454,10 +394,10 @@ export class SpannerBuilder {
 
 	/*
 	 * Slides on a TAB stave: a <slide> (or <glissando>) start..stop pair, drawn as a
-	 * TabSlide — a diagonal line between the two frets, angled up or down by the fret
+	 * TabSlide: a diagonal line between the two frets, angled up or down by the fret
 	 * motion. Paired by `number` like every spanner; resolved over the whole score so a
 	 * slide can cross a barline. (Unlike hammer/pull there's no "H"/"P" label, so the
-	 * slide direction is purely cosmetic — vexflow just tilts the line.)
+	 * slide direction is purely cosmetic: vexflow just tilts the line.)
 	 */
 	buildSlides(
 		chords: Chord[],
@@ -491,7 +431,7 @@ export class SpannerBuilder {
 					open.delete(number);
 					if (!from) {
 						// A stop with no matching start is a slide *into* this note from an
-						// indeterminate origin — a "/8" tick left of the fret, not a line.
+						// indeterminate origin: a "/8" tick left of the fret, not a line.
 						slides.push(new SingleSlide(tabNote, 0, 'in', SINGLE_SLIDE_GAP));
 						continue;
 					}
@@ -513,7 +453,7 @@ export class SpannerBuilder {
 				}
 			}
 		}
-		// A start left unclosed is a slide *out* of that note to an indeterminate target — a
+		// A start left unclosed is a slide *out* of that note to an indeterminate target: a
 		// tick right of the fret. (showText only labels paired "sl." lines, not these ticks.)
 		for (const { note } of open.values()) {
 			slides.push(new SingleSlide(note, 0, 'out', SINGLE_SLIDE_GAP));
@@ -523,7 +463,7 @@ export class SpannerBuilder {
 
 	/*
 	 * Glissandos/slides on a standard-notation stave: a <slide> (or <glissando>)
-	 * start..stop pair drawn as a StaveLine — a straight line between the two
+	 * start..stop pair drawn as a StaveLine: a straight line between the two
 	 * noteheads (the tab counterpart is buildSlides, a tilted TabSlide). Paired by
 	 * `number` and resolved over the whole score so a slide can cross a barline. The
 	 * grace lead is in byLead too, so this covers a grace note that slides into the
@@ -534,7 +474,7 @@ export class SpannerBuilder {
 		byLead: Map<Note, StaveNote>,
 	): Array<NotationSlide | SingleSlide> {
 		// A slide can sit on any chord member (a two-note chord may slide both notes,
-		// each with its own <slide number>), so map every note — not just the lead —
+		// each with its own <slide number>), so map every note (not just the lead)
 		// to its StaveNote and notehead index. Otherwise only the lead's line draws.
 		const placement = new Map<Note, { staveNote: StaveNote; index: number }>();
 		for (const chord of chords) {
@@ -569,7 +509,7 @@ export class SpannerBuilder {
 						open.delete(marker.number);
 						if (!from) {
 							// Stop with no start: a slide *into* this note (a "/" tick left of
-							// the head) — the notation counterpart of the tab slide-in.
+							// the head), the notation counterpart of the tab slide-in.
 							lines.push(new SingleSlide(at.staveNote, at.index, 'in', 0));
 							continue;
 						}
@@ -585,7 +525,7 @@ export class SpannerBuilder {
 				}
 			}
 		}
-		// A start left unclosed is a slide *out* of that note — a "/" tick right of the head.
+		// A start left unclosed is a slide *out* of that note: a "/" tick right of the head.
 		for (const at of open.values()) {
 			lines.push(
 				new SingleSlide(at.staveNote, at.index, 'out', SINGLE_SLIDE_GAP),
@@ -595,8 +535,8 @@ export class SpannerBuilder {
 	}
 
 	/*
-	 * Hairpins (<direction><wedge>): a start..stop pair drawn as a vexflow StaveHairpin —
-	 * an opening wedge for a crescendo, a closing one for a diminuendo — on the side of the
+	 * Hairpins (<direction><wedge>): a start..stop pair drawn as a vexflow StaveHairpin
+	 * (an opening wedge for a crescendo, a closing one for a diminuendo), on the side of the
 	 * staff the direction's placement names (below by default). Paired by `number` and
 	 * resolved over the whole score (a hairpin can span barlines) like the other spanners;
 	 * the markers arrive in document order, so each stop closes the matching open start.
@@ -630,11 +570,11 @@ export class SpannerBuilder {
 
 	/*
 	 * Trill extension lines (<notations><ornaments><wavy-line>): a start..stop pair drawn as a
-	 * vexflow VibratoBracket — the wavy line running from a trill across the notes it is held
+	 * vexflow VibratoBracket: the wavy line running from a trill across the notes it is held
 	 * over. Paired by `number` over the whole score like the other spanners, so a run of
 	 * trilled notes (each carrying a stop and then a start) comes out as a chain of brackets
 	 * that meet end to end.
-	 * ponytail: the marker's placement is ignored — vexflow's bracket only draws above the
+	 * ponytail: the marker's placement is ignored; vexflow's bracket only draws above the
 	 * stave, which is where a trill line belongs anyway.
 	 */
 	buildWavyLines(
@@ -669,11 +609,11 @@ export class SpannerBuilder {
 
 	/*
 	 * Sustain pedals (<direction><pedal>): a start..stop pair drawn as a vexflow
-	 * PedalMarking under the stave — the "Ped…*" text by default, or a bracket line
+	 * PedalMarking under the stave: the "Ped…*" text by default, or a bracket line
 	 * when the MusicXML carries line="yes". Paired by `number` and resolved over the
 	 * whole score (a pedal can span barlines) like the other spanners; the markers
 	 * arrive in document order, so each stop closes the matching open start.
-	 * ponytail: a pedal whose stop wraps onto a later system isn't split — vexflow
+	 * ponytail: a pedal whose stop wraps onto a later system isn't split; vexflow
 	 * throws on descending x, so a wrapping pedal would need the partial-span handling
 	 * buildTies uses; add it if a fixture needs one.
 	 *
@@ -741,7 +681,7 @@ export class SpannerBuilder {
 				const j = indexOf.get(partner) ?? -1;
 				// `chords` is the whole score in document order, so the slice between two
 				// notes also sweeps up every other part, stave and voice that happens to be
-				// notated in between — the last note of a bass-stave voice and the first note
+				// notated in between: the last note of a bass-stave voice and the first note
 				// of the next measure's same voice are separated by the whole treble stave.
 				// Clearing those would inflate a two-note bow into a spike reaching the stave
 				// above, so only notes sharing a stave with an endpoint count.
@@ -761,7 +701,7 @@ export class SpannerBuilder {
 				// A cross-stave slur: the two ends sit on different staves of the same system,
 				// because the run is beamed out of one hand's stave up into the other's. A stop
 				// that WRAPS onto a later system is on another stave too, but that splits into
-				// two half-curves below and each half stays put — hence the Y test, which reads
+				// two half-curves below and each half stays put, hence the Y test, which reads
 				// "the stop's stave is HIGHER on the page", the one thing a wrap can't be.
 				const fromStave = from.getStave();
 				const toStave = to.getStave();
@@ -789,7 +729,7 @@ export class SpannerBuilder {
 				// stems (slurs sit on the notehead side). The opening direction forces the
 				// arc's sign even when the two endpoints' stems disagree. A grace-to-main
 				// slur always hugs under (under the grace, down to the main notehead),
-				// ignoring placement — grace slurs read as a consistent underneath bow.
+				// ignoring placement: grace slurs read as a consistent underneath bow.
 				// A cross-stave slur overrides placement too, bowing away from its run's beam: its
 				// ends are a stave apart, so a bow on the beam's side has to duck under (or over)
 				// the beam and then dive most of a stave to reach the far end, which reads as a
@@ -823,13 +763,13 @@ export class SpannerBuilder {
 				// low note beamed up out of the stave has a stem taller than the stave, so a
 				// slur joining it to its neighbour's notehead comes out as a near-vertical
 				// whip. A slur is a bow between two points at comparable heights, so choose
-				// per slur rather than per note — take the stem tips only while they leave the
+				// per slur rather than per note: take the stem tips only while they leave the
 				// two ends at least as level as the noteheads would.
 				//
 				// Unless an end is BEAMED on the bulge side, where the notehead is the worse anchor
 				// however level it is: the beam is a bar lying between that notehead and the bow, so
 				// a curve leaving the notehead climbs out through it. Such a slur takes the stem
-				// tips — the beam's own outer edge — as long as its span is wide enough to carry the
+				// tips (the beam's own outer edge), as long as its span is wide enough to carry the
 				// drop as a slant (SLUR_STEM_TIP_SLANT). That budget is what still holds the whip
 				// case above to the noteheads: its far stem is a stave tall over two adjacent notes.
 				const towardBulge = (note: StaveNote) =>
@@ -844,7 +784,7 @@ export class SpannerBuilder {
 				// Measure both candidates against their own stave. On a slur that wraps onto a
 				// later system the two ends sit a system apart, so raw Ys differ by the row gap
 				// and that would swamp the comparison; stave-relative heights are what "level"
-				// means for the two halves it splits into. Same-stave slurs are unaffected — the
+				// means for the two halves it splits into. Same-stave slurs are unaffected: the
 				// offsets cancel.
 				const relative = (note: StaveNote, y: number) =>
 					y - (note.getStave()?.getY() ?? 0);
@@ -896,7 +836,7 @@ export class SpannerBuilder {
 				// midpoint. The arc height also grows with the slur's width so long slurs get
 				// a rounder, taller bow instead of a flat line skimming the noteheads. A grace
 				// curve measures against its own anchors instead, so the bow it draws is the
-				// one its endpoints ask for — change SLUR_GRACE_ANCHOR and the depth follows.
+				// one its endpoints ask for; change SLUR_GRACE_ANCHOR and the depth follows.
 				const extentsOf = (n: StaveNote) => {
 					if (isGrace) {
 						const y = anchorY(n);
@@ -956,8 +896,8 @@ export class SpannerBuilder {
 				//     changing its shape. Costs the same everywhere along the span.
 				//
 				// So: solve cpY against the notes in the middle, then lift by whatever is still
-				// short anywhere — the notes under the ends, and anything the aspect cap refused
-				// to inflate for. A steep near-end obstacle raises the slur off its first
+				// short anywhere (the notes under the ends, and anything the aspect cap refused
+				// to inflate for). A steep near-end obstacle raises the slur off its first
 				// notehead instead of ballooning it, which is what a reference engraving does.
 				//
 				// Clearance is checked at each note's OWN x, not just at the apex: an apex-only
@@ -965,7 +905,7 @@ export class SpannerBuilder {
 				// also catches notes the old midpoint-vs-extreme comparison couldn't see at all,
 				// like one poking above a steeply slanted chord.
 				//
-				// For a full slur only the notes it passes *over* count — the endpoints are
+				// For a full slur only the notes it passes *over* count: the endpoints are
 				// where it attaches, so their own stems must not inflate it. A note beamed up
 				// out of the stave has a stem taller than the stave itself, and clearing that
 				// from a notehead anchor turns a two-note slur into a narrow spike; with no
@@ -996,7 +936,7 @@ export class SpannerBuilder {
 					yR: number,
 				) => {
 					const width = Math.abs(xR - xL);
-					// A grace bow stays tight — it takes the clearance it needs and no more,
+					// A grace bow stays tight: it takes the clearance it needs and no more,
 					// where a full slur also widens with its span.
 					const floor = isGrace
 						? SLUR_GRACE_CP_Y
@@ -1007,7 +947,7 @@ export class SpannerBuilder {
 					// past the CHORD counts. Measured against a single Y instead, a note well
 					// below an upward-bowing slur (the other voice on the stave, the next
 					// measure's lower neighbour) asks the arc to rise by however far below it
-					// sits — which turns a two-note bow across a barline into a tall narrow
+					// sits, which turns a two-note bow across a barline into a tall narrow
 					// spike.
 					const clearances = clearanceOf(spanNotes).map((n) => {
 						const s = width ? (n.getAbsoluteX() - xL) / (xR - xL) : 0.5;
@@ -1027,7 +967,7 @@ export class SpannerBuilder {
 					);
 					// One ceiling for both knobs: how far past its base lift the curve may stand
 					// off the chord at all. Beyond this it stops reading as a bow, whether it
-					// got there by inflating or by rising, so it stops trying — a slur can't
+					// got there by inflating or by rising, so it stops trying: a slur can't
 					// clear everything a span might hold (a second voice, the stem of a run
 					// beamed into the other hand) and shouldn't deform itself pretending to.
 					const reach = width * SLUR_MAX_ASPECT;
@@ -1037,7 +977,7 @@ export class SpannerBuilder {
 					);
 					// A bow held under the ceiling flattens instead: its control points slide
 					// toward the ends, as little as clears the notes the depth was for. Only the
-					// ceiling does this — a short slur the aspect cap stopped keeps its shape.
+					// ceiling does this: a short slur the aspect cap stopped keeps its shape.
 					const capped = cpY === SLUR_MAX_CP_Y && inflation > cpY;
 					const middle = clearances.filter(
 						(c) => c.s >= SLUR_END_ZONE && c.s <= 1 - SLUR_END_ZONE,
@@ -1075,14 +1015,14 @@ export class SpannerBuilder {
 				) => {
 					// vexflow offsets each control point from its OWN endpoint by the same cps.y, so
 					// on a slur whose two ends sit at very different heights both points land the
-					// same distance above their end — which is nowhere near the line between the
+					// same distance above their end, which is nowhere near the line between the
 					// two. The far one ends up on the wrong side of its endpoint entirely and the
 					// curve flicks up out of the note instead of settling onto it.
 					//
 					// Offset them from the CHORD (the straight line joining the two ends) instead,
 					// each lifted `cpY` off it. vexflow puts the control points a quarter and three
 					// quarters of the way along, so the chord there is a quarter of the drop either
-					// side of the midpoint — hence the ±slant. What that draws is a parabola over
+					// side of the midpoint, hence the ±slant. What that draws is a parabola over
 					// the chord: symmetric bow, both ends tangent to the chord, no hook. The apex
 					// is unchanged at chord-midpoint + 0.75*cpY (the cubic's t=0.5 works out to
 					// that), so the clearance shapeFor solved for still holds. Level endpoints
@@ -1110,11 +1050,11 @@ export class SpannerBuilder {
 						],
 					};
 					const curve = isGrace
-						? new HeadCurve(curveFrom, curveTo, options, y0, y1)
+						? new HeadCurve(curveFrom, curveTo, y0, y1, options)
 						: new CrispCurve(curveFrom, curveTo, options);
 					// Where the bow will actually reach. vexflow shifts both endpoints by
 					// `yShift` and lands both control points at `depth`, so the cubic's midpoint
-					// sits at mid(y0,y1) + dir*(yShift + 0.75*cpY) — the arc's far side, plus the
+					// sits at mid(y0,y1) + dir*(yShift + 0.75*cpY): the arc's far side, plus the
 					// stroke thickness it's drawn with. Reported so the draw pass can reserve the
 					// room a bow needs over its stave instead of letting it print into the part
 					// above's lyrics.
@@ -1208,7 +1148,7 @@ export class SpannerBuilder {
 	 * The vexflow TieNotes spec(s) for a tie/slur from firstNote to lastNote on the given
 	 * notehead/position indexes. Normally one spec spanning both notes; but when the stop note
 	 * wraps onto a later system its stave sits lower on the page (greater Y), so a single tie
-	 * would draw as one long diagonal across the page — split it into two partial ties, one
+	 * would draw as one long diagonal across the page, so it is split into two partial ties, one
 	 * bowing off the right edge of the start note's stave ("tie to nothing") and one bowing in
 	 * from the left edge of the stop note's ("tie from nothing"). vexflow renders a tie given
 	 * only a firstNote (or only a lastNote) exactly so. Shared by buildTies and buildHammerPulls.
@@ -1245,7 +1185,7 @@ export class SpannerBuilder {
 	/*
 	 * The position indexes a hammer-on/pull-off arc connects: each string played by both
 	 * notes, paired up. A hammer-on runs along one string, so a two-string chord hammering
-	 * into another draws one arc per shared string. Positions with no counterpart drop out —
+	 * into another draws one arc per shared string. Positions with no counterpart drop out;
 	 * that's how an arpeggiated chord hammering into a single note stays drawable: the two
 	 * lists have to stay the same length to pair up. Falls back to the lead position on both sides
 	 * when the two share no string at all (a slur across strings isn't really a hammer-on,
@@ -1325,7 +1265,7 @@ export class SpannerBuilder {
 	/*
 	 * A note's <slur>s and hammer-on/pull-offs with their partners resolved, read once per
 	 * note. mdom pairs a marker by re-pairing every marker of its kind in the part, so each
-	 * `partner` read costs the whole part — and the slur passes run per measure and per pass,
+	 * `partner` read costs the whole part, and the slur passes run per measure and per pass
 	 * over the whole score. A SpannerBuilder lives for one render, over a document that
 	 * doesn't change under it. Starts only: every connector is drawn from its start, and a
 	 * stop's partner costs as much to find as a start's.
@@ -1421,3 +1361,63 @@ export class SpannerBuilder {
 		};
 	}
 }
+
+/*
+ * A built slur, with the vertical extent it will be drawn at. A slur is not movable: it's
+ * pinned to its two noteheads, so the only way it can stop printing through a neighbouring
+ * part's lyrics is for the draw pass to reserve the room its bow needs (it feeds this to
+ * recordStaveSpill).
+ */
+export type SlurCurve = {
+	curve: Curve;
+	/* The stave the bow is drawn over; absent only if an endpoint lost its stave. */
+	stave: Stave | undefined;
+	top: number;
+	bottom: number;
+	left: number;
+	right: number;
+	/* Whether the bow joins two staves of the same system. Such a curve LIVES in the gap
+	 * between them, so it doesn't report spill: it would ask the gap to widen to hold a
+	 * curve whose height that same gap sets, and the two would chase each other. It takes
+	 * whatever room the notes leave. */
+	crossStave: boolean;
+};
+
+/*
+ * How a <tuplet> start marker asks to be PRINTED, which MusicXML keeps separate from the
+ * <time-modification> that compresses the durations: <tuplet-actual>/<tuplet-normal> give the
+ * printed pair their own numbers (a "7:5" label over a 3:2 compression), show-number="both"
+ * prints the second half of that pair, and `bracket` settles the bracket instead of leaving
+ * vexflow to infer it from whether the group is beamed. Nulls mean "not stated": the caller
+ * falls back to the <time-modification> ratio and vexflow's own bracket rule.
+ *
+ * ponytail: show-number="none" (a bracket with no numeral) and show-type (the note-value
+ * glyphs some publishers print beside the number) are ignored. vexflow's Tuplet always draws
+ * its text and splits the bracket around it, so either would need a draw() override; no
+ * fixture asks for them yet.
+ */
+type TupletDisplay = {
+	numNotes: number | null;
+	notesOccupied: number | null;
+	ratioed: boolean;
+	bracketed: boolean | null;
+};
+
+/*
+ * The slur-like connectors starting/stopping on a note: its <slur> markers plus any
+ * <hammer-on>/<pull-off> in <technical>. In standard notation a hammer-on/pull-off IS
+ * just a slur curve (the "H"/"P" label is a tab-only convention), so buildSlurs draws
+ * them the same way, including grace-to-main graces. A technique a real <slur> already
+ * covers is dropped, so an exporter that emits both doesn't double the arc: either the
+ * slur reaches the same partner, or (`spans`) one slur arcs over both of the technique's
+ * ends. The second case is a legato run written as one long <slur> plus a hammer-on/pull-off
+ * per adjacent pair: the run gets its one arc, not that arc plus a bump over every pair.
+ */
+type SlurConnector = {
+	slurType: string;
+	partner: { note: Note } | null;
+	placement: string | null;
+	/* The canvas dash array from <slur line-type>, or null for a solid curve. A
+	 * hammer-on/pull-off has no line-type, so it is always solid. */
+	dash: number[] | null;
+};

@@ -1,10 +1,11 @@
 import type { Note as MNote } from '@stringsync/mdom';
 import type { Rect } from 'webappwiz/geometry';
 import type { Decorations } from './decoration';
-import { Element, type Highlightable, type Playable, Toggle } from './element';
+import { Element, type Highlightable, type Playable } from './element';
 import type { NoteGlyph } from './geometry-collector';
 import type { Measure } from './measure';
 import type { TabPosition } from './tab-position';
+import { Toggle } from './toggle';
 import type { Viewport } from './viewport';
 
 /*
@@ -62,8 +63,7 @@ export class Note extends Element implements Highlightable, Playable {
 	}
 
 	/* Replay vexflow's own notehead (same glyph text, font, baseline) in the chosen color, so the
-	 * actual head recolors and a hollow head stays hollow. No glyph means nothing was engraved —
-	 * a rest, or a tie-stop tab string whose fret is omitted — so draw nothing rather than stamping
+	 * actual head recolors and a hollow head stays hollow. No glyph means nothing was engraved (a rest, or a tie-stop tab string whose fret is omitted), so draw nothing rather than stamping
 	 * a phantom ellipse blip where there's no notehead. */
 	override drawColor(ctx: CanvasRenderingContext2D, color: string): void {
 		if (this.deps.glyph) {
@@ -77,7 +77,7 @@ export class Note extends Element implements Highlightable, Playable {
 		return pitch ? this.pitchToKey(pitch) : null;
 	}
 
-	/* Duration in quarter-note beats; 0 for a grace note (which steals time — see isGrace). */
+	/* Duration in quarter-note beats; 0 for a grace note (which steals time: see isGrace). */
 	getDurationBeats(): number {
 		return this.deps.mnote.beats ?? 0;
 	}
@@ -92,7 +92,7 @@ export class Note extends Element implements Highlightable, Playable {
 
 	/**
 	 * Whether swing leaves this note alone. MusicXML exempts notes with no `<type>`, grace notes,
-	 * and — the one that matters in practice — notes whose sounding duration isn't the nominal one
+	 * and (the one that matters in practice) notes whose sounding duration isn't the nominal one
 	 * for their type, i.e. anything carrying a `<time-modification>`.
 	 *
 	 * This is not a nicety. Arrangers of swung music routinely write the guitar or piano part as

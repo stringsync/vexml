@@ -4,11 +4,7 @@ import { dimensions, type Renderer, renderers } from '@vexml/renderer';
 import type { Logger } from 'webappwiz/log';
 import type { Fs } from 'webappwiz/system';
 
-// MusicXML in, PNG out, through whichever engine the flag picks. vexml is the
-// point; the other three are reference renderers for checking vexml against when
-// the correct engraving is unclear (each has its own house style and its own
-// bugs — second opinions, not ground truth).
-export async function render(opts: {
+export interface RenderOptions {
 	input: string;
 	output?: string;
 	config?: string;
@@ -18,7 +14,13 @@ export async function render(opts: {
 	cwd: string;
 	log: Logger;
 	fs: Fs;
-}) {
+}
+
+// MusicXML in, PNG out, through whichever engine the flag picks. vexml is the
+// point; the other three are reference renderers for checking vexml against when
+// the correct engraving is unclear (each has its own house style and its own
+// bugs: second opinions, not ground truth).
+export async function render(opts: RenderOptions) {
 	// index.ts chdir'd to the repo root, so resolve user paths against their cwd.
 	const at = (p: string) => (isAbsolute(p) ? p : resolve(opts.cwd, p));
 	const musicXML = await opts.fs.read(at(opts.input));

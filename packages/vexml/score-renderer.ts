@@ -48,6 +48,7 @@ export interface RenderStage extends Host, PagePainter {
 export class ScoreRenderer {
 	constructor(
 		private readonly config: Config,
+		// scry-ignore classes-over-function-exports: RenderStage is already the interface Stage implements; score-renderer.test.ts injects its FakeStage through it.
 		private readonly stage: RenderStage,
 		private readonly fontLoader: FontLoader,
 		private readonly parser: ScoreParser,

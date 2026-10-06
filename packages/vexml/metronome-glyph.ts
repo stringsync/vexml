@@ -2,7 +2,7 @@ import { Element, type RenderContext } from 'vexflow';
 
 /*
  * The <metronome-note> form of a metronome mark: a note GROUP either side of a relation, e.g.
- * "two beamed eighths = a quarter-eighth triplet" — the swing marking. vexflow's StaveTempo only
+ * "two beamed eighths = a quarter-eighth triplet": the swing marking. vexflow's StaveTempo only
  * draws the <beat-unit> forms ("note = bpm", "note = note"), so this group is laid out and
  * stroked here instead: SMuFL note glyphs at StaveTempo's own size, with beams, augmentation
  * dots, and tuplet brackets drawn in.
@@ -10,95 +10,6 @@ import { Element, type RenderContext } from 'vexflow';
  * Layout runs once in the constructor and drawing just replays it, so the box a caller reserves
  * for collisions and the ink that actually lands come from the same numbers.
  */
-
-/*
- * SMuFL metronome note glyphs by MusicXML <metronome-type>, mirroring vexflow's own
- * StaveTempo.durationToCode so both forms of mark draw the same noteheads at the same size.
- * vexflow's `Glyphs` enum isn't re-exported, hence the literal codepoints.
- */
-const NOTE_GLYPHS: Record<string, string> = {
-	breve: '\uECA0', // metNoteDoubleWhole
-	whole: '\uECA2', // metNoteWhole
-	half: '\uECA3', // metNoteHalfUp
-	quarter: '\uECA5', // metNoteQuarterUp
-	eighth: '\uECA7', // metNote8thUp
-	'16th': '\uECA9', // metNote16thUp
-	'32nd': '\uECAB', // metNote32ndUp
-	'64th': '\uECAD', // metNote64thUp
-	'128th': '\uECAF', // metNote128thUp
-};
-
-/*
- * metNoteQuarterUp: a stemmed black notehead with NO flag, which is exactly what a beamed note
- * looks like. A note carrying a <metronome-beam> draws with this whatever its own type and gets
- * its beams stroked in — an eighth's own flag would otherwise print inside the beam. It doubles
- * as the fallback for an unrecognized <metronome-type>.
- */
-const BEAMED_GLYPH = '';
-
-/** metAugmentationDot — the dot StaveTempo trails a dotted unit with. */
-const DOT_GLYPH = '';
-
-/** Gap between adjacent pieces, matching the 3px StaveTempo advances each of its own pieces by. */
-const GAP = 3;
-
-/** Beam thickness and the stem width a beam has to reach back over, as fractions of a note's ascent. */
-const BEAM_THICKNESS = 0.09;
-const STEM_WIDTH = 0.03;
-
-/** Air between stacked beams (16ths and finer), as a fraction of the beam thickness. */
-const BEAM_SPACING = 0.75;
-
-/** Tuplet bracket: clearance above the stems, leg length, and number size, all off the ascent. */
-const BRACKET_GAP = 0.16;
-const BRACKET_LEG = 0.14;
-const BRACKET_NUMBER_SIZE = 0.36;
-
-/** A `<metronome-tuplet>` marker: the ratio's `actual-notes`, and which end of the span this is. */
-export type ModulationTuplet = { actual: number; type: 'start' | 'stop' };
-
-/** One `<metronome-note>` of a metric modulation. */
-export type ModulationNote = {
-	/** `<metronome-type>`: 'eighth', 'quarter', … */
-	type: string;
-	/** `<metronome-dot/>` count. */
-	dots: number;
-	/** Drawn beamed rather than flagged — the note carries at least one `<metronome-beam>`. */
-	beamed: boolean;
-	/** How many beams run from this note to the next: its 'begin'/'continue' markers. */
-	beamsToNext: number;
-	tuplet: ModulationTuplet | null;
-};
-
-/**
- * A `<metronome>` written in the note form: two note groups either side of a
- * `<metronome-relation>`. This is the shape a swing marking takes, and the beat-unit form (see
- * `TempoMark`) cannot express it — a beat unit is one note, never a beamed pair or a triplet.
- */
-export type TempoModulation = {
-	left: ModulationNote[];
-	right: ModulationNote[];
-	parenthesis: boolean;
-};
-
-/**
- * A glyph or text run, placed relative to the group's left edge and baseline. `size` overrides
- * the element's default point size (the tuplet number, which is smaller than the "=").
- */
-type Placed = {
-	kind: 'glyph' | 'text';
-	text: string;
-	x: number;
-	y: number;
-	size: number | null;
-};
-
-/** An axis-aligned bar. Beams and all three sides of a tuplet bracket are drawn as these. */
-type Bar = { x: number; y: number; width: number; height: number };
-
-/** The x range one note occupies: its left edge, and the right edge of its last augmentation dot. */
-type Span = { left: number; right: number };
-
 export class MetronomeGlyph {
 	/** Total advance width, and how far the ink reaches above/below the baseline. */
 	readonly width: number;
@@ -305,3 +216,92 @@ export class MetronomeGlyph {
 		}
 	}
 }
+
+/*
+ * SMuFL metronome note glyphs by MusicXML <metronome-type>, mirroring vexflow's own
+ * StaveTempo.durationToCode so both forms of mark draw the same noteheads at the same size.
+ * vexflow's `Glyphs` enum isn't re-exported, hence the literal codepoints: metNoteDoubleWhole,
+ * metNoteWhole, then the stem-up metNoteHalfUp through metNote128thUp.
+ */
+const NOTE_GLYPHS: Record<string, string> = {
+	breve: '\uECA0',
+	whole: '\uECA2',
+	half: '\uECA3',
+	quarter: '\uECA5',
+	eighth: '\uECA7',
+	'16th': '\uECA9',
+	'32nd': '\uECAB',
+	'64th': '\uECAD',
+	'128th': '\uECAF',
+};
+
+/*
+ * metNoteQuarterUp: a stemmed black notehead with NO flag, which is exactly what a beamed note
+ * looks like. A note carrying a <metronome-beam> draws with this whatever its own type and gets
+ * its beams stroked in: an eighth's own flag would otherwise print inside the beam. It doubles
+ * as the fallback for an unrecognized <metronome-type>.
+ */
+const BEAMED_GLYPH = '';
+
+/** metAugmentationDot: the dot StaveTempo trails a dotted unit with. */
+const DOT_GLYPH = '';
+
+/** Gap between adjacent pieces, matching the 3px StaveTempo advances each of its own pieces by. */
+const GAP = 3;
+
+/** Beam thickness and the stem width a beam has to reach back over, as fractions of a note's ascent. */
+const BEAM_THICKNESS = 0.09;
+const STEM_WIDTH = 0.03;
+
+/** Air between stacked beams (16ths and finer), as a fraction of the beam thickness. */
+const BEAM_SPACING = 0.75;
+
+/** Tuplet bracket: clearance above the stems, leg length, and number size, all off the ascent. */
+const BRACKET_GAP = 0.16;
+const BRACKET_LEG = 0.14;
+const BRACKET_NUMBER_SIZE = 0.36;
+
+/** A `<metronome-tuplet>` marker: the ratio's `actual-notes`, and which end of the span this is. */
+export type ModulationTuplet = { actual: number; type: 'start' | 'stop' };
+
+/** One `<metronome-note>` of a metric modulation. */
+export type ModulationNote = {
+	/** `<metronome-type>`: 'eighth', 'quarter', … */
+	type: string;
+	/** `<metronome-dot/>` count. */
+	dots: number;
+	/** Drawn beamed rather than flagged: the note carries at least one `<metronome-beam>`. */
+	beamed: boolean;
+	/** How many beams run from this note to the next: its 'begin'/'continue' markers. */
+	beamsToNext: number;
+	tuplet: ModulationTuplet | null;
+};
+
+/**
+ * A `<metronome>` written in the note form: two note groups either side of a
+ * `<metronome-relation>`. This is the shape a swing marking takes, and the beat-unit form (see
+ * `TempoMark`) cannot express it: a beat unit is one note, never a beamed pair or a triplet.
+ */
+export type TempoModulation = {
+	left: ModulationNote[];
+	right: ModulationNote[];
+	parenthesis: boolean;
+};
+
+/**
+ * A glyph or text run, placed relative to the group's left edge and baseline. `size` overrides
+ * the element's default point size (the tuplet number, which is smaller than the "=").
+ */
+type Placed = {
+	kind: 'glyph' | 'text';
+	text: string;
+	x: number;
+	y: number;
+	size: number | null;
+};
+
+/** An axis-aligned bar. Beams and all three sides of a tuplet bracket are drawn as these. */
+type Bar = { x: number; y: number; width: number; height: number };
+
+/** The x range one note occupies: its left edge, and the right edge of its last augmentation dot. */
+type Span = { left: number; right: number };

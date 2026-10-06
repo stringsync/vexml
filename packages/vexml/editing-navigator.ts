@@ -20,7 +20,7 @@ export class EditingNavigator {
 		private readonly layout?: EditingLayout,
 	) {}
 
-	move(move: EditingNavigation, options: SelectionOptions = {}): boolean {
+	move(move: EditingNavigation, opts: SelectionOptions = {}): boolean {
 		const focus = this.editor.getFocus();
 		let target: Note | undefined;
 		switch (move.unit) {
@@ -45,11 +45,11 @@ export class EditingNavigator {
 		if (
 			!target ||
 			target === focus ||
-			(options.extend && !this.editor.canExtendTo(target))
+			(opts.extend && !this.editor.canExtendTo(target))
 		) {
 			return false;
 		}
-		this.editor.select(target, options);
+		this.editor.select(target, opts);
 		return true;
 	}
 

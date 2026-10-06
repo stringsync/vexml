@@ -2,36 +2,24 @@ import { Disposer, disposables, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
 import { Rect } from 'webappwiz/geometry';
 import type { CursorHost } from './cursor-host';
+import { CursorPosition } from './cursor-position';
 import type { CursorView } from './cursor-view';
-import type { Bounded } from './decoration';
 import type { CursorChangeEvent, CursorEventMap } from './events';
 import type { Note } from './note';
 import type { Scroller, ScrollerOptions } from './scroller';
 import type { Sequence } from './sequence';
 
+const EMPTY_RECT = new Rect(0, 0, 0, 0);
+
 /*
  * A playback cursor: a position in a score's playback timeline that you step (next/previous) or seek
  * (any ms or beat), reporting where it is and what's sounding so a caller can sync an instrument or
- * audio UI. It holds an exact time, not just a step — the bar interpolates between onsets so it
+ * audio UI. It holds an exact time, not just a step: the bar interpolates between onsets so it
  * follows audio smoothly. Optional visuals and scrolling attach to it (sync/follow) and detach
- * cleanly; it owns nothing of the score, so disposing it just unhooks. A pure state model — it
- * never draws (that's the CursorView, e.g. Playhead). Distinct from mdom's editing Cursor — this
+ * cleanly; it owns nothing of the score, so disposing it just unhooks. A pure state model: it
+ * never draws (that's the CursorView, e.g. Playhead). Distinct from mdom's editing Cursor: this
  * never edits.
  */
-
-const EMPTY_RECT = new Rect(0, 0, 0, 0);
-
-/* The cursor's current box, mapped to the page on demand (mirrors an element's Bounded). */
-class CursorPosition implements Bounded {
-	constructor(
-		readonly rect: Rect,
-		private readonly host: CursorHost,
-	) {}
-	getBoundingClientRect(): DOMRect {
-		return this.host.clientRectOf(this.rect);
-	}
-}
-
 export class CursorController implements Eventful<CursorEventMap>, Resource {
 	private readonly dispatcher = new Dispatcher<CursorEventMap>();
 	readonly events = this.dispatcher.events;
@@ -72,7 +60,7 @@ export class CursorController implements Eventful<CursorEventMap>, Resource {
 		this.emit(from);
 	}
 
-	/* Snap to the previous tickable; a no-op on the first one. */
+	/* Snap to the previous tickable. On the first one it stays put, so callers needn't check. */
 	previous(): void {
 		if (this.disposed || this.index <= 0) {
 			return;
@@ -189,7 +177,7 @@ export class CursorController implements Eventful<CursorEventMap>, Resource {
 	}
 
 	/* Halt any smooth scroll the score's scroller has pending or in flight (e.g. when the user
-	 * grabs the scrollbar mid-follow). Only touches the score's scroller — a custom scroller given
+	 * grabs the scrollbar mid-follow). Only touches the score's scroller: a custom scroller given
 	 * to follow() manages its own animations. */
 	cancelScroll(): void {
 		this.scroller.cancel();

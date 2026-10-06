@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { BarlineTranslator } from './barline-translator';
 import { ChordTranslator } from './chord-translator';
-import {
-	type Config,
-	DEFAULT_CONFIG,
-	DEFAULT_PAGED_LAYOUT,
-	type FontConfig,
-} from './config';
+import { type Config, DEFAULT_CONFIG, DEFAULT_PAGED_LAYOUT } from './config';
 import { DurationTranslator } from './duration-translator';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { ElementFactory } from './element-factory';
@@ -17,8 +12,8 @@ import type { Fold } from './fold';
 import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
 import { LayoutPlanner } from './layout-planner';
-import { NoopFontLoader } from './noop-font-loader';
 import { NotationTranslator } from './notation-translator';
+import { RecordingFontLoader } from './recording-font-loader';
 import { type Engraving, ScoreDrawer } from './score-drawer';
 import { ScoreReader } from './score-reader';
 import { type RenderStage, ScoreRenderer } from './score-renderer';
@@ -29,45 +24,6 @@ import { SpillResolver } from './spill-resolver';
 import { StavePlan } from './stave-plan';
 import { TabVoiceTranslator } from './tab-voice-translator';
 import { VoiceTranslator } from './voice-translator';
-
-// A headless stage: the Host fake plus what RenderStage adds. The empty-parts path
-// never touches container/base, so inert placeholders are enough — and any layout or draw attempt
-// would crash on them, which is what proves the path was skipped.
-class FakeStage extends FakeHost implements RenderStage {
-	readonly container = {} as HTMLDivElement;
-	readonly base = {} as HTMLElement;
-	readonly probe = new FakePaintProbe();
-	readonly folds: Fold[] = [];
-	readonly engravings: Engraving[] = [];
-
-	engrave(engraving: Engraving): void {
-		this.engravings.push(engraving);
-	}
-
-	setFold(fold: Fold): void {
-		this.folds.push(fold);
-	}
-
-	readonly pixelRatio = 1;
-
-	paperColor(): string {
-		return '#ffffff';
-	}
-
-	paintEngraving(): void {}
-}
-
-// A FontLoader that records its calls, to pin the fonts-before-parse ordering.
-class RecordingFontLoader extends NoopFontLoader {
-	calls: Array<FontConfig | undefined> = [];
-	override load(
-		container: HTMLElement,
-		config?: FontConfig,
-	): Promise<{ notation: string; text: string }> {
-		this.calls.push(config);
-		return super.load(container, config);
-	}
-}
 
 describe('ScoreRenderer', () => {
 	let stage: FakeStage;
@@ -174,3 +130,30 @@ describe('ScoreRenderer', () => {
 		expect(stage.disposed).toBe(true);
 	});
 });
+
+// A headless stage: the Host fake plus what RenderStage adds. The empty-parts path
+// never touches container/base, so inert placeholders are enough, and any layout or draw attempt
+// would crash on them, which is what proves the path was skipped.
+class FakeStage extends FakeHost implements RenderStage {
+	readonly container = {} as HTMLDivElement;
+	readonly base = {} as HTMLElement;
+	readonly probe = new FakePaintProbe();
+	readonly folds: Fold[] = [];
+	readonly engravings: Engraving[] = [];
+
+	engrave(engraving: Engraving): void {
+		this.engravings.push(engraving);
+	}
+
+	setFold(fold: Fold): void {
+		this.folds.push(fold);
+	}
+
+	readonly pixelRatio = 1;
+
+	paperColor(): string {
+		return '#ffffff';
+	}
+
+	paintEngraving(): void {}
+}

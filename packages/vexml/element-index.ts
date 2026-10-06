@@ -12,7 +12,7 @@ import type { TabPosition } from './tab-position';
 /*
  * Every element built for a rendered score: enumeration by kind, the musical (parts) and layout
  * (systems) axes, plus the spatial queries (score-space points/rects). Identities are stable for
- * the Score's lifetime — the playback timeline references the very same Notes hit-testing
+ * the Score's lifetime: the playback timeline references the very same Notes hit-testing
  * returns (see noteLookup).
  */
 export class ElementIndex {
@@ -77,7 +77,7 @@ export class ElementIndex {
 		return this.hitTester.hitTestWithin(rect);
 	}
 
-	/* Resolves an mdom note to its Note — the seam that keeps timeline identities === hit
+	/* Resolves an mdom note to its Note: the seam that keeps timeline identities === hit
 	 * identities (SequenceFactory builds onsets against this same map). */
 	get noteLookup(): ReadonlyMap<MNote, Note> {
 		return this.noteByMnote;

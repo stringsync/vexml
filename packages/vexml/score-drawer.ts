@@ -131,7 +131,7 @@ export class ScoreDrawer {
 			'Arial';
 
 		// The music font, for the few glyphs vexml types itself out of SMuFL codepoints
-		// rather than getting from a vexflow element — dynamics markings today. Same
+		// rather than getting from a vexflow element (dynamics markings today). Same
 		// container-scoped CSS var loadFonts() sets, read off the host like labelFont.
 		const notationFont =
 			getComputedStyle(host).getPropertyValue('--vexml-font-notation').trim() ||

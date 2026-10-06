@@ -4,7 +4,7 @@ import type { CursorHost, CursorHostEventMap } from './cursor-host';
 
 /* Fake fulfilling the CursorHost seam (preferred over mocks); score space maps 1:1 onto client
  * space, so a test asserts on the rect it passed in. `moveViewport` stands in for the scroll or
- * resize a real stage would report. Test-only — excluded from the published package via
+ * resize a real stage would report. Test-only, excluded from the published package via
  * package.json "files". */
 export class FakeCursorHost implements CursorHost {
 	private readonly dispatcher = new Dispatcher<CursorHostEventMap>();

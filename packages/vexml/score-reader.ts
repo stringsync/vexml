@@ -20,225 +20,6 @@ import type { DynamicGlyphs } from './dynamic-glyphs';
 import type { ModulationNote, TempoModulation } from './metronome-glyph';
 import type { Jump } from './sequence';
 
-/**
- * A metronome mark: the beat-unit's vexflow duration code plus its bpm. The optional
- * fields are the printed variants — augmentation dots on either unit, a second unit for
- * the note-equals-note metric modulation, and the parenthesized form. Only the drawing
- * path reads them; playback needs `bpm` alone.
- */
-export type TempoMark = {
-	duration: string;
-	bpm: number;
-	dots?: number;
-	duration2?: string | null;
-	dots2?: number;
-	parenthesis?: boolean;
-};
-
-/**
- * A `<sound><swing>` instruction: the on-beat:off-beat duration ratio (`first`:`second`)
- * and `unit`, the swung note value in quarter-note beats — eighth = 0.5, 16th = 0.25. An
- * even `first === second` is straight time.
- */
-export type Swing = { first: number; second: number; unit: number };
-
-/*
- * One voice as ONE staff draws it (see ScoreReader.staffVoices). `chords` is the voice
- * restricted to the notes that sit on this staff; `beamChords` is the voice's full,
- * unrestricted chord list on the staff that owns it and null everywhere else, so a beamed run
- * crossing staves is grouped exactly once — off the notes the `<beam>` markers were written
- * on — and the beam then spans both staves instead of breaking at the staff change.
- */
-export type StaffVoice = {
-	chords: Chord[];
-	beamChords: Chord[] | null;
-	/* The whole voice, every staff's share of it — what a staff it only partly sits on
-	 * holds the rest of its time with (see VoiceTickablesOptions.run). */
-	run: Chord[];
-};
-
-/** Which side of the staff a `<direction>` prints on. */
-export type Placement = 'above' | 'below';
-
-// A <direction><direction-type><pedal> spanner marker, bound to the lead note it
-// anchors. `line` carries the MusicXML line="yes" flag (bracket pedal vs. the
-// default "Ped…*" text); it rides on every marker so the stop knows the style.
-export type PedalMark = {
-	lead: Note;
-	type: 'start' | 'stop';
-	number: string;
-	line: boolean;
-};
-
-// A <direction><direction-type><wedge> (hairpin) marker, bound to the lead note it anchors
-// the same way a PedalMark is. `crescendo` is carried on every marker of the pair so the
-// stop knows which way its hairpin opens; `placement` likewise, so both ends agree on the
-// side of the staff.
-export type WedgeMark = {
-	lead: Note;
-	type: 'start' | 'stop';
-	number: string;
-	crescendo: boolean;
-	placement: Placement;
-};
-
-/*
- * One <octave-shift> span: the notes it covers, how far to shift them when drawing (signed
- * the way vexflow's octaveShift option reads it — positive draws lower), and the bracket
- * label that goes over or under them ("8" + "va", "15" + "mb", …). See ScoreReader.octaveShiftsOf.
- */
-export type OctaveShiftSpan = {
-	notes: Note[];
-	octaves: number;
-	label: string;
-	suffix: string;
-	above: boolean;
-};
-
-/** How a <bracket> terminates at one of its ends. */
-export type LineEnd = 'up' | 'down' | 'arrow' | 'none';
-
-/*
- * One <direction-type><bracket> or <dashes> span: the notes it runs between, the side of the
- * staff it prints on, its stroke pattern (null = solid, else a canvas dash array) and the hook
- * each end terminates in. A <dashes> is the degenerate bracket — dashed, hookless — which is
- * why the two share a span type. See ScoreReader.directionLinesOf.
- */
-export type DirectionLineSpan = {
-	from: Note;
-	to: Note;
-	above: boolean;
-	dash: number[] | null;
-	startEnd: LineEnd;
-	stopEnd: LineEnd;
-};
-
-/* A `line-type` attribute (<bracket>, <slur>, …) -> the canvas dash array to stroke it
- * with; null is a solid line.
- * ponytail: 'wavy' falls back to solid — a wavy line needs the SMuFL squiggle run that
- * VibratoBracket draws for trills, not a dash pattern. No fixture asks for one. */
-export const LINE_TYPE_DASH: Record<string, number[] | null> = {
-	solid: null,
-	dashed: [5, 5],
-	dotted: [1, 3],
-	wavy: null,
-};
-
-// MusicXML <root-alter>/<bass-alter> semitones -> the printed accidental sign, using the
-// real Unicode music symbols (♯ ♭ ♮). 0 prints an explicit natural — rare in a root, but
-// MusicXML carries it when the chart wants the sign drawn. An absent <root-alter> maps to
-// nothing (no sign), so plain roots stay bare.
-const HARMONY_ALTER: Record<string, string> = { '1': '♯', '-1': '♭', '0': '♮' };
-
-// Fallback suffix per <kind> value, for the exporters that omit the text attribute —
-// without it a D power chord prints as a bare "D", which reads as a major triad.
-// An empty string is the right answer for 'major' and 'none' (the bare root).
-const HARMONY_KIND_SUFFIX: Record<string, string> = {
-	major: '',
-	minor: 'm',
-	augmented: '+',
-	diminished: 'dim',
-	dominant: '7',
-	'major-seventh': 'maj7',
-	'minor-seventh': 'm7',
-	'diminished-seventh': 'dim7',
-	'augmented-seventh': '+7',
-	'half-diminished': 'm7♭5',
-	'major-minor': 'mMaj7',
-	'major-sixth': '6',
-	'minor-sixth': 'm6',
-	'dominant-ninth': '9',
-	'major-ninth': 'maj9',
-	'minor-ninth': 'm9',
-	'dominant-11th': '11',
-	'major-11th': 'maj11',
-	'minor-11th': 'm11',
-	'dominant-13th': '13',
-	'major-13th': 'maj13',
-	'minor-13th': 'm13',
-	'suspended-second': 'sus2',
-	'suspended-fourth': 'sus4',
-	Neapolitan: 'N',
-	Italian: 'It',
-	French: 'Fr',
-	German: 'Ger',
-	pedal: 'ped',
-	power: '5',
-	Tristan: 'Tr',
-	other: '',
-	none: '',
-};
-
-/*
- * A <figured-bass><figure>'s <prefix>/<suffix> value -> the sign printed beside its numeral,
- * in the same real Unicode accidentals HARMONY_ALTER uses so the two faces match.
- * ponytail: 'slash'/'back-slash' ask for a stroke THROUGH the numeral (the continuo sign for a
- * raised third) and print as a trailing solidus instead — striking a glyph needs a drawn line
- * over measured text, not a character, and SMuFL's pre-slashed figbass glyphs exist only for a
- * few specific numerals (not lilypond_74a's "127"). Draw the stroke if a real continuo score
- * makes the difference matter.
- */
-const FIGURE_SIGN: Record<string, string> = {
-	sharp: '♯',
-	flat: '♭',
-	natural: '♮',
-	'double-sharp': '𝄪',
-	'sharp-sharp': '♯♯',
-	'flat-flat': '𝄫',
-	slash: '/',
-	'back-slash': '\\',
-};
-
-/*
- * Reads score semantics straight off the mdom: staff voice selection, meter lengths,
- * and the direction/harmony markers a measure carries. Stateless — the layout
- * (measuring) and draw passes must read identically, so the predicates live here.
- */
-
-/* Which kinds of stave a render shows, from Config.showTabs/showNotation. Both are asked
- * together everywhere a part's stave rows are derived, so they travel as one value. */
-/** A `<part-group>` span: the run of parts it brackets, and the connector to draw. */
-export type PartGroup = {
-	/** Index into the rendered `parts` array of the group's first and last part. */
-	fromPart: number;
-	toPart: number;
-	symbol: 'brace' | 'bracket' | 'line';
-	/** Nesting depth — 0 is outermost, and each level draws further left of the system. */
-	depth: number;
-	/** The group's `<group-name>`, printed left of its symbol; null when it declares none. */
-	name: string | null;
-};
-
-export type MeasureRepeat = {
-	/** A left `<repeat direction="forward"/>`: the measure opens a repeat block. */
-	repeatBegin: boolean;
-	/** A right `<repeat direction="backward"/>`: the measure closes one. */
-	repeatEnd: boolean;
-	/** How many times a backward repeat plays the block; null when there is no repeat end. */
-	repeatTimes: number | null;
-	/** The ending (volta) run covering this measure, or null when it's outside one. */
-	ending: MeasureEnding | null;
-};
-
-export type MeasureEnding = {
-	/** The raw `<ending number>` — a list or range like `"1"`, `"1,2"`, `"1-3"`. */
-	number: string;
-	/** Whether the run starts here (its bracket's left hook). */
-	first: boolean;
-	/** Whether the run ends here (its bracket's right hook, and where playback jumps). */
-	last: boolean;
-	/** The bracket stays open on the right, with no down hook. */
-	open: boolean;
-};
-
-type BarlineRead = {
-	repeatBegin: boolean;
-	repeatEnd: boolean;
-	repeatTimes: number | null;
-	started: string | null;
-	closed: 'stop' | 'discontinue' | null;
-};
-
 export class ScoreReader {
 	private readonly measureBeats = new Map<Note, number | null>();
 	private readonly lengths = new Map<Note, number | null>();
@@ -250,7 +31,7 @@ export class ScoreReader {
 	/*
 	 * Note.measureBeat and Note.beats, read once per note. mdom finds a note's <divisions> by
 	 * gathering the <attributes> of every earlier measure in the part, so each read costs the
-	 * part's length — and layout, both draw passes and playback all ask about every note. A
+	 * part's length. Layout, both draw passes and playback all ask about every note. A
 	 * ScoreReader lives for one render, over a document that doesn't change under it.
 	 */
 	measureBeatOf(note: Note): number | null {
@@ -268,17 +49,17 @@ export class ScoreReader {
 	}
 
 	/*
-	 * One staff's renderable content from a measure's voices — see {@link StaffVoice}.
+	 * One staff's renderable content from a measure's voices; see {@link StaffVoice}.
 	 *
 	 * A voice is PROJECTED onto the staff rather than assigned to one: each chord keeps only
 	 * the notes whose own `<staff>` names this staff. That is what makes cross-staff writing
-	 * work — a piano voice that runs up out of the bass staff mid-beam has its upper notes
+	 * work: a piano voice that runs up out of the bass staff mid-beam has its upper notes
 	 * drawn on the treble staff, where the composer put them, instead of climbing out of the
 	 * bass staff on five ledger lines. A chord split across both staves lands as two partial
 	 * chords, one per staff, sharing an onset.
 	 *
 	 * A voice with nothing on this staff drops out entirely (an empty voice would crash the
-	 * formatter), and one that never leaves its own staff projects to itself unchanged — the
+	 * formatter), and one that never leaves its own staff projects to itself unchanged: the
 	 * single-staff case is untouched.
 	 *
 	 * The layout (measuring) and draw passes must select identically, so the projection lives
@@ -290,7 +71,7 @@ export class ScoreReader {
 			const chords: Chord[] = [];
 			for (const chord of voice.chords) {
 				const notes = chord.notes.filter((note) => note.staff === staffNumber);
-				// Keep the original Chord identity when the whole chord stays — it's the key
+				// Keep the original Chord identity when the whole chord stays: it's the key
 				// the hit index maps noteheads back through.
 				if (notes.length === chord.notes.length) {
 					chords.push(chord);
@@ -302,7 +83,7 @@ export class ScoreReader {
 				out.push({
 					chords,
 					// mdom sets a voice's staff from its FIRST note, so exactly one staff owns
-					// each voice's beams — the run is grouped once and spans whatever staves its
+					// each voice's beams: the run is grouped once and spans whatever staves its
 					// notes landed on.
 					beamChords: voice.staff === staffNumber ? voice.chords : null,
 					run: voice.chords,
@@ -313,7 +94,7 @@ export class ScoreReader {
 	}
 
 	/*
-	 * What a `<key>` prints, as an equality key — the string to compare against the previous
+	 * What a `<key>` prints, as an equality key: the string to compare against the previous
 	 * measure's to spot a mid-piece key change, and the test for "does this staff draw a
 	 * signature at all" (null when it draws nothing).
 	 *
@@ -334,8 +115,8 @@ export class ScoreReader {
 
 	/*
 	 * The beat length a measure's width is floored at (see meterBeats), except for a
-	 * <measure implicit="yes"> — a pickup bar, or the back half of a measure split across a
-	 * system break — which floors at 0 so it is sized to the music it actually holds. An
+	 * <measure implicit="yes"> (a pickup bar, or the back half of a measure split across a
+	 * system break), which floors at 0 so it is sized to the music it actually holds. An
 	 * implicit measure is short BY DECLARATION, not underfull by accident, so padding it out
 	 * to the meter would draw a pickup as wide as a full bar.
 	 */
@@ -377,8 +158,8 @@ export class ScoreReader {
 
 	/*
 	 * A measure's <barline location="middle"> dividers: the beat each one falls on and its
-	 * <bar-style>. These are the barlines that land off the measure edge — a double bar or a
-	 * dotted divider mid-bar — which MusicXML writes between two notes rather than at an
+	 * <bar-style>. These are the barlines that land off the measure edge, such as a double bar or a
+	 * dotted divider mid-bar, which MusicXML writes between two notes rather than at an
 	 * edge. Left/right barlines are the measure's own edges and are read elsewhere.
 	 */
 	midBarlinesOf(measure: Measure): { beat: number; style: string }[] {
@@ -391,9 +172,9 @@ export class ScoreReader {
 	}
 
 	/*
-	 * A measure's mid-measure <clef> changes for one staff — Measure.clefChanges, minus any
+	 * A measure's mid-measure <clef> changes for one staff: Measure.clefChanges, minus any
 	 * landing at beat 0.
-	 * ponytail: a change landing at beat 0 is dropped rather than drawn inline — it is the
+	 * ponytail: a change landing at beat 0 is dropped rather than drawn inline; it is the
 	 * staff's OPENING clef. Measure.getClef doesn't look past the measure's first note, so
 	 * such a staff still opens in the previous clef and switches at the next barline
 	 * (navigation.musicxml's bass staff documents exactly that). Closing that gap means
@@ -415,7 +196,7 @@ export class ScoreReader {
 	 * no box by the layout planner and the draw pass skips them (the document keeps them, so
 	 * playback still counts the full rest).
 	 *
-	 * A run only collapses when EVERY part (and every staff within it — see multiRestCountOf)
+	 * A run only collapses when EVERY part (and every staff within it; see multiRestCountOf)
 	 * declares the same count at the same measure. Parts are laid out in one grid of measure
 	 * columns, so collapsing three bars of a resting flute against three played bars of a violin
 	 * would shear the two apart.
@@ -455,7 +236,7 @@ export class ScoreReader {
 	/*
 	 * The <clef> in effect at the END of a measure for one staff: its last mid-measure change
 	 * if it has one, else the clef it opened with. This is what the NEXT measure compares
-	 * against to decide whether to reprint a clef — a change already stated inside a measure
+	 * against to decide whether to reprint a clef: a change already stated inside a measure
 	 * (or as its courtesy clef) must not be stated again at the next barline.
 	 */
 	clefAtEndOf(measure: Measure | undefined, staffNumber: string): Clef | null {
@@ -476,7 +257,7 @@ export class ScoreReader {
 	 * A measure's metronome mark from the first <direction> that carries a
 	 * <metronome>, or null when none does. MusicXML's <beat-unit> names ('quarter',
 	 * 'eighth', 'half', ...) already match StaveTempo's duration codes. bpm comes from
-	 * <per-minute>, falling back to the <sound tempo>, then to 120 — so a metronome
+	 * <per-minute>, falling back to the <sound tempo>, then to 120, so a metronome
 	 * directive without a number still prints "= 120".
 	 *
 	 * A SECOND <beat-unit> is the metric-modulation form ("dotted quarter = dotted half"),
@@ -484,7 +265,7 @@ export class ScoreReader {
 	 * its fallback for the playback path, which has no way to read a relation.
 	 *
 	 * A <metronome> written in the <metronome-note> form carries no <beat-unit> at all and is
-	 * skipped here — that shape is a note-group relation, read separately by
+	 * skipped here: that shape is a note-group relation, read separately by
 	 * {@link modulationOf} and drawn beside this mark.
 	 */
 	tempoOf(measure: Measure): TempoMark | null {
@@ -511,15 +292,15 @@ export class ScoreReader {
 
 	/*
 	 * A measure's metric modulation: the first <metronome> written in the <metronome-note>
-	 * form, or null when none is. This is the note-GROUP shape — "two beamed eighths = a
-	 * quarter-eighth triplet", i.e. a swing marking — which states a relation between two
+	 * form, or null when none is. This is the note-GROUP shape ("two beamed eighths = a
+	 * quarter-eighth triplet", i.e. a swing marking), which states a relation between two
 	 * rhythms rather than a rate, and which the <beat-unit> form {@link tempoOf} reads cannot
 	 * express.
 	 *
 	 * The two live side by side: an exporter routinely writes the rate in one <direction-type>
 	 * and this in the next, of the same <direction>, so a measure can have both and both print.
 	 *
-	 * It is notation only. Nothing here reaches playback — a <sound><swing> is what makes the
+	 * It is notation only. Nothing here reaches playback: a <sound><swing> is what makes the
 	 * timing swing (see {@link swingOf}), and a score can carry this mark without one.
 	 */
 	modulationOf(measure: Measure): TempoModulation | null {
@@ -545,7 +326,7 @@ export class ScoreReader {
 	/*
 	 * A measure's PLAYBACK tempo, in quarter notes per minute (as a TempoMark). The
 	 * visible <metronome> mark wins (via {@link tempoOf}); otherwise a <sound tempo>
-	 * drives timing — co-located in a <direction> or standalone as a direct measure
+	 * drives timing, whether co-located in a <direction> or standalone as a direct measure
 	 * child (MusicXML's tempo is already quarter-note BPM). null means no mark here,
 	 * so the previous tempo carries forward.
 	 *
@@ -566,7 +347,7 @@ export class ScoreReader {
 	}
 
 	/*
-	 * A measure's <sound><swing> performance instruction, or null when it carries none — in
+	 * A measure's <sound><swing> performance instruction, or null when it carries none, in
 	 * which case the swing already in force carries forward, like tempo. This is the ONLY
 	 * thing that makes playback swing; a <metronome> "two eighths = triplet quarter-eighth"
 	 * mark states the same intent to a human reader but carries no timing (see
@@ -590,19 +371,19 @@ export class ScoreReader {
 	 * `staffNumber` is the direction's <staff> ('1' when absent), so a multi-staff part
 	 * prints each directive over the staff it was written for instead of piling every one
 	 * of them onto the part's top staff.
-	 * `lead` is the note the directive applies to — the next non-chord note after it, the
-	 * same binding a pedal start uses — so per-note directives (guitar p-i-m-a fingering,
+	 * `lead` is the note the directive applies to: the next non-chord note after it (the
+	 * same binding a pedal start uses), so per-note directives (guitar p-i-m-a fingering,
 	 * picking marks) print over their own note instead of stacking on the measure's first.
 	 * null when the direction trails the measure's last note, or falls at the bar's end.
 	 * `placement` is the direction's placement attribute: 'below' prints under the staff (the
-	 * convention for piano expression marks), anything else — including an absent attribute —
+	 * convention for piano expression marks), anything else, including an absent attribute,
 	 * keeps the above-staff default.
 	 * `opensBar` says the direction falls on the measure's first beat, so it marks where the bar
 	 * begins. `closesBar` says it falls where the bar's content runs out: written after a
 	 * staff's last note (a "D.S. al Coda" before a <backup>), it applies to the barline, not to
 	 * the next note in the file, which is another staff's from the bar's start.
-	 * ponytail: font-style attributes still ignored — every words direction prints in italics;
-	 * add a style field if a fixture needs upright words.
+	 * ponytail: font-style attributes still ignored; every words direction prints in italics.
+	 * Add a style field if a fixture needs upright words.
 	 */
 	wordsOf(measure: Measure): {
 		text: string;
@@ -633,15 +414,15 @@ export class ScoreReader {
 
 	/*
 	 * A measure's <direction><direction-type><dynamics> markings (p, mf, sfz, …), in
-	 * document order. MusicXML names the marking by the TAG — <dynamics><sfz/> — with
+	 * document order. MusicXML names the marking by the TAG (<dynamics><sfz/>), with
 	 * <other-dynamics> carrying free text for anything outside the vocabulary, so the tag
 	 * name is the text to print.
 	 * `glyph` says the marking is spelled entirely out of the SMuFL dynamic letters and so
 	 * draws in the notation font; an <other-dynamics> (or any tag with a stray letter)
 	 * falls back to plain italic text.
 	 * `staffNumber` and `lead` bind it the same way {@link wordsOf} binds a directive.
-	 * Dynamics engrave BELOW the staff by convention, so that's the placement default here
-	 * — an explicit placement="above" still wins.
+	 * Dynamics engrave BELOW the staff by convention, so that's the placement default here;
+	 * an explicit placement="above" still wins.
 	 */
 	dynamicsOf(measure: Measure): {
 		text: string;
@@ -671,7 +452,7 @@ export class ScoreReader {
 	 * A measure's <direction><direction-type><rehearsal> section headers (e.g. "A", "B",
 	 * "Chorus"), in document order. These are the boxed letters a player navigates a chart
 	 * by, printed at the measure's left edge above the system's top staff.
-	 * ponytail: the <rehearsal> enclosure/font attributes are ignored — every mark prints
+	 * ponytail: the <rehearsal> enclosure/font attributes are ignored; every mark prints
 	 * boxed in the default style; add an enclosure field if a fixture needs a circle or a
 	 * bare letter.
 	 */
@@ -682,15 +463,15 @@ export class ScoreReader {
 	}
 
 	/*
-	 * A measure's `<figured-bass>` stacks — the numerals a continuo player reads under the bass
-	 * line — each bound to the note it sits under (the next non-`<chord/>` note, the binding a
+	 * A measure's `<figured-bass>` stacks (the numerals a continuo player reads under the bass
+	 * line), each bound to the note it sits under (the next non-`<chord/>` note, the binding a
 	 * `<harmony>` uses). One string per `<figure>`, top of the stack first, each its
 	 * `<prefix>` sign + `<figure-number>` + `<suffix>` sign; `parentheses="yes"` on the
 	 * `<figured-bass>` wraps every figure of that stack.
 	 *
 	 * A stack with no printable figure at all (the empty `<figured-bass>` that lilypond_74a
 	 * writes on purpose to see what breaks) is dropped rather than reserving a blank row.
-	 * ponytail: `<extend>` is ignored — it draws the dash that carries a figure over the notes
+	 * ponytail: `<extend>` is ignored; it draws the dash that carries a figure over the notes
 	 * that follow it, and neither fixture in tmp/ writes one (74a says so in its own
 	 * description). It would hang off this same lead note when one does.
 	 */
@@ -718,11 +499,11 @@ export class ScoreReader {
 	}
 
 	/*
-	 * A measure's navigation signs — <direction><direction-type><segno/> and <coda/> — in
+	 * A measure's navigation signs: <direction><direction-type><segno/> and <coda/>, in
 	 * document order. These are the landmarks a D.S./D.C. jumps to. The words that drive them
 	 * ("D.S. al Coda", "Fine") are ordinary <words> and already print via {@link wordsOf}; only
 	 * the two GLYPHS are here.
-	 * ponytail: the sign's own placement/x attributes are ignored — MusicXML lets a segno be
+	 * ponytail: the sign's own placement/x attributes are ignored; MusicXML lets a segno be
 	 * offset anywhere, but every one in tmp/ sits at its measure's start, which is where a
 	 * player looks for it.
 	 */
@@ -735,7 +516,7 @@ export class ScoreReader {
 	 * (the pedal goes down there), a "stop" to the previous note (the last note still
 	 * held). Directions sit between notes, so walk the children tracking the last lead
 	 * and any starts pending a note.
-	 * ponytail: only start/stop handled — change/continue/sostenuto/discontinue
+	 * ponytail: only start/stop handled; change/continue/sostenuto/discontinue
 	 * pedal directions are ignored; add them if a fixture needs a re-pedal or sostenuto.
 	 */
 	pedalsOf(measure: Measure): PedalMark[] {
@@ -759,15 +540,15 @@ export class ScoreReader {
 	/*
 	 * A measure's wedge (hairpin) markers, in document order. A "crescendo"/"diminuendo"
 	 * opens on the note that follows it. A "stop" sits at the moment the wedge finishes, so
-	 * it closes on the note that FOLLOWS it too — unlike a pedal stop, which releases on the
+	 * it closes on the note that FOLLOWS it too, unlike a pedal stop, which releases on the
 	 * last note still held. An exporter that trails the stop after a measure's last note
 	 * leaves no next note, so that case falls back to the previous one.
 	 * The opening marker's type decides the direction, so a stop inherits it from its
 	 * partner; a stop whose partner is missing (a malformed or sliced span) is dropped by
 	 * the builder, not here.
-	 * Hairpins engrave BELOW the staff by convention, so that's the placement default — an
+	 * Hairpins engrave BELOW the staff by convention, so that's the placement default: an
 	 * explicit placement="above" still wins.
-	 * ponytail: a "continue" marker is ignored — it only re-states an open wedge mid-span.
+	 * ponytail: a "continue" marker is ignored; it only re-states an open wedge mid-span.
 	 */
 	wedgesOf(measure: Measure): WedgeMark[] {
 		const out: WedgeMark[] = [];
@@ -809,7 +590,7 @@ export class ScoreReader {
 	 * MusicXML carries SOUNDING pitch, so an octave shift is a printing instruction: type="down"
 	 * means print the notes an octave (or two, or three) LOWER than they sound and label the
 	 * passage 8va, and type="up" is the mirror. `octaves` is signed the way vexflow's own
-	 * octaveShift option reads it — positive draws lower — so it can be handed straight to the
+	 * octaveShift option reads it (positive draws lower), so it can be handed straight to the
 	 * note builder.
 	 *
 	 * A start binds to the note that follows it and a stop to the note before it, and everything
@@ -876,7 +657,7 @@ export class ScoreReader {
 	}
 
 	/*
-	 * A part's <direction-type><bracket> and <dashes> spans — the phrase/analysis brackets and
+	 * A part's <direction-type><bracket> and <dashes> spans: the phrase/analysis brackets and
 	 * the dashed line that trails a "cresc." or "rit.".
 	 *
 	 * Paired by type and `number` across the whole part, so a span can cross barlines. Both ends
@@ -890,7 +671,7 @@ export class ScoreReader {
 	 * dashed line.
 	 * ponytail: a span whose start has no note after it, or that never stops, is dropped. One
 	 * wrapping onto a later system is dropped by the drawing side rather than split the way
-	 * buildTies splits a tie — neither needs handling until a fixture has one.
+	 * buildTies splits a tie; neither needs handling until a fixture has one.
 	 */
 	directionLinesOf(part: Part): DirectionLineSpan[] {
 		const spans: DirectionLineSpan[] = [];
@@ -954,7 +735,7 @@ export class ScoreReader {
 	 * <frame>, else null. `source` is the Harmony element itself, kept for provenance.
 	 *
 	 * Deduplicated on (beat, text, frame): a <harmony> belongs to the part, but Guitar Pro
-	 * repeats an identical one after every <backup> — once per voice — and drawing each
+	 * repeats an identical one after every <backup> (once per voice), and drawing each
 	 * copy stacks the same chord symbol/diagram on itself. The same chord genuinely
 	 * restruck later in the measure lands on a different beat, so it survives.
 	 */
@@ -994,7 +775,7 @@ export class ScoreReader {
 	/*
 	 * The beat a measure's voices run out to: the latest onset+duration across them.
 	 * Voices that end before this (e.g. one silent on the final beat via <forward>)
-	 * are padded out to it so every voice spans the same range — see the trailing
+	 * are padded out to it so every voice spans the same range; see the trailing
 	 * fill in VoiceTranslator.tickables.
 	 */
 	endBeatOf(voices: { chords: Chord[] }[]): number {
@@ -1015,15 +796,15 @@ export class ScoreReader {
 	 * The part boundaries a measure's barlines must NOT run across: entry `i` means the barline
 	 * between rendered part `i` and part `i + 1` stops instead of continuing down.
 	 *
-	 * A barline runs through the staves of ONE part — that is what a part's brace/bracket means —
+	 * A barline runs through the staves of ONE part (that is what a part's brace/bracket means)
 	 * and stops at every part boundary, which is how an engraver separates one instrument from the
 	 * next (MuseScore draws this score exactly so: the singer's barline stops, the guitar's runs
 	 * through its notation and TAB together). A `<part-group>` is what joins parts back up, and it
-	 * does so unless it declares `<group-barline>no</group-barline>` — MusicXML defines no default
-	 * for an absent one, so a declared group is read as asking for common barlines.
+	 * does so unless it declares `<group-barline>no</group-barline>` (MusicXML defines no default
+	 * for an absent one), so a declared group is read as asking for common barlines.
 	 *
 	 * A nested pair that disagrees resolves to "any 'no' covering the boundary breaks it", since
-	 * the inner group is the one closest to the staves — hence the two passes rather than deleting
+	 * the inner group is the one closest to the staves, hence the two passes rather than deleting
 	 * from a running set, which would let an outer 'yes' erase an inner 'no'.
 	 */
 	barlineBreaks(score: Score): Set<number> {
@@ -1046,11 +827,11 @@ export class ScoreReader {
 	/*
 	 * The `<part-group>` spans that draw a connector, outermost first.
 	 *
-	 * Groups whose `<group-symbol>` is absent or 'none' draw nothing — they exist only to carry
-	 * a name or a barline rule (see barlineBreaks) — and one spanning a single part has nothing
+	 * Groups whose `<group-symbol>` is absent or 'none' draw nothing: they exist only to carry
+	 * a name or a barline rule (see barlineBreaks), and one spanning a single part has nothing
 	 * to connect. 'square' falls back to 'bracket' (vexflow draws no squared bracket).
 	 *
-	 * ponytail: `<group-abbreviation>` is ignored — it's the short name for systems after the
+	 * ponytail: `<group-abbreviation>` is ignored; it's the short name for systems after the
 	 * first, and vexml prints part labels on the first system only, so nothing would ever use it.
 	 */
 	partGroups(score: Score): PartGroup[] {
@@ -1082,8 +863,8 @@ export class ScoreReader {
 	 * only knowable in document order. Two encodings appear in the wild and both resolve
 	 * here: the standard one marks `start` on the run's first measure and `stop` on its
 	 * last, while some exporters restate `start`/`stop` on every measure of the run. A
-	 * `stop` the next measure immediately reopens with the same number is that restatement
-	 * — one bracket over the whole run, one ending for playback — not a pile of adjacent
+	 * `stop` the next measure immediately reopens with the same number is that restatement:
+	 * one bracket over the whole run and one ending for playback, not a pile of adjacent
 	 * one-measure endings.
 	 */
 	measureRepeats(measures: readonly Measure[]): MeasureRepeat[] {
@@ -1111,7 +892,7 @@ export class ScoreReader {
 								last,
 								// An ending closes with a down hook only when something jumps back from it, or
 								// when the piece stops there. `discontinue` asks for an open bracket outright;
-								// otherwise the backward repeat is the signal — a final ending runs on into
+								// otherwise the backward repeat is the signal: a final ending runs on into
 								// the music, so its bracket stays open even though exporters routinely still
 								// write `type="stop"` on it. At the last measure there's nothing to run into.
 								open:
@@ -1126,7 +907,7 @@ export class ScoreReader {
 
 	/* The repeat/volta jumps for every measure, mapped from the shared repeat structure
 	 * (measureRepeats, which the renderer reads too). An ending supersedes a co-located backward
-	 * repeat — the iterator drives the back-jump off the ending instead. */
+	 * repeat: the iterator drives the back-jump off the ending instead. */
 	measureJumps(measures: readonly Measure[]): Jump[][] {
 		return this.measureRepeats(measures).map(
 			({ repeatBegin, repeatEnd, repeatTimes, ending }) => {
@@ -1224,7 +1005,7 @@ export class ScoreReader {
 	 * exactly this (a major triad's text is empty, so it prints the bare root), falling
 	 * back to the kind's conventional suffix when the exporter omits the attribute. A
 	 * <bass> (slash chord) appends "/<bass-step><bass-alter>", e.g. "E♭/B♭".
-	 * ponytail: <degree> alterations (an added 9th, a flat 5) are ignored — they only
+	 * ponytail: <degree> alterations (an added 9th, a flat 5) are ignored; they only
 	 * refine a suffix the kind already names. Fold them in if a fixture needs "C5(add9)".
 	 */
 	private harmonyText(harmony: Harmony): string {
@@ -1260,7 +1041,7 @@ export class ScoreReader {
 		const numStrings = frame.strings;
 		const frameNotes = frame.frameNotes;
 
-		// string -> absolute fret (0 = open).
+		// Fret 0 is an open string, which is why `fretted` leaves it out.
 		const absFret = new Map<number, number>();
 		for (const fn of frameNotes) {
 			absFret.set(fn.string, fn.fret);
@@ -1299,7 +1080,7 @@ export class ScoreReader {
 
 		// Position label, for movable shapes only (box not at the nut). Its number is the fret of
 		// the lowest-sounding fretted string (the highest played string number), drawn beside
-		// that note's row rather than at the box top — guitarists finger from the lowest string
+		// that note's row rather than at the box top: guitarists finger from the lowest string
 		// up, so the number marks where the hand sits. The box layout still keys off firstFret
 		// (the lowest fret), so the dots stay compact regardless of where the label lands.
 		let position = firstFret;
@@ -1323,11 +1104,11 @@ export class ScoreReader {
 	/*
 	 * The <multiple-rest> count every staff of a measure agrees on, or null when they disagree (or
 	 * when there is none). Collapsing removes the whole measure COLUMN, so a run declared on only
-	 * some of a part's staves must not collapse — the others' music would be swallowed with it.
+	 * some of a part's staves must not collapse: the others' music would be swallowed with it.
 	 *
 	 * A <measure-style> with no `number` applies to every staff, so an ordinary multirest agrees
 	 * trivially; only an explicit per-staff disagreement trips this.
-	 * ponytail: no fixture covers that case — no score in tmp/ writes one, and both hands of a
+	 * ponytail: no fixture covers that case; no score in tmp/ writes one, and both hands of a
 	 * piano rest together. It's here because the failure it prevents is deleting played music.
 	 */
 	private multiRestCountOf(measure: Measure | undefined): number | null {
@@ -1388,3 +1169,222 @@ export class ScoreReader {
 		return read;
 	}
 }
+
+/**
+ * A metronome mark: the beat-unit's vexflow duration code plus its bpm. The optional
+ * fields are the printed variants: augmentation dots on either unit, a second unit for
+ * the note-equals-note metric modulation, and the parenthesized form. Only the drawing
+ * path reads them; playback needs `bpm` alone.
+ */
+export type TempoMark = {
+	duration: string;
+	bpm: number;
+	dots?: number;
+	duration2?: string | null;
+	dots2?: number;
+	parenthesis?: boolean;
+};
+
+/**
+ * A `<sound><swing>` instruction: the on-beat:off-beat duration ratio (`first`:`second`)
+ * and `unit`, the swung note value in quarter-note beats (eighth = 0.5, 16th = 0.25). An
+ * even `first === second` is straight time.
+ */
+export type Swing = { first: number; second: number; unit: number };
+
+/*
+ * One voice as ONE staff draws it (see ScoreReader.staffVoices). `chords` is the voice
+ * restricted to the notes that sit on this staff; `beamChords` is the voice's full,
+ * unrestricted chord list on the staff that owns it and null everywhere else, so a beamed run
+ * crossing staves is grouped exactly once (off the notes the `<beam>` markers were written
+ * on), and the beam then spans both staves instead of breaking at the staff change.
+ */
+export type StaffVoice = {
+	chords: Chord[];
+	beamChords: Chord[] | null;
+	/* The whole voice, every staff's share of it: what a staff it only partly sits on
+	 * holds the rest of its time with (see VoiceTickablesOptions.run). */
+	run: Chord[];
+};
+
+/** Which side of the staff a `<direction>` prints on. */
+export type Placement = 'above' | 'below';
+
+// A <direction><direction-type><pedal> spanner marker, bound to the lead note it
+// anchors. `line` carries the MusicXML line="yes" flag (bracket pedal vs. the
+// default "Ped…*" text); it rides on every marker so the stop knows the style.
+export type PedalMark = {
+	lead: Note;
+	type: 'start' | 'stop';
+	number: string;
+	line: boolean;
+};
+
+// A <direction><direction-type><wedge> (hairpin) marker, bound to the lead note it anchors
+// the same way a PedalMark is. `crescendo` is carried on every marker of the pair so the
+// stop knows which way its hairpin opens; `placement` likewise, so both ends agree on the
+// side of the staff.
+export type WedgeMark = {
+	lead: Note;
+	type: 'start' | 'stop';
+	number: string;
+	crescendo: boolean;
+	placement: Placement;
+};
+
+/*
+ * One <octave-shift> span: the notes it covers, how far to shift them when drawing (signed
+ * the way vexflow's octaveShift option reads it: positive draws lower), and the bracket
+ * label that goes over or under them ("8" + "va", "15" + "mb", …). See ScoreReader.octaveShiftsOf.
+ */
+export type OctaveShiftSpan = {
+	notes: Note[];
+	octaves: number;
+	label: string;
+	suffix: string;
+	above: boolean;
+};
+
+/** How a <bracket> terminates at one of its ends. */
+export type LineEnd = 'up' | 'down' | 'arrow' | 'none';
+
+/*
+ * One <direction-type><bracket> or <dashes> span: the notes it runs between, the side of the
+ * staff it prints on, its stroke pattern (null = solid, else a canvas dash array) and the hook
+ * each end terminates in. A <dashes> is the degenerate bracket (dashed, hookless), which is
+ * why the two share a span type. See ScoreReader.directionLinesOf.
+ */
+export type DirectionLineSpan = {
+	from: Note;
+	to: Note;
+	above: boolean;
+	dash: number[] | null;
+	startEnd: LineEnd;
+	stopEnd: LineEnd;
+};
+
+/* A `line-type` attribute (<bracket>, <slur>, …) -> the canvas dash array to stroke it
+ * with; null is a solid line.
+ * ponytail: 'wavy' falls back to solid; a wavy line needs the SMuFL squiggle run that
+ * VibratoBracket draws for trills, not a dash pattern. No fixture asks for one. */
+export const LINE_TYPE_DASH: Record<string, number[] | null> = {
+	solid: null,
+	dashed: [5, 5],
+	dotted: [1, 3],
+	wavy: null,
+};
+
+// MusicXML <root-alter>/<bass-alter> semitones -> the printed accidental sign, using the
+// real Unicode music symbols (♯ ♭ ♮). 0 prints an explicit natural: rare in a root, but
+// MusicXML carries it when the chart wants the sign drawn. An absent <root-alter> maps to
+// nothing (no sign), so plain roots stay bare.
+const HARMONY_ALTER: Record<string, string> = { '1': '♯', '-1': '♭', '0': '♮' };
+
+// Fallback suffix per <kind> value, for the exporters that omit the text attribute;
+// without it a D power chord prints as a bare "D", which reads as a major triad.
+// An empty string is the right answer for 'major' and 'none' (the bare root).
+const HARMONY_KIND_SUFFIX: Record<string, string> = {
+	major: '',
+	minor: 'm',
+	augmented: '+',
+	diminished: 'dim',
+	dominant: '7',
+	'major-seventh': 'maj7',
+	'minor-seventh': 'm7',
+	'diminished-seventh': 'dim7',
+	'augmented-seventh': '+7',
+	'half-diminished': 'm7♭5',
+	'major-minor': 'mMaj7',
+	'major-sixth': '6',
+	'minor-sixth': 'm6',
+	'dominant-ninth': '9',
+	'major-ninth': 'maj9',
+	'minor-ninth': 'm9',
+	'dominant-11th': '11',
+	'major-11th': 'maj11',
+	'minor-11th': 'm11',
+	'dominant-13th': '13',
+	'major-13th': 'maj13',
+	'minor-13th': 'm13',
+	'suspended-second': 'sus2',
+	'suspended-fourth': 'sus4',
+	Neapolitan: 'N',
+	Italian: 'It',
+	French: 'Fr',
+	German: 'Ger',
+	pedal: 'ped',
+	power: '5',
+	Tristan: 'Tr',
+	other: '',
+	none: '',
+};
+
+/*
+ * A <figured-bass><figure>'s <prefix>/<suffix> value -> the sign printed beside its numeral,
+ * in the same real Unicode accidentals HARMONY_ALTER uses so the two faces match.
+ * ponytail: 'slash'/'back-slash' ask for a stroke THROUGH the numeral (the continuo sign for a
+ * raised third) and print as a trailing solidus instead: striking a glyph needs a drawn line
+ * over measured text, not a character, and SMuFL's pre-slashed figbass glyphs exist only for a
+ * few specific numerals (not lilypond_74a's "127"). Draw the stroke if a real continuo score
+ * makes the difference matter.
+ */
+const FIGURE_SIGN: Record<string, string> = {
+	sharp: '♯',
+	flat: '♭',
+	natural: '♮',
+	'double-sharp': '𝄪',
+	'sharp-sharp': '♯♯',
+	'flat-flat': '𝄫',
+	slash: '/',
+	'back-slash': '\\',
+};
+
+/*
+ * Reads score semantics straight off the mdom: staff voice selection, meter lengths,
+ * and the direction/harmony markers a measure carries. Stateless: the layout
+ * (measuring) and draw passes must read identically, so the predicates live here.
+ */
+
+/* Which kinds of stave a render shows, from Config.showTabs/showNotation. Both are asked
+ * together everywhere a part's stave rows are derived, so they travel as one value. */
+/** A `<part-group>` span: the run of parts it brackets, and the connector to draw. */
+export type PartGroup = {
+	/** Index into the rendered `parts` array of the group's first and last part. */
+	fromPart: number;
+	toPart: number;
+	symbol: 'brace' | 'bracket' | 'line';
+	/** Nesting depth: 0 is outermost, and each level draws further left of the system. */
+	depth: number;
+	/** The group's `<group-name>`, printed left of its symbol; null when it declares none. */
+	name: string | null;
+};
+
+export type MeasureRepeat = {
+	/** A left `<repeat direction="forward"/>`: the measure opens a repeat block. */
+	repeatBegin: boolean;
+	/** A right `<repeat direction="backward"/>`: the measure closes one. */
+	repeatEnd: boolean;
+	/** How many times a backward repeat plays the block; null when there is no repeat end. */
+	repeatTimes: number | null;
+	/** The ending (volta) run covering this measure, or null when it's outside one. */
+	ending: MeasureEnding | null;
+};
+
+export type MeasureEnding = {
+	/** The raw `<ending number>`: a list or range like `"1"`, `"1,2"`, `"1-3"`. */
+	number: string;
+	/** Whether the run starts here (its bracket's left hook). */
+	first: boolean;
+	/** Whether the run ends here (its bracket's right hook, and where playback jumps). */
+	last: boolean;
+	/** The bracket stays open on the right, with no down hook. */
+	open: boolean;
+};
+
+type BarlineRead = {
+	repeatBegin: boolean;
+	repeatEnd: boolean;
+	repeatTimes: number | null;
+	started: string | null;
+	closed: 'stop' | 'discontinue' | null;
+};

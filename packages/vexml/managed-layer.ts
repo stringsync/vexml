@@ -4,7 +4,7 @@ import type { Stage } from './stage';
 
 /* The per-axis bitmap ceiling for overlay layers, in device px. GPUs commonly top out at 16384px
  * textures; a canvas past that on either axis falls back to software rasterization.
- * ponytail: hardcoded common limit, not queried from WebGL — probe MAX_TEXTURE_SIZE if a
+ * ponytail: hardcoded common limit, not queried from WebGL; probe MAX_TEXTURE_SIZE if a
  * platform under 16384 ever matters. */
 const MAX_BITMAP_PX = 16384;
 

@@ -18,13 +18,13 @@ export interface StaveVisibility {
  * asked to see, so every question here needs both. The visibility is fixed for a render, so it
  * is held once here rather than threaded through the layout and draw passes that ask.
  *
- * Layout and draw both iterate this, so their stave rows — and the offsets, connectors and
- * brackets keyed off them — stay aligned.
+ * Layout and draw both iterate this, so their stave rows (and the offsets, connectors and
+ * brackets keyed off them) stay aligned.
  */
 export class StavePlan {
 	/* The tuning and tab answers walk every measure of the part, and mdom reads each measure's attributes by
 	 * walking back to the last one that set them, so one uncached question costs the part's
-	 * length squared — and layout and draw ask per stave per measure. A StavePlan lives for
+	 * length squared, and layout and draw ask per stave per measure. A StavePlan lives for
 	 * one render, over a document that doesn't change under it, so answering once is enough. */
 	private readonly tunings = new Map<Part, Map<string, number[] | null>>();
 	private readonly tabs = new Map<Part, Map<string, boolean>>();
@@ -40,7 +40,7 @@ export class StavePlan {
 	 * tuning *lines* from the bottom up and strings from the top down, so they invert:
 	 * string = lineCount - line + 1.
 	 *
-	 * Null when the staff declares no tunings — there is nothing to derive a fret from, so
+	 * Null when the staff declares no tunings: there is nothing to derive a fret from, so
 	 * callers keep their explicit-fret-only behavior rather than guessing a tuning.
 	 */
 	tuningOf(part: Part, staffNumber: string): number[] | null {
@@ -66,7 +66,7 @@ export class StavePlan {
 	}
 
 	/** A staff is tablature when its clef sign is TAB, or when `<staff-details>` gives it
-	 * string tunings — some exporters (Guitar Pro, Soundslice) notate a tab staff with an
+	 * string tunings, some exporters (Guitar Pro, Soundslice) notate a tab staff with an
 	 * octave-down treble clef, so the clef sign alone doesn't settle it. A staff's clef is
 	 * stable across a part, so the first measure that declares either settles it. */
 	isTab(part: Part, staffNumber: string): boolean {
@@ -90,7 +90,7 @@ export class StavePlan {
 
 	/** The staff numbers ('1', '2', …) a part renders, in order. All of them normally; with
 	 * showTabs off its tablature staves are dropped, with showNotation off its notation staves
-	 * are — a notation+tab part then shows only the kept kind, and a part of the dropped kind
+	 * are. A notation+tab part then shows only the kept kind, and a part of the dropped kind
 	 * alone shows nothing. Layout and draw both iterate this so their stave rows (and the
 	 * offsets/connectors keyed off them) stay aligned. */
 	visibleNumbers(part: Part): string[] {
@@ -108,7 +108,7 @@ export class StavePlan {
 	}
 
 	/*
-	 * True when the part stacks a TAB stave with at least one non-TAB (notation) stave —
+	 * True when the part stacks a TAB stave with at least one non-TAB (notation) stave:
 	 * the guitar notation+tab pairing, which is bracketed rather than braced by convention.
 	 */
 	pairsTabWithNotation(part: Part): boolean {
@@ -127,7 +127,7 @@ export class StavePlan {
 	 * True when a notation+tab pair is split across separate single-stave parts (a
 	 * guitar's notation in one part, its TAB in another) rather than stacked in one
 	 * two-stave part. Such a system is bracketed by convention, the cross-part analog
-	 * of pairsTabWithNotation. Only meaningful for multi-part systems — a single
+	 * of pairsTabWithNotation. Only meaningful for multi-part systems: a single
 	 * notation+tab part already brackets itself via partSymbol.
 	 */
 	partsPairTabWithNotation(parts: Part[]): boolean {
@@ -139,7 +139,7 @@ export class StavePlan {
 		) {
 			return false;
 		}
-		// A part that stacks both kinds ITSELF is not a cross-part pairing — it already brackets
+		// A part that stacks both kinds ITSELF is not a cross-part pairing: it already brackets
 		// its own two staves via partSymbol. Without this, a score that merely CONTAINS such a
 		// part (a singer over a notation+TAB guitar) also brackets the whole system, sweeping the
 		// unrelated part into the guitar's bracket.
@@ -162,9 +162,9 @@ export class StavePlan {
 	 * The stave connector that joins a multi-staff part's own staves. An explicit
 	 * <part-symbol> in any measure's attributes wins: bracket, none (no connector), or
 	 * brace (the MusicXML default; line/square fall back to it). With none declared, a
-	 * guitar notation+tab pair brackets by convention, a tab+tab stack (two tunings, or a
-	 * "played" and "written" pair) gets nothing — a brace would claim a grand staff that
-	 * isn't one — and everything else (piano grand staves, …) braces.
+	 * guitar notation+tab pair brackets by convention; a tab+tab stack (two tunings, or a
+	 * "played" and "written" pair) gets nothing (a brace would claim a grand staff that
+	 * isn't one), and everything else (piano grand staves, …) braces.
 	 */
 	symbolOf(part: Part): 'brace' | 'bracket' | null {
 		if (!this.symbols.has(part)) {
@@ -221,7 +221,7 @@ export class StavePlan {
 	}
 
 	/** True when `<staff-details>` gives this staff both string tunings and an explicit
-	 * `<staff-lines>` — the MusicXML signal for tablature that doesn't depend on the clef.
+	 * `<staff-lines>`: the MusicXML signal for tablature that doesn't depend on the clef.
 	 *
 	 * Tunings alone are not enough: Guitar Pro copies a guitar's six `<staff-tuning>`s onto
 	 * the *notation* staff of a notation+tab part (and onto unrelated parts sharing the

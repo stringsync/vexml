@@ -15,6 +15,8 @@ export interface SegmentedOption<T extends string> {
 	hint?: string;
 }
 
+// scry-ignore objects-over-callbacks: these are the props of the Segmented component, and
+// onChange is how React passes its event.
 export interface SegmentedProps<T extends string> {
 	value: T;
 	onChange: (value: T) => void;
@@ -34,7 +36,7 @@ export interface SegmentedProps<T extends string> {
  * A row of mutually exclusive cells in an inset tray: a small option set worth showing all of at
  * once, where a Select would hide two thirds of it behind a click.
  *
- * The tray's fill is the caller's, because it has to sit against whatever surface it lands on —
+ * The tray's fill is the caller's, because it has to sit against whatever surface it lands on:
  * muted inside a white card, white against the page.
  */
 export function Segmented<T extends string>({

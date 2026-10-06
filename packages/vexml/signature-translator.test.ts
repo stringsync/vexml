@@ -65,7 +65,7 @@ describe('SignatureTranslator', () => {
 	});
 
 	it('places a pinned custom accidental at its named octave', () => {
-		// F5 sits on the treble top line — signature line 0, the traditional F# spot.
+		// F5 sits on the treble top line (signature line 0, the traditional F# spot).
 		expect(
 			translator.customKeyAccidentals(
 				key({

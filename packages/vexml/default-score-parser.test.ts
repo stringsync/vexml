@@ -1,6 +1,58 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { MDocument } from '@stringsync/mdom';
 import { DefaultScoreParser } from './default-score-parser';
+
+describe('DefaultScoreParser', () => {
+	let parser: DefaultScoreParser;
+
+	beforeEach(() => {
+		parser = new DefaultScoreParser();
+	});
+
+	it('reuses an editor-owned document and its note identities across parses', async () => {
+		const document = MDocument.empty();
+		const note = document.score
+			.addPart()
+			.addMeasure()
+			.getOrCreateVoice('1')
+			.addNote({ step: 'C', octave: 4, type: 'quarter' });
+		expect(await parser.parse(document)).toBe(document);
+		note.setPitch({ step: 'D', octave: 4 });
+		const reparsed = await parser.parse(document);
+		expect(reparsed.score.parts[0]?.measures[0]?.notes[0]).toBe(note);
+		expect(reparsed.score.parts[0]?.measures[0]?.notes[0]?.pitch?.step).toBe(
+			'D',
+		);
+	});
+
+	it('parses a MusicXML string into a document', async () => {
+		const mdoc = await parser.parse(XML);
+		expect(mdoc.score.parts).toHaveLength(1);
+		expect(mdoc.score.parts[0]?.measures).toHaveLength(1);
+	});
+
+	it('leaves a chain-middle slur written start-before-stop paired to its neighbors', async () => {
+		const mdoc = await parser.parse(CHAIN_XML);
+		const notes = mdoc.score.parts[0]?.measures[0]?.notes ?? [];
+		const partners = notes.map((note) =>
+			note.slurs.map((slur) => {
+				const octave = slur.partner?.note.pitch?.octave;
+				return `${slur.slurType}->${octave ?? 'none'}`;
+			}),
+		);
+		expect(partners).toEqual([
+			['start->5'],
+			['start->6', 'stop->4'],
+			['stop->5'],
+		]);
+	});
+
+	it('rejects input that is not a string, Blob or MDocument', async () => {
+		await expect(parser.parse(42 as unknown as string)).rejects.toThrow(
+			new TypeError('render: input is not a string, Blob or MDocument'),
+		);
+	});
+});
 
 const XML = `<?xml version="1.0"?>
 <score-partwise version="4.0">
@@ -14,7 +66,7 @@ const XML = `<?xml version="1.0"?>
 </score-partwise>`;
 
 // C4 -> C5 -> C6, where the middle note ends one slur and starts another but writes the
-// start FIRST — the exporter ordering (Guitar Pro, Finale) that mdom used to self-pair into
+// start FIRST: the exporter ordering (Guitar Pro, Finale) that mdom used to self-pair into
 // a zero-length span, leaving the first note's start to reach all the way to the third and
 // bow one long arc over the middle one. mdom 0.2.4 pairs it; this is the regression guard,
 // since the symptom only ever showed up as a wrong arc in a screenshot.
@@ -33,52 +85,3 @@ const CHAIN_XML = `<?xml version="1.0"?>
     </measure>
   </part>
 </score-partwise>`;
-
-describe('DefaultScoreParser', () => {
-	it('reuses an editor-owned document and its note identities across parses', async () => {
-		const document = MDocument.empty();
-		const note = document.score
-			.addPart()
-			.addMeasure()
-			.getOrCreateVoice('1')
-			.addNote({ step: 'C', octave: 4, type: 'quarter' });
-		const parser = new DefaultScoreParser();
-		expect(await parser.parse(document)).toBe(document);
-		note.setPitch({ step: 'D', octave: 4 });
-		const reparsed = await parser.parse(document);
-		expect(reparsed.score.parts[0]?.measures[0]?.notes[0]).toBe(note);
-		expect(reparsed.score.parts[0]?.measures[0]?.notes[0]?.pitch?.step).toBe(
-			'D',
-		);
-	});
-
-	it('parses a MusicXML string into a document', async () => {
-		const parser = new DefaultScoreParser();
-		const mdoc = await parser.parse(XML);
-		expect(mdoc.score.parts).toHaveLength(1);
-		expect(mdoc.score.parts[0]?.measures).toHaveLength(1);
-	});
-
-	it('leaves a chain-middle slur written start-before-stop paired to its neighbors', async () => {
-		const mdoc = await new DefaultScoreParser().parse(CHAIN_XML);
-		const notes = mdoc.score.parts[0]?.measures[0]?.notes ?? [];
-		const partners = notes.map((note) =>
-			note.slurs.map((slur) => {
-				const octave = slur.partner?.note.pitch?.octave;
-				return `${slur.slurType}->${octave ?? 'none'}`;
-			}),
-		);
-		expect(partners).toEqual([
-			['start->5'],
-			['start->6', 'stop->4'],
-			['stop->5'],
-		]);
-	});
-
-	it('rejects input that is not a string, Blob or MDocument', async () => {
-		const parser = new DefaultScoreParser();
-		await expect(parser.parse(42 as unknown as string)).rejects.toThrow(
-			new TypeError('render: input is not a string, Blob or MDocument'),
-		);
-	});
-});

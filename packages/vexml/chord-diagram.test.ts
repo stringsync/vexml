@@ -1,11 +1,59 @@
-import { describe, expect, it } from 'bun:test';
-import { MDOMParser } from '@stringsync/mdom';
+import { beforeEach, describe, expect, it } from 'bun:test';
+import { type Harmony, MDOMParser } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
 import { ChordDiagram } from './chord-diagram';
 import type { ChordFrame } from './chord-diagram-glyph';
 import { isHighlightable, isPlayable } from './element';
 import { FakeDecorations } from './fake-decorations';
 import { FakeViewport } from './fake-viewport';
+
+describe('ChordDiagram', () => {
+	let source: Harmony;
+	let frame: ChordFrame;
+	let decorations: FakeDecorations;
+	let diagram: ChordDiagram;
+
+	beforeEach(() => {
+		const mdoc = new MDOMParser().parseFromString(XML);
+		const harmony = mdoc.score.parts[0]?.measures[0]?.harmonies[0];
+		if (!harmony) {
+			throw new Error('fixture: missing harmony');
+		}
+		source = harmony;
+		frame = {
+			chord: [
+				[1, 0],
+				[2, 1],
+				[3, 0],
+			],
+		};
+		decorations = new FakeDecorations();
+		diagram = new ChordDiagram(new Rect(40, 5, 75, 90), new FakeViewport(), {
+			source,
+			frame,
+			title: 'C',
+			decorations,
+		});
+	});
+
+	it('exposes its title, frame, and harmony source', () => {
+		expect(diagram.type).toBe('chord-diagram');
+		expect(diagram.getTitle()).toBe('C');
+		expect(diagram.getFrame()).toBe(frame);
+		expect(diagram.getSources()).toEqual([source]);
+	});
+
+	it('is highlightable but not playable', () => {
+		expect(isHighlightable(diagram)).toBe(true);
+		expect(isPlayable(diagram)).toBe(false);
+	});
+
+	it('color toggle delegates to its decoration', () => {
+		diagram.color.on('#2962ff');
+		expect(decorations.color.active.get(diagram)).toBe('#2962ff');
+		expect(diagram.color.active).toBe(true);
+	});
+});
 
 const XML = `<?xml version="1.0"?>
 <score-partwise version="4.0">
@@ -18,53 +66,3 @@ const XML = `<?xml version="1.0"?>
     </measure>
   </part>
 </score-partwise>`;
-
-function fixture() {
-	const mdoc = new MDOMParser().parseFromString(XML);
-	const source = mdoc.score.parts[0]?.measures[0]?.harmonies[0];
-	if (!source) {
-		throw new Error('fixture: missing harmony');
-	}
-	const frame: ChordFrame = {
-		chord: [
-			[1, 0],
-			[2, 1],
-			[3, 0],
-		],
-	};
-	const decorations = new FakeDecorations();
-	const diagram = new ChordDiagram(
-		new Rect(40, 5, 75, 90),
-		new FakeViewport(),
-		{
-			source,
-			frame,
-			title: 'C',
-			decorations,
-		},
-	);
-	return { diagram, source, frame, decorations };
-}
-
-describe('ChordDiagram', () => {
-	it('exposes its title, frame, and harmony source', () => {
-		const { diagram, source, frame } = fixture();
-		expect(diagram.type).toBe('chord-diagram');
-		expect(diagram.getTitle()).toBe('C');
-		expect(diagram.getFrame()).toBe(frame);
-		expect(diagram.getSources()).toEqual([source]);
-	});
-
-	it('is highlightable but not playable', () => {
-		const { diagram } = fixture();
-		expect(isHighlightable(diagram)).toBe(true);
-		expect(isPlayable(diagram)).toBe(false);
-	});
-
-	it('color toggle delegates to its decoration', () => {
-		const { diagram, decorations } = fixture();
-		diagram.color.on('#2962ff');
-		expect(decorations.color.active.get(diagram)).toBe('#2962ff');
-		expect(diagram.color.active).toBe(true);
-	});
-});

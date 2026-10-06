@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import {
 	MDocument,
 	type Measure as MMeasure,
@@ -17,8 +17,52 @@ import { System } from './system';
 import { TabPosition } from './tab-position';
 import type { Viewport } from './viewport';
 
+describe('TabPosition', () => {
+	let note: Note;
+	let tab: TabPosition;
+	let mnote: MNote;
+
+	beforeEach(() => {
+		({ note, tab, mnote } = fixture());
+	});
+
+	it('exposes string/fret and links back to its note', () => {
+		expect(tab.getString()).toBe(3);
+		expect(tab.getFret()).toBe(5);
+		expect(tab.getNote()).toBe(note);
+		expect(tab.type).toBe('tab-position');
+	});
+
+	it('shares the note it renders as its sources', () => {
+		expect(tab.getSources()).toEqual([mnote]);
+		expect(tab.getSources()).toEqual(note.getSources());
+	});
+
+	it('is highlightable but not playable', () => {
+		expect(isHighlightable(tab)).toBe(true);
+		expect(isPlayable(tab)).toBe(false);
+	});
+
+	// A tie-stop/held string omits its fret number (glyph null); coloring it must not stamp a
+	// phantom ellipse blip on the empty string.
+	it('draws nothing when no fret glyph was engraved', () => {
+		let draws = 0;
+		const ctx = new Proxy(
+			{},
+			{
+				get: () => () => {
+					draws++;
+				},
+				set: () => true,
+			},
+		) as unknown as CanvasRenderingContext2D;
+		tab.drawColor(ctx, 'red');
+		expect(draws).toBe(0);
+	});
+});
+
 /* Any Measure at all: Note stores one and hands it back, and nothing here reads it. Its
- * back-reference arrays stay empty — measure.test.ts is what covers the linking. */
+ * back-reference arrays stay empty; measure.test.ts is what covers the linking. */
 function bareMeasure(
 	mpart: MPart,
 	mmeasure: MMeasure,
@@ -70,43 +114,3 @@ function fixture() {
 	});
 	return { note, tab, mnote };
 }
-
-describe('TabPosition', () => {
-	it('exposes string/fret and links back to its note', () => {
-		const { note, tab } = fixture();
-		expect(tab.getString()).toBe(3);
-		expect(tab.getFret()).toBe(5);
-		expect(tab.getNote()).toBe(note);
-		expect(tab.type).toBe('tab-position');
-	});
-
-	it('getSources shares the note it renders', () => {
-		const { note, tab, mnote } = fixture();
-		expect(tab.getSources()).toEqual([mnote]);
-		expect(tab.getSources()).toEqual(note.getSources());
-	});
-
-	it('is highlightable but not playable', () => {
-		const { tab } = fixture();
-		expect(isHighlightable(tab)).toBe(true);
-		expect(isPlayable(tab)).toBe(false);
-	});
-
-	// A tie-stop/held string omits its fret number (glyph null); coloring it must not stamp a
-	// phantom ellipse blip on the empty string.
-	it('draws nothing when no fret glyph was engraved', () => {
-		const { tab } = fixture();
-		let draws = 0;
-		const ctx = new Proxy(
-			{},
-			{
-				get: () => () => {
-					draws++;
-				},
-				set: () => true,
-			},
-		) as unknown as CanvasRenderingContext2D;
-		tab.drawColor(ctx, 'red');
-		expect(draws).toBe(0);
-	});
-});

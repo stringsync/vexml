@@ -10,7 +10,7 @@ import type { LayerHost } from './layer-host';
  * onto one score-space overlay layer in the style's placement.
  *
  * A change repaints only the changed target's bounds, not the whole layer. The layer spans the
- * entire engraved score, so a full-bitmap clear per toggle is O(score area) — ~100ms on a long
+ * entire engraved score, so a full-bitmap clear per toggle is O(score area): ~100ms on a long
  * multi-part score, which made hover halos visibly lag. Overlapping neighbors still survive an
  * off(): every active decoration intersecting the cleared region is redrawn into it, clipped to
  * the region so nothing outside it is double-painted. The layer is created lazily on the first

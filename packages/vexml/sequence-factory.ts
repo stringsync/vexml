@@ -36,7 +36,7 @@ type Span = { onset: number; end: number };
 /*
  * Builds the playback timeline: bridges the parsed document (onsets, meter, tempo, repeats, ties)
  * and the engraved geometry (note x, system boxes) into `SequenceInput`, then assembles the
- * `Sequence` from it — expanding repeats/voltas into playback order via MeasureSequenceIterator.
+ * `Sequence` from it, expanding repeats/voltas into playback order via MeasureSequenceIterator.
  * `createFromInput` is public so tests drive the assembly through the pure data seam.
  */
 export class SequenceFactory {
@@ -104,8 +104,7 @@ export class SequenceFactory {
 			}
 			// A gap plays for exactly gapMs: its segment gets the bpm that maps its nominal
 			// beats to that time, without touching the carried tempo (the next measure
-			// resumes at the rate in effect before the gap). Its step is synthesized here —
-			// a gap has no notes to seed one — spanning the measure with nothing active, so
+			// resumes at the rate in effect before the gap). Its step is synthesized here (a gap has no notes to seed one), spanning the measure with nothing active, so
 			// the cursor glides across its box and everything sounding before it stops.
 			if (measure.gapMs !== undefined) {
 				segments.push({
@@ -161,10 +160,10 @@ export class SequenceFactory {
 			}
 		}
 
-		// A voice can end before its measure does (no trailing rest — legal, and common in real
+		// A voice can end before its measure does (no trailing rest; legal, and common in real
 		// exports), leaving no onset at the note's end: without a step boundary there the note keeps
 		// sounding until the next onset anywhere in the score. Seed a step at every note end that isn't
-		// already an onset. Matching is epsilon-tolerant (see BEAT_EPSILON) via a quantized key —
+		// already an onset. Matching is epsilon-tolerant (see BEAT_EPSILON) via a quantized key;
 		// an exact-equality test would seed a duplicate micro-step one ULP off a real onset.
 		const quantize = (beat: number) => Math.round(beat / BEAT_EPSILON);
 		const onsetKeys = new Set([...onsets.keys()].map(quantize));
@@ -190,7 +189,7 @@ export class SequenceFactory {
 		const tempo = new TempoMap(segments);
 		const startBeats = [...onsets.keys()].sort((a, b) => a - b);
 		// Place each seeded end along the glide the cursor was already making between the surrounding
-		// noteheads, so splitting a step leaves the cursor's path unchanged — only the active set
+		// noteheads, so splitting a step leaves the cursor's path unchanged; only the active set
 		// differs. Ascending order means the previous onset is always resolved already; the next one
 		// may be another seed, so scan forward to the next real notehead.
 		for (const [i, startBeat] of startBeats.entries()) {
@@ -561,7 +560,7 @@ export class SequenceFactory {
 		return placed;
 	}
 
-	/* Per measure index, the beat-axis warp swing puts on that measure — identity where none is
+	/* Per measure index, the beat-axis warp swing puts on that measure: identity where none is
 	 * in force. A <sound><swing> carries forward from the measure that declares it until another
 	 * one changes it, like tempo, and is read from the first part: swing is a performance
 	 * instruction for the whole score, the same way repeats and endings are. */
@@ -612,7 +611,7 @@ export class SequenceFactory {
 		return this.reader.meterBeats(parts[0]?.measures[index]?.getTime() ?? null);
 	}
 
-	/* Two notes at the same pitch (a tie's two ends always match). */
+	/* Pitch alone picks a tie's other end out of a chord, since a tie's two ends always match. */
 	private samePitch(a: MNote, b: MNote): boolean {
 		return (
 			!!a.pitch &&

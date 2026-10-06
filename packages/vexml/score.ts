@@ -1,4 +1,4 @@
-import type { Resource } from 'webappwiz/disposable';
+import { Disposer, type Resource } from 'webappwiz/disposable';
 import {
 	Dispatcher,
 	type Eventful,
@@ -34,7 +34,7 @@ import type { Sequence } from './sequence';
 import type { System } from './system';
 import { TabPosition } from './tab-position';
 
-/** A rendered gap measure's sync metadata — see `Config.gaps` and `Score.getGaps`. */
+/** A rendered gap measure's sync metadata: see `Config.gaps` and `Score.getGaps`. */
 export interface GapInfo {
 	/** The document measure index the gap landed on (gaps shift the indexes of the
 	 * measures after them, but not the printed measure numbers). */
@@ -54,11 +54,12 @@ export interface GapInfo {
  *
  * Pointer/scroll DOM listeners are bound lazily: the underlying source is attached only while at
  * least one caller is subscribed, so an unobserved score does no per-pointer hit-testing. Resize
- * is observed from construction instead — it also resizes viewport layers, which must happen even
+ * is observed from construction instead: it also resizes viewport layers, which must happen even
  * with no resize subscriber.
  */
 export class Score implements Eventful<ScoreEventMap> {
 	private readonly dispatcher = new Dispatcher<ScoreEventMap>();
+	private readonly disposer = new Disposer();
 	// Live subscriptions per event type, so the DOM sources below can be bound on the first one
 	// and released on the last. Counted here because a dispatcher doesn't report its listeners.
 	private readonly listening = new Map<keyof ScoreEventMap, number>();
@@ -92,12 +93,11 @@ export class Score implements Eventful<ScoreEventMap> {
 	};
 	// The live DOM listeners backing each Score event, so unbind can remove the exact references.
 	// Most events map to one DOM listener; hover maps to several (move/down/leave). Resize isn't
-	// here — it's a ResizeObserver, set up once below.
+	// here: it's a ResizeObserver, set up once below.
 	private readonly bound = new Map<
 		keyof ScoreEventMap,
 		Array<[string, EventListener]>
 	>();
-	private readonly unlistenResize: Unlisten;
 	// Last container size we emitted a 'resize' for, so a base-only reflow (same container size)
 	// relayouts without re-emitting. null until the first notification.
 	private lastResize: { width: number; height: number } | null = null;
@@ -113,7 +113,7 @@ export class Score implements Eventful<ScoreEventMap> {
 	constructor(
 		private readonly host: Host,
 		private readonly elements: ElementIndex,
-		private readonly decorations: Resource,
+		decorations: Resource,
 		private readonly sequence: Sequence,
 		private readonly scroller: Scroller & {
 			cancel(): void;
@@ -122,13 +122,17 @@ export class Score implements Eventful<ScoreEventMap> {
 		private readonly gaps: readonly GapInfo[],
 		private readonly pages: readonly Page[] = [],
 	) {
+		// Released in reverse: editors and cursors first, the host they draw on last.
+		this.disposer.use(host);
+		this.disposer.use(this.dispatcher);
+		this.disposer.use(decorations);
 		// Fires on any change to the container OR the base canvas's rendered box (e.g. a web-font
 		// reflow growing the engraving without the container resizing). Re-sync the layers to the
-		// base's live box every time — that stale placement is exactly what drifts when the base grows
+		// base's live box every time: that stale placement is exactly what drifts when the base grows
 		// without a container resize. Viewport layers are refit and cleared; content layers just
 		// re-track the base canvas, so a viewport-layer redraw in the resize handler lands on a
 		// correctly sized, cleared surface.
-		this.unlistenResize = host.events.on('resize', (size) => {
+		const unlistenResize = host.events.on('resize', (size) => {
 			host.relayoutLayers();
 			// Only an actual container-size change is a 'resize' for the caller. A base-only reflow
 			// reports the unchanged container size, so dedupe: relayout above, but don't suspend
@@ -143,6 +147,22 @@ export class Score implements Eventful<ScoreEventMap> {
 			// Suspend scrolling for the duration of the resize burst; it resumes once the size settles.
 			this.scroller.suspendForResize();
 			this.dispatcher.dispatch('resize', size);
+		});
+		this.disposer.defer(unlistenResize);
+		this.disposer.defer(() => this.unbindAll());
+		// Cursors and editors drop out of these sets when they dispose themselves, which a Disposer
+		// can't do, so the sets are what the score releases.
+		this.disposer.defer(() => {
+			for (const cursor of [...this.cursors]) {
+				cursor.dispose();
+			}
+			this.cursors.clear();
+		});
+		this.disposer.defer(() => {
+			for (const editor of this.editors) {
+				editor.dispose();
+			}
+			this.editors.clear();
 		});
 	}
 
@@ -164,7 +184,7 @@ export class Score implements Eventful<ScoreEventMap> {
 	/* Add a caller-owned box over the score, placed in score px (see Marker). Unlike a layer it holds
 	 * no bitmap, so moving or restyling it every pointer move stays compositor-only: reach for it over
 	 * a layer for anything that tracks a drag. zIndex orders it against the score canvas exactly as
-	 * addLayer's does — negative sits behind the engraving, so a translucent tint doesn't dull the
+	 * addLayer's does: negative sits behind the engraving, so a translucent tint doesn't dull the
 	 * notes. Disposed when the score is. */
 	createMarker(zIndex?: number): Marker {
 		if (zIndex !== undefined && !Number.isInteger(zIndex)) {
@@ -177,19 +197,19 @@ export class Score implements Eventful<ScoreEventMap> {
 	 * engraving, content and background layers, and markers (the playhead included). Sizes are CSS
 	 * px; `zoom` is relative to the score's on-screen size; omitted options take vexml's defaults
 	 * (sized for a thumb on a phone), and configure() changes them later. Show it on each pointer
-	 * move — it repaints only its own small canvas. Disposed when the score is. */
-	createLoupe(options: LoupeOptions = {}): Loupe {
-		return this.host.createLoupe(resolveLoupeOptions(LOUPE_OPTIONS, options));
+	 * move: it repaints only its own small canvas. Disposed when the score is. */
+	createLoupe(opts: LoupeOptions = {}): Loupe {
+		return this.host.createLoupe(resolveLoupeOptions(LOUPE_OPTIONS, opts));
 	}
 
 	/* Change `Config.maxHeight` after the fact: cap the score at `px` (scrolling vertically past it),
-	 * or null to remove the cap. The cap only sizes the container — the engraving is independent of
-	 * it — so nothing re-renders; layers relayout and a 'resize' fires if the box actually changed. */
+	 * or null to remove the cap. The cap only sizes the container: the engraving is independent of
+	 * it, so nothing re-renders; layers relayout and a 'resize' fires if the box actually changed. */
 	setMaxHeight(px: number | null): void {
 		this.host.setMaxHeight(px);
 	}
 
-	/* Add a playback cursor over this score's timeline. Headless by default — sync a view
+	/* Add a playback cursor over this score's timeline. Headless by default: sync a view
 	 * (createPlayhead) and/or follow the scroller for visuals. Disposed when the score is. */
 	createCursor(): CursorController {
 		const cursor = new CursorController(
@@ -207,16 +227,16 @@ export class Score implements Eventful<ScoreEventMap> {
 	/** Compose editing input, written/layout navigation, selection visuals and scrolling. */
 	createEditingController(
 		editor: EditingSession,
-		options: EditingControllerOptions = {},
+		opts: EditingControllerOptions = {},
 	): EditingController {
 		const view =
-			options.view ??
-			(options.selection === false
+			opts.view ??
+			(opts.selection === false
 				? null
 				: new SelectionOverlay(
 						// Lazy: a viewer that never edits never pays for two score-sized canvases.
 						new LazyLayer(this.host, 'background'),
-						options.selection,
+						opts.selection,
 						// Keep selected glyphs and the cursor outline above hover coloring.
 						new LazyLayer(this.host, 'content', 2),
 					));
@@ -230,18 +250,18 @@ export class Score implements Eventful<ScoreEventMap> {
 				scroller: this.scroller,
 				view,
 			},
-			options,
+			opts,
 		);
 		controller.events.on('dispose', () => this.editors.delete(controller));
 		this.editors.add(controller);
 		return controller;
 	}
 
-	/* vexml's default cursor visual — a vertical bar, moved as a DOM box rather than repainted.
+	/* vexml's default cursor visual: a vertical bar, moved as a DOM box rather than repainted.
 	 * Hand it to a cursor with cursor.sync(playhead). Style it with `color`/`widthPx`, or implement
 	 * CursorView for your own. */
-	createPlayhead(options?: PlayheadOptions): Playhead {
-		return new Playhead(this.host.createMarker(), options);
+	createPlayhead(opts?: PlayheadOptions): Playhead {
+		return new Playhead(this.host.createMarker(), opts);
 	}
 
 	/* Total playback time of the score, repeats and voltas expanded. */
@@ -274,7 +294,7 @@ export class Score implements Eventful<ScoreEventMap> {
 		return this.sequence;
 	}
 
-	/* The rendered gap measures (see Config.gaps), in the same order they were passed —
+	/* The rendered gap measures (see Config.gaps), in the same order they were passed:
 	 * gaps[i] in is getGaps()[i] out, so callers join by position to sync media. */
 	getGaps(): readonly GapInfo[] {
 		return this.gaps;
@@ -303,7 +323,7 @@ export class Score implements Eventful<ScoreEventMap> {
 	}
 
 	/* The playback time at a score-space point (jump-aware: a repeated spot maps to its first pass),
-	 * or null on empty space. Hit-tests the point, then interpolates the exact time/beat under it —
+	 * or null on empty space. Hit-tests the point, then interpolates the exact time/beat under it:
 	 * a note/fret within its onset step, a measure across its full width (see Sequence.resolveX). The
 	 * `step*` fields are the closest onset (the step the point lands in), for snap-to-note callers. */
 	getTimeAt(point: { x: number; y: number }): {
@@ -350,14 +370,11 @@ export class Score implements Eventful<ScoreEventMap> {
 	}
 
 	dispose(): void {
-		for (const editor of this.editors) {
-			editor.dispose();
-		}
-		this.editors.clear();
-		for (const cursor of [...this.cursors]) {
-			cursor.dispose();
-		}
-		this.cursors.clear();
+		this.disposer.dispose();
+	}
+
+	// Remove every DOM listener the lazily bound events hold, and hover's host-scroll subscription.
+	private unbindAll(): void {
 		for (const handlers of this.bound.values()) {
 			for (const [domType, handler] of handlers) {
 				this.sourceOf(domType).removeEventListener(domType, handler);
@@ -366,10 +383,6 @@ export class Score implements Eventful<ScoreEventMap> {
 		this.bound.clear();
 		this.unlistenScroll?.();
 		this.unlistenScroll = null;
-		this.unlistenResize();
-		this.decorations.dispose();
-		this.dispatcher.dispose();
-		this.host.dispose();
 	}
 
 	// Count a new subscriber to a type, binding its source if it's the first, and hand back the
@@ -423,7 +436,7 @@ export class Score implements Eventful<ScoreEventMap> {
 				this.listen(type, 'pointermove', track);
 				this.listen(type, 'pointerdown', track);
 				// Clear on leave and on cancel: a touch pointer ceases to exist on lift (pointerleave
-				// follows pointerup) or when the UA steals the gesture to scroll (pointercancel) — drop
+				// follows pointerup) or when the UA steals the gesture to scroll (pointercancel): drop
 				// the stale position so a momentum-scroll recompute doesn't relight a phantom target.
 				const clear: EventListener = () => {
 					this.lastClient = null;
@@ -474,7 +487,6 @@ export class Score implements Eventful<ScoreEventMap> {
 		}
 	}
 
-	// Bind a DOM listener for a Score event and record it for later removal.
 	private listen(
 		type: keyof ScoreEventMap,
 		domType: string,
@@ -502,7 +514,7 @@ export class Score implements Eventful<ScoreEventMap> {
 			: this.elements.at(point);
 	}
 
-	// Re-hit-test the last pointer position and emit hover only when the element changes — so a
+	// Re-hit-test the last pointer position and emit hover only when the element changes, so a
 	// scroll or a move within the same element stays quiet, but sliding onto/off an element fires.
 	private recomputeHover(): void {
 		const client = this.lastClient;

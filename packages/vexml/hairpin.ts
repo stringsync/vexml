@@ -6,7 +6,7 @@ import { HAIRPIN_HEIGHT, HAIRPIN_STAVE_GAP } from './constants';
  * A crescendo/diminuendo hairpin between two notes, drawn at a fixed gap from the staff on
  * the side its <wedge> placement names. vexflow's own StaveHairpin derives its y from the
  * stave box and a pair of hardcoded 20/30px constants that, for an ABOVE hairpin, land the
- * wedge inside the staff — the offset needed to correct it is more code (and more coupling
+ * wedge inside the staff: the offset needed to correct it is more code (and more coupling
  * to those constants) than the three lines the shape actually is. Drawn via
  * setContext().draw() like the other spanners.
  */
@@ -53,7 +53,7 @@ export class Hairpin {
 				: stave.getBottomLineY() + HAIRPIN_STAVE_GAP + this.offset;
 		return { top, bottom: top + HAIRPIN_HEIGHT };
 	}
-	/** The box the wedge is drawn in — the band above, over the notes it spans. */
+	/** The box the wedge is drawn in: the band above, over the notes it spans. */
 	get rect(): Rect {
 		const { top, bottom } = this.bounds;
 		const x1 = this.from.getAbsoluteX();

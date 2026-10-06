@@ -2,7 +2,7 @@ import type { Note as MNote } from '@stringsync/mdom';
 import type { Note, NoteLookup } from './note';
 
 /*
- * One voice within one part's measure. A stave is not a node of its own — it's this grouping
+ * One voice within one part's measure. A stave is not a node of its own: it's this grouping
  * key: a measure's voices each carry the stave they live on, and callers bucket by getStave().
  * Resolves its mdom notes to the interactive Note elements through the shared lookup (populated
  * by the factory before any query), so voice traversal lands on the same identities hit-testing

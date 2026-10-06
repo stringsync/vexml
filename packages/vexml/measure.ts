@@ -4,7 +4,7 @@ import type { Part } from './part';
 import type { Voice } from './voice';
 
 /*
- * One part's measure: the musical node, wrapping a single mdom Measure. Not an Element — it has
+ * One part's measure: the musical node, wrapping a single mdom Measure. Not an Element: it has
  * no box of its own in v1 (only the cross-part column is measured); getBox() is its place on the
  * page. This is where voices live unambiguously: a MeasureBox spans all parts, so "whose
  * voices?" only has an answer here.

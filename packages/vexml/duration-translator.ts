@@ -27,7 +27,7 @@ const BEAT_CODES: [beats: number, code: string][] = [
 	[0.03125, '128'],
 ];
 
-// VexFlow duration code -> quarter-note beats, largest first.
+// Largest first, because ghostNotes fills a gap greedily.
 const GHOST_DURATIONS: [code: string, beats: number][] = [
 	['w', 4],
 	['h', 2],
@@ -78,12 +78,12 @@ export class DurationTranslator {
 	/**
 	 * Fill a timing gap (in quarter-note beats) with invisible GhostNotes: tickables
 	 * that reserve the gap's time but draw nothing, so a voice that starts late or has
-	 * an internal hole stays aligned with its sibling voices. Greedy largest-first;
-	 * MusicXML gaps are dyadic, so this lands exactly down to a 128th (the epsilon
-	 * guards float drift). ponytail: a non-dyadic gap (e.g. a lone tuplet-sized hole)
-	 * drops a sub-128th remainder — add tuplet ghosts if that ever shows up.
+	 * an internal hole stays aligned with its sibling voices. Exact down to a 128th.
 	 */
 	ghostNotes(beats: number): GhostNote[] {
+		// Greedy largest-first: MusicXML gaps are dyadic, so this lands exactly down to a 128th
+		// (the epsilon guards float drift). ponytail: a non-dyadic gap (e.g. a lone tuplet-sized
+		// hole) drops a sub-128th remainder; add tuplet ghosts if that ever shows up.
 		const ghosts: GhostNote[] = [];
 		let remaining = beats;
 		for (const [duration, value] of GHOST_DURATIONS) {

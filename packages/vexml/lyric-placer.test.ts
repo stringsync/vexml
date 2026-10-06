@@ -17,7 +17,11 @@ describe('LyricPlacer', () => {
 			checkStave: () => stave,
 		}) as unknown as StaveNote;
 
-	const makePlacer = (opts: { lyricDrops?: Map<string, number> } = {}) => {
+	interface PlacerOptions {
+		lyricDrops?: Map<string, number>;
+	}
+
+	const makePlacer = (opts: PlacerOptions = {}) => {
 		// Captures each stroked segment so a melisma line's endpoints are assertable.
 		const lines: Array<{ x1: number; x2: number; y: number }> = [];
 		let pen = { x: 0, y: 0 };

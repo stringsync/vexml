@@ -3,6 +3,89 @@ import type { ConfigInput } from '@stringsync/vexml';
 import type { VexmlContext } from '@vexml/renderer';
 import { testing } from './setup';
 
+describe('pages', () => {
+	it.concurrent('exports a long score from a hidden container as whole-system pages', async () => {
+		const musicXML = await testing.fixture('score_bach_air.musicxml');
+		const { result } = await testing.eval(
+			'score_bach_air.musicxml',
+			{},
+			exportPages,
+			{
+				musicXML,
+				config: {
+					layout: LETTER,
+					pixelRatio: 1,
+					backgroundColor: '#ffffff',
+					fonts: FONTS,
+				},
+			},
+		);
+
+		expect(result.pages.length).toBeGreaterThan(1);
+		expect(result.steps).toBeGreaterThan(0);
+		expect(result.disposedThrows).toBe(true);
+		expect(
+			result.pages.map((page) => ({
+				size: `${page.width}x${page.height}`,
+				cornerAlpha: page.cornerAlpha,
+				hasSystems: page.systems.length > 0,
+				systemsInsidePage: page.systems.every(
+					(system) => system.top >= 0 && system.bottom <= 1056,
+				),
+			})),
+		).toEqual(
+			result.pages.map(() => ({
+				size: '816x1056',
+				cornerAlpha: 255,
+				hasSystems: true,
+				systemsInsidePage: true,
+			})),
+		);
+		// The first two pages show the paper, margins and system fit; the rest only repeat them.
+		result.pages.slice(0, 2).forEach((page, i) => {
+			expect(Buffer.from(page.png, 'base64')).toMatchScreenshot(
+				`pages_bach_air_${i + 1}.png`,
+			);
+		});
+	});
+
+	it.concurrent('draws each page at the configured pixel ratio', async () => {
+		const musicXML = await testing.fixture('score_bach_air.musicxml');
+		const { result } = await testing.eval(
+			'score_bach_air.musicxml',
+			{},
+			exportPages,
+			{
+				musicXML,
+				config: {
+					layout: { ...LETTER, pageWidth: 794, pageHeight: 1123 },
+					pixelRatio: 3,
+					fonts: FONTS,
+				},
+			},
+		);
+
+		expect(result.pages.length).toBeGreaterThan(1);
+		// No backgroundColor: the paper still comes out opaque.
+		expect(
+			result.pages.map((page) => ({
+				size: `${page.width}x${page.height}`,
+				cornerAlpha: page.cornerAlpha,
+			})),
+		).toEqual(
+			result.pages.map(() => ({ size: '2382x3369', cornerAlpha: 255 })),
+		);
+	});
+
+	it.concurrent('shows the pages stacked on screen', async () => {
+		const image = await testing.render('score_bach_air.musicxml', {
+			layout: { ...LETTER, pageHeight: 600 },
+			backgroundColor: '#ffffff',
+		});
+		expect(image).toMatchScreenshot('pages_stacked.png');
+	});
+});
+
 // US Letter with half-inch margins: the 816 x 1056 CSS px page sound2score exports.
 const LETTER = {
 	type: 'paged',
@@ -94,74 +177,3 @@ const FONTS = {
 	notation: { family: 'Bravura' },
 	text: { family: 'Source Sans 3' },
 } as const;
-
-describe('pages', () => {
-	it.concurrent('exports a long score from a hidden container as whole-system pages', async () => {
-		const musicXML = await testing.fixture('score_bach_air.musicxml');
-		const { result } = await testing.eval(
-			'score_bach_air.musicxml',
-			{},
-			exportPages,
-			{
-				musicXML,
-				config: {
-					layout: LETTER,
-					pixelRatio: 1,
-					backgroundColor: '#ffffff',
-					fonts: FONTS,
-				},
-			},
-		);
-
-		expect(result.pages.length).toBeGreaterThan(1);
-		expect(result.steps).toBeGreaterThan(0);
-		expect(result.disposedThrows).toBe(true);
-		result.pages.forEach((page, i) => {
-			expect(`${i}: ${page.width}x${page.height}`).toBe(`${i}: 816x1056`);
-			expect(page.cornerAlpha).toBe(255);
-			expect(page.systems.length).toBeGreaterThan(0);
-			for (const system of page.systems) {
-				expect(system.top).toBeGreaterThanOrEqual(0);
-				expect(system.bottom).toBeLessThanOrEqual(1056);
-			}
-		});
-		// The first two pages show the paper, margins and system fit; the rest only repeat them.
-		result.pages.slice(0, 2).forEach((page, i) => {
-			expect(Buffer.from(page.png, 'base64')).toMatchScreenshot(
-				`pages_bach_air_${i + 1}.png`,
-			);
-		});
-	});
-
-	it.concurrent('draws each page at the configured pixel ratio', async () => {
-		const musicXML = await testing.fixture('score_bach_air.musicxml');
-		const { result } = await testing.eval(
-			'score_bach_air.musicxml',
-			{},
-			exportPages,
-			{
-				musicXML,
-				config: {
-					layout: { ...LETTER, pageWidth: 794, pageHeight: 1123 },
-					pixelRatio: 3,
-					fonts: FONTS,
-				},
-			},
-		);
-
-		expect(result.pages.length).toBeGreaterThan(1);
-		for (const page of result.pages) {
-			expect(`${page.width}x${page.height}`).toBe('2382x3369');
-			// No backgroundColor: the paper still comes out opaque.
-			expect(page.cornerAlpha).toBe(255);
-		}
-	});
-
-	it.concurrent('shows the pages stacked on screen', async () => {
-		const image = await testing.render('score_bach_air.musicxml', {
-			layout: { ...LETTER, pageHeight: 600 },
-			backgroundColor: '#ffffff',
-		});
-		expect(image).toMatchScreenshot('pages_stacked.png');
-	});
-});

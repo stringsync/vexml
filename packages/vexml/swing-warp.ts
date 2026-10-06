@@ -1,27 +1,30 @@
 import type { Swing } from './score-reader';
 
 /**
- * One measure's swung beat axis: the swing in force, warped onto that measure's played length
- * and meter. The identity when nothing is swinging.
- *
- * Each pair of swung notes spans `2 * unit` beats; the warp stretches the on-beat half to
- * `first / (first + second)` of that span and squeezes the off-beat half into what's left. The
- * pair boundaries are fixed points, so a measure keeps its length and only the off-beats move —
- * which means one warp maps a note's onset, its end, and the measure's own length without any of
- * them drifting apart.
- *
- * The grid is phased off the notated downbeat rather than off the measure's first beat. A full
- * measure starts on a boundary, but a pickup starts part-way through a pair, and without the
- * shift its off-beat eighth would be read as an on-beat and played LONG instead of short —
- * backwards, and audible on the very first note of any swung tune with an anacrusis.
- *
- * Exempt notes (see {@link Note.isSwingExempt}) skip the warp entirely and keep their written
- * beats. That stays consistent with their swung neighbors because the pair boundaries are fixed
- * points: a triplet filling a beat still starts and ends where the warp leaves that beat, and
- * only its interior stays even.
+ * One measure's swung beat axis: at() maps a written beat in the measure to the beat it plays
+ * at under the swing in force, and is the identity when nothing is swinging. The measure keeps
+ * its length, and a pickup swings in step with the notated downbeat. Exempt notes (see
+ * {@link Note.isSwingExempt}) should skip it and keep their written beats.
  */
 export class SwingWarp {
-	// Null when nothing swings — an even ratio is no swing at all — which makes at() the identity.
+	/*
+	 * Each pair of swung notes spans `2 * unit` beats; the warp stretches the on-beat half to
+	 * `first / (first + second)` of that span and squeezes the off-beat half into what's left. The
+	 * pair boundaries are fixed points, so a measure keeps its length and only the off-beats move,
+	 * which means one warp maps a note's onset, its end, and the measure's own length without any of
+	 * them drifting apart.
+	 *
+	 * The grid is phased off the notated downbeat rather than off the measure's first beat. A full
+	 * measure starts on a boundary, but a pickup starts part-way through a pair, and without the
+	 * shift its off-beat eighth would be read as an on-beat and played LONG instead of short,
+	 * backwards, and audible on the very first note of any swung tune with an anacrusis.
+	 *
+	 * Exempt notes skipping the warp stay consistent with their swung neighbors because the pair
+	 * boundaries are fixed points: a triplet filling a beat still starts and ends where the warp
+	 * leaves that beat, and only its interior stays even.
+	 */
+
+	// Null when nothing swings (an even ratio is no swing at all), which makes at() the identity.
 	private readonly swing: Swing | null;
 	private readonly span: number;
 	private readonly onBeatSpan: number;
@@ -66,7 +69,7 @@ export class SwingWarp {
 }
 
 export interface SwingWarpOptions {
-	/** The measure's played length in quarter-note beats — a pickup is short. */
+	/** The measure's played length in quarter-note beats: a pickup is short. */
 	playedBeats: number;
 	/** What the meter says a full measure of it holds. */
 	meterBeats: number;

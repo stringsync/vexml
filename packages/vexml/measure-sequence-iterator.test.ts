@@ -241,7 +241,7 @@ describe('MeasureSequenceIterator', () => {
 
 	it('iterator: skips every measure of an exhausted multi-measure ending', () => {
 		// On the second pass the whole first ending (M2-M3) is skipped, not just its last
-		// measure — otherwise the second pass would replay part of the first ending.
+		// measure; otherwise the second pass would replay part of the first ending.
 		expect(
 			order([
 				{ index: 0, jumps: [{ type: 'repeatstart' }] },

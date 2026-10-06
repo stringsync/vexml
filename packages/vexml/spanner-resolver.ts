@@ -34,7 +34,7 @@ import type { VoiceTranslator } from './voice-translator';
 /*
  * The whole-pass endpoint registries handed to resolve(), snapshotted once every note is
  * placed: each spanner looks its lead notes up here to find the drawn note its endpoints
- * landed on — the notation map for ties/slurs/wedges/pedals, the tab map for
+ * landed on: the notation map for ties/slurs/wedges/pedals, the tab map for
  * hammer-ons/pull-offs and slides.
  */
 export interface SpannerAnchors {
@@ -49,7 +49,7 @@ export interface SpannerAnchors {
  */
 export interface SpannerReporter {
 	/** The collision obstacle for a drawn note: a box from its top (notehead ∪
-	 * beam-extended stem tip ∪ above articulations) to its bottom, one notehead wide —
+	 * beam-extended stem tip ∪ above articulations) to its bottom, one notehead wide:
 	 * what a pedal band or ottava label has to drop/lift clear of. */
 	noteObstacle(note: StaveNote): Rect;
 	/** Ink that reached `top`: keeps the page crop above it. */
@@ -74,7 +74,7 @@ export interface SpannerResolverOptions {
  * Resolves and draws the whole-score spanners once every note is placed: ties, slurs, tab
  * hammer-ons/pull-offs and slides, glissandos, ottava brackets, direction lines, trill
  * extensions, wedges, and pedals. A spanner's endpoints can sit in different measures, so
- * none of them can be built inside the measure loop — the loop records each measure's
+ * none of them can be built inside the measure loop: the loop records each measure's
  * chords, markers, and staves in here, and resolve() runs after the last one. One
  * instance lives and dies with its DrawPass.
  */
@@ -90,7 +90,7 @@ export class SpannerResolver {
 	// and resolved over the whole score alongside ties and slurs.
 	private readonly allPedals: PedalMark[] = [];
 	// Wedge (hairpin) markers, resolved into StaveHairpins over the whole score alongside
-	// the pedals — a hairpin can span barlines, so it can't be built per measure.
+	// the pedals: a hairpin can span barlines, so it can't be built per measure.
 	private readonly allWedges: WedgeMark[] = [];
 	// The same arrangement for tablature staves: hammer-ons/pull-offs also span
 	// barlines, so the tab chords accumulate into their own list.
@@ -150,7 +150,7 @@ export class SpannerResolver {
 
 	/*
 	 * Build and draw every recorded spanner, resolved over the whole score now that every
-	 * note is placed — so a span can cross a barline (its endpoints sit in different
+	 * note is placed, so a span can cross a barline (its endpoints sit in different
 	 * measures). Drawn last, on top of the notes.
 	 */
 	resolve(anchors: SpannerAnchors): void {
@@ -161,7 +161,7 @@ export class SpannerResolver {
 			tie.setContext(this.context).draw();
 			// A tie off a note above or below the staff arcs further out than the notehead,
 			// and one running to the end of a system stretches that arc over every note to
-			// the barline — the band a hairpin or the neighbouring stave sits in.
+			// the barline: the band a hairpin or the neighbouring stave sits in.
 			const stave = (
 				tie.getNotes().firstNote ?? tie.getNotes().lastNote
 			)?.checkStave();
@@ -274,7 +274,7 @@ export class SpannerResolver {
 			this.reporter.growPageTop(wedge.bounds.top);
 			this.reporter.growPageBottom(wedge.bounds.bottom);
 			// A wedge pushed out past a slur can reach the neighbouring stave, so report the band
-			// it ended up in and let pass two open the gap — within the system as spill, and
+			// it ended up in and let pass two open the gap: within the system as spill, and
 			// against the system above as overflow (an above-placed wedge on a system's top
 			// stave has nothing but the previous system over it).
 			const placement = this.staveRows.get(wedge.stave);
@@ -290,7 +290,7 @@ export class SpannerResolver {
 		}
 		// Pedals draw under the stave (vexflow's getYForBottomText), below the notes, so
 		// grow the bottom crop to keep their "Ped…*" text / bracket from being clipped.
-		// ponytail: only the final crop is grown — a pedal on a non-last system isn't
+		// ponytail: only the final crop is grown: a pedal on a non-last system isn't
 		// reserved against the system below it; add that if a fixture stacks one there.
 		for (const { marking, notes } of this.spanners.buildPedals(
 			this.allPedals,
@@ -311,8 +311,8 @@ export class SpannerResolver {
 	}
 
 	/*
-	 * Drop a pedal's band below anything of its own that hangs under the staff — a low
-	 * notehead and its ledger lines — instead of drawing the "Ped." glyph through it.
+	 * Drop a pedal's band below anything of its own that hangs under the staff: a low
+	 * notehead and its ledger lines, instead of drawing the "Ped." glyph through it.
 	 * vexflow positions the whole marking off one `line` offset, so the band moves as a
 	 * unit and the drop converts to line units.
 	 *
@@ -392,8 +392,8 @@ export class SpannerResolver {
 
 	/*
 	 * Put hairpins that run end to end on one line: a crescendo straight into a diminuendo
-	 * reads as one swell, so each cleared on its own — one dropped under low notes, the next
-	 * left at the staff — would draw the swell as a step. Every wedge in a chain takes the
+	 * reads as one swell, so each cleared on its own (one dropped under low notes, the next
+	 * left at the staff) would draw the swell as a step. Every wedge in a chain takes the
 	 * furthest offset any of them needed, which still clears what each one cleared.
 	 */
 	private alignWedgeChains(wedges: readonly Hairpin[]): void {
@@ -434,7 +434,7 @@ export class SpannerResolver {
 	 * past the floor. Without this the crop cuts the arc off mid-air.
 	 *
 	 * A bow arcs past the notes it joins, so it can reach further off the stave than anything
-	 * the note pass measured — a slur over a beamed group climbs over the beam, and in a song
+	 * the note pass measured: a slur over a beamed group climbs over the beam, and in a song
 	 * that lands on the singer's lyrics. Report it as spill so pass two opens the gap instead
 	 * (the arc is pinned to its noteheads and has nowhere else to go).
 	 *
@@ -490,8 +490,8 @@ export class SpannerResolver {
 	/*
 	 * Move an ottava bracket's row further from the stave until its label clears the notes it
 	 * covers. vexflow parks a TextBracket one text line off the staff, which is right until a
-	 * beam reaches into that band — a stem-down beam under an "8vb", a stem-up one over an
-	 * "8va" — and then the label is drawn straight through the beam line.
+	 * beam reaches into that band (a stem-down beam under an "8vb", a stem-up one over an
+	 * "8va") and then the label is drawn straight through the beam line.
 	 *
 	 * Same shape as {@link dropPedalClear}: a scoped resolver over the span's own notes (the
 	 * shared index is per-system and brackets resolve after the last one), and the resolved
@@ -541,7 +541,7 @@ export class SpannerResolver {
 		bracket.setLine(OTTAVA_TEXT_LINE + shift);
 		this.reporter.growPageTop(placed.y);
 		this.reporter.growPageBottom(placed.bottom);
-		// Report the band the label ended up in so pass two opens room for it — as spill
+		// Report the band the label ended up in so pass two opens room for it, as spill
 		// against the neighbouring stave inside the system (a piano 8va sits in the gap
 		// under the vocal part's lyrics), and as overflow against the system above.
 		const placement = this.staveRows.get(stave);

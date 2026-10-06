@@ -57,8 +57,8 @@ export class SignatureTranslator {
 	}
 
 	/*
-	 * A <key>'s non-traditional accidentals — the <key-step>/<key-alter>(/<key-accidental>)
-	 * triples MusicXML writes instead of <fifths> — as the glyph list a CustomKeySignature draws,
+	 * A <key>'s non-traditional accidentals: the <key-step>/<key-alter>(/<key-accidental>)
+	 * triples MusicXML writes instead of <fifths>, as the glyph list a CustomKeySignature draws,
 	 * in the order given rather than in circle-of-fifths order. Empty when the key is an ordinary
 	 * <fifths> one (or carries nothing at all), which is the signal to use the plain key spec.
 	 */
@@ -144,7 +144,7 @@ export class SignatureTranslator {
 
 	/*
 	 * The staff line a key-signature accidental on `step` sits at, in the coordinates
-	 * KeySignature draws in (0 = top line, +1 per line downward). `octave` pins it outright —
+	 * KeySignature draws in (0 = top line, +1 per line downward). `octave` pins it outright:
 	 * MusicXML's <key-octave>. Without one, the accidental takes the highest position that still
 	 * lands on the stave, which is where the traditional signatures put every flat and most
 	 * sharps, so an unpinned custom signature reads like an ordinary one.

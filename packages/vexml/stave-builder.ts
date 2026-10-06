@@ -55,51 +55,15 @@ export interface StaveColumn {
 	suppressBegRepeat: boolean;
 	/** Whether an earlier stave of this column already printed the measure number. */
 	measureNumbered: boolean;
-	/** The next measure's box when it carries a volta on this same system, or null —
+	/** The next measure's box when it carries a volta on this same system, or null;
 	 * see the early obstacle registration in build. */
 	nextVolta: { x: number; width: number } | null;
-}
-
-/* What one build hands back for the driver to fold into its column and page state. */
-export interface BuiltStave {
-	stave: Stave;
-	/** Whether the stave is a TabStave (fret numbers; no clef, key or time). */
-	isTab: boolean;
-	/** The column's volta box when this stave carries the bracket (the system's top
-	 * stave under an ending), or null: `box` is the bracket (line plus its label drop) at
-	 * its unlifted height, what the lift observations measure against; `top` is where the
-	 * bracket actually sits. */
-	volta: { box: Rect; top: number } | null;
-	/** How many measures the stave's <multiple-rest> consolidates, or null when the
-	 * measure draws its own notes. */
-	multiRestCount: number | null;
-	/** Whether this stave printed the measure number. */
-	numbered: boolean;
-}
-
-export interface StaveBuilderOptions {
-	/** The score's parts, in render order. */
-	parts: Part[];
-	/** The <part-group> spans from the <part-list>, outermost first. Fixed for the score. */
-	partGroups: PartGroup[];
-	totalStaves: number;
-	/** When to print measure numbers above the staff. */
-	measureNumbering: MeasureNumbering;
-	textColor: string;
-	/** Stave-row y offsets from the system top (see ScoreLayout.staveOffsets). */
-	staveOffsets: number[];
-	/** Per-system offset overrides once a first pass has measured spill; undefined on
-	 * a first pass. */
-	systemStaveOffsets: ReadonlyMap<number, number[]> | undefined;
-	/** How far each system's volta brackets rise to clear the notes under them — measured
-	 * on the previous pass and reserved on this one; empty on the first pass. */
-	voltaLifts: ReadonlyMap<number, number>;
 }
 
 /*
  * Builds one measure-column stave at a time: the vexflow Stave/TabStave placed at its
  * row, with its clefs, key and time signatures, begin/end barlines, repeat signs, volta
- * bracket, measure number and tab sizing — plus the consolidated multi-bar rest a
+ * bracket, measure number and tab sizing, plus the consolidated multi-bar rest a
  * <multiple-rest> lead draws over it. The stave comes back unqueued and undrawn: the
  * driver draws the whole column at once so a repeat sign can be aligned across staves
  * that reserve different opening widths. One instance lives and dies with its DrawPass.
@@ -220,7 +184,7 @@ export class StaveBuilder {
 		stave.setBegBarType(begBarType);
 		// A <bar-style> vexflow has no type for is set to NONE here and painted by
 		// drawCustomBarline once the stave is on the canvas; 'none' is genuinely no line, so
-		// it takes NONE and no repaint. A repeat sign outranks any bar style — MusicXML puts
+		// it takes NONE and no repaint. A repeat sign outranks any bar style: MusicXML puts
 		// the two in the same <barline>, and the repeat is the one that changes what's played.
 		const styled = column.barStyle
 			? BAR_STYLE_TYPES[column.barStyle]
@@ -238,14 +202,14 @@ export class StaveBuilder {
 			endBarType = Barline.type.END;
 		}
 		stave.setEndBarType(endBarType);
-		// The volta (ending) bracket rides above the top stave of the system only — it labels
+		// The volta (ending) bracket rides above the top stave of the system only: it labels
 		// the passage, not each instrument. Registered as an obstacle after the draw below so
 		// chord symbols and words in the same measure lift clear of it.
-		// vexflow anchors a volta at getYForTopText(numLines) — five text lines up, far above
-		// everything else vexml draws — so shift it back down to a fixed gap over the top staff
+		// vexflow anchors a volta at getYForTopText(numLines) (five text lines up, far above
+		// everything else vexml draws), so shift it back down to a fixed gap over the top staff
 		// line, in the same band as the other above-stave decorations.
 		// The bracket is drawn with the stave, before the notes are formatted, so a measure
-		// whose notes climb past that gap can't be seen yet — the lift that clears them is
+		// whose notes climb past that gap can't be seen yet: the lift that clears them is
 		// measured on the previous pass and arrives per system in voltaLifts. Per SYSTEM, not
 		// per measure: one bracket spans its measures as separate BEGIN/MID/END stave voltas,
 		// and heights that disagree would draw it as a staircase.
@@ -263,7 +227,7 @@ export class StaveBuilder {
 		// The previous measure's effective signatures (carried forward), used to
 		// spot a mid-system change. getClef/getKey/getTime return what's in effect at
 		// the measure start, so M3 of a piece that changed key at M2 reads the same
-		// key as M2 — no spurious redraw.
+		// key as M2: no spurious redraw.
 		const prevMeasure = part.measures[m - 1];
 		const key = measure.getKey(staffNumber);
 		const prevKey = prevMeasure?.getKey(staffNumber) ?? null;
@@ -272,7 +236,7 @@ export class StaveBuilder {
 		// A <key> spelled out accidental by accidental (<key-step>/<key-alter>), which vexflow's
 		// own KeySignature can't take a spec for; empty for an ordinary <fifths> key.
 		const customKey = isTab ? [] : this.factory.customKey(measure, staffNumber);
-		// The key being replaced, so vexflow can print the naturals that cancel it — the
+		// The key being replaced, so vexflow can print the naturals that cancel it: the
 		// only thing a change TO C major has to draw, and without it M2 of
 		// transpose_change looked like no change happened at all. vexflow applies the
 		// modern rule itself (cancel only the accidentals dropped, or all of them when
@@ -296,7 +260,7 @@ export class StaveBuilder {
 		// Clef and key print at every system start (re-stated on each new line).
 		// A mid-system clef or key change is also redrawn where it happens (the time
 		// signature is not repeated for either). The changed clef is drawn at the
-		// small "change clef" size, which is how a mid-piece clef change is engraved —
+		// small "change clef" size, which is how a mid-piece clef change is engraved:
 		// it reads as a correction to the stave, not a fresh system opening.
 		if (column.isSystemStart) {
 			this.factory.addOpening(placed, measure, staffNumber, cancelKeySpec);
@@ -314,13 +278,13 @@ export class StaveBuilder {
 		}
 
 		// Unlike clef and key, the time signature is not re-stated at every
-		// system start — only at the piece start and wherever the meter changes
+		// system start: only at the piece start and wherever the meter changes
 		// (a change that lands on a system break still redraws here).
 		//
 		// A part that states no <time> anywhere opens in 4/4, the meter a reader assumes when
-		// none is printed — the counterpart of the treble-clef fallback above. An explicit
+		// none is printed: the counterpart of the treble-clef fallback above. An explicit
 		// <senza-misura> is a different thing and still prints nothing.
-		// ponytail: the DEFAULT is display-only — meterBeats still reports 0 for an absent
+		// ponytail: the DEFAULT is display-only: meterBeats still reports 0 for an absent
 		// <time>, so an unmetered measure is sized by its own content rather than padded out
 		// to four beats. Printing an assumed meter is a convention; spacing to one would be
 		// guessing at the music.
@@ -340,11 +304,11 @@ export class StaveBuilder {
 		}
 
 		// A gap is non-musical, so it never shows a measure number (its neighbors keep
-		// their own printed numbers — insertion shifts indexes, not labels).
+		// their own printed numbers; insertion shifts indexes, not labels).
 		const showNumber =
 			!this.gaps.has(m) && this.showsMeasureNumber(m, column.isSystemStart);
 		// A bracket (drawn below) has a top curl that sits where vexflow's
-		// setMeasure centers the measure number, so the number gets occluded — true
+		// setMeasure centers the measure number, so the number gets occluded: true
 		// for a multi-stave part's own bracket, for the system bracket of a
 		// notation+tab pair split across parts, and for a <part-group> bracket that
 		// starts on the top part (the only one whose curl reaches the number). Only
@@ -394,7 +358,7 @@ export class StaveBuilder {
 
 		// The NEXT measure's bracket, registered a column early. A chord symbol is anchored at
 		// its note's x and runs right from there, so one on this measure's last beat overruns
-		// the barline into the next measure — where a volta may start, putting "G♯m11" right
+		// the barline into the next measure (where a volta may start), putting "G♯m11" right
 		// under a "1.2.3." label. That bracket is otherwise only registered when its own column
 		// is drawn, which is after this measure's annotations are placed, so the symbol would
 		// never see it. Same system means the same top staff line, so the y above still holds;
@@ -457,12 +421,12 @@ export class StaveBuilder {
 	/*
 	 * Draw a consolidated multi-bar rest over `stave`: the thick horizontal bar with its
 	 * measure count centered above. Drawn straight onto the stave rather than as a
-	 * tickable — it stands for the whole measure, so there is nothing for the formatter
+	 * tickable: it stands for the whole measure, so there is nothing for the formatter
 	 * to space it against.
 	 */
 	drawMultiRest(stave: Stave, count: number): void {
 		// vexflow measures its padding from the stave's x, so the left inset has to clear
-		// the clef/key/time first — otherwise the bar starts under the time signature and
+		// the clef/key/time first: otherwise the bar starts under the time signature and
 		// ends well short of the barline instead of centering in the note area.
 		new MultiMeasureRest(count, {
 			numberOfMeasures: count,
@@ -477,7 +441,7 @@ export class StaveBuilder {
 	/*
 	 * Register a printed measure number as a collision obstacle, measured with whatever font
 	 * the caller has set on the context. It sits at the stave's left edge, which is exactly
-	 * where a rehearsal mark anchors — without this the section header prints on top of it.
+	 * where a rehearsal mark anchors; without this the section header prints on top of it.
 	 * `centered` matches vexflow's own placement (the number straddles the stave x); the
 	 * bracket-occluded path draws it left-aligned instead.
 	 */
@@ -498,4 +462,40 @@ export class StaveBuilder {
 			kind: 'annotation',
 		});
 	}
+}
+
+/* What one build hands back for the driver to fold into its column and page state. */
+export interface BuiltStave {
+	stave: Stave;
+	/** Whether the stave is a TabStave (fret numbers; no clef, key or time). */
+	isTab: boolean;
+	/** The column's volta box when this stave carries the bracket (the system's top
+	 * stave under an ending), or null: `box` is the bracket (line plus its label drop) at
+	 * its unlifted height, what the lift observations measure against; `top` is where the
+	 * bracket actually sits. */
+	volta: { box: Rect; top: number } | null;
+	/** How many measures the stave's <multiple-rest> consolidates, or null when the
+	 * measure draws its own notes. */
+	multiRestCount: number | null;
+	/** Whether this stave printed the measure number. */
+	numbered: boolean;
+}
+
+export interface StaveBuilderOptions {
+	/** The score's parts, in render order. */
+	parts: Part[];
+	/** The <part-group> spans from the <part-list>, outermost first. Fixed for the score. */
+	partGroups: PartGroup[];
+	totalStaves: number;
+	/** When to print measure numbers above the staff. */
+	measureNumbering: MeasureNumbering;
+	textColor: string;
+	/** Stave-row y offsets from the system top (see ScoreLayout.staveOffsets). */
+	staveOffsets: number[];
+	/** Per-system offset overrides once a first pass has measured spill; undefined on
+	 * a first pass. */
+	systemStaveOffsets: ReadonlyMap<number, number[]> | undefined;
+	/** How far each system's volta brackets rise to clear the notes under them, measured
+	 * on the previous pass and reserved on this one; empty on the first pass. */
+	voltaLifts: ReadonlyMap<number, number>;
 }

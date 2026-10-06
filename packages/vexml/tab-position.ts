@@ -1,9 +1,10 @@
 import type { Note as MNote } from '@stringsync/mdom';
 import type { Rect } from 'webappwiz/geometry';
 import type { Decorations } from './decoration';
-import { Element, type Highlightable, Toggle } from './element';
+import { Element, type Highlightable } from './element';
 import type { NoteGlyph } from './geometry-collector';
 import type { Note } from './note';
+import { Toggle } from './toggle';
 import type { Viewport } from './viewport';
 
 /* A fret number on a tab string. The same note can render as both a Note (notehead) and a
@@ -17,7 +18,7 @@ export interface TabPositionOptions {
 	decorations: Decorations;
 	/* The engraved fret glyph ("5", "<7>", "(2)", "✕") captured with vexflow's exact
 	 * baseline, so a decoration replays the digit recolored. Null when no fret was drawn
-	 * (a tie-stop/held string omits its number) — nothing on the tab to recolor. */
+	 * (a tie-stop/held string omits its number): nothing on the tab to recolor. */
 	glyph: NoteGlyph | null;
 }
 
@@ -36,14 +37,14 @@ export class TabPosition extends Element implements Highlightable {
 		this.halo = new Toggle(this, opts.decorations.halo);
 	}
 
-	/* The same mdom note its Note wraps — one source of truth for both renderings. */
+	/* The same mdom note its Note wraps: one source of truth for both renderings. */
 	getSources(): readonly MNote[] {
 		return this.opts.note.getSources();
 	}
 
 	/* Replay vexflow's own fret glyph recolored so the digit lights up exactly where it was
 	 * engraved. No glyph means the fret was omitted (a tie-stop/held string), so there's nothing
-	 * to recolor — draw nothing rather than stamping a phantom ellipse blip on an empty string. */
+	 * to recolor; draw nothing rather than stamping a phantom ellipse blip on an empty string. */
 	override drawColor(ctx: CanvasRenderingContext2D, color: string): void {
 		if (this.opts.glyph) {
 			this.stampGlyph(ctx, this.opts.glyph, color);

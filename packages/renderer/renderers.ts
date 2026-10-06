@@ -10,8 +10,8 @@ import {
 	type OsmdInput,
 	OsmdRenderer,
 } from './osmd-renderer';
-import { tabPools } from './pool';
 import type { EvalRenderer, Renderer } from './renderer';
+import { tabPools } from './tab-pools';
 import {
 	type VexmlContext,
 	type VexmlInput,

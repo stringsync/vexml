@@ -1,4 +1,4 @@
-import { cli, type Deps, type Middleware } from 'webappwiz/cmd';
+import { cli, type Deps, type Next } from 'webappwiz/cmd';
 import { color } from 'webappwiz/log';
 import type { Fs } from 'webappwiz/system';
 import { SystemClock } from 'webappwiz/time';
@@ -29,17 +29,6 @@ const bool = z.string().transform((raw) => raw !== 'false');
 const flag = { default: false };
 
 const clock = new SystemClock();
-
-/** Reports how long the command took once it is done. */
-const timing: Middleware<VexDeps> = async (ctx, next) => {
-	const started = clock.now();
-	await next(ctx);
-	// args[0] is the command; a failing command throws past this, so only the
-	// runs that finished get timed.
-	ctx.log.info(
-		`${color.dim(ctx.ps.args[0])} took ${clock.now().subtract(started).human()}`,
-	);
-};
 
 export const vex = cli<VexDeps>('vex');
 
@@ -100,16 +89,16 @@ vex
 	.option('muse', bool, {
 		...flag,
 		description:
-			'render with a dockerized MuseScore instead — a reference, not ground truth',
+			'render with a dockerized MuseScore instead: a reference, not ground truth',
 	})
 	.option('osmd', bool, {
 		...flag,
 		description:
-			'render with OpenSheetMusicDisplay instead — a reference, not ground truth',
+			'render with OpenSheetMusicDisplay instead: a reference, not ground truth',
 	})
 	.option('alpha', bool, {
 		...flag,
-		description: 'render with alphaTab instead — a reference, not ground truth',
+		description: 'render with alphaTab instead: a reference, not ground truth',
 	})
 	.use(timing)
 	.action(async (opts, { log, fs, invocationDir }) => {
@@ -165,3 +154,14 @@ vex
 	.description('bump version (patch|minor|major), commit, tag, and publish')
 	.arg('type', z.enum(['patch', 'minor', 'major'] as const))
 	.action((opts, { log, ps }) => ship({ bump: opts.type, log, ps }));
+
+/** Reports how long the command took once it is done. */
+async function timing(ctx: VexDeps, next: Next<VexDeps>): Promise<void> {
+	const started = clock.now();
+	await next(ctx);
+	// args[0] is the command; a failing command throws past this, so only the
+	// runs that finished get timed.
+	ctx.log.info(
+		`${color.dim(ctx.ps.args[0])} took ${clock.now().subtract(started).human()}`,
+	);
+}

@@ -37,7 +37,7 @@ import { VoiceTranslator } from './voice-translator';
  * Render a MusicXML score into a container: parse text or a compressed .mxl Blob, or reuse an
  * editor-owned MDocument, which is never edited: its gaps must name measures already in it.
  * Build the stage inside the div, lay the score out, and draw it onto the stage's
- * managed canvas. The caller never sees the canvas — only the returned Score, which owns the DOM
+ * managed canvas. The caller never sees the canvas: only the returned Score, which owns the DOM
  * and is the handle for events/decorations/layers (and dispose).
  *
  * This is the composition root: it merges the caller's partial config over the defaults and wires
@@ -67,7 +67,7 @@ export function render(
 	// Scale-to-fit + center by default for a system-stacked layout that isn't a horizontal scroll
 	// box: the score is engraved once at its reference width, then shrunk to fit a narrower container
 	// (never blown up past that width) and centered. A panoramic layout, or one the caller capped into
-	// a horizontal scroll box, wants its intrinsic width and to scroll — so it opts out.
+	// a horizontal scroll box, wants its intrinsic width and to scroll, so it opts out.
 	const fit =
 		resolved.layout.type !== 'panoramic' &&
 		resolved.width == null &&

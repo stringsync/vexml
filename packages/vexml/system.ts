@@ -4,7 +4,7 @@ import { Element } from './element';
 import type { MeasureBox } from './measure-box';
 import type { Viewport } from './viewport';
 
-/* A system: one line of music, the measure columns laid out on it. Layout-only — it answers
+/* A system: one line of music, the measure columns laid out on it. Layout-only: it answers
  * "where on the page" (its rect unions its columns), never "what's in the music"; content is
  * reached through each column's per-part Measures. Not in the pointer tree: staff-space hits
  * report the MeasureBox, and a system-level target would swallow it. */

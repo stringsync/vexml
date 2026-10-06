@@ -21,15 +21,7 @@ describe('ConnectorDrawer', () => {
 	// The barline geometry paintBarStyle reads off a stave, and the edges drawCustomBarline
 	// anchors to. Bare identity objects (no overrides) are enough for barlineRuns, which
 	// only groups references.
-	const stave = (
-		opts: {
-			x?: number;
-			width?: number;
-			lineTop?: number;
-			lineBottom?: number;
-			spacing?: number;
-		} = {},
-	) =>
+	const stave = (opts: StaveOptions = {}) =>
 		({
 			getX: () => opts.x ?? 0,
 			getWidth: () => opts.width ?? 100,
@@ -39,6 +31,14 @@ describe('ConnectorDrawer', () => {
 			getYForLine: () => opts.lineTop ?? 100,
 			getBottomLineY: () => opts.lineBottom ?? 140,
 		}) as unknown as Stave;
+
+	interface StaveOptions {
+		x?: number;
+		width?: number;
+		lineTop?: number;
+		lineBottom?: number;
+		spacing?: number;
+	}
 
 	const column = (
 		overrides: Partial<ConnectorColumn> = {},

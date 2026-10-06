@@ -51,7 +51,6 @@ export {
 	isHighlightable,
 	isPlayable,
 	type Playable,
-	type Toggle,
 } from './element';
 export type { ElementIndex } from './element-index';
 export type {
@@ -89,4 +88,5 @@ export {
 export { Sequence, type Step } from './sequence';
 export { System } from './system';
 export { TabPosition } from './tab-position';
+export type { Toggle } from './toggle';
 export { Voice } from './voice';

@@ -14,7 +14,7 @@ export interface PointerTargetEvent {
 /* The element under the pointer changed: entered, left, or moved between elements. `target` is null
  * when nothing is under the pointer (empty space, or the pointer left the score); `point` is the
  * pointer in score space, or null once the pointer is off the score. Unlike pointermove, this also
- * fires when scrolling slides a different element under a stationary pointer — so it fires at most
+ * fires when scrolling slides a different element under a stationary pointer, so it fires at most
  * once per change, not once per pixel. Touch pointers never hover. */
 export interface HoverEvent {
 	readonly target: Element | null;
@@ -49,9 +49,9 @@ export type ScoreEventMap = {
 
 /* What changed entering the current cursor position. `started` are (re)attacks (a re-struck pitch
  * shows in both `started` and `stopped`); `sustained` are notes held or tied through (do not
- * re-press); `stopped` are releases (a note tied into this step is excluded — it keeps ringing).
- * `active` is the full sounding set (onset-based — use for audio). `highlighted` is `active` plus any
- * notes tied into them, so a tie chain stays lit until it releases — use for visual highlighting.
+ * re-press); `stopped` are releases (a note tied into this step is excluded: it keeps ringing).
+ * `active` is the full sounding set (onset-based: use for audio). `highlighted` is `active` plus any
+ * notes tied into them, so a tie chain stays lit until it releases: use for visual highlighting.
  * `position` is the bar in score space, mappable to the page. */
 export interface CursorChangeEvent {
 	readonly timeMs: number;
@@ -67,7 +67,7 @@ export interface CursorChangeEvent {
 }
 
 /* The cursor's bar crossed the viewport edge: `fullyVisible` is true when the whole bar sits inside
- * the viewport, false when any part is off-screen. Fires on a transition only — driven by the
+ * the viewport, false when any part is off-screen. Fires on a transition only: driven by the
  * cursor's own moves and by viewport scroll/resize, so it also fires while paused if the user
  * scrolls the bar away. */
 export interface CursorVisibilityEvent {

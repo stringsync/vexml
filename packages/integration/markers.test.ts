@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import type { Note } from '@stringsync/vexml';
 import { testing } from './setup';
 
 describe('markers', () => {
@@ -9,10 +10,7 @@ describe('markers', () => {
 			'note.musicxml',
 			{},
 			async ({ score, container }) => {
-				const note = score.getElements().notes()[0];
-				if (!note) {
-					throw new Error('no note to magnify');
-				}
+				const note = score.getElements().notes()[0] as Note;
 				const at = {
 					x: note.rect.x + note.rect.w / 2,
 					y: note.rect.y + note.rect.h / 2,
@@ -37,14 +35,12 @@ describe('markers', () => {
 				loupe.show({ x: at.x - 2, y: at.y - 2, w: 4, h: 4 }, at);
 				// It paints on the next frame, however many shows came before it.
 				await new Promise(requestAnimationFrame);
-				const canvas =
-					document.querySelector<HTMLCanvasElement>('.vexml-loupe');
+				const canvas = document.querySelector(
+					'.vexml-loupe',
+				) as HTMLCanvasElement;
 				// It grows in rather than popping on.
-				const entering = canvas?.getAnimations().length ?? 0;
-				const ctx = canvas?.getContext('2d');
-				if (!canvas || !ctx) {
-					throw new Error('loupe canvas not found');
-				}
+				const entering = canvas.getAnimations().length;
+				const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 				const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 				const center = ctx.getImageData(
 					Math.floor(canvas.width / 2),
@@ -52,16 +48,9 @@ describe('markers', () => {
 					1,
 					1,
 				).data;
-				let dark = 0;
-				for (let i = 0; i < pixels.length; i += 4) {
-					if (
-						(pixels[i] ?? 255) < 80 &&
-						(pixels[i + 1] ?? 255) < 80 &&
-						(pixels[i + 2] ?? 255) < 80
-					) {
-						dark++;
-					}
-				}
+				const dark = Array.from({ length: pixels.length / 4 }, (_, i) =>
+					Array.from(pixels.slice(i * 4, i * 4 + 3)),
+				).filter((rgb) => rgb.every((v) => v < 80)).length;
 				const box = canvas.getBoundingClientRect();
 				const anchor = knobEl?.getBoundingClientRect();
 				const shown = {
@@ -146,16 +135,10 @@ describe('markers', () => {
 			'note.musicxml',
 			{ backgroundColor: 'transparent' },
 			async ({ score, container }) => {
-				const base = container.querySelector<HTMLElement>('.vexml-canvas');
-				if (!base) {
-					throw new Error('score element not found');
-				}
+				const base = container.querySelector('.vexml-canvas') as HTMLElement;
 				base.style.width = `${base.getBoundingClientRect().width * 0.44}px`;
 				base.style.height = 'auto';
-				const note = score.getElements().notes()[0];
-				if (!note) {
-					throw new Error('no note to magnify');
-				}
+				const note = score.getElements().notes()[0] as Note;
 				// A content layer's red block with a marker's blue block butted against its right edge.
 				const at = { x: note.rect.x, y: note.rect.y + note.rect.h / 2 };
 				const layer = score.addLayer('content');
@@ -172,12 +155,10 @@ describe('markers', () => {
 				);
 
 				const loupe = score.createLoupe({ width: 40, height: 20, zoom: 2 });
-				const canvas =
-					document.querySelector<HTMLCanvasElement>('.vexml-loupe');
-				const ctx = canvas?.getContext('2d');
-				if (!canvas || !ctx) {
-					throw new Error('loupe canvas not found');
-				}
+				const canvas = document.querySelector(
+					'.vexml-loupe',
+				) as HTMLCanvasElement;
+				const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 				const pixel = (dx: number) =>
 					[
 						...ctx.getImageData(

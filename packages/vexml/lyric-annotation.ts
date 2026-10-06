@@ -4,7 +4,7 @@ import type { LyricMark } from './lyric-mark';
 
 /*
  * A lyric syllable under the stave. vexflow's own BOTTOM-justified Annotation hangs its
- * text off the note's lowest notehead, so a verse would rise and fall with the melody —
+ * text off the note's lowest notehead, so a verse would rise and fall with the melody:
  * a ledger-line note drags its syllable well below the row and a high note tucks its
  * syllable up against the stave. Lyrics read as a line of text, so the draw pass pins one
  * baseline per stave (see LyricPlacer.pin) and this draws there instead.
@@ -21,7 +21,7 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 
 	constructor(
 		text: string,
-		/** 0-based verse index — which row under the stave this syllable sits on. Not readonly:
+		/** 0-based verse index: which row under the stave this syllable sits on. Not readonly:
 		 * a stave carrying several voices offsets each voice's rows past the ones the voices
 		 * before it used (see {@link shiftVerses}). */
 		public verseIndex: number,

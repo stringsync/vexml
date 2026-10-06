@@ -13,39 +13,6 @@ import { ScoreReader } from './score-reader';
 import type { SequenceNote } from './sequence';
 import { SequenceFactory } from './sequence-factory';
 
-// Identity tokens: the sequence only ever compares notes, so nothing else about them is read.
-const note = (label: string) => ({ label }) as unknown as Note;
-const A = note('a');
-const B = note('b');
-
-// Four quarters in one 4/4 measure @120bpm: steps at 0/500/1000/1500 ms, durationMs 2000, bars
-// at x 10/20/30/40.
-function fourQuarters() {
-	const notes: SequenceNote[] = [A, B, note('c'), note('d')].map((n, i) => ({
-		note: n,
-		measureIndex: 0,
-		measureBeat: i,
-		beats: 1,
-		x: 10 + i * 10,
-		tiedFrom: null,
-	}));
-	return new SequenceFactory(
-		new ScoreReader(new DynamicGlyphs()),
-		new Gaps([], new GapInserter(new ScoreReader(new DynamicGlyphs()))),
-	).createFromInput({
-		measures: [
-			{
-				index: 0,
-				beats: 4,
-				tempoBpm: 120,
-				jumps: [],
-				systemRect: new Rect(0, 0, 1000, 100),
-			},
-		],
-		notes,
-	});
-}
-
 describe('CursorController', () => {
 	let host: FakeCursorHost;
 	let scroller: FakeScroller;
@@ -145,7 +112,7 @@ describe('CursorController', () => {
 		expect(view.events).toHaveLength(2);
 		detach.dispose();
 		cursor.next();
-		expect(view.events).toHaveLength(2); // detached
+		expect(view.events).toHaveLength(2);
 	});
 
 	it('disposes the views still attached to it, but not the detached ones', () => {
@@ -176,10 +143,9 @@ describe('CursorController', () => {
 		host.vp = new Rect(500, 0, 1000, 1000); // bar off-screen left
 		const unfollow = cursor.follow(undefined, { block: 'start' });
 		cursor.next();
-		expect(scroller.options.length).toBeGreaterThan(0);
-		for (const opts of scroller.options) {
-			expect(opts).toEqual({ block: 'start' });
-		}
+		expect(scroller.options).toEqual(
+			Array.from({ length: 2 }, () => ({ block: 'start' })),
+		);
 		unfollow.dispose();
 	});
 
@@ -239,3 +205,36 @@ describe('CursorController', () => {
 		expect(disposes).toBe(1);
 	});
 });
+
+// Identity tokens: the sequence only ever compares notes, so nothing else about them is read.
+const note = (label: string) => ({ label }) as unknown as Note;
+const A = note('a');
+const B = note('b');
+
+// Four quarters in one 4/4 measure @120bpm: steps at 0/500/1000/1500 ms, durationMs 2000, bars
+// at x 10/20/30/40.
+function fourQuarters() {
+	const notes: SequenceNote[] = [A, B, note('c'), note('d')].map((n, i) => ({
+		note: n,
+		measureIndex: 0,
+		measureBeat: i,
+		beats: 1,
+		x: 10 + i * 10,
+		tiedFrom: null,
+	}));
+	return new SequenceFactory(
+		new ScoreReader(new DynamicGlyphs()),
+		new Gaps([], new GapInserter(new ScoreReader(new DynamicGlyphs()))),
+	).createFromInput({
+		measures: [
+			{
+				index: 0,
+				beats: 4,
+				tempoBpm: 120,
+				jumps: [],
+				systemRect: new Rect(0, 0, 1000, 100),
+			},
+		],
+		notes,
+	});
+}

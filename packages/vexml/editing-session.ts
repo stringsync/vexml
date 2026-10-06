@@ -137,10 +137,10 @@ export class EditingSession
 
 	/** Selecting a note starts a selection; extend: true extends the existing voice range.
 	 * Chord members, grace notes and invisible notes remain individual targets. */
-	select(note: MNote, options: SelectionOptions = {}): void {
+	select(note: MNote, opts: SelectionOptions = {}): void {
 		this.requireNote(note);
 		const anchor = this.anchor;
-		if (options.extend && anchor && this.contains(anchor)) {
+		if (opts.extend && anchor && this.contains(anchor)) {
 			if (anchor.part !== note.part || anchor.voice !== note.voice) {
 				throw new Error('editing: a range must stay within one part and voice');
 			}
@@ -202,7 +202,7 @@ export class EditingSession
 
 	/** Left/right follow the written voice across measures, including cross-staff notes, landing on chord leads.
 	 * Up/down visit pitches within the current chord. Boundaries clamp. */
-	move(direction: EditingMove, options: SelectionOptions = {}): boolean {
+	move(direction: EditingMove, opts: SelectionOptions = {}): boolean {
 		return new EditingNavigator(this).move(
 			{
 				unit:
@@ -211,7 +211,7 @@ export class EditingSession
 						: 'chordPitch',
 				direction: direction === 'next' || direction === 'higher' ? 1 : -1,
 			},
-			options,
+			opts,
 		);
 	}
 

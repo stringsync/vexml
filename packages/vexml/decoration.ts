@@ -8,7 +8,7 @@ export interface Bounded {
 }
 
 /* What a decoration paints. HaloStyle draws from the element's box alone, but the color is the
- * element's own job: only it knows what it is — a notehead glyph (Note), a fret number
+ * element's own job: only it knows what it is, whether a notehead glyph (Note), a fret number
  * (TabPosition), or a plain box (the filled-ellipse fallback). So ColorStyle hands over the
  * overlay ctx and the chosen color and the element stamps itself recolored. */
 export interface Decoratable extends Bounded {
@@ -16,7 +16,7 @@ export interface Decoratable extends Bounded {
 }
 
 /*
- * One decoration kind's store — the seam an element's toggle delegates to, so the drawing surface
+ * One decoration kind's store: the seam an element's toggle delegates to, so the drawing surface
  * stays out of the model. Production: DefaultDecoration (paints its overlay layer from the active
  * set). Tests: FakeDecoration, which records state.
  */

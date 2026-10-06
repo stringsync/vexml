@@ -21,18 +21,17 @@ import type { DurationTranslator } from './duration-translator';
 
 /*
  * Where a note sits on the fretboard when `<technical>` doesn't say. Some exporters give a
- * tab note only its pitch, leaving the string/fret to be derived from the staff tuning —
- * without this it would print fret 0 on string 1 no matter what it sounds.
+ * tab note only its pitch, leaving the string/fret to be derived from the staff tuning.
+ * Without this it would print fret 0 on string 1 no matter what it sounds.
  *
  * Pick the highest string the note is reachable on, i.e. the smallest non-negative fret:
  * that is the ordinary first-position fingering and matches what MuseScore derives. A note
  * below every open string is unplayable as written; put it on the lowest string at fret 0
  * rather than dropping it, so the tab still shows something at that tick.
  *
- * `tuning` is indexed by string - 1 (see stringTuning). An explicit `<string>` wins — only
- * its fret is derived — so a hand-fingered voicing keeps the string the editor chose.
+ * `tuning` is indexed by string - 1 (see stringTuning). An explicit `<string>` wins; only
+ * its fret is derived, so a hand-fingered voicing keeps the string the editor chose.
  */
-/* Semitones above C for each MusicXML <step>. */
 const STEP_SEMITONES: Record<string, number> = {
 	C: 0,
 	D: 2,
@@ -71,7 +70,7 @@ export class TabVoiceTranslator {
 	 * chords steal no time, so like VoiceTranslator.tickables they're held aside and
 	 * attached to the next real note as a GraceNoteGroup modifier (drawn just left of
 	 * it). A rest reserves its duration with invisible GhostNotes rather than a drawn
-	 * rest glyph (tab convention omits rests) — without that reserved time, a tab note
+	 * rest glyph (tab convention omits rests), because without that reserved time, a tab note
 	 * after a rest slides left and falls out of vertical alignment with the notation
 	 * stave it's formatted against. `record` captures each chord's lead -> TabNote for
 	 * later hammer-on/pull-off resolution; the layout pass reuses this to size tab
@@ -82,7 +81,7 @@ export class TabVoiceTranslator {
 		chords: Chord[],
 		tuning: number[] | null,
 		// scry-ignore objects-over-callbacks: the notation path's `record` and this one are the
-		// same collector, scoped to the one call for the same reason — see
+		// same collector, scoped to the one call for the same reason: see
 		// VoiceTickablesOptions.record.
 		record?: (lead: Note, tickable: StemmableNote) => void,
 	): StemmableNote[] {
@@ -107,7 +106,7 @@ export class TabVoiceTranslator {
 			if (chord.notes.every((note) => this.isHeld(note))) {
 				if (chord.lead.timeModification) {
 					// A held note inside a tuplet: reserve it as ONE duration-coded ghost and
-					// `record` it, so buildTuplets rescales this lone tickable with the tuplet —
+					// `record` it, so buildTuplets rescales this lone tickable with the tuplet:
 					// a triplet that opens on a tied note (measure 25 of the jazz corpus) must
 					// compress the frets after it or they drift right. the duration translator's ghosts can't stand in:
 					// a tuplet-sized hole isn't dyadic, so it would drop a sub-128th remainder.
@@ -128,7 +127,7 @@ export class TabVoiceTranslator {
 			const tabNote = this.tabChord(chord, tuning);
 			if (pendingGrace.length > 0) {
 				// No beamNotes() unlike the standard-notation path: tab grace notes have no
-				// stem to anchor a beam, so beaming floats it off the staff — they render as
+				// stem to anchor a beam, so beaming floats it off the staff; they render as
 				// plain small fret numbers.
 				const group = new GraceNoteGroup(pendingGrace.map((g) => g.note));
 				// preFormat now so the width pad survives format()'s preFormatted guard.
@@ -151,7 +150,7 @@ export class TabVoiceTranslator {
 	/*
 	 * Build a vexflow TabNote for one chord on a tablature stave: each member's
 	 * <string>/<fret> becomes a position (string 1 = highest-pitched). Tab notes carry
-	 * no clef, accidentals, or stems — just the fret numbers stacked on their strings,
+	 * no clef, accidentals, or stems, just the fret numbers stacked on their strings,
 	 * plus any bend/vibrato/annotation modifiers from <notations>.
 	 */
 	private tabChord(chord: Chord, tuning: number[] | null): TabNote {
@@ -192,16 +191,16 @@ export class TabVoiceTranslator {
 	/*
 	 * Each chord member's <string>/<fret> as a vexflow tab position (string 1 =
 	 * highest-pitched, an open string is fret 0). A natural harmonic is notated as the fret
-	 * in angle brackets, e.g. <12> — vexflow renders the fret string verbatim.
+	 * in angle brackets, e.g. <12>; vexflow renders the fret string verbatim.
 	 *
 	 * A member with no <technical> carries only a pitch; `tuning` (the staff's
-	 * <staff-tuning>, null when it declares none) derives its string/fret — see
+	 * <staff-tuning>, null when it declares none) derives its string/fret: see
 	 * derivePosition.
 	 *
 	 * A tie-stop fret is the held tail of a tie: the string isn't re-struck, so guitar tab
 	 * convention omits its number (unlike a slur/hammer-on/pull-off, which changes fret and
-	 * is drawn). Filter those out; a wholly-held chord never reaches here — tickables
-	 * replaces it with a ghost note — but keep an all-members fallback so the grace path (which
+	 * is drawn). Filter those out; a wholly-held chord never reaches here (tickables
+	 * replaces it with a ghost note), but keep an all-members fallback so the grace path (which
 	 * also calls this) can never hand vexflow an empty position list.
 	 */
 	private positions(chord: Chord, tuning: number[] | null) {
@@ -268,7 +267,7 @@ export class TabVoiceTranslator {
 	 * Attach the lead note's tablature articulations to its TabNote, reading straight
 	 * from <notations>: a <bend> (with optional <release/> for a bend-and-release),
 	 * free-text <other-technical>, and <ornaments><wavy-line> vibrato. All are vexflow
-	 * modifiers, so attaching them here means the layout pass — which also calls this —
+	 * modifiers, so attaching them here means the layout pass, which also calls this,
 	 * sizes measures with the extra width they take. (A <harmonic> is drawn as an
 	 * angle-bracketed fret in positions(), not a modifier.)
 	 */
@@ -277,7 +276,7 @@ export class TabVoiceTranslator {
 		if (bend) {
 			const phrase = [{ type: Bend.UP, text: this.bendLabel(bend.semitones) }];
 			// ponytail: a <release/> child draws a bend-then-release (up-down arrow); a
-			// release to a non-zero target would need its own label — add when a fixture wants it.
+			// release to a non-zero target would need its own label; add when a fixture wants it.
 			if (bend.release) {
 				phrase.push({ type: Bend.DOWN, text: '' });
 			}
@@ -304,8 +303,8 @@ export class TabVoiceTranslator {
 		// The fret glyph draws centered on the note's x (drawPositions: tabX = x - width/2), but the
 		// formatter lands an ABOVE annotation half a note-width to the right of it. The modifier
 		// formatter treats xShift as a leftward shift, so half a note-width re-centers the text over
-		// the fret. (Centering is width-independent here, so the text font's measured width — narrow
-		// in the notation-first stack — doesn't affect it.)
+		// the fret. (Centering is width-independent here, so the text font's measured width (narrow
+		// in the notation-first stack) doesn't affect it.)
 		annotation.setXShift(noteWidth / 2);
 		return annotation;
 	}
@@ -323,7 +322,7 @@ export class TabVoiceTranslator {
 	/*
 	 * Restyle a TabNote's fret digits in place. VexFlow has no public API to set the
 	 * 'TabNote.text' metric globally (Metrics isn't exported), so override each fret Element
-	 * built in the constructor — fretElement is protected, hence the cast. Resizing rebuilds
+	 * built in the constructor; fretElement is protected, hence the cast. Resizing rebuilds
 	 * each digit's vertical centering and the note width off the new glyphs so the formatter
 	 * reserves the right horizontal space. Grace notes pass a smaller scale.
 	 */
@@ -347,7 +346,7 @@ export class TabVoiceTranslator {
 	/*
 	 * A natural harmonic fret reads as "<12>": the angle brackets stay thin/unbolded while the
 	 * fret number inside is bold like an ordinary fret. VexFlow draws one fillText per Element,
-	 * so a single element can't mix weights — make the parent hold the bold digits and hang the
+	 * so a single element can't mix weights; make the parent hold the bold digits and hang the
 	 * two thin brackets off it as child Elements (renderText draws children with their own
 	 * font). The pieces lay out left-to-right within the parent's reported width, which
 	 * drawPositions centers on the note x and clears the staff line behind.

@@ -17,7 +17,7 @@ export async function ship(opts: ShipOptions) {
 
 	// Everything else belongs to webappwiz/ship: it refuses a dirty tree or a
 	// branch that isn't master, asks, stamps package.json, commits, pushes,
-	// tags, publishes and writes the GitHub notes — and finishes a release that
+	// tags, publishes and writes the GitHub notes, and finishes a release that
 	// died partway instead of bumping past it.
 	await releases
 		.lockstep(

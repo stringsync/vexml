@@ -2,7 +2,7 @@ import type { ScrollHost } from './scroll-host';
 
 /* Fake fulfilling the ScrollHost seam (preferred over mocks); records every scrollTo. Score space
  * maps 1:1 onto the scroll content (scale 1, base at the origin) and the visible box is 100x100,
- * so a test's rects read directly as scroll-content target boxes. Test-only — excluded from the
+ * so a test's rects read directly as scroll-content target boxes. Test-only, excluded from the
  * published package via package.json "files". */
 export class FakeScrollHost implements ScrollHost {
 	readonly calls: ScrollToOptions[] = [];
@@ -25,8 +25,8 @@ export class FakeScrollHost implements ScrollHost {
 		return this.inset;
 	}
 
-	scrollTo(options: ScrollToOptions): void {
-		this.calls.push(options);
+	scrollTo(opts: ScrollToOptions): void {
+		this.calls.push(opts);
 	}
 
 	/* The most recent scroll, or undefined before anything scrolled. */

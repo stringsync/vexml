@@ -1,5 +1,5 @@
 /*
- * One <technical> mark stacked off a note — a fingering/pluck label or a string-number
+ * One <technical> mark stacked off a note: a fingering/pluck label or a string-number
  * ring. The draw pass reads these off a note's modifiers to stack a chord's marks as one
  * column clear of the stave (SystemFormatter.pinTechnicals) and to keep the things drawn
  * above a note clear of the column (SystemFormatter.noteRect).

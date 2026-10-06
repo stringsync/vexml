@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import {
 	Barline,
 	type BarlineType,
@@ -42,13 +42,7 @@ describe('SystemFormatter', () => {
 		);
 
 	// The note surface noteRect reads: notehead bounds, stem extents, and modifiers.
-	const note = (
-		opts: {
-			x?: number;
-			stem?: { topY: number; baseY: number };
-			modifiers?: unknown[];
-		} = {},
-	) =>
+	const note = (opts: NoteOptions = {}) =>
 		({
 			getAbsoluteX: () => opts.x ?? 100,
 			getNoteHeadBounds: () => ({ yTop: 50, yBottom: 70 }),
@@ -56,6 +50,12 @@ describe('SystemFormatter', () => {
 			getStemExtents: () => opts.stem,
 			getModifiers: () => opts.modifiers ?? [],
 		}) as unknown as StaveNote;
+
+	interface NoteOptions {
+		x?: number;
+		stem?: { topY: number; baseY: number };
+		modifiers?: unknown[];
+	}
 
 	const articulation = (position: number, y: number) => ({
 		getCategory: () => 'Articulation',
@@ -135,8 +135,13 @@ describe('SystemFormatter', () => {
 			}
 		).closeGraceGaps(voices as Voice[]);
 
+	let leading: ReturnType<typeof graceGroup>;
+
+	beforeEach(() => {
+		leading = graceGroup(Modifier.Position.LEFT, 4);
+	});
+
 	it('hands a double-graced note reserved right shift back to its leading cluster', () => {
-		const leading = graceGroup(Modifier.Position.LEFT, 4);
 		const trailing = graceGroup(Modifier.Position.RIGHT, 9);
 		const tickable = {
 			getModifiers: () => [leading, trailing],
@@ -148,7 +153,6 @@ describe('SystemFormatter', () => {
 	});
 
 	it('leaves a lone grace cluster where the formatter put it', () => {
-		const leading = graceGroup(Modifier.Position.LEFT, 4);
 		const tickable = {
 			getModifiers: () => [leading],
 			checkTickContext: () => {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import type { Chord, Note } from '@stringsync/mdom';
 import {
 	BarNote,
@@ -109,6 +109,7 @@ describe('VoiceBuilder', () => {
 			order,
 			beamCalls,
 			tupletCalls,
+			// scry-ignore named-options-last: mirrors SpannerBuilder.buildBeams, whose positional signature this fake must match to be injected.
 			buildBeams(
 				groups: unknown[],
 				byLead: Map<Note, StaveNote>,
@@ -153,6 +154,12 @@ describe('VoiceBuilder', () => {
 				byTabLead: overrides.byTabLead ?? new Map(),
 			},
 		);
+
+	let spanners: ReturnType<typeof fakeSpanners>;
+
+	beforeEach(() => {
+		spanners = fakeSpanners();
+	});
 
 	const stave = {} as Stave;
 	const buildNotes = (
@@ -265,6 +272,7 @@ describe('VoiceBuilder', () => {
 		expect(pending.midBars).toEqual([{ note: custom, style: 'dashed' }]);
 	});
 
+	// scry-ignore simple-test-setup: the translator and lyric marks are specific to this verse-row scenario; no other test shares them.
 	it('stacks a later voice’s verses beneath the rows already used', () => {
 		const upper = new FakeLyricMark(1, {});
 		const low = new FakeLyricMark(0, {});
@@ -334,7 +342,6 @@ describe('VoiceBuilder', () => {
 			[a, noteA],
 			[b, noteB],
 		]);
-		const spanners = fakeSpanners();
 		const chords = [chordOf(a, 0), chordOf(b, 0)];
 		const pending = pendingStave({
 			staveNotes: [noteA, noteB],
@@ -367,7 +374,6 @@ describe('VoiceBuilder', () => {
 			[a, noteA],
 			[b, noteB],
 		]);
-		const spanners = fakeSpanners();
 		const top = pendingStave({
 			staveNotes: [noteA],
 			beamPlans: [beamPlan([a, b])],
@@ -452,7 +458,6 @@ describe('VoiceBuilder', () => {
 		const b = lead();
 		const noteA = staveNote();
 		const noteB = staveNote();
-		const spanners = fakeSpanners();
 		const builder = makeBuilder({
 			spanners,
 			byLead: new Map([
@@ -471,6 +476,7 @@ describe('VoiceBuilder', () => {
 		expect(spanners.beamCalls[0]?.stem).toBe('up');
 	});
 
+	// scry-ignore simple-test-setup: the main/next/member leads and their notes are specific to this split-chord scenario; no other test shares them.
 	it('orders a split chord’s halves top staff first for the beam', () => {
 		const main = lead({ measureBeat: 1 });
 		const next = lead({ measureBeat: 2 });
@@ -478,7 +484,6 @@ describe('VoiceBuilder', () => {
 		const mainNote = staveNote();
 		const halfNote = staveNote();
 		const nextNote = staveNote();
-		const spanners = fakeSpanners();
 		const builder = makeBuilder({
 			spanners,
 			byLead: new Map([
@@ -505,13 +510,13 @@ describe('VoiceBuilder', () => {
 		expect(mainNote.stemDirections).toEqual([Stem.DOWN]);
 	});
 
+	// scry-ignore simple-test-setup: the rest/struck/grace leads, ghost and tuning are specific to this tab scenario; no other test shares them.
 	it('records struck tab notes into the shared tab registry and skips ghosts', () => {
 		const rest = lead({ isRest: true });
 		const struck = lead();
 		const grace = lead({ isGrace: true });
 		const ghost = ghostNote();
 		const byTabLead = new Map<Note, TabNote>();
-		const spanners = fakeSpanners();
 		const tuning = [64, 59, 55];
 		const tab = {
 			tickables: (

@@ -40,7 +40,7 @@ export class StaveFactory {
 		const staveLines = measure.getStaveLines(staffNumber);
 		// Half the lines a reduced stave drops come off the top. The whole part of that says
 		// which five-line row it starts on; the leftover half (an even line count can't sit on
-		// the five-line rows) nudges the whole frame — lines and note rows together — down a
+		// the five-line rows) nudges the whole frame (lines and note rows together) down a
 		// half space, which is how an even-line stave centers.
 		const hiddenAbove = Math.max(0, Math.floor((5 - staveLines) / 2));
 		const halfNudge = Math.max(0, (5 - staveLines) / 2 - hiddenAbove);
@@ -49,13 +49,13 @@ export class StaveFactory {
 			: new Stave(x, y, width, {
 					// A reduced stave keeps the five-line frame and HIDES the lines it doesn't
 					// draw, rather than declaring fewer of them. vexflow anchors a shorter stave
-					// at the top — its lines come off the bottom, so a 1-line percussion stave
-					// draws where a five-line stave's TOP line goes — while leaving note rows,
+					// at the top: its lines come off the bottom, so a 1-line percussion stave
+					// draws where a five-line stave's TOP line goes, while leaving note rows,
 					// ledger lines, clef and time signature in the five-line frame regardless.
 					// Hiding instead centers the drawn lines the way MuseScore and OSMD do (the
 					// single line lands on the middle line, with the percussion clef straddling
-					// it) and leaves everything measured off the stave — note rows, connectors,
-					// part spacing — exactly as it was.
+					// it) and leaves everything measured off the stave (note rows, connectors,
+					// part spacing) exactly as it was.
 					spaceAboveStaffLn: 4 + halfNudge,
 				});
 		// Tab is exempt: its line count IS its string count, so a 4-string stave draws four
@@ -87,7 +87,7 @@ export class StaveFactory {
 			return;
 		}
 		const clef = measure.getClef(staffNumber);
-		// A part that declares no <clef> at all is engraved as treble — the same fallback
+		// A part that declares no <clef> at all is engraved as treble: the same fallback
 		// buildNotes already positions its notes with, and what MuseScore and OSMD draw.
 		// Without it the stave opened with an empty gap where the glyph belongs (the lead
 		// width reserves the room either way).
@@ -149,7 +149,7 @@ export class StaveFactory {
 	/*
 	 * The "TAB" glyph is sized and centered for a 6-line staff. For a shorter tab staff
 	 * (e.g. a 4-string bass) shrink and re-center it to fit. Reaches into vexflow's clef
-	 * modifier directly — there's no public API for this.
+	 * modifier directly: there's no public API for this.
 	 */
 	private resizeTabClef(stave: TabStave, tabLines: number): void {
 		if (tabLines === 6) {

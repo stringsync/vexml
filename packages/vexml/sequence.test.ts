@@ -5,45 +5,6 @@ import type { Note } from './note';
 import { Sequence, type Step } from './sequence';
 import { TempoMap } from './tempo-map';
 
-// Identity tokens — the sequence only uses Note for identity (active sets / tie keys).
-function fakeNote(label: string, sources: readonly MNote[] = []): Note {
-	return { label, getSources: () => sources } as unknown as Note;
-}
-const SYS = new Rect(0, 0, 1000, 100);
-const A = fakeNote('a');
-const B = fakeNote('b');
-const C = fakeNote('c');
-const D = fakeNote('d');
-
-// A Sequence whose steps carry the given active sets (one step per set, one beat each), to drive
-// classify() through the public surface.
-function withActive(
-	active: Note[][],
-	tiedFrom: ReadonlyMap<Note, Note> = new Map(),
-): Sequence {
-	const steps: Step[] = active.map((notes, i) => ({
-		index: i,
-		measureIndex: 0,
-		startBeat: i,
-		endBeat: i + 1,
-		startMs: i * 500,
-		endMs: (i + 1) * 500,
-		x: 10 + i * 10,
-		glideToX: 20 + i * 10,
-		systemRect: SYS,
-		active: notes,
-	}));
-	return new Sequence(
-		steps,
-		new TempoMap([{ startBeat: 0, endBeat: active.length, bpm: 120 }]),
-		active.length,
-		1,
-		tiedFrom,
-		new Map(),
-		new Map(),
-	);
-}
-
 describe('Sequence', () => {
 	it('counts every note as started or stopped when two steps share none', () => {
 		const seq = withActive([
@@ -111,9 +72,7 @@ describe('Sequence', () => {
 		expect(r.started).toEqual([A, B]);
 		expect(r.stopped).toEqual([]);
 	});
-});
 
-describe('Sequence editing playback positions', () => {
 	it('chooses the nearest repeat occurrence for an explicit note and never falls back to another note', () => {
 		const sequence = withActive([[A], [B], [A], [B]]);
 		expect(sequence.getNoteNearMs(1100, { note: A })).toEqual({
@@ -127,12 +86,9 @@ describe('Sequence editing playback positions', () => {
 		expect(sequence.getNoteNearMs(1100, { note: C })).toBeNull();
 		expect(withActive([]).getNoteNearMs(0)).toBeNull();
 	});
-});
 
-describe('Sequence preferred editing voice', () => {
 	it('prefers the remembered voice near playback and falls back when it has no positions', () => {
-		const document = MDocument.empty();
-		const part = document.score.addPart();
+		const part = MDocument.empty().score.addPart();
 		const measure = part.addMeasure();
 		const upper = fakeNote('upper', [
 			measure
@@ -145,6 +101,7 @@ describe('Sequence preferred editing voice', () => {
 				.addNote({ step: 'C', octave: 3, type: 'quarter' }),
 		]);
 		const preferred = { part, voice: '2' };
+
 		expect(
 			withActive([[lower], [upper], [lower]]).getNoteNearMs(750, {
 				voice: preferred,
@@ -156,3 +113,42 @@ describe('Sequence preferred editing voice', () => {
 		expect(withActive([]).getNoteNearMs(750, { voice: preferred })).toBeNull();
 	});
 });
+
+// Identity tokens: the sequence only uses Note for identity (active sets / tie keys).
+function fakeNote(label: string, sources: readonly MNote[] = []): Note {
+	return { label, getSources: () => sources } as unknown as Note;
+}
+const SYS = new Rect(0, 0, 1000, 100);
+const A = fakeNote('a');
+const B = fakeNote('b');
+const C = fakeNote('c');
+const D = fakeNote('d');
+
+// A Sequence whose steps carry the given active sets (one step per set, one beat each), to drive
+// classify() through the public surface.
+function withActive(
+	active: Note[][],
+	tiedFrom: ReadonlyMap<Note, Note> = new Map(),
+): Sequence {
+	const steps: Step[] = active.map((notes, i) => ({
+		index: i,
+		measureIndex: 0,
+		startBeat: i,
+		endBeat: i + 1,
+		startMs: i * 500,
+		endMs: (i + 1) * 500,
+		x: 10 + i * 10,
+		glideToX: 20 + i * 10,
+		systemRect: SYS,
+		active: notes,
+	}));
+	return new Sequence(
+		steps,
+		new TempoMap([{ startBeat: 0, endBeat: active.length, bpm: 120 }]),
+		active.length,
+		1,
+		tiedFrom,
+		new Map(),
+		new Map(),
+	);
+}

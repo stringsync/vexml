@@ -1,11 +1,23 @@
-import { describe, expect, it } from 'bun:test';
-import { MDocument, MElement, MusicXMLSerializer } from '@stringsync/mdom';
+import { beforeEach, describe, expect, it } from 'bun:test';
+import {
+	MDocument,
+	MElement,
+	MusicXMLSerializer,
+	type Voice,
+} from '@stringsync/mdom';
 import { PitchEdit } from './pitch-edit';
 
 describe('PitchEdit', () => {
+	let document: MDocument;
+	let voice: Voice;
+
+	beforeEach(() => {
+		document = MDocument.empty();
+		voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
+	});
+
+	// scry-ignore simple-test-setup: this score is bespoke (dotted sharp note, slur, accidental child); the C4 quarter the other tests share would shift its beat expectations.
 	it('restores exact XML, pitch and accidental identity through repeated undo/redo', () => {
-		const document = MDocument.empty();
-		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
 		const note = voice.addNote({
 			step: 'C',
 			alter: 1,
@@ -33,19 +45,25 @@ describe('PitchEdit', () => {
 		expect(note.beats).toBe(1.5);
 		expect(next.measureBeat).toBe(1.5);
 		expect(note.slurs[0]?.partner?.note).toBe(next);
-		for (let index = 0; index < 3; index++) {
+
+		const undoRedo = () => {
 			document.history.undo();
-			expect(serializer.serializeToString(document)).toBe(original);
-			expect(note.pitch).toBe(pitch);
-			expect(note.child('accidental')).toBe(accidental);
+			const undone = {
+				xml: serializer.serializeToString(document),
+				pitchRestored: note.pitch === pitch,
+				accidentalRestored: note.child('accidental') === accidental,
+			};
 			document.history.redo();
-			expect(serializer.serializeToString(document)).toBe(edited);
-		}
+			return { undone, redoneXml: serializer.serializeToString(document) };
+		};
+		const cycle = {
+			undone: { xml: original, pitchRestored: true, accidentalRestored: true },
+			redoneXml: edited,
+		};
+		expect([undoRedo(), undoRedo(), undoRedo()]).toEqual([cycle, cycle, cycle]);
 	});
 
 	it('rejects a mixed pitched/rest group before changing any member', () => {
-		const document = MDocument.empty();
-		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
 		const note = voice.addNote({ step: 'C', octave: 4, type: 'quarter' });
 		const rest = voice.addRest({ type: 'quarter' });
 		const pitch = note.pitch;
@@ -56,29 +74,22 @@ describe('PitchEdit', () => {
 		expect(rest.isRest).toBe(true);
 	});
 
-	it('rejects invalid pitches before changing the document', () => {
-		const document = MDocument.empty();
-		const note = document.score
-			.addPart()
-			.addMeasure()
-			.getOrCreateVoice('1')
-			.addNote({ step: 'C', octave: 4, type: 'quarter' });
+	it.each([
+		{ spec: { step: 'H', octave: 4 } },
+		{ spec: { step: 'D', octave: -1 } },
+		{ spec: { step: 'D', octave: 10 } },
+		{ spec: { step: 'D', octave: 4.5 } },
+		{ spec: { step: 'D', octave: 4, alter: Number.NaN } },
+	])('rejects the invalid pitch $spec before changing the document', ({
+		spec,
+	}) => {
+		const note = voice.addNote({ step: 'C', octave: 4, type: 'quarter' });
 		const pitch = note.pitch;
-		for (const spec of [
-			{ step: 'H', octave: 4 },
-			{ step: 'D', octave: -1 },
-			{ step: 'D', octave: 10 },
-			{ step: 'D', octave: 4.5 },
-			{ step: 'D', octave: 4, alter: Number.NaN },
-		]) {
-			expect(() => new PitchEdit([note]).apply(spec)).toThrow('invalid pitch');
-		}
+		expect(() => new PitchEdit([note]).apply(spec)).toThrow('invalid pitch');
 		expect(note.pitch).toBe(pitch);
 	});
 
 	it('does not silently break a tie when repitching one endpoint', () => {
-		const document = MDocument.empty();
-		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
 		const first = voice.addNote({ step: 'C', octave: 4, type: 'quarter' });
 		const second = voice.addNote({ step: 'C', octave: 4, type: 'quarter' });
 		first.addTie(second);
@@ -90,12 +101,7 @@ describe('PitchEdit', () => {
 	});
 
 	it('does not leave a guitar fingering inconsistent with its pitch', () => {
-		const document = MDocument.empty();
-		const note = document.score
-			.addPart()
-			.addMeasure()
-			.getOrCreateVoice('1')
-			.addNote({ step: 'E', octave: 4, type: 'quarter' });
+		const note = voice.addNote({ step: 'E', octave: 4, type: 'quarter' });
 		note.setStringFret({ string: 1, fret: 0 });
 		expect(() => new PitchEdit([note]).apply({ step: 'F', octave: 4 })).toThrow(
 			'fingering-aware',

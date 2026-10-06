@@ -215,7 +215,7 @@ export class VoiceTranslator {
 				// the gap opens before the grace while it stays snug to its host. Inflating the
 				// host's own left reservation instead would just let the grace drift left off it.
 				// setRightDisplacedHeadPx survives format (only the constructor resets it), but
-				// vexflow draws augmentation dots after that displaced-head gap — so skip a note
+				// vexflow draws augmentation dots after that displaced-head gap, so skip a note
 				// that carries dots, which would otherwise be flung out to the right.
 				const prev = tickables.at(-1);
 				const prevHasDots = prev
@@ -270,7 +270,7 @@ export class VoiceTranslator {
 			const onset = this.reader.measureBeatOf(lead);
 			const beats = this.reader.beatsOf(lead);
 			// Only a note starting right where the fill stands, so a stand-in never skips time,
-			// and only one whose written value is known — the fallback code is a guess.
+			// and only one whose written value is known: the fallback code is a guess.
 			if (
 				lead.isGrace ||
 				lead.type === null ||
@@ -309,15 +309,15 @@ export class VoiceTranslator {
 	}
 
 	/*
-	 * VexFlow draws a TabNote's fret digits — and the staff-line gap it clears behind them —
+	 * VexFlow draws a TabNote's fret digits, and the staff-line gap it clears behind them,
 	 * centered on the note's start x, but a StaveNote anchors its notehead's LEFT edge there
 	 * (the notehead's center sits half a glyph-width to the right). So a fret lines up under
 	 * the notehead's left edge, not its center. SystemFormatter.formatAndDraw recenters by shifting the
 	 * whole tab note area right by this; doing it there rather than via the fret's own xShift
 	 * keeps the cleared gap moving with the digit (clearRect ignores xShift). The width is a
 	 * font metric needing a live canvas, so probe it lazily off a throwaway StaveNote and
-	 * cache the first non-zero read. The cache lives on this translator instance — one per
-	 * render — so each render re-probes at most once against its own canvas.
+	 * cache the first non-zero read. The cache lives on this translator instance: one per
+	 * render, so each render re-probes at most once against its own canvas.
 	 */
 	private noteheadHalfWidthCache = 0;
 
@@ -331,8 +331,8 @@ export class VoiceTranslator {
 
 	/*
 	 * The band a tuplet's bracket and numeral are drawn in. vexflow never positions a Tuplet's
-	 * own bounding box, so this rebuilds it from getYPosition — the line Tuplet.draw puts the
-	 * bracket on and centers the numeral over — spanning the notes the bracket reaches.
+	 * own bounding box, so this rebuilds it from getYPosition: the line Tuplet.draw puts the
+	 * bracket on and centers the numeral over, spanning the notes the bracket reaches.
 	 */
 	tupletRect(tuplet: Tuplet): Rect {
 		const notes = tuplet.getNotes();
@@ -352,7 +352,7 @@ export class VoiceTranslator {
 	 * Find a note's first attached modifier of a given vexflow category (a GraceNoteGroup,
 	 * Bend, Vibrato, …), or undefined. vexflow types getModifiers() loosely, so the find needs
 	 * a cast; centralizing it keeps that one unsafe cast in a single auditable place instead of
-	 * hand-copied at each call site — including across modules, since layout can't import draw
+	 * hand-copied at each call site, including across modules, since layout can't import draw
 	 * and its graceWidthOf would otherwise re-roll the same find.
 	 */
 	findModifier<T extends Modifier>(
@@ -366,8 +366,8 @@ export class VoiceTranslator {
 
 	/*
 	 * Whether a cluster of grace notes beams: two or more of them, all of flagged value. A run of
-	 * small notes is beamed together whether or not the exporter wrote <beam> markers — both
-	 * MuseScore and LilyPond engrave lilypond_24d's unmarked 16th cluster with a beam — so the
+	 * small notes is beamed together whether or not the exporter wrote <beam> markers (both
+	 * MuseScore and LilyPond engrave lilypond_24d's unmarked 16th cluster with a beam), so the
 	 * markers only matter for telling a beamed run from a genuinely flagged one, which no
 	 * fixture writes.
 	 */

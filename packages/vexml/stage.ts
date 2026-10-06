@@ -1,3 +1,4 @@
+import { Disposer } from 'webappwiz/disposable';
 import { Dispatcher } from 'webappwiz/events';
 import { Rect } from 'webappwiz/geometry';
 import { CanvasPaintProbe } from './canvas-paint-probe';
@@ -21,7 +22,7 @@ import type { Viewport } from './viewport';
 /* The caller's container options from config. A set height/width cap turns the container into a
  * scroll box on that axis; null leaves the axis to size to its content. backgroundColor paints the
  * container behind the score. `fit` scales the score down to fit the container width (never up past
- * its engraved size) and centers it — the default for a system-stacked layout that isn't a
+ * its engraved size) and centers it: the default for a system-stacked layout that isn't a
  * horizontal scroll box (render() derives it). `scrollContainer` names a caller-owned ancestor that
  * does the scrolling instead of the container (see Stage.scrollElement). */
 export interface ScrollBox {
@@ -91,8 +92,6 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 	private readonly onWindowResize = () => {
 		this.requestView();
 	};
-	private readonly prevPosition: string;
-	private readonly prevIsolation: string;
 	// Inline styles this stage set on the container, with their prior values, restored on dispose.
 	private readonly restoreStyles: Array<[string, string]> = [];
 	private readonly layers = new Set<ManagedLayer | TiledLayer>();
@@ -119,7 +118,8 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 	private readonly backgroundColor: string | null;
 	// The configured pixel ratio, or null to follow the screen's.
 	private readonly fixedPixelRatio: number | null;
-	private disposed = false;
+	// Released in reverse, so the stage unwinds in the opposite order it was built.
+	private readonly disposer = new Disposer();
 
 	constructor(
 		readonly container: HTMLDivElement,
@@ -130,22 +130,37 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		// re-owns the properties it needs.
 		Stage.byContainer.get(container)?.dispose();
 		Stage.byContainer.set(container, this);
+		// Only deregister if still the owner: a newer Stage may have already claimed this container.
+		this.disposer.defer(() => {
+			if (Stage.byContainer.get(this.container) === this) {
+				Stage.byContainer.delete(this.container);
+			}
+		});
 		this.scrollElement = scroll.scrollContainer ?? container;
 		this.backgroundColor = scroll.backgroundColor ?? null;
 		this.fixedPixelRatio = scroll.pixelRatio ?? null;
 		// A positioned container is the containing block the overlay layers anchor to. Only set it
 		// when the caller left position static, and remember it so dispose restores.
-		this.prevPosition = container.style.position;
+		const prevPosition = container.style.position;
 		if (!container.style.position) {
 			container.style.position = 'relative';
 		}
 		// Isolate the container into its own stacking context so the background layer's z-index:-1
-		// stays trapped here — above the container's (possibly opaque) background but below the base
-		// canvas — rather than escaping behind an ancestor's background, where it'd be invisible.
-		this.prevIsolation = container.style.isolation;
+		// stays trapped here, above the container's (possibly opaque) background but below the base
+		// canvas, rather than escaping behind an ancestor's background, where it'd be invisible.
+		const prevIsolation = container.style.isolation;
 		if (!container.style.isolation) {
 			container.style.isolation = 'isolate';
 		}
+		this.disposer.defer(() => {
+			container.style.position = prevPosition;
+			container.style.isolation = prevIsolation;
+		});
+		this.disposer.defer(() => {
+			for (const [prop, value] of this.restoreStyles) {
+				container.style.setProperty(prop, value);
+			}
+		});
 		// The score is a picture to point at, not text: a press held on it (the start of a drag on a
 		// touch screen) must not start a native text selection or the iOS callout. Set on the
 		// container so it covers the canvas and every overlay vexml stacks in it. Only the prefixed
@@ -202,12 +217,36 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		this.base.style.overflow = 'hidden';
 		this.ensureCanvasStyles();
 		container.appendChild(this.base);
+		this.disposer.defer(() => this.base.remove());
 		this.probe = new CanvasPaintProbe();
 		this.engraving = new TiledSurface(
 			this.base,
 			this.probe,
 			surfaceOptions(this.pixelRatio),
 		);
+		// Frees the tile bitmaps now, not at the next GC: a re-render has the outgoing and incoming
+		// scores alive together, and iOS WebKit kills the page past its canvas budget.
+		this.disposer.use(this.engraving);
+		this.disposer.defer(() => this.clearFold());
+		// Overlays drop out of these sets when they dispose themselves (see forget), which a
+		// Disposer can't do, so the sets are what the stage releases.
+		this.disposer.defer(() => {
+			for (const loupe of [...this.loupes]) {
+				loupe.dispose();
+			}
+		});
+		this.disposer.defer(() => {
+			for (const marker of [...this.markers]) {
+				marker.dispose();
+			}
+		});
+		this.disposer.defer(() => {
+			for (const layer of [...this.layers]) {
+				layer.dispose();
+			}
+		});
+		this.disposer.defer(() => this.scrollController?.dispose());
+		this.disposer.use(this.dispatcher);
 		// The box's only in-flow child, giving it the intrinsic sizes the single canvas it once was
 		// had: a canvas is a replaced element, so under a percentage max-width it contributes its
 		// width to a max-content size but nothing to a min-content one. A grid's auto track or a
@@ -226,14 +265,14 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 
 		// Observe BOTH the container and the base canvas. Placement (placeLayer and the score<->client
 		// frame) is derived from the base canvas's rendered box, which can change *without* the
-		// container's box changing — e.g. the Bravura web font finishing load and reflowing the
+		// container's box changing, e.g. the Bravura web font finishing load and reflowing the
 		// engraving taller, or content-height settling inside a fixed-size scroll box. Observing only
 		// the container misses those, leaving overlays and the cursor placed against a stale base box.
 		// Observing the base can't self-trigger: listeners only move absolutely-positioned overlay
 		// canvases (relayoutLayers) or reposition the cursor, none of which affect the base or
 		// container layout, so there's no feedback loop.
 		//
-		// Report the scroll element's visible (client) box regardless of which target fired — that's
+		// Report the scroll element's visible (client) box regardless of which target fired: that's
 		// the size a viewport layer is given and the "rendered area" a caller cares about (the container
 		// itself unless the caller named a scrollContainer). A base-only change reports the unchanged
 		// size; the listener dedupes its public 'resize' on it.
@@ -250,6 +289,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		if (this.scrollElement !== container) {
 			this.resizeObserver.observe(this.scrollElement);
 		}
+		this.disposer.defer(() => this.resizeObserver.disconnect());
 
 		// Capture phase on window catches every scroll container (the score's own or any ancestor),
 		// since scroll events don't bubble. passive: we only read positions, never preventDefault.
@@ -258,9 +298,21 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 			passive: true,
 		});
 		window.addEventListener('resize', this.onWindowResize);
+		this.disposer.defer(() => {
+			window.removeEventListener('scroll', this.onWindowScroll, {
+				capture: true,
+			});
+			window.removeEventListener('resize', this.onWindowResize);
+		});
+		this.disposer.defer(() => {
+			if (this.viewRequest !== null) {
+				cancelAnimationFrame(this.viewRequest);
+				this.viewRequest = null;
+			}
+		});
 	}
 
-	// The cap is pure container CSS — the engraving doesn't depend on it — so this is a style write,
+	// The cap is pure container CSS (the engraving doesn't depend on it), so this is a style write,
 	// not a re-layout. The resize observer picks up the new container box and relayouts the overlays.
 	// Once capped the container keeps overflow-y:auto; with no cap there's nothing to overflow.
 	setMaxHeight(px: number | null): void {
@@ -304,7 +356,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 	}
 
 	// The visible scrollport box: the scroll element's own box (the same box overflow scrolls within),
-	// less the strip a sticky fold covers at its left edge — music under the fold isn't visible.
+	// less the strip a sticky fold covers at its left edge: music under the fold isn't visible.
 	viewportRect(): DOMRect {
 		const box = this.scrollElement.getBoundingClientRect();
 		const inset = this.fold
@@ -344,7 +396,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 	 * Pin a fold at the scroll box's left edge. The base canvas moves into a max-content wrapper
 	 * beside a `position: sticky` strip: sticky is what keeps the fold still while the browser
 	 * scrolls (a script-moved overlay lags a compositor scroll), and it can only travel as far as
-	 * its parent is wide — the container is only as wide as its scrollport, the wrapper as wide as
+	 * its parent is wide: the container is only as wide as its scrollport, the wrapper as wide as
 	 * the score. It stays hidden while any of the system's own opening is still in view, then
 	 * paints whichever strip is in effect.
 	 */
@@ -435,8 +487,8 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		};
 	}
 
-	scrollTo(options: ScrollToOptions): void {
-		this.scrollElement.scrollTo(options);
+	scrollTo(opts: ScrollToOptions): void {
+		this.scrollElement.scrollTo(opts);
 	}
 
 	createLayer(kind: LayerKind, zIndex?: number): Layer {
@@ -531,7 +583,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		return marker;
 	}
 
-	createLoupe(options: Required<LoupeOptions>): ManagedLoupe {
+	createLoupe(opts: Required<LoupeOptions>): ManagedLoupe {
 		const canvas = document.createElement('canvas');
 		// On the body, not in the container: fixed to the viewport over the whole page, so neither
 		// the container's overflow nor a transformed ancestor can clip or re-anchor it. A manual
@@ -552,7 +604,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		canvas.style.willChange = 'transform';
 		canvas.style.display = 'none';
 		canvas.style.boxShadow = '0 2px 12px rgba(0, 0, 0, 0.3)';
-		const loupe = new ManagedLoupe(canvas, options, this);
+		const loupe = new ManagedLoupe(canvas, this, opts);
 		document.body.appendChild(canvas);
 		this.loupes.add(loupe);
 		return loupe;
@@ -561,7 +613,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 	/*
 	 * Paint what the score shows over `region` (score px) into a context already mapped to score
 	 * space: the base engraving, the content and background layers, and the markers, stacked as the
-	 * browser stacks them — negative z-indexes behind the in-flow base canvas, the rest over it, equal
+	 * browser stacks them: negative z-indexes behind the in-flow base canvas, the rest over it, equal
 	 * z-indexes in DOM order. Viewport layers and the fold are chrome over the view, not the score.
 	 */
 	paintScore(ctx: CanvasRenderingContext2D, region: Rect): void {
@@ -598,7 +650,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		region: Rect,
 		scale: number,
 	): void {
-		if (this.disposed) {
+		if (this.disposer.disposed) {
 			throw new Error('vexml: the score was disposed');
 		}
 		this.engraving.paintInto(ctx, region, scale);
@@ -614,7 +666,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 			}
 		}
 		for (const layer of this.layers) {
-			// Viewport layers are tied to the visible box, so refit the bitmap (which clears them —
+			// Viewport layers are tied to the visible box, so refit the bitmap (which clears them:
 			// callers redraw in their resize handler). Content layers keep their fixed score-resolution
 			// bitmap; only their on-screen box is re-placed, so the drawing scales without clearing.
 			if (layer.kind === 'viewport') {
@@ -625,17 +677,17 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		this.updateView();
 	}
 
-	// Deregister a layer disposing itself (called from its dispose).
+	// Only a layer's own dispose calls this; callers dispose the layer instead.
 	forget(layer: ManagedLayer | TiledLayer): void {
 		this.layers.delete(layer);
 	}
 
-	// Deregister a marker disposing itself (called from ManagedMarker.dispose).
+	// Only ManagedMarker.dispose calls this; callers dispose the marker instead.
 	forgetMarker(marker: ManagedMarker): void {
 		this.markers.delete(marker);
 	}
 
-	// Deregister a loupe disposing itself (called from ManagedLoupe.dispose).
+	// Only ManagedLoupe.dispose calls this; callers dispose the loupe instead.
 	forgetLoupe(loupe: ManagedLoupe): void {
 		this.loupes.delete(loupe);
 	}
@@ -643,52 +695,15 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 	dispose(): void {
 		// Idempotent: a re-render disposes this Stage from the new Stage's constructor, so the caller's
 		// own later dispose() must be a no-op rather than re-restoring stale styles over the new Stage.
-		if (this.disposed) {
-			return;
-		}
-		this.disposed = true;
-		if (this.viewRequest !== null) {
-			cancelAnimationFrame(this.viewRequest);
-			this.viewRequest = null;
-		}
-		this.resizeObserver.disconnect();
-		window.removeEventListener('scroll', this.onWindowScroll, {
-			capture: true,
-		});
-		window.removeEventListener('resize', this.onWindowResize);
-		this.dispatcher.dispose();
-		this.scrollController?.dispose();
-		for (const layer of [...this.layers]) {
-			layer.dispose();
-		}
-		for (const marker of [...this.markers]) {
-			marker.dispose();
-		}
-		for (const loupe of [...this.loupes]) {
-			loupe.dispose();
-		}
-		this.clearFold();
-		// Frees the tile bitmaps now, not at the next GC: a re-render has the outgoing and incoming
-		// scores alive together, and iOS WebKit kills the page past its canvas budget.
-		this.engraving.dispose();
-		this.base.remove();
-		this.container.style.position = this.prevPosition;
-		this.container.style.isolation = this.prevIsolation;
-		for (const [prop, value] of this.restoreStyles) {
-			this.container.style.setProperty(prop, value);
-		}
-		// Only deregister if still the owner: a newer Stage may have already claimed this container.
-		if (Stage.byContainer.get(this.container) === this) {
-			Stage.byContainer.delete(this.container);
-		}
+		this.disposer.dispose();
 	}
 
 	// Size the fold to the base canvas's rendered scale (a caller's CSS may stretch the score), then
 	// repaint it: resizing a canvas clears it. Sticky pins inside the scroller's padding, which would
 	// leave the music scrolling past in a strip beside the fold, so the paper reaches back over the
 	// padding to the scroller's edge while the strip itself stays where the opening sat. It reaches
-	// over the container's top and bottom padding too — and down to its bottom edge when the
-	// container is taller than the score — so the fold runs the whole height of the page rather
+	// over the container's top and bottom padding too (and down to its bottom edge when the
+	// container is taller than the score) so the fold runs the whole height of the page rather
 	// than stopping where the engraving does.
 	private placeFold(): void {
 		if (!this.fold) {
@@ -725,7 +740,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 	}
 
 	// Show the fold only once the system's own clefs and keys have scrolled wholly out of view, so
-	// the two never show at once, and paint the strip for whatever the fold now covers — the clef
+	// the two never show at once, and paint the strip for whatever the fold now covers: the clef
 	// and key in effect at its right edge. A score that barely scrolls never gets a fold.
 	private updateFold(): void {
 		if (!this.fold) {
@@ -953,7 +968,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 	 * properties the drawer sets.
 	 *
 	 * Base rule: render the score at its intrinsic size. `.vexml-fit` (added when the layout should scale to fit its
-	 * container — see Stage) then caps the canvas at the container width and lets its height follow via
+	 * container: see Stage) then caps the canvas at the container width and lets its height follow via
 	 * the exact score aspect ratio (--vexml-aspect, not the rounded bitmap ratio), so a narrow viewport
 	 * shrinks the score to fit while a wide one lands on a pixel-identical box (the score<->client scale
 	 * stays exactly 1) and never blows it up past its engraved resolution. Its width is auto, taken from

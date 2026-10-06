@@ -17,6 +17,134 @@ import { System } from './system';
 import type { TabPosition } from './tab-position';
 import type { Viewport } from './viewport';
 
+describe('Note', () => {
+	it('reports its sounding pitch as a vexflow key, or null for a rest', () => {
+		const { noteC, noteE, noteRest, noteBb } = fixture();
+		expect(noteC.getPitch()).toBe('C/4');
+		expect(noteE.getPitch()).toBe('E/4');
+		expect(noteRest.getPitch()).toBeNull();
+		expect(noteBb.getPitch()).toBe('Bb/3');
+	});
+
+	it('reads its duration and grace flag off the underlying note', () => {
+		const { noteC } = fixture();
+		expect(noteC.getDurationBeats()).toBe(1);
+		expect(noteC.isGrace()).toBe(false);
+	});
+
+	it('lists the articulation markings on its notation', () => {
+		const { noteC, noteE } = fixture();
+		expect(noteC.getArticulations()).toEqual(['staccato']);
+		expect(noteE.getArticulations()).toEqual([]);
+	});
+
+	it('traces back to the mdom note it was built from', () => {
+		const { noteC, mC } = fixture();
+		expect(noteC.getSources()).toEqual([mC]);
+	});
+
+	it('is highlightable and playable', () => {
+		const { noteC } = fixture();
+		expect(isHighlightable(noteC)).toBe(true);
+		expect(isPlayable(noteC)).toBe(true);
+	});
+
+	it('chord membership and siblings', () => {
+		const { noteC, noteE, noteBb } = fixture();
+		expect(noteC.isChordMember()).toBe(true);
+		expect(noteBb.isChordMember()).toBe(false);
+		expect(noteC.getChordSiblings({ includeSelf: false })).toEqual([noteE]);
+		expect(noteC.getChordSiblings({ includeSelf: true })).toEqual([
+			noteC,
+			noteE,
+		]);
+	});
+
+	it('links across to its measure and its tab position', () => {
+		const { noteC, measure } = fixture();
+		expect(noteC.getMeasure()).toBe(measure);
+		expect(noteC.getTabPosition()).toBeNull();
+	});
+
+	it('color toggle delegates to its decoration and reflects active state', () => {
+		const { noteC, decorations } = fixture();
+		expect(noteC.color.active).toBe(false);
+		noteC.color.on('#2962ff');
+		expect(decorations.color.active.get(noteC)).toBe('#2962ff');
+		expect(noteC.color.active).toBe(true);
+		noteC.color.off();
+		expect(decorations.color.active.has(noteC)).toBe(false);
+		expect(noteC.color.active).toBe(false);
+	});
+
+	it('halo toggle delegates to its decoration and carries its color', () => {
+		const { noteC, decorations } = fixture();
+		noteC.halo.on('#2962ff');
+		expect(decorations.halo.active.get(noteC)).toBe('#2962ff');
+		expect(noteC.halo.active).toBe(true);
+		noteC.halo.off();
+		expect(decorations.halo.active.has(noteC)).toBe(false);
+		expect(noteC.halo.active).toBe(false);
+	});
+
+	it('maps its score-space box to the page through the viewport', () => {
+		const { noteC } = fixture();
+		const r = noteC.getBoundingClientRect();
+		expect([r.x, r.y, r.width, r.height]).toEqual([10, 10, 8, 8]);
+	});
+
+	it('collects the grace run immediately preceding it', () => {
+		const { graceF, graceG, noteA, noteB } = graceFixture();
+
+		// A's graces are the two grace notes before it, in play order; B (a plain note) has none.
+		expect(noteA.getGraceNotes()).toEqual([graceF, graceG]);
+		expect(noteB.getGraceNotes()).toEqual([]);
+	});
+
+	it('reaches its ink back over its grace notes', () => {
+		const { noteA, noteB } = graceFixture();
+
+		expect(noteA.getInkRect()).toMatchObject({ x: 10, w: 28 });
+		expect(noteB.getInkRect()).toMatchObject({ x: 50, w: 8 });
+	});
+	// Swing exemption. A written-out triplet already carries the swing feel; swinging it again
+	// would put it on neither an even third of the beat nor a swung pair, which is the case that
+	// shows up in real arrangements where a swung vocal line sits over a triplet accompaniment.
+	const PITCH = '<pitch><step>C</step><octave>5</octave></pitch>';
+
+	it('swings an ordinary eighth', () => {
+		expect(
+			noteOf(
+				`<note>${PITCH}<duration>1</duration><type>eighth</type></note>`,
+			).isSwingExempt(),
+		).toBe(false);
+	});
+
+	it('exempts a note under a <time-modification>', () => {
+		expect(
+			noteOf(
+				`<note>${PITCH}<duration>1</duration><type>eighth</type>` +
+					'<time-modification><actual-notes>3</actual-notes>' +
+					'<normal-notes>2</normal-notes></time-modification></note>',
+			).isSwingExempt(),
+		).toBe(true);
+	});
+
+	it('exempts a grace note, which has no written duration to stretch', () => {
+		expect(
+			noteOf(
+				`<note><grace/>${PITCH}<type>eighth</type></note>`,
+			).isSwingExempt(),
+		).toBe(true);
+	});
+
+	it('exempts a note with no <type>, whose nominal duration is unknown', () => {
+		expect(
+			noteOf(`<note>${PITCH}<duration>1</duration></note>`).isSwingExempt(),
+		).toBe(true);
+	});
+});
+
 const XML = `<?xml version="1.0"?>
 <score-partwise version="4.0">
   <part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
@@ -35,7 +163,7 @@ const XML = `<?xml version="1.0"?>
 </score-partwise>`;
 
 /* Any Measure at all: Note stores one and hands it back, and nothing here reads it. Its
- * back-reference arrays stay empty — measure.test.ts is what covers the linking. */
+ * back-reference arrays stay empty; measure.test.ts is what covers the linking. */
 function bareMeasure(
 	mpart: MPart,
 	mmeasure: MMeasure,
@@ -183,131 +311,3 @@ function graceFixture() {
 
 	return { graceF, graceG, noteA, noteB };
 }
-
-describe('Note', () => {
-	it('reports its sounding pitch as a vexflow key, or null for a rest', () => {
-		const { noteC, noteE, noteRest, noteBb } = fixture();
-		expect(noteC.getPitch()).toBe('C/4');
-		expect(noteE.getPitch()).toBe('E/4');
-		expect(noteRest.getPitch()).toBeNull();
-		expect(noteBb.getPitch()).toBe('Bb/3');
-	});
-
-	it('reads its duration and grace flag off the underlying note', () => {
-		const { noteC } = fixture();
-		expect(noteC.getDurationBeats()).toBe(1);
-		expect(noteC.isGrace()).toBe(false);
-	});
-
-	it('lists the articulation markings on its notation', () => {
-		const { noteC, noteE } = fixture();
-		expect(noteC.getArticulations()).toEqual(['staccato']);
-		expect(noteE.getArticulations()).toEqual([]);
-	});
-
-	it('traces back to the mdom note it was built from', () => {
-		const { noteC, mC } = fixture();
-		expect(noteC.getSources()).toEqual([mC]);
-	});
-
-	it('is highlightable and playable', () => {
-		const { noteC } = fixture();
-		expect(isHighlightable(noteC)).toBe(true);
-		expect(isPlayable(noteC)).toBe(true);
-	});
-
-	it('chord membership and siblings', () => {
-		const { noteC, noteE, noteBb } = fixture();
-		expect(noteC.isChordMember()).toBe(true);
-		expect(noteBb.isChordMember()).toBe(false);
-		expect(noteC.getChordSiblings({ includeSelf: false })).toEqual([noteE]);
-		expect(noteC.getChordSiblings({ includeSelf: true })).toEqual([
-			noteC,
-			noteE,
-		]);
-	});
-
-	it('links across to its measure and its tab position', () => {
-		const { noteC, measure } = fixture();
-		expect(noteC.getMeasure()).toBe(measure);
-		expect(noteC.getTabPosition()).toBeNull();
-	});
-
-	it('color toggle delegates to its decoration and reflects active state', () => {
-		const { noteC, decorations } = fixture();
-		expect(noteC.color.active).toBe(false);
-		noteC.color.on('#2962ff');
-		expect(decorations.color.active.get(noteC)).toBe('#2962ff');
-		expect(noteC.color.active).toBe(true);
-		noteC.color.off();
-		expect(decorations.color.active.has(noteC)).toBe(false);
-		expect(noteC.color.active).toBe(false);
-	});
-
-	it('halo toggle delegates to its decoration and carries its color', () => {
-		const { noteC, decorations } = fixture();
-		noteC.halo.on('#2962ff');
-		expect(decorations.halo.active.get(noteC)).toBe('#2962ff');
-		expect(noteC.halo.active).toBe(true);
-		noteC.halo.off();
-		expect(decorations.halo.active.has(noteC)).toBe(false);
-		expect(noteC.halo.active).toBe(false);
-	});
-
-	it('maps its score-space box to the page through the viewport', () => {
-		const { noteC } = fixture();
-		const r = noteC.getBoundingClientRect();
-		expect([r.x, r.y, r.width, r.height]).toEqual([10, 10, 8, 8]);
-	});
-
-	it('collects the grace run immediately preceding it', () => {
-		const { graceF, graceG, noteA, noteB } = graceFixture();
-
-		// A's graces are the two grace notes before it, in play order; B (a plain note) has none.
-		expect(noteA.getGraceNotes()).toEqual([graceF, graceG]);
-		expect(noteB.getGraceNotes()).toEqual([]);
-	});
-
-	it('reaches its ink back over its grace notes', () => {
-		const { noteA, noteB } = graceFixture();
-
-		expect(noteA.getInkRect()).toMatchObject({ x: 10, w: 28 });
-		expect(noteB.getInkRect()).toMatchObject({ x: 50, w: 8 });
-	});
-	// Swing exemption. A written-out triplet already carries the swing feel; swinging it again
-	// would put it on neither an even third of the beat nor a swung pair, which is the case that
-	// shows up in real arrangements where a swung vocal line sits over a triplet accompaniment.
-	const PITCH = '<pitch><step>C</step><octave>5</octave></pitch>';
-
-	it('swings an ordinary eighth', () => {
-		expect(
-			noteOf(
-				`<note>${PITCH}<duration>1</duration><type>eighth</type></note>`,
-			).isSwingExempt(),
-		).toBe(false);
-	});
-
-	it('exempts a note under a <time-modification>', () => {
-		expect(
-			noteOf(
-				`<note>${PITCH}<duration>1</duration><type>eighth</type>` +
-					'<time-modification><actual-notes>3</actual-notes>' +
-					'<normal-notes>2</normal-notes></time-modification></note>',
-			).isSwingExempt(),
-		).toBe(true);
-	});
-
-	it('exempts a grace note, which has no written duration to stretch', () => {
-		expect(
-			noteOf(
-				`<note><grace/>${PITCH}<type>eighth</type></note>`,
-			).isSwingExempt(),
-		).toBe(true);
-	});
-
-	it('exempts a note with no <type>, whose nominal duration is unknown', () => {
-		expect(
-			noteOf(`<note>${PITCH}<duration>1</duration></note>`).isSwingExempt(),
-		).toBe(true);
-	});
-});

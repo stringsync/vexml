@@ -3,7 +3,7 @@ import type { Eventful } from 'webappwiz/events';
 import type { Rect } from 'webappwiz/geometry';
 
 /* The host fires this whenever the viewport moves or resizes, so the cursor can re-test visibility
- * even though it hasn't moved. Payload-free — the cursor reads viewportRect()/clientRectOf() itself. */
+ * even though it hasn't moved. Payload-free: the cursor reads viewportRect()/clientRectOf() itself. */
 export type CursorHostEventMap = {
 	viewportchange: undefined;
 };

@@ -1,7 +1,7 @@
 import type { Rect } from 'webappwiz/geometry';
 import type { Viewport } from './viewport';
 
-/* Fake fulfilling the Viewport seam (preferred over mocks). Test-only — excluded from the
+/* Fake fulfilling the Viewport seam (preferred over mocks). Test-only, excluded from the
  * published package via package.json "files". */
 
 export class FakeViewport implements Viewport {

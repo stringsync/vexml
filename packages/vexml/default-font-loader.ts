@@ -5,12 +5,12 @@ import type { FontLoader } from './font-loader';
 
 // DOM-derived dedup: injected <style>/<link> elements are tagged with data attributes
 // (data-vexml-font-face="family|url", data-vexml-google-fonts) and checked before
-// injecting, so the document itself tracks what's been injected — no process-global
+// injecting, so the document itself tracks what's been injected: no process-global
 // state. It tracks injected DOM, not font choices.
 export class DefaultFontLoader implements FontLoader {
 	/** Inject the requested fonts, wait until they are resident, and return the resolved
 	 * family names. The family-name fallbacks are applied here, once, from
-	 * DEFAULT_FONT_CONFIG — callers (the CSS variables) and the VexFlow.setFonts call
+	 * DEFAULT_FONT_CONFIG, callers (the CSS variables) and the VexFlow.setFonts call
 	 * below reuse the returned names instead of defaulting again. */
 	async load(
 		container: HTMLElement,
@@ -27,8 +27,8 @@ export class DefaultFontLoader implements FontLoader {
 		// VexFlow engraves glyphs from its own bundled font modules via global state, not the
 		// --vexml-font-notation CSS var. setFonts sets a CSS font-family stack the browser falls
 		// through per glyph: music glyphs (noteheads, clefs, the stacked "TAB" clef) come from the
-		// notation font, and everything VexFlow types — tab fret numbers, "H"/"P", bend/annotation
-		// labels — from the next family that has the letter, so it matches the part labels (both
+		// notation font, and everything VexFlow types (tab fret numbers, "H"/"P", bend/annotation
+		// labels) from the next family that has the letter, so it matches the part labels (both
 		// default to Source Sans 3). The trailing sans-serif keeps text off the browser's serif
 		// default. Families MUST be quoted: an unquoted multi-word name like Source Sans 3 makes
 		// the whole CSS font string invalid and every glyph falls back to serif. Reset each call
@@ -40,11 +40,11 @@ export class DefaultFontLoader implements FontLoader {
 
 	/** Wait until the resolved faces are resident, so layout never measures text against
 	 * fallback metrics. Chromium loads a face lazily on first use, and the pipeline
-	 * positions every text glyph — tab fret digits, part labels, annotations — by
+	 * positions every text glyph (tab fret digits, part labels, annotations) by
 	 * measuring it; a cold face measures with substitute metrics and the glyphs land in
 	 * the wrong place once the real face arrives. Faces the loader can see
 	 * (@font-face injections, the Google Fonts link, VexFlow's embedded Bravura) sit in
-	 * document.fonts and are awaited directly; a bare family (FontOverride.url absent —
+	 * document.fonts and are awaited directly; a bare family (FontOverride.url absent,
 	 * a system font) is invisible to the CSS Font Loading API, so it is forced resident
 	 * by measuring a probe span and waiting for the measurement to stop changing. */
 	private async settle(notation: string, text: string): Promise<void> {
@@ -73,7 +73,7 @@ export class DefaultFontLoader implements FontLoader {
 		// a render can use: the Google Fonts link loads 300/400/600; a face that lacks a
 		// weight just resolves to the nearest one, which is harmless to await.
 		const specs: Array<{ font: string; sample: string }> = [
-			// G clef, F clef, black notehead, flat, sharp — the SMuFL staples every score paints.
+			// G clef, F clef, black notehead, flat, sharp: the SMuFL staples every score paints.
 			{ font: `1em '${notation}'`, sample: '\uE050\uE062\uE0A4\uE260\uE262' },
 			...[300, 400, 600].map((weight) => ({
 				font: `${weight} 1em '${text}'`,
@@ -124,12 +124,12 @@ export class DefaultFontLoader implements FontLoader {
 	private injectNotationFont(override?: FontOverride): void {
 		// No notation config: VexFlow's main entry already Font.load()s Bravura (its embedded
 		// base64 woff2) under this exact family name with display:block, so we inject nothing
-		// and reuse that face — no second copy needed.
+		// and reuse that face: no second copy needed.
 		if (!override) {
 			return;
 		}
 		// A URL: inject the caller's own @font-face. A family alone: assume it's already
-		// available (a system font or the caller's own @font-face), per FontOverride.url —
+		// available (a system font or the caller's own @font-face), per FontOverride.url:
 		// inject nothing, so the family resolves synchronously with no fetch.
 		if (override.url) {
 			this.injectFontFace(override.family, override.url, 'block');
@@ -143,7 +143,7 @@ export class DefaultFontLoader implements FontLoader {
 			return;
 		}
 		// A URL: inject the caller's own @font-face. A family alone: assume it's already
-		// available (a system font or the caller's own @font-face), per FontOverride.url —
+		// available (a system font or the caller's own @font-face), per FontOverride.url:
 		// inject nothing, so the family resolves synchronously with no network fetch.
 		if (override.url) {
 			this.injectFontFace(override.family, override.url, 'swap');
@@ -192,7 +192,7 @@ export class DefaultFontLoader implements FontLoader {
 		document.head.appendChild(style);
 	}
 
-	// Scopes CSS variables to the render container — not :root — so two render() calls
+	// Scopes CSS variables to the render container (not :root) so two render() calls
 	// on the same page can use different fonts independently.
 	private applyFontVariables(
 		container: HTMLElement,

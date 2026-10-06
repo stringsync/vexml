@@ -9,7 +9,8 @@ import type {
 } from '@stringsync/vexml';
 import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
-import { type TabPool, tabPools } from './pool';
+import type { TabPool } from './pool';
+import { tabPools } from './tab-pools';
 
 /** What vexml exposes to eval fns: the live Score, the container it rendered into,
  * and the library entry itself (so a fn can drive a re-render, as the stage tests do). */

@@ -1,15 +1,17 @@
 import * as path from 'node:path';
 import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
-import { type TabPool, tabPools } from './pool';
+import type { TabPool } from './pool';
+import { tabPools } from './tab-pools';
 
 export interface OsmdInput {
 	musicXML: string;
 }
 
-/** The slice of OSMD's api the page keeps. Deliberately minimal: the repo drives OSMD
- * as a reference renderer for second opinions, not as a library under test. */
+/** The OSMD calls an eval fn can make through OsmdContext.osmd. */
 export interface OsmdApi {
+	// Deliberately minimal: the repo drives OSMD as a reference renderer for second
+	// opinions, not as a library under test.
 	load(musicXML: string): Promise<void>;
 	render(): void;
 }

@@ -20,10 +20,7 @@ describe('tiles', () => {
 			WIDE,
 			async ({ container }) => {
 				const frame = () => new Promise((r) => requestAnimationFrame(r));
-				const base = container.querySelector<HTMLElement>('.vexml-canvas');
-				if (!base) {
-					throw new Error('score element not found');
-				}
+				const base = container.querySelector('.vexml-canvas') as HTMLElement;
 				const width = parseFloat(base.style.getPropertyValue('--vexml-width'));
 				const tiles = () => Array.from(base.querySelectorAll('canvas'));
 				// Whether the tile over score x (if one is painted) holds any ink.
@@ -63,10 +60,7 @@ describe('tiles', () => {
 			WIDE,
 			async ({ score, container }) => {
 				const frame = () => new Promise((r) => requestAnimationFrame(r));
-				const base = container.querySelector<HTMLElement>('.vexml-canvas');
-				if (!base) {
-					throw new Error('score element not found');
-				}
+				const base = container.querySelector('.vexml-canvas') as HTMLElement;
 				const width = parseFloat(base.style.getPropertyValue('--vexml-width'));
 				const layer = score.addLayer('content');
 				layer.ctx.fillStyle = 'rgb(255, 0, 0)';
@@ -78,11 +72,8 @@ describe('tiles', () => {
 				const tile = Array.from(element?.querySelectorAll('canvas') ?? []).find(
 					(c) =>
 						parseFloat(c.style.left) + parseFloat(c.style.width) >= width - 40,
-				);
-				const ctx = tile?.getContext('2d');
-				if (!tile || !ctx) {
-					throw new Error('no layer tile at the end of the score');
-				}
+				) as HTMLCanvasElement;
+				const ctx = tile.getContext('2d') as CanvasRenderingContext2D;
 				// The tile's device px per CSS px: the screen's, not a fraction capped by the score's size.
 				const dpr = window.devicePixelRatio;
 				const x = (width - 50 - parseFloat(tile.style.left)) * dpr;

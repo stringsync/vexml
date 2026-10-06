@@ -10,6 +10,7 @@ import { FakeHost } from './fake-host';
 import type { FakeLayer } from './fake-layer';
 import type { FakeLoupe } from './fake-loupe';
 import type { FakeMarker } from './fake-marker';
+import { FakePointerEvent } from './fake-pointer-event';
 import { FakeViewport } from './fake-viewport';
 import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
@@ -21,66 +22,21 @@ import { ScoreReader } from './score-reader';
 import { SequenceFactory } from './sequence-factory';
 import { System } from './system';
 
-/* An empty timeline: these tests exercise events/layers/hover, not playback. */
-const EMPTY_SEQUENCE = new SequenceFactory(
-	new ScoreReader(new DynamicGlyphs()),
-	new Gaps([], new GapInserter(new ScoreReader(new DynamicGlyphs()))),
-).createFromInput({ measures: [], notes: [] });
-
-const viewport = new FakeViewport();
-
-// Wrap a HitTester into the ElementIndex Score takes; these tests don't enumerate.
-function elementIndex(hitTester: HitTester): ElementIndex {
-	return new ElementIndex(
-		hitTester,
-		new Map(),
-		new Map(),
-		new Map(),
-		[],
-		[],
-		[],
-	);
-}
-
-// A bare hit-target measure box: an empty system, no per-part measures.
-function measureBox(rect: Rect): MeasureBox {
-	return new MeasureBox(
-		rect,
-		viewport,
-		'1',
-		0,
-		[],
-		new System(rect, viewport, 0, []),
-		[],
-	);
-}
-
-// A bare EventTarget has no DOM tree, so a synthetic Event with the coords the handler reads is
-// enough to drive a pointer event through.
-class FakePointerEvent extends Event {
-	constructor(
-		type: string,
-		readonly clientX: number,
-		readonly clientY: number,
-		readonly pointerType = 'mouse',
-	) {
-		super(type);
-	}
-}
-
 describe('Score', () => {
 	let host: FakeHost;
 	let index: FakeHitTester;
+	let elements: ElementIndex;
 	let decorations: DefaultDecorations;
 	let score: Score;
 
 	beforeEach(() => {
 		host = new FakeHost();
 		index = new FakeHitTester(null);
+		elements = elementIndex(index);
 		decorations = new DefaultDecorations(host);
 		score = new Score(
 			host,
-			elementIndex(index),
+			elements,
 			decorations,
 			EMPTY_SEQUENCE,
 			host.scroller,
@@ -153,23 +109,9 @@ describe('Score', () => {
 
 	it('hover fires only on target change and recomputes on scroll; unsubscribe detaches scroll', () => {
 		const target = measureBox(new Rect(0, 0, 10, 10));
-		const host = new FakeHost();
 		// A mutable hit result lets the test flip what's "under the pointer" to simulate scrolling the
 		// target out from under a stationary pointer (FakeHost.toScoreSpace is identity).
-		let hit: Element | null = target;
-		const index: HitTester = {
-			hitTest: () => hit,
-			hitTestAll: () => (hit ? [hit] : []),
-			hitTestWithin: () => (hit ? [hit] : []),
-		};
-		const score = new Score(
-			host,
-			elementIndex(index),
-			new DefaultDecorations(host),
-			EMPTY_SEQUENCE,
-			host.scroller,
-			[],
-		);
+		index.result = target;
 
 		const seen: Array<Element | null> = [];
 		const unlisten = score.events.on('hover', (e) => seen.push(e.target));
@@ -178,7 +120,7 @@ describe('Score', () => {
 		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 6, 6)); // same target, quiet
 		expect(seen).toEqual([target]);
 
-		hit = null; // scroll slid the target away
+		index.result = null; // scroll slid the target away
 		host.scrolled();
 		expect(seen).toEqual([target, null]);
 
@@ -190,20 +132,7 @@ describe('Score', () => {
 		// A sticky fold over the music: the note under it is still in the index, but the pointer
 		// is on the fold, so neither a click nor hover reaches it.
 		const target = measureBox(new Rect(0, 0, 10, 10));
-		const host = new FakeHost();
-		const index: HitTester = {
-			hitTest: () => target,
-			hitTestAll: () => [target],
-			hitTestWithin: () => [target],
-		};
-		const score = new Score(
-			host,
-			elementIndex(index),
-			new DefaultDecorations(host),
-			EMPTY_SEQUENCE,
-			host.scroller,
-			[],
-		);
+		index.result = target;
 		const clicked: Array<Element | null> = [];
 		const hovered: Array<Element | null> = [];
 		score.events.on('click', (e) => clicked.push(e.target));
@@ -224,8 +153,12 @@ describe('Score', () => {
 	it('touch pointers never hover', () => {
 		const seen: Array<Element | null> = [];
 		score.events.on('hover', (e) => seen.push(e.target));
-		host.dom.dispatchEvent(new FakePointerEvent('pointerdown', 5, 5, 'touch'));
-		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 6, 6, 'touch'));
+		host.dom.dispatchEvent(
+			new FakePointerEvent('pointerdown', 5, 5, { pointerType: 'touch' }),
+		);
+		host.dom.dispatchEvent(
+			new FakePointerEvent('pointermove', 6, 6, { pointerType: 'touch' }),
+		);
 		expect(seen).toEqual([]);
 		expect(index.probes).toHaveLength(0);
 	});
@@ -324,21 +257,10 @@ describe('Score', () => {
 	});
 
 	it('hands back the element index it was built with', () => {
-		const index = elementIndex(new FakeHitTester(null));
-		const host = new FakeHost();
-		const score = new Score(
-			host,
-			index,
-			new DefaultDecorations(host),
-			EMPTY_SEQUENCE,
-			host.scroller,
-			[],
-		);
-		expect(score.getElements()).toBe(index);
+		expect(score.getElements()).toBe(elements);
 	});
 
 	it('interpolates the playback time under a point, and reports the step nearest it', () => {
-		const host = new FakeHost();
 		// A measure at index 0 with two quarter notes (x 10 @ beat 0, x 20 @ beat 1) at 120bpm.
 		const sequence = new SequenceFactory(
 			new ScoreReader(new DynamicGlyphs()),
@@ -372,18 +294,18 @@ describe('Score', () => {
 				},
 			],
 		});
-		const target = measureBox(new Rect(0, 0, 1000, 100));
-		const score = new Score(
+		index.result = measureBox(new Rect(0, 0, 1000, 100));
+		const playback = new Score(
 			host,
-			elementIndex(new FakeHitTester(target)),
-			new DefaultDecorations(host),
+			elements,
+			decorations,
 			sequence,
 			host.scroller,
 			[],
 		);
 
 		// x 15 is halfway through step 0's glide (10 -> 20), so beat 0.5 = 250ms; closest step is 0.
-		expect(score.getTimeAt({ x: 15, y: 50 })).toEqual({
+		expect(playback.getTimeAt({ x: 15, y: 50 })).toEqual({
 			ms: 250,
 			beat: 0.5,
 			stepMs: 0,
@@ -391,7 +313,7 @@ describe('Score', () => {
 			stepIndex: 0,
 		});
 		// Far right lands in step 1 (snapped to beat 1 / 500ms) and clamps to the measure end.
-		expect(score.getTimeAt({ x: 9999, y: 50 })).toEqual({
+		expect(playback.getTimeAt({ x: 9999, y: 50 })).toEqual({
 			ms: 1000,
 			beat: 2,
 			stepMs: 500,
@@ -399,15 +321,8 @@ describe('Score', () => {
 			stepIndex: 1,
 		});
 
-		const offScore = new Score(
-			host,
-			elementIndex(new FakeHitTester(null)),
-			new DefaultDecorations(host),
-			sequence,
-			host.scroller,
-			[],
-		);
-		expect(offScore.getTimeAt({ x: 15, y: 50 })).toBeNull();
+		index.result = null;
+		expect(playback.getTimeAt({ x: 15, y: 50 })).toBeNull();
 	});
 
 	it('detaches every listener and tears down its decorations and host when disposed', () => {
@@ -427,3 +342,37 @@ describe('Score', () => {
 		expect(index.probes).toHaveLength(0); // pointer handler detached
 	});
 });
+
+/* An empty timeline: these tests exercise events/layers/hover, not playback. */
+const EMPTY_SEQUENCE = new SequenceFactory(
+	new ScoreReader(new DynamicGlyphs()),
+	new Gaps([], new GapInserter(new ScoreReader(new DynamicGlyphs()))),
+).createFromInput({ measures: [], notes: [] });
+
+const viewport = new FakeViewport();
+
+// Wrap a HitTester into the ElementIndex Score takes; these tests don't enumerate.
+function elementIndex(hitTester: HitTester): ElementIndex {
+	return new ElementIndex(
+		hitTester,
+		new Map(),
+		new Map(),
+		new Map(),
+		[],
+		[],
+		[],
+	);
+}
+
+// A bare hit-target measure box: an empty system, no per-part measures.
+function measureBox(rect: Rect): MeasureBox {
+	return new MeasureBox(
+		rect,
+		viewport,
+		'1',
+		0,
+		[],
+		new System(rect, viewport, 0, []),
+		[],
+	);
+}

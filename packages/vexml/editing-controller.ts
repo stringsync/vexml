@@ -74,10 +74,10 @@ export class EditingController
 	constructor(
 		readonly editor: EditingSession,
 		private readonly deps: EditingControllerDeps,
-		private readonly options: EditingControllerOptions = {},
+		private readonly opts: EditingControllerOptions = {},
 	) {
-		this.enabled = options.enabled ?? true;
-		this.bindings = options.bindings ?? new DefaultEditingBindings();
+		this.enabled = opts.enabled ?? true;
+		this.bindings = opts.bindings ?? new DefaultEditingBindings();
 		this.presentation = this.resolve();
 		if (deps.view) {
 			this.disposer.use(deps.view);
@@ -85,7 +85,7 @@ export class EditingController
 		this.disposer.defer(
 			editor.events.on('selectionchange', () => this.refresh()),
 		);
-		if (options.pointer !== false) {
+		if (opts.pointer !== false) {
 			this.disposer.defer(
 				deps.events.on('pointerdown', (event) => this.pointerDown(event)),
 			);
@@ -122,7 +122,7 @@ export class EditingController
 				deps.events.on('click', (event) => this.click(event)),
 			);
 		}
-		if (options.keyboard !== false) {
+		if (opts.keyboard !== false) {
 			const keydown = (event: Event) => {
 				if (event.target !== deps.dom) {
 					return;
@@ -224,7 +224,7 @@ export class EditingController
 				}
 				break;
 			case 'clear':
-				if (this.options.allowDeselect === false) {
+				if (this.opts.allowDeselect === false) {
 					const focus = this.editor.getFocus();
 					if (focus && this.editor.getSelection().length > 1) {
 						this.editor.select(focus);
@@ -244,9 +244,9 @@ export class EditingController
 		return !this.disposed && this.enabled && this.navigator.selectVoice(voice);
 	}
 
-	scrollIntoView(options?: ScrollerOptions): void {
+	scrollIntoView(opts?: ScrollerOptions): void {
 		if (!this.disposed && this.presentation.position) {
-			this.deps.scroller.scrollIntoView(this.presentation.position, options);
+			this.deps.scroller.scrollIntoView(this.presentation.position, opts);
 		}
 	}
 
@@ -326,7 +326,7 @@ export class EditingController
 		drag.notes = [
 			...new Set([...(drag.additive ? drag.initial : []), ...notes]),
 		];
-		if (!drag.notes.length && this.options.allowDeselect === false) {
+		if (!drag.notes.length && this.opts.allowDeselect === false) {
 			drag.notes = drag.initial;
 		}
 		this.suppressedClick = drag.pointerId;
@@ -386,7 +386,7 @@ export class EditingController
 		const key = event.native;
 		const selection = this.editor.getSelection();
 		if (
-			this.options.allowDeselect === false &&
+			this.opts.allowDeselect === false &&
 			selection.length > 1 &&
 			(!note || !selection.includes(note)) &&
 			!key.shiftKey &&
@@ -404,15 +404,15 @@ export class EditingController
 			}
 		} else if (key.ctrlKey || key.metaKey) {
 			if (
-				this.options.allowDeselect !== false ||
+				this.opts.allowDeselect !== false ||
 				this.editor.getSelection().length !== 1 ||
 				this.editor.getFocus() !== note
 			) {
 				this.editor.toggle(note);
 			}
 		} else if (
-			this.options.allowDeselect !== false &&
-			this.options.toggleOnClick &&
+			this.opts.allowDeselect !== false &&
+			this.opts.toggleOnClick &&
 			this.editor.getFocus() === note &&
 			this.editor.getSelection().length === 1
 		) {
@@ -435,7 +435,7 @@ export class EditingController
 		if (
 			this.enabled &&
 			!this.drag &&
-			this.options.follow !== false &&
+			this.opts.follow !== false &&
 			this.presentation.position !== previous
 		) {
 			this.scrollIntoView({ behavior: 'smooth' });

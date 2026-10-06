@@ -1,4 +1,4 @@
-# xmllint — MusicXML XSD validation
+# xmllint: MusicXML XSD validation
 
 Validates MusicXML files against the MusicXML 4.0 XSD using `xmllint` (libxml2).
 MusicXML is XSD 1.0, which xmllint fully supports.

@@ -22,7 +22,7 @@ describe('SwingWarp', () => {
 	it('phases the grid off the downbeat, so a pickup eighth plays SHORT', () => {
 		// One eighth of pickup in 3/4: that note is the OFF-beat of the pair landing on beat 1,
 		// so it is the squeezed half (1/3 of a quarter). Phased off the measure's own start
-		// instead, it would come out 2/3 — stretched, exactly backwards.
+		// instead: it would come out 2/3, stretched, exactly backwards.
 		const warp = new SwingWarp(SWUNG, {
 			playedBeats: 0.5,
 			meterBeats: 3,

@@ -48,7 +48,10 @@ export function EditingToolbar({
 				>
 					Rendered in{' '}
 					<span className="font-mono text-brand-ink">
-						{renderMs === null ? '—' : `${renderMs.toFixed(1)} ms`}
+						{
+							// scry-ignore no-em-dashes: an em dash is the conventional "no value" glyph in a readout, not punctuation
+							renderMs === null ? '—' : `${renderMs.toFixed(1)} ms`
+						}
 					</span>
 				</output>
 				<span className="hidden min-w-0 flex-1 truncate text-sm text-muted-foreground sm:block">

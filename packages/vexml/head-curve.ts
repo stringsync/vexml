@@ -10,7 +10,7 @@ import { CrispCurve } from './crisp-curve';
 /*
  * A slur whose endpoints are pinned to explicit Ys. vexflow's Curve can only anchor an
  * end at getStemExtents(): NEAR_TOP is the stem tip, NEAR_HEAD the notehead *opposite*
- * the stem. On a stem-down chord neither names the notehead a bow should touch —
+ * the stem. On a stem-down chord neither names the notehead a bow should touch.
  * NEAR_HEAD lands on the chord's topmost note (so a grace slur shoots up over the
  * chord's accidentals as a near-straight diagonal instead of bowing under it) and
  * NEAR_TOP lands below the beam. Take the endpoint Ys as given; the X, the bezier and
@@ -20,11 +20,11 @@ export class HeadCurve extends CrispCurve {
 	constructor(
 		from: StaveNote | undefined,
 		to: StaveNote | undefined,
-		options: CurveOptions,
 		private readonly fromY: number,
 		private readonly toY: number,
+		opts: CurveOptions,
 	) {
-		super(from, to, options);
+		super(from, to, opts);
 	}
 
 	override draw(): boolean {

@@ -12,11 +12,11 @@ import {
 
 /*
  * A slide into or out of a single note, where the other end is indeterminate (an unpaired
- * <slide>/<glissando> — a stop with no start, or a start with no stop). There's no partner
+ * <slide>/<glissando>: a stop with no start, or a start with no stop). There's no partner
  * notehead, so it draws a short "/" tick beside the head instead of a line between two: a
  * slide-in ('in') sits just left of the head and rises up into it; a slide-out ('out') sits
- * just right and rises up out of it. Works for both a StaveNote (notation) and a TabNote (tab)
- * — both expose getAbsoluteX/getGlyphWidth/getModifierStartXY. Drawn via setContext().draw()
+ * just right and rises up out of it. Works for both a StaveNote (notation) and a TabNote (tab),
+ * since both expose getAbsoluteX/getGlyphWidth/getModifierStartXY. Drawn via setContext().draw()
  * like the other spanners. (vexflow's TabSlide/StaveTie render a partial only by running the
  * line to the stave edge, which is right for a system-break wrap but not a mid-measure gesture.)
  */

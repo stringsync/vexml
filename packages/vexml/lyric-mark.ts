@@ -20,9 +20,9 @@ export interface LyricMark {
 	setBaselineY(y: number): void;
 	/** The ink to draw the syllable in. */
 	setStyle(style: { fillStyle?: string }): void;
-	/** Push this syllable `rows` rows further from the stave. Voices sharing a stave each
-	 * number their verses from 1, so without an offset per voice every voice's first verse
-	 * would land on the same row and overprint. */
+	/** Push this syllable `rows` rows further from the stave. Offset each voice sharing a
+	 * stave this way: every voice numbers its verses from 1, so their first verses would
+	 * otherwise share a row and overprint. */
 	shiftVerses(rows: number): void;
 }
 

@@ -92,7 +92,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 	}
 
 	/* Open the saved score, holding it back if the last session never finished rendering. */
-	restore(opts: { reset?: boolean } = {}): Promise<void> {
+	restore(opts: RestoreOptions = {}): Promise<void> {
 		return this.document.restore({
 			reset: opts.reset,
 			unfinished: this.guard.tripped,
@@ -177,7 +177,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 			this.session = new ScoreSession(
 				score,
 				container,
-				() => this.instrument.current(),
+				this.instrument,
 				voices,
 				this.loupe,
 				this.mode,
@@ -294,4 +294,9 @@ export interface RenderIntoOptions {
 	/* Which parser `input` needs; it is a Blob for anything but 'musicxml'. */
 	format: DocumentFormat;
 	config: ConfigInput;
+}
+
+export interface RestoreOptions {
+	/* Forget the saved score and open the default example. */
+	reset?: boolean;
 }

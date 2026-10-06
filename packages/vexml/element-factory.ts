@@ -27,12 +27,12 @@ import { Voice } from './voice';
  * built from the geometry: one box per measure column, grouped into systems whose rects union
  * their columns. The musical axis (Part -> Measure -> Voice -> Note) mirrors mdom: one Measure
  * per (part, column). Cross-links that would be circular at construction resolve through shared
- * collections filled before any query runs — a System's box list, a box's per-part Measure list,
+ * collections filled before any query runs: a System's box list, a box's per-part Measure list,
  * and the note maps below.
  *
  * A tab note becomes both a Note (its pitch/beats) and a TabPosition (its fret); only the visible
- * glyph is inserted into the tree — the TabPosition for a tab note, the Note for a notation
- * notehead — so a point hits one element, while the other stays reachable via
+ * glyph is inserted into the tree: the TabPosition for a tab note, the Note for a notation
+ * notehead, so a point hits one element, while the other stays reachable via
  * getNote()/getTabPosition(). The two note maps double as the NoteLookup/TabLookup the wrappers
  * (and Voices) resolve through.
  */

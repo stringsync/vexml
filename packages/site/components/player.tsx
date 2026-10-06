@@ -257,7 +257,7 @@ export function Player({
 			<div className="hidden items-center gap-3 md:flex">
 				{position}
 				{/* Mirrors the Playback card, so the voice can be changed without opening the
-				    sidebar — or, below md, the sheet. */}
+				    sidebar, or, below md, the sheet. */}
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button

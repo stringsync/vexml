@@ -2,7 +2,7 @@ import { Curve, type CurveOptions, type Note as VexNote } from 'vexflow';
 
 /* The offset of the second bezier pass that gives a solid slur its lens shape, so the ink
  * reaches this far past the arc's midpoint. Larger than vexflow's default 2 because CrispCurve
- * drops the stroke that used to widen the shape — the lens alone is only 0.75 of this deep. */
+ * drops the stroke that used to widen the shape: the lens alone is only 0.75 of this deep. */
 export const CURVE_THICKNESS = 4;
 
 /*
@@ -10,7 +10,7 @@ export const CURVE_THICKNESS = 4;
  * then fills it (curve.ts renderCurve). Canvas composites the two passes independently, so
  * along every edge the antialiased stroke and the antialiased fill each contribute partial
  * coverage that never adds up to solid: the arc reads soft, with a lighter seam running
- * inside it. Filling alone gives a crisp edge — at CURVE_THICKNESS, which is raised to make
+ * inside it. Filling alone gives a crisp edge, at CURVE_THICKNESS, which is raised to make
  * up for the stroke that no longer widens the shape. Every curve vexml draws goes through
  * this, so slurs and tab arcs stay the same weight.
  */
@@ -18,9 +18,9 @@ export class CrispCurve extends Curve {
 	constructor(
 		from: VexNote | undefined,
 		to: VexNote | undefined,
-		options: CurveOptions,
+		opts: CurveOptions,
 	) {
-		super(from, to, { ...options, thickness: CURVE_THICKNESS });
+		super(from, to, { ...opts, thickness: CURVE_THICKNESS });
 	}
 
 	override renderCurve(params: {

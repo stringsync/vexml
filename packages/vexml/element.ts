@@ -5,8 +5,9 @@ import type {
 	Part as MPart,
 } from '@stringsync/mdom';
 import type { Rect } from 'webappwiz/geometry';
-import type { Decoratable, Decoration } from './decoration';
+import type { Decoratable } from './decoration';
 import type { NoteGlyph } from './geometry-collector';
+import type { Toggle } from './toggle';
 import type { Viewport } from './viewport';
 
 /*
@@ -29,7 +30,7 @@ export interface Highlightable {
 export interface Playable {
 	/* The sounding pitch as a vexflow key ("E/4"), or null for a rest. */
 	getPitch(): string | null;
-	/* Duration in quarter-note beats; 0 for a grace note (which steals time — see isGrace). */
+	/* Duration in quarter-note beats; 0 for a grace note (which steals time: see isGrace). */
 	getDurationBeats(): number;
 	/* Articulation marking names (staccato, accent, ...) from <notations><articulations>. */
 	getArticulations(): string[];
@@ -44,27 +45,9 @@ export function isPlayable(el: Element): el is Element & Playable {
 	return 'getPitch' in el;
 }
 
-/* A reversible on/off effect carrying its color, delegating to the Decoration's store. `off()`
- * is the whole undo — this is view state, not a document edit, so there is no history. */
-export class Toggle {
-	constructor(
-		private readonly target: Decoratable,
-		private readonly decoration: Decoration,
-	) {}
-	on(color: string): void {
-		this.decoration.set(this.target, color);
-	}
-	off(): void {
-		this.decoration.set(this.target, null);
-	}
-	get active(): boolean {
-		return this.decoration.has(this.target);
-	}
-}
-
 /* Shared base for every element: the score-space rect (mapped to the page on demand through the
  * Viewport), the `type` discriminant, and provenance back to the mutable mdom nodes that caused
- * it. The default color is a filled ellipse over the box — the fallback for an element with no
+ * it. The default color is a filled ellipse over the box: the fallback for an element with no
  * glyph or text of its own (a rest, a measure). Note and TabPosition override it with their own
  * stamp. */
 export abstract class Element implements Decoratable {

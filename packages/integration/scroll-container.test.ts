@@ -40,174 +40,171 @@ type Case = {
 type Probe = Awaited<ReturnType<typeof probe>>;
 
 describe('scrollContainer', () => {
-	describe('standard layout (scaled to fit)', () => {
-		test('just right: nothing scrolls and the bar is always visible', async () => {
-			const r = await run(STANDARD, 1, 1);
-			// The box is exactly as tall as the engraving (no inline line gap), so nothing overflows.
-			expect(r.boxGap).toBeCloseTo(0, 0);
-			expect(r.overflow).toEqual({ x: false, y: false });
-			expect(r.scale).toBeCloseTo(1);
-			expect(r.visibleAtStart).toBe(true);
-			expect(r.visibleAtSeek).toBe(true);
-			expect(r.after.scroll).toEqual({ left: 0, top: 0 });
-			expect(r.events).toEqual([]);
-			expectLayersAligned(r);
-		});
-
-		test('too big: nothing scrolls, the score stays centered at full size', async () => {
-			const r = await run(STANDARD, 1.3, 1.3);
-			expect(r.overflow).toEqual({ x: false, y: false });
-			expect(r.scale).toBeCloseTo(1);
-			// Centered in the extra width: an equal margin either side.
-			expect(r.canvasInset.left).toBeCloseTo(r.canvasInset.right, 0);
-			expect(r.canvasInset.left).toBeGreaterThan(0);
-			expect(r.visibleAtSeek).toBe(true);
-			expect(r.after.scroll).toEqual({ left: 0, top: 0 });
-			expect(r.events).toEqual([]);
-			expectLayersAligned(r);
-		});
-
-		// Pre-existing: visibility compares the bar to the scroller's box only, not the browser
-		// window. A scroller taller than the window calls a bar below the window's fold visible.
-		test('too big: a bar below the window fold still reads as visible', async () => {
-			const r = await run(STANDARD, 1.3, 1.3, { at: 0.999 });
-			expect(r.windowHeight).toBeLessThan(r.after.bar.bottom);
-			expect(r.visibleAtSeek).toBe(true);
-		});
-
-		test('too short: scrolls vertically only', async () => {
-			const r = await run(STANDARD, 1, 0.3);
-			expect(r.overflow).toEqual({ x: false, y: true });
-			expect(r.visibleAtStart).toBe(true);
-			expect(r.visibleAtSeek).toBe(false);
-			expect(r.after.scroll.left).toBe(0);
-			expect(r.after.scroll.top).toBeGreaterThan(0);
-			expect(r.after.visible).toBe(true);
-			expect(r.after.bar.fromTop).toBeCloseTo(PADDING, 0);
-			expect(r.events).toEqual([false, true]);
-			expect(r.lastScrollEvent).toEqual(r.after.scroll);
-			expectLayersAligned(r);
-		});
-
-		test('too narrow: the score shrinks to fit and nothing scrolls', async () => {
-			const r = await run(STANDARD, 0.6, 1);
-			expect(r.scale).toBeCloseTo(0.6, 2);
-			// Shrunk proportionally, so a height sized for the full score has room to spare.
-			expect(r.overflow).toEqual({ x: false, y: false });
-			expect(r.visibleAtSeek).toBe(true);
-			expect(r.after.scroll).toEqual({ left: 0, top: 0 });
-			expect(r.events).toEqual([]);
-			expectLayersAligned(r);
-		});
-
-		test('too narrow and too short: shrinks, then scrolls vertically', async () => {
-			// Shorter than the other cases: the shrunk score is only ~1800px, so a 0.3 scroller would
-			// either show the midpoint already or clamp at its max scroll before the padding.
-			const r = await run(STANDARD, 0.6, 0.15);
-			expect(r.scale).toBeCloseTo(0.6, 2);
-			expect(r.overflow).toEqual({ x: false, y: true });
-			expect(r.visibleAtSeek).toBe(false);
-			expect(r.after.scroll.left).toBe(0);
-			expect(r.after.visible).toBe(true);
-			expect(r.after.bar.fromTop).toBeCloseTo(PADDING, 0);
-			expect(r.events).toEqual([false, true]);
-			expectLayersAligned(r);
-		});
-
-		test('too wide but too short: scrolls vertically over a centered score', async () => {
-			const r = await run(STANDARD, 1.3, 0.3);
-			expect(r.scale).toBeCloseTo(1);
-			expect(r.overflow).toEqual({ x: false, y: true });
-			expect(r.canvasInset.left).toBeCloseTo(r.canvasInset.right, 0);
-			expect(r.visibleAtSeek).toBe(false);
-			expect(r.after.scroll.left).toBe(0);
-			expect(r.after.visible).toBe(true);
-			expect(r.after.bar.fromTop).toBeCloseTo(PADDING, 0);
-			expectLayersAligned(r);
-		});
-
-		test('too narrow but too tall: shrinks and nothing scrolls', async () => {
-			const r = await run(STANDARD, 0.6, 1.3);
-			expect(r.scale).toBeCloseTo(0.6, 2);
-			expect(r.overflow).toEqual({ x: false, y: false });
-			expect(r.visibleAtSeek).toBe(true);
-			expect(r.after.scroll).toEqual({ left: 0, top: 0 });
-			expectLayersAligned(r);
-		});
-
-		// A system taller than the scroller can never fit: scrollIntoView shows its top, holds
-		// there on a repeat call, and visibility never reports true.
-		test('shorter than one system: shows the system top and holds', async () => {
-			const r = await run(STANDARD, 1, 0.08);
-			expect(r.overflow).toEqual({ x: false, y: true });
-			expect(r.after.bar.height).toBeGreaterThan(r.clientSize.height);
-			expect(r.after.visible).toBe(false);
-			expect(r.after.bar.fromTop).toBeCloseTo(PADDING, 0);
-			expect(r.again).toEqual(r.after.scroll);
-			expect(r.events).not.toContain(true);
-		});
+	// standard layout (scaled to fit)
+	test('just right: nothing scrolls and the bar is always visible', async () => {
+		const r = await run(STANDARD, 1, 1);
+		// The box is exactly as tall as the engraving (no inline line gap), so nothing overflows.
+		expect(r.boxGap).toBeCloseTo(0, 0);
+		expect(r.overflow).toEqual({ x: false, y: false });
+		expect(r.scale).toBeCloseTo(1);
+		expect(r.visibleAtStart).toBe(true);
+		expect(r.visibleAtSeek).toBe(true);
+		expect(r.after.scroll).toEqual({ left: 0, top: 0 });
+		expect(r.events).toEqual([]);
+		expectLayersAligned(r);
 	});
 
-	describe('panoramic layout (no fit)', () => {
-		test('too narrow: scrolls horizontally only', async () => {
-			const r = await run(PANORAMIC, 0.3, 1);
-			expect(r.scale).toBeCloseTo(1);
-			expect(r.overflow).toEqual({ x: true, y: false });
-			expect(r.visibleAtSeek).toBe(false);
-			expect(r.after.scroll.top).toBe(0);
-			expect(r.after.scroll.left).toBeGreaterThan(0);
-			expect(r.after.visible).toBe(true);
-			expect(r.after.bar.fromLeft).toBeCloseTo(PADDING, 0);
-			expect(r.events).toEqual([false, true]);
-			expect(r.lastScrollEvent).toEqual(r.after.scroll);
-			expectLayersAligned(r);
-		});
-
-		test('too narrow but too tall: scrolls horizontally only', async () => {
-			const r = await run(PANORAMIC, 0.3, 1.5);
-			expect(r.overflow).toEqual({ x: true, y: false });
-			expect(r.after.scroll.top).toBe(0);
-			expect(r.after.scroll.left).toBeGreaterThan(0);
-			expect(r.after.visible).toBe(true);
-			expectLayersAligned(r);
-		});
-
-		// The system is taller than the scroller, so the bar can't fully fit: both axes move in the
-		// one call, the vertical one to the system's top.
-		test('too narrow and too short: scrolls both axes at once', async () => {
-			const r = await run(PANORAMIC, 0.3, 0.6);
-			expect(r.overflow).toEqual({ x: true, y: true });
-			expect(r.after.scroll.left).toBeGreaterThan(0);
-			expect(r.after.scroll.top).toBeGreaterThan(0);
-			expect(r.after.bar.fromLeft).toBeCloseTo(PADDING, 0);
-			expect(r.after.bar.fromTop).toBeCloseTo(PADDING, 0);
-			expectLayersAligned(r);
-		});
-
-		test('too wide: nothing scrolls', async () => {
-			const r = await run(PANORAMIC, 1.3, 1);
-			expect(r.overflow).toEqual({ x: false, y: false });
-			expect(r.visibleAtSeek).toBe(true);
-			expect(r.after.scroll).toEqual({ left: 0, top: 0 });
-			expectLayersAligned(r);
-		});
+	test('too big: nothing scrolls, the score stays centered at full size', async () => {
+		const r = await run(STANDARD, 1.3, 1.3);
+		expect(r.overflow).toEqual({ x: false, y: false });
+		expect(r.scale).toBeCloseTo(1);
+		// Centered in the extra width: an equal margin either side.
+		expect(r.canvasInset.left).toBeCloseTo(r.canvasInset.right, 0);
+		expect(r.canvasInset.left).toBeGreaterThan(0);
+		expect(r.visibleAtSeek).toBe(true);
+		expect(r.after.scroll).toEqual({ left: 0, top: 0 });
+		expect(r.events).toEqual([]);
+		expectLayersAligned(r);
 	});
 
-	describe('screenshots', () => {
-		test('a halo stays on its note after the scroller moves', async () => {
-			const { image } = await shoot(STANDARD, 1, 0.3);
-			expect(image).toMatchScreenshot('scroll_container_short_halo.png');
-		});
+	// Pre-existing: visibility compares the bar to the scroller's box only, not the browser
+	// window. A scroller taller than the window calls a bar below the window's fold visible.
+	test('too big: a bar below the window fold still reads as visible', async () => {
+		const r = await run(STANDARD, 1.3, 1.3, { at: 0.999 });
+		expect(r.windowHeight).toBeLessThan(r.after.bar.bottom);
+		expect(r.visibleAtSeek).toBe(true);
+	});
 
-		test('a narrow scroller shrinks the score and its halo together', async () => {
-			const { image } = await shoot(STANDARD, 0.6, 0.15);
-			expect(image).toMatchScreenshot('scroll_container_narrow_halo.png');
-		});
+	test('too short: scrolls vertically only', async () => {
+		const r = await run(STANDARD, 1, 0.3);
+		expect(r.overflow).toEqual({ x: false, y: true });
+		expect(r.visibleAtStart).toBe(true);
+		expect(r.visibleAtSeek).toBe(false);
+		expect(r.after.scroll.left).toBe(0);
+		expect(r.after.scroll.top).toBeGreaterThan(0);
+		expect(r.after.visible).toBe(true);
+		expect(r.after.bar.fromTop).toBeCloseTo(PADDING, 0);
+		expect(r.events).toEqual([false, true]);
+		expect(r.lastScrollEvent).toEqual(r.after.scroll);
+		expectLayersAligned(r);
+	});
 
-		test('a panoramic score scrolls sideways under its halo', async () => {
-			const { image } = await shoot(PANORAMIC, 0.3, 1.2);
-			expect(image).toMatchScreenshot('scroll_container_panoramic_halo.png');
-		});
+	test('too narrow: the score shrinks to fit and nothing scrolls', async () => {
+		const r = await run(STANDARD, 0.6, 1);
+		expect(r.scale).toBeCloseTo(0.6, 2);
+		// Shrunk proportionally, so a height sized for the full score has room to spare.
+		expect(r.overflow).toEqual({ x: false, y: false });
+		expect(r.visibleAtSeek).toBe(true);
+		expect(r.after.scroll).toEqual({ left: 0, top: 0 });
+		expect(r.events).toEqual([]);
+		expectLayersAligned(r);
+	});
+
+	test('too narrow and too short: shrinks, then scrolls vertically', async () => {
+		// Shorter than the other cases: the shrunk score is only ~1800px, so a 0.3 scroller would
+		// either show the midpoint already or clamp at its max scroll before the padding.
+		const r = await run(STANDARD, 0.6, 0.15);
+		expect(r.scale).toBeCloseTo(0.6, 2);
+		expect(r.overflow).toEqual({ x: false, y: true });
+		expect(r.visibleAtSeek).toBe(false);
+		expect(r.after.scroll.left).toBe(0);
+		expect(r.after.visible).toBe(true);
+		expect(r.after.bar.fromTop).toBeCloseTo(PADDING, 0);
+		expect(r.events).toEqual([false, true]);
+		expectLayersAligned(r);
+	});
+
+	test('too wide but too short: scrolls vertically over a centered score', async () => {
+		const r = await run(STANDARD, 1.3, 0.3);
+		expect(r.scale).toBeCloseTo(1);
+		expect(r.overflow).toEqual({ x: false, y: true });
+		expect(r.canvasInset.left).toBeCloseTo(r.canvasInset.right, 0);
+		expect(r.visibleAtSeek).toBe(false);
+		expect(r.after.scroll.left).toBe(0);
+		expect(r.after.visible).toBe(true);
+		expect(r.after.bar.fromTop).toBeCloseTo(PADDING, 0);
+		expectLayersAligned(r);
+	});
+
+	test('too narrow but too tall: shrinks and nothing scrolls', async () => {
+		const r = await run(STANDARD, 0.6, 1.3);
+		expect(r.scale).toBeCloseTo(0.6, 2);
+		expect(r.overflow).toEqual({ x: false, y: false });
+		expect(r.visibleAtSeek).toBe(true);
+		expect(r.after.scroll).toEqual({ left: 0, top: 0 });
+		expectLayersAligned(r);
+	});
+
+	// A system taller than the scroller can never fit: scrollIntoView shows its top, holds
+	// there on a repeat call, and visibility never reports true.
+	test('shorter than one system: shows the system top and holds', async () => {
+		const r = await run(STANDARD, 1, 0.08);
+		expect(r.overflow).toEqual({ x: false, y: true });
+		expect(r.after.bar.height).toBeGreaterThan(r.clientSize.height);
+		expect(r.after.visible).toBe(false);
+		expect(r.after.bar.fromTop).toBeCloseTo(PADDING, 0);
+		expect(r.again).toEqual(r.after.scroll);
+		expect(r.events).not.toContain(true);
+	});
+
+	// panoramic layout (no fit)
+	test('too narrow: scrolls horizontally only', async () => {
+		const r = await run(PANORAMIC, 0.3, 1);
+		expect(r.scale).toBeCloseTo(1);
+		expect(r.overflow).toEqual({ x: true, y: false });
+		expect(r.visibleAtSeek).toBe(false);
+		expect(r.after.scroll.top).toBe(0);
+		expect(r.after.scroll.left).toBeGreaterThan(0);
+		expect(r.after.visible).toBe(true);
+		expect(r.after.bar.fromLeft).toBeCloseTo(PADDING, 0);
+		expect(r.events).toEqual([false, true]);
+		expect(r.lastScrollEvent).toEqual(r.after.scroll);
+		expectLayersAligned(r);
+	});
+
+	test('too narrow but too tall: scrolls horizontally only', async () => {
+		const r = await run(PANORAMIC, 0.3, 1.5);
+		expect(r.overflow).toEqual({ x: true, y: false });
+		expect(r.after.scroll.top).toBe(0);
+		expect(r.after.scroll.left).toBeGreaterThan(0);
+		expect(r.after.visible).toBe(true);
+		expectLayersAligned(r);
+	});
+
+	// The system is taller than the scroller, so the bar can't fully fit: both axes move in the
+	// one call, the vertical one to the system's top.
+	test('too narrow and too short: scrolls both axes at once', async () => {
+		const r = await run(PANORAMIC, 0.3, 0.6);
+		expect(r.overflow).toEqual({ x: true, y: true });
+		expect(r.after.scroll.left).toBeGreaterThan(0);
+		expect(r.after.scroll.top).toBeGreaterThan(0);
+		expect(r.after.bar.fromLeft).toBeCloseTo(PADDING, 0);
+		expect(r.after.bar.fromTop).toBeCloseTo(PADDING, 0);
+		expectLayersAligned(r);
+	});
+
+	test('too wide: nothing scrolls', async () => {
+		const r = await run(PANORAMIC, 1.3, 1);
+		expect(r.overflow).toEqual({ x: false, y: false });
+		expect(r.visibleAtSeek).toBe(true);
+		expect(r.after.scroll).toEqual({ left: 0, top: 0 });
+		expectLayersAligned(r);
+	});
+
+	// screenshots
+	test('a halo stays on its note after the scroller moves', async () => {
+		const { image } = await shoot(STANDARD, 1, 0.3);
+		expect(image).toMatchScreenshot('scroll_container_short_halo.png');
+	});
+
+	test('a narrow scroller shrinks the score and its halo together', async () => {
+		const { image } = await shoot(STANDARD, 0.6, 0.15);
+		expect(image).toMatchScreenshot('scroll_container_narrow_halo.png');
+	});
+
+	test('a panoramic score scrolls sideways under its halo', async () => {
+		const { image } = await shoot(PANORAMIC, 0.3, 1.2);
+		expect(image).toMatchScreenshot('scroll_container_panoramic_halo.png');
 	});
 
 	// A viewport layer covers the scroller's visible box, not the (much taller) render box, and
@@ -228,6 +225,7 @@ async function run(
 	return (await shoot(config, w, h, extra)).result;
 }
 
+// scry-ignore named-options-last: config, w and h are the case's identity, read positionally at every call site; the optional extras already trail as a named object.
 async function shoot(
 	config: ConfigInput,
 	w: number,

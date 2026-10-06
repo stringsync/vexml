@@ -7,7 +7,7 @@ describe('TileBudget', () => {
 		budget.use('a', 10);
 		budget.use('b', 10);
 		budget.use('c', 10);
-		budget.use('a', 10); // a is now the most recent
+		budget.use('a', 10); // re-using a leaves b the least recent, so b is the one freed
 		expect(budget.trim(new Set())).toEqual(['b']);
 		expect(budget.used).toBe(20);
 	});

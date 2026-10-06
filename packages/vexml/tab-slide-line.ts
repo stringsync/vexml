@@ -9,8 +9,8 @@ const TAB_LINE_CLEAR_HEIGHT = 6;
  * A tab slide, plus the erasure of the string line it runs along. vexflow draws a TabStave's
  * string lines edge to edge and the slide's diagonal on top of them, so the two frets end up
  * joined by a straight line *and* a slanted one, which reads as two gestures instead of one.
- * Clearing the line between the frets first — the same trick TabNote uses to punch a hole for
- * its fret digit — leaves just the slide. Tab only: a notation glissando runs through the gaps
+ * Clearing the line between the frets first (the same trick TabNote uses to punch a hole for
+ * its fret digit) leaves just the slide. Tab only: a notation glissando runs through the gaps
  * between staff lines, not along one, so it has nothing to erase.
  */
 export class TabSlideLine {
@@ -31,7 +31,7 @@ export class TabSlideLine {
 		const ys = this.slide.getFirstYs();
 		// vexflow slants the slide around the *first* note's string y (tabslide.ts renderTie
 		// ignores lastYs), so that line is the only one it can double up on. A non-positive
-		// width means the two ends aren't on the same system — nothing sensible to erase.
+		// width means the two ends aren't on the same system: nothing sensible to erase.
 		if (width > 0) {
 			for (const index of this.slide.getNotes().firstIndexes ?? []) {
 				const y = ys[index];

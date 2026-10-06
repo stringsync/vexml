@@ -13,91 +13,11 @@ import type { TempoMap } from './tempo-map';
  * geometry and the parsed document.
  */
 
-/* A measure's repeat structure, as the iterator consumes it. `times` is the number of *back-jumps*
- * (a plain repeat that plays twice is `times: 1`); a volta `repeatending`'s `times` is how many
- * passes that ending covers. An ending can span measures, so every measure it covers carries a
- * `repeatending` and only the run's final one sets `last` — the measure playback jumps from.
- * `number` is the ending's FIRST pass number ("1" -> 1, "2,3" -> 2), which is what tells two
- * adjacent volta groups apart: a run whose number is not greater than the previous run's has
- * restarted, so it belongs to an enclosing repeat block rather than to the same group.
- * Derived from MusicXML barlines/endings by SequenceFactory. */
-export type Jump =
-	| { type: 'repeatstart' }
-	| { type: 'repeatend'; times: number }
-	| { type: 'repeatending'; times: number; last: boolean; number: number };
-
-/* One measure in document (visual) order. `beats` is its played length in quarter-note beats (the
- * max note end, or the meter); `tempoBpm` is the quarter-note BPM in effect at its start, or null to
- * carry the previous (the piece starts at 120 if never set). `systemRect` is the measure's full
- * system box — the bar's vertical span and the x it clamps to at a line end. */
-export interface MeasureInfo {
-	index: number;
-	beats: number;
-	tempoBpm: number | null;
-	jumps: Jump[];
-	systemRect: Rect;
-	/** Set on a gap measure: it plays for exactly this many ms regardless of tempo
-	 * (its `beats` are nominal — the factory maps them to gapMs via a dedicated tempo
-	 * segment) and gets a synthesized silent step spanning it. */
-	gapMs?: number;
-}
-
-/* A rendered, time-bearing note (a notation notehead or rest). A grace note appears here with the
- * slot it plays in, taken from a neighbor that plays shorter for it (see
- * SequenceFactory.placeGraces); tab ghosts never do. `note` is the element identity used in active
- * sets; `tiedFrom` is the note this one continues from across a tie, so a tied continuation reads as
- * a sustain rather than a re-attack. */
-export interface SequenceNote {
-	note: Note;
-	measureIndex: number;
-	measureBeat: number;
-	beats: number;
-	x: number;
-	tiedFrom: Note | null;
-}
-
-/* Everything the timeline is built from. A fake supplies plain values in tests; SequenceFactory
- * builds the real one from `RawGeometry` + the parsed parts. */
-export interface SequenceInput {
-	measures: MeasureInfo[];
-	notes: SequenceNote[];
-}
-
-/* One stop in playback order: the onset of a tickable. The active set is constant across
- * `[startBeat, endBeat)`. `x`/`glideToX` are the bar's onset position and where it glides to by the
- * step's end (the next onset on the same system, or the measure box's right edge at a line break
- * and for a gap);
- * `systemRect` is its vertical span. */
-export interface Step {
-	readonly index: number;
-	readonly measureIndex: number;
-	readonly startBeat: number;
-	readonly endBeat: number;
-	readonly startMs: number;
-	readonly endMs: number;
-	readonly x: number;
-	readonly glideToX: number;
-	readonly systemRect: Rect;
-	readonly active: readonly Note[];
-}
-
-/* What changed between two cursor positions: notes to attack (a re-struck pitch shows in both
- * `started` and `stopped`), notes held or tied through (do not re-attack), and notes released
- * (a note tied into the next step is excluded — it keeps ringing). */
-export interface CursorTransition {
-	readonly started: readonly Note[];
-	readonly sustained: readonly Note[];
-	readonly stopped: readonly Note[];
-}
-
-/* A quarter-note-beats <-> ms segment: `[startBeat, endBeat)` plays at `bpm` quarter notes/min. */
-
 /**
  * The built timeline: ordered steps, the tempo map, and lookups. Constructed by SequenceFactory;
  * the CursorController walks it (step/seek/interpolate) and the Score queries it (duration,
  * position->time).
  */
-
 export class Sequence {
 	// Undirected tie graph (built in the constructor from tiedFrom), so getHighlighted can light a
 	// whole tie chain in both directions while any of it is sounding.
@@ -135,14 +55,14 @@ export class Sequence {
 	 * to available notes; an explicit note filter never falls back to another note. */
 	getNoteNearMs(
 		timeMs: number,
-		options: { voice?: Pick<MNote, 'part' | 'voice'> | null; note?: Note } = {},
+		opts: NoteNearMsOptions = {},
 	): { note: Note; timeMs: number } | null {
 		const positions = this.getSteps().flatMap((step) =>
 			step.active
-				.filter((note) => !options.note || note === options.note)
+				.filter((note) => !opts.note || note === opts.note)
 				.map((note) => ({ note, timeMs: step.startMs })),
 		);
-		const voice = options.voice;
+		const voice = opts.voice;
 		const preferred = voice
 			? positions.filter(({ note }) =>
 					note
@@ -220,7 +140,8 @@ export class Sequence {
 		return index === null ? 0 : (this.steps[index]?.measureIndex ?? 0);
 	}
 
-	/* The document measure index playing at `beats` (before the first onset clamps to 0). */
+	/* Which document measure is playing at `beats`, to follow a beat clock with a measure display.
+	 * A time before the first onset reads as measure 0. */
 	getMeasureIndexAtBeats(beats: number): number {
 		const index = this.getStepIndexAtBeats(beats);
 		return index === null ? 0 : (this.steps[index]?.measureIndex ?? 0);
@@ -371,4 +292,88 @@ export class Sequence {
 		}
 		return { started, sustained, stopped };
 	}
+}
+
+/* What getNoteNearMs looks for: notes of a preferred `voice`, falling back to any note when that
+ * voice has none near, or only occurrences of one `note`, with no fallback. */
+export interface NoteNearMsOptions {
+	voice?: Pick<MNote, 'part' | 'voice'> | null;
+	note?: Note;
+}
+
+/* A measure's repeat structure, as the iterator consumes it. `times` is the number of *back-jumps*
+ * (a plain repeat that plays twice is `times: 1`); a volta `repeatending`'s `times` is how many
+ * passes that ending covers. An ending can span measures, so every measure it covers carries a
+ * `repeatending` and only the run's final one sets `last`: the measure playback jumps from.
+ * `number` is the ending's FIRST pass number ("1" -> 1, "2,3" -> 2), which is what tells two
+ * adjacent volta groups apart: a run whose number is not greater than the previous run's has
+ * restarted, so it belongs to an enclosing repeat block rather than to the same group.
+ * Derived from MusicXML barlines/endings by SequenceFactory. */
+export type Jump =
+	| { type: 'repeatstart' }
+	| { type: 'repeatend'; times: number }
+	| { type: 'repeatending'; times: number; last: boolean; number: number };
+
+/* One measure in document (visual) order. `beats` is its played length in quarter-note beats (the
+ * max note end, or the meter); `tempoBpm` is the quarter-note BPM in effect at its start, or null to
+ * carry the previous (the piece starts at 120 if never set). `systemRect` is the measure's full
+ * system box: the bar's vertical span and the x it clamps to at a line end. */
+export interface MeasureInfo {
+	index: number;
+	beats: number;
+	tempoBpm: number | null;
+	jumps: Jump[];
+	systemRect: Rect;
+	/** Set on a gap measure: it plays for exactly this many ms regardless of tempo
+	 * (its `beats` are nominal: the factory maps them to gapMs via a dedicated tempo
+	 * segment) and gets a synthesized silent step spanning it. */
+	gapMs?: number;
+}
+
+/* A rendered, time-bearing note (a notation notehead or rest). A grace note appears here with the
+ * slot it plays in, taken from a neighbor that plays shorter for it (see
+ * SequenceFactory.placeGraces); tab ghosts never do. `note` is the element identity used in active
+ * sets; `tiedFrom` is the note this one continues from across a tie, so a tied continuation reads as
+ * a sustain rather than a re-attack. */
+export interface SequenceNote {
+	note: Note;
+	measureIndex: number;
+	measureBeat: number;
+	beats: number;
+	x: number;
+	tiedFrom: Note | null;
+}
+
+/* Everything the timeline is built from. A fake supplies plain values in tests; SequenceFactory
+ * builds the real one from `RawGeometry` + the parsed parts. */
+export interface SequenceInput {
+	measures: MeasureInfo[];
+	notes: SequenceNote[];
+}
+
+/* One stop in playback order: the onset of a tickable. The active set is constant across
+ * `[startBeat, endBeat)`. `x`/`glideToX` are the bar's onset position and where it glides to by the
+ * step's end (the next onset on the same system, or the measure box's right edge at a line break
+ * and for a gap);
+ * `systemRect` is its vertical span. */
+export interface Step {
+	readonly index: number;
+	readonly measureIndex: number;
+	readonly startBeat: number;
+	readonly endBeat: number;
+	readonly startMs: number;
+	readonly endMs: number;
+	readonly x: number;
+	readonly glideToX: number;
+	readonly systemRect: Rect;
+	readonly active: readonly Note[];
+}
+
+/* What changed between two cursor positions: notes to attack (a re-struck pitch shows in both
+ * `started` and `stopped`), notes held or tied through (do not re-attack), and notes released
+ * (a note tied into the next step is excluded: it keeps ringing). */
+export interface CursorTransition {
+	readonly started: readonly Note[];
+	readonly sustained: readonly Note[];
+	readonly stopped: readonly Note[];
 }

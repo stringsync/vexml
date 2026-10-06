@@ -6,7 +6,7 @@ import type { System } from './system';
 /*
  * One page of a score rendered with a paged layout: its box in score space and the systems on it.
  * toBlob draws it on a canvas of its own, at the score's pixelRatio, so a long score prints every
- * page sharp — the canvas size cap applies to a page, not the whole score. What it draws is the
+ * page sharp: the canvas size cap applies to a page, not the whole score. What it draws is the
  * engraving on opaque paper, margins included; caller layers, markers and cursors are left off.
  */
 export class Page {

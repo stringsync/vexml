@@ -1,18 +1,18 @@
-import { describe, expect, it } from 'bun:test';
-import { MDocument, MElement, type Note } from '@stringsync/mdom';
+import { beforeEach, describe, expect, it } from 'bun:test';
+import { MDocument, MElement, type Note, type Voice } from '@stringsync/mdom';
 import { ChordNoteOrder } from './chord-note-order';
 
-function required(note: Note | undefined): Note {
-	if (!note) {
-		throw new Error('missing chord member');
-	}
-	return note;
-}
-
 describe('ChordNoteOrder', () => {
+	let voice: Voice;
+
+	beforeEach(() => {
+		voice = MDocument.empty()
+			.score.addPart()
+			.addMeasure()
+			.getOrCreateVoice('1');
+	});
+
 	it('uses written position rather than sounding pitch, and preserves equal-position order', () => {
-		const document = MDocument.empty();
-		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
 		const chord = voice.addChord(
 			[
 				{ step: 'B', octave: 4, alter: 1 },
@@ -28,12 +28,9 @@ describe('ChordNoteOrder', () => {
 		]);
 		expect(chord.notes[0]).toBe(chord.lead);
 	});
-});
 
-describe('ChordNoteOrder staff positions', () => {
+	// scry-ignore simple-test-setup: each test builds a different chord (pitches differ per case), so the addChord call is the input under test, not shared setup; the shared voice is already in beforeEach.
 	it('orders cross-staff chord members by staff before pitch', () => {
-		const document = MDocument.empty();
-		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
 		const chord = voice.addChord(
 			[
 				{ step: 'C', octave: 4 },
@@ -42,9 +39,6 @@ describe('ChordNoteOrder staff positions', () => {
 			{ type: 'whole' },
 		);
 		const lowerStaff = required(chord.notes[1]);
-		if (!lowerStaff) {
-			throw new Error('missing cross-staff chord member');
-		}
 		const staff = new MElement('staff');
 		staff.setText('2');
 		lowerStaff.child('staff')?.remove();
@@ -53,8 +47,6 @@ describe('ChordNoteOrder staff positions', () => {
 	});
 
 	it('orders unpitched chord members by their displayed position', () => {
-		const document = MDocument.empty();
-		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
 		const chord = voice.addChord(
 			[
 				{ step: 'C', octave: 4 },
@@ -62,23 +54,30 @@ describe('ChordNoteOrder staff positions', () => {
 			],
 			{ type: 'whole' },
 		);
-		for (const note of chord.notes) {
-			const pitch = note.pitch;
-			if (!pitch) {
-				throw new Error('missing pitch');
-			}
-			const unpitched = new MElement('unpitched');
-			const step = new MElement('display-step');
-			step.setText(pitch.step);
-			const octave = new MElement('display-octave');
-			octave.setText(String(pitch.octave));
-			unpitched.append(step);
-			unpitched.append(octave);
-			pitch.remove();
-			note.append(unpitched);
-		}
+		toUnpitched(required(chord.notes[0]));
+		toUnpitched(required(chord.notes[1]));
 		expect(new ChordNoteOrder().of(chord.lead)).toEqual(
 			[...chord.notes].reverse(),
 		);
 	});
 });
+
+function toUnpitched(note: Note) {
+	const pitch = required(note.pitch);
+	const unpitched = new MElement('unpitched');
+	const step = new MElement('display-step');
+	step.setText(pitch.step);
+	const octave = new MElement('display-octave');
+	octave.setText(String(pitch.octave));
+	unpitched.append(step);
+	unpitched.append(octave);
+	pitch.remove();
+	note.append(unpitched);
+}
+
+function required<T>(value: T | null | undefined): T {
+	if (!value) {
+		throw new Error('missing value');
+	}
+	return value;
+}

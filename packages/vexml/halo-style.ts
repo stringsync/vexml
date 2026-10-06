@@ -14,7 +14,7 @@ export class HaloStyle implements DecorationStyle {
 		target: Decoratable,
 		color: string,
 	): void {
-		// The circle inscribed in bounds() — one source of truth for where the halo lands.
+		// The circle inscribed in bounds(): one source of truth for where the halo lands.
 		const b = this.bounds(target);
 		const radius = b.w / 2;
 		ctx.save();

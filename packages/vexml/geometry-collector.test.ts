@@ -131,7 +131,7 @@ describe('GeometryCollector', () => {
 				note: staveNote([50, 60], undefined, [
 					// A flat on the C, pushed 3px further left by the formatter.
 					modifier('Accidental', 0, LEFT, -3),
-					// A dot on the E.
+					// A dot on the E, so only the E's ink grows to the right.
 					modifier('Dot', 1, RIGHT, 1),
 					// A fermata above the chord: not on the note's line.
 					modifier('Articulation', 0, ABOVE, 0),

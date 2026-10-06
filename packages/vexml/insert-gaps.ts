@@ -5,7 +5,7 @@ import { GapInserter } from './gap-inserter';
 import { ScoreReader } from './score-reader';
 
 /*
- * Insert gap measures into a document — an ordinary edit of it, so run it inside
+ * Insert gap measures into a document: an ordinary edit of it, so run it inside
  * `document.history.edit()` once an EditingSession has turned history on. Returns the new
  * measures (the first part's) in `positions` order; render the document with
  * `gaps: [{ measure, durationMs, ... }]` naming them. Positions are read against the

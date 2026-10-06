@@ -17,12 +17,13 @@ export class FakeLyricMark implements LyricMark {
 	baselineY: number | null = null;
 	/** The fill the placer inked this syllable with, or undefined until it does. */
 	fillStyle: string | undefined;
-	verseIndex: number;
 	readonly extend: boolean;
 	private readonly width: number;
 
-	constructor(verseIndex: number, opts: FakeLyricMarkOptions) {
-		this.verseIndex = verseIndex;
+	constructor(
+		public verseIndex: number,
+		opts: FakeLyricMarkOptions,
+	) {
 		this.extend = opts.extend ?? false;
 		this.width = opts.width ?? 20;
 	}

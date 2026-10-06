@@ -39,7 +39,7 @@ export interface VoiceBuilderOptions {
 	/** The formatter's proportional-spacing exponent, shared with the layout's width
 	 * planning so measures format at the width they were planned for. */
 	softmaxFactor: number;
-	/** The per-note octave offset the score's <octave-shift> spans imply — every note
+	/** The per-note octave offset the score's <octave-shift> spans imply: every note
 	 * under one draws an octave (or two, or three) off its sounding pitch. Fixed for
 	 * the score. */
 	octaveShiftByNote: ReadonlyMap<Note, number>;
@@ -103,6 +103,8 @@ export class VoiceBuilder {
 	 * measures, so the caller resolves them once over the whole score (this only
 	 * records each chord's StaveNote in the shared `byLead` map).
 	 */
+	// scry-ignore named-options-last: stave, row, voices and clef are required inputs with no
+	// default; the settings a caller can leave out are already in opts, last.
 	buildNotes(
 		stave: Stave,
 		row: number,
@@ -139,7 +141,7 @@ export class VoiceBuilder {
 			return index === 0 ? 'up' : 'down';
 		};
 		// A mid-measure divider belongs to the measure, not to a voice, so it goes in the
-		// first voice only — a second copy in each of the others would draw the same line
+		// first voice only: a second copy in each of the others would draw the same line
 		// again at the same x.
 		const midBars: Array<{ note: BarNote; style: string }> = [];
 		// How many lyric rows the voices before this one have used. Each voice numbers its own
@@ -210,8 +212,8 @@ export class VoiceBuilder {
 		});
 
 		// Spanners that mutate notes (beams drop flags, tuplets rescale ticks) must be built
-		// before formatting. Beam GROUPING happens here — per voice, so each group keeps its
-		// voice's default stem direction — but the Beams themselves are constructed once the
+		// before formatting. Beam GROUPING happens here, per voice, so each group keeps its
+		// voice's default stem direction, but the Beams themselves are constructed once the
 		// part's other staves exist (see buildPartBeams): a group read off `beamChords` can
 		// name notes this staff never drew, and byLead only has them after those staves are
 		// built. Everything else about a beam is settled here.
@@ -258,7 +260,7 @@ export class VoiceBuilder {
 	 *
 	 * Deferred to here rather than done inside buildNotes because a voice's beams are grouped
 	 * off its FULL note list (see StaffVoice.beamChords), which on a piano part can name notes
-	 * that landed on a different stave of the same part — and byLead only holds those once
+	 * that landed on a different stave of the same part, and byLead only holds those once
 	 * that stave has been built. A beam whose notes sit on two staves is exactly the
 	 * cross-staff beam, which vexflow draws between them off each note's own stave.
 	 *
@@ -270,7 +272,7 @@ export class VoiceBuilder {
 		// halves top staff first.
 		const rowOf = new Map<StaveNote, number>();
 		// A chord split across staves draws as one StaveNote per staff, but only the half
-		// holding the chord's own lead is reachable through byLead — the other half's chord
+		// holding the chord's own lead is reachable through byLead: the other half's chord
 		// leads with a <chord/> member. Index those by voice and onset so their group can pick
 		// them up too; without it the split-off half draws a flag beside the beam.
 		const splitHalves = new Map<string, StaveNote[]>();
@@ -321,7 +323,7 @@ export class VoiceBuilder {
 					const notes = group.notes
 						.flatMap((lead) => notesByLead.get(lead) ?? [this.byLead.get(lead)])
 						.filter((note): note is StaveNote => note !== undefined);
-					// A cross-staff group takes ONE direction like any other beam — the beam
+					// A cross-staff group takes ONE direction like any other beam: the beam
 					// parked past the group's outermost stem tip, every stem reaching it,
 					// including the ones a stave away. Written <stem>s are set aside: a group's
 					// notes stem toward each other across the gap (bass up, treble down), which asks
@@ -383,7 +385,7 @@ export class VoiceBuilder {
 			p.tupletChords.length = 0;
 		}
 		// A stand-in counts its note's time on another staff, so it takes that note's tuplet
-		// too — otherwise it holds a plain 16th where the note it stands for holds a triplet.
+		// too; otherwise it holds a plain 16th where the note it stands for holds a triplet.
 		for (const [lead, ghosts] of this.standIns) {
 			const tuplet = this.byLead.get(lead)?.getTuplet();
 			if (tuplet) {
@@ -394,7 +396,7 @@ export class VoiceBuilder {
 		}
 		this.standIns.clear();
 		// Voice caches its total ticks and resolution denominator when notes are added.
-		// Tuplets just changed those ticks — on any of the part's staves, since a cross-staff
+		// Tuplets just changed those ticks, on any of the part's staves, since a cross-staff
 		// tuplet rescales notes another stave drew: rebuild the voices so ordinary beats and
 		// tuplet beats share the correct formatter tick contexts.
 		if (pending.some((p) => p.tuplets.length > 0)) {
@@ -409,7 +411,7 @@ export class VoiceBuilder {
 	/*
 	 * Build a tablature staff's notes into vexflow voices of TabNotes (fret numbers on
 	 * their strings). Tab notes carry no clef/key, no ghost-note gap filling, and no
-	 * beams — the roadmap cases are single-voice fretted lines — so this is a slimmer
+	 * beams (the roadmap cases are single-voice fretted lines), so this is a slimmer
 	 * sibling of buildNotes. The bend/vibrato stretching and drawing happen in
 	 * SystemFormatter.formatAndDraw, after the part's staves are formatted together. Hammer-ons/
 	 * pull-offs span measures, so the caller resolves them once over the whole score
@@ -423,7 +425,7 @@ export class VoiceBuilder {
 	): PendingStave {
 		const tabChords: Array<{ note: TabNote; chord: Chord }> = [];
 		const graceTabChords: Array<{ note: TabNote; chord: Chord }> = [];
-		// lead -> its tab tickable, held-note ghosts included — unlike byTabLead, which holds
+		// lead -> its tab tickable, held-note ghosts included, unlike byTabLead, which holds
 		// only struck TabNotes (buildHammerPulls reads their getPositions()). buildTuplets
 		// rescales over this map, so a tuplet that opens on a held (fretless) note still
 		// compresses the frets after it instead of letting them drift out from under the beam.

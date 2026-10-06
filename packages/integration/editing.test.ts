@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import type { Note, System, TabPosition } from '@stringsync/vexml';
 import { testing } from './setup';
 
 describe('editing', () => {
@@ -22,18 +23,14 @@ describe('editing', () => {
 				context.score.dispose();
 				let score = await render(document, container, config);
 				const original = container.querySelector('canvas')?.toDataURL();
-				const first = score.getElements().notes()[0];
-				if (!first) {
-					throw new Error('missing rendered note');
-				}
+				const first = score.getElements().notes()[0] as Note;
 				const hit = score.getElements().at({
 					x: first.rect.x + first.rect.w / 2,
 					y: first.rect.y + first.rect.h / 2,
 				});
-				if (!hit) {
-					throw new Error('missing note hit');
-				}
-				session.selectElements([hit]);
+				session.selectElements([hit] as Parameters<
+					typeof session.selectElements
+				>[0]);
 				const focused = session.getFocus();
 				const selectedByMouse = focused === first.getSources()[0];
 				const measureCount = score.getMeasureCount();
@@ -60,9 +57,9 @@ describe('editing', () => {
 				session.redo();
 				score.dispose();
 				score = await render(document, container, config);
-				for (const note of session.getSelectedElements(score.getElements())) {
+				session.getSelectedElements(score.getElements()).forEach((note) => {
 					note.color.on('#155dfc');
-				}
+				});
 				context.score = score;
 				return {
 					selectedByMouse,
@@ -119,11 +116,8 @@ describe('editing', () => {
 				const quarter = notes.findIndex(
 					(note) => note.getPitch() === null && note.getDurationBeats() === 1,
 				);
-				const rest = notes[quarter];
-				const next = notes[quarter + 1];
-				if (!rest || !next) {
-					throw new Error('missing quarter rest or its neighbor');
-				}
+				const rest = notes[quarter] as Note;
+				const next = notes[quarter + 1] as Note;
 				session.selectElements([rest]);
 				session.selectElements([next]);
 				return { focusMoved: session.getFocus() === next.getSources()[0] };
@@ -152,15 +146,9 @@ describe('editing', () => {
 				});
 				context.score = score;
 				const index = score.getElements();
-				const system = index.systems()[0];
-				if (!system) {
-					throw new Error('missing system');
-				}
+				const system = index.systems()[0] as System;
 				const hits = index.within(system.rect);
-				const fret = index.tabPositions()[0];
-				if (!fret) {
-					throw new Error('missing fret');
-				}
+				const fret = index.tabPositions()[0] as TabPosition;
 				session.selectElements([...hits, fret, fret.getNote()]);
 				return {
 					hasNotes: hits.some((element) => element.type === 'note'),
@@ -201,12 +189,11 @@ describe('editing', () => {
 				} catch (error) {
 					insideRepeat = error instanceof Error ? error.message : String(error);
 				}
-				const [intro, solo] = session.history.edit('Insert gaps', () =>
+				const inserted = session.history.edit('Insert gaps', () =>
 					insertGaps(document, [{ beforeBarIndex: 0 }, { beforeBarIndex: 4 }]),
 				);
-				if (!intro || !solo) {
-					throw new Error('insertGaps returned no measures');
-				}
+				const intro = inserted[0] as (typeof inserted)[number];
+				const solo = inserted[1] as (typeof inserted)[number];
 				const config = {
 					gaps: [
 						{ measure: intro, durationMs: 1000 },
@@ -223,10 +210,7 @@ describe('editing', () => {
 				const first = score
 					.getElements()
 					.notes()
-					.find((note) => note.getPitch() !== null);
-				if (!first) {
-					throw new Error('missing pitched note');
-				}
+					.find((note) => note.getPitch() !== null) as Note;
 				session.selectElements([first]);
 				const selected = session.getFocus() === first.getSources()[0];
 				session.setPitch({ step: 'F', octave: 5 });
@@ -287,10 +271,8 @@ describe('editing', () => {
 						gaps: [{ beforeMeasureIndex: 0, durationMs: 1000 }],
 					}),
 				);
-				const measure = document.score.parts[0]?.measures[0];
-				if (!measure) {
-					throw new Error('missing measure');
-				}
+				const measures = document.score.parts[0]?.measures ?? [];
+				const measure = measures[0] as (typeof measures)[number];
 				const named = await messageOf(() =>
 					context.render(xml, context.container, {
 						gaps: [{ measure, durationMs: 1000 }],

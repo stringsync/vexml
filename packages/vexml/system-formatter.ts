@@ -53,7 +53,7 @@ export type PendingStave = {
 	vexVoices: Voice[];
 	beams: ReturnType<SpannerBuilder['buildBeams']>;
 	// Beam groups read off this stave's voices, waiting on the rest of the part's staves
-	// before they can be built — a cross-staff run names notes another stave drew. Consumed
+	// before they can be built: a cross-staff run names notes another stave drew. Consumed
 	// (and emptied into `beams`) by VoiceBuilder.buildPartBeams.
 	beamPlans: Array<{
 		groups: BeamRun[];
@@ -65,7 +65,7 @@ export type PendingStave = {
 	tupletChords: Chord[][];
 	// Real notes only (no gap-filling ghosts), for the bottom-bound calc.
 	staveNotes: StaveNote[];
-	// StaveNotes whose lead carries a tie — they get a tie-apex collision obstacle once their
+	// StaveNotes whose lead carries a tie, so they get a tie-apex collision obstacle once their
 	// stem direction is final (stem-down ties bow up over the noteheads). See tieApexRect.
 	tiedNotes: Set<StaveNote>;
 	// Each real (non-grace) note paired with its mdom chord, so the hit index can map every
@@ -82,52 +82,13 @@ export type PendingStave = {
 	midBars: Array<{ note: BarNote; style: string }>;
 };
 
-/* The measure loop's locals the system formatter reads, snapshotted at the call. */
-export interface FormatColumn {
-	/** Which system the column belongs to — the band its lyric-drop and spill
-	 * measurements report under. */
-	systemIndex: number;
-	/** Width at the LEFT end of the measure the notes must not format into, so a centered
-	 * words directive on the first note prints clear of the opening barline (see MeasureBox). */
-	measureLeadingPad: number;
-	/** The same at the RIGHT end, so a words directive on the last note has room to print
-	 * before the barline (see MeasureBox). */
-	measureTrailingPad: number;
-}
-
-/*
- * The bookkeeping the draw pass keeps for itself while a column's notes land, handed over
- * as a narrow structural view: which system each stave was registered under, which is the
- * band the formatter's spill measurements accumulate against.
- */
-export interface SystemReporter {
-	/** Which system a stave belongs to (the column's own system while it's being built). */
-	systemOf(stave: Stave): number;
-}
-
-export interface SystemFormatterOptions {
-	/** The formatter's proportional-spacing exponent, shared with the layout's width
-	 * planning so measures format at the width they were planned for. */
-	softmaxFactor: number;
-	/** The context's default ink (see DrawPass.notationColor): stems and ledger lines
-	 * override vexflow's hardcoded styles to match it. */
-	notationColor: string;
-	/** The pass-wide lead-note registry, read to rebuild this stave's slurs for the
-	 * collision measurement. The voice builder keeps filling it; the reference is stable. */
-	byLead: ReadonlyMap<Note, StaveNote>;
-	/** Notes whose beam group spans two staves (see VoiceBuilder.buildPartBeams): their
-	 * cross-gap stems are kept out of the stave spill that sizes that gap. */
-	crossStaveNotes: ReadonlySet<StaveNote>;
-}
-
 /*
  * Justifies and draws one system's pending staves once its measure column completes: the
  * shared vexflow format that aligns same-tick notes across the column's staves, and the
- * measurement/pinning that has to ride on it — lyric baselines, technical columns, tab
+ * measurement/pinning that has to ride on it: lyric baselines, technical columns, tab
  * bend/vibrato stretching, and the collision obstacles for everything just drawn. One
  * instance lives and dies with its DrawPass.
  */
-
 export class SystemFormatter {
 	private readonly softmaxFactor: number;
 	private readonly notationColor: string;
@@ -157,7 +118,7 @@ export class SystemFormatter {
 	 * return the repeat's x (null when the measure opens with none).
 	 *
 	 * Both belong to the MEASURE rather than to one stave, so they should read as one vertical
-	 * column — but vexflow lays each stave's begin modifiers out on its own, so they shear apart
+	 * column, but vexflow lays each stave's begin modifiers out on its own, so they shear apart
 	 * whenever the glyphs ahead of them differ in width: a treble clef plus a time signature is
 	 * wider than a bare "TAB" glyph, and a grand staff can carry a different key per stave
 	 * (staves_different_keys), or a key on one stave and none on another (transpose). The widest
@@ -169,7 +130,7 @@ export class SystemFormatter {
 	 * multi-stave system's opening for nothing. The note start is unified separately, in
 	 * formatAndDraw.
 	 *
-	 * One pass for both, because Stave.format() reassigns every modifier's x — running two
+	 * One pass for both, because Stave.format() reassigns every modifier's x, and running two
 	 * alignments in sequence would have the second one's format() undo the first.
 	 */
 	alignBegModifiers(staves: readonly Stave[]): number | null {
@@ -197,7 +158,7 @@ export class SystemFormatter {
 	 * (shared) tick-context x plus its own stave's note-start x, so two things must hold
 	 * for same-tick notes to line up across staves: a single Formatter shares the tick
 	 * contexts, and every stave starts its note area at the same x. Staves are equalized
-	 * to the widest note start (a treble clef is wider than the "TAB" glyph) — otherwise
+	 * to the widest note start (a treble clef is wider than the "TAB" glyph); otherwise
 	 * the columns shear apart even when the ticks match. Returns the topmost/lowest y any
 	 * content reaches so the page can grow to fit high notes and deep ledger lines.
 	 */
@@ -224,7 +185,7 @@ export class SystemFormatter {
 			noteEndX = p.stave.getNoteEndX();
 			for (const vexVoice of p.vexVoices) {
 				vexVoice.setStave(p.stave);
-				// Voice.setStave doesn't reach the tickables — Voice.draw does that, which is
+				// Voice.setStave doesn't reach the tickables; Voice.draw does that, which is
 				// too late for a cross-staff beam: it draws with its owning stave's row, before
 				// the lower row's voices have drawn, so its notes a stave away still sit at the
 				// stave-less origin and their stems shoot off the top of the page. Setting each
@@ -278,7 +239,7 @@ export class SystemFormatter {
 		}
 		// One lyric baseline per stave row, shared by every measure of the system: a verse is a
 		// line of text, so its syllables all have to hang at the same height. Measured here as
-		// a DROP below the bottom staff line — how far this column's lowest note pushes the
+		// a DROP below the bottom staff line: how far this column's lowest note pushes the
 		// verse past LYRIC_Y_OFFSET, so a note on ledger lines below the stave doesn't print
 		// through its own syllable. The column can only see its own measure, so the drop the
 		// rest of the system needs arrives from the previous pass (see LyricPlacer);
@@ -305,11 +266,11 @@ export class SystemFormatter {
 		for (const p of pending) {
 			if (p.isTab) {
 				// setStave before stretching so each note's getAbsoluteX() is in true stave
-				// coordinates — the stretch helpers compare it against stave.getNoteEndX().
+				// coordinates: the stretch helpers compare it against stave.getNoteEndX().
 				const tabStave = p.stave as TabStave;
 				// Center each fret (and its cleared staff-line gap) under the notation
 				// notehead, which is left-anchored at the shared start x: shift the tab note
-				// area right by half a notehead. Safe post-format — the column's staves are
+				// area right by half a notehead. Safe post-format: the column's staves are
 				// already drawn before the format pass and the formatter never reads
 				// getAbsoluteX, so only the notes, their gaps, and note-anchored modifiers
 				// (bends/annotations) move.
@@ -341,7 +302,7 @@ export class SystemFormatter {
 						continue;
 					}
 					// VexFlow's Metrics hand every Stem a hardcoded strokeStyle:'black' that its
-					// drawWithStyle lays over the context ink — so stems ignore notation.color while
+					// drawWithStyle lays over the context ink, so stems ignore notation.color while
 					// the noteheads/staves/clefs it colors don't. Restyle each note's stem to match.
 					// Covers beamed stems too: the beam renders this same Stem object.
 					(note as StemmableNote).getStem()?.setStyle({
@@ -406,14 +367,14 @@ export class SystemFormatter {
 				bottom = Math.max(bottom, box.getY() + box.getH());
 				top = Math.min(top, this.noteTop(note), this.accidentalTop(note));
 				// The page still has to fit a cross-staff stem (hence `top`/`bottom` above
-				// reading it), but the gap between the staves does not — see crossStaveNotes.
+				// reading it), but the gap between the staves does not; see crossStaveNotes.
 				const heads = this.crossStaveNotes.has(note)
 					? note.getNoteHeadBounds()
 					: null;
 				const spillTop = heads ? heads.yTop : this.noteTop(note);
 				const spillBottom = heads ? heads.yBottom : box.getY() + box.getH();
 				// The note's own x span, so the gap only opens where this note actually sits
-				// over (or under) the neighbouring stave's music — not everywhere in the system.
+				// over (or under) the neighbouring stave's music, not everywhere in the system.
 				this.recordStaveSpill(
 					p,
 					new Rect(box.getX(), spillTop, box.getW(), spillBottom - spillTop),
@@ -448,14 +409,14 @@ export class SystemFormatter {
 				}
 			}
 			// A slur bows into the same band the above-stave annotations drawn next sit in,
-			// and it can't yield — it's pinned to its noteheads — so it's an obstacle, the
+			// and it can't yield: it's pinned to its noteheads, so it's an obstacle, the
 			// way a tie's apex is. The real curves are built (and drawn) in
 			// SpannerResolver.resolve; this rebuilds them over this stave's own chords just
 			// to measure the bow.
 			//
 			// ponytail: within-measure slurs only. A bow crossing a barline has one endpoint
-			// outside `noteChords`, so slurSpans never pairs it and it registers nothing —
-			// widen to the system's chords if a wrapping bow ever collides with text.
+			// outside `noteChords`, so slurSpans never pairs it and it registers nothing.
+			// Widen to the system's chords if a wrapping bow ever collides with text.
 			for (const slur of this.spanners.buildSlurs(
 				p.noteChords.map(({ chord }) => chord),
 				this.byLead,
@@ -480,14 +441,14 @@ export class SystemFormatter {
 	/*
 	 * The collision obstacle for a tab arc (a <slur>, or a <hammer-on>/<pull-off> drawn as
 	 * one): the band it bows into above the fret digits it springs from. Same problem
-	 * tieApexRect solves — the arc is a spanner drawn in the finish pass, so there's no glyph
-	 * for the above-stave annotations to clear when they're placed here — and the same
+	 * tieApexRect solves: the arc is a spanner drawn in the finish pass, so there's no glyph
+	 * for the above-stave annotations to clear when they're placed here, and the same
 	 * answer, reconstructed from the rise TabCurve.draw bows by.
 	 *
 	 * Only an arc on the top string gets one: TabCurve caps an inner-string arc under the
 	 * line above it, where no above-stave text can reach. Returns null when there's no arc.
 	 *
-	 * ponytail: registered at the notes that carry the slur marker — its two ends — not at
+	 * ponytail: registered at the notes that carry the slur marker (its two ends), not at
 	 * the notes in between, and at the arc's full height whatever it scales down to. Widen
 	 * to the drawn span if a chord symbol ever lands mid-arc.
 	 */
@@ -510,11 +471,11 @@ export class SystemFormatter {
 
 	/*
 	 * The collision obstacle for a tab <bend>: the band its arrow and label occupy above the
-	 * fret it springs from. Same problem tabArcApexRect solves — a Bend is a note modifier
+	 * fret it springs from. Same problem tabArcApexRect solves: a Bend is a note modifier
 	 * that vexflow gives no bounding box, so above-stave words placed later see nothing there
 	 * and print straight through the arrow. Reconstructed from Bend.draw's own geometry: the
 	 * arrow tips out (textLine + 1) stave spaces above the fret, with the "full"/"1/2" label
-	 * centered a text height above that. `textLine` is protected — hence the cast, as in
+	 * centered a text height above that. `textLine` is protected, hence the cast, as in
 	 * stretchBends, which is also what sets the leg widths this reads.
 	 */
 	private tabBendRect(stave: Stave, note: TabNote): Rect | null {
@@ -551,7 +512,7 @@ export class SystemFormatter {
 	 * vexflow sizes both clusters together: GraceNoteGroup.format takes the wider one's width
 	 * and adds it to the tick context's left shift AND its right shift, so a note with a group
 	 * on each side reserves that width twice. Placing a left-side modifier then subtracts the
-	 * whole reserved block — left plus right — which slides the leading graces a cluster's width
+	 * whole reserved block (left plus right), which slides the leading graces a cluster's width
 	 * off the note they lead, leaving them stranded between the two notes. Handing that width
 	 * back through the group's own spacing (the one term the left-side placement adds) lands
 	 * them against their note again; the after-graces are placed from the note's x and don't
@@ -619,7 +580,7 @@ export class SystemFormatter {
 	}
 
 	/*
-	 * The highest y a single note reaches: its top notehead, and — when it has a stem —
+	 * The highest y a single note reaches: its top notehead and, when it has a stem,
 	 * the stem tip, which a beam extends up to its beam line. Excludes modifiers on
 	 * purpose (see formatAndDraw). Falls back to the notehead bound if the stem
 	 * extents aren't available (e.g. a stemless whole note).
@@ -627,11 +588,11 @@ export class SystemFormatter {
 	private noteTop(note: StaveNote): number {
 		let top = this.noteGlyphTop(note);
 		// Clear articulations sitting above the notehead too (e.g. a staccato dot on a
-		// stem-down note), and the stacked <technical> marks — a chord's fingering column
+		// stem-down note), and the stacked <technical> marks, since a chord's fingering column
 		// reaches much further than any single glyph does. They're drawn before the
 		// harmony/words/tempo pass, so their bounding box is final; the notehead and stem
 		// alone miss them, which would let a chord symbol land on the dot and would crop the
-		// page through the top of the column. Only above-side marks raise the top —
+		// page through the top of the column. Only above-side marks raise the top;
 		// below-side ones ride the note's own bounding box instead.
 		for (const mod of note.getModifiers()) {
 			if (isTechnicalMark(mod)) {
@@ -654,7 +615,7 @@ export class SystemFormatter {
 	 * alone still slices through it.
 	 *
 	 * Deliberately NOT folded into {@link noteTop}: that also builds the note's collision
-	 * obstacle (see noteRect), which is one notehead wide and centered on the notehead — an
+	 * obstacle (see noteRect), which is one notehead wide and centered on the notehead: an
 	 * accidental sits to its LEFT, so widening the box upward there claims height at an x the
 	 * accidental never occupies, and below-stave spanners resolving against it shift for a
 	 * glyph that isn't over them.
@@ -670,7 +631,7 @@ export class SystemFormatter {
 	}
 
 	/*
-	 * The top of a note's own glyphs — its top notehead, and the stem tip when it has one.
+	 * The top of a note's own glyphs: its top notehead and the stem tip when it has one.
 	 * Modifier-free, so it is readable BEFORE the note draws (which {@link noteTop} is not,
 	 * since a modifier's bounding box is only final once it's drawn).
 	 */
@@ -684,7 +645,7 @@ export class SystemFormatter {
 	}
 
 	/*
-	 * The lowest y a single note reaches — the mirror of {@link noteTop}: its bottom
+	 * The lowest y a single note reaches, the mirror of {@link noteTop}: its bottom
 	 * notehead, and the stem tip when it stems down. Modifiers are excluded on purpose,
 	 * lyrics included: a lyric's own baseline is what this feeds, so reading it back would
 	 * ratchet the row down a little further on every render pass.
@@ -703,13 +664,13 @@ export class SystemFormatter {
 	 * a column running away from the stave, and register each one as a collision obstacle so
 	 * the above-stave text placed later lifts clear of it.
 	 *
-	 * The column starts past whichever is further out — the stave's near line or the note's
-	 * own glyphs — so a chord on ledger lines pushes its digits out with it instead of
+	 * The column starts past whichever is further out: the stave's near line or the note's
+	 * own glyphs, so a chord on ledger lines pushes its digits out with it instead of
 	 * printing them over its own noteheads. Each mark then steps one of its own row heights
 	 * further out, which is the part vexflow's Annotation stacking gets wrong (see
 	 * TechnicalAnnotation): it hands every mark on a note low in the stave the same row.
 	 *
-	 * Called after format and before draw, like LyricPlacer.pin — the notes' x/y are final by then
+	 * Called after format and before draw, like LyricPlacer.pin; the notes' x/y are final by then
 	 * but nothing has rendered, so the marks' own bounding boxes aren't readable yet and the
 	 * column is measured off the note's glyphs alone (noteGlyphTop/noteBottom).
 	 */
@@ -745,7 +706,7 @@ export class SystemFormatter {
 						y += height;
 					}
 					mark.setBaselineY(y);
-					// Pin the ink the same way LyricPlacer.pin does — a mark drawn inside a colored
+					// Pin the ink the same way LyricPlacer.pin does: a mark drawn inside a colored
 					// notehead's style would otherwise take that notehead's color.
 					mark.setStyle({ fillStyle: this.notationColor });
 					const w = mark.getWidth();
@@ -763,14 +724,14 @@ export class SystemFormatter {
 	}
 
 	/*
-	 * The collision obstacle for a note: a box from its top (noteTop — notehead ∪ beam-extended
-	 * stem tip ∪ above articulations) down to its bottom (noteBottom — the mirror), one notehead
+	 * The collision obstacle for a note: a box from its top (noteTop, notehead ∪ beam-extended
+	 * stem tip ∪ above articulations) down to its bottom (noteBottom, the mirror), one notehead
 	 * wide, centered on its laid-out x. Deliberately built from noteTop/noteBottom, NOT
 	 * note.getBoundingBox() (which unions attached modifiers and reports a bogus near-origin y
 	 * for grace groups).
 	 *
 	 * The bottom edge reaches the stem tip, not just the lowest notehead, so a stem-down beam is
-	 * an obstacle to the things that stack UNDER a stave — an ottava bracket, a pedal, a
+	 * an obstacle to the things that stack UNDER a stave: an ottava bracket, a pedal, a
 	 * below-stave words direction all sat in the band a low beam reaches into.
 	 */
 	noteRect(note: StaveNote): Rect {
@@ -783,7 +744,7 @@ export class SystemFormatter {
 	/*
 	 * The collision obstacle for a stem-down note's tie: the band the tie ribbon bows up into,
 	 * from its reconstructed apex (TIE_APEX_RISE above the top notehead) down to that notehead.
-	 * The tie is a separate spanner drawn later, so there's no glyph to measure — this lets an
+	 * The tie is a separate spanner drawn later, so there's no glyph to measure: this lets an
 	 * annotation clear the arc the same way it clears a notehead.
 	 */
 	private tieApexRect(note: StaveNote): Rect {
@@ -799,13 +760,13 @@ export class SystemFormatter {
 
 	/*
 	 * VexFlow draws a bend arrow at a fixed ~8px width. A guitar bend reads as sliding
-	 * into the next note, so stretch each so its arrow reaches the next note — or the
+	 * into the next note, so stretch each so its arrow reaches the next note, or the
 	 * bar's end if it's the last note (same span as stretchVibratos). The arrow draws
 	 * from getAbsoluteX() + width + 2 + 3 (TabNote RIGHT modifier x, +3 in Bend.draw),
 	 * mirrored here (the modifier's own x isn't positioned until draw). getAbsoluteX()
-	 * is in stave coordinates only because formatAndDraw setStave's the notes first — else
+	 * is in stave coordinates only because formatAndDraw setStave's the notes first; else
 	 * it's stave-relative and the last note's span to getNoteEndX overshoots off the page.
-	 * Bend.draw uses each phrase leg's drawWidth, which is protected — hence the cast. A
+	 * Bend.draw uses each phrase leg's drawWidth, which is protected, hence the cast. A
 	 * bend-and-release (UP+DOWN) peaks at the midpoint and returns, so split across legs.
 	 */
 	private stretchBends(stave: TabStave, voices: Voice[]): void {
@@ -839,7 +800,7 @@ export class SystemFormatter {
 	/*
 	 * VexFlow's Vibrato draws a fixed 20px wavy line trailing the fret. A real vibrato
 	 * sustains for the note's full sounding length, so stretch each to span up to the
-	 * next note — or the bar's end if it's the last note. Widths depend on the formatted
+	 * next note, or the bar's end if it's the last note. Widths depend on the formatted
 	 * x positions, so this runs after formatToStave: set each Vibrato's width from the
 	 * fret's right edge to the next note's x (or the stave's note-end x). The Vibrato
 	 * draws from getAbsoluteX() + width + 2 (TabNote.getModifierStartXY for RIGHT), mirrored
@@ -870,7 +831,7 @@ export class SystemFormatter {
 	 * each tab grace group right so its frets sit under the notehead: by the notation grace
 	 * group's own left reservation (its width + GRACE_GROUP_SPACING_STAVE) minus the tab
 	 * group's (note.getMetrics().modLeftPx). Match the notation group by the shared tick
-	 * context — every stave formatted together shares one per tick. Deliberately NOT the tick
+	 * context: every stave formatted together shares one per tick. Deliberately NOT the tick
 	 * context's modLeftPx: that's the max across the stave, so a main note with its OWN
 	 * accidental (a chord) inflates it and overshoots the grace shift. With no notation
 	 * counterpart (tab-only score) nothing moves. Runs before draw, which reads
@@ -904,7 +865,7 @@ export class SystemFormatter {
 	 * absolute canvas y; they're stored relative to the stave so rows from different
 	 * measures and systems (drawn at different y) accumulate into one per-row worst case.
 	 *
-	 * ponytail: only notation notes are measured — a tab row reports its staff lines alone,
+	 * ponytail: only notation notes are measured; a tab row reports its staff lines alone,
 	 * since its frets sit on them. Feed the tab bend/annotation extents in here too if one
 	 * ever reaches the stave above.
 	 */
@@ -973,4 +934,42 @@ export class SystemFormatter {
 			GraceNoteGroup.CATEGORY,
 		);
 	}
+}
+
+/* The measure loop's locals the system formatter reads, snapshotted at the call. */
+export interface FormatColumn {
+	/** Which system the column belongs to: the band its lyric-drop and spill
+	 * measurements report under. */
+	systemIndex: number;
+	/** Width at the LEFT end of the measure the notes must not format into, so a centered
+	 * words directive on the first note prints clear of the opening barline (see MeasureBox). */
+	measureLeadingPad: number;
+	/** The same at the RIGHT end, so a words directive on the last note has room to print
+	 * before the barline (see MeasureBox). */
+	measureTrailingPad: number;
+}
+
+/*
+ * The bookkeeping the draw pass keeps for itself while a column's notes land, handed over
+ * as a narrow structural view: which system each stave was registered under, which is the
+ * band the formatter's spill measurements accumulate against.
+ */
+export interface SystemReporter {
+	/** Which system a stave belongs to (the column's own system while it's being built). */
+	systemOf(stave: Stave): number;
+}
+
+export interface SystemFormatterOptions {
+	/** The formatter's proportional-spacing exponent, shared with the layout's width
+	 * planning so measures format at the width they were planned for. */
+	softmaxFactor: number;
+	/** The context's default ink (see DrawPass.notationColor): stems and ledger lines
+	 * override vexflow's hardcoded styles to match it. */
+	notationColor: string;
+	/** The pass-wide lead-note registry, read to rebuild this stave's slurs for the
+	 * collision measurement. The voice builder keeps filling it; the reference is stable. */
+	byLead: ReadonlyMap<Note, StaveNote>;
+	/** Notes whose beam group spans two staves (see VoiceBuilder.buildPartBeams): their
+	 * cross-gap stems are kept out of the stave spill that sizes that gap. */
+	crossStaveNotes: ReadonlySet<StaveNote>;
 }

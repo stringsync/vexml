@@ -11,19 +11,19 @@ import { FAR } from './constants';
  *
  * Not everything is movable. Register fixed things (noteheads, stems, ties) as obstacles;
  * only nudge the things that can yield (chord symbols, words, chord diagrams). The detector
- * reports the TYPE of each collision — the other element's `kind` plus the axis/direction of
- * the minimum separation (`mtv`) — so a caller can pick the right fix. The constrained
+ * reports the TYPE of each collision: the other element's `kind` plus the axis/direction of
+ * the minimum separation (`mtv`), so a caller can pick the right fix. The constrained
  * resolvers below (`liftClear`, `pushRightOf`) encode the per-kind policy directly: text
  * only ever lifts up, diagrams only push right, so a raw minimum-translation can't shove a
  * chord symbol sideways off the note it labels.
  *
- * ANY new "move this so it clears that" logic should go through here — do not add new bespoke
+ * ANY new "move this so it clears that" logic should go through here. Do not add new bespoke
  * magic-offset clearance code. See the "Collisions and nudges" section of AGENTS.md.
  */
 
 export type CollisionKind = 'note' | 'tie' | 'annotation' | 'diagram';
 /*
- * `band` groups obstacles that belong together — the renderer uses one per stave row. A
+ * `band` groups obstacles that belong together: the renderer uses one per stave row. A
  * constrained resolve can then ignore the other bands, so an above-stave annotation stacks
  * over its own stave's music instead of climbing over the part above it (which, since every
  * part's annotations share the lead note's x, would otherwise cascade the whole system's
@@ -43,7 +43,7 @@ type Collision = {
 
 /* How a rect is cleared of obstacles. Both narrow which obstacles count. */
 export interface ClearOptions {
-	/* Restricts which obstacle kinds count — e.g. above-stave text clears notes/ties/other
+	/* Restricts which obstacle kinds count, e.g. above-stave text clears notes/ties/other
 	 * text but deliberately ignores diagrams (which draw on top). */
 	kinds?: CollisionKind[];
 	/* Restricts the move to obstacles in that band (plus bandless ones); see Collidable. */
@@ -167,7 +167,7 @@ export class CollisionResolver {
 	 * its y-band. Enforces the gap against a neighbor that's merely close (not yet
 	 * overlapping), reproducing the running-cursor spacing chord diagrams used. Iterates to
 	 * a fixed point: the push can land the rect on a further-right obstacle the original
-	 * probe (which only reaches the rect's right edge) never saw — three crowded diagrams
+	 * probe (which only reaches the rect's right edge) never saw: three crowded diagrams
 	 * would leave the third printed through the second. Each pass extends the probe to the
 	 * new right edge; the target only ever grows, so it terminates.
 	 */
@@ -192,7 +192,7 @@ export class CollisionResolver {
 	/*
 	 * Shift `rect` horizontally so it sits within `bounds` (the canvas), pulling a box that
 	 * overruns the right edge back inside, or pushing one off the left edge back right. Only
-	 * moves along x — vertical clipping is handled by growing the crop, not nudging. The left
+	 * moves along x; vertical clipping is handled by growing the crop, not nudging. The left
 	 * edge wins if the rect is wider than the available span. `margin` insets both edges.
 	 */
 	nudgeInsideX(rect: Rect, bounds: Rect, margin: number): Rect {
@@ -200,7 +200,7 @@ export class CollisionResolver {
 		const right = bounds.right - margin;
 		let dx = 0;
 		if (rect.right > right) {
-			dx = right - rect.right; // pull left
+			dx = right - rect.right;
 		}
 		if (rect.x + dx < left) {
 			dx = left - rect.x; // but never past the left edge
@@ -210,7 +210,7 @@ export class CollisionResolver {
 
 	/*
 	 * Registered items that escape `viewport` (the rendered/crop rectangle), with which edges
-	 * they cross — the "no-man's land" where content gets clipped. The caller decides whether
+	 * they cross: the "no-man's land" where content gets clipped. The caller decides whether
 	 * to grow the crop or lift the element. Independent of element-vs-element overlap.
 	 */
 	escaping(viewport: Rect): { item: Collidable; edges: Edge[] }[] {

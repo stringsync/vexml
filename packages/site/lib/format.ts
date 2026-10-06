@@ -1,6 +1,6 @@
 import { type Element, Note, TabPosition } from '@stringsync/vexml';
 
-// One-line summary of the hovered element for the tooltip.
+/** The hover tooltip's text for an element, kept to one line. */
 export function describe(target: Element): string {
 	if (target instanceof Note) {
 		const beats = target.getDurationBeats();

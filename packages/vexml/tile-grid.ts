@@ -20,6 +20,8 @@ export class TileGrid {
 	private readonly lists: Filed[][];
 	private seq = 0;
 
+	// scry-ignore named-options-last: width, height, tileSize and origin are the grid's geometry,
+	// values the caller measures, not choices about how the grid behaves.
 	constructor(
 		readonly width: number,
 		readonly height: number,

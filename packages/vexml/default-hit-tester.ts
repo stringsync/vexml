@@ -4,14 +4,14 @@ import type { Element } from './element';
 import type { HitTester } from './hit-tester';
 
 /* The production HitTester over the renderer's QuadTree (its collision broad-phase doubles as
- * the index — elements have boxes, so they're valid items). */
+ * the index: elements have boxes, so they're valid items). */
 
 export class DefaultHitTester implements HitTester {
 	constructor(private readonly tree: QuadTree<Element>) {}
 
 	/*
 	 * The element under `point`: a foreground glyph (note / fret) beats the measure background it
-	 * sits on, and among same-tier overlaps the tighter (smaller-area) box wins — so a notehead
+	 * sits on, and among same-tier overlaps the tighter (smaller-area) box wins, so a notehead
 	 * is picked over the measure, and the nearer notehead of a chord over its neighbor.
 	 */
 	hitTest(point: { x: number; y: number }): Element | null {
@@ -49,7 +49,7 @@ export class DefaultHitTester implements HitTester {
 	}
 
 	// Topmost-first: a foreground glyph (note/fret) before the measure it sits on, and within a tier
-	// the tighter (smaller-area) box first — the ordering hitTest picks its single winner from.
+	// the tighter (smaller-area) box first: the ordering hitTest picks its single winner from.
 	private byPriority(a: Element, b: Element): number {
 		const fa = a.type !== 'measure';
 		const fb = b.type !== 'measure';

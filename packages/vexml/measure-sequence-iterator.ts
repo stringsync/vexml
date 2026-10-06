@@ -6,7 +6,7 @@ type VoltaEnding = {
 	startIndex: number;
 	endIndex: number;
 	times: number;
-	/* The ending's own `<ending number>`, as its first pass — see Jump. Only used to spot the
+	/* The ending's own `<ending number>`, as its first pass: see Jump. Only used to spot the
 	 * restart that separates one volta group from the next. */
 	number: number;
 	startPass: number;

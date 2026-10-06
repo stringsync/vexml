@@ -1,6 +1,5 @@
 import { AsyncDisposer, type AsyncResource } from 'webappwiz/disposable';
 import type { Browser } from './browser';
-import { PlaywrightBrowser } from './playwright-browser';
 import type { Tab } from './tab';
 
 /** One engine's page: the tab shell its renders mount into, and the classic scripts
@@ -75,42 +74,3 @@ export class TabPool implements AsyncResource {
 		}
 	}
 }
-
-/**
- * The shared machinery behind every factory: one browser process for the whole run
- * (launching a second Chromium in the same run is flaky in Docker, where its teardown
- * hangs past hook timeouts) and one pool per engine page, all created lazily on the
- * first render. renderers.disposeAsync() tears it all down.
- */
-export class TabPools implements AsyncResource {
-	private browser: Browser | null = null;
-	private readonly pools = new Map<string, TabPool>();
-
-	/** The pool for `key`'s page, created against the shared browser on first use. */
-	pool(key: string, spec: PageSpec): TabPool {
-		let existing = this.pools.get(key);
-		if (!existing) {
-			this.browser ??= new PlaywrightBrowser();
-			existing = new TabPool(this.browser, spec);
-			this.pools.set(key, existing);
-		}
-		return existing;
-	}
-
-	/** Close the pooled tabs and the shared browser, and forget the pools. Rendering
-	 * after this lazily starts fresh machinery. */
-	async disposeAsync(): Promise<void> {
-		const pools = [...this.pools.values()];
-		const browser = this.browser;
-		this.pools.clear();
-		this.browser = null;
-		for (const pool of pools) {
-			await pool.disposeAsync();
-		}
-		await browser?.disposeAsync();
-	}
-}
-
-/** The one set of pools for the run: every renderer borrows its tabs from here, and
- * renderers.disposeAsync() releases it. */
-export const tabPools = new TabPools();

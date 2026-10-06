@@ -57,7 +57,7 @@ import { ScoreFit } from '@/lib/score-fit';
 import { SiteModel } from '@/lib/site-model';
 
 // Vite reads the fixtures straight from packages/integration at build time (fs.allow:
-// ['../..'] in vite.config permits it) and hands us the file list — no symlink or manifest.
+// ['../..'] in vite.config permits it) and hands us the file list: no symlink or manifest.
 // Keyed by basename, each value lazily loads the file's raw text.
 const loaders: Record<string, () => Promise<string>> = {};
 for (const [path, load] of Object.entries(
@@ -83,41 +83,6 @@ const OVERFLOWS: ReadonlyArray<SegmentedOption<SystemOverflow>> = [
 	{ value: 'allow', label: 'allow' },
 	{ value: 'widen', label: 'widen' },
 ];
-
-// Hoisted, not inline: useResource rebuilds when the factory's identity changes, so an arrow
-// written at the call site would build (and dispose) a fresh model on every render.
-// Render-pure, as useResource requires: SiteModel's constructor wires in-memory state and its own
-// dispatchers, and acquires nothing that needs cleanup (the AudioContext is built lazily).
-const buildModel = () => new SiteModel(fixtures, localStorage);
-
-// What the component reads off the model. Every field is a primitive or a stable reference, so
-// useReactive's shallow comparison decides re-renders.
-const projection = (model: SiteModel) => ({
-	text: model.document.text,
-	input: model.document.input,
-	format: model.document.format,
-	fixture: model.document.fixture,
-	held: model.document.held,
-	error: model.error,
-	initialized: model.initialized,
-	rendering: model.rendering,
-	session: model.session,
-	applied: model.config.applied,
-	renderMs: model.config.renderMs,
-	debouncing: model.config.debouncing || model.document.debouncing,
-	config: model.config.live,
-	canReset: model.config.canReset(),
-	instrumentName: model.instrument.name,
-	muted: model.instrument.muted,
-	loupe: model.loupe.values,
-	loupeCanReset: model.loupe.canReset(),
-	playing: model.session?.playing ?? false,
-	loading: model.isPlayPending(),
-	timeMs: model.session?.timeMs ?? 0,
-	durationMs: model.session?.durationMs ?? 0,
-	activeVoice: model.session?.editingVoices.getValue() ?? '',
-	mode: model.currentMode,
-});
 
 export default function App() {
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -834,7 +799,7 @@ export default function App() {
 							{input != null && (
 								// vexml appends its managed canvas here; React manages only this div's
 								// attributes, never its children. vexml sizes the score to fit this container
-								// (scaling down when narrow, never past its engraved width) and centers it — no
+								// (scaling down when narrow, never past its engraved width) and centers it: no
 								// CSS needed here.
 								<div
 									ref={containerRef}
@@ -843,8 +808,8 @@ export default function App() {
 									role="application"
 									aria-label="Score"
 									// invisible (not hidden) until initialized so the container keeps its
-									// width — the canvas fits against it and would fit against 0 if removed.
-									// Panoramic is the horizontal scroll box itself — vexml's ScrollController
+									// width: the canvas fits against it and would fit against 0 if removed.
+									// Panoramic is the horizontal scroll box itself: vexml's ScrollController
 									// scrolls this container either way, and the measured cap already ends it
 									// above the player, so the scrollbar lands somewhere reachable. The card
 									// wraps the panorama rather than filling the space: w-fit hugs the music
@@ -893,4 +858,43 @@ export default function App() {
 			</main>
 		</div>
 	);
+}
+
+// Hoisted, not inline: useResource rebuilds when the factory's identity changes, so an arrow
+// written at the call site would build (and dispose) a fresh model on every render.
+// Render-pure, as useResource requires: SiteModel's constructor wires in-memory state and its own
+// dispatchers, and acquires nothing that needs cleanup (the AudioContext is built lazily).
+function buildModel() {
+	return new SiteModel(fixtures, localStorage);
+}
+
+// What the component reads off the model. Every field is a primitive or a stable reference, so
+// useReactive's shallow comparison decides re-renders.
+function projection(model: SiteModel) {
+	return {
+		text: model.document.text,
+		input: model.document.input,
+		format: model.document.format,
+		fixture: model.document.fixture,
+		held: model.document.held,
+		error: model.error,
+		initialized: model.initialized,
+		rendering: model.rendering,
+		session: model.session,
+		applied: model.config.applied,
+		renderMs: model.config.renderMs,
+		debouncing: model.config.debouncing || model.document.debouncing,
+		config: model.config.live,
+		canReset: model.config.canReset(),
+		instrumentName: model.instrument.name,
+		muted: model.instrument.muted,
+		loupe: model.loupe.values,
+		loupeCanReset: model.loupe.canReset(),
+		playing: model.session?.playing ?? false,
+		loading: model.isPlayPending(),
+		timeMs: model.session?.timeMs ?? 0,
+		durationMs: model.session?.durationMs ?? 0,
+		activeVoice: model.session?.editingVoices.getValue() ?? '',
+		mode: model.currentMode,
+	};
 }

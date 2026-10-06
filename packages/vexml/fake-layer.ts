@@ -8,7 +8,7 @@ export interface FakeLayerOptions {
 
 /* Fake fulfilling the Layer seam (preferred over mocks); records its disposal and the placement it
  * was created with, and paints onto a RecordingContext a test can read back through `recording`.
- * Test-only — excluded from the published package via package.json "files". */
+ * Test-only, excluded from the published package via package.json "files". */
 export class FakeLayer implements Layer {
 	readonly kind: LayerKind;
 	readonly zIndex: number | undefined;

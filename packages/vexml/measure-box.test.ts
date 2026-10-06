@@ -7,6 +7,28 @@ import type { Measure } from './measure';
 import { MeasureBox } from './measure-box';
 import { System } from './system';
 
+describe('MeasureBox', () => {
+	it('exposes its printed number, stable index, and system', () => {
+		const { box, system } = fixture();
+		expect(box.getNumber()).toBe('1');
+		expect(box.getIndex()).toBe(0);
+		expect(box.type).toBe('measure');
+		expect(box.getSystem()).toBe(system);
+		expect(system.getMeasureBoxes()).toEqual([box]);
+	});
+
+	it('lists the mdom measures it spans as its sources', () => {
+		const { box, mmeasure } = fixture();
+		expect(box.getSources()).toEqual([mmeasure]);
+	});
+
+	it('is neither highlightable nor playable in v1', () => {
+		const { box } = fixture();
+		expect(isHighlightable(box)).toBe(false);
+		expect(isPlayable(box)).toBe(false);
+	});
+});
+
 /* One part, one measure, one note: the smallest score a MeasureBox can point back at. */
 function fixture() {
 	const mmeasure = MDocument.empty()
@@ -32,25 +54,3 @@ function fixture() {
 	boxes.push(box);
 	return { box, system, mmeasure };
 }
-
-describe('MeasureBox', () => {
-	it('exposes its printed number, stable index, and system', () => {
-		const { box, system } = fixture();
-		expect(box.getNumber()).toBe('1');
-		expect(box.getIndex()).toBe(0);
-		expect(box.type).toBe('measure');
-		expect(box.getSystem()).toBe(system);
-		expect(system.getMeasureBoxes()).toEqual([box]);
-	});
-
-	it('getSources returns the mdom measures it spans', () => {
-		const { box, mmeasure } = fixture();
-		expect(box.getSources()).toEqual([mmeasure]);
-	});
-
-	it('is neither highlightable nor playable in v1', () => {
-		const { box } = fixture();
-		expect(isHighlightable(box)).toBe(false);
-		expect(isPlayable(box)).toBe(false);
-	});
-});

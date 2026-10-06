@@ -21,7 +21,9 @@ export class SelectionOverlay implements EditingView {
 	private readonly color = new ColorStyle();
 	constructor(
 		private readonly layer: Layer,
-		private readonly options: SelectionOverlayOptions = {},
+		// scry-ignore named-options-last: SelectionOverlay is published, and callers pass focusLayer
+		// third; moving it into opts would break `new SelectionOverlay(layer, opts, focusLayer)`.
+		private readonly opts: SelectionOverlayOptions = {},
 		private readonly focusLayer: Layer = layer,
 	) {}
 
@@ -51,7 +53,7 @@ export class SelectionOverlay implements EditingView {
 		}
 		this.previousFocus = [];
 		ctx.save();
-		const color = this.options.color ?? '#155dfc';
+		const color = this.opts.color ?? '#155dfc';
 		ctx.fillStyle = color;
 		ctx.globalAlpha = 0.1;
 		const regions = state.marquee
@@ -86,7 +88,7 @@ export class SelectionOverlay implements EditingView {
 					this.halo.drawOutline(
 						foreground,
 						element,
-						this.options.focusColor ?? color,
+						this.opts.focusColor ?? color,
 					);
 					this.previousFocus.push(this.halo.bounds(element));
 				}

@@ -34,6 +34,12 @@ import { SiteEditingBindings } from './site-editing-bindings';
 
 export type ScoreMode = 'view' | 'edit';
 
+/* Where a session finds the instrument to sound notes on, read at each note: the user can switch
+ * instruments while a score is open. Null when there is none to play. */
+export interface InstrumentSource {
+	current(): Instrument | null;
+}
+
 type ScoreSessionEvents = {
 	/* Anything a component reads has moved: time, playing, selection, duration. */
 	changed: undefined;
@@ -79,7 +85,6 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	// CSS px per score px: the score shrinks to fit a narrow container, and the playhead and knob
 	// are sized to hold their on-screen size through it.
 	private scale = 1;
-	mode: ScoreMode;
 	timeMs = 0;
 	playing = false;
 	// Play was pressed but the instrument is still loading, so the clock has not started.
@@ -115,12 +120,11 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	constructor(
 		readonly score: Score,
 		private readonly container: HTMLDivElement,
-		private readonly instrument: () => Instrument | null,
+		private readonly instrument: InstrumentSource,
 		readonly editingVoices: EditingVoices,
 		private readonly loupeSettings: LoupeSettings,
-		mode: ScoreMode = 'view',
+		public mode: ScoreMode,
 	) {
-		this.mode = mode;
 		this.durationMs = score.getDurationMs();
 		this.disposer.use(this.dispatcher);
 		this.disposer.use(this.loop);
@@ -496,7 +500,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	 * synchronously, so that its resume lands inside the user's click.
 	 */
 	private begin(): void {
-		const instrument = this.instrument();
+		const instrument = this.instrument.current();
 		// Already loaded: start now, so the spinner never flashes.
 		if (!instrument || instrument.isLoaded()) {
 			this.start();
@@ -552,7 +556,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			voice.dispose();
 		}
 		this.voices.clear();
-		this.instrument()?.stopAll();
+		this.instrument.current()?.stopAll();
 		this.dispatcher.dispatch('changed');
 	}
 
@@ -683,7 +687,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	// Attack one sounding note, registering its voice. No-op if already voiced, so a re-attack of a
 	// still-sounding note is skipped.
 	private attack(n: Note): void {
-		const instrument = this.instrument();
+		const instrument = this.instrument.current();
 		const pitch = n.getPitch();
 		if (!instrument || !pitch || this.voices.has(n)) {
 			return;

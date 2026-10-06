@@ -16,43 +16,6 @@ import type { PartGroup, ScoreReader } from './score-reader';
 import type { StavePlan } from './stave-plan';
 
 /*
- * The stroke pattern of each <bar-style> vexflow has no type for, as [offset, width] pairs
- * measured from the barline's x — the same geometry vexflow's own Barline uses, where a thin
- * bar is 1px at x and a thick one is 3px at x-2, so a custom style sits flush with the plain
- * dividers around it. `dash` turns the stroke into a broken line ([on, off] lengths).
- *
- * 'tick' and 'short' are the abbreviated dividers: both are single thin strokes that cover
- * only part of the stave height, so they carry a `span` in staff-space units measured down
- * from the top line — a tick straddles the top line, a short one fills the middle two spaces.
- */
-const CUSTOM_BAR_STYLES: Record<
-	string,
-	{
-		bars: Array<[offset: number, width: number]>;
-		dash?: [number, number];
-		span?: [from: number, to: number];
-	}
-> = {
-	dotted: { bars: [[0, 1]], dash: [1, 3] },
-	dashed: { bars: [[0, 1]], dash: [4, 4] },
-	heavy: { bars: [[-2, 3]] },
-	'heavy-light': {
-		bars: [
-			[-5, 3],
-			[0, 1],
-		],
-	},
-	'heavy-heavy': {
-		bars: [
-			[-6, 3],
-			[-2, 3],
-		],
-	},
-	tick: { bars: [[0, 1]], span: [-0.5, 0.5] },
-	short: { bars: [[0, 1]], span: [1, 3] },
-};
-
-/*
  * One measure column's connector inputs, snapshotted from the measure loop at each call:
  * where the column sits, the system staves it spans, and the repeat/bar-style state
  * resolved for its measure.
@@ -81,26 +44,6 @@ export interface ConnectorColumn {
 	 * from one part's top stave to another's bottom. Sparse: a part with no measure here
 	 * has no entry. */
 	partStaves: ReadonlyArray<{ top: Stave; bottom: Stave } | undefined>;
-}
-
-export interface ConnectorDrawerOptions {
-	/** The score's parts, in render order. */
-	parts: Part[];
-	/** The <part-group> spans from the <part-list>, outermost first. Fixed for the score. */
-	partGroups: PartGroup[];
-	/** Part boundaries a barline must not run across (<group-barline>no</group-barline>).
-	 * Empty for every score that doesn't ask, which is nearly all of them. */
-	barlineBreaks: ReadonlySet<number>;
-	/** Which kinds of stave the render shows, forwarded to every reader query so the
-	 * connectors agree with the stave rows actually drawn. */
-	totalStaves: number;
-	/** The first system's reserved left indents (see ScoreLayout): the whole label column,
-	 * and the inner band the part labels print in — group names go outside that. */
-	labelIndent: number;
-	partLabelIndent: number;
-	labelFont: string;
-	notationColor: string;
-	textColor: string;
 }
 
 /*
@@ -148,7 +91,7 @@ export class ConnectorDrawer {
 				this.drawSystemStart(column);
 			}
 			// A repeat's bars run the full height of the system like any other barline, but its
-			// dots belong to each stave — and no connector type draws dots. So each stave draws
+			// dots belong to each stave, and no connector type draws dots. So each stave draws
 			// the whole sign itself and a bold-double connector retraces just the bars: vexflow
 			// gives it the same geometry it gives a repeat barline, so it lands exactly over the
 			// per-stave bars and fills the gaps between staves.
@@ -177,7 +120,7 @@ export class ConnectorDrawer {
 				return;
 			}
 			// ponytail: on a MULTI-stave system only light-light and light-heavy change the
-			// connector — StaveConnector's own vocabulary is thin / thinDouble / boldDoubleRight,
+			// connector: StaveConnector's own vocabulary is thin / thinDouble / boldDoubleRight,
 			// with no dotted, dashed or heavy member, so the exotic styles fall back to the plain
 			// line there. Single-stave scores (where these styles actually show up) get the full
 			// vocabulary via drawCustomBarline; widen this if a multi-stave fixture needs it.
@@ -256,7 +199,7 @@ export class ConnectorDrawer {
 	}
 
 	/*
-	 * The vertical runs a measure's barline connector is drawn in — one per unbroken stretch of
+	 * The vertical runs a measure's barline connector is drawn in: one per unbroken stretch of
 	 * parts (see barlineBreaks), which by default means one run per part. A run always spans
 	 * whole parts: a part's own staves are joined by its barline, which is what the brace on a
 	 * grand staff means. An ungrouped single-part system has no breaks and yields one run.
@@ -290,7 +233,7 @@ export class ConnectorDrawer {
 			runs.push({ top, bottom });
 		}
 		// A run of one stave draws nothing useful (a connector needs two), but the stave's own
-		// end barline already covers it — so the empty case is correct, not a gap.
+		// end barline already covers it, so the empty case is correct, not a gap.
 		return runs;
 	}
 
@@ -309,7 +252,7 @@ export class ConnectorDrawer {
 	}
 
 	/* Paint one <bar-style> vexflow has no Barline type for, as a vertical stroke at `x` on
-	 * `stave` (see CUSTOM_BAR_STYLES). A style vexflow does draw is a no-op here — it was
+	 * `stave` (see CUSTOM_BAR_STYLES). A style vexflow does draw is a no-op here: it was
 	 * already drawn with the stave, or with the mid-measure BarNote standing in its place. */
 	paintBarStyle(stave: Stave, x: number, barStyle: string): void {
 		const style = CUSTOM_BAR_STYLES[barStyle];
@@ -354,7 +297,7 @@ export class ConnectorDrawer {
 	 * insetting its bar/curl glyphs a little further and overhanging the curls past the top and
 	 * bottom staff lines; a brace reaches further left but stays within the staff lines
 	 * vertically. Returns null away from a system start, or when the only connector is the plain
-	 * left line (which sits on measureX — already the box's left edge).
+	 * left line (which sits on measureX, already the box's left edge).
 	 */
 	connectorExtent(column: ConnectorColumn): {
 		left: number;
@@ -382,7 +325,7 @@ export class ConnectorDrawer {
 	/*
 	 * Draw the `<part-group>` symbols at a system start: one connector per group, from its
 	 * first member part's top stave down to its last member's bottom stave. Nested groups
-	 * step further left of the system so an inner symbol doesn't print over its outer one —
+	 * step further left of the system so an inner symbol doesn't print over its outer one:
 	 * the same "the connector's x comes from its top stave" nudge the notation+tab bracket
 	 * uses, just repeated per depth.
 	 *
@@ -414,7 +357,7 @@ export class ConnectorDrawer {
 	/*
 	 * Print each `<part-group>`'s `<group-name>` at the first system's start, in the column of
 	 * the left indent that sits OUTSIDE the part labels (see ScoreLayout.partLabelIndent) and
-	 * vertically centered on the parts the group spans — the section heading a bracket in an
+	 * vertically centered on the parts the group spans: the section heading a bracket in an
 	 * orchestral score carries ("Oboe through Clarinet" over its three staves).
 	 *
 	 * Right-aligned like the part labels, so with several groups every name ends at the same x.
@@ -447,7 +390,7 @@ export class ConnectorDrawer {
 	}
 
 	/* One half of a repeat sign carried down the system. `xShift` moves a left-sided connector
-	 * off the stave's left edge — an opening repeat prints after the clef and signatures, and a
+	 * off the stave's left edge: an opening repeat prints after the clef and signatures, and a
 	 * back-to-back one prints at the measure's right edge. */
 	private drawRepeatConnector(
 		column: ConnectorColumn,
@@ -463,4 +406,61 @@ export class ConnectorDrawer {
 			.setContext(this.context)
 			.draw();
 	}
+}
+
+/*
+ * The stroke pattern of each <bar-style> vexflow has no type for, as [offset, width] pairs
+ * measured from the barline's x: the same geometry vexflow's own Barline uses, where a thin
+ * bar is 1px at x and a thick one is 3px at x-2, so a custom style sits flush with the plain
+ * dividers around it. `dash` turns the stroke into a broken line ([on, off] lengths).
+ *
+ * 'tick' and 'short' are the abbreviated dividers: both are single thin strokes that cover
+ * only part of the stave height, so they carry a `span` in staff-space units measured down
+ * from the top line: a tick straddles the top line, a short one fills the middle two spaces.
+ */
+const CUSTOM_BAR_STYLES: Record<
+	string,
+	{
+		bars: Array<[offset: number, width: number]>;
+		dash?: [number, number];
+		span?: [from: number, to: number];
+	}
+> = {
+	dotted: { bars: [[0, 1]], dash: [1, 3] },
+	dashed: { bars: [[0, 1]], dash: [4, 4] },
+	heavy: { bars: [[-2, 3]] },
+	'heavy-light': {
+		bars: [
+			[-5, 3],
+			[0, 1],
+		],
+	},
+	'heavy-heavy': {
+		bars: [
+			[-6, 3],
+			[-2, 3],
+		],
+	},
+	tick: { bars: [[0, 1]], span: [-0.5, 0.5] },
+	short: { bars: [[0, 1]], span: [1, 3] },
+};
+
+export interface ConnectorDrawerOptions {
+	/** The score's parts, in render order. */
+	parts: Part[];
+	/** The <part-group> spans from the <part-list>, outermost first. Fixed for the score. */
+	partGroups: PartGroup[];
+	/** Part boundaries a barline must not run across (<group-barline>no</group-barline>).
+	 * Empty for every score that doesn't ask, which is nearly all of them. */
+	barlineBreaks: ReadonlySet<number>;
+	/** Which kinds of stave the render shows, forwarded to every reader query so the
+	 * connectors agree with the stave rows actually drawn. */
+	totalStaves: number;
+	/** The first system's reserved left indents (see ScoreLayout): the whole label column,
+	 * and the inner band the part labels print in; group names go outside that. */
+	labelIndent: number;
+	partLabelIndent: number;
+	labelFont: string;
+	notationColor: string;
+	textColor: string;
 }

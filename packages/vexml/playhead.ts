@@ -26,10 +26,10 @@ export class Playhead implements CursorView {
 
 	constructor(
 		private readonly marker: Marker,
-		options?: PlayheadOptions,
+		opts?: PlayheadOptions,
 	) {
-		this.color = options?.color ?? CURSOR_COLOR;
-		this.widthPx = options?.widthPx ?? CURSOR_WIDTH_PX;
+		this.color = opts?.color ?? CURSOR_COLOR;
+		this.widthPx = opts?.widthPx ?? CURSOR_WIDTH_PX;
 		this.marker.hide();
 	}
 
@@ -44,7 +44,7 @@ export class Playhead implements CursorView {
 		}
 	}
 
-	/** Change the bar's width (score px) and redraw it where it is — e.g. on a 'resize' that
+	/** Change the bar's width (score px) and redraw it where it is, e.g. on a 'resize' that
 	 * rescaled the score, to keep it a constant on-screen width. */
 	setWidthPx(widthPx: number): void {
 		this.widthPx = widthPx;

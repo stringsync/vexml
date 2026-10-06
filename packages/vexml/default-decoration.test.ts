@@ -84,7 +84,7 @@ describe('DefaultDecoration', () => {
 			'#222222',
 		);
 		// The rects nearly touch, so clearing the second's padded region requires restamping the
-		// first — otherwise its edge pixels would be wiped.
+		// first; otherwise its edge pixels would be wiped.
 		expect(host.marks('content')).toEqual([
 			'text:q:#111111:30px Bravura',
 			'text:q:#222222:30px Bravura',
@@ -106,7 +106,7 @@ describe('DefaultDecoration', () => {
 		expect(host.marks('content')).toEqual(['text:q:#222222:30px Bravura']);
 	});
 
-	it('an off() while already off is a no-op — no layer, no paint', () => {
+	it('an off() while already off is a no-op that draws no layer and paints nothing', () => {
 		const host = new FakeLayerHost();
 		const colors = new DefaultDecoration(host, new ColorStyle());
 		colors.set(new FakeDecoratable(new Rect(0, 0, 12, 10), NOTEHEAD), null);

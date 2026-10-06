@@ -7,7 +7,7 @@ import type { VoiceTranslator } from './voice-translator';
 
 export interface LyricPlacerOptions {
 	/* Per lyric row (keyed `<systemIndex>:<staveRow>`), how far to drop it so it clears the
-	 * notes above it — measured on the previous pass and reserved on this one; empty on the
+	 * notes above it, measured on the previous pass and reserved on this one; empty on the
 	 * first pass. */
 	lyricDrops?: Map<string, number>;
 }
@@ -145,7 +145,7 @@ export class LyricPlacer {
 
 	/*
 	 * Melisma extenders: a `<lyric><extend/>` draws a horizontal line on the verse's own row
-	 * from just past its syllable to the last note the syllable is held over — the note before
+	 * from just past its syllable to the last note the syllable is held over: the note before
 	 * the next syllable in that same verse, or the stave's last note when none follows. Drawn
 	 * here rather than as a modifier because the line spans notes, and pin is the point
 	 * where every syllable's row and every note's x are final.
@@ -209,7 +209,7 @@ export class LyricPlacer {
 		return this.observedLyricDrops;
 	}
 
-	/* Whether any row's measure columns disagreed on their drop — the signal that a redraw
+	/* Whether any row's measure columns disagreed on their drop: the signal that a redraw
 	 * with the observed drops would land the verses on different pixels. */
 	stepped(): boolean {
 		return this.lyricsStepped;

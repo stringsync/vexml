@@ -12,7 +12,7 @@ import type { GapInserter } from './gap-inserter';
  * about where the gaps are.
  */
 export class Gaps {
-	/* Each gap's document measure index, in config order — set by resolve. */
+	/* Each gap's document measure index, in config order; set by resolve. */
 	private indexes: readonly number[] | null = null;
 
 	constructor(
@@ -36,7 +36,7 @@ export class Gaps {
 
 	/*
 	 * Find every gap's measure in the parsed document, inserting the positioned ones first
-	 * (GapInserter — one empty, unnumbered measure per part, carrying its neighbor's
+	 * (GapInserter: one empty, unnumbered measure per part, carrying its neighbor's
 	 * signatures). Measure *numbers* (the printed labels) are untouched; a gap never gets one.
 	 */
 	resolve(document: MDocument): void {
@@ -77,7 +77,7 @@ export class Gaps {
 	}
 
 	/* Each gap paired with its document measure index, in the caller's config order
-	 * (Score.getGaps' contract). Empty until resolve — a score with no parts never has one. */
+	 * (Score.getGaps' contract). Empty until resolve: a score with no parts never has one. */
 	documentIndexes(): { gap: Gap; measureIndex: number }[] {
 		const indexes = this.indexes ?? [];
 		return indexes.flatMap((measureIndex, i) => {

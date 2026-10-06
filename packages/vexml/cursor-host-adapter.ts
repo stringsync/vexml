@@ -6,7 +6,7 @@ import type { Host } from './host';
 
 /* Adapts the Stage host into a CursorController's CursorHost: passes through the rect methods and
  * turns the host's window-scroll + resize observers into a single `viewportchange` event. One per
- * cursor, and the cursor disposes it — the observers live exactly as long as the cursor watching
+ * cursor, and the cursor disposes it: the observers live exactly as long as the cursor watching
  * them. */
 export class CursorHostAdapter implements CursorHost, Resource {
 	private readonly dispatcher = new Dispatcher<CursorHostEventMap>();

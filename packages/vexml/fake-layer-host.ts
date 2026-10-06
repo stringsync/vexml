@@ -5,7 +5,7 @@ import type { LayerHost } from './layer-host';
 /* Fake fulfilling the LayerHost seam (preferred over mocks); keeps every layer it made, so a test
  * can read back what was painted on the one it cares about. Layers are looked up by kind because
  * that is what separates them: a decoration's ColorStyle draws on 'content' over the score while
- * its HaloStyle draws on 'background' behind it. Test-only — excluded from the published package
+ * its HaloStyle draws on 'background' behind it. Test-only, excluded from the published package
  * via package.json "files". */
 export class FakeLayerHost implements LayerHost {
 	readonly created: FakeLayer[] = [];

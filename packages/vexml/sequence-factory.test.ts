@@ -9,75 +9,19 @@ import { ScoreReader } from './score-reader';
 import type { MeasureInfo, SequenceInput, SequenceNote } from './sequence';
 import { SequenceFactory } from './sequence-factory';
 
-// Identity tokens: the sequence only ever compares notes, so nothing else about them is read.
-const fakeNote = (label: string) => ({ label }) as unknown as Note;
-const SYS = new Rect(0, 0, 1000, 100);
-
-const quarter = (
-	note: Note,
-	measureIndex: number,
-	measureBeat: number,
-	x: number,
-): SequenceNote => ({
-	note,
-	measureIndex,
-	measureBeat,
-	beats: 1,
-	x,
-	tiedFrom: null,
-});
-
-const metronomeDir = (bpm: number, sound?: number) =>
-	`<direction><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${bpm}</per-minute></metronome></direction-type>${
-		sound === undefined ? '' : `<sound tempo="${sound}"/>`
-	}</direction>`;
-
-/* A one-part score of 4/4 measures of quarter notes, each prefixed with the directions under
- * test: what the tempo readers are asked about. */
-async function measuresOf(...prefixes: string[]) {
-	const body = prefixes
-		.map((prefix, i) => {
-			const attrs =
-				i === 0
-					? '<attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>'
-					: '';
-			const notes =
-				'<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>'.repeat(
-					4,
-				);
-			return `<measure number="${i + 1}">${attrs}${prefix}${notes}</measure>`;
-		})
-		.join('');
-	const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
-<score-partwise version="4.0">
-	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
-	<part id="P1">${body}</part>
-</score-partwise>`);
-	return mdoc.score.parts[0]?.measures ?? [];
-}
-
-async function measureOf(prefix: string) {
-	const [measure] = await measuresOf(prefix);
-	if (!measure) {
-		throw new Error('fixture parsed no measures');
-	}
-	return measure;
-}
-
-// createFromInput never touches the reader (only create() does), so a real stateless one is fine.
-const build = (input: SequenceInput) =>
-	new SequenceFactory(
-		new ScoreReader(new DynamicGlyphs()),
-		new Gaps([], new GapInserter(new ScoreReader(new DynamicGlyphs()))),
-	).createFromInput(input);
-
 describe('SequenceFactory', () => {
+	// scry-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
 	it('assembly: two 4/4 measures of quarters → 8 steps with correct beats/ms', () => {
-		const notes: SequenceNote[] = [];
-		for (let b = 0; b < 4; b++) {
-			notes.push(quarter(fakeNote(`m0b${b}`), 0, b, 10 + b * 10));
-			notes.push(quarter(fakeNote(`m1b${b}`), 1, b, 110 + b * 10));
-		}
+		const notes: SequenceNote[] = [
+			quarter(fakeNote('m0b0'), 0, 0, 10),
+			quarter(fakeNote('m1b0'), 1, 0, 110),
+			quarter(fakeNote('m0b1'), 0, 1, 20),
+			quarter(fakeNote('m1b1'), 1, 1, 120),
+			quarter(fakeNote('m0b2'), 0, 2, 30),
+			quarter(fakeNote('m1b2'), 1, 2, 130),
+			quarter(fakeNote('m0b3'), 0, 3, 40),
+			quarter(fakeNote('m1b3'), 1, 3, 140),
+		];
 		const seq = build({
 			measures: [
 				{ index: 0, beats: 4, tempoBpm: 120, jumps: [], systemRect: SYS },
@@ -101,11 +45,13 @@ describe('SequenceFactory', () => {
 		expect(seq.getMeasureIndexAtBeats(5)).toBe(1);
 	});
 
+	// scry-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
 	it('assembly: 3:2 sixteenth triplets in a measure starting at beat 4 keep one note active per step', () => {
 		// 1/6-beat onsets: (4 + 1/6) + 1/6 and 4 + 2/6 are the same instant but differ by 1 ULP, so a
 		// strict `startBeat < endBeat` test leaks the previous note into the next step.
-		const notes: SequenceNote[] = Array.from({ length: 6 }, (_, i) => ({
-			note: fakeNote(`t${i}`),
+		const triplets = [0, 1, 2, 3, 4, 5].map((i) => fakeNote(`t${i}`));
+		const notes: SequenceNote[] = triplets.map((note, i) => ({
+			note,
 			measureIndex: 1,
 			measureBeat: i / 6,
 			beats: 1 / 6,
@@ -118,22 +64,24 @@ describe('SequenceFactory', () => {
 				{ index: 1, beats: 1, tempoBpm: null, jumps: [], systemRect: SYS },
 			],
 			notes: [
-				...[0, 1, 2, 3].map((b) =>
-					quarter(fakeNote(`m0b${b}`), 0, b, 10 + b * 10),
-				),
+				quarter(fakeNote('m0b0'), 0, 0, 10),
+				quarter(fakeNote('m0b1'), 0, 1, 20),
+				quarter(fakeNote('m0b2'), 0, 2, 30),
+				quarter(fakeNote('m0b3'), 0, 3, 40),
 				...notes,
 			],
 		});
 
 		expect(seq.length).toBe(10);
-		for (const [i, sn] of notes.entries()) {
-			expect(seq.getStep(i + 4)?.active).toEqual([sn.note]);
-		}
+		expect([4, 5, 6, 7, 8, 9].map((i) => seq.getStep(i)?.active)).toEqual(
+			triplets.map((note) => [note]),
+		);
 	});
 
+	// scry-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
 	it('assembly: a voice that ends before its measure does stops sounding at the note end', () => {
 		// Voice 1 fills only beat 1 of a 4-beat measure and has no trailing rest, so nothing onsets at
-		// beat 1 — without a step seeded there the quarter rings until the next measure.
+		// beat 1; without a step seeded there the quarter rings until the next measure.
 		const short = fakeNote('short');
 		const held = fakeNote('held');
 		const next = fakeNote('next');
@@ -174,6 +122,7 @@ describe('SequenceFactory', () => {
 		expect(seq.getStep(1)?.measureIndex).toBe(0);
 	});
 
+	// scry-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
 	it('assembly: a gap measure plays for exactly gapMs, silent, and the next measure resumes the carried tempo', () => {
 		const a = fakeNote('a');
 		const b = fakeNote('b');
@@ -265,24 +214,20 @@ describe('SequenceFactory', () => {
 		expect(seq.getStep(1)?.glideToX).toBe(200);
 	});
 
-	it('resolveX: inside a gap maps linearly within its time; over the signatures, to the next bar start', () => {
+	it('maps an x inside a gap linearly within its time', () => {
 		const seq = leadingGap();
-		const gapStep = seq.getStepRangeOfMeasure(0);
-		const bar = seq.getStepRangeOfMeasure(1);
-		if (!gapStep || !bar) {
-			throw new Error('expected both measures to have steps');
-		}
 		// Round trip: the x positionAt gives at 1500ms resolves back to 1500ms.
 		const mid = seq.positionAt(1500)?.x ?? Number.NaN;
-		const resolved = seq.resolveX(mid, gapStep.start, gapStep.end);
+		const resolved = seq.resolveX(mid, 0, 0);
 		expect(resolved?.stepIndex).toBe(0);
 		expect(seq.beatsToMs(resolved?.beat ?? Number.NaN)).toBeCloseTo(1500);
 		expect(seq.resolveX(12, 0, 0)?.beat).toBeCloseTo(0.25);
-		// An x over the signatures lands on bar 1's start, whether the range is the bar's or both.
-		expect(seq.resolveX(80, bar.start, bar.end)).toEqual({
-			stepIndex: 1,
-			beat: 1,
-		});
+	});
+
+	it('maps an x over the signatures to the next bar start', () => {
+		const seq = leadingGap();
+		// Bar 1's steps are 1..2; the result is the same whether the range is the bar's or both.
+		expect(seq.resolveX(80, 1, 2)).toEqual({ stepIndex: 1, beat: 1 });
 		expect(seq.resolveX(80, 0, 2)).toEqual({ stepIndex: 1, beat: 1 });
 	});
 
@@ -387,6 +332,7 @@ describe('SequenceFactory', () => {
 		expect(seq.getFirstStepOfNote(a)).toBe(0);
 	});
 
+	// scry-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
 	it('assembly: overlapping voices window the active set; classify reports held vs released', () => {
 		const half = fakeNote('half'); // voice A, [0, 2)
 		const q1 = fakeNote('q1'); // voice B, [0, 1)
@@ -433,7 +379,7 @@ describe('SequenceFactory', () => {
 		expect(t.stopped).toEqual([q1]);
 	});
 
-	it('positionAt: interpolates the bar x within a step toward the next onset', () => {
+	it('interpolates the bar x within a step toward the next onset', () => {
 		const seq = build({
 			measures: [
 				{ index: 0, beats: 2, tempoBpm: 120, jumps: [], systemRect: SYS },
@@ -451,7 +397,7 @@ describe('SequenceFactory', () => {
 		expect(rect?.h).toBe(100);
 	});
 
-	it('resolveX: interpolates the beat from x within a step, clamping to the range ends', () => {
+	it('interpolates the beat from x within a step, clamping to the range ends', () => {
 		const seq = build({
 			measures: [
 				{ index: 0, beats: 2, tempoBpm: 120, jumps: [], systemRect: SYS },
@@ -473,7 +419,7 @@ describe('SequenceFactory', () => {
 		expect(seq.resolveX(0, 1, 0)).toBeNull();
 	});
 
-	it('getStepRangeOfMeasure: the first occurrence contiguous run, null when empty', () => {
+	it('gives a measure its first contiguous run of steps, and none when it has no steps', () => {
 		const seq = build({
 			measures: [
 				{ index: 0, beats: 2, tempoBpm: 120, jumps: [], systemRect: SYS },
@@ -490,7 +436,7 @@ describe('SequenceFactory', () => {
 		expect(seq.getStepRangeOfMeasure(99)).toBeNull();
 	});
 
-	it('getStepIndexAtBeats: binary search, null before the first onset', () => {
+	it('finds the step at a beat by binary search, and none before the first onset', () => {
 		const seq = build({
 			measures: [
 				{ index: 0, beats: 3, tempoBpm: 120, jumps: [], systemRect: SYS },
@@ -566,3 +512,65 @@ describe('SequenceFactory', () => {
 		expect(seq.getStep(1)?.endMs).toBeCloseTo(6000);
 	});
 });
+
+// Identity tokens: the sequence only ever compares notes, so nothing else about them is read.
+const fakeNote = (label: string) => ({ label }) as unknown as Note;
+const SYS = new Rect(0, 0, 1000, 100);
+
+const quarter = (
+	note: Note,
+	measureIndex: number,
+	measureBeat: number,
+	x: number,
+): SequenceNote => ({
+	note,
+	measureIndex,
+	measureBeat,
+	beats: 1,
+	x,
+	tiedFrom: null,
+});
+
+const metronomeDir = (bpm: number, sound?: number) =>
+	`<direction><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${bpm}</per-minute></metronome></direction-type>${
+		sound === undefined ? '' : `<sound tempo="${sound}"/>`
+	}</direction>`;
+
+/* A one-part score of 4/4 measures of quarter notes, each prefixed with the directions under
+ * test: what the tempo readers are asked about. */
+async function measuresOf(...prefixes: string[]) {
+	const body = prefixes
+		.map((prefix, i) => {
+			const attrs =
+				i === 0
+					? '<attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>'
+					: '';
+			const notes =
+				'<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>'.repeat(
+					4,
+				);
+			return `<measure number="${i + 1}">${attrs}${prefix}${notes}</measure>`;
+		})
+		.join('');
+	const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
+<score-partwise version="4.0">
+	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+	<part id="P1">${body}</part>
+</score-partwise>`);
+	return mdoc.score.parts[0]?.measures ?? [];
+}
+
+async function measureOf(prefix: string) {
+	const [measure] = await measuresOf(prefix);
+	if (!measure) {
+		throw new Error('fixture parsed no measures');
+	}
+	return measure;
+}
+
+// createFromInput never touches the reader (only create() does), so a real stateless one is fine.
+const build = (input: SequenceInput) =>
+	new SequenceFactory(
+		new ScoreReader(new DynamicGlyphs()),
+		new Gaps([], new GapInserter(new ScoreReader(new DynamicGlyphs()))),
+	).createFromInput(input);

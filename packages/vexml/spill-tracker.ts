@@ -5,7 +5,7 @@ import { SPILL_COLUMN } from './constants';
  * How far one stave row's drawn content spilled past its staff lines, plus where those
  * lines sit relative to the stave's y (what a stave offset positions). Measured on a
  * first draw pass so a second can re-space the staves around the actual music instead of
- * a fixed gap — the vertical analog of the per-system topOverflow feedback.
+ * a fixed gap: the vertical analog of the per-system topOverflow feedback.
  */
 export type StaveSpill = {
 	/** Px the content rose above the top staff line, per x column (see SPILL_COLUMN):
@@ -40,12 +40,12 @@ export class SpillTracker {
 	private readonly staveSpill = new Map<number, Map<number, StaveSpill>>();
 	// Per system: the stave-top y it was placed at, and the highest (smallest) y any of
 	// its content reached. Their difference is how far the system overflows above its
-	// top stave — reserved above it on a redraw so it can't clash with the system above.
+	// top stave, and is reserved above it on a redraw so it can't clash with the system above.
 	private readonly systemTopByIndex = new Map<number, number>();
 	private readonly systemHighestTop = new Map<number, number>();
 	// The topmost y reached by above-stave text decorations (chord symbols, words) in a
 	// system. Measure boxes grow up to this so the playback cursor/scroll cover those
-	// extras instead of clipping them; chord diagrams are deliberately excluded — see the
+	// extras instead of clipping them; chord diagrams are deliberately excluded: see the
 	// harmony draw block in DrawPass for why the cursor stops at the stave.
 	private readonly systemDecorationTop = new Map<number, number>();
 
@@ -93,7 +93,7 @@ export class SpillTracker {
 		this.systemTopByIndex.set(system, topY);
 	}
 
-	/* Content that reached `top` in a system — keeps the highest (smallest) y per system. */
+	/* Content that reached `top` in a system. Keeps the highest (smallest) y per system. */
 	growHighestTop(system: number, top: number): void {
 		this.systemHighestTop.set(
 			system,
@@ -101,7 +101,7 @@ export class SpillTracker {
 		);
 	}
 
-	/* An above-stave text decoration that reached `top` — grows the system's measure-box
+	/* An above-stave text decoration that reached `top`. Grows the system's measure-box
 	 * ceiling (see decorationTopOf). */
 	growDecorationTop(system: number, top: number): void {
 		this.systemDecorationTop.set(
@@ -174,7 +174,7 @@ export class SpillTracker {
 
 	/*
 	 * Record `extent` px of spill against every x column `rect` covers, keeping the worst per
-	 * column. Nothing is stored for a non-positive extent — content that stays inside its own
+	 * column. Nothing is stored for a non-positive extent: content that stays inside its own
 	 * staff lines has nothing for a neighbour to clear, and an absent column reads as 0.
 	 */
 	private bandSpill(

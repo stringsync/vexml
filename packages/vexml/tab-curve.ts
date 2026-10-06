@@ -17,7 +17,7 @@ import { CrispCurve } from './crisp-curve';
  * arc came out flatter, and hugging the fret digits, next to the slur the notation stave draws
  * over the same two notes. This is the adapter: same endpoints TabTie would use (getYs()[index]
  * per shared string), shape and fill from Curve, so both staves bow alike. TabTie's "H"/"P"
- * label is dropped along with it — a player reads the gesture off the arc and the fret motion.
+ * label is dropped along with it: a player reads the gesture off the arc and the fret motion.
  */
 export class TabCurve extends CrispCurve {
 	constructor(
@@ -53,7 +53,7 @@ export class TabCurve extends CrispCurve {
 		const firstX = firstNote ? firstNote.getTieRightX() : stave.getTieStartX();
 		const lastX = lastNote ? lastNote.getTieLeftX() : stave.getTieEndX();
 		// Keep the bow in proportion to its span. A grace note hammering into the note beside
-		// it, or the stub half of a wrapped arc, spans a few pixels — at the full lift that
+		// it, or the stub half of a wrapped arc, spans a few pixels: at the full lift that
 		// draws as a tall narrow spike instead of an arc. (The slurs cap on the same idea with
 		// SLUR_MAX_ASPECT.) Done at draw time because the span in pixels isn't known until the
 		// notes are placed.

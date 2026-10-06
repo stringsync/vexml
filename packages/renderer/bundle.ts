@@ -1,7 +1,9 @@
-/** Compile a browser-side entry file (plus everything it imports) into a single classic
- * script, ready for OpenOptions.scripts. IIFE, not ESM, so injecting it executes it
- * synchronously and its globalThis registrations exist before open() returns. */
+/** Bundle a browser-side entry file and everything it imports into one script to pass
+ * in OpenOptions.scripts. Whatever it registers on globalThis is ready by the time
+ * open() returns. */
 export async function bundle(entrypoint: string): Promise<string> {
+	// IIFE, not ESM: an injected classic script executes synchronously, so its globalThis
+	// registrations exist before open() returns.
 	const result = await Bun.build({
 		entrypoints: [entrypoint],
 		target: 'browser',

@@ -2,7 +2,7 @@ import { TabSlide } from 'vexflow';
 
 /*
  * vexflow's TabSlide strokes its two-point line with a closePath() in between (tabslide.ts
- * renderTie), which walks the segment back to where it started — so the rasterizer strokes it
+ * renderTie), which walks the segment back to where it started, so the rasterizer strokes it
  * twice and the two antialiased passes composite into a line that reads fat and blurry next to
  * the pixel-crisp string lines. Same geometry, stroked once.
  */

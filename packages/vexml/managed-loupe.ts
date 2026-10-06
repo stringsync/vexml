@@ -36,8 +36,8 @@ export class ManagedLoupe implements Loupe {
 
 	constructor(
 		private readonly canvas: HTMLCanvasElement,
-		private options: Required<LoupeOptions>,
 		private readonly stage: Stage,
+		private opts: Required<LoupeOptions>,
 	) {
 		const ctx = canvas.getContext('2d');
 		if (!ctx) {
@@ -74,12 +74,12 @@ export class ManagedLoupe implements Loupe {
 		};
 	}
 
-	configure(options: LoupeOptions): void {
-		this.options = resolveLoupeOptions(this.options, options);
+	configure(opts: LoupeOptions): void {
+		this.opts = resolveLoupeOptions(this.opts, opts);
 		this.style();
 		this.dpr = 0;
 		if (this.paper !== null) {
-			this.paper = this.options.paper ?? this.stage.paperColor();
+			this.paper = this.opts.paper ?? this.stage.paperColor();
 		}
 		if (this.shown) {
 			this.frame ??= requestAnimationFrame(() => this.paint());
@@ -109,7 +109,7 @@ export class ManagedLoupe implements Loupe {
 			x: anchor.x + anchor.w / 2,
 			y: anchor.y + anchor.h / 2,
 		};
-		const { width, height, zoom, gap } = this.options;
+		const { width, height, zoom, gap } = this.opts;
 		const dpr = this.stage.pixelRatio;
 		if (dpr !== this.dpr) {
 			this.dpr = dpr;
@@ -117,7 +117,7 @@ export class ManagedLoupe implements Loupe {
 			this.canvas.height = Math.round(height * dpr);
 		}
 		const entering = this.paper === null;
-		const paper = this.paper ?? this.options.paper ?? this.stage.paperColor();
+		const paper = this.paper ?? this.opts.paper ?? this.stage.paperColor();
 		if (entering) {
 			this.paper = paper;
 			this.exit?.cancel();
@@ -200,7 +200,7 @@ export class ManagedLoupe implements Loupe {
 	}
 
 	private style(): void {
-		const { width, height, radius } = this.options;
+		const { width, height, radius } = this.opts;
 		this.canvas.style.width = `${width}px`;
 		this.canvas.style.height = `${height}px`;
 		this.canvas.style.borderRadius = `${radius}px`;

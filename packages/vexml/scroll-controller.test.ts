@@ -55,7 +55,7 @@ describe('ScrollController', () => {
 
 	it('turns the page to the left edge when the target runs off to the right', () => {
 		// The 150..160 target left the 0..100 view by its right edge, so it comes back 16px in
-		// from the left with the rest of the viewport ahead of it — not pinned flush at the right.
+		// from the left with the rest of the viewport ahead of it, not pinned flush at the right.
 		scroller.scrollIntoView(new Rect(150, 10, 10, 10));
 		expect(host.last()?.left).toBe(134);
 	});
@@ -80,9 +80,9 @@ describe('ScrollController', () => {
 		// The creep this guards against: three bars advancing across one viewport must leave the
 		// horizontal offset alone, or the music would slide under the cursor note by note.
 		host.scroll = { left: 300, top: 0 };
-		for (const x of [310, 350, 390]) {
-			scroller.scrollIntoView(new Rect(x, 10, 10, 10));
-		}
+		scroller.scrollIntoView(new Rect(310, 10, 10, 10));
+		scroller.scrollIntoView(new Rect(350, 10, 10, 10));
+		scroller.scrollIntoView(new Rect(390, 10, 10, 10));
 		expect(host.calls).toHaveLength(0);
 	});
 
@@ -124,11 +124,9 @@ describe('ScrollController', () => {
 
 	it('leaves both axes still through focus changes, including viewport edges', async () => {
 		host.scroll = { left: 300, top: 300 };
-		for (const position of [300, 350, 390]) {
-			scroller.scrollIntoView(new Rect(position, position, 10, 10), {
-				behavior: 'smooth',
-			});
-		}
+		scroller.scrollIntoView(new Rect(300, 300, 10, 10), { behavior: 'smooth' });
+		scroller.scrollIntoView(new Rect(350, 350, 10, 10), { behavior: 'smooth' });
+		scroller.scrollIntoView(new Rect(390, 390, 10, 10), { behavior: 'smooth' });
 		await settle();
 		expect(host.calls).toHaveLength(0);
 	});

@@ -8,7 +8,7 @@ export type TempoSegment = { startBeat: number; endBeat: number; bpm: number };
  * conversions between beats and milliseconds they define.
  *
  * SequenceFactory builds one while it walks playback order and hands it to the Sequence, which
- * is why this is its own object rather than a pair of Sequence methods — the factory has to date
+ * is why this is its own object rather than a pair of Sequence methods: the factory has to date
  * its own steps before there is a Sequence to ask.
  */
 export class TempoMap {

@@ -1,14 +1,21 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { Rect } from 'webappwiz/geometry';
 import { DefaultDecorations } from './default-decorations';
 import { FakeDecoratable, NOTEHEAD } from './fake-decoratable';
 import { FakeLayerHost } from './fake-layer-host';
 
 describe('DefaultDecorations', () => {
-	it('the color and the halo paint different layers of the same host', () => {
-		const host = new FakeLayerHost();
-		const decorations = new DefaultDecorations(host);
-		const target = new FakeDecoratable(new Rect(0, 0, 12, 10), NOTEHEAD);
+	let host: FakeLayerHost;
+	let decorations: DefaultDecorations;
+	let target: FakeDecoratable;
+
+	beforeEach(() => {
+		host = new FakeLayerHost();
+		decorations = new DefaultDecorations(host);
+		target = new FakeDecoratable(new Rect(0, 0, 12, 10), NOTEHEAD);
+	});
+
+	it('paints the color and the halo on different layers of the same host', () => {
 		decorations.color.set(target, '#2962ff');
 		decorations.halo.set(target, 'rgba(41, 98, 255, 0.35)');
 		expect(host.marks('content')).toEqual(['text:q:#2962ff:30px Bravura']);
@@ -17,10 +24,7 @@ describe('DefaultDecorations', () => {
 		]);
 	});
 
-	it('disposing releases both kinds', () => {
-		const host = new FakeLayerHost();
-		const decorations = new DefaultDecorations(host);
-		const target = new FakeDecoratable(new Rect(0, 0, 12, 10), NOTEHEAD);
+	it('releases both kinds when disposed', () => {
 		decorations.color.set(target, '#2962ff');
 		decorations.halo.set(target, 'rgba(41, 98, 255, 0.35)');
 		decorations.dispose();

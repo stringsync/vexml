@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'bun:test';
-import { MDocument, MElement, type Note } from '@stringsync/mdom';
+import { beforeEach, describe, expect, it } from 'bun:test';
+import { MDocument, MElement, type Note, type Voice } from '@stringsync/mdom';
 import { EditingSession } from './editing-session';
 
 function required<T>(value: T | null | undefined, name: string): T {
@@ -26,6 +26,14 @@ function noteAt(document: MDocument, index: number): Note {
 }
 
 describe('EditingSession', () => {
+	let emptyDocument: MDocument;
+	let voice: Voice;
+
+	beforeEach(() => {
+		emptyDocument = MDocument.empty();
+		voice = emptyDocument.score.addPart().addMeasure().getOrCreateVoice('1');
+	});
+
 	it('starts without a selection and safely navigates an empty document', () => {
 		const session = new EditingSession(MDocument.empty());
 		expect(session.getFocus()).toBeNull();
@@ -92,6 +100,7 @@ describe('EditingSession', () => {
 		]);
 	});
 
+	// scry-ignore simple-test-setup: the extra voice, empty measure and second staff are written only for this test; the session must be built after them because it takes over the document's history
 	it('crosses empty measures and staves within its voice without entering another voice', () => {
 		const document = createDocument(['C']);
 		const part = required(document.score.parts[0], 'part');
@@ -119,15 +128,20 @@ describe('EditingSession', () => {
 		noteAt(document, 1).convertToRest();
 		noteAt(document, 2).setAttribute('print-object', 'no');
 		const session = new EditingSession(document);
-		for (let index = 0; index < 3; index++) {
-			expect(session.move('next')).toBe(true);
-			expect(session.getFocus()).toBe(noteAt(document, index));
-		}
+		const visited = [
+			session.move('next') && session.getFocus(),
+			session.move('next') && session.getFocus(),
+			session.move('next') && session.getFocus(),
+		];
+		expect(visited).toEqual([
+			noteAt(document, 0),
+			noteAt(document, 1),
+			noteAt(document, 2),
+		]);
 	});
 
+	// scry-ignore simple-test-setup: the two three-note chords are written only for this test; no other test shares them, and the session must be built after they exist because it takes over the document's history
 	it.each([0, 1, 2])('moves horizontally past chord member %i', (member) => {
-		const document = MDocument.empty();
-		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
 		const first = voice.addChord(
 			[
 				{ step: 'C', octave: 4 },
@@ -144,7 +158,7 @@ describe('EditingSession', () => {
 			],
 			{ type: 'quarter' },
 		);
-		const session = new EditingSession(document);
+		const session = new EditingSession(emptyDocument);
 		session.select(required(first.notes[member], 'first chord member'));
 		expect(session.move('next')).toBe(true);
 		expect(session.getSelection()).toEqual([second.lead]);
@@ -157,8 +171,6 @@ describe('EditingSession', () => {
 	});
 
 	it('starts backwards on the final chord lead', () => {
-		const document = MDocument.empty();
-		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
 		const chord = voice.addChord(
 			[
 				{ step: 'C', octave: 4 },
@@ -166,14 +178,12 @@ describe('EditingSession', () => {
 			],
 			{ type: 'quarter' },
 		);
-		const session = new EditingSession(document);
+		const session = new EditingSession(emptyDocument);
 		expect(session.move('previous')).toBe(true);
 		expect(session.getFocus()).toBe(chord.lead);
 	});
 
 	it('keeps a grace chord separate from the following note at the same beat', () => {
-		const document = MDocument.empty();
-		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
 		const chord = voice.addChord(
 			[
 				{ step: 'C', octave: 4 },
@@ -185,7 +195,7 @@ describe('EditingSession', () => {
 		const upper = required(chord.notes[1], 'upper grace note');
 		upper.convertToGrace();
 		const following = voice.addNote({ step: 'D', octave: 4, type: 'quarter' });
-		const session = new EditingSession(document);
+		const session = new EditingSession(emptyDocument);
 		session.select(upper);
 		expect(session.move('next')).toBe(true);
 		expect(session.getFocus()).toBe(following);
@@ -194,8 +204,6 @@ describe('EditingSession', () => {
 	});
 
 	it('moves vertically by chord pitch even when XML stores pitches in another order', () => {
-		const document = MDocument.empty();
-		const voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
 		const chord = voice.addChord(
 			[
 				{ step: 'G', octave: 4 },
@@ -207,7 +215,7 @@ describe('EditingSession', () => {
 		const g = required(chord.notes[0], 'G');
 		const c = required(chord.notes[1], 'C');
 		const e = required(chord.notes[2], 'E');
-		const session = new EditingSession(document);
+		const session = new EditingSession(emptyDocument);
 		session.select(c);
 		expect(session.move('lower')).toBe(false);
 		session.move('higher');

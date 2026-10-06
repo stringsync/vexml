@@ -83,9 +83,9 @@ export interface SystemExtent {
 /*
  * Draw every measure once. `topOverflow` maps a systemIndex to extra space to reserve
  * above that system so its notes (which rise above its own top stave) clear the system
- * before it — measured on a first pass and applied on a second (see the driver in
+ * before it: measured on a first pass and applied on a second (see the driver in
  * ScoreDrawer.draw). run() returns the page extents drawn plus the overflow this pass
- * observed per system. One instance draws one pass — a redraw constructs a fresh
+ * observed per system. One instance draws one pass; a redraw constructs a fresh
  * DrawPass, so every field below starts clean.
  */
 export class DrawPass {
@@ -95,7 +95,7 @@ export class DrawPass {
 	private readonly softmaxFactor: number;
 	private readonly systemGap: number;
 	private readonly labelIndent: number;
-	// When false, tab staves are dropped — iterate visibleStaffNumbers, not staveCount.
+	// When false, tab staves are dropped: iterate visibleStaffNumbers, not staveCount.
 	private readonly showTabs: boolean;
 	// When false, notation staves are dropped the same way tab staves are.
 	private readonly showNotation: boolean;
@@ -122,9 +122,9 @@ export class DrawPass {
 
 	// Systems stack top-to-bottom. Each is placed below the previous system's lowest
 	// drawn content (notes + staff lines), so deep ledger lines push the next system
-	// down instead of colliding with it — fixed spacing can't, since note range is
-	// unbounded. The symmetric hazard — the next system's notes rising above its own
-	// top stave into that gap — is covered by topOverflow, measured on a prior pass.
+	// down instead of colliding with it: fixed spacing can't, since note range is
+	// unbounded. The symmetric hazard (the next system's notes rising above its own
+	// top stave into that gap) is covered by topOverflow, measured on a prior pass.
 	private pageBottom = 0;
 	private pageTop = Infinity;
 	// Hit-index geometry collected this pass, in scratch space; the caller shifts it into
@@ -138,11 +138,11 @@ export class DrawPass {
 	// Per-system collision index of everything already drawn (notes, high ties, placed
 	// chord symbols/words/diagrams). The above-stave annotations query it to nudge clear of
 	// obstacles, and chord diagrams use it to space apart across a barline (replacing an old
-	// running-cursor). Reset at each system start (x/y restart) — see the system-change
+	// running-cursor). Reset at each system start (x/y restart); see the system-change
 	// block. ALL nudge logic funnels through here; see AGENTS.md, "Collisions and nudges".
 	private readonly collisionResolver: CollisionResolver;
 	// The drawable region of the scratch canvas. Anything escaping it is in "no-man's land"
-	// and gets clipped, so warn — the slack that prevents this (LEDGER_HEADROOM/topSlack)
+	// and gets clipped, so warn: the slack that prevents this (LEDGER_HEADROOM/topSlack)
 	// is then the knob to grow. Vertical edges only; horizontal page overflow is separate.
 	private readonly scratchViewport: Rect;
 	// The vertical measurements this pass takes for the next one: stave-row spill, system
@@ -171,7 +171,7 @@ export class DrawPass {
 	// This measure's right <bar-style>, or null when it declares none. See BAR_STYLE_TYPES
 	// for which values vexflow draws itself and drawCustomBarline for the rest.
 	private barStyle: string | null = null;
-	// This measure's repeat dots and volta bracket, plus the neighbors' repeat state — a
+	// This measure's repeat dots and volta bracket, plus the neighbors' repeat state: a
 	// backward repeat butted against the next measure's forward repeat prints as one
 	// back-to-back sign rather than two, so each edge needs to see the other side.
 	private decoration: BarlineDecoration = NO_DECORATION;
@@ -184,14 +184,14 @@ export class DrawPass {
 	private systemTop: Stave | undefined;
 	private systemBottom: Stave | undefined;
 	// Every part's staves are formatted together as one column so notes at the same
-	// tick line up vertically across the whole system — not just within a part.
+	// tick line up vertically across the whole system, not just within a part.
 	// Standard engraving aligns all instruments on the beat, and a notation+tab pair
 	// split into separate MusicXML parts must align the same as a single two-stave
 	// part. Built per part below, then formatted and drawn once after the part loop.
 	private systemPending: PendingStave[] = [];
 	// Verse baselines: shared per stave row, measured this pass and re-pinned on the next.
 	private readonly lyricPlacer: LyricPlacer;
-	// Builds each measure column's staves — clef/key/time, barlines, and the repeat, volta
+	// Builds each measure column's staves: clef/key/time, barlines, and the repeat, volta
 	// and measure-number furniture. Fed the measure loop's locals through staveColumn().
 	private readonly staveBuilder: StaveBuilder;
 	// Translates each staff's mdom voices into the vexflow voices the formatter consumes,
@@ -210,7 +210,7 @@ export class DrawPass {
 	// notes under them, measured this pass and applied on the next (see voltaLifts).
 	private observedVoltaLifts = new Map<number, number>();
 	// This column's volta bracket at its unlifted height, or null when the column carries no
-	// bracket — set while the staves are built, read once the notes have been formatted.
+	// bracket. Set while the staves are built, read once the notes have been formatted.
 	private columnVoltaBox: Rect | null = null;
 	// Every stave of the measure column being built, drawn once the whole column exists so a
 	// repeat sign can be lined up across staves that reserve different opening widths.
@@ -246,7 +246,7 @@ export class DrawPass {
 	// The per-note octave offset the score's <octave-shift> spans imply. Fixed for the
 	// score; filled in the constructor (the spans themselves go to the spanner resolver).
 	private readonly octaveShiftByNote = new Map<Note, number>();
-	// The whole-score spanners — ties, slurs, wedges, pedals, ottava brackets and friends —
+	// The whole-score spanners (ties, slurs, wedges, pedals, ottava brackets and friends)
 	// recorded into during the measure loop and resolved once after the last measure, when
 	// every note is placed.
 	private readonly spannerResolver: SpannerResolver;
@@ -303,7 +303,7 @@ export class DrawPass {
 		this.partGroups = this.reader.partGroups(this.score);
 		// A notation+TAB pair split across parts is ONE instrument that just happens to be
 		// written as two parts, and it's bracketed as one (see partsPairTabWithNotation), so
-		// its barline runs through the pair too — the barline run has to agree with what the
+		// its barline runs through the pair too: the barline run has to agree with what the
 		// connector groups, or the bracket says "one instrument" while the gap says "two".
 		const barlineBreaks = this.staves.partsPairTabWithNotation(this.parts)
 			? new Set<number>()
@@ -333,7 +333,7 @@ export class DrawPass {
 			}
 			directionLineSpans.push(...this.reader.directionLinesOf(part));
 		}
-		// Read from the first part — a repeat or volta boundary applies across the system.
+		// Read from the first part: a repeat or volta boundary applies across the system.
 		this.decorations = barlines.decorations(
 			reader.measureRepeats(this.parts[0]?.measures ?? []),
 		);
@@ -468,12 +468,12 @@ export class DrawPass {
 	} {
 		// The context's default ink: every vexflow glyph with no explicit style inherits it, and it
 		// survives the save()/restore() pairs below since it's set before any of them. A fresh canvas
-		// (or a resize between passes) resets to black, so setting black here is a no-op — a colored
+		// (or a resize between passes) resets to black, so setting black here is a no-op: a colored
 		// score is the only thing this changes. Text vexml types itself overrides to textColor inline.
 		this.context.setFillStyle(this.notationColor);
 		this.context.setStrokeStyle(this.notationColor);
 		// Stems ignore the context stroke above: Stem.drawWithStyle paints them with
-		// Metrics.Stem.strokeStyle (hardcoded 'black') on top of it. Override that metric too —
+		// Metrics.Stem.strokeStyle (hardcoded 'black') on top of it. Override that metric too:
 		// global VexFlow state like setFonts, reset to the default black when no color is set so an
 		// uncolored render stays byte-identical and no color leaks into the next render.
 		MetricsDefaults.Stem.strokeStyle = this.notationColor;
@@ -511,7 +511,7 @@ export class DrawPass {
 			m === this.boxes.findIndex((b) => b !== undefined && !b.edge);
 		// An explicit right <barline> with a <bar-style> replaces this measure's end divider
 		// (normally a plain single line, or the thin-thick end on the final measure). Read
-		// from the first part — a barline is a boundary of the whole system, not of one staff.
+		// from the first part: a barline is a boundary of the whole system, not of one staff.
 		this.barStyle =
 			this.parts[0]?.measures[m]?.barlines.find((b) => b.location === 'right')
 				?.barStyle ?? null;
@@ -603,7 +603,7 @@ export class DrawPass {
 			}
 
 			// A metronome mark (from a <direction><metronome>) prints on this part's top
-			// staff wherever it appears — the piece start or a mid-piece tempo change.
+			// staff wherever it appears: the piece start or a mid-piece tempo change.
 			// Drawn after the system is formatted so it can clear a high first note.
 			// The rate ("quarter = 60") and a note-group relation (a swing figure) are separate
 			// <metronome> elements, routinely both in the same <direction>. They print side by
@@ -644,7 +644,7 @@ export class DrawPass {
 				}
 			}
 
-			// Dynamics markings, bound to their staff and lead note exactly like words —
+			// Dynamics markings, bound to their staff and lead note exactly like words:
 			// they differ only in the face they're typed in and in defaulting below the staff.
 			for (const {
 				text,
@@ -693,7 +693,7 @@ export class DrawPass {
 			}
 
 			// Pedal markers, resolved into PedalMarkings over the whole score (a pedal
-			// can span barlines) after every note is placed — see finishPass.
+			// can span barlines) after every note is placed; see finishPass.
 			this.spannerResolver.addPedals(this.reader.pedalsOf(measure));
 			this.spannerResolver.addWedges(this.reader.wedgesOf(measure));
 
@@ -740,7 +740,7 @@ export class DrawPass {
 		}
 
 		// The whole column exists now, so the modifiers that belong to the measure rather
-		// than to one stave — the opening repeat, the time signature — can be squared up
+		// than to one stave (the opening repeat, the time signature) can be squared up
 		// across its staves before any of them is committed to the canvas.
 		this.begRepeatX = this.systemFormatter.alignBegModifiers(this.columnStaves);
 		// An edge gap's staves only place its box (see drawEdgeGap); none of them prints.
@@ -748,7 +748,7 @@ export class DrawPass {
 			stave.setContext(this.context).draw();
 			this.connectorDrawer.drawCustomBarline(stave, this.connectorColumn());
 		}
-		// The consolidated multi-bar rests, over the staves that just landed — they paint
+		// The consolidated multi-bar rests, over the staves that just landed; they paint
 		// onto staff lines, so the staves have to be on the canvas first.
 		for (const { stave, count } of this.columnMultiRests) {
 			this.staveBuilder.drawMultiRest(stave, count);
@@ -787,7 +787,7 @@ export class DrawPass {
 	 * A bracket over this column and content that climbs past where it sits: record how far
 	 * the whole system's brackets have to rise so the next pass can draw them clear of it.
 	 * Measured off the column's own collision obstacles, registered by the format pass that
-	 * just ran — noteheads, stem tips and slur bows alike, so a bow arching over the notes
+	 * just ran: noteheads, stem tips and slur bows alike, so a bow arching over the notes
 	 * lifts the bracket the way a high notehead does. The whole box clears, not just the
 	 * line: vexflow hangs the "1." label below it. The result also grows systemHighestTop,
 	 * so the headroom reserved above this system covers where the bracket is about to move.
@@ -812,7 +812,7 @@ export class DrawPass {
 		}
 	}
 
-	/* The measure loop's locals the system formatter reads, snapshotted at the call —
+	/* The measure loop's locals the system formatter reads, snapshotted at the call:
 	 * see FormatColumn for what each field means. */
 	private formatColumn(): FormatColumn {
 		return {
@@ -822,7 +822,7 @@ export class DrawPass {
 		};
 	}
 
-	/* The measure loop's locals the direction placer reads, snapshotted at the call —
+	/* The measure loop's locals the direction placer reads, snapshotted at the call:
 	 * see DirectionColumn for what each field means. */
 	private directionColumn(m: number): DirectionColumn {
 		return {
@@ -839,7 +839,7 @@ export class DrawPass {
 		};
 	}
 
-	/* The measure loop's locals the connector drawer reads, snapshotted at the call —
+	/* The measure loop's locals the connector drawer reads, snapshotted at the call:
 	 * see ConnectorColumn for what each field means. */
 	private connectorColumn(): ConnectorColumn {
 		return {
@@ -857,7 +857,7 @@ export class DrawPass {
 		};
 	}
 
-	/* The measure loop's locals the stave builder reads, snapshotted at the call —
+	/* The measure loop's locals the stave builder reads, snapshotted at the call:
 	 * see StaveColumn for what each field means. */
 	private staveColumn(m: number): StaveColumn {
 		const nextBox = this.boxes[m + 1];
@@ -946,7 +946,7 @@ export class DrawPass {
 		// rest of the part's staves below. A TAB stave builds fretted TabNotes;
 		// everything else uses the notation path. An empty voice (no chords) would
 		// crash the formatter, so it's filtered.
-		// A <multiple-rest> lead draws the consolidated bar in place of its own contents — the
+		// A <multiple-rest> lead draws the consolidated bar in place of its own contents: the
 		// whole rest it holds stands for the run and would otherwise print on top of the bar.
 		if (built.multiRestCount) {
 			this.columnMultiRests.push({ stave, count: built.multiRestCount });
@@ -998,7 +998,7 @@ export class DrawPass {
 	/*
 	 * Collect hit-index boxes now that this measure's notes are formatted (positions
 	 * final). Each notehead/fret maps back to its mdom note; measure boxes back each
-	 * measure's staff column. Still scratch space — shifted to score space by the caller.
+	 * measure's staff column. Still scratch space: shifted to score space by the caller.
 	 */
 	private collectGeometry(m: number, contentTop: number): void {
 		for (const p of this.systemPending) {
@@ -1015,8 +1015,8 @@ export class DrawPass {
 			// The box spans the staff column, then grows to enclose whatever escapes it: notes
 			// that rise above the top staff line (contentTop) and, at a system start, the stave
 			// connector, which draws left of the staves and (for a bracket) overhangs them top
-			// and bottom. Otherwise a high note or the bracket clips out of the measure's box —
-			// and the playback cursor that rides it. contentTop is Infinity when the measure has
+			// and bottom. Otherwise a high note or the bracket clips out of the measure's box,
+			// and so out of the playback cursor that rides it. contentTop is Infinity when the measure has
 			// no notes, so it never shrinks the box.
 			const connector = this.connectorDrawer.connectorExtent(
 				this.connectorColumn(),
@@ -1043,7 +1043,7 @@ export class DrawPass {
 
 	/*
 	 * Draw a gap measure's overlay: the optional fill painted over its (empty) note area
-	 * — after the staves, so it dims the staff lines under it — and the optional label
+	 * after the staves (so it dims the staff lines under it) and the optional label
 	 * centered in that area, vertically centered on the system's staves. The area starts
 	 * at the stave's note-start x so the fill never covers a clef/key/time the gap's
 	 * stave prints at a system start.
@@ -1074,7 +1074,6 @@ export class DrawPass {
 		this.drawGapLabel(gap, startX, endX, top, bottom);
 	}
 
-	// A gap's label, centered in the area from left to right and top to bottom.
 	private drawGapLabel(
 		gap: Gap,
 		left: number,
@@ -1168,7 +1167,7 @@ export class DrawPass {
 		this.geometry.applyDecorationTops(this.spill);
 
 		// Every note is placed now, so the whole-score spanners can finally find both of
-		// their endpoints and draw — last, on top of the notes.
+		// their endpoints and draw last, on top of the notes.
 		this.spannerResolver.resolve({
 			byLead: this.byLead,
 			byTabLead: this.byTabLead,
@@ -1217,7 +1216,7 @@ export class DrawPass {
 		};
 	}
 
-	/* Which stave row (of this measure's column) a stave sits on — the collision band its
+	/* Which stave row (of this measure's column) a stave sits on: the collision band its
 	 * notes and annotations are registered under. */
 	private rowOf(stave: Stave): number | undefined {
 		return this.systemPending.find((p) => p.stave === stave)?.row;
@@ -1280,7 +1279,7 @@ export class DrawPass {
 			if (edges.includes('top') || edges.includes('bottom')) {
 				console.warn(
 					`vexml: ${item.kind} clipped past the ${edges.join('/')} of the canvas ` +
-						"(content in no-man's land — bump LEDGER_HEADROOM / topSlack).",
+						"(content in no-man's land: bump LEDGER_HEADROOM / topSlack).",
 				);
 			}
 		}

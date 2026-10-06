@@ -7,8 +7,8 @@ import type { DecorationStyle } from './decoration-style';
 const COLOR_PAD = 4;
 
 /* Recolors the element itself, on a `content` layer over the engraving (it recolors the notehead,
- * so it sits on top). Only the element knows what it is — a notehead glyph, a fret number, a
- * plain box — so the stamping delegates to Decoratable.drawColor. */
+ * so it sits on top). Only the element knows what it is (a notehead glyph, a fret number, a
+ * plain box), so the stamping delegates to Decoratable.drawColor. */
 export class ColorStyle implements DecorationStyle {
 	readonly placement = 'content';
 

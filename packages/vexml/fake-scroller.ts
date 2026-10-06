@@ -2,7 +2,7 @@ import type { Rect } from 'webappwiz/geometry';
 import type { Scroller, ScrollerOptions } from './scroller';
 
 /* Fake fulfilling the Scroller seam (preferred over mocks); records what it was told, so tests
- * that don't care simply never read `calls`/`cancels`. Test-only — excluded from the published
+ * that don't care simply never read `calls`/`cancels`. Test-only, excluded from the published
  * package via package.json "files". */
 
 export class FakeScroller implements Scroller {

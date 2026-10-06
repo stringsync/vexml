@@ -23,8 +23,8 @@ export interface LoupeOptions {
  * move is cheap where repainting a score-sized layer isn't. */
 export interface Loupe extends Resource {
 	/* Magnify the score around `at` (score px; the anchor's center when omitted) and float the loupe
-	 * just above `anchor` (score px) — what's being dragged, e.g. the cursor bar a change event
-	 * reports, or a loop marker — so neither it nor the thumb below it is covered. Where the
+	 * just above `anchor` (score px; what's being dragged, e.g. the cursor bar a change event
+	 * reports, or a loop marker), so neither it nor the thumb below it is covered. Where the
 	 * viewport's top edge leaves no room above, the loupe sits right of the anchor (where reading
 	 * goes next), else left of it. */
 	show(anchor: MarkerRect, at?: { x: number; y: number }): void;
@@ -43,6 +43,8 @@ export interface LoupeHost {
  * and a paper that isn't a string or null, so a bad value fails where it was passed. */
 export function resolveLoupeOptions(
 	base: Required<LoupeOptions>,
+	// scry-ignore named-options-last: `patch` is the data being merged, not settings for the
+	// merge; it is the same type as `base`, and naming it opts would misname what it is.
 	patch: LoupeOptions,
 ): Required<LoupeOptions> {
 	// Only known keys, and an explicit undefined keeps the current value rather than erasing it.

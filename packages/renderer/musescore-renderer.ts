@@ -8,15 +8,16 @@ export interface MusescoreInput {
 }
 
 /**
- * The one engine with no browser behind it: MuseScore in Docker (see musescore/).
- * A reference renderer with its own bugs and its own house style: a second opinion on
- * an ambiguous measure, not ground truth. No eval: MuseScore renders at arm's length
- * and keeps no live handle.
+ * Renders MusicXML to a PNG with MuseScore. Use it as a second opinion on an ambiguous
+ * measure, not as ground truth: MuseScore has its own bugs and its own house style.
+ * Unlike the browser renderers, it offers no eval.
  */
 export class MusescoreRenderer implements Renderer {
 	constructor(private readonly input: MusescoreInput) {}
 
 	async render(): Promise<Image> {
+		// The one engine with no browser behind it: MuseScore runs in Docker (see
+		// musescore/) at arm's length and keeps no live handle, which is why there's no eval.
 		const dir = await mkdtemp(path.join(tmpdir(), 'vexml-musescore-'));
 		try {
 			const input = path.join(dir, 'score.musicxml');

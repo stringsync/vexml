@@ -26,25 +26,24 @@ describe('cursor', () => {
 				// The opening pickup precedes printed measure 1.
 				const steps = seq.getSteps().filter((step) => step.measureIndex === 5);
 				return steps.slice(0, -1).map((step, i) => {
-					const next = steps[i + 1];
-					if (!next) {
-						throw new Error('missing next onset');
-					}
+					const nextX = steps[i + 1]?.x ?? NaN;
+					const midX =
+						seq.positionAt((step.startMs + step.endMs) / 2)?.x ?? NaN;
 					return {
-						x: step.x,
-						nextX: next.x,
-						glideToX: step.glideToX,
-						midX: seq.positionAt((step.startMs + step.endMs) / 2)?.x,
+						advancesRight: nextX > step.x,
+						glidesToNext: step.glideToX === nextX,
+						midpointInterpolates: Math.abs(midX - (step.x + nextX) / 2) < 0.005,
 					};
 				});
 			},
 		);
-		expect(result).toHaveLength(9);
-		for (const step of result) {
-			expect(step.nextX).toBeGreaterThan(step.x);
-			expect(step.glideToX).toBe(step.nextX);
-			expect(step.midX).toBeCloseTo((step.x + step.nextX) / 2);
-		}
+		expect(result).toEqual(
+			Array(9).fill({
+				advancesRight: true,
+				glidesToNext: true,
+				midpointInterpolates: true,
+			}),
+		);
 	});
 
 	// A playback cursor end to end, the way a caller reaches it: render, add a cursor, attach the
@@ -77,44 +76,47 @@ describe('cursor', () => {
 			({ score }) => {
 				const seq = score.getSequence();
 				const boxes = score.getElements().measureBoxes();
+				const closeTo = (a: number, b: number) => Math.abs(a - b) < 0.005;
 				return score.getGaps().map((gap) => {
 					const box = boxes.find((b) => b.getIndex() === gap.measureIndex);
 					const next = seq.getStep(
 						seq.getFirstStepOfMeasure(gap.measureIndex + 1) ?? -1,
 					);
-					if (!box || !next) {
-						throw new Error('missing gap box or next onset');
-					}
-					const y = box.rect.y + box.rect.h / 2;
+					const left = box?.rect.x ?? NaN;
+					const right = box?.rect.right ?? NaN;
+					const width = box?.rect.w ?? NaN;
+					const nextX = next?.x ?? NaN;
+					const nextMs = next?.startMs ?? NaN;
+					const y = (box?.rect.y ?? NaN) + (box?.rect.h ?? NaN) / 2;
+					const midX = seq.positionAt((gap.startMs + gap.endMs) / 2)?.x ?? NaN;
+					const endX = seq.positionAt(gap.endMs)?.x ?? NaN;
+					// Between the gap's right edge and the next onset: signatures or a barline.
+					const jumpMs =
+						score.getTimeAt({ x: (right + nextX) / 2, y })?.ms ?? NaN;
+					// A quarter of the way into the box maps back to a quarter of the gap's time.
+					const quarterMs =
+						score.getTimeAt({ x: left + width / 4, y })?.ms ?? NaN;
+					const quarterOfGapMs = gap.startMs + (gap.endMs - gap.startMs) / 4;
 					return {
-						left: box.rect.x,
-						right: box.rect.right,
-						nextX: next.x,
-						nextMs: next.startMs,
-						midX: seq.positionAt((gap.startMs + gap.endMs) / 2)?.x,
-						endX: seq.positionAt(gap.endMs)?.x,
-						// Between the gap's right edge and the next onset: signatures or a barline.
-						jumpMs: score.getTimeAt({ x: (box.rect.right + next.x) / 2, y })
-							?.ms,
-						// A quarter of the way into the box maps back to a quarter of the gap's time.
-						quarterMs: score.getTimeAt({
-							x: box.rect.x + box.rect.w / 4,
-							y,
-						})?.ms,
-						quarterOfGapMs: gap.startMs + (gap.endMs - gap.startMs) / 4,
+						// The next onset sits past the gap's box, so there is a jump to make.
+						nextOnsetPastBox: nextX > right,
+						glidesAcrossBox: closeTo(midX, (left + right) / 2),
+						endsAtNextOnset: closeTo(endX, nextX),
+						jumpsToNextOnset: closeTo(jumpMs, nextMs),
+						mapsQuarterOfBox: closeTo(quarterMs, quarterOfGapMs),
 					};
 				});
 			},
 		);
-		expect(result).toHaveLength(2);
-		for (const gap of result) {
-			// The next onset sits past the gap's box, so there is a jump to make.
-			expect(gap.nextX).toBeGreaterThan(gap.right);
-			expect(gap.midX).toBeCloseTo((gap.left + gap.right) / 2);
-			expect(gap.endX).toBeCloseTo(gap.nextX);
-			expect(gap.jumpMs).toBeCloseTo(gap.nextMs);
-			expect(gap.quarterMs).toBeCloseTo(gap.quarterOfGapMs);
-		}
+		expect(result).toEqual(
+			Array(2).fill({
+				nextOnsetPastBox: true,
+				glidesAcrossBox: true,
+				endsAtNextOnset: true,
+				jumpsToNextOnset: true,
+				mapsQuarterOfBox: true,
+			}),
+		);
 	});
 
 	// The playhead halfway through the leading gap of measures_gap.png: a blue bar in the middle of
@@ -257,10 +259,12 @@ describe('cursor', () => {
 			{ beat: 1.13, active: ['C/5', 'E/4'] },
 			{ beat: 2.13, active: ['E/4', null] },
 		]);
-		for (const steps of [result.m1, result.m11, result.m12]) {
-			const xs = steps.map((step) => step.x);
-			expect(xs).toEqual([...xs].sort((a, b) => a - b));
-		}
+		const xsOf = (steps: typeof result.m1) => steps.map((step) => step.x);
+		expect([xsOf(result.m1), xsOf(result.m11), xsOf(result.m12)]).toEqual([
+			[...xsOf(result.m1)].sort((a, b) => a - b),
+			[...xsOf(result.m11)].sort((a, b) => a - b),
+			[...xsOf(result.m12)].sort((a, b) => a - b),
+		]);
 	});
 
 	// After-graces close out the note they follow: grace_after M25's trailing G5/A5 pair has no

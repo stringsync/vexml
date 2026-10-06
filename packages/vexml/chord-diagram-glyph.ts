@@ -7,63 +7,8 @@ export type ChordNote = [number, number | 'x'];
 /** A finger barring `fromString`..`toString` at `fret` (a single bar drawn across those strings). */
 export type Barre = { fromString: number; toString: number; fret: number };
 
-/** Everything a {@link ChordDiagramGlyph} needs: the chord data plus optional styling. */
-export type ChordDiagramGlyphOptions = {
-	/** The fretted notes: one `[string, fret]` pair per played/muted string. */
-	chord: ChordNote[];
-	/** Absolute fret of the top displayed fret line; drawn as a label when > 1. */
-	position?: number;
-	positionText?: number;
-	barres?: Barre[];
-	tuning?: string[];
-	/** Chord name drawn centered above the board (e.g. "G♯m7♭5"). */
-	title?: string;
-	/** Overall widget width in px (board is 75% of this, centered). */
-	width?: number;
-	/** Overall widget height in px. */
-	height?: number;
-	stringCount?: number;
-	fretCount?: number;
-	/** Draw the tuning letters under the board. */
-	showTuning?: boolean;
-	/** Line/dot stroke width. */
-	strokeWidth?: number;
-	/** Foreground (lines, dots, text). */
-	color?: string;
-	/** Background (open-string circle fill, page). */
-	bgColor?: string;
-	fontFamily?: string;
-	/** Finger-dot radius; defaults to board-width / 18. */
-	circleRadius?: number;
-	/** Base font size; defaults to board-width / 7. */
-	fontSize?: number;
-};
-
-/**
- * The chord-data subset: what a source (e.g. MusicXML) describes before render-time
- * geometry is known. Merged with styling to build a diagram.
- */
-export type ChordFrame = Pick<
-	ChordDiagramGlyphOptions,
-	'chord' | 'position' | 'positionText' | 'barres'
->;
-
-/** The defaultable styling subset — every field gets a fallback in the constructor. */
-type ChordStyle = Pick<
-	ChordDiagramGlyphOptions,
-	| 'width'
-	| 'height'
-	| 'stringCount'
-	| 'fretCount'
-	| 'showTuning'
-	| 'strokeWidth'
-	| 'color'
-	| 'bgColor'
-	| 'fontFamily'
->;
-
 export class ChordDiagramGlyph {
-	private readonly opts: Required<ChordStyle>;
+	private readonly style: Required<ChordStyle>;
 	private readonly chord: ChordNote[];
 	private readonly position: number;
 	private readonly positionText: number;
@@ -72,7 +17,7 @@ export class ChordDiagramGlyph {
 	private readonly title?: string;
 	private readonly stringCount: number;
 	private readonly fretCount: number;
-	private readonly width: number; // board width
+	private readonly width: number; // the board alone, not style.width, which spans the whole widget
 	private readonly spacing: number; // gap between strings
 	private readonly fretSpacing: number;
 	private readonly originX: number; // leftmost string x
@@ -85,9 +30,9 @@ export class ChordDiagramGlyph {
 	constructor(
 		private readonly x: number,
 		private readonly y: number,
-		options: ChordDiagramGlyphOptions,
+		opts: ChordDiagramGlyphOptions,
 	) {
-		this.opts = {
+		this.style = {
 			width: 100,
 			height: 120,
 			stringCount: 6,
@@ -97,35 +42,35 @@ export class ChordDiagramGlyph {
 			color: '#000',
 			bgColor: '#fff',
 			fontFamily: 'Arial, sans-serif',
-			...options,
+			...opts,
 		};
-		this.chord = options.chord;
-		this.position = options.position ?? 0;
-		this.positionText = options.positionText ?? 0;
-		this.barres = options.barres ?? [];
-		this.tuning = options.tuning ?? DEFAULT_TUNING;
-		this.title = options.title;
+		this.chord = opts.chord;
+		this.position = opts.position ?? 0;
+		this.positionText = opts.positionText ?? 0;
+		this.barres = opts.barres ?? [];
+		this.tuning = opts.tuning ?? DEFAULT_TUNING;
+		this.title = opts.title;
 
-		this.stringCount = this.opts.stringCount;
-		this.fretCount = this.opts.fretCount;
-		this.width = this.opts.width * 0.75;
+		this.stringCount = this.style.stringCount;
+		this.fretCount = this.style.fretCount;
+		this.width = this.style.width * 0.75;
 		this.spacing = this.width / this.stringCount;
 		// Vertical bands filling `height`: 1.5 fret-rows of headroom for the open/mute
 		// markers above the nut, fretCount fret rows, then a tuning row when shown plus a
 		// little bottom pad. The title (when present) is drawn ABOVE y, outside this box,
 		// so it never shares the marker band. See the `top` getter.
-		const vRows = this.fretCount + 3 + (this.opts.showTuning ? 1 : 0);
-		this.fretSpacing = this.opts.height / vRows;
+		const vRows = this.fretCount + 3 + (this.style.showTuning ? 1 : 0);
+		this.fretSpacing = this.style.height / vRows;
 		// Inset so the dots on the outer strings have room on either side.
-		this.originX = x + this.opts.width * 0.15 + this.spacing / 2;
+		this.originX = x + this.style.width * 0.15 + this.spacing / 2;
 		this.originY = y + this.fretSpacing * 1.5;
-		this.circleRadius = options.circleRadius ?? this.width / 18;
-		this.fontSize = options.fontSize ?? Math.ceil(this.width / 7);
+		this.circleRadius = opts.circleRadius ?? this.width / 18;
+		this.fontSize = opts.fontSize ?? Math.ceil(this.width / 7);
 		this.barShiftX = this.width / 28;
 		this.bridgeWidth = Math.max(2, Math.ceil(this.fretSpacing / 4));
 	}
 
-	/** Title font size — readable regardless of how small the box's own labels get. */
+	/** Title font size: readable regardless of how small the box's own labels get. */
 	private get titleSize(): number {
 		return Math.max(this.fontSize, 11);
 	}
@@ -141,8 +86,8 @@ export class ChordDiagramGlyph {
 		const { chord, position, positionText, barres, tuning } = this;
 		const { spacing, fretSpacing, originX, originY } = this;
 
-		// The strings overhang past the last fret line at the bottom — and, when a position
-		// label is shown (no nut), past the top fret line too — so the neck reads as
+		// The strings overhang past the last fret line at the bottom and, when a position
+		// label is shown (no nut), past the top fret line too, so the neck reads as
 		// continuing beyond the diagram.
 		const overhang = fretSpacing * 0.4;
 		const topOverhang = position > 1 ? overhang : 0;
@@ -158,13 +103,13 @@ export class ChordDiagramGlyph {
 				: originY - topOverhang - fretSpacing * 0.5 - size * 0.73; // just above the board
 			this.titleText(
 				context,
-				this.x + this.opts.width / 2,
+				this.x + this.style.width / 2,
 				topY,
 				this.title,
 				size,
 			);
 			// titleText draws the baseline at topY + size*0.73, but a font's real ascent is closer to
-			// a full em, so the cap tops land ~size above the baseline — about 0.27*size ABOVE topY.
+			// a full em, so the cap tops land ~size above the baseline (about 0.27*size ABOVE topY).
 			// Bound the title at that true top so callers reserving space above it (the page crop, the
 			// playback cursor/scroll box) cover those pixels instead of clipping them.
 			const titleTop = topY + size * 0.73 - size;
@@ -175,11 +120,11 @@ export class ChordDiagramGlyph {
 
 		// Nut (open position) or fret-position label.
 		if (position <= 1) {
-			const w = spacing * (this.stringCount - 1) + this.opts.strokeWidth;
+			const w = spacing * (this.stringCount - 1) + this.style.strokeWidth;
 			context.save();
-			context.setFillStyle(this.opts.color);
+			context.setFillStyle(this.style.color);
 			context.fillRect(
-				originX - this.opts.strokeWidth / 2,
+				originX - this.style.strokeWidth / 2,
 				originY - this.bridgeWidth,
 				w,
 				this.bridgeWidth,
@@ -215,7 +160,7 @@ export class ChordDiagramGlyph {
 			);
 		}
 
-		if (this.opts.showTuning && tuning.length > 0) {
+		if (this.style.showTuning && tuning.length > 0) {
 			for (let i = 0; i < Math.min(this.stringCount, tuning.length); i += 1) {
 				this.text(
 					context,
@@ -262,9 +207,9 @@ export class ChordDiagramGlyph {
 		// open (fret 0) = hollow ring.
 		const cy = y - this.fretSpacing / 2;
 		context.save();
-		context.setLineWidth(this.opts.strokeWidth);
-		context.setStrokeStyle(this.opts.color);
-		context.setFillStyle(fretNum > 0 ? this.opts.color : this.opts.bgColor);
+		context.setLineWidth(this.style.strokeWidth);
+		context.setStrokeStyle(this.style.color);
+		context.setFillStyle(fretNum > 0 ? this.style.color : this.style.bgColor);
 		context.beginPath();
 		context.arc(x, cy, this.circleRadius, 0, Math.PI * 2, false);
 		context.fill();
@@ -294,7 +239,7 @@ export class ChordDiagramGlyph {
 			(this.fretSpacing / 4) * 3;
 		// ponytail: square-ended bar. Add rounded caps if it reads poorly at small sizes.
 		context.save();
-		context.setFillStyle(this.opts.color);
+		context.setFillStyle(this.style.color);
 		context.fillRect(x, y, xTo - x, yTo - y);
 		context.restore();
 	}
@@ -307,8 +252,8 @@ export class ChordDiagramGlyph {
 		y2: number,
 	): void {
 		context.save();
-		context.setLineWidth(this.opts.strokeWidth);
-		context.setStrokeStyle(this.opts.color);
+		context.setLineWidth(this.style.strokeWidth);
+		context.setStrokeStyle(this.style.color);
 		context.beginPath();
 		context.moveTo(x1, y1);
 		context.lineTo(x2, y2);
@@ -326,15 +271,15 @@ export class ChordDiagramGlyph {
 		size: number,
 	): void {
 		context.save();
-		context.setFont(this.opts.fontFamily, size);
-		context.setFillStyle(this.opts.color);
+		context.setFont(this.style.fontFamily, size);
+		context.setFillStyle(this.style.color);
 		const w = context.measureText(msg).width;
 		context.fillText(msg, x - w / 2, topY + size * 0.73);
 		context.restore();
 	}
 
-	// Like `text`, but draws char by char so the ♯/♭/♮ glyphs — which carry wide
-	// side-bearings in text fonts and would otherwise read as "G ♯ m7 ♭ 5" — are pulled
+	// Like `text`, but draws char by char so the ♯/♭/♮ glyphs, which carry wide
+	// side-bearings in text fonts and would otherwise read as "G ♯ m7 ♭ 5", are pulled
 	// tight against their neighbours and rendered a touch smaller, matching the chord
 	// symbols drawn elsewhere (drawHarmony).
 	private titleText(
@@ -349,12 +294,12 @@ export class ChordDiagramGlyph {
 		const chars = [...msg];
 		const fontFor = (ch: string) =>
 			context.setFont(
-				this.opts.fontFamily,
+				this.style.fontFamily,
 				HARMONY_ACCIDENTALS.has(ch) ? accSize : size,
 			);
 
 		context.save();
-		context.setFillStyle(this.opts.color);
+		context.setFillStyle(this.style.color);
 		// Measure the kerned advance first so the whole string lands centered on centerX.
 		let total = 0;
 		for (const ch of chars) {
@@ -380,3 +325,58 @@ export class ChordDiagramGlyph {
 		context.restore();
 	}
 }
+
+/** Everything a {@link ChordDiagramGlyph} needs: the chord data plus optional styling. */
+export type ChordDiagramGlyphOptions = {
+	/** The fretted notes: one `[string, fret]` pair per played/muted string. */
+	chord: ChordNote[];
+	/** Absolute fret of the top displayed fret line; drawn as a label when > 1. */
+	position?: number;
+	positionText?: number;
+	barres?: Barre[];
+	tuning?: string[];
+	/** Chord name drawn centered above the board (e.g. "G♯m7♭5"). */
+	title?: string;
+	/** Overall widget width in px (board is 75% of this, centered). */
+	width?: number;
+	/** Overall widget height in px. */
+	height?: number;
+	stringCount?: number;
+	fretCount?: number;
+	/** Draw the tuning letters under the board. */
+	showTuning?: boolean;
+	/** Line/dot stroke width. */
+	strokeWidth?: number;
+	/** Foreground (lines, dots, text). */
+	color?: string;
+	/** Background (open-string circle fill, page). */
+	bgColor?: string;
+	fontFamily?: string;
+	/** Finger-dot radius; defaults to board-width / 18. */
+	circleRadius?: number;
+	/** Base font size; defaults to board-width / 7. */
+	fontSize?: number;
+};
+
+/**
+ * The chord-data subset: what a source (e.g. MusicXML) describes before render-time
+ * geometry is known. Merged with styling to build a diagram.
+ */
+export type ChordFrame = Pick<
+	ChordDiagramGlyphOptions,
+	'chord' | 'position' | 'positionText' | 'barres'
+>;
+
+/** The defaultable styling subset: every field gets a fallback in the constructor. */
+type ChordStyle = Pick<
+	ChordDiagramGlyphOptions,
+	| 'width'
+	| 'height'
+	| 'stringCount'
+	| 'fretCount'
+	| 'showTuning'
+	| 'strokeWidth'
+	| 'color'
+	| 'bgColor'
+	| 'fontFamily'
+>;

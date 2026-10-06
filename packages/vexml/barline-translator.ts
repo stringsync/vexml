@@ -45,7 +45,7 @@ export class BarlineTranslator {
 	/**
 	 * Each measure's barline decorations, translated from the repeat rows ScoreReader.measureRepeats
 	 * reads (playback reads the same rows). An ending run's bracket opens with a left hook (BEGIN),
-	 * continues hookless (MID), and closes with a right hook (END) — BEGIN_END when the run is one
+	 * continues hookless (MID), and closes with a right hook (END); BEGIN_END when the run is one
 	 * measure. A `discontinue` close leaves the bracket open on the right, so it keeps the hookless
 	 * form.
 	 */
@@ -86,7 +86,7 @@ export class BarlineTranslator {
 		return hooked ? Volta.type.END : Volta.type.MID;
 	}
 
-	/* "1" -> "1.", "1,2" -> "1., 2." — the printed form of an `<ending>`'s number list. */
+	/* "1" -> "1.", "1,2" -> "1., 2.": the printed form of an `<ending>`'s number list. */
 	private voltaLabel(number: string): string {
 		return number
 			.split(',')

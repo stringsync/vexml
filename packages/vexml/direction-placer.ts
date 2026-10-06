@@ -51,167 +51,10 @@ import type {
 } from './score-reader';
 import type { SpillTracker } from './spill-tracker';
 
-// Above-stave text (chord symbols, words) clears notes, ties, and other placed text, but NOT
-// chord diagrams — a diagram deliberately draws on top of any text it shares a spot with. All
-// nudge logic funnels through the CollisionResolver; see AGENTS.md, "Collisions and nudges".
-const TEXT_CLEAR_KINDS: CollisionKind[] = ['note', 'tie', 'annotation'];
-
-// A dynamic that sets a sustained LEVEL rather than accenting one note: any run of p's or
-// f's, plus mp/mf. These stay in force until the next one, so an immediate restatement of
-// the level already sounding is redundant and doesn't print. Everything else (sfz, fp, rfz,
-// fz, an <other-dynamics>) marks a single note and always prints, however often it repeats.
-const SUSTAINED_DYNAMIC = /^(p+|f+|mp|mf)$/;
-
-// How far a restatement of the sounding level can be from the last one printed and still
-// count as redundant, in measures. GuitarPro exports the level on EVERY measure, which this
-// swallows; a composer restating a dynamic further along — Schumann re-marking `p` at a new
-// stanza after the voice has rested — is a fresh reminder to the player and prints.
-const DYNAMIC_RESTATE_GAP = 1;
-
-// The SMuFL glyphs of the two navigation signs. They engrave as music, not as text — a
-// segno is a symbol a player recognizes by shape, so spelling it "Segno" would not do.
-const NAVIGATION_GLYPHS: Record<'segno' | 'coda', string> = {
-	segno: '\uE047', // segno
-	coda: '\uE048', // coda
-};
-
-// The face drawWords types a beside-stave string in. A words directive gets the text font
-// in italics; a dynamics marking gets the notation font (SMuFL glyphs are not text) at its
-// own larger size, so it engraves as music.
-type SideTextStyle = {
-	font: string;
-	size: number;
-	italic: boolean;
-	color?: string;
-	/** Where the string sits relative to its anchor x. Default 'left' — a directive is a
-	 * phrase reading rightward from its note; a dynamic centers on its notehead, and a
-	 * repeat-times label ends at the barline it labels. */
-	align?: 'left' | 'center' | 'right';
-	/** Side clearance the string keeps from other marks it would otherwise abut (see
-	 * ClearOptions.xMargin). 0 when absent. */
-	sideGap?: number;
-};
-
-/**
- * One measure's metronome mark(s): the rate from a `<beat-unit>` metronome, the note-group
- * relation from a `<metronome-note>` one, or both. At least one is non-null.
- */
-export type TempoTask = {
-	tempo: TempoMark | null;
-	modulation: TempoModulation | null;
-};
-
-/** A queued chord symbol (or fret diagram) and what to print there. */
-export type HarmonyTask = {
-	// A notation note when the part has a notation stave, else the tab note — a
-	// tab-only part still prints its chord symbols.
-	staveNote: StaveNote | TabNote;
-	text: string;
-	frame: ChordFrame | null;
-	source: Harmony;
-};
-
-/** A queued words direction, drawn on its stave's `placement` side at the laid-out x of
- * the note it applies to. */
-export type WordsTask = {
-	stave: Stave;
-	text: string;
-	anchor: StaveNote | TabNote | undefined;
-	placement: Placement;
-	/* The direction falls on the bar's first beat (see wordsAnchor). Absent means it doesn't. */
-	opensBar?: boolean;
-	/* The direction falls at the bar's end, so it ends at the right barline. Absent means it
-	 * doesn't. */
-	closesBar?: boolean;
-};
-
-/** A queued dynamics marking: a words task plus whether the marking spells out of SMuFL's
- * dynamic letters (and so engraves as glyphs in the notation font). */
-export type DynamicsTask = {
-	stave: Stave;
-	text: string;
-	glyph: boolean;
-	anchor: StaveNote | TabNote | undefined;
-	placement: Placement;
-};
-
-/** A queued <figured-bass> stack. `figures` is the whole stack, top row first; it draws as
- * one row per figure under the stave. */
-export type FiguredBassTask = {
-	stave: Stave;
-	figures: string[];
-	anchor: StaveNote | TabNote | undefined;
-};
-
-/** A <bracket>/<dashes> span with its endpoint notes as drawn — undefined when an endpoint
- * sits on a hidden staff. */
-export type DirectionLineTask = {
-	span: DirectionLineSpan;
-	start: StaveNote | undefined;
-	stop: StaveNote | undefined;
-};
-
 /*
- * One measure column's direction inputs, snapshotted from the measure loop at each call:
- * the annotation tasks queued while the column's staves and notes were built, plus the
- * measure-level facts behind the marks printed once over the column's top stave.
- */
-export interface DirectionColumn {
-	measureIndex: number;
-	systemIndex: number;
-	/** The system's top stave at this column, where measure-level marks print; undefined
-	 * until a stave exists. */
-	topStave: Stave | undefined;
-	/** The first part's measure — a rehearsal or navigation mark belongs to the measure
-	 * rather than to one part (every part carries the same one), so it's read from the
-	 * first part like the barline decorations. */
-	measure: Measure | undefined;
-	/** The printed "Nx" label of a repeat played more than twice, or null. */
-	repeatTimesLabel: string | null;
-	words: readonly WordsTask[];
-	dynamics: readonly DynamicsTask[];
-	figuredBasses: readonly FiguredBassTask[];
-	harmonies: readonly HarmonyTask[];
-	tempos: ReadonlyArray<{ stave: Stave } & TempoTask>;
-}
-
-/*
- * The bookkeeping the draw pass keeps for itself while directions land, handed over as a
- * narrow structural view: stave→row resolution lives with the pass's pending registry, and
- * the page crop grows with the rest of its page state.
- */
-export interface DirectionReporter {
-	/** Which stave row (of the current measure column) a stave sits on — the collision
-	 * band its text registers under. */
-	rowOf(stave: Stave): number | undefined;
-	/** How far an above-stave annotation reached over its stave, so pass two opens the gap
-	 * to the stave above wide enough to hold it. */
-	recordAnnotationSpill(stave: Stave, rect: Rect): void;
-	/** The below-stave mirror of recordAnnotationSpill: how far a below-stave annotation
-	 * reached under its stave (also grows the page and system bottoms). */
-	recordAnnotationDrop(stave: Stave, rect: Rect): void;
-	/** Ink that reached `top`: keeps the page crop above it. */
-	growPageTop(top: number): void;
-	/** Ink that reached `bottom`: keeps the page crop below it. */
-	growPageBottom(bottom: number): void;
-}
-
-export interface DirectionPlacerOptions {
-	/** The face beside-stave text is typed in. */
-	labelFont: string;
-	/** The SMuFL face for markings that engrave as music (dynamics, segno/coda). */
-	notationFont: string;
-	notationColor: string;
-	textColor: string;
-	/** The drawable region of the scratch canvas; a mark anchored near its right edge is
-	 * nudged back inside rather than clipped. */
-	scratchViewport: Rect;
-}
-
-/*
- * Places and draws the text a score types beside its staves — rehearsal marks, tempo
+ * Places and draws the text a score types beside its staves: rehearsal marks, tempo
  * marks, chord symbols and diagrams, words directives, dynamics, figured bass, and
- * direction lines — nudging each clear of the notes and text already placed via the shared
+ * direction lines, nudging each clear of the notes and text already placed via the shared
  * collision resolver. One instance lives and dies with its DrawPass.
  */
 export class DirectionPlacer {
@@ -252,7 +95,7 @@ export class DirectionPlacer {
 
 	/*
 	 * Whether a dynamics marking merely restates the dynamic already sounding on its staff,
-	 * and so prints nothing — some exporters (GuitarPro) repeat the level on every measure.
+	 * and so prints nothing. Some exporters (GuitarPro) repeat the level on every measure.
 	 * Only sustained LEVELS dedupe: sfz/fp/rfz and friends are per-note accents, so a repeat
 	 * of one is meaningful and always prints. Stamped on every statement, printed or not: a
 	 * suppressed one still keeps the run alive, so an unbroken per-measure chain stays
@@ -277,10 +120,10 @@ export class DirectionPlacer {
 	 */
 	placeColumn(column: DirectionColumn): void {
 		// Words go before the diagrams so a chord diagram draws on top of any words it
-		// shares a measure with — the fret box stays fully legible, the text yields.
+		// shares a measure with, so the fret box stays fully legible and the text yields.
 		for (const w of column.words) {
 			// A tab fret glyph is drawn CENTERED on its column x, but a notation notehead is
-			// drawn FROM it — so text left-anchored at that x starts at the fret's middle and
+			// drawn FROM it, so text left-anchored at that x starts at the fret's middle and
 			// reads as shifted right of the fret AND of the notehead above it. Center it over a
 			// tab anchor so it lines up with both. On a notation stave, left-anchored at the
 			// notehead is already right (and is what MuseScore draws), so leave that alone.
@@ -303,7 +146,7 @@ export class DirectionPlacer {
 				this.spill.growDecorationTop(column.systemIndex, placed.y);
 			}
 		}
-		// Dynamics ride the same path as words — they're just typed in the music font. A
+		// Dynamics ride the same path as words: they're just typed in the music font. A
 		// marking spelled out of SMuFL's dynamic letters engraves as glyphs; an
 		// <other-dynamics> keeps its literal text in the words face.
 		for (const d of column.dynamics) {
@@ -335,7 +178,7 @@ export class DirectionPlacer {
 		// Figured bass: one row per <figure> under the stave, top figure first. Each row goes
 		// through the same below-stave path as a dynamic, so the collision resolver drops each
 		// one clear of the row already placed above it and the stack builds downward on its
-		// own — no per-row offset arithmetic. Upright rather than italic: the numerals are read
+		// own, with no per-row offset arithmetic. Upright rather than italic: the numerals are read
 		// as figures, not as an expression marking.
 		for (const f of column.figuredBasses) {
 			for (const figure of f.figures) {
@@ -380,14 +223,14 @@ export class DirectionPlacer {
 					CHORD_DIAGRAM_HEIGHT,
 				);
 				const band = this.reporter.rowOf(stave);
-				// Lift, THEN space — not the other way round. A diagram over a run of high
+				// Lift, THEN space, not the other way round. A diagram over a run of high
 				// notes rises a long way off its default row, so the boxes already placed in
 				// this system sit well above where an unlifted box would probe: pushRightOf
 				// there matches nothing and two crowded diagrams print through each other.
 				// Lifting first puts the box in the row its neighbours are actually in.
 				//
 				// Padded below its bottom so the lift-clear probe reaches a high note (or its
-				// tie) poking up into the box's column — the same padding treatment a chord
+				// tie) poking up into the box's column; the same padding treatment a chord
 				// symbol uses. The box then rises off the note instead of overlapping it; with
 				// nothing in the way it keeps its default position. Banded to its own stave
 				// row: without it, a lower part's diagram sees the part above's notes and
@@ -410,7 +253,7 @@ export class DirectionPlacer {
 				const lifted = unpad(lift(natural));
 				// A box anchored at a note near the right edge would overrun the canvas and be
 				// clipped (page overflow has no crop-growth knob like the vertical edges do), so
-				// nudge it back inside the drawable region — minus the room this column's later
+				// nudge it back inside the drawable region, minus the room this column's later
 				// boxes are owed, so they land beside it instead of on top of it.
 				//
 				// Clamp BEFORE spacing, not after. Clamping last pins every crowded box to the
@@ -434,7 +277,7 @@ export class DirectionPlacer {
 					CHORD_DIAGRAM_GAP,
 				);
 				// Spacing moved it into a different column, which may hold taller notes than
-				// the one it was lifted out of — so lift again where it actually landed.
+				// the one it was lifted out of, so lift again where it actually landed.
 				const placed = spaced.x === lifted.x ? lifted : unpad(lift(spaced));
 				const diagram = new ChordDiagramGlyph(placed.x, placed.y, {
 					...h.frame,
@@ -479,15 +322,15 @@ export class DirectionPlacer {
 				// Unlike words/chord symbols, a chord diagram is NOT folded into the measure
 				// box (no growDecorationTop): the diagram is a tall floating fret box, and a
 				// playback cursor bar stretching all the way up to it reads as disconnected.
-				// The bar should span only the stave region — as if the diagram weren't there.
+				// The bar should span only the stave region, as if the diagram weren't there.
 				// The diagram is still kept on-canvas (pageTop) and reserved against the system
 				// above (systemHighestTop); it just doesn't lift the cursor/measure box.
 				// The diagram rises above the stave, so it also counts toward this system's
-				// upward overflow — otherwise no systemSpacing is reserved for it and a
+				// upward overflow; otherwise no systemSpacing is reserved for it and a
 				// diagram on a stacked system collides with the system above.
 				this.spill.growHighestTop(column.systemIndex, diagram.top);
 				// Emit the placed box for the element index (the whole drawn extent, title
-				// included), still in scratch space — the caller shifts it with the crop.
+				// included), still in scratch space, which the caller shifts with the crop.
 				this.geometry.addChordDiagram({
 					rect: new Rect(
 						placed.x,
@@ -515,14 +358,14 @@ export class DirectionPlacer {
 			this.reporter.growPageTop(top);
 			this.spill.growDecorationTop(column.systemIndex, top);
 		}
-		// A rehearsal mark belongs to the measure, not to one part — every part carries the
-		// same one — so it's read from the first part (like the barline decorations) and
+		// A rehearsal mark belongs to the measure, not to one part: every part carries the
+		// same one, so it's read from the first part (like the barline decorations) and
 		// printed once, over the column's top stave. It goes last of all: engraving puts the
 		// section header at the very top of the above-stave stack, clear of tempo and chords.
 		const topStave = column.topStave;
 		const measure = column.measure;
 		// Segno/coda: measure-level landmarks like a rehearsal mark, so they're read from the
-		// first part and printed once over the column's top stave, at its left edge — where a
+		// first part and printed once over the column's top stave, at its left edge, where a
 		// player scanning for "the sign" looks. Drawn before the rehearsal marks so a mark in
 		// the same measure stacks above rather than over them.
 		if (topStave && measure) {
@@ -575,7 +418,7 @@ export class DirectionPlacer {
 
 	/*
 	 * Draw a rehearsal mark (a section header like "A" or "Chorus") as boxed bold text above
-	 * the stave, anchored at the measure's left edge — a player reading "from B" looks for
+	 * the stave, anchored at the measure's left edge: a player reading "from B" looks for
 	 * the barline, not a note. The collision resolver lifts it clear of anything already in
 	 * its column. Returns the y the box reaches up to so the caller can grow the page crop.
 	 */
@@ -617,9 +460,9 @@ export class DirectionPlacer {
 	 * The collision box of a metronome mark drawn at (`x`, `baseline`): StaveTempo lays the
 	 * beat-unit glyph, "=", and the bpm out on one baseline with 3px gaps, all shrunk by
 	 * TEMPO_SCALE. Measured with the same vexflow Elements (and Metrics font info) StaveTempo
-	 * draws with, so the box matches the drawn glyphs — ink ascent AND descent, because the
+	 * draws with, so the box matches the drawn glyphs, ink ascent AND descent, because the
 	 * beat-unit glyph's origin is its notehead center, so half of it hangs below the baseline.
-	 * ponytail: measured with the quarter-note glyph whatever the beat unit — the note glyphs
+	 * ponytail: measured with the quarter-note glyph whatever the beat unit; the note glyphs
 	 * are within a couple of pixels of each other at this size, except a stemless whole note,
 	 * which just reserves a little more air than it needs.
 	 */
@@ -678,8 +521,8 @@ export class DirectionPlacer {
 	 * Draw a metronome mark ("<note> = bpm") above the stave, anchored just right of the
 	 * clef/key/time (StaveTempo's own placement, over the first note). It normally sits one
 	 * text line above the staff; the collision resolver lifts it clear of anything already in
-	 * its column — a high note reaching up into that band, or a chord symbol/word placed
-	 * earlier in this pass — and the layout reserves the matching top headroom. Returns the y
+	 * its column (a high note reaching up into that band, or a chord symbol/word placed
+	 * earlier in this pass), and the layout reserves the matching top headroom. Returns the y
 	 * the mark reaches up to so the caller can grow the page crop above it. Drawn after the
 	 * notes are formatted so the anchor x and the note extents are real.
 	 */
@@ -687,7 +530,7 @@ export class DirectionPlacer {
 		const baseY = stave.getYForTopText(1);
 		// vexflow's StaveTempo.draw reads stave.getModifierXShift(position), which uses the
 		// position enum as an index into the stave's modifier array. ABOVE (the default, 3)
-		// indexes modifiers[3], which is undefined — and throws — on a system-start stave that
+		// indexes modifiers[3], which is undefined (and throws) on a system-start stave that
 		// re-states a clef but no time signature (begin barline + clef + end barline = 3
 		// modifiers). CENTER (0) points at the always-present begin barline instead, yielding
 		// the same start-of-notes x offset without the out-of-bounds read.
@@ -769,7 +612,7 @@ export class DirectionPlacer {
 
 	/*
 	 * Draw a chord symbol (from a <harmony>) above its note's stave, left-anchored at the note's
-	 * x — the laid-out position of the note the harmony applies to. The collision resolver lifts
+	 * x: the laid-out position of the note the harmony applies to. The collision resolver lifts
 	 * it clear of any notehead, high tie, or already-placed annotation it would land on (all
 	 * registered as obstacles); it sits at a fixed gap above the top staff line when nothing is in
 	 * the way. Returns the y the text reaches up to so the caller can grow the page crop above it.
@@ -857,7 +700,7 @@ export class DirectionPlacer {
 	/*
 	 * Draw a words direction (e.g. "ritardando") beside the stave in italics, left-anchored at
 	 * the x of the note it applies to. `placement` picks the side: 'above' is the default and
-	 * lifts clear of any notehead/tie/annotation in its column, 'below' is the mirror image —
+	 * lifts clear of any notehead/tie/annotation in its column, and 'below' is the mirror image:
 	 * it drops clear of everything hanging under the stave (low notes, stems, lyrics, an
 	 * earlier below-stave mark) via the same resolver with the sign flipped. With nothing in
 	 * the way either sits at a fixed gap from the near staff line. Returns the placed box so
@@ -915,12 +758,12 @@ export class DirectionPlacer {
 					band,
 					xMargin: style.sideGap,
 				});
-		// The stave's opening modifiers own everything left of the note start x — clef, key,
+		// The stave's opening modifiers own everything left of the note start x: clef, key,
 		// time, and a begin-repeat's bars, which on a multi-stave system a connector carries
 		// straight up through the band this text sits in (no lift can clear a line that spans
 		// the whole gap). A tab annotation is CENTERED on its note (see placeColumn), so
 		// over a measure's first note its left half reaches back into that area and prints
-		// through the sign. Bound note-anchored text on the left by the note area — but not on
+		// through the sign. Bound note-anchored text on the left by the note area, but not on
 		// the right by the barline: a trailing "rit." on a measure's last note is supposed to
 		// overrun it, so the right bound is the page, which the viewport nudge below owns.
 		// Only note-anchored text: a caller passing an explicit x (the segno/coda at the
@@ -939,7 +782,7 @@ export class DirectionPlacer {
 						0,
 					);
 		// A mark anchored near the right edge would run off the canvas and be clipped (there's
-		// no horizontal crop-growth knob), so pull it back inside — the same treatment a chord
+		// no horizontal crop-growth knob), so pull it back inside: the same treatment a chord
 		// diagram at the edge gets.
 		const placed = this.collisionResolver.nudgeInsideX(
 			bounded,
@@ -970,7 +813,7 @@ export class DirectionPlacer {
 	 * line: they are drawn in the finish pass, after the per-system collision index has been
 	 * cleared, so they take that fixed anchor instead of resolving (see AGENTS.md,
 	 * "Collisions and nudges").
-	 * ponytail: 'arrow' draws the same tick 'down' does — an arrowhead needs its own path and no
+	 * ponytail: 'arrow' draws the same tick 'down' does; an arrowhead needs its own path and no
 	 * fixture asks for one.
 	 */
 	drawDirectionLines(lines: readonly DirectionLineTask[]): void {
@@ -1023,4 +866,161 @@ export class DirectionPlacer {
 			this.reporter.growPageBottom(y + DIRECTION_LINE_HOOK);
 		}
 	}
+}
+
+// Above-stave text (chord symbols, words) clears notes, ties, and other placed text, but NOT
+// chord diagrams: a diagram deliberately draws on top of any text it shares a spot with. All
+// nudge logic funnels through the CollisionResolver; see AGENTS.md, "Collisions and nudges".
+const TEXT_CLEAR_KINDS: CollisionKind[] = ['note', 'tie', 'annotation'];
+
+// A dynamic that sets a sustained LEVEL rather than accenting one note: any run of p's or
+// f's, plus mp/mf. These stay in force until the next one, so an immediate restatement of
+// the level already sounding is redundant and doesn't print. Everything else (sfz, fp, rfz,
+// fz, an <other-dynamics>) marks a single note and always prints, however often it repeats.
+const SUSTAINED_DYNAMIC = /^(p+|f+|mp|mf)$/;
+
+// How far a restatement of the sounding level can be from the last one printed and still
+// count as redundant, in measures. GuitarPro exports the level on EVERY measure, which this
+// swallows; a composer restating a dynamic further along (Schumann re-marking `p` at a new
+// stanza after the voice has rested) is a fresh reminder to the player and prints.
+const DYNAMIC_RESTATE_GAP = 1;
+
+// The SMuFL glyphs of the two navigation signs. They engrave as music, not as text: a
+// segno is a symbol a player recognizes by shape, so spelling it "Segno" would not do.
+const NAVIGATION_GLYPHS: Record<'segno' | 'coda', string> = {
+	segno: '\uE047', // segno
+	coda: '\uE048', // coda
+};
+
+// The face drawWords types a beside-stave string in. A words directive gets the text font
+// in italics; a dynamics marking gets the notation font (SMuFL glyphs are not text) at its
+// own larger size, so it engraves as music.
+type SideTextStyle = {
+	font: string;
+	size: number;
+	italic: boolean;
+	color?: string;
+	/** Where the string sits relative to its anchor x. Default 'left': a directive is a
+	 * phrase reading rightward from its note; a dynamic centers on its notehead, and a
+	 * repeat-times label ends at the barline it labels. */
+	align?: 'left' | 'center' | 'right';
+	/** Side clearance the string keeps from other marks it would otherwise abut (see
+	 * ClearOptions.xMargin). 0 when absent. */
+	sideGap?: number;
+};
+
+/**
+ * One measure's metronome mark(s): the rate from a `<beat-unit>` metronome, the note-group
+ * relation from a `<metronome-note>` one, or both. At least one is non-null.
+ */
+export type TempoTask = {
+	tempo: TempoMark | null;
+	modulation: TempoModulation | null;
+};
+
+/** A queued chord symbol (or fret diagram) and what to print there. */
+export type HarmonyTask = {
+	// A notation note when the part has a notation stave, else the tab note, so a
+	// tab-only part still prints its chord symbols.
+	staveNote: StaveNote | TabNote;
+	text: string;
+	frame: ChordFrame | null;
+	source: Harmony;
+};
+
+/** A queued words direction, drawn on its stave's `placement` side at the laid-out x of
+ * the note it applies to. */
+export type WordsTask = {
+	stave: Stave;
+	text: string;
+	anchor: StaveNote | TabNote | undefined;
+	placement: Placement;
+	/* The direction falls on the bar's first beat (see wordsAnchor). Absent means it doesn't. */
+	opensBar?: boolean;
+	/* The direction falls at the bar's end, so it ends at the right barline. Absent means it
+	 * doesn't. */
+	closesBar?: boolean;
+};
+
+/** A queued dynamics marking: a words task plus whether the marking spells out of SMuFL's
+ * dynamic letters (and so engraves as glyphs in the notation font). */
+export type DynamicsTask = {
+	stave: Stave;
+	text: string;
+	glyph: boolean;
+	anchor: StaveNote | TabNote | undefined;
+	placement: Placement;
+};
+
+/** A queued <figured-bass> stack. `figures` is the whole stack, top row first; it draws as
+ * one row per figure under the stave. */
+export type FiguredBassTask = {
+	stave: Stave;
+	figures: string[];
+	anchor: StaveNote | TabNote | undefined;
+};
+
+/** A <bracket>/<dashes> span with its endpoint notes as drawn; undefined when an endpoint
+ * sits on a hidden staff. */
+export type DirectionLineTask = {
+	span: DirectionLineSpan;
+	start: StaveNote | undefined;
+	stop: StaveNote | undefined;
+};
+
+/*
+ * One measure column's direction inputs, snapshotted from the measure loop at each call:
+ * the annotation tasks queued while the column's staves and notes were built, plus the
+ * measure-level facts behind the marks printed once over the column's top stave.
+ */
+export interface DirectionColumn {
+	measureIndex: number;
+	systemIndex: number;
+	/** The system's top stave at this column, where measure-level marks print; undefined
+	 * until a stave exists. */
+	topStave: Stave | undefined;
+	/** The first part's measure: a rehearsal or navigation mark belongs to the measure
+	 * rather than to one part (every part carries the same one), so it's read from the
+	 * first part like the barline decorations. */
+	measure: Measure | undefined;
+	/** The printed "Nx" label of a repeat played more than twice, or null. */
+	repeatTimesLabel: string | null;
+	words: readonly WordsTask[];
+	dynamics: readonly DynamicsTask[];
+	figuredBasses: readonly FiguredBassTask[];
+	harmonies: readonly HarmonyTask[];
+	tempos: ReadonlyArray<{ stave: Stave } & TempoTask>;
+}
+
+/*
+ * The bookkeeping the draw pass keeps for itself while directions land, handed over as a
+ * narrow structural view: stave→row resolution lives with the pass's pending registry, and
+ * the page crop grows with the rest of its page state.
+ */
+export interface DirectionReporter {
+	/** Which stave row (of the current measure column) a stave sits on: the collision
+	 * band its text registers under. */
+	rowOf(stave: Stave): number | undefined;
+	/** How far an above-stave annotation reached over its stave, so pass two opens the gap
+	 * to the stave above wide enough to hold it. */
+	recordAnnotationSpill(stave: Stave, rect: Rect): void;
+	/** The below-stave mirror of recordAnnotationSpill: how far a below-stave annotation
+	 * reached under its stave (also grows the page and system bottoms). */
+	recordAnnotationDrop(stave: Stave, rect: Rect): void;
+	/** Ink that reached `top`: keeps the page crop above it. */
+	growPageTop(top: number): void;
+	/** Ink that reached `bottom`: keeps the page crop below it. */
+	growPageBottom(bottom: number): void;
+}
+
+export interface DirectionPlacerOptions {
+	/** The face beside-stave text is typed in. */
+	labelFont: string;
+	/** The SMuFL face for markings that engrave as music (dynamics, segno/coda). */
+	notationFont: string;
+	notationColor: string;
+	textColor: string;
+	/** The drawable region of the scratch canvas; a mark anchored near its right edge is
+	 * nudged back inside rather than clipped. */
+	scratchViewport: Rect;
 }

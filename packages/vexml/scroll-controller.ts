@@ -40,7 +40,7 @@ export class ScrollController implements Scroller {
 	constructor(private readonly host: ScrollHost) {}
 
 	/* Suspend scrolling for a resize: cancel any in-flight scroll and drop new scrollIntoView calls
-	 * until the container size stops changing. Call once per ResizeObserver callback — each call
+	 * until the container size stops changing. Call once per ResizeObserver callback: each call
 	 * restarts the debounce, so scrolling only resumes RESIZE_SETTLE_MS after the last resize. */
 	suspendForResize(): void {
 		if (!this.resizeSettleTimer) {

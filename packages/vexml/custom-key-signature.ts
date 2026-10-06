@@ -2,13 +2,13 @@ import { KeySignature, Stave } from 'vexflow';
 
 /*
  * A key signature spelled out accidental by accidental, for a <key> written with
- * <key-step>/<key-alter> instead of <fifths> — microtonal and modal-jazz signatures, which
+ * <key-step>/<key-alter> instead of <fifths>, microtonal and modal-jazz signatures, which
  * are not circle-of-fifths shaped and so have no key spec to name them.
  *
  * vexflow's own KeySignature always rebuilds its accidentals from a key spec (format() calls
  * Tables.keySignature), so there is no way to hand it a list; this overrides that one step
- * and reuses everything else — the glyph laying, the spacing and the stave-modifier plumbing
- * — so a custom signature places, measures and draws exactly like a normal one.
+ * and reuses everything else (the glyph laying, the spacing and the stave-modifier plumbing),
+ * so a custom signature places, measures and draws exactly like a normal one.
  */
 export class CustomKeySignature extends KeySignature {
 	constructor(

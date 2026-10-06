@@ -4,7 +4,7 @@ import { MeasureSequenceIterator } from './measure-sequence-iterator';
 import type { ScoreReader } from './score-reader';
 
 /* A run of source measures [lo, hi] that playback enters once, at lo from lo - 1, and leaves
- * once, after hi — playing positions [p0, p1] of the unrolled order in between. A repeat with
+ * once, after hi (playing positions [p0, p1] of the unrolled order in between). A repeat with
  * its voltas is the multi-pass kind; a measure outside every repeat is a block of one. */
 type Block = { lo: number; hi: number; p0: number; p1: number };
 
@@ -12,7 +12,7 @@ type Block = { lo: number; hi: number; p0: number; p1: number };
  * Inserts gap measures into a document: one empty, unnumbered measure per part for each
  * position, carrying its right neighbor's signatures. A `beforeMeasureIndex` names where it
  * is written. A `beforeBarIndex` counts bars in playback order (MeasureSequenceIterator over
- * the score's repeats and voltas) and maps to the measure that bar plays — refusing one that
+ * the score's repeats and voltas) and maps to the measure that bar plays, refusing one that
  * falls inside a repeat, where a plain measure would play on every pass or split a volta group.
  * Positions are all read against the document before any of them is inserted, so they never
  * count each other.

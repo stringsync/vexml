@@ -10,6 +10,7 @@ describe('Affine', () => {
 	});
 
 	it('maps a box to the box around its turned corners', () => {
+		// scry-ignore comments-say-why-not-what: names the transform the bare matrix entries encode, which the code cannot say
 		const quarter = new Affine(0, 1, -1, 0, 0, 0); // rotate(90deg)
 		expect(quarter.mapBox(0, 0, 10, 4)).toEqual(new Rect(-4, 0, 4, 10));
 	});

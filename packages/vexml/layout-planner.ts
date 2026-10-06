@@ -41,86 +41,6 @@ import type { StavePlan } from './stave-plan';
 import type { TabVoiceTranslator } from './tab-voice-translator';
 import type { VoiceTranslator } from './voice-translator';
 
-/** A measure's placed box within its system. */
-export type MeasureBox = {
-	x: number;
-	width: number;
-	/** Part of `width` held open before the right barline for a words directive on the
-	 * measure's last note (see LayoutPlanner.trailingWordsPad); the notes format into the
-	 * rest. 0 for measures with no such directive. */
-	trailingPad: number;
-	/** Part of `width` held open after the left barline for a CENTERED words directive on the
-	 * measure's first note (see LayoutPlanner.leadingWordsPad); the notes start after it.
-	 * 0 for measures with no such directive. */
-	leadingPad: number;
-	systemIndex: number;
-	/** First / last measure of its system that is music: a leading or trailing gap is not. */
-	isSystemStart: boolean;
-	isSystemEnd: boolean;
-	/** A gap before the score's first measure ('leading') or after its last ('trailing'):
-	 * drawn as a box outside the staves, `x`/`width` being exactly that box. Null for every
-	 * other measure, gaps between measures included. */
-	edge: 'leading' | 'trailing' | null;
-};
-
-/** Where everything goes: parts laid out at a reference width, ready for the draw
- * pass. Pure geometry — no vexflow drawing happens here. */
-export type ScoreLayout = {
-	measureCount: number;
-	totalStaves: number;
-	boxes: MeasureBox[];
-	/** Each stave's y-offset within a system, indexed by global stave row. The planned
-	 * spacing, from the fixed constants — and the floor no system goes below. */
-	staveOffsets: number[];
-	/** What pass one measured each system actually needs, indexed by system (see
-	 * SpillResolver.spacedOffsets). Absent on pass one, where every system uses the planned
-	 * offsets; a system missing from it falls back to them too. */
-	systemStaveOffsets?: ReadonlyMap<number, number[]>;
-	/** Top margin: the first system's y. */
-	top: number;
-	/** Vertical gap between stacked systems. */
-	systemGap: number;
-	/** Page width (reference width, or content width in panoramic). */
-	width: number;
-	/** Left space reserved on the first system for part labels AND any <part-group> names
-	 * printed outside them (0 when nothing is labelled). Where draw places the names. */
-	labelIndent: number;
-	/** The part-label column alone, out of `labelIndent`: names right-align against the
-	 * staves inside it, and a group name right-aligns against ITS left edge. 0 when no
-	 * <part-group> declares a <group-name>, in which case it equals labelIndent. */
-	partLabelIndent: number;
-	/** Starting page height, before the draw pass grows it for deep ledger lines. */
-	floorHeight: number;
-	/** Resolved spacing curve, shared by this measurement and the draw pass so the
-	 * drawn notes land where the spacing was computed for. */
-	softmaxFactor: number;
-};
-
-/** The two widths a measure's note area can take. `ideal` is what the spacing curve wants;
- * `min` is the hard floor below which the notes no longer fit. Layout squeezes between them
- * and never past `min`, so no configuration can produce a system with cut-off notes. */
-type NoteArea = {
-	min: number;
-	ideal: number;
-};
-
-/** One stave's inputs to the note-area measurement: the voices to size plus the
- * clef/meter/tab context that shapes their tickables. */
-type StaveSpec = {
-	voices: StaffVoice[];
-	clef: string;
-	meterFloor: number;
-	isTab: boolean;
-	/** Open-string pitches of a tab staff; null for a notation staff (see stringTuning). */
-	tuning: number[] | null;
-	/** Mid-measure dividers (see ScoreReader.midBarlinesOf) — they take horizontal room, so
-	 * the measured width has to include the same BarNotes the draw pass inserts. */
-	barlines: { beat: number; style: string }[];
-	/** Mid-measure clef changes (see ScoreReader.midClefsOf) — the small ClefNotes they insert
-	 * take horizontal room too, and they re-aim the notes after them. */
-	midClefs: MidClefSpec[];
-};
-
 export class LayoutPlanner {
 	constructor(
 		private readonly translator: VoiceTranslator,
@@ -234,7 +154,7 @@ export class LayoutPlanner {
 	// A measure's note-area widths: `ideal` is the sum of its notes' logarithmic widths (denser
 	// measures get more space; a long note adds only a little), `min` is the width below which
 	// vexflow's own formatter can no longer place those notes without collision. Every layout
-	// decision is free to squeeze a measure between the two, and none may go below `min` — that
+	// decision is free to squeeze a measure between the two, and none may go below `min`: that
 	// is what keeps notes from being cut off. Builds throwaway notes so the draw pass is
 	// untouched. The busiest staff wins (all staves in a measure share one width).
 	private measureNoteArea(
@@ -287,7 +207,7 @@ export class LayoutPlanner {
 				minNotes = Math.max(minNotes, noteCount * TAB_MIN_NOTE_SPACING);
 			}
 			// Sum each voice's per-note logarithmic widths; the busiest voice sets the width.
-			// Grace notes steal no time, so they get no logarithmic share — but they still
+			// Grace notes steal no time, so they get no logarithmic share, but they still
 			// occupy horizontal space left of their host. Add each grace cluster's width on top
 			// so a grace-bearing measure is allocated the extra room it needs, instead of the
 			// graces compressing the real notes into the same width (see graceWidthOf).
@@ -312,7 +232,7 @@ export class LayoutPlanner {
 	 * vexflow pads the contexts' summed widths by the larger of two terms: its unaligned-note
 	 * padding for each context only some voices sound in, or the spread (coefficient of
 	 * variation) of the notes' widths and durations times the context count. That spread
-	 * runs away on two things the notes never need room for — the zero-width ghosts that
+	 * runs away on two things the notes never need room for: the zero-width ghosts that
 	 * stand in for a cross-staff run's notes on the other stave, and one long held note in
 	 * another voice under a fast run, pooled into a single duration sample. Together they
 	 * asked Der Lindenbaum's bar 51 for 678px where its notes fit in about 400. So the spread
@@ -376,7 +296,7 @@ export class LayoutPlanner {
 	 * Space to hold open before a measure's right barline, so a words directive on the measure's
 	 * LAST note fits inside the measure instead of printing across the divider. The directive is
 	 * left-anchored at its note's x (see DrawPass.drawWords), and the last note has nothing after
-	 * it, so the only room the text has is that note's own share of the width — anything longer
+	 * it, so the only room the text has is that note's own share of the width; anything longer
 	 * spills over the barline. A directive anchored earlier prints over the notes that follow it,
 	 * which is ordinary engraving and needs no room of its own.
 	 *
@@ -386,10 +306,10 @@ export class LayoutPlanner {
 	 * the space where the text actually needs it.
 	 */
 	private trailingWordsPad(measures: Measure[], noteSpacing: number): number {
-		// The column's last onset, across every part, voice and staff — the whole column is
+		// The column's last onset, across every part, voice and staff: the whole column is
 		// formatted together, so a note in ANY part is room a directive can print over.
 		// Compared against onsets rather than against the column's end beat, so a whole-measure
-		// rest — which ENDS last but starts at beat 0 — isn't mistaken for a note at the barline.
+		// rest (which ENDS last but starts at beat 0) isn't mistaken for a note at the barline.
 		let lastOnset = 0;
 		for (const measure of measures) {
 			for (const voice of measure.voices) {
@@ -424,7 +344,7 @@ export class LayoutPlanner {
 	/*
 	 * The mirror of {@link trailingWordsPad}: space to hold open after a measure's LEFT barline.
 	 * A directive on a TAB note is drawn CENTERED on it (see DrawPass.drawAnnotations), so one on
-	 * the measure's first note reaches half its width backwards, across the divider — the notes
+	 * the measure's first note reaches half its width backwards, across the divider: the notes
 	 * before it are in the previous measure and are no room at all. Half the text is what has to
 	 * fit; the caller nets off the lead glyphs, which already hold the front of the measure open.
 	 *
@@ -432,7 +352,7 @@ export class LayoutPlanner {
 	 * and reaches only forward, so it needs nothing here.
 	 */
 	private leadingWordsPad(parts: Part[], m: number): number {
-		// The column's first onset, across every part, voice and staff — matching the last-onset
+		// The column's first onset, across every part, voice and staff, matching the last-onset
 		// read in trailingWordsPad, so "anchored at the measure's first note" means the same
 		// thing on both sides even when one part rests through the downbeat.
 		let firstOnset = Number.POSITIVE_INFINITY;
@@ -475,7 +395,7 @@ export class LayoutPlanner {
 
 	/** Lay the parts out at the reference width: where every measure box sits, how
 	 * staves stack within a system, and how tall/wide the page starts. Depends only on
-	 * the music and the options, never on the live container — the finished result is
+	 * the music and the options, never on the live container: the finished result is
 	 * scaled to fit its container. */
 	plan(score: Score, config: Config): ScoreLayout {
 		const parts = score.parts;
@@ -499,7 +419,7 @@ export class LayoutPlanner {
 		let width =
 			layout.type === 'standard' ? layout.referenceWidth : DEFAULT_WIDTH;
 		// Panoramic has no wrapping to honor breaks in and grows the page to its content, so
-		// it reads as 'allow' with breaks off — neither is consulted outside standard.
+		// it reads as 'allow' with breaks off; neither is consulted outside standard.
 		const overflow = layout.type === 'standard' ? layout.overflow : 'allow';
 		const honorSystemBreaks =
 			layout.type === 'standard' && layout.honorSystemBreaks;
@@ -559,14 +479,14 @@ export class LayoutPlanner {
 		// widest label plus LABEL_GAP so labels right-align just before the stave and the
 		// longest still fits inside the margin without clipping.
 		// ponytail: label width estimated at ~7.5px/char for 13px Arial (no render context
-		// here to measure) — a hair over the ~6.9px actual, so the longest never clips its
+		// here to measure), a hair over the ~6.9px actual, so the longest never clips its
 		// left edge. Measure exactly if a font change makes the estimate drift.
 		const labelChars = config.showPartLabels
 			? Math.max(0, ...parts.map((part) => part.label?.length ?? 0))
 			: 0;
 		const partLabelIndent =
 			labelChars > 0 ? labelChars * LABEL_CHAR_WIDTH + LABEL_GAP : 0;
-		// A <group-name> prints outside the part labels — it names the section the bracket
+		// A <group-name> prints outside the part labels: it names the section the bracket
 		// spans, so it can't sit between a part's name and that part's stave. It gets its own
 		// column of the indent, sized the same way.
 		const groupChars = config.showPartLabels
@@ -630,12 +550,12 @@ export class LayoutPlanner {
 
 		// --- Spacing (content only) ---------------------------------------------------
 		// A measure's note area is a pure function of its music: an `ideal` width (the sum of its
-		// notes' logarithmic widths — noteSpacing per quarter, sub-linear in duration) and a `min`
+		// notes' logarithmic widths: noteSpacing per quarter, sub-linear in duration) and a `min`
 		// width (vexflow's collision-free minimum, floored at BASE_VOICE_WIDTH). More notes mean a
-		// wider measure; a long note adds only a little — so identical content is identically wide
+		// wider measure; a long note adds only a little, so identical content is identically wide
 		// everywhere.
 		// The measures a <multiple-rest> swallows get no box at all, so they take no width, force
-		// no break, and are skipped by the draw pass — the run's lead measure stands for all of
+		// no break, and are skipped by the draw pass: the run's lead measure stands for all of
 		// them (see ScoreReader.multiRestsOf).
 		const { leads: multiRestLeads, hidden: multiRestHidden } =
 			this.reader.multiRestsOf(parts);
@@ -646,7 +566,7 @@ export class LayoutPlanner {
 			}
 			// A gap has no notes to size it: floor its (empty) note area at the caller's
 			// minWidth and at the label's estimated width so the text fits. It stretches
-			// with its system like any measure — minWidth is a floor, not an exact width.
+			// with its system like any measure: minWidth is a floor, not an exact width.
 			const gap = gaps.get(m);
 			if (gap) {
 				// The label has to fit, so it sets the gap's hard minimum; the caller's minWidth is
@@ -680,7 +600,7 @@ export class LayoutPlanner {
 					}
 				}
 			}
-			// A multirest lead holds one whole rest, which would size it like any empty bar —
+			// A multirest lead holds one whole rest, which would size it like any empty bar:
 			// floor it so the consolidated bar and its count have room to read as a multirest.
 			return this.measureNoteArea(
 				staves,
@@ -689,7 +609,7 @@ export class LayoutPlanner {
 				softmaxFactor,
 			);
 		});
-		// Measures past the end of a short part have no entry — they fall back to an empty bar.
+		// Measures past the end of a short part have no entry; they fall back to an empty bar.
 		const areaOf = (m: number): NoteArea =>
 			noteAreas[m] ?? { min: BASE_VOICE_WIDTH, ideal: BASE_VOICE_WIDTH };
 
@@ -714,7 +634,7 @@ export class LayoutPlanner {
 		// Lead = glyphs a stave prints before its notes. Clef (+ key, when present)
 		// repeats at every system start; the time signature prints once at the piece
 		// start; mid-system measures carry only a barline, plus a smaller clef when the
-		// clef changes there (draw's buildStave redraws it — budget the room or the
+		// clef changes there (draw's buildStave redraws it: budget the room or the
 		// change clef eats into the note area).
 		// ponytail: fixed, deliberately generous estimates so notes never collide with
 		// the glyphs; measure stave.getNoteStartX() if exact alignment is ever needed.
@@ -762,7 +682,7 @@ export class LayoutPlanner {
 				? leadFull(m)
 				: LEAD_BARLINE + (clefChangesAt(m) ? LEAD_CLEF_CHANGE : 0);
 		// A leading directive prints over the lead glyphs' room, so only the part of it those
-		// glyphs don't already cover is reserved — a measure opening with a clef and a key
+		// glyphs don't already cover is reserved: a measure opening with a clef and a key
 		// usually needs nothing extra.
 		const leadingPadOf = (m: number, systemStart: boolean) =>
 			Math.max(0, (leadingPads[m] ?? 0) - leadGlyphs(m, systemStart));
@@ -813,7 +733,7 @@ export class LayoutPlanner {
 					honorSystemBreaks && print.some((p) => p?.newSystem || p?.newPage);
 				// An explicit <print new-system="no"/> is a statement, not silence: the document
 				// laid this line out and wants the measure to stay on it. Honor it by squeezing
-				// the system rather than wrapping — but only while its notes still fit at their
+				// the system rather than wrapping, but only while its notes still fit at their
 				// collision-free minimum. Past that the document's line and the reference width
 				// genuinely can't both hold, and `overflow` says which one gives: 'wrap' breaks
 				// the line here, 'allow' and 'widen' keep it and pay for it in page width.
@@ -826,7 +746,7 @@ export class LayoutPlanner {
 					: rowWidth + LEAD_BARLINE + area.ideal >
 						usable * config.maxSystemFill;
 				// ponytail: a lone measure has nowhere to wrap to, so one whose own minimum
-				// exceeds the usable width stays put and spills like overflow: 'allow' — the
+				// exceeds the usable width stays put and spills like overflow: 'allow'. That is the
 				// documented hole in 'wrap'. Needs a tiny referenceWidth or a huge noteSpacing
 				// to reach; splitting a measure across systems is the only real fix and no
 				// caller has wanted one.
@@ -868,7 +788,7 @@ export class LayoutPlanner {
 		// 'widen': grow the page until every system fits at its ideal spacing, then re-break
 		// at the new width. Widening only ever removes wraps, and a system the breaker itself
 		// ended is already bounded by maxSystemFill, so each pass leaves less to fix than the
-		// last and this settles — two passes for a typical score.
+		// last and this settles: two passes for a typical score.
 		// ponytail: capped at 4 passes rather than proving convergence; the loop exits early
 		// on the pass that needs no growth, so the cap only bites on pathological input.
 		if (overflow === 'widen') {
@@ -912,7 +832,7 @@ export class LayoutPlanner {
 			// fill most of the line: once their intrinsic width reaches minLastSystemFill
 			// of the reference width, justify it so a nearly-full trailing line snaps to the page
 			// edge instead of leaving a sliver of margin. Full systems always justify. A lone
-			// single system also always justifies — unless stretchSingleSystem is off, which
+			// single system also always justifies, unless stretchSingleSystem is off, which
 			// makes it obey the same minLastSystemFill rule as a trailing line, so a short
 			// excerpt keeps its natural width instead of being blown up across the page.
 			const isLastOfMany =
@@ -923,15 +843,15 @@ export class LayoutPlanner {
 			const justify =
 				layoutMode === 'standard' &&
 				(!obeysMinFill || intrinsic >= cap * config.minLastSystemFill);
-			// Justified systems fill the page; ragged systems keep their intrinsic width —
+			// Justified systems fill the page; ragged systems keep their intrinsic width,
 			// and every standard system is capped at the page width, so an over-wide system
 			// squeezes toward it. Panoramic (cap = Infinity) is untouched and grows the page.
 			const target = Math.min(cap, justify ? cap : intrinsic);
 			// The note areas absorb the difference between what the system wants and what it
-			// gets. Stretching is uniform — every measure grows by the same factor, keeping the
+			// gets. Stretching is uniform: every measure grows by the same factor, keeping the
 			// spacing curve's proportions. Squeezing is NOT: each measure gives up the same
-			// fraction of its own give (ideal - min), so a measure with none to give — an empty
-			// bar already at the floor, a bar of 16ths already at its minimum — holds its width
+			// fraction of its own give (ideal - min), so a measure with none to give (an empty
+			// bar already at the floor, a bar of 16ths already at its minimum) holds its width
 			// while its roomier neighbors close up. A uniform squeeze would instead let the
 			// least compressible measure in the line dictate terms for all of them.
 			//
@@ -972,7 +892,7 @@ export class LayoutPlanner {
 			// The page box always covers what was actually drawn. Short lines sit left with
 			// margin and never widen it; panoramic grows it to fit its single long system,
 			// and a standard system that bottomed out on its minimum grows it by however far
-			// it spilled — so the score scales down into its container rather than clipping.
+			// it spilled, so the score scales down into its container rather than clipping.
 			naturalWidth = Math.max(naturalWidth, cx + x);
 		});
 
@@ -993,3 +913,83 @@ export class LayoutPlanner {
 		};
 	}
 }
+
+/** A measure's placed box within its system. */
+export type MeasureBox = {
+	x: number;
+	width: number;
+	/** Part of `width` held open before the right barline for a words directive on the
+	 * measure's last note (see LayoutPlanner.trailingWordsPad); the notes format into the
+	 * rest. 0 for measures with no such directive. */
+	trailingPad: number;
+	/** Part of `width` held open after the left barline for a CENTERED words directive on the
+	 * measure's first note (see LayoutPlanner.leadingWordsPad); the notes start after it.
+	 * 0 for measures with no such directive. */
+	leadingPad: number;
+	systemIndex: number;
+	/** First / last measure of its system that is music: a leading or trailing gap is not. */
+	isSystemStart: boolean;
+	isSystemEnd: boolean;
+	/** A gap before the score's first measure ('leading') or after its last ('trailing'):
+	 * drawn as a box outside the staves, `x`/`width` being exactly that box. Null for every
+	 * other measure, gaps between measures included. */
+	edge: 'leading' | 'trailing' | null;
+};
+
+/** Where everything goes: parts laid out at a reference width, ready for the draw
+ * pass. Pure geometry: no vexflow drawing happens here. */
+export type ScoreLayout = {
+	measureCount: number;
+	totalStaves: number;
+	boxes: MeasureBox[];
+	/** Each stave's y-offset within a system, indexed by global stave row. The planned
+	 * spacing (from the fixed constants) and the floor no system goes below. */
+	staveOffsets: number[];
+	/** What pass one measured each system actually needs, indexed by system (see
+	 * SpillResolver.spacedOffsets). Absent on pass one, where every system uses the planned
+	 * offsets; a system missing from it falls back to them too. */
+	systemStaveOffsets?: ReadonlyMap<number, number[]>;
+	/** Top margin: the first system's y. */
+	top: number;
+	/** Vertical gap between stacked systems. */
+	systemGap: number;
+	/** Page width (reference width, or content width in panoramic). */
+	width: number;
+	/** Left space reserved on the first system for part labels AND any <part-group> names
+	 * printed outside them (0 when nothing is labelled). Where draw places the names. */
+	labelIndent: number;
+	/** The part-label column alone, out of `labelIndent`: names right-align against the
+	 * staves inside it, and a group name right-aligns against ITS left edge. 0 when no
+	 * <part-group> declares a <group-name>, in which case it equals labelIndent. */
+	partLabelIndent: number;
+	/** Starting page height, before the draw pass grows it for deep ledger lines. */
+	floorHeight: number;
+	/** Resolved spacing curve, shared by this measurement and the draw pass so the
+	 * drawn notes land where the spacing was computed for. */
+	softmaxFactor: number;
+};
+
+/** The two widths a measure's note area can take. `ideal` is what the spacing curve wants;
+ * `min` is the hard floor below which the notes no longer fit. Layout squeezes between them
+ * and never past `min`, so no configuration can produce a system with cut-off notes. */
+type NoteArea = {
+	min: number;
+	ideal: number;
+};
+
+/** One stave's inputs to the note-area measurement: the voices to size plus the
+ * clef/meter/tab context that shapes their tickables. */
+type StaveSpec = {
+	voices: StaffVoice[];
+	clef: string;
+	meterFloor: number;
+	isTab: boolean;
+	/** Open-string pitches of a tab staff; null for a notation staff (see stringTuning). */
+	tuning: number[] | null;
+	/** Mid-measure dividers (see ScoreReader.midBarlinesOf): they take horizontal room, so
+	 * the measured width has to include the same BarNotes the draw pass inserts. */
+	barlines: { beat: number; style: string }[];
+	/** Mid-measure clef changes (see ScoreReader.midClefsOf): the small ClefNotes they insert
+	 * take horizontal room too, and they re-aim the notes after them. */
+	midClefs: MidClefSpec[];
+};

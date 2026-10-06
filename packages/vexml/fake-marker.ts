@@ -1,7 +1,7 @@
-import type { Marker, MarkerHost, MarkerOptions, MarkerRect } from './marker';
+import type { Marker, MarkerOptions, MarkerRect } from './marker';
 
 /* Fake fulfilling the Marker seam (preferred over mocks); records where it is shown (null while
- * hidden), the z-index it was made at and its disposal. Test-only — excluded from the published
+ * hidden), the z-index it was made at and its disposal. Test-only, excluded from the published
  * package via package.json "files". */
 export class FakeMarker implements Marker {
 	shown: { rect: MarkerRect; color: string; radius?: number } | null = null;
@@ -10,8 +10,8 @@ export class FakeMarker implements Marker {
 
 	constructor(readonly zIndex?: number) {}
 
-	show(rect: MarkerRect, color: string, options?: MarkerOptions): void {
-		this.shown = { rect, color, radius: options?.radius };
+	show(rect: MarkerRect, color: string, opts?: MarkerOptions): void {
+		this.shown = { rect, color, radius: opts?.radius };
 		this.shows++;
 	}
 
@@ -21,16 +21,5 @@ export class FakeMarker implements Marker {
 
 	dispose(): void {
 		this.disposed = true;
-	}
-}
-
-/* Fake fulfilling the MarkerHost seam; keeps every marker it made. */
-export class FakeMarkerHost implements MarkerHost {
-	readonly created: FakeMarker[] = [];
-
-	createMarker(zIndex?: number): FakeMarker {
-		const marker = new FakeMarker(zIndex);
-		this.created.push(marker);
-		return marker;
 	}
 }

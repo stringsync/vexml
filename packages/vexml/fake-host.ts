@@ -10,11 +10,11 @@ import type { LoupeOptions } from './loupe';
 
 /* Fake fulfilling the Host seam (preferred over mocks); records the layers it made, the listeners
  * it was given and the relayouts/disposal it was told about. Client coords are score coords
- * (identity transform), so a test asserts on the point it passed in. Test-only — excluded from the
+ * (identity transform), so a test asserts on the point it passed in. Test-only, excluded from the
  * published package via package.json "files". */
 export class FakeHost implements Host {
 	private readonly dispatcher = new Dispatcher<HostEventMap>();
-	/* Live listeners per event type, so a test can assert a subscription was released — a
+	/* Live listeners per event type, so a test can assert a subscription was released: a
 	 * Dispatcher doesn't report its own. */
 	readonly listeners = new Map<keyof HostEventMap, number>();
 	readonly events: Events<HostEventMap> = {

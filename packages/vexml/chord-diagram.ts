@@ -2,11 +2,12 @@ import type { Harmony } from '@stringsync/mdom';
 import type { Rect } from 'webappwiz/geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
 import type { Decorations } from './decoration';
-import { Element, type Highlightable, Toggle } from './element';
+import { Element, type Highlightable } from './element';
+import { Toggle } from './toggle';
 import type { Viewport } from './viewport';
 
 /* A rendered chord diagram (the fret box a <harmony> with a <frame> draws above the stave).
- * Decorations use the base ellipse/halo fallback — there's no single glyph to restamp. Not in the
+ * Decorations use the base ellipse/halo fallback: there's no single glyph to restamp. Not in the
  * pointer tree in v1: reachable via ElementIndex.chordDiagrams(), not by hit-testing. */
 /* What a ChordDiagram is built from: the <harmony> it came from, the fingering it draws,
  * its printed chord name, and the decoration stores its toggles delegate to. */

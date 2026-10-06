@@ -25,7 +25,7 @@ describe('CollisionResolver', () => {
 		const natural = new Rect(0, 85, 20, 15); // bottom at y=100, overlaps both
 		const placed = d.liftClear(natural, 8, {});
 		expect(placed.bottom).toBe(62); // 70 (highest top) - 8 gap
-		expect(placed.x).toBe(0); // x unchanged — text only lifts vertically
+		expect(placed.x).toBe(0); // x unchanged; text only lifts vertically
 	});
 
 	it('leaves a rect that is already clear above its column where it is', () => {
@@ -106,7 +106,6 @@ describe('CollisionResolver', () => {
 		const bounds = new Rect(0, 0, 100, 100);
 		// Overruns the right edge -> pulled left so its right edge lands on the (margin-inset) edge.
 		expect(d.nudgeInsideX(new Rect(80, 0, 30, 10), bounds, 5).x).toBe(65);
-		// Already inside -> untouched.
 		expect(d.nudgeInsideX(new Rect(20, 0, 30, 10), bounds, 5).x).toBe(20);
 		// Wider than the span -> clamps to the left edge rather than overshooting it.
 		expect(d.nudgeInsideX(new Rect(80, 0, 200, 10), bounds, 5).x).toBe(5);
@@ -114,7 +113,7 @@ describe('CollisionResolver', () => {
 
 	it('flags the rects that cross the viewport edges', () => {
 		const d = detector();
-		d.add({ rect: new Rect(10, 10, 5, 5), kind: 'note' }); // inside
+		d.add({ rect: new Rect(10, 10, 5, 5), kind: 'note' }); // the control: inside, so not flagged
 		d.add({ rect: new Rect(10, -20, 5, 5), kind: 'annotation' }); // off the top
 		d.add({ rect: new Rect(95, 10, 20, 5), kind: 'diagram' }); // off the right
 		const escaped = d.escaping(new Rect(0, 0, 100, 100));

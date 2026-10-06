@@ -10,9 +10,10 @@ describe('TempoMap', () => {
 
 	it('honors a mid-piece tempo change, and converts back to the beat it started from', () => {
 		const tempo = new TempoMap([
-			{ startBeat: 0, endBeat: 4, bpm: 120 }, // 500 ms / beat
-			{ startBeat: 4, endBeat: 8, bpm: 60 }, // 1000 ms / beat
+			{ startBeat: 0, endBeat: 4, bpm: 120 },
+			{ startBeat: 4, endBeat: 8, bpm: 60 },
 		]);
+		// A beat takes 500 ms at 120 bpm and 1000 ms at 60, which is where these times come from.
 		expect(tempo.msAt(4)).toBeCloseTo(2000);
 		expect(tempo.msAt(6)).toBeCloseTo(4000);
 		expect(tempo.msAt(8)).toBeCloseTo(6000);

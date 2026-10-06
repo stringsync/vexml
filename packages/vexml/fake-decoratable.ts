@@ -12,9 +12,9 @@ export const NOTEHEAD: NoteGlyph = {
 };
 
 /* Fake fulfilling the Decoratable seam (preferred over mocks): a box that stamps itself the way
- * the real elements do — the glyph in the given color, or a filled ellipse over the box when
+ * the real elements do: the glyph in the given color, or a filled ellipse over the box when
  * there's none, which is what a rest gets. Pass `null` for the glyph to take that fallback.
- * Test-only — excluded from the published package via package.json "files". */
+ * Test-only, excluded from the published package via package.json "files". */
 export class FakeDecoratable implements Decoratable {
 	constructor(
 		readonly rect: Rect,
