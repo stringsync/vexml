@@ -11,6 +11,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { ConfigSlider } from '@/components/config-slider';
 import { EditingToolbar } from '@/components/editing-toolbar';
+import { ExamplePicker } from '@/components/example-picker';
 import { Header } from '@/components/header';
 import { LayoutToggle } from '@/components/layout-toggle';
 import { Player } from '@/components/player';
@@ -375,26 +376,13 @@ export default function App() {
 						Or pick an example
 					</FieldLabel>
 					<div className="flex items-center gap-1.5">
-						<Select
+						<ExamplePicker
+							id="example"
 							value={fixture}
-							onValueChange={(name) => model.document.loadFixture(name)}
-						>
-							<SelectTrigger
-								id="example"
-								className="min-w-0 flex-1 font-mono text-sm data-[size=default]:h-9"
-							>
-								<SelectValue placeholder="Load an example…" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectGroup>
-									{fixtureNames.map((name) => (
-										<SelectItem key={name} value={name}>
-											{name}
-										</SelectItem>
-									))}
-								</SelectGroup>
-							</SelectContent>
-						</Select>
+							names={fixtureNames}
+							onChange={(name) => model.document.loadFixture(name)}
+							className="min-w-0 flex-1 font-mono"
+						/>
 						<Button
 							type="button"
 							variant="outline"
