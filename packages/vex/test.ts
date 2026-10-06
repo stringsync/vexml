@@ -38,25 +38,39 @@ export async function test(opts: TestOptions) {
 	if (opts.clean) {
 		args.push('-e', 'CLEANUP_ORPHANED_SCREENSHOTS=1');
 	}
+	const image = await buildSilently(opts);
 	// Anything after the image is forwarded to the container's test command.
-	args.push(await buildSilently(opts), ...testArgs);
+	args.push(image, ...testArgs);
 
-	const { exitCode } = await opts.ps.spawn(['docker', ...args]);
-	if (exitCode !== 0) {
-		throw new Error('tests failed');
+	try {
+		const { exitCode } = await opts.ps.spawn(['docker', ...args]);
+		if (exitCode !== 0) {
+			throw new Error('tests failed');
+		}
+	} finally {
+		if (image !== SHARED_TAG) {
+			// Only the tag goes: the image stays while any other run's tag still names it.
+			await opts.ps.spawnCapture(['docker', 'image', 'rm', image]);
+		}
 	}
 }
 
-/** Builds the test image and returns the image to run: by ID, not the shared `vexml-tests`
- * tag, which every worktree builds. Running the tag let a concurrent `vex test` in another
- * worktree retag it between build and run, so this run tested that worktree's source. */
+const SHARED_TAG = 'vexml-tests';
+
+/** Builds the test image and returns a tag of this run's own to run it by. The shared
+ * `vexml-tests` tag won't do: every worktree builds it, so a concurrent `vex test` elsewhere
+ * can retag it between build and run, and this run tests that worktree's source. Nor will
+ * the bare image ID: once that retag leaves the image untagged, Docker may collect it before
+ * `docker run` starts, which fails with `No such image`. A tag per run pins the image until
+ * the run removes it. */
 async function buildSilently(opts: TestOptions): Promise<string> {
 	// CI pre-builds the vexml-tests image with layer caching, then sets this to
 	// reuse it instead of rebuilding from scratch every run.
 	if (opts.ps.env('VEX_TEST_SKIP_BUILD')) {
 		opts.log.info('Skipping build (VEX_TEST_SKIP_BUILD set)');
-		return 'vexml-tests';
+		return SHARED_TAG;
 	}
+	const tag = `${SHARED_TAG}:run-${opts.ps.pid}`;
 	opts.log.info('Building...');
 	const start = Date.now();
 	// Captured, not inherited: a successful build says nothing worth the scroll,
@@ -67,7 +81,9 @@ async function buildSilently(opts: TestOptions): Promise<string> {
 		// Prints only the image ID on stdout; errors still go to stderr.
 		'-q',
 		'-t',
-		'vexml-tests',
+		SHARED_TAG,
+		'-t',
+		tag,
 		'.',
 	]);
 	if (exitCode !== 0) {
@@ -75,5 +91,5 @@ async function buildSilently(opts: TestOptions): Promise<string> {
 		throw new Error('docker build failed');
 	}
 	opts.log.info(`Built in ${((Date.now() - start) / 1000).toFixed(1)}s`);
-	return stdout.trim();
+	return tag;
 }
