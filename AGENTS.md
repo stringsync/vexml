@@ -24,6 +24,8 @@ After making code changes:
 - `vex test --update` update the test snapshots.
 - `bunx @webappwiz/cli scry` check the change against the code style rules in `.wiz/scry`.
   If it says a credential is missing, skip this check rather than asking for one.
+  If it says the budget is exhausted, ask the user whether to override the budget, but
+  carry on with the rest of the work rather than waiting on the answer.
 
 `packages/site` has no tests, on purpose: they made `vex test` slow and flaky. Don't add any;
 check site changes in the running app instead.
