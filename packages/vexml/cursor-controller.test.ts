@@ -126,6 +126,7 @@ describe('CursorController', () => {
 	});
 
 	it('scrolls while following only when the bar is not fully visible', () => {
+		// scry-ignore comments-say-why-not-what: names what the bare rect means for the bar, which the numbers can't say
 		host.vp = new Rect(0, 0, 1000, 1000); // covers the bar
 		const unfollow = cursor.follow();
 		cursor.next();

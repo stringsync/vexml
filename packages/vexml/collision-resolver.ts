@@ -21,39 +21,6 @@ import { FAR } from './constants';
  * magic-offset clearance code. See the "Collisions and nudges" section of AGENTS.md.
  */
 
-export type CollisionKind = 'note' | 'tie' | 'annotation' | 'diagram';
-/*
- * `band` groups obstacles that belong together: the renderer uses one per stave row. A
- * constrained resolve can then ignore the other bands, so an above-stave annotation stacks
- * over its own stave's music instead of climbing over the part above it (which, since every
- * part's annotations share the lead note's x, would otherwise cascade the whole system's
- * text into one pile above the top stave). Obstacles with no band are visible to everyone.
- */
-type Collidable = { rect: Rect; kind: CollisionKind; band?: number };
-type Axis = 'x' | 'y';
-type Edge = 'top' | 'bottom' | 'left' | 'right';
-
-/* One detected collision. `other.kind` + `mtv.axis` are "the type of collision". */
-type Collision = {
-	other: Collidable;
-	overlap: Rect;
-	/* Signed minimum translation (along the smaller-overlap axis) to separate FROM `other`. */
-	mtv: { axis: Axis; dx: number; dy: number };
-};
-
-/* How a rect is cleared of obstacles. Both narrow which obstacles count. */
-export interface ClearOptions {
-	/* Restricts which obstacle kinds count, e.g. above-stave text clears notes/ties/other
-	 * text but deliberately ignores diagrams (which draw on top). */
-	kinds?: CollisionKind[];
-	/* Restricts the move to obstacles in that band (plus bandless ones); see Collidable. */
-	band?: number;
-	/* Widens the x-column searched by this much on each side, so an obstacle that only abuts
-	 * the rect still counts. 0 when absent: ordinary text may sit edge to edge with its
-	 * neighbor. */
-	xMargin?: number;
-}
-
 export class CollisionResolver {
 	private readonly tree: QuadTree<Collidable>;
 	// Kept alongside the tree because `escaping` is a whole-set scan, and a quadtree only
@@ -203,7 +170,7 @@ export class CollisionResolver {
 			dx = right - rect.right;
 		}
 		if (rect.x + dx < left) {
-			dx = left - rect.x; // but never past the left edge
+			dx = left - rect.x; // checked last, so a rect wider than the bounds keeps its start in view
 		}
 		return rect.translate(dx, 0);
 	}
@@ -246,4 +213,37 @@ export class CollisionResolver {
 			? { axis: 'x', dx: signX * overlap.w, dy: 0 }
 			: { axis: 'y', dx: 0, dy: signY * overlap.h };
 	}
+}
+
+export type CollisionKind = 'note' | 'tie' | 'annotation' | 'diagram';
+/*
+ * `band` groups obstacles that belong together: the renderer uses one per stave row. A
+ * constrained resolve can then ignore the other bands, so an above-stave annotation stacks
+ * over its own stave's music instead of climbing over the part above it (which, since every
+ * part's annotations share the lead note's x, would otherwise cascade the whole system's
+ * text into one pile above the top stave). Obstacles with no band are visible to everyone.
+ */
+type Collidable = { rect: Rect; kind: CollisionKind; band?: number };
+type Axis = 'x' | 'y';
+type Edge = 'top' | 'bottom' | 'left' | 'right';
+
+/* One detected collision. `other.kind` + `mtv.axis` are "the type of collision". */
+type Collision = {
+	other: Collidable;
+	overlap: Rect;
+	/* Signed minimum translation (along the smaller-overlap axis) to separate FROM `other`. */
+	mtv: { axis: Axis; dx: number; dy: number };
+};
+
+/* How a rect is cleared of obstacles. Both narrow which obstacles count. */
+export interface ClearOptions {
+	/* Restricts which obstacle kinds count, e.g. above-stave text clears notes/ties/other
+	 * text but deliberately ignores diagrams (which draw on top). */
+	kinds?: CollisionKind[];
+	/* Restricts the move to obstacles in that band (plus bandless ones); see Collidable. */
+	band?: number;
+	/* Widens the x-column searched by this much on each side, so an obstacle that only abuts
+	 * the rect still counts. 0 when absent: ordinary text may sit edge to edge with its
+	 * neighbor. */
+	xMargin?: number;
 }

@@ -199,7 +199,7 @@ export class LyricPlacer {
 		}
 	}
 
-	/* The lyric syllables hanging off a note, in verse order. */
+	/* Modifiers come back in the order they were attached, which is verse order. */
 	private lyricsOf(note: StaveNote): LyricMark[] {
 		return note.getModifiers().filter(isLyricMark);
 	}

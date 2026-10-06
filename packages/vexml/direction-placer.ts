@@ -888,8 +888,8 @@ const DYNAMIC_RESTATE_GAP = 1;
 // The SMuFL glyphs of the two navigation signs. They engrave as music, not as text: a
 // segno is a symbol a player recognizes by shape, so spelling it "Segno" would not do.
 const NAVIGATION_GLYPHS: Record<'segno' | 'coda', string> = {
-	segno: '\uE047', // segno
-	coda: '\uE048', // coda
+	segno: '\uE047',
+	coda: '\uE048',
 };
 
 // The face drawWords types a beside-stave string in. A words directive gets the text font
