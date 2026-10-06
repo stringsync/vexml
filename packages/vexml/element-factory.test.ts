@@ -48,6 +48,7 @@ function build() {
 		{
 			mnote: mC,
 			rect: new Rect(50, 40, 8, 8),
+			ink: new Rect(50, 40, 8, 8),
 			chord: [mC, mE],
 			measureIndex: 0,
 			tab: null,
@@ -56,6 +57,7 @@ function build() {
 		{
 			mnote: mE,
 			rect: new Rect(50, 50, 8, 8),
+			ink: new Rect(50, 50, 8, 8),
 			chord: [mC, mE],
 			measureIndex: 0,
 			tab: null,
@@ -64,6 +66,7 @@ function build() {
 		{
 			mnote: mBb,
 			rect: new Rect(90, 40, 6, 6),
+			ink: new Rect(90, 40, 6, 6),
 			chord: [mBb],
 			measureIndex: 0,
 			tab: { string: 2, fret: 3 },

@@ -258,6 +258,7 @@ export class ScoreDrawer {
 			notes: pass.rawNotes.map((n) => ({
 				...n,
 				rect: toScore(n.rect),
+				ink: toScore(n.ink),
 				glyph: toScoreGlyph(n.glyph),
 			})),
 			measures: pass.rawMeasures.map((mm) => ({
@@ -323,6 +324,7 @@ export class ScoreDrawer {
 				notes: pass.rawNotes.map((n) => ({
 					...n,
 					rect: toScore(n.rect),
+					ink: toScore(n.ink),
 					glyph: n.glyph
 						? { ...n.glyph, x: n.glyph.x + dx, y: n.glyph.y - cropTop }
 						: null,

@@ -84,6 +84,7 @@ function fixture() {
 		const note = new Note({
 			mnote,
 			rect,
+			ink: rect,
 			viewport,
 			decorations,
 			measure,
@@ -123,6 +124,7 @@ function noteOf(inner: string): Note {
 	return new Note({
 		mnote,
 		rect: new Rect(0, 0, 8, 8),
+		ink: new Rect(0, 0, 8, 8),
 		viewport,
 		decorations: new FakeDecorations(),
 		measure: bareMeasure(mpart, mmeasure, viewport),
@@ -209,7 +211,7 @@ describe('Note', () => {
 		expect([r.x, r.y, r.width, r.height]).toEqual([10, 10, 8, 8]);
 	});
 
-	it('collects the grace run immediately preceding it', () => {
+	it('collects the grace run immediately preceding it, its ink reaching over them', () => {
 		const xml = `<?xml version="1.0"?>
 <score-partwise version="4.0">
   <part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
@@ -232,10 +234,11 @@ describe('Note', () => {
 		const decorations = new FakeDecorations();
 		const measure = bareMeasure(mpart, mmeasure, viewport);
 		const notesByMnote = new Map<MNote, Note>();
-		const build = (mnote: MNote) => {
+		const build = (mnote: MNote, ink = new Rect(0, 0, 8, 8)) => {
 			const note = new Note({
 				mnote,
 				rect: new Rect(0, 0, 8, 8),
+				ink,
 				viewport,
 				decorations,
 				measure,
@@ -247,14 +250,17 @@ describe('Note', () => {
 			notesByMnote.set(mnote, note);
 			return note;
 		};
-		const graceF = build(must(mF, 'F'));
-		const graceG = build(must(mG, 'G'));
-		const noteA = build(must(mA, 'A'));
-		const noteB = build(must(mB, 'B'));
+		const graceF = build(must(mF, 'F'), new Rect(10, 0, 6, 8));
+		const graceG = build(must(mG, 'G'), new Rect(20, 0, 6, 8));
+		const noteA = build(must(mA, 'A'), new Rect(30, 0, 8, 8));
+		const noteB = build(must(mB, 'B'), new Rect(50, 0, 8, 8));
 
 		// A's graces are the two grace notes before it, in play order; B (a plain note) has none.
 		expect(noteA.getGraceNotes()).toEqual([graceF, graceG]);
 		expect(noteB.getGraceNotes()).toEqual([]);
+		// A's ink reaches back over its graces; B's is its own.
+		expect(noteA.getInkRect()).toMatchObject({ x: 10, w: 28 });
+		expect(noteB.getInkRect()).toMatchObject({ x: 50, w: 8 });
 	});
 	// Swing exemption. A written-out triplet already carries the swing feel; swinging it again
 	// would put it on neither an even third of the beat nor a swung pair, which is the case that

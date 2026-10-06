@@ -1,8 +1,34 @@
 import type { Chord, Harmony, Note as MNote } from '@stringsync/mdom';
-import type { StaveNote, TabNote, TabStave } from 'vexflow';
+import {
+	type Element,
+	Modifier,
+	type StaveNote,
+	Stem,
+	Stroke,
+	type TabNote,
+	type TabStave,
+} from 'vexflow';
 import { Rect } from 'webappwiz/geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
 import { FRET_HALF_H, FRET_HALF_W, NOTEHEAD_HALF_H } from './constants';
+
+/* The side modifiers one notehead owns (attached at its index) that count toward its ink. A
+ * Stroke (arpeggio) is drawn once for the whole chord, so it counts for every head. Grace
+ * groups and annotations (lyrics, fingerings above/below) stay out: graces are notes of their
+ * own, and text above or below the stave is not on the note's line. */
+const INK_CATEGORIES = new Set([
+	'Accidental',
+	'Dot',
+	'Parenthesis',
+	'FretHandFinger',
+]);
+
+/* The strokes whose arrowhead hangs below the bottom head (Stroke.draw). */
+const ARROW_BELOW = new Set<number>([
+	Stroke.Type.BRUSH_UP,
+	Stroke.Type.ROLL_UP,
+	Stroke.Type.RASGUEADO_UP,
+]);
 
 /* A note's engraved glyph, captured so a decoration can re-stamp it in color on an overlay: the
  * SMuFL text, the exact CSS font vexflow drew it with, and its baseline position in score space.
@@ -21,6 +47,10 @@ export interface NoteGlyph {
 export interface RawNote {
 	mnote: MNote;
 	rect: Rect;
+	/* Everything drawn for this note on its line but its stem and beam: `rect` plus the
+	 * accidentals, parentheses, arpeggio, dots, and flag that hang off it. A fret's is its rect.
+	 * Grace notes are their own RawNotes; Note.getInkRect unions them in. */
+	ink: Rect;
 	chord: MNote[];
 	measureIndex: number;
 	tab: { string: number; fret: number } | null;
@@ -95,14 +125,16 @@ export class GeometryCollector {
 				const y = tabStave.getYForLine(string - 1);
 				// Match this string's drawn fret glyph (positions carry one entry per string).
 				const el = fretEls[positions.findIndex((pos) => pos.str === string)];
+				const rect = new Rect(
+					x - FRET_HALF_W,
+					y - FRET_HALF_H,
+					2 * FRET_HALF_W,
+					2 * FRET_HALF_H,
+				);
 				this.rawNotes.push({
 					mnote,
-					rect: new Rect(
-						x - FRET_HALF_W,
-						y - FRET_HALF_H,
-						2 * FRET_HALF_W,
-						2 * FRET_HALF_H,
-					),
+					rect,
+					ink: rect,
 					chord: chord.notes,
 					measureIndex,
 					tab: { string, fret },
@@ -172,14 +204,16 @@ export class GeometryCollector {
 				// spans three staff spaces), so its rect follows the drawn box there as
 				// well: a decoration clears exactly what it stamped.
 				const rest = mnote.isRest && box;
+				const rect = new Rect(
+					box ? box.getX() : headX,
+					rest ? box.getY() : y - NOTEHEAD_HALF_H,
+					box ? box.getW() : headWidth,
+					rest ? box.getH() : 2 * NOTEHEAD_HALF_H,
+				);
 				this.rawNotes.push({
 					mnote,
-					rect: new Rect(
-						box ? box.getX() : headX,
-						rest ? box.getY() : y - NOTEHEAD_HALF_H,
-						box ? box.getW() : headWidth,
-						rest ? box.getH() : 2 * NOTEHEAD_HALF_H,
-					),
+					rect,
+					ink: this.inkOf(note, i, rect),
 					chord: chord.notes,
 					measureIndex,
 					tab: null,
@@ -187,6 +221,95 @@ export class GeometryCollector {
 				});
 			});
 		}
+	}
+
+	/*
+	 * The head's rect grown over what vexflow hangs beside it: the side modifiers attached at
+	 * this head's index (accidentals, parentheses, dots, left/right fingerings), the arpeggio
+	 * or non-arpeggiate bracket (drawn once, at index 0, for the whole chord), and the flag.
+	 * Each box repeats the placement its draw() computes — getModifierStartXY plus the
+	 * xShift format assigned (negated for a left modifier) — rather than reading
+	 * getBoundingBox: a modifier's x is unset until it draws, which this may precede, and a
+	 * grace group's box reports a bogus near-origin y (see SystemFormatter).
+	 */
+	private inkOf(note: StaveNote, index: number, head: Rect): Rect {
+		let ink = head;
+		const ys = note.getYs();
+		for (const mod of note.getModifiers()) {
+			const box = this.modifierInk(note, mod, index, ys);
+			if (box) {
+				ink = ink.union(box);
+			}
+		}
+		const stem = note.getStem();
+		if (note.shouldDrawFlag() && stem) {
+			// drawFlag's placement: the glyph's baseline sits a (signed) stem height off the far
+			// head. The flag itself is protected on StemmableNote.
+			const { flag } = note as unknown as { flag: Element };
+			const { yTop, yBottom } = note.getNoteHeadBounds();
+			const height = stem.getHeight();
+			const {
+				actualBoundingBoxAscent: ascent,
+				actualBoundingBoxDescent: descent,
+			} = flag.getTextMetrics();
+			const baseline =
+				note.getStemDirection() === Stem.DOWN
+					? yTop - height - descent
+					: yBottom - height + ascent;
+			ink = ink.union(
+				new Rect(
+					note.getStemX() - Stem.WIDTH / 2,
+					baseline - ascent,
+					flag.getWidth(),
+					ascent + descent,
+				),
+			);
+		}
+		return ink;
+	}
+
+	private modifierInk(
+		note: StaveNote,
+		mod: Modifier,
+		index: number,
+		ys: number[],
+	): Rect | null {
+		const category = mod.getCategory();
+		const stroke = category === Stroke.CATEGORY;
+		if (
+			!stroke &&
+			(!INK_CATEGORIES.has(category) || mod.getIndex() !== index)
+		) {
+			return null;
+		}
+		const position = mod.getPosition();
+		const left = position === Modifier.Position.LEFT;
+		if (!left && position !== Modifier.Position.RIGHT) {
+			return null;
+		}
+		const start = note.getModifierStartXY(position, mod.checkIndex(), {
+			forceFlagRight: true,
+		});
+		const w = mod.getWidth();
+		const x = start.x + mod.getXShift() - (left ? w : 0);
+		if (stroke) {
+			// The wiggle (or bracket) spans every head, overhanging each end by half a space,
+			// and vexflow repeats the wiggle glyph until it covers that, overshooting the bottom
+			// by up to one more half. An upward arrowhead sits on the top head, reaching a space
+			// above it; a downward one hangs a space below the bottom head, half a space more.
+			const space = note.checkStave().getSpacingBetweenLines();
+			// The stroke type is protected on Stroke.
+			const { type } = mod as unknown as { type: number };
+			const top = Math.min(...ys) - space;
+			const bottom =
+				Math.max(...ys) + (ARROW_BELOW.has(type) ? 1.5 : 1) * space;
+			return new Rect(x, top, w, bottom - top);
+		}
+		const metrics = mod.getTextMetrics();
+		const top = start.y + mod.getYShift() - metrics.actualBoundingBoxAscent;
+		const h =
+			metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+		return new Rect(x, top, w, h);
 	}
 
 	addMeasure(measure: RawMeasure): void {

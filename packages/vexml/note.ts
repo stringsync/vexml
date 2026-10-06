@@ -25,6 +25,8 @@ export interface TabLookup {
 export interface NoteDeps {
 	mnote: MNote;
 	rect: Rect;
+	/* The note's drawn extent on its line, its grace notes aside: see RawNote.ink. */
+	ink: Rect;
 	viewport: Viewport;
 	decorations: Decorations;
 	/* This note's own part's measure (the musical node, not the cross-part column). */
@@ -114,6 +116,22 @@ export class Note extends Element implements Highlightable, Playable {
 		return this.deps.mnote.gracesBefore
 			.map((g) => this.deps.notes.get(g))
 			.filter((n) => !!n);
+	}
+
+	/**
+	 * Everything drawn for this note on its line except stems and beams, in score space: the
+	 * head, its accidentals and other left marks (parentheses, the chord's arpeggio), its dots
+	 * and flag, and the grace notes in front of its chord. Wider than `rect`, which is the head
+	 * alone — the box to keep clear of when marking just short of a note.
+	 */
+	getInkRect(): Rect {
+		let ink = this.deps.ink;
+		for (const sibling of this.getChordSiblings({ includeSelf: true })) {
+			for (const grace of sibling.getGraceNotes()) {
+				ink = ink.union(grace.deps.ink);
+			}
+		}
+		return ink;
 	}
 
 	/* True when this note is part of a chord of two or more notes (the lead counts too). */

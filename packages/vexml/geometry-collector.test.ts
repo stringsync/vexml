@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'bun:test';
 import type { Chord } from '@stringsync/mdom';
 import { MDocument } from '@stringsync/mdom';
-import type { StaveNote, TabNote, TabStave } from 'vexflow';
+import {
+	type Modifier,
+	type StaveNote,
+	type TabNote,
+	type TabStave,
+	Modifier as VexModifier,
+} from 'vexflow';
 import { Rect } from 'webappwiz/geometry';
 import { GeometryCollector } from './geometry-collector';
 
@@ -40,8 +46,43 @@ describe('GeometryCollector', () => {
 
 	// Every drawn head's box is 12 wide and 30 tall around its staff y. A notehead doesn't
 	// measure that tall but a quarter rest does, and the collector must tell them apart.
-	const staveNote = (ys: (number | undefined)[], headXs?: number[]) =>
+	// A side modifier as the collector reads it: a 6-wide, 10-tall glyph at the head's index.
+	const modifier = (
+		category: string,
+		index: number,
+		position: number,
+		xShift: number,
+	) =>
 		({
+			getCategory: () => category,
+			getIndex: () => index,
+			checkIndex: () => index,
+			getPosition: () => position,
+			getWidth: () => 6,
+			getXShift: () => xShift,
+			getYShift: () => 0,
+			getTextMetrics: () => ({
+				actualBoundingBoxAscent: 6,
+				actualBoundingBoxDescent: 4,
+			}),
+		}) as unknown as Modifier;
+	const { LEFT, RIGHT, ABOVE } = VexModifier.Position;
+
+	const staveNote = (
+		ys: (number | undefined)[],
+		headXs?: number[],
+		modifiers: Modifier[] = [],
+	) =>
+		({
+			getModifiers: () => modifiers,
+			shouldDrawFlag: () => false,
+			getStem: () => undefined,
+			// Left modifiers start 2px left of the head column, right ones 2px past it.
+			getModifierStartXY: (position: number, index: number) => ({
+				x: position === LEFT ? 8 : 24,
+				y: ys[index] ?? 0,
+			}),
+			checkStave: () => ({ getSpacingBetweenLines: () => 10 }),
 			getNoteHeadBeginX: () => 10,
 			getNoteHeadEndX: () => 22,
 			getYs: () => ys,
@@ -81,6 +122,41 @@ describe('GeometryCollector', () => {
 		expect(notes[0]?.rect.x).toBe(-1);
 		expect(notes[0]?.glyph).toMatchObject({ x: -1 });
 		expect(notes[1]?.rect.x).toBe(11);
+	});
+
+	it("grows a head's ink over its own side modifiers, leaving its chordmates' alone", () => {
+		const collector = new GeometryCollector();
+		collector.collectStaveNotes(0, [
+			{
+				note: staveNote([50, 60], undefined, [
+					// A flat on the C, pushed 3px further left by the formatter.
+					modifier('Accidental', 0, LEFT, -3),
+					// A dot on the E.
+					modifier('Dot', 1, RIGHT, 1),
+					// A fermata above the chord: not on the note's line.
+					modifier('Articulation', 0, ABOVE, 0),
+				]),
+				chord,
+			},
+		]);
+		const [c, e] = collector.notes();
+		// The flat ends where the left modifiers start (8, shifted to 5) and is 6 wide.
+		expect(c?.ink).toMatchObject({ x: -1, y: 44, w: 24 });
+		expect(e?.ink).toMatchObject({ x: 11, y: 54, w: 20 });
+	});
+
+	it("counts the chord's arpeggio for every head, spanning them all", () => {
+		const collector = new GeometryCollector();
+		collector.collectStaveNotes(0, [
+			{
+				note: staveNote([50, 60], undefined, [modifier('Stroke', 0, LEFT, 0)]),
+				chord,
+			},
+		]);
+		const [c, e] = collector.notes();
+		// 6 wide, ending at 8; a space past the outer heads either way.
+		expect(c?.ink).toMatchObject({ x: 2, y: 40 });
+		expect(e?.ink).toMatchObject({ x: 2, y: 40, bottom: 70 });
 	});
 
 	it('keeps a notehead rect to the standard band around its staff y', () => {

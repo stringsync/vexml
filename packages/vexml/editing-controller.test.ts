@@ -92,6 +92,7 @@ function fixture() {
 				notes: [first, second, other].map((mnote, i) => ({
 					mnote,
 					rect: new Rect(20 + i * 30 + offset, 40, 8, 8),
+					ink: new Rect(20 + i * 30 + offset, 40, 8, 8),
 					chord: [mnote],
 					measureIndex: 0,
 					tab: i === 2 ? { string: 2, fret: 3 } : null,

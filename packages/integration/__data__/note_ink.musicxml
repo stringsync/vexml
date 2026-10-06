@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- One of each thing drawn beside a notehead, for Note.getInkRect: an arpeggiated chord
+         with an accidental, a chord holding a second (a displaced head), a flagged dotted eighth,
+         a stem-down flagged sixteenth, and a quarter led by a grace note with its own accidental. -->
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations><arpeggiate /></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>E</step><alter>-1</alter><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <accidental>flat</accidental>
+        <notations><arpeggiate /></notations>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations><arpeggiate /></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <accidental>sharp</accidental>
+      </note>
+      <note>
+        <chord />
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>3</duration>
+        <type>eighth</type>
+        <dot />
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>16th</type>
+        <stem>down</stem>
+      </note>
+      <note>
+        <grace slash="yes" />
+        <pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch>
+        <type>eighth</type>
+        <accidental>flat</accidental>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <accidental>natural</accidental>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

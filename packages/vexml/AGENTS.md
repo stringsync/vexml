@@ -176,6 +176,7 @@ vexflow's fixed text line — drawn in the finish pass, after the index clears.
 - **Editing keyboard/pointer controller, focus scrolling and selection overlay** — `editing-controller.ts`, `editing-bindings.ts`, `default-editing-bindings.ts`, `editing-view.ts`, `selection-overlay.ts`; default composition in `score.ts`
 - **Rendering an editor-owned mdom document without reparsing** — `render.ts`, `score-parser.ts`, `default-score-parser.ts`, `score-renderer.ts`
 - **What a caller gets from a hit test** — `element.ts`, `element-index.ts`, `note.ts`, `measure.ts`, `measure-box.ts`, `voice.ts`, `part.ts`, `system.ts`
+- **A note's boxes: `Note.rect` (the head alone) and `getInkRect` (head plus accidentals, arpeggio, dots, flag, graces)** — `geometry-collector.ts` (`inkOf`), `note.ts`
 - **Pointer position to element** — `hit-tester.ts`, `default-hit-tester.ts`, `element-index.ts`
 - **Coloring, highlighting, halos** — `decoration.ts`, `default-decoration.ts`, `default-decorations.ts`, `decoration-style.ts`, `color-style.ts`, `halo-style.ts`
 - **Playback timeline, repeats unrolled, swing** — `sequence-factory.ts`, `sequence.ts`, `measure-sequence-iterator.ts` (repeat/volta expansion), `tempo-map.ts`, `swing-warp.ts`

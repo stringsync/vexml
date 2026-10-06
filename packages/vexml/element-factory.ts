@@ -134,6 +134,7 @@ export class ElementFactory {
 				new Note({
 					mnote: rn.mnote,
 					rect: rn.rect,
+					ink: rn.ink,
 					viewport,
 					decorations,
 					measure,

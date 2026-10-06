@@ -51,6 +51,7 @@ function fixture() {
 	const note = new Note({
 		mnote,
 		rect: new Rect(10, 10, 8, 8),
+		ink: new Rect(10, 10, 8, 8),
 		viewport,
 		decorations,
 		measure,
