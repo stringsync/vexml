@@ -22,7 +22,8 @@ After making code changes:
 - `vex fix` typecheck, format, and lint the project.
 - `vex test` test the project.
 - `vex test --update` update the test snapshots.
-- `bunx @webappwiz/cli judge --print` to view code stlye rules.
+- `bunx @webappwiz/cli scry` check the change against the code style rules in `.wiz/scry`.
+  If it says a credential is missing, skip this check rather than asking for one.
 
 `packages/site` has no tests, on purpose: they made `vex test` slow and flaky. Don't add any;
 check site changes in the running app instead.
