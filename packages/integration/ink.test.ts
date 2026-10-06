@@ -16,9 +16,9 @@ describe('Note.getInkRect', () => {
 		expect(result.escapes).toEqual([]);
 		const [c4, eb4, g4, fs4, g4b, a4, d5, c5] = result.reaches;
 		// The arpeggio hangs left of the whole first chord.
-		for (const reach of [c4, eb4, g4]) {
-			expect(reach?.left).toBeGreaterThan(8);
-		}
+		expect(c4?.left).toBeGreaterThan(8);
+		expect(eb4?.left).toBeGreaterThan(8);
+		expect(g4?.left).toBeGreaterThan(8);
 		// The sharp, but not the G it shares a chord with.
 		expect(fs4?.left).toBeGreaterThan(4);
 		expect(g4b?.left).toBe(0);

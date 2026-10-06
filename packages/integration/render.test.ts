@@ -603,7 +603,7 @@ describe('render', () => {
 	});
 
 	// Treble stave: rests with no <type>, which leave the duration to say what to draw.
-	// - M1 (3/4): a <rest measure="yes"/>, three beats long — no plain note value, but it fills
+	// - M1 (3/4): a <rest measure="yes"/>, three beats long: no plain note value, but it fills
 	//   the bar, so it draws as a whole rest centered in the measure.
 	// - M2 (6/8): the same for a bare <rest/> lasting the 6/8 bar.
 	// - M3 (3/4): a one-beat typeless rest before a half note draws as a quarter rest.

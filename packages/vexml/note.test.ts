@@ -135,6 +135,55 @@ function noteOf(inner: string): Note {
 	});
 }
 
+/* A measure of two grace notes, F4 and G4, before a quarter A4, then a plain quarter B4. Each
+ * note's ink sits further right, so a union over graces shows in its x. */
+function graceFixture() {
+	const xml = `<?xml version="1.0"?>
+<score-partwise version="4.0">
+  <part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions></attributes>
+      <note><grace/><pitch><step>F</step><octave>4</octave></pitch><type>eighth</type></note>
+      <note><grace/><pitch><step>G</step><octave>4</octave></pitch><type>eighth</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+    </measure>
+  </part>
+</score-partwise>`;
+	const mdoc = new MDOMParser().parseFromString(xml);
+	const mpart = must(mdoc.score.parts[0], 'part');
+	const mmeasure = must(mpart.measures[0], 'measure');
+	const [mF, mG, mA, mB] = mmeasure.notes;
+
+	const viewport = new FakeViewport();
+	const decorations = new FakeDecorations();
+	const measure = bareMeasure(mpart, mmeasure, viewport);
+	const notesByMnote = new Map<MNote, Note>();
+	const build = (mnote: MNote, ink: Rect) => {
+		const note = new Note({
+			mnote,
+			rect: new Rect(0, 0, 8, 8),
+			ink,
+			viewport,
+			decorations,
+			measure,
+			chord: [mnote],
+			notes: notesByMnote,
+			tabs: new Map(),
+			glyph: null,
+		});
+		notesByMnote.set(mnote, note);
+		return note;
+	};
+	const graceF = build(must(mF, 'F'), new Rect(10, 0, 6, 8));
+	const graceG = build(must(mG, 'G'), new Rect(20, 0, 6, 8));
+	const noteA = build(must(mA, 'A'), new Rect(30, 0, 8, 8));
+	const noteB = build(must(mB, 'B'), new Rect(50, 0, 8, 8));
+
+	return { graceF, graceG, noteA, noteB };
+}
+
 describe('Note', () => {
 	it('reports its sounding pitch as a vexflow key, or null for a rest', () => {
 		const { noteC, noteE, noteRest, noteBb } = fixture();
@@ -211,54 +260,17 @@ describe('Note', () => {
 		expect([r.x, r.y, r.width, r.height]).toEqual([10, 10, 8, 8]);
 	});
 
-	it('collects the grace run immediately preceding it, its ink reaching over them', () => {
-		const xml = `<?xml version="1.0"?>
-<score-partwise version="4.0">
-  <part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
-  <part id="P1">
-    <measure number="1">
-      <attributes><divisions>1</divisions></attributes>
-      <note><grace/><pitch><step>F</step><octave>4</octave></pitch><type>eighth</type></note>
-      <note><grace/><pitch><step>G</step><octave>4</octave></pitch><type>eighth</type></note>
-      <note><pitch><step>A</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
-      <note><pitch><step>B</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
-    </measure>
-  </part>
-</score-partwise>`;
-		const mdoc = new MDOMParser().parseFromString(xml);
-		const mpart = must(mdoc.score.parts[0], 'part');
-		const mmeasure = must(mpart.measures[0], 'measure');
-		const [mF, mG, mA, mB] = mmeasure.notes;
-
-		const viewport = new FakeViewport();
-		const decorations = new FakeDecorations();
-		const measure = bareMeasure(mpart, mmeasure, viewport);
-		const notesByMnote = new Map<MNote, Note>();
-		const build = (mnote: MNote, ink = new Rect(0, 0, 8, 8)) => {
-			const note = new Note({
-				mnote,
-				rect: new Rect(0, 0, 8, 8),
-				ink,
-				viewport,
-				decorations,
-				measure,
-				chord: [mnote],
-				notes: notesByMnote,
-				tabs: new Map(),
-				glyph: null,
-			});
-			notesByMnote.set(mnote, note);
-			return note;
-		};
-		const graceF = build(must(mF, 'F'), new Rect(10, 0, 6, 8));
-		const graceG = build(must(mG, 'G'), new Rect(20, 0, 6, 8));
-		const noteA = build(must(mA, 'A'), new Rect(30, 0, 8, 8));
-		const noteB = build(must(mB, 'B'), new Rect(50, 0, 8, 8));
+	it('collects the grace run immediately preceding it', () => {
+		const { graceF, graceG, noteA, noteB } = graceFixture();
 
 		// A's graces are the two grace notes before it, in play order; B (a plain note) has none.
 		expect(noteA.getGraceNotes()).toEqual([graceF, graceG]);
 		expect(noteB.getGraceNotes()).toEqual([]);
-		// A's ink reaches back over its graces; B's is its own.
+	});
+
+	it('reaches its ink back over its grace notes', () => {
+		const { noteA, noteB } = graceFixture();
+
 		expect(noteA.getInkRect()).toMatchObject({ x: 10, w: 28 });
 		expect(noteB.getInkRect()).toMatchObject({ x: 50, w: 8 });
 	});

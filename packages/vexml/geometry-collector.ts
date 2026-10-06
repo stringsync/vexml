@@ -227,8 +227,8 @@ export class GeometryCollector {
 	 * The head's rect grown over what vexflow hangs beside it: the side modifiers attached at
 	 * this head's index (accidentals, parentheses, dots, left/right fingerings), the arpeggio
 	 * or non-arpeggiate bracket (drawn once, at index 0, for the whole chord), and the flag.
-	 * Each box repeats the placement its draw() computes — getModifierStartXY plus the
-	 * xShift format assigned (negated for a left modifier) — rather than reading
+	 * Each box repeats the placement its draw() computes (getModifierStartXY plus the
+	 * xShift format assigned, negated for a left modifier) rather than reading
 	 * getBoundingBox: a modifier's x is unset until it draws, which this may precede, and a
 	 * grace group's box reports a bogus near-origin y (see SystemFormatter).
 	 */
@@ -298,7 +298,7 @@ export class GeometryCollector {
 			// by up to one more half. An upward arrowhead sits on the top head, reaching a space
 			// above it; a downward one hangs a space below the bottom head, half a space more.
 			const space = note.checkStave().getSpacingBetweenLines();
-			// The stroke type is protected on Stroke.
+			// Stroke keeps its type protected and offers no getter, so read it through a cast.
 			const { type } = mod as unknown as { type: number };
 			const top = Math.min(...ys) - space;
 			const bottom =

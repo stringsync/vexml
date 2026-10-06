@@ -122,7 +122,7 @@ export class Note extends Element implements Highlightable, Playable {
 	 * Everything drawn for this note on its line except stems and beams, in score space: the
 	 * head, its accidentals and other left marks (parentheses, the chord's arpeggio), its dots
 	 * and flag, and the grace notes in front of its chord. Wider than `rect`, which is the head
-	 * alone — the box to keep clear of when marking just short of a note.
+	 * alone: this is the box to keep clear of when marking just short of a note.
 	 */
 	getInkRect(): Rect {
 		let ink = this.deps.ink;
