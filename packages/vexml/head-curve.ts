@@ -1,4 +1,10 @@
-import type { CurveOptions, StaveNote } from 'vexflow';
+import {
+	type CurveOptions,
+	GraceNote,
+	type Note,
+	type StaveNote,
+} from 'vexflow';
+import { GRACE_START } from './constants';
 import { CrispCurve } from './crisp-curve';
 
 /*
@@ -32,7 +38,7 @@ export class HeadCurve extends CrispCurve {
 			return false;
 		}
 		this.renderCurve({
-			firstX: from ? from.getTieRightX() : stave.getTieStartX(),
+			firstX: from ? startX(from) : stave.getTieStartX(),
 			lastX: to ? to.getTieLeftX() : stave.getTieEndX(),
 			firstY: this.fromY,
 			lastY: this.toY,
@@ -40,4 +46,17 @@ export class HeadCurve extends CrispCurve {
 		});
 		return true;
 	}
+}
+
+/*
+ * Where the curve leaves its first note. A grace note's curve tucks in under its notehead,
+ * a little left of centre, so it reads as growing out of the grace rather than flicking off
+ * its right edge; any other note lets go at its tie edge as usual.
+ */
+function startX(note: Note): number {
+	if (!(note instanceof GraceNote)) {
+		return note.getTieRightX();
+	}
+	const left = note.getNoteHeadBeginX();
+	return left + (note.getNoteHeadEndX() - left) * GRACE_START;
 }

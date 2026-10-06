@@ -43,11 +43,13 @@ describe('VoiceBuilder', () => {
 		beamChords: Chord[] | null = null,
 	): StaffVoice => ({ chords, beamChords, run: beamChords ?? chords });
 
-	// A built note the way buildPartBeams sees one: identity plus a recorded stem set.
-	const staveNote = (mods: unknown[] = []) => {
+	// A built note the way buildPartBeams sees one: identity, a notehead count, and a
+	// recorded stem set.
+	const staveNote = (mods: unknown[] = [], heads = 1) => {
 		const note = {
 			stemDirections: [] as number[],
 			getModifiers: () => mods,
+			getKeyProps: () => Array.from({ length: heads }, () => ({ line: 3 })),
 			setStemDirection: (direction: number) => {
 				note.stemDirections.push(direction);
 			},
@@ -356,7 +358,7 @@ describe('VoiceBuilder', () => {
 		expect(builder.crossStaveNotes().size).toBe(0);
 	});
 
-	it('stems a cross-staff group down and marks its notes cross-stave', () => {
+	it('stems an evenly split cross-staff group down, marking the stems that cross the gap', () => {
 		const a = lead();
 		const b = lead();
 		const noteA = staveNote();
@@ -377,7 +379,72 @@ describe('VoiceBuilder', () => {
 		expect(noteA.stemDirections).toEqual([Stem.DOWN]);
 		expect(noteB.stemDirections).toEqual([Stem.DOWN]);
 		expect(spanners.beamCalls[0]?.stem).toBe('down');
-		expect([...builder.crossStaveNotes()]).toEqual([noteA, noteB]);
+		// The bottom note's stem points away from the top stave, so it still needs room.
+		expect([...builder.crossStaveNotes()]).toEqual([noteA]);
+	});
+
+	it('stems a cross-staff group up when most of its chords sit on the bottom stave', () => {
+		const a = lead();
+		const b = lead();
+		const c = lead();
+		const noteA = staveNote();
+		const noteB = staveNote();
+		const noteC = staveNote();
+		const spanners = fakeSpanners();
+		const builder = makeBuilder({
+			spanners,
+			byLead: new Map([
+				[a, noteA],
+				[b, noteB],
+				[c, noteC],
+			]),
+		});
+		builder.buildPartBeams([
+			pendingStave({ staveNotes: [noteB] }),
+			pendingStave({
+				row: 1,
+				staveNotes: [noteA, noteC],
+				beamPlans: [beamPlan([a, b, c])],
+			}),
+		]);
+
+		expect(noteA.stemDirections).toEqual([Stem.UP]);
+		expect(noteB.stemDirections).toEqual([Stem.UP]);
+		expect(spanners.beamCalls[0]?.stem).toBe('up');
+		// The top note's stem points away from the bottom stave, so it still needs room.
+		expect([...builder.crossStaveNotes()]).toEqual([noteA, noteC]);
+	});
+
+	it('sides a split chord with the stave holding most of its noteheads', () => {
+		const main = lead({ measureBeat: 1 });
+		const next = lead({ measureBeat: 2 });
+		const member = lead({ measureBeat: 1, isChordMember: true });
+		// Beat 1 puts one notehead on the bottom stave and three on the top, so it sides with
+		// the top, and beat 2's lone bottom note only ties it: the group stems down.
+		const mainNote = staveNote();
+		const halfNote = staveNote([], 3);
+		const nextNote = staveNote();
+		const spanners = fakeSpanners();
+		const builder = makeBuilder({
+			spanners,
+			byLead: new Map([
+				[main, mainNote],
+				[next, nextNote],
+			]),
+		});
+		builder.buildPartBeams([
+			pendingStave({
+				staveNotes: [halfNote],
+				noteChords: [{ note: halfNote, chord: chordOf(member, 1) }],
+			}),
+			pendingStave({
+				row: 1,
+				staveNotes: [mainNote, nextNote],
+				beamPlans: [beamPlan([main, next])],
+			}),
+		]);
+
+		expect(spanners.beamCalls[0]?.stem).toBe('down');
 	});
 
 	it('honors a shared-stave voice’s up stem across the staves', () => {

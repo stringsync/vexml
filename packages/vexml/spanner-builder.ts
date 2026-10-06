@@ -745,7 +745,7 @@ export class SpannerBuilder {
 				// of the next measure's same voice are separated by the whole treble stave.
 				// Clearing those would inflate a two-note bow into a spike reaching the stave
 				// above, so only notes sharing a stave with an endpoint count.
-				const span =
+				let span =
 					j > i
 						? chords
 								.slice(i, j + 1)
@@ -767,21 +767,39 @@ export class SpannerBuilder {
 				const toStave = to.getStave();
 				const crossStave =
 					!!fromStave && !!toStave && toStave.getY() < fromStave.getY();
+				// A cross-stave slur's two ends sit on different staves, which `chords` lists one
+				// after the other, so the slice above can't hold the notes between them (the
+				// stop can even come first). Both ends are on one system, so what the bow passes
+				// over is every note on either stave between their Xs.
+				if (crossStave) {
+					const left = from.getAbsoluteX();
+					const right = to.getAbsoluteX();
+					span = chords
+						.map((c) => byLead.get(c.lead))
+						.filter(
+							(n): n is StaveNote =>
+								n !== undefined &&
+								(n.getStave() === fromStave || n.getStave() === toStave) &&
+								n.getAbsoluteX() >= left &&
+								n.getAbsoluteX() <= right,
+						);
+				}
 
 				// Bulge up for placement="above", down for "below", otherwise opposite the
 				// stems (slurs sit on the notehead side). The opening direction forces the
 				// arc's sign even when the two endpoints' stems disagree. A grace-to-main
 				// slur always hugs under (under the grace, down to the main notehead),
 				// ignoring placement — grace slurs read as a consistent underneath bow.
-				// A cross-stave slur overrides placement the same way, in the other direction:
-				// its ends are a stave apart, so a "below" bow has to duck under the beam and
-				// then dive most of a stave to reach the far end, which reads as a spike rather
-				// than a slur. Above, the same span is one arc riding over the run.
+				// A cross-stave slur overrides placement too, bowing away from its run's beam: its
+				// ends are a stave apart, so a bow on the beam's side has to duck under (or over)
+				// the beam and then dive most of a stave to reach the far end, which reads as a
+				// spike rather than a slur. The run beams one way (see buildPartBeams), so its
+				// first note's stem says which side the beam is on.
 				let bulgeUp: boolean;
 				if (isGrace) {
 					bulgeUp = false;
 				} else if (crossStave) {
-					bulgeUp = true;
+					bulgeUp = from.getStemDirection() !== 1;
 				} else if (slur.placement === 'above') {
 					bulgeUp = true;
 				} else if (slur.placement === 'below') {
@@ -955,12 +973,14 @@ export class SpannerBuilder {
 				// endpoint anchors (extentsOf collapses to anchorY), never a stem, so it has
 				// nothing to exclude.
 				//
-				// A cross-stave slur clears nothing at all. Its two ends are a stave apart, so
-				// the run it climbs through sits above its chord for most of the span by
-				// construction — no bow gets over that, and solving for it domes the arc across
-				// the hand it's leaving. The endpoints alone shape it.
+				// A cross-stave slur bowing over a run beamed below clears nothing at all. Its two
+				// ends are a stave apart, so the run it climbs through sits above its chord for
+				// most of the span by construction: no bow gets over that, and solving for it
+				// domes the arc across the hand it's leaving. The endpoints alone shape it. One
+				// bowing under a run beamed above passes below the run's noteheads, which a bow
+				// can clear, so it does.
 				const clearanceOf = (spanNotes: StaveNote[]): StaveNote[] => {
-					if (crossStave) {
+					if (crossStave && bulgeUp) {
 						return [];
 					}
 					if (isGrace) {
@@ -1074,14 +1094,19 @@ export class SpannerBuilder {
 					// a flattened bow (see shapeFor) moves them out to `shoulder`.
 					const slant = (y1 - y0) * shoulder;
 					const pull = (shoulder - 0.25) * width;
+					// Lifted straight up or down, a control point over a slanted chord also slides
+					// along it toward the end the bow hangs past, so the bow sags toward that end.
+					// Leaning each point back by the chord's slope lifts it square off the chord
+					// instead, and the bow sits centred on it. Level ends have no slope and no lean.
+					const lean = width ? (-dir * (y1 - y0) * cpY) / width : 0;
 					const options: CurveOptions = {
 						position,
 						positionEnd,
 						openingDirection: bulgeUp ? 'down' : 'up',
 						yShift,
 						cps: [
-							{ x: pull, y: cpY + dir * slant },
-							{ x: -pull, y: cpY - dir * slant },
+							{ x: pull + lean, y: cpY + dir * slant },
+							{ x: -pull + lean, y: cpY - dir * slant },
 						],
 					};
 					const curve = isGrace

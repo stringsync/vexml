@@ -22,6 +22,8 @@ import {
 	GAP_LABEL_FONT_SIZE,
 	LABEL_FONT_SIZE,
 	LABEL_GAP,
+	LYRIC_FONT_SIZE,
+	LYRIC_LINE_HEIGHT,
 	VOLTA_NOTE_CLEARANCE,
 } from './constants';
 import {
@@ -1171,6 +1173,31 @@ export class DrawPass {
 			byLead: this.byLead,
 			byTabLead: this.byTabLead,
 		});
+
+		// A verse hangs below its stave, in the gap to the stave under it, so it's spill like
+		// any other ink there: a beam or slur the lower stave raises into the gap has to clear
+		// the words, not just the notes over them. Reported now, at the drop the whole row
+		// hangs at, rather than as each column pinned it: on the first pass a column's
+		// syllables can sit higher than the line they join, and the gap sized to that would
+		// come up short once the line drops.
+		for (const syllable of this.lyricPlacer.pinnedSyllables()) {
+			const system = this.systemOf(syllable.stave);
+			const baseline =
+				syllable.stave.getBottomLineY() +
+				this.lyricPlacer.rowDrop(system, syllable.row) +
+				syllable.verseIndex * LYRIC_LINE_HEIGHT;
+			this.spill.recordDrop(
+				system,
+				syllable.row,
+				syllable.stave,
+				new Rect(
+					syllable.left,
+					baseline - LYRIC_FONT_SIZE,
+					syllable.width,
+					LYRIC_FONT_SIZE,
+				),
+			);
+		}
 
 		return {
 			pageTop: this.pageTop,

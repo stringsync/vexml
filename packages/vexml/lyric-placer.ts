@@ -1,4 +1,4 @@
-import type { RenderContext, StaveNote } from 'vexflow';
+import type { RenderContext, Stave, StaveNote } from 'vexflow';
 import { Rect } from 'webappwiz/geometry';
 import type { CollisionResolver } from './collision-resolver';
 import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT } from './constants';
@@ -10,6 +10,15 @@ export interface LyricPlacerOptions {
 	 * notes above it — measured on the previous pass and reserved on this one; empty on the
 	 * first pass. */
 	lyricDrops?: Map<string, number>;
+}
+
+/* One pinned lyric syllable, as the spill report needs it (see LyricPlacer.rowDrop). */
+export interface PinnedSyllable {
+	readonly stave: Stave;
+	readonly row: number;
+	readonly left: number;
+	readonly width: number;
+	readonly verseIndex: number;
 }
 
 /*
@@ -25,6 +34,7 @@ export class LyricPlacer {
 	// disagreed (see recordDrop).
 	private observedLyricDrops = new Map<string, number>();
 	private lyricsStepped = false;
+	private readonly pinned: PinnedSyllable[] = [];
 
 	constructor(
 		private readonly translator: VoiceTranslator,
@@ -71,7 +81,8 @@ export class LyricPlacer {
 	 * Each pinned syllable is also registered as a collision obstacle in band `row`, so
 	 * anything the draw pass places under the stave later (a placement="below" directive, a
 	 * dynamics marking) drops clear of the verse instead of printing through it. vexflow
-	 * draws lyrics itself, so this is the only point where their boxes are known.
+	 * draws lyrics itself, so this is the only point where their boxes are known, hence
+	 * each is also kept for {@link pinnedSyllables}.
 	 */
 	pin(notes: StaveNote[], row: number, baseline: number): void {
 		const lyricNotes = notes
@@ -90,20 +101,46 @@ export class LyricPlacer {
 				lyric.setStyle({ fillStyle: this.notationColor });
 				// LyricAnnotation.draw centers the syllable on the notehead and draws up from
 				// the baseline, so its box is one text height tall ending at that baseline.
+				// getAbsoluteX is the notehead's left edge, half a notehead short of its center.
 				const w = lyric.getWidth();
-				this.collisionResolver.add({
-					rect: new Rect(
-						note.getAbsoluteX() - w / 2,
-						y - LYRIC_FONT_SIZE,
-						w,
-						LYRIC_FONT_SIZE,
-					),
-					kind: 'annotation',
-					band: row,
+				const center =
+					note.getAbsoluteX() + this.translator.noteheadHalfWidth();
+				const rect = new Rect(
+					center - w / 2,
+					y - LYRIC_FONT_SIZE,
+					w,
+					LYRIC_FONT_SIZE,
+				);
+				this.collisionResolver.add({ rect, kind: 'annotation', band: row });
+				this.pinned.push({
+					stave: note.checkStave(),
+					row,
+					left: rect.x,
+					width: w,
+					verseIndex: lyric.verseIndex,
 				});
 			}
 		}
 		this.drawMelismas(notes, row, baseline);
+	}
+
+	/* Every syllable this pass pinned: its stave and row, its x span, and its verse. */
+	pinnedSyllables(): ReadonlyArray<PinnedSyllable> {
+		return this.pinned;
+	}
+
+	/*
+	 * How far below the staff a row's verse ends up hanging: the worst drop any of its
+	 * columns asked for this pass, or the one the previous pass reserved. A column pins its
+	 * own syllables before the rest of the row is measured, so on the first pass they can sit
+	 * higher than the line they join on the next; this is the line's height either way.
+	 */
+	rowDrop(system: number, row: number): number {
+		const key = this.rowKey(system, row);
+		return Math.max(
+			this.observedLyricDrops.get(key) ?? 0,
+			this.lyricDrops.get(key) ?? 0,
+		);
 	}
 
 	/*

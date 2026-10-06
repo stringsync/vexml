@@ -473,6 +473,9 @@ export const SLUR_GRACE_MARGIN = 5;
  * Both read the bulge side, so an above-bulging curve mirrors each rule upward. */
 export const SLUR_GRACE_ANCHOR: 'stem-base' | 'notehead' = 'stem-base';
 
+/** How far across its notehead, from the left, a grace curve starts. */
+export const GRACE_START = 0.35;
+
 /** Guards float drift when comparing dyadic beat positions. */
 export const EPSILON = 1e-6;
 

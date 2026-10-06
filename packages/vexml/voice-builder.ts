@@ -63,12 +63,14 @@ export class VoiceBuilder {
 	private readonly octaveShiftByNote: ReadonlyMap<Note, number>;
 	private readonly byLead: Map<Note, StaveNote>;
 	private readonly byTabLead: Map<Note, TabNote>;
-	// Notes whose beam group spans two staves (see buildPartBeams). Their stems cross the
-	// gap between the staves on purpose, so the stem tip is excluded from the stave spill
-	// that sizes that gap — counting it would have the gap widen to "make room" for a stem
-	// whose whole job is to reach the other stave, pushing the staves apart by the stem's
-	// own length. The noteheads still count: a note written far outside its stave (M1's B4
-	// on the bass staff) genuinely needs the clearance.
+	// Notes in a beam group spanning two staves whose stems point at the other stave (see
+	// buildPartBeams). Those stems cross the gap between the staves on purpose, so the stem
+	// tip is excluded from the stave spill that sizes that gap: counting it would have the
+	// gap widen to "make room" for a stem whose whole job is to reach the other stave,
+	// pushing the staves apart by the stem's own length. It is excluded from the note's
+	// collision obstacle too, or a dynamic above the lower stave is lifted clear of the
+	// stem, past the upper stave. The noteheads still count: a note written far outside its
+	// stave (M1's B4 on the bass staff) genuinely needs the clearance.
 	private readonly crossStave = new Set<StaveNote>();
 	// The ghosts each staff put in for a note its voice drew on another staff (see
 	// VoiceTickablesOptions.run), by that note's lead, until the part's tuplets exist.
@@ -87,8 +89,8 @@ export class VoiceBuilder {
 		this.byTabLead = opts.byTabLead;
 	}
 
-	/** Notes whose beam group spans two staves — their cross-gap stems are kept out of
-	 * the stave spill that sizes the gap between the staves. Filled by buildPartBeams;
+	/** Notes in a two-stave beam group whose stems cross the gap, kept out of the stave
+	 * spill that sizes the gap between the staves, and their stems out of its obstacles. Filled by buildPartBeams;
 	 * the reference is stable. */
 	crossStaveNotes(): ReadonlySet<StaveNote> {
 		return this.crossStave;
@@ -321,31 +323,46 @@ export class VoiceBuilder {
 						.filter((note): note is StaveNote => note !== undefined);
 					// A cross-staff group takes ONE direction like any other beam — the beam
 					// parked past the group's outermost stem tip, every stem reaching it,
-					// including the ones a stave away. Only the direction is decided here:
-					// auto-stem reads each note against its own stave, so a group written low in
-					// the bass and high in the treble reads as "up" on one staff and "down" on
-					// the other and the tie-break lands arbitrarily. Down is the convention for
-					// the piano hand-crossing this shows up in, and it keeps the two hands'
-					// groups parallel instead of one beaming over the treble and one under
-					// the bass. The exception is a lower voice on the group's own stave: the
-					// beam can't park below a stave another voice already occupies, so the
-					// whole group flips up and beams over the TOP stave instead. That case is
-					// already decided by `defaultStem` (voices sharing a stave stem apart, first
-					// voice up), so honoring it here is the same rule read one level out.
-					// ponytail: down unless a voice sits below. A group that lives mostly in the
-					// treble with one low note reads better beamed above even when it's alone;
-					// deciding that means comparing the notes' distance from a common reference
-					// line rather than each stave's own, which no fixture needs yet.
+					// including the ones a stave away. Written <stem>s are set aside: a group's
+					// notes stem toward each other across the gap (bass up, treble down), which asks
+					// for a beam kneed between the staves, and that reads worse than one parked
+					// outside them. Each chord sides with the stave holding most of its noteheads
+					// (a split chord included); when most chords side with the bottom stave the
+					// stems rise from it and the beam parks over the top stave, otherwise (a tie
+					// too) the beam parks under the bottom one. That keeps the stems short, and it
+					// is how Soundslice reads these groups. The exception is a lower voice on the
+					// group's own stave: the beam can't park below a stave another voice already
+					// occupies, so the whole group flips up and beams over the TOP stave instead.
+					// That case is already decided by `defaultStem` (voices sharing a stave stem
+					// apart, first voice up), so honoring it here is the same rule read one level
+					// out.
 					let stem = defaultStem;
 					if (new Set(notes.map((note) => rowOf.get(note))).size > 1) {
-						const direction = defaultStem === 'up' ? Stem.UP : Stem.DOWN;
+						const bottom = Math.max(
+							...notes.map((note) => rowOf.get(note) ?? 0),
+						);
+						const chords = group.notes.map((lead) =>
+							(notesByLead.get(lead) ?? [this.byLead.get(lead)]).filter(
+								(note): note is StaveNote => note !== undefined,
+							),
+						);
+						stem =
+							defaultStem ??
+							(sidesBelow(chords, (note) => rowOf.get(note) === bottom)
+								? 'up'
+								: 'down');
+						const direction = stem === 'up' ? Stem.UP : Stem.DOWN;
+						const top = Math.min(...notes.map((note) => rowOf.get(note) ?? 0));
 						for (const note of notes) {
 							note.setStemDirection(direction);
-							this.crossStave.add(note);
+							// Only a stem pointing at the group's other stave crosses the gap; one
+							// pointing away (the top stave's stems when the beam is above it) is an
+							// ordinary stem and still needs room past its own stave.
+							const row = rowOf.get(note);
+							if (stem === 'up' ? row !== top : row !== bottom) {
+								this.crossStave.add(note);
+							}
 						}
-						// Any value here only says "don't auto-stem" — the directions just set
-						// are what the beam reads.
-						stem = defaultStem ?? 'down';
 					}
 					p.beams.push(
 						...this.spanners.buildBeams(
@@ -462,4 +479,23 @@ export class VoiceBuilder {
 			midBars: [],
 		};
 	}
+}
+
+// Whether most of a cross-staff group's chords side with its bottom stave, each chord siding
+// with the stave holding most of its noteheads (a split chord's halves sit on both). A tie
+// sides with the top.
+function sidesBelow(
+	chords: ReadonlyArray<ReadonlyArray<StaveNote>>,
+	isBelow: (note: StaveNote) => boolean,
+): boolean {
+	let below = 0;
+	for (const halves of chords) {
+		let lean = 0;
+		for (const note of halves) {
+			const heads = note.getKeyProps().length;
+			lean += isBelow(note) ? heads : -heads;
+		}
+		below += lean > 0 ? 1 : -1;
+	}
+	return below > 0;
 }

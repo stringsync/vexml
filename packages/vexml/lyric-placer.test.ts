@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import type { RenderContext, StaveNote } from 'vexflow';
+import type { RenderContext, Stave, StaveNote } from 'vexflow';
 import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
 import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT } from './constants';
@@ -8,10 +8,13 @@ import { LyricPlacer } from './lyric-placer';
 import type { VoiceTranslator } from './voice-translator';
 
 describe('LyricPlacer', () => {
+	// The stave every note sits on: only its identity is read, as the syllable's stave.
+	const stave = {} as Stave;
 	const note = (x: number, modifiers: unknown[]) =>
 		({
 			getAbsoluteX: () => x,
 			getModifiers: () => modifiers,
+			checkStave: () => stave,
 		}) as unknown as StaveNote;
 
 	const makePlacer = (opts: { lyricDrops?: Map<string, number> } = {}) => {
@@ -72,17 +75,46 @@ describe('LyricPlacer', () => {
 		expect(v1.fillStyle).toBe('#123456');
 	});
 
-	it('registers each syllable as an annotation obstacle centered on its note', () => {
+	it('registers each syllable as an annotation obstacle centered on its notehead', () => {
 		const { placer, obstacles } = makePlacer();
 		placer.pin([note(100, [new FakeLyricMark(0, { width: 20 })])], 3, 200);
 		const [hit] = obstacles();
 		expect(hit?.other).toMatchObject({ kind: 'annotation', band: 3 });
+		// The notehead's center is half a notehead (6) right of its left edge.
 		expect(hit?.other.rect).toMatchObject({
-			x: 90,
+			x: 96,
 			y: 200 - LYRIC_FONT_SIZE,
 			w: 20,
 			h: LYRIC_FONT_SIZE,
 		});
+	});
+
+	it('keeps each pinned syllable with its stave, row, span and verse', () => {
+		const { placer } = makePlacer();
+		placer.pin(
+			[
+				note(100, [
+					new FakeLyricMark(0, { width: 20 }),
+					new FakeLyricMark(1, { width: 30 }),
+				]),
+			],
+			3,
+			200,
+		);
+		expect(placer.pinnedSyllables()).toEqual([
+			{ stave, row: 3, left: 96, width: 20, verseIndex: 0 },
+			{ stave, row: 3, left: 91, width: 30, verseIndex: 1 },
+		]);
+	});
+
+	it('hangs a row at the worst drop seen this pass or carried from the last', () => {
+		const { placer } = makePlacer({ lyricDrops: new Map([['0:1', 25]]) });
+		placer.recordDrop(0, 1, 21);
+		placer.recordDrop(0, 1, 31);
+		placer.recordDrop(1, 1, 18);
+		expect(placer.rowDrop(0, 1)).toBe(31);
+		expect(placer.rowDrop(1, 1)).toBe(18);
+		expect(placer.rowDrop(2, 1)).toBe(0);
 	});
 
 	it('ignores notes whose modifiers carry no lyrics', () => {

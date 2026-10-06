@@ -2793,6 +2793,11 @@ describe('render', () => {
 	//   stems reaching up to the one beam under them, and the treble pair's stems run the
 	//   full height of the gap; nothing escapes above the treble staff. A half rest fills
 	//   beats 3-4.
+	// - M5: bass A3, treble E4, bass A3, bass A3, every <stem> written stemming toward the
+	//   other staff (bass up, treble down). The written stems are set aside: the group still
+	//   takes one direction, and with most of its chords on the bass staff that direction is
+	//   UP, so every stem rises (the E4's too) to a beam parked above the TREBLE staff, the
+	//   A3s' stems running the full height of the gap. A half rest fills beats 3-4.
 	// See also cross_stave_16ths_ghost_notes_simple.xml.
 	it.concurrent('renders cross_stave.png', async () => {
 		expect(await testing.render('cross_stave.musicxml')).toMatchScreenshot(

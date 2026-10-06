@@ -17,7 +17,7 @@ import {
 	type TabNote,
 	type TabStave,
 	TimeSignature,
-	type Tuplet,
+	type Note as VexNote,
 	Vibrato,
 	type Voice,
 } from 'vexflow';
@@ -371,6 +371,23 @@ export class SystemFormatter {
 			}
 			for (const beam of p.beams) {
 				beam.setContext(this.context).draw();
+				// A cross-staff beam parks outside one of its staves, over notes whose own spill
+				// leaves out the stems crossing the gap (see crossStaveNotes). Nothing else
+				// reports the beam's span there, so the lyrics hanging over that stave would
+				// sit on it; report the beam itself to the stave it stands outside of.
+				const notes = beam.getNotes() as StaveNote[];
+				if (notes.some((note) => this.crossStaveNotes.has(note))) {
+					const tips = notes.map((note) => note.getStemExtents().topY);
+					const left = notes[0]?.getStemX() ?? 0;
+					const right = notes[notes.length - 1]?.getStemX() ?? left;
+					const rect = new Rect(
+						left,
+						Math.min(...tips),
+						right - left,
+						Math.max(...tips) - Math.min(...tips),
+					);
+					this.recordStaveSpill(this.spillHost(rect, notes, pending, p), rect);
+				}
 			}
 			for (const tuplet of p.tuplets) {
 				tuplet.setContext(this.context).draw();
@@ -380,7 +397,7 @@ export class SystemFormatter {
 				// report it as spill too: the gap to the neighbouring stave (and the lyrics
 				// hanging under it) has to hold the bracket.
 				const rect = this.translator.tupletRect(tuplet);
-				const host = this.tupletHost(rect, tuplet, pending, p);
+				const host = this.spillHost(rect, tuplet.getNotes(), pending, p);
 				this.collisionResolver.add({ rect, kind: 'note', band: host.row });
 				this.recordStaveSpill(host, rect);
 			}
@@ -403,8 +420,12 @@ export class SystemFormatter {
 				);
 				// Register each note as a collision obstacle now that its position is final, so the
 				// above-stave annotations drawn next can be nudged clear of it (and of high ties).
+				// A cross-staff stem is left out like its spill: lifting a dynamic clear of it
+				// would carry the dynamic past the far stave.
 				this.collisionResolver.add({
-					rect: this.noteRect(note),
+					rect: heads
+						? new Rect(box.getX(), spillTop, box.getW(), spillBottom - spillTop)
+						: this.noteRect(note),
 					kind: 'note',
 					band: p.row,
 				});
@@ -897,19 +918,19 @@ export class SystemFormatter {
 	}
 
 	/*
-	 * The stave a tuplet's bracket stands over. Usually the stave that drew it, but a
-	 * cross-staff run is drawn by its owning stave while its bracket can sit over the other
-	 * one — bass notes beamed up into the treble put the "3" above the treble staff, in the
-	 * gap to the stave above, not the one under the bass. So of the staves its notes sit on,
-	 * take the one the bracket is nearest to.
+	 * The stave a run's tuplet bracket or beam stands over. Usually the stave that drew it,
+	 * but a cross-staff run is drawn by its owning stave while its bracket or beam can sit
+	 * over the other one: bass notes beamed up into the treble put the beam and the "3"
+	 * above the treble staff, in the gap to the stave above, not the one under the bass. So
+	 * of the staves its notes sit on, take the one the rect is nearest to.
 	 */
-	private tupletHost(
+	private spillHost(
 		rect: Rect,
-		tuplet: Tuplet,
+		notes: ReadonlyArray<VexNote>,
 		pending: PendingStave[],
 		owner: PendingStave,
 	): PendingStave {
-		const staves = new Set(tuplet.getNotes().map((note) => note.getStave()));
+		const staves = new Set(notes.map((note) => note.getStave()));
 		const distance = (stave: Stave) =>
 			Math.max(
 				0,
