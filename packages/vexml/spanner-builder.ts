@@ -903,15 +903,12 @@ export class SpannerBuilder {
 
 				// How far the bow stands off its chord (the straight line joining the two
 				// drawn ends) at horizontal fraction `s` of the span, per unit of cpY. vexflow
-				// lifts both control points off the chord by the same cpY, so the cubic reduces
-				// to 3s(1-s): 0.75 at the midpoint, tapering to nothing at either end.
-				//
-				// A flattened bow (`shoulder` nearer the ends than vexflow's quarter, see
-				// shapeFor) reaches each x sooner along the curve, so it stands further off there.
-				// Scaled by how much further: the rise at bezier parameter t is 3t(1-t) whatever
-				// the shoulder, and x(t) only climbs, so solve x(t) = s for each shoulder and
-				// take the ratio. At the quarter the ratio is 1 and this is 3s(1-s) exactly.
-				const riseAt = (s: number, shoulder: number) => {
+				// lifts both control points off the chord by the same cpY, so at bezier
+				// parameter t the bow stands 3t(1-t) off it: 0.75 at the midpoint, tapering to
+				// nothing at either end. But t is not s: the control points sit at `shoulder`
+				// (vexflow's quarter, or nearer the ends for a flattened bow, see shapeFor), so
+				// x runs along the curve unevenly. x(t) only climbs, so solve x(t) = s for t.
+				const riseFactor = (s: number, shoulder = 0.25) => {
 					const xAt = (t: number) =>
 						3 * t * (1 - t) * ((1 - t) * shoulder + t * (1 - shoulder)) +
 						t ** 3;
@@ -928,10 +925,6 @@ export class SpannerBuilder {
 					const t = (lo + hi) / 2;
 					return 3 * t * (1 - t);
 				};
-				const riseFactor = (s: number, shoulder = 0.25) =>
-					shoulder === 0.25
-						? 3 * s * (1 - s)
-						: (3 * s * (1 - s) * riseAt(s, shoulder)) / riseAt(s, 0.25);
 
 				// How the curve clears every note it passes over, given where its two ends are
 				// drawn (xL/yL to xR/yR). Two independent knobs, and which one does the work
