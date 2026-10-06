@@ -8,7 +8,8 @@
 	],
 	"devDependencies": {
 		"@biomejs/biome": "2.5.1",
-		"@types/bun": "latest"
+		"@types/bun": "latest",
+		"@webappwiz/scry": "0.0.36"
 	},
 	"peerDependencies": {
 		"typescript": "^5"
