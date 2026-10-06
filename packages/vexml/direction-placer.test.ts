@@ -41,8 +41,10 @@ describe('DirectionPlacer', () => {
 			getYForBottomText: () => 160,
 		}) as unknown as Stave;
 
-	const note = (x: number, anchorStave: Stave) =>
+	// A centered note is a whole-measure rest, drawn mid-bar whatever its tick x.
+	const note = (x: number, anchorStave: Stave, centered = false) =>
 		({
+			isCenterAligned: () => centered,
 			getAbsoluteX: () => x,
 			getGlyphWidth: () => 10,
 			checkStave: () => anchorStave,
@@ -220,6 +222,47 @@ describe('DirectionPlacer', () => {
 		expect(spills[0]?.y).toBe(73);
 		expect(pageTops).toEqual([73]);
 		expect(spill.decorationTopOf(0)).toBe(73);
+	});
+
+	it('starts a directive over a whole-measure rest at the bar start, not the rest', () => {
+		const { placer, texts } = makePlacer();
+		placer.placeColumn(
+			column({
+				words: [
+					{
+						stave: stave(),
+						text: 'Andantino',
+						anchor: note(200, stave(), true),
+						placement: 'above',
+						opensBar: true,
+					},
+				],
+			}),
+		);
+		// The stave's first note position (60), not the rest's x.
+		expect(texts).toEqual([
+			{ text: 'Andantino', x: 60, y: 86, fill: '#000002' },
+		]);
+	});
+
+	it('keeps a directive later in a resting bar on the rest', () => {
+		const { placer, texts } = makePlacer();
+		placer.placeColumn(
+			column({
+				words: [
+					{
+						stave: stave(),
+						text: 'D.S. al Coda',
+						anchor: note(200, stave(), true),
+						placement: 'above',
+						opensBar: false,
+					},
+				],
+			}),
+		);
+		expect(texts).toEqual([
+			{ text: 'D.S. al Coda', x: 200, y: 86, fill: '#000002' },
+		]);
 	});
 
 	it('drops a below-placement directive under the stave without lifting the crop', () => {

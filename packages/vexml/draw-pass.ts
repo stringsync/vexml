@@ -617,9 +617,13 @@ export class DrawPass {
 			// falling back to this part's top staff when that staff isn't rendered, and
 			// anchored at the note the direction precedes (its first note when it names
 			// none). Drawn after the system is formatted so that note's x is real.
-			for (const { text, staffNumber, lead, placement } of this.reader.wordsOf(
-				measure,
-			)) {
+			for (const {
+				text,
+				staffNumber,
+				lead,
+				placement,
+				opensBar,
+			} of this.reader.wordsOf(measure)) {
 				const target =
 					this.pendingStaves[staves.indexOf(staffNumber)] ?? topStave;
 				if (target) {
@@ -631,6 +635,7 @@ export class DrawPass {
 						text,
 						anchor: anchor ?? target.staveNotes[0],
 						placement,
+						opensBar,
 					});
 				}
 			}

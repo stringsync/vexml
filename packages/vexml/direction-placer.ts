@@ -114,6 +114,8 @@ export type WordsTask = {
 	text: string;
 	anchor: StaveNote | TabNote | undefined;
 	placement: Placement;
+	/* The direction falls on the bar's first beat (see wordsAnchor). Absent means it doesn't. */
+	opensBar?: boolean;
 };
 
 /** A queued dynamics marking: a words task plus whether the marking spells out of SMuFL's
@@ -278,7 +280,7 @@ export class DirectionPlacer {
 			const placed = this.drawWords(
 				w.stave,
 				w.text,
-				w.anchor,
+				this.wordsAnchor(w),
 				w.placement,
 				w.anchor instanceof TabNote
 					? {
@@ -815,6 +817,22 @@ export class DirectionPlacer {
 		// Register the placed symbol so a later annotation in this system stacks above it.
 		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
 		return placed.y;
+	}
+
+	/*
+	 * Where a words direction starts. Normally its note's x, but a whole-measure rest is drawn
+	 * centered in the bar, and a tempo or expression opening a resting bar (an "Andantino" over
+	 * the opening rest) marks where the bar begins, not the middle of it. So text opening the
+	 * bar on a centered rest starts at the stave's first note position instead. A direction
+	 * later in the bar that happens to resolve to that rest stays where it was.
+	 */
+	private wordsAnchor(
+		task: WordsTask,
+	): StaveNote | TabNote | number | undefined {
+		const { anchor, stave } = task;
+		return task.opensBar && anchor?.isCenterAligned()
+			? stave.getNoteStartX()
+			: anchor;
 	}
 
 	/*

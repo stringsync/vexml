@@ -502,5 +502,17 @@
         </notations>
       </note>
     </measure>
+    <measure number="9">
+      <direction placement="above">
+        <direction-type>
+          <words font-style="italic">Andantino</words>
+        </direction-type>
+      </direction>
+      <note>
+        <rest measure="yes" />
+        <duration>12</duration>
+        <type>whole</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>

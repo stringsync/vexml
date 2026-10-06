@@ -597,6 +597,8 @@ export class ScoreReader {
 	 * `placement` is the direction's placement attribute: 'below' prints under the staff (the
 	 * convention for piano expression marks), anything else — including an absent attribute —
 	 * keeps the above-staff default.
+	 * `opensBar` says the direction falls on the measure's first beat, so it marks where the bar
+	 * begins.
 	 * ponytail: font-style attributes still ignored — every words direction prints in italics;
 	 * add a style field if a fixture needs upright words.
 	 */
@@ -605,14 +607,17 @@ export class ScoreReader {
 		staffNumber: string;
 		lead: Note | null;
 		placement: Placement;
+		opensBar: boolean;
 	}[] {
 		return measure.directions.flatMap((d) => {
 			const staffNumber = d.staff;
 			const lead = d.nextNote;
 			const placement = this.placementOf(d, 'above');
+			const beat = d.measureBeat;
+			const opensBar = beat !== null && Math.abs(beat) < EPSILON;
 			return d.words
 				.filter(Boolean)
-				.map((text) => ({ text, staffNumber, lead, placement }));
+				.map((text) => ({ text, staffNumber, lead, placement, opensBar }));
 		});
 	}
 

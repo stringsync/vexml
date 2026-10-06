@@ -810,6 +810,9 @@ describe('render', () => {
 	//   (divisions 3). The stems hang down, so each triplet's "3" prints above the staff with
 	//   no bracket, in the text's default band. The numeral can't move off its notes, so the
 	//   text lifts clear over the first "3" (Schubert, Der Lindenbaum m. 80).
+	// - M9: "Andantino" over a bar holding only a whole-measure rest. The rest is centered in
+	//   the bar, but the text starts at the bar's first note position, where the music it
+	//   marks begins, not over the rest (Faure, Apres un reve m. 1).
 	it.concurrent('renders words.png', async () => {
 		expect(await testing.render('words.musicxml')).toMatchScreenshot(
 			'words.png',
