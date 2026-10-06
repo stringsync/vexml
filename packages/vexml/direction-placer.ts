@@ -3,7 +3,7 @@ import {
 	Element,
 	type RenderContext,
 	type Stave,
-	type StaveNote,
+	StaveNote,
 	StaveTempo,
 	TabNote,
 } from 'vexflow';
@@ -721,10 +721,16 @@ export class DirectionPlacer {
 		const baseY = below
 			? stave.getBottomLineY() + WORDS_Y_OFFSET
 			: stave.getYForLine(0) - WORDS_Y_OFFSET;
-		const anchorX =
+		// A note's x is its left edge, where its noteheads begin. Text centered under a note
+		// (a dynamic, a bass figure) centers on the noteheads instead, or it reads as
+		// belonging half a notehead to the left.
+		let anchorX =
 			typeof anchor === 'number'
 				? anchor
 				: (anchor?.getAbsoluteX() ?? stave.getNoteStartX());
+		if (anchor instanceof StaveNote && style.align === 'center') {
+			anchorX = (anchor.getNoteHeadBeginX() + anchor.getNoteHeadEndX()) / 2;
+		}
 		this.context.save();
 		this.context.setFont(
 			style.font,
