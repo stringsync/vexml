@@ -7,10 +7,10 @@ const cases = await Cases.load(import.meta.dir);
 
 describe("classes-over-function-exports", () => {
 	it.each(cases.bad)("asks about or flags $name", async ({ file }) => {
-		const decider = new FakeDecider({}, 0.9);
+		const som = new FakeDecider({}, 0.9);
 
 		const findings = await new ClassesOverFunctionExports({
-			decider,
+			som,
 			llm: new FakeDecider(),
 		}).check(file);
 
@@ -18,10 +18,10 @@ describe("classes-over-function-exports", () => {
 	});
 
 	it.each(cases.good)("passes $name on code alone", async ({ file }) => {
-		const decider = new FakeDecider({}, 0);
+		const som = new FakeDecider({}, 0);
 
 		const findings = await new ClassesOverFunctionExports({
-			decider,
+			som,
 			llm: new FakeDecider(),
 		}).check(file);
 
@@ -29,7 +29,7 @@ describe("classes-over-function-exports", () => {
 	});
 
 	it("asks whether a type several exported functions take is a service they call", async () => {
-		const decider = new FakeDecider({}, 0.8);
+		const som = new FakeDecider({}, 0.8);
 		const file = new SourceFile(
 			"a.ts",
 			[
@@ -43,13 +43,13 @@ describe("classes-over-function-exports", () => {
 		);
 
 		const findings = await new ClassesOverFunctionExports({
-			decider,
+			som,
 			llm: new FakeDecider(),
 		}).check(file);
 
 		expect([
 			findings.map((finding) => [finding.line, finding.message]),
-			decider.asked.map((asked) => asked.question),
+			som.asked.map((asked) => asked.question),
 		]).toEqual([
 			[
 				[
@@ -75,7 +75,7 @@ describe("classes-over-function-exports", () => {
 		);
 
 		const findings = await new ClassesOverFunctionExports({
-			decider: new FakeDecider(),
+			som: new FakeDecider(),
 			llm: new FakeDecider(),
 		}).check(file);
 
@@ -83,7 +83,7 @@ describe("classes-over-function-exports", () => {
 	});
 
 	it("asks about a constructor's type only when the file names a wider one", async () => {
-		const decider = new FakeDecider({}, 0.8);
+		const som = new FakeDecider({}, 0.8);
 		const file = new SourceFile(
 			"a.ts",
 			[
@@ -95,11 +95,11 @@ describe("classes-over-function-exports", () => {
 		);
 
 		await new ClassesOverFunctionExports({
-			decider,
+			som,
 			llm: new FakeDecider(),
 		}).check(file);
 
-		expect(decider.asked.map((asked) => asked.question)).toEqual([
+		expect(som.asked.map((asked) => asked.question)).toEqual([
 			"Is NodeFs one implementation of Fs, which has others, such as a fake for tests?",
 		]);
 	});

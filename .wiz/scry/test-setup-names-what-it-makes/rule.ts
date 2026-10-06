@@ -33,10 +33,10 @@ export default class TestSetupNamesWhatItMakes implements Rule {
 	static readonly level = "error";
 	static readonly recommended = true;
 
-	private decider: Decider;
+	private som: Decider;
 
 	constructor(tools: Tools) {
-		this.decider = tools.decider;
+		this.som = tools.som;
 	}
 
 	async check(file: SourceFile): Promise<Finding[]> {
@@ -77,7 +77,7 @@ export default class TestSetupNamesWhatItMakes implements Rule {
 
 	/**
 	 * A `Testing` class may hold the dependencies a test runs against, never
-	 * the thing a test is about; a decider tells which it holds.
+	 * the thing a test is about; the som tells which it holds.
 	 */
 	private async testingHoldingTheSubject(file: SourceFile): Promise<Finding[]> {
 		const candidates = file.ts
@@ -91,7 +91,7 @@ export default class TestSetupNamesWhatItMakes implements Rule {
 			candidates.map(async (testing) =>
 				testing.flag(
 					"Testing should hold only the dependencies a test runs against: build the thing the test is about in the test, or its beforeEach.",
-					await this.decider.decide(OWNS_THE_SUBJECT, testing),
+					await this.som.decide(OWNS_THE_SUBJECT, testing),
 					OWNS_THE_SUBJECT,
 				),
 			),

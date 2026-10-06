@@ -7,24 +7,24 @@ const cases = await Cases.load(import.meta.dir);
 
 describe("comments-say-why-not-what", () => {
 	it.each(cases.bad)("asks about a comment in $name", async ({ file }) => {
-		const decider = new FakeDecider();
+		const som = new FakeDecider();
 
-		await new CommentsSayWhyNotWhat({ decider, llm: new FakeDecider() }).check(
+		await new CommentsSayWhyNotWhat({ som, llm: new FakeDecider() }).check(
 			file,
 		);
 
-		expect(decider.asked).not.toEqual([]);
+		expect(som.asked).not.toEqual([]);
 	});
 
-	it("flags each comment with the decider's answer, at its line", async () => {
-		const decider = new FakeDecider({ increment: 0.9 }, 0.1);
+	it("flags each comment with the som's answer, at its line", async () => {
+		const som = new FakeDecider({ increment: 0.9 }, 0.1);
 		const file = new SourceFile(
 			"a.ts",
 			"// increment the counter\ncounter++;\nskip(); // the first is a header\n",
 		);
 
 		const findings = await new CommentsSayWhyNotWhat({
-			decider,
+			som,
 			llm: new FakeDecider(),
 		}).check(file);
 
@@ -37,32 +37,32 @@ describe("comments-say-why-not-what", () => {
 	});
 
 	it("asks once about a run of line comments", async () => {
-		const decider = new FakeDecider();
+		const som = new FakeDecider();
 		const file = new SourceFile(
 			"a.ts",
 			"// a sliding log: fixed windows\n// let a client send twice\nallow();\n",
 		);
 
-		await new CommentsSayWhyNotWhat({ decider, llm: new FakeDecider() }).check(
+		await new CommentsSayWhyNotWhat({ som, llm: new FakeDecider() }).check(
 			file,
 		);
 
-		expect(decider.asked.map((asked) => asked.about.text)).toEqual([
+		expect(som.asked.map((asked) => asked.about.text)).toEqual([
 			"// a sliding log: fixed windows\n// let a client send twice",
 		]);
 	});
 
 	it("leaves doc comments and tool directives alone", async () => {
-		const decider = new FakeDecider();
+		const som = new FakeDecider();
 		const file = new SourceFile(
 			"a.ts",
 			"/** Adds one. */\nfunction add() {\n\t// @ts-expect-error\n\treturn x + 1;\n}\n// biome-ignore lint: reason\nrun();\n",
 		);
 
-		await new CommentsSayWhyNotWhat({ decider, llm: new FakeDecider() }).check(
+		await new CommentsSayWhyNotWhat({ som, llm: new FakeDecider() }).check(
 			file,
 		);
 
-		expect(decider.asked).toEqual([]);
+		expect(som.asked).toEqual([]);
 	});
 });

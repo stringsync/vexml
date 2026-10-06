@@ -20,10 +20,10 @@ export default class ResourcesAreDisposable implements Rule {
 	static readonly level = "error";
 	static readonly recommended = true;
 
-	private decider: Decider;
+	private som: Decider;
 
 	constructor(tools: Tools) {
-		this.decider = tools.decider;
+		this.som = tools.som;
 	}
 
 	async check(file: SourceFile): Promise<Finding[]> {
@@ -64,7 +64,7 @@ export default class ResourcesAreDisposable implements Rule {
 	/**
 	 * A `close()`, `stop()` or the like on something with no `dispose`.
 	 * When the class visibly takes a resource, the method is its release;
-	 * otherwise a decider reads whether it releases anything.
+	 * otherwise the som reads whether it releases anything.
 	 */
 	private async releasesUnderAnotherName(
 		holders: SyntaxNode[],
@@ -84,7 +84,7 @@ export default class ResourcesAreDisposable implements Rule {
 				const question = `Does ${name}() release something ${nameOf(holder)} holds, like a timer, listener, subscription, socket, worker or file handle?`;
 				return method.flag(
 					message,
-					await this.decider.decide(question, holder),
+					await this.som.decide(question, holder),
 					question,
 				);
 			}),

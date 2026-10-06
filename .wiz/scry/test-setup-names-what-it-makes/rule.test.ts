@@ -6,12 +6,12 @@ import TestSetupNamesWhatItMakes from "./rule";
 const cases = await Cases.load(import.meta.dir);
 
 describe("test-setup-names-what-it-makes", () => {
-	let decider: FakeDecider;
+	let som: FakeDecider;
 	let rule: TestSetupNamesWhatItMakes;
 
 	beforeEach(() => {
-		decider = new FakeDecider({ Cart: 0.85 }, 0.1);
-		rule = new TestSetupNamesWhatItMakes({ decider, llm: new FakeDecider() });
+		som = new FakeDecider({ Cart: 0.85 }, 0.1);
+		rule = new TestSetupNamesWhatItMakes({ som, llm: new FakeDecider() });
 	});
 
 	it.each(cases.bad)("flags $name", async ({ file }) => {
@@ -20,7 +20,7 @@ describe("test-setup-names-what-it-makes", () => {
 
 	it.each(cases.good)("finds no harness by name in $name", async ({ file }) => {
 		const refusing = new TestSetupNamesWhatItMakes({
-			decider: new FakeDecider({}, 0),
+			som: new FakeDecider({}, 0),
 			llm: new FakeDecider(),
 		});
 
@@ -56,7 +56,7 @@ describe("test-setup-names-what-it-makes", () => {
 		expect(findings.map(({ line }) => line)).toEqual([1]);
 	});
 
-	it("asks the decider whether a Testing class holds the subject, and no other class", async () => {
+	it("asks the som whether a Testing class holds the subject, and no other class", async () => {
 		const file = new SourceFile(
 			"testing.ts",
 			[
@@ -72,7 +72,7 @@ describe("test-setup-names-what-it-makes", () => {
 		const findings = await rule.check(file);
 
 		expect([
-			decider.asked.map(({ about }) => about.line),
+			som.asked.map(({ about }) => about.line),
 			findings.map(({ line, confidence }) => [line, confidence]),
 		]).toEqual([[4], [[4, 0.85]]]);
 	});

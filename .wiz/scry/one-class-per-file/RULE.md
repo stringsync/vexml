@@ -1,5 +1,5 @@
 ---
-version: 0.0.36
+version: 0.0.38
 ---
 # One class per file
 

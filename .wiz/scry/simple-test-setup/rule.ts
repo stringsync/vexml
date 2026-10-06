@@ -54,10 +54,10 @@ export default class SimpleTestSetup implements Rule {
 	static readonly level = "error";
 	static readonly recommended = true;
 
-	private decider: Decider;
+	private som: Decider;
 
 	constructor(tools: Tools) {
-		this.decider = tools.decider;
+		this.som = tools.som;
 	}
 
 	async check(file: SourceFile): Promise<Finding[]> {
@@ -156,7 +156,7 @@ export default class SimpleTestSetup implements Rule {
 	/**
 	 * Titles that cannot complete "it ...", because they open on a gerund like
 	 * "calling" or on a condition like "when", and titles that may not,
-	 * because they open on a name from the code like `isEnabled`. A decider
+	 * because they open on a name from the code like `isEnabled`. The som
 	 * reads only the names, since "URL-encodes" is one and still a verb.
 	 */
 	private async titlesLeadingWithTheAction(
@@ -177,7 +177,7 @@ export default class SimpleTestSetup implements Rule {
 				return opening === "name"
 					? title.flag(
 							message,
-							await this.decider.decide(ACTION_FIRST, title),
+							await this.som.decide(ACTION_FIRST, title),
 							ACTION_FIRST,
 						)
 					: title.flag(message);
@@ -187,7 +187,7 @@ export default class SimpleTestSetup implements Rule {
 
 	/**
 	 * Tests that declare several things before they first assert, which a
-	 * decider weighs. A declaration after an assertion is an input to the
+	 * som weighs. A declaration after an assertion is an input to the
 	 * next one, like each case a table of checks walks through, not setup.
 	 */
 	private async setupDrowningTheBehavior(file: SourceFile): Promise<Finding[]> {
@@ -198,7 +198,7 @@ export default class SimpleTestSetup implements Rule {
 			candidates.map(async (test) =>
 				test.flag(
 					"Move the setup this test shares with others into its describe's beforeEach, so the behavior under test leads.",
-					await this.decider.decide(DROWNED, test),
+					await this.som.decide(DROWNED, test),
 					DROWNED,
 				),
 			),

@@ -6,33 +6,28 @@ import ObjectsOverCallbacks from "./rule";
 const cases = await Cases.load(import.meta.dir);
 
 describe("objects-over-callbacks", () => {
-	let decider: FakeDecider;
+	let som: FakeDecider;
 	let rule: ObjectsOverCallbacks;
 
 	beforeEach(() => {
-		decider = new FakeDecider({}, 0.3);
-		rule = new ObjectsOverCallbacks({ decider, llm: new FakeDecider() });
+		som = new FakeDecider({}, 0.3);
+		rule = new ObjectsOverCallbacks({ som, llm: new FakeDecider() });
 	});
 
 	it.each(cases.bad)("flags $name", async ({ file }) => {
 		expect(await rule.check(file)).not.toEqual([]);
 	});
 
-	it.each(cases.good)(
-		"passes $name when the decider says no",
-		async ({ file }) => {
-			const refusing = new ObjectsOverCallbacks({
-				decider: new FakeDecider({}, 0),
-				llm: new FakeDecider(),
-			});
+	it.each(cases.good)("passes $name when the som says no", async ({ file }) => {
+		const refusing = new ObjectsOverCallbacks({
+			som: new FakeDecider({}, 0),
+			llm: new FakeDecider(),
+		});
 
-			expect(
-				(await refusing.check(file)).filter(
-					(finding) => finding.confidence > 0,
-				),
-			).toEqual([]);
-		},
-	);
+		expect(
+			(await refusing.check(file)).filter((finding) => finding.confidence > 0),
+		).toEqual([]);
+	});
 
 	it("asks about a function parameter a constructor does not keep, pointing at the declaration", async () => {
 		const file = new SourceFile(
@@ -52,7 +47,7 @@ describe("objects-over-callbacks", () => {
 
 		expect([
 			findings.map((finding) => [finding.line, finding.confidence]),
-			decider.asked.map((asked) => asked.about.line),
+			som.asked.map((asked) => asked.about.line),
 		]).toEqual([[[1, 0.3]], [1]]);
 	});
 
@@ -75,7 +70,7 @@ describe("objects-over-callbacks", () => {
 
 		expect([
 			findings.map((finding) => [finding.line, finding.confidence]),
-			decider.asked.map((asked) => asked.about.line),
+			som.asked.map((asked) => asked.about.line),
 		]).toEqual([
 			[
 				[2, 1],

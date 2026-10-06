@@ -8,7 +8,7 @@ const cases = await Cases.load(import.meta.dir);
 describe("simple-test-setup", () => {
 	it.each(cases.bad)("flags $name", async ({ file }) => {
 		const rule = new SimpleTestSetup({
-			decider: new FakeDecider({}, 0.9),
+			som: new FakeDecider({}, 0.9),
 			llm: new FakeDecider(),
 		});
 
@@ -17,7 +17,7 @@ describe("simple-test-setup", () => {
 
 	it.each(cases.good)("passes $name", async ({ file }) => {
 		const rule = new SimpleTestSetup({
-			decider: new FakeDecider({}, 0.9),
+			som: new FakeDecider({}, 0.9),
 			llm: new FakeDecider(),
 		});
 
@@ -38,7 +38,7 @@ describe("simple-test-setup", () => {
 				].join("\n"),
 			);
 		const rule = new SimpleTestSetup({
-			decider: new FakeDecider(),
+			som: new FakeDecider(),
 			llm: new FakeDecider(),
 		});
 
@@ -60,7 +60,7 @@ describe("simple-test-setup", () => {
 		);
 
 		const findings = await new SimpleTestSetup({
-			decider: new FakeDecider(),
+			som: new FakeDecider(),
 			llm: new FakeDecider(),
 		}).check(file);
 
@@ -84,7 +84,7 @@ describe("simple-test-setup", () => {
 		);
 
 		const findings = await new SimpleTestSetup({
-			decider: new FakeDecider(),
+			som: new FakeDecider(),
 			llm: new FakeDecider(),
 		}).check(file);
 
@@ -92,7 +92,7 @@ describe("simple-test-setup", () => {
 	});
 
 	it("flags titles that open on a gerund or a condition, and asks about ones that open on a name from the code", async () => {
-		const decider = new FakeDecider({}, 0.8);
+		const som = new FakeDecider({}, 0.8);
 		const file = new SourceFile(
 			"a.test.ts",
 			[
@@ -104,12 +104,12 @@ describe("simple-test-setup", () => {
 		);
 
 		const findings = await new SimpleTestSetup({
-			decider,
+			som,
 			llm: new FakeDecider(),
 		}).check(file);
 
 		expect([
-			decider.asked.map(({ about }) => about.line),
+			som.asked.map(({ about }) => about.line),
 			findings.map(({ line, confidence }) => [line, confidence]),
 		]).toEqual([
 			[2],
@@ -122,7 +122,7 @@ describe("simple-test-setup", () => {
 	});
 
 	it("asks about a test only when it declares several things before it first asserts", async () => {
-		const decider = new FakeDecider({ gateway: 0.9 }, 0.1);
+		const som = new FakeDecider({ gateway: 0.9 }, 0.1);
 		const file = new SourceFile(
 			"a.test.ts",
 			[
@@ -149,12 +149,12 @@ describe("simple-test-setup", () => {
 		);
 
 		const findings = await new SimpleTestSetup({
-			decider,
+			som,
 			llm: new FakeDecider(),
 		}).check(file);
 
 		expect([
-			decider.asked.map(({ about }) => about.line),
+			som.asked.map(({ about }) => about.line),
 			findings.map(({ line, confidence }) => [line, confidence]),
 		]).toEqual([[1], [[1, 0.9]]]);
 	});

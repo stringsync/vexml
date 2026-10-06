@@ -36,10 +36,10 @@ export default class ClassesOverFunctionExports implements Rule {
 	static readonly level = "error";
 	static readonly recommended = true;
 
-	private decider: Decider;
+	private som: Decider;
 
 	constructor(tools: Tools) {
-		this.decider = tools.decider;
+		this.som = tools.som;
 	}
 
 	async check(file: SourceFile): Promise<Finding[]> {
@@ -52,7 +52,7 @@ export default class ClassesOverFunctionExports implements Rule {
 
 	/**
 	 * Two or more exported functions taking a parameter of the same type, and
-	 * calling a method on it in at least one: a decider tells a service they
+	 * calling a method on it in at least one: the som tells a service they
 	 * share from data they all work on.
 	 */
 	private async functionsSharingADependency(
@@ -81,7 +81,7 @@ export default class ClassesOverFunctionExports implements Rule {
 				const first = takers[0] as Taker;
 				return first.span.flag(
 					`${list(takers.map((taker) => taker.name))} each take a ${type}: make them methods of one class that takes it in its constructor.`,
-					await this.decider.decide(question, first.span),
+					await this.som.decide(question, first.span),
 					question,
 				);
 			}),
@@ -132,7 +132,7 @@ export default class ClassesOverFunctionExports implements Rule {
 
 	/**
 	 * A constructor parameter typed `NodeFs` in a file that names `Fs`: a
-	 * decider tells one implementation of an interface from a class that is
+	 * som tells one implementation of an interface from a class that is
 	 * the only one.
 	 */
 	private async oneImplementationNamed(file: SourceFile): Promise<Finding[]> {
@@ -158,7 +158,7 @@ export default class ClassesOverFunctionExports implements Rule {
 				const question = `Is ${type} one implementation of ${wider}, which has others, such as a fake for tests?`;
 				return parameter.flag(
 					`Type ${nameOf(parameter)} as ${wider}, not ${type}, so a test can hand in another implementation.`,
-					await this.decider.decide(question, parameter),
+					await this.som.decide(question, parameter),
 					question,
 				);
 			}),

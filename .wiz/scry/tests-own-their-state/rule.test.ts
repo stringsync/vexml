@@ -6,12 +6,12 @@ import TestsOwnTheirState from "./rule";
 const cases = await Cases.load(import.meta.dir);
 
 describe("tests-own-their-state", () => {
-	let decider: FakeDecider;
+	let som: FakeDecider;
 	let rule: TestsOwnTheirState;
 
 	beforeEach(() => {
-		decider = new FakeDecider({}, 0.2);
-		rule = new TestsOwnTheirState({ decider, llm: new FakeDecider() });
+		som = new FakeDecider({}, 0.2);
+		rule = new TestsOwnTheirState({ som, llm: new FakeDecider() });
 	});
 
 	it.each(cases.bad)("flags $name", async ({ file }) => {
@@ -22,7 +22,7 @@ describe("tests-own-their-state", () => {
 		expect(await rule.check(file)).toEqual([]);
 	});
 
-	it("asks the decider whether a class holding built objects is a harness", async () => {
+	it("asks the som whether a class holding built objects is a harness", async () => {
 		const file = new SourceFile(
 			"a.test.ts",
 			"class FakeOutbox {\n\treadonly sent = [];\n}\nclass Harness {\n\treadonly cart = new Cart();\n}\n",
@@ -32,7 +32,7 @@ describe("tests-own-their-state", () => {
 
 		expect([
 			findings.map((finding) => [finding.line, finding.confidence]),
-			decider.asked.map((asked) => asked.about.line),
+			som.asked.map((asked) => asked.about.line),
 		]).toEqual([[[4, 0.2]], [4]]);
 	});
 

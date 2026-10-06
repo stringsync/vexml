@@ -38,10 +38,10 @@ export default class TestsOwnTheirState implements Rule {
 	static readonly level = "error";
 	static readonly recommended = true;
 
-	private decider: Decider;
+	private som: Decider;
 
 	constructor(tools: Tools) {
-		this.decider = tools.decider;
+		this.som = tools.som;
 	}
 
 	async check(file: SourceFile): Promise<Finding[]> {
@@ -183,7 +183,7 @@ export default class TestsOwnTheirState implements Rule {
 		);
 	}
 
-	/** Classes whose fields build objects, which a decider tells apart from fakes. */
+	/** Classes whose fields build objects, which the som tells apart from fakes. */
 	private async harnesses(file: SourceFile): Promise<Finding[]> {
 		const candidates = file.ts.topLevel().filter(
 			(statement) =>
@@ -199,7 +199,7 @@ export default class TestsOwnTheirState implements Rule {
 			candidates.map(async (harness) =>
 				harness.flag(
 					`${harness.field("name")?.text} owns the state the tests are about: build it in each test, or in a beforeEach.`,
-					await this.decider.decide(HARNESS, harness),
+					await this.som.decide(HARNESS, harness),
 					HARNESS,
 				),
 			),

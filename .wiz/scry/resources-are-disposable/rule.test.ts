@@ -6,12 +6,12 @@ import ResourcesAreDisposable from "./rule";
 const cases = await Cases.load(import.meta.dir);
 
 describe("resources-are-disposable", () => {
-	let decider: FakeDecider;
+	let som: FakeDecider;
 	let rule: ResourcesAreDisposable;
 
 	beforeEach(() => {
-		decider = new FakeDecider({}, 0.4);
-		rule = new ResourcesAreDisposable({ decider, llm: new FakeDecider() });
+		som = new FakeDecider({}, 0.4);
+		rule = new ResourcesAreDisposable({ som, llm: new FakeDecider() });
 	});
 
 	it.each(cases.bad)("flags $name", async ({ file }) => {
@@ -19,7 +19,7 @@ describe("resources-are-disposable", () => {
 	});
 
 	it.each(cases.good)("passes $name", async ({ file }) => {
-		expect([await rule.check(file), decider.asked]).toEqual([[], []]);
+		expect([await rule.check(file), som.asked]).toEqual([[], []]);
 	});
 
 	it("asks whether a close() releases anything when the class takes nothing it can see", async () => {
@@ -32,7 +32,7 @@ describe("resources-are-disposable", () => {
 
 		expect([
 			findings.map((finding) => [finding.line, finding.confidence]),
-			decider.asked.map((asked) => asked.about.line),
+			som.asked.map((asked) => asked.about.line),
 		]).toEqual([[[2, 0.4]], [1]]);
 	});
 
@@ -55,7 +55,7 @@ describe("resources-are-disposable", () => {
 
 		expect([
 			findings.map((finding) => [finding.line, finding.confidence]),
-			decider.asked,
+			som.asked,
 		]).toEqual([[[5, 1]], []]);
 	});
 

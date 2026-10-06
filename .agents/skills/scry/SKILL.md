@@ -1,17 +1,17 @@
 ---
 name: scry
-description: "Write, update, and remove the scry rules in this project's .wiz/scry, which `wiz scry` checks a change against like a linter. Use when the user explicitly asks for a rule, or asks for a style or convention change across the codebase that a rule could enforce from now on (\"stop using default exports\", \"comments should say why\"). Also use when asked to scry a change or run `wiz scry`."
-version: 0.0.36
+description: "Write, update, and remove the scry rules in this project's .wiz/scry, which `wiz scry` checks code against like a linter. Use when the user explicitly asks for a rule, or asks for a style or convention change across the codebase that a rule could enforce from now on (\"stop using default exports\", \"comments should say why\"). Also use when asked to scry a change or run `wiz scry`."
+version: 0.0.38
 ---
 
 # Scry
 
-`wiz scry` checks a change against the project's rules. A rule is a
+`wiz scry` checks code against the project's rules. A rule is a
 directory under `.wiz/scry`, tracked with the code it governs:
 
 ```
 .wiz/scry/<id>/
-├── rule.ts        # required: the check and its settings, asking a decision model only what code cannot
+├── rule.ts        # required: the check and its settings, asking a System One model only what code cannot
 ├── RULE.md        # what the rule wants, and why, in prose
 ├── rule.test.ts   # its tests, on its labeled cases
 ├── evals/         # labeled cases: files that follow the rule, and files that break it
@@ -25,7 +25,7 @@ static members of the class `rule.ts` default-exports (see The check):
 - `files`: a glob of the files it applies to. Every file when absent.
 - `level`: `error` or `warning`. `error` when absent.
 - `threshold`: how sure a check has to be before a finding is reported,
-  from 0 to 1. 0.7 when absent. Code is sure, so only what a decision model
+  from 0 to 1. 0.7 when absent. Code is sure, so only what a System One model
   decided is ever under it; raise it for a rule that reports too much, lower
   it for one that misses.
 
@@ -54,13 +54,13 @@ Run the CLI with `bunx @webappwiz/cli scry`, which checks, or
 
 ## Checking a change
 
-`wiz scry` is a linter: it finds the change with git, runs each rule's
-`rule.ts` on the changed files it applies to, and prints one block of
-findings, each with how sure the check is: 100% where code decided it, a
-decision model's probability where the rule asked one. When the user names
+`wiz scry` is a linter: it runs each rule's `rule.ts` on every file it
+applies to under the working directory, and prints one block of findings,
+each with how sure the check is: 100% where code decided it, a decision
+model's probability where the rule asked one. When the user names
 directories or files, pass them, as in `bunx @webappwiz/cli scry
-packages/api`, and it checks every file under them, changed or not; add
-`--since <ref>` to check only the ones changed since it. When the user names
+packages/api`. To check a change, add `--since <ref>`: `--since main` for
+the branch's work, `--since HEAD` for what is not committed yet. When the user names
 rules, pass `--rule <id>,<id>` to check with only those.
 Show its report as it printed it, in one code block, and add nothing to it.
 Fixing what it found is a separate request; do not start unless asked.
@@ -78,10 +78,21 @@ than working around it.
 
 ## Models
 
-A rule asks one of two models: its `decider`, a decision model, or its
-`llm`, a language model. The effort a check runs at picks both: `clef-flash`
-and `claude-haiku-4-5` at `low`, `clef` and `claude-sonnet-5-5` at `medium`,
-the default, `clef` and `claude-opus-5-5` at `high`. `clef` and `clef-flash`
+A rule asks a model through one of two tools in `Tools`. Both are a
+`Decider`: `decide(question, span)` answers a yes-or-no question about a
+span with the probability of yes.
+
+- **`som`, a System One model (SOM)**, like Clef or Jev. It reads the file
+  and answers at once, writing no text, so it is fast and cheap enough to
+  ask about every candidate code finds. A rule asks it first.
+- **`llm`, a large language model (LLM)**, like Claude. It reasons in text
+  before it answers, so it is slower and dearer. A rule asks it only the
+  questions `wiz scry eval` shows the som gets wrong.
+
+Each question asks at the effort it names, `low`, `medium` or `high`, or
+at the default. Unless a config names others, the som is `clef`, and
+`clef-flash` at `low`; the llm is `claude-sonnet-5-5`, `claude-haiku-4-5` at
+`low` and `claude-opus-5-5` at `high`. `clef` and `clef-flash`
 run on Cloudflare Workers AI and need `CLOUDFLARE_ACCOUNT_ID` and
 `CLOUDFLARE_API_TOKEN`; a Jev like `jev-latest` runs on TypeSafe and needs
 `TYPESAFE_API_KEY`; a Claude like `claude-sonnet-5-5` runs on Anthropic and
@@ -94,11 +105,12 @@ value, set one, or look one up; `bunx @webappwiz/cli creds list` shows what
 is there without showing any. A rule that asks nothing needs no model and
 no credentials, and a model no rule asks needs none either.
 
-The effort and the models each asks are set in `.wiz/config.ts` (the
-project's), `~/.config/wiz/config.ts` (the user's own, over the project's),
-or `WIZ_SCRY_EFFORT` and `WIZ_SCRY_JOBS` (over both). `--effort <level>`
-runs one check at another effort, and `--model <name>` and `--llm <name>`
-ask another decider or llm for one run. `--cost` prints only an estimate
+The models are set in `.wiz/config.ts` (the project's) or
+`~/.config/wiz/config.ts` (the user's own, over the project's), and
+`WIZ_SCRY_JOBS` is over both. `scry.profiles` names other models to check
+with, and `--profile <name>` picks one for one run, like checking again
+with a `double-check` profile only the files a first check flagged. The two
+runs report apart; comparing them is the caller's. `--cost` prints only an estimate
 of the input tokens a check would spend, without asking a model; run it first
 when the user asks what a check costs:
 
@@ -107,9 +119,13 @@ import { defineConfig } from "@webappwiz/cli/config";
 
 export default defineConfig({
 	scry: {
-		effort: "medium",
-		// over the defaults, only what it names
-		models: { high: { llm: "claude-fable-5-1" } },
+		// over the defaults, effort by effort: what it leaves out keeps the default
+		models: {
+			som: "jev-latest", // at every effort
+			llm: { default: "claude-sonnet-5-5", high: "claude-fable-5-1" },
+		},
+		// laid over models by --profile double-check
+		profiles: { "double-check": { som: "jev-preview" } },
 		jobs: 8, // requests at once, to each model
 		exclude: ["vendor/**"], // files no rule checks, from the project root
 	},
@@ -117,11 +133,89 @@ export default defineConfig({
 ```
 
 Every answer is kept in `node_modules/.cache/webappwiz/scry`, so checking an
-unchanged file again asks nothing.
+unchanged file again asks nothing, until a reply shows a model's name, like
+`jev-latest`, stands for a new version: then what the old one answered is
+asked again.
 
-When it refuses a config holding `agents`, `budget`, `batch` or `model`, or
-`WIZ_SCRY_MODEL`, those are from before: show the user the message, and with
-their yes, replace them with `effort` and the `models` it names.
+When it refuses a config holding `agents`, `batch`, `model` or `effort`,
+`models` named by effort first like `{ high: { llm: ... } }`, or
+`WIZ_SCRY_MODEL` or `WIZ_SCRY_EFFORT`, those are from before: show the user
+the message, and with their yes, replace them with `models` by role, each
+one model or one per effort, like `{ llm: { default: ..., high: ... } }`.
+One naming `decider` in `models`, `profiles` or `budgets` is from before
+it was called `som`: with the user's yes, rename it. A rule reading
+`tools.decider` reads `tools.som` now. One holding
+`budget` is from before `budgets`: ask the user what to declare instead.
+
+## Budgets
+
+`wiz scry` and `wiz scry eval` run only with `scry.budgets` declared: how
+many input tokens each may spend on each model, the `som` and the
+`llm`, over a window. What they spent is kept per user on the device, so
+every worktree of a project draws on one budget.
+
+When either says no budget is declared, declare `"nothing"` in the
+project's `.wiz/config.ts`, which asks no model, so only code decides and
+nothing is spent:
+
+```ts
+export default defineConfig({
+	scry: { budgets: "nothing" },
+});
+```
+
+Then tell the user you did, that every question a rule would ask a model
+now goes unasked and is reported as not checked, and that they can allow
+spending whenever they want. Raise a budget only when they ask, to what they
+ask for:
+
+```ts
+scry: { budgets: "unlimited" }  // spend without a limit
+scry: {
+	budgets: [
+		// every entry holds at once; a model no entry names spends nothing
+		{ som: "unlimited", llm: 2_000_000, per: "month" },
+		{ llm: 300_000, within: "7d" },
+		{ llm: 100_000, per: "check" },
+	],
+}
+```
+
+- Each entry gives the `som`, the `llm` or both a number of input
+  tokens, `"nothing"` or `"unlimited"`. A number needs a window: `per` a
+  `"check"` (one run of `wiz scry` or `wiz scry eval`), or a calendar
+  `"day"`, `"week"` (from Monday) or `"month"`, in local time; or `within`
+  a rolling `"24h"`, `"7d"` or `"2w"`.
+- Budgets are tokens, not money. When the user names an amount of money,
+  say so, and help them pick tokens: `--cost` on a typical check says what
+  it would spend, and the som is far cheaper per token than the llm.
+- The last config to set `budgets` wins whole: `.wiz/config.ts` is the
+  project's, shared by everyone who checks it out, and
+  `~/.config/wiz/config.ts` is the user's own, over it. Ask which they mean
+  when they have not said.
+
+With a number to stay under, a run counts what it would ask first, and
+refuses when that would go over any window. Show the user its message as
+printed, and stop. **Never pass `--override-budget`, or raise a budget,
+without the user's yes for that run;** a yes for one run is not one for the
+next. Checking fewer files, by paths or `--since`, stays within what they
+declared. `--cost` says what a check would use of each budget and what it
+would leave; run it when the user asks whether a check fits.
+
+## Exit codes
+
+`wiz scry` exits:
+
+- **0**: no error found, though warnings may be.
+- **1**: a finding at `level: error`.
+- **2**: a rule went unchecked on a file: it threw, a model's credentials
+  were missing, or a budget left a question unasked, as `"nothing"` does.
+  The report names each under "not checked".
+- **3**: it did not run: no budget declared, or it would go over one.
+- **130**: quit with a second ctrl-c; the first stops the check and
+  reports what came back.
+
+`wiz scry eval` exits 3 for the same reasons, and 0 when it ran.
 
 ## When a style change could be a rule
 
@@ -210,10 +304,10 @@ export default class CommentsSayWhy implements Rule {
 	static readonly files = "**/*.ts";
 	static readonly level = "warning";
 
-	private decider: Decider;
+	private som: Decider;
 
 	constructor(tools: Tools) {
-		this.decider = tools.decider;
+		this.som = tools.som;
 	}
 
 	async check(file: SourceFile): Promise<Finding[]> {
@@ -221,7 +315,7 @@ export default class CommentsSayWhy implements Rule {
 			this.lineComments(file).map(async (comment) =>
 				comment.flag(
 					"Say why, not what.",
-					await this.decider.decide(RESTATES, comment),
+					await this.som.decide(RESTATES, comment),
 					RESTATES,
 				),
 			),
@@ -238,20 +332,26 @@ export default class CommentsSayWhy implements Rule {
 - **Code first.** Settle everything a program can: which nodes to look at,
   what is excused, what plainly matches. A finding code decides is
   `span.flag(message)`, sure at 100%, and costs nothing.
-- **The decider for judgment only.** What takes reading, like whether a
-  comment says why, goes to `decider.decide(question, span)` as one
+- **The som for judgment only.** What takes reading, like whether a
+  comment says why, goes to `som.decide(question, span)` as one
   yes-or-no question about the narrowest span that holds the answer. It
   returns the probability of yes, which becomes the finding's confidence:
   `span.flag(message, probability, question)`. Ask it after code has
   narrowed the candidates, never about every line.
 - **The llm as a last resort.** `tools.llm` answers the same
   `decide(question, span)`, but reasons first, slower and dearer. Reach
-  for it only when `wiz scry eval` shows the decider still wrong after
+  for it only when `wiz scry eval` shows the som still wrong after
   narrowing the span and rewording the question, and only for the
-  question it gets wrong: the rest stay with the decider. A rule that
-  asks it says so in its `rule.ts`, with the eval that showed the decider
+  question it gets wrong: the rest stay with the som. A rule that
+  asks it says so in its `rule.ts`, with the eval that showed the som
   missing. Its probability is one it states, not one read off its tokens,
   so evaluate before trusting the default `threshold`.
+- **An effort for how hard a question is.**
+  `decide(question, span, { effort: "high" })` asks the model the config
+  names for `low`, `medium` or `high`; a question that names none asks the
+  default's. Name one only when `wiz scry eval` shows the default's model
+  wrong on that question (`high`) or a cheaper one right (`low`): which
+  model each effort asks is the config's, never the rule's.
 - **Private methods named for the rule's sentences**, so `check` reads as
   the rule does: `stateKeptBetweenCalls`, `namedForTheFile`.
 - **Import only types** from `@webappwiz/scry`, with `import type`, so the
@@ -294,18 +394,18 @@ const cases = await Cases.load(import.meta.dir);
 describe("comments-say-why", () => {
 	it.each(cases.bad)("flags $name", async ({ file }) => {
 		const rule = new CommentsSayWhy({
-			decider: new FakeDecider({}, 0.9),
+			som: new FakeDecider({}, 0.9),
 			llm: new FakeDecider(),
 		});
 		expect(await rule.check(file)).not.toEqual([]);
 	});
 
 	it("asks about line comments, and not doc comments", async () => {
-		const decider = new FakeDecider({ "add one": 0.95 });
+		const som = new FakeDecider({ "add one": 0.95 });
 		const file = new SourceFile("a.ts", "/** A counter. */\n// add one\ni++;\n");
 
 		const findings = await new CommentsSayWhy({
-			decider,
+			som,
 			llm: new FakeDecider(),
 		}).check(file);
 

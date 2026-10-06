@@ -35,10 +35,10 @@ export default class NamedOptionsLast implements Rule {
 	static readonly level = "warning";
 	static readonly recommended = true;
 
-	private decider: Decider;
+	private som: Decider;
 
 	constructor(tools: Tools) {
-		this.decider = tools.decider;
+		this.som = tools.som;
 	}
 
 	async check(file: SourceFile): Promise<Finding[]> {
@@ -162,13 +162,13 @@ export default class NamedOptionsLast implements Rule {
 		);
 	}
 
-	/** Settings among the positional parameters, which a decider tells apart from values the call needs. */
+	/** Settings among the positional parameters, which the som tells apart from values the call needs. */
 	private async settingsSpreadOut(parameters: SyntaxNode[]): Promise<Finding> {
 		const owner = (parameters[0] as SyntaxNode).parent()?.parent();
 		const span = owner ?? (parameters[0] as SyntaxNode);
 		return span.flag(
 			`Gather the settings among ${parameters.map((parameter) => nameOf(parameter)).join(", ")} into one named opts object, last.`,
-			await this.decider.decide(SETTINGS, span),
+			await this.som.decide(SETTINGS, span),
 			SETTINGS,
 		);
 	}

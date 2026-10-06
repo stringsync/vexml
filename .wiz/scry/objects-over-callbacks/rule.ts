@@ -40,7 +40,7 @@ const PASCAL_CASE = /^[A-Z][A-Za-z0-9]*$/;
  * keeps as a field, a bag of `onX` callbacks, and a named function type
  * that several things implement or something injects. Whether any other
  * function parameter runs during the call, to compute its result, is a
- * decider's call. A React component's props are how React passes events,
+ * som's call. A React component's props are how React passes events,
  * so their `onX` members are not a bag of callbacks. A finding points at
  * the declaration, where one `scry-ignore` covers it.
  */
@@ -51,10 +51,10 @@ export default class ObjectsOverCallbacks implements Rule {
 	static readonly level = "warning";
 	static readonly recommended = true;
 
-	private decider: Decider;
+	private som: Decider;
 
 	constructor(tools: Tools) {
-		this.decider = tools.decider;
+		this.som = tools.som;
 	}
 
 	async check(file: SourceFile): Promise<Finding[]> {
@@ -68,7 +68,7 @@ export default class ObjectsOverCallbacks implements Rule {
 	/**
 	 * Each function-typed parameter of the file's own functions, judged by
 	 * when its function runs: across the object's life when a constructor
-	 * keeps it as a field, and otherwise as the decider reads the function.
+	 * keeps it as a field, and otherwise as the som reads the function.
 	 * A name like `onDone` does not settle it: `subscribe(onChange)` is how
 	 * an events API takes a listener.
 	 */
@@ -98,7 +98,7 @@ export default class ObjectsOverCallbacks implements Rule {
 		const question = `Does ${of} call the function ${name} to announce that something happened, like onDone or onProgress, or keep it to call after ${of} returns? Answer no when ${name} only computes part of what ${of} returns, like a predicate, comparator or transform, or is a body ${of} runs between setting something up and tearing it down, or when ${of} exists to register a listener, like subscribe, on or defer.`;
 		return owner.flag(
 			`${name} runs after ${of} returns, or announces something: inject an object behind an interface, or expose Events.`,
-			await this.decider.decide(question, owner),
+			await this.som.decide(question, owner),
 			question,
 		);
 	}

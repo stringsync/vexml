@@ -7,7 +7,7 @@ const cases = await Cases.load(import.meta.dir);
 
 describe("named-options-last", () => {
 	const rule = new NamedOptionsLast({
-		decider: new FakeDecider({}, 0.9),
+		som: new FakeDecider({}, 0.9),
 		llm: new FakeDecider(),
 	});
 
@@ -20,7 +20,7 @@ describe("named-options-last", () => {
 	});
 
 	it("asks about settings only where positional parameters crowd a signature", async () => {
-		const decider = new FakeDecider({}, 0.3);
+		const som = new FakeDecider({}, 0.3);
 		const file = new SourceFile(
 			"a.ts",
 			[
@@ -31,13 +31,13 @@ describe("named-options-last", () => {
 		);
 
 		const findings = await new NamedOptionsLast({
-			decider,
+			som,
 			llm: new FakeDecider(),
 		}).check(file);
 
 		expect([
 			findings.map((finding) => [finding.line, finding.confidence]),
-			decider.asked.map((asked) => asked.about.line),
+			som.asked.map((asked) => asked.about.line),
 		]).toEqual([[[2, 0.3]], [2]]);
 	});
 

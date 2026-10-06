@@ -26,7 +26,7 @@ const FOR_MAINTAINERS =
 
 /**
  * Finds doc comments on exports that speak to maintainers rather than users.
- * A TODO is plainly a maintainer's; a decider tells whether the rest of a
+ * A TODO is plainly a maintainer's; the som tells whether the rest of a
  * doc comment is about how the code is built. One tagged `@internal` is for
  * maintainers by design, and left alone.
  */
@@ -37,10 +37,10 @@ export default class DocCommentsAddressUsers implements Rule {
 	static readonly level = "error";
 	static readonly recommended = true;
 
-	private decider: Decider;
+	private som: Decider;
 
 	constructor(tools: Tools) {
-		this.decider = tools.decider;
+		this.som = tools.som;
 	}
 
 	async check(file: SourceFile): Promise<Finding[]> {
@@ -64,13 +64,13 @@ export default class DocCommentsAddressUsers implements Rule {
 			);
 	}
 
-	/** A doc comment on an export that a decider reads as written for maintainers. */
+	/** A doc comment on an export that the som reads as written for maintainers. */
 	private async forMaintainers(docs: SyntaxNode[]): Promise<Finding[]> {
 		return Promise.all(
 			docs.map(async (doc) =>
 				doc.flag(
 					"Users read this doc comment: say what it is for and how to use it, and move notes on how it is built into the body.",
-					await this.decider.decide(FOR_MAINTAINERS, doc),
+					await this.som.decide(FOR_MAINTAINERS, doc),
 					FOR_MAINTAINERS,
 				),
 			),

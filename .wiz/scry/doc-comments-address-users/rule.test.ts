@@ -9,40 +9,40 @@ describe("doc-comments-address-users", () => {
 	it.each(cases.bad)(
 		"flags or asks about a doc comment in $name",
 		async ({ file }) => {
-			const decider = new FakeDecider();
+			const som = new FakeDecider();
 
 			const findings = await new DocCommentsAddressUsers({
-				decider,
+				som,
 				llm: new FakeDecider(),
 			}).check(file);
 
 			expect([
-				...decider.asked,
+				...som.asked,
 				...findings.filter((finding) => finding.confidence === 1),
 			]).not.toEqual([]);
 		},
 	);
 
 	it("flags a TODO in a doc comment on an export without asking", async () => {
-		const decider = new FakeDecider();
+		const som = new FakeDecider();
 		const file = new SourceFile(
 			"a.ts",
 			"/** Parses. TODO: drop the switch. */\nexport function parse() {}\n",
 		);
 
 		const findings = await new DocCommentsAddressUsers({
-			decider,
+			som,
 			llm: new FakeDecider(),
 		}).check(file);
 
 		expect([
 			findings.map((finding) => [finding.line, finding.confidence]),
-			decider.asked,
+			som.asked,
 		]).toEqual([[[1, 1]], []]);
 	});
 
 	it("asks about doc comments on exports and their public members only", async () => {
-		const decider = new FakeDecider();
+		const som = new FakeDecider();
 		const file = new SourceFile(
 			"a.ts",
 			[
@@ -67,22 +67,22 @@ describe("doc-comments-address-users", () => {
 		);
 
 		await new DocCommentsAddressUsers({
-			decider,
+			som,
 			llm: new FakeDecider(),
 		}).check(file);
 
-		expect(decider.asked.map((asked) => asked.about.line)).toEqual([3, 5, 15]);
+		expect(som.asked.map((asked) => asked.about.line)).toEqual([3, 5, 15]);
 	});
 
-	it("flags with the decider's answer", async () => {
-		const decider = new FakeDecider({ ResizeQueue: 0.8 });
+	it("flags with the som's answer", async () => {
+		const som = new FakeDecider({ ResizeQueue: 0.8 });
 		const file = new SourceFile(
 			"a.ts",
 			"/** This used to live in ResizeQueue. */\nexport function resize() {}\n",
 		);
 
 		const findings = await new DocCommentsAddressUsers({
-			decider,
+			som,
 			llm: new FakeDecider(),
 		}).check(file);
 
@@ -90,7 +90,7 @@ describe("doc-comments-address-users", () => {
 	});
 
 	it("leaves a doc comment tagged @internal, which is for maintainers by design", async () => {
-		const decider = new FakeDecider({}, 0.9);
+		const som = new FakeDecider({}, 0.9);
 		const file = new SourceFile(
 			"a.ts",
 			[
@@ -106,13 +106,13 @@ describe("doc-comments-address-users", () => {
 		);
 
 		const findings = await new DocCommentsAddressUsers({
-			decider,
+			som,
 			llm: new FakeDecider(),
 		}).check(file);
 
 		expect([
 			findings.map((finding) => finding.line),
-			decider.asked.map((asked) => asked.about.line),
+			som.asked.map((asked) => asked.about.line),
 		]).toEqual([[4], [4]]);
 	});
 });

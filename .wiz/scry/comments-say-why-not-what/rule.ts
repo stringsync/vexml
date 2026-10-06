@@ -17,7 +17,7 @@ const RESTATES =
 
 /**
  * Finds comments that say what the code does rather than why it is so. Code
- * picks out the comments written for a reader; a decider tells whether one
+ * picks out the comments written for a reader; the som tells whether one
  * only restates its code.
  */
 export default class CommentsSayWhyNotWhat implements Rule {
@@ -27,10 +27,10 @@ export default class CommentsSayWhyNotWhat implements Rule {
 	static readonly level = "error";
 	static readonly recommended = true;
 
-	private decider: Decider;
+	private som: Decider;
 
 	constructor(tools: Tools) {
-		this.decider = tools.decider;
+		this.som = tools.som;
 	}
 
 	async check(file: SourceFile): Promise<Finding[]> {
@@ -38,7 +38,7 @@ export default class CommentsSayWhyNotWhat implements Rule {
 			this.forReaders(file).map(async (comment) =>
 				comment.flag(
 					"This comment says what the code does: drop it, or say why the code is so.",
-					await this.decider.decide(RESTATES, comment),
+					await this.som.decide(RESTATES, comment),
 					RESTATES,
 				),
 			),
