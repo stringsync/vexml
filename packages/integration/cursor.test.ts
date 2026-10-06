@@ -295,6 +295,32 @@ describe('cursor', () => {
 		expect(xs).toEqual([...xs].sort((a, b) => a - b));
 	});
 
+	// A grace chord sounds as one: grace_chord's D5/F5 and B4/D5 grace chords each strike
+	// together in a single flick (0.13 beats) on the beat, before the C5 and the A4/C5 chord they
+	// lead, rather than rolling through their pitches one flick at a time.
+	it.concurrent('a grace chord sounds its pitches together', async () => {
+		const { result } = await testing.eval(
+			'grace_chord.musicxml',
+			{},
+			({ score }) =>
+				score
+					.getSequence()
+					.getSteps()
+					.map((step) => ({
+						beat: Math.round(step.startBeat * 1000) / 1000,
+						active: step.active.map((n) => n.getPitch()).sort(),
+					})),
+		);
+
+		expect(result).toEqual([
+			{ beat: 0, active: ['C/5'] },
+			{ beat: 1, active: ['D/5', 'F/5'] },
+			{ beat: 1.13, active: ['C/5'] },
+			{ beat: 2, active: ['B/4', 'D/5'] },
+			{ beat: 2.13, active: ['A/4', 'C/5'] },
+		]);
+	});
+
 	// A tie must not re-attack the note: the tied-to onset sustains the sounding pitch rather than
 	// re-striking it. Walk every step transition of a score that ties two half notes within a bar
 	// (M1), a whole note across the barline (M2->M3), and two half notes with a redundant accidental

@@ -527,7 +527,8 @@ export class SequenceFactory {
 
 	/*
 	 * Where a run of graces plays: every grace is a fast flick of GRACE_MS, whatever its written
-	 * value or steal-time percent, so it reads as an ornament rather than a note. The run takes its
+	 * value or steal-time percent, so it reads as an ornament rather than a note; a grace chord
+	 * shares one flick. The run takes its
 	 * time from `victim`: from its `start` (on the beat, the usual case), or from its `end` (ahead
 	 * of the next beat: steal-time-previous, and after-graces closing out their note), squeezed to
 	 * at most half of it so the victim still sounds. A make-time run steals nothing: it starts at
@@ -540,17 +541,22 @@ export class SequenceFactory {
 		bpm: number,
 		makeTime: boolean,
 	): Map<MNote, Span> {
+		// A <chord/> grace sounds with the grace before it, so only chord leads take a flick each.
+		const flicks = graces.filter(
+			(grace, i) => i === 0 || !grace.isChordMember,
+		).length;
 		const flick = (GRACE_MS * bpm) / 60000;
 		const room = (victim.end - victim.onset) / 2;
 		const beats = makeTime
 			? flick
-			: Math.min(flick, room / Math.max(1, graces.length));
-		let at =
-			from === 'start' ? victim.onset : victim.end - beats * graces.length;
+			: Math.min(flick, room / Math.max(1, flicks));
+		let at = from === 'start' ? victim.onset : victim.end - beats * flicks;
 		const placed = new Map<MNote, Span>();
-		for (const grace of graces) {
+		for (const [i, grace] of graces.entries()) {
+			if (i > 0 && !grace.isChordMember) {
+				at += beats;
+			}
 			placed.set(grace, { onset: at, end: at + beats });
-			at += beats;
 		}
 		return placed;
 	}
