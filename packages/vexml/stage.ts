@@ -118,6 +118,8 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 	private readonly backgroundColor: string | null;
 	// The configured pixel ratio, or null to follow the screen's.
 	private readonly fixedPixelRatio: number | null;
+	// CSS px each score px is shown at, from the engraving (see engrave).
+	private scale = 1;
 	// Released in reverse, so the stage unwinds in the opposite order it was built.
 	private readonly disposer = new Disposer();
 
@@ -258,7 +260,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		strut.width = 0;
 		strut.height = 0;
 		strut.style.display = 'block';
-		strut.style.width = 'var(--vexml-width)';
+		strut.style.width = 'calc(var(--vexml-width) * var(--vexml-scale, 1))';
 		strut.style.maxWidth = '100%';
 		strut.style.height = '0';
 		this.base.appendChild(strut);
@@ -520,7 +522,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 						new TiledSurface(
 							element,
 							this.probe,
-							surfaceOptions(this.pixelRatio),
+							surfaceOptions(this.pixelRatio * this.scale),
 						),
 						this,
 						z ?? 0,
@@ -538,7 +540,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 
 	/* Show the recorded engraving in the base element. */
 	engrave(engraving: Engraving): void {
-		const { ops, width, height, origin } = engraving;
+		const { ops, width, height, origin, scale } = engraving;
 		// Publish the score-space (intrinsic) CSS size as custom properties rather than as inline
 		// width/height. The stage's default `:where(.vexml-canvas)` rule consumes them for the
 		// on-screen size, but at zero specificity, so a caller's own `.vexml-canvas { width: 100% }`
@@ -552,6 +554,11 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		this.base.style.setProperty('--vexml-width', `${width}px`);
 		this.base.style.setProperty('--vexml-height', `${height}px`);
 		this.base.style.setProperty('--vexml-aspect', `${width / height}`);
+		// The scale sizes the box as a caller's CSS stretching it would, so everything mapped through
+		// frame() follows it; the tiles are painted at the size shown rather than resampled to it.
+		this.base.style.setProperty('--vexml-scale', `${scale}`);
+		this.scale = scale;
+		this.engraving.rescale(this.pixelRatio * scale);
 		this.engraving.load(ops, width, height, origin);
 		this.fitEngraving();
 		this.updateView();
@@ -967,7 +974,8 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 	 * with no `!important`. The per-score intrinsic dimensions ride on the --vexml-width/height custom
 	 * properties the drawer sets.
 	 *
-	 * Base rule: render the score at its intrinsic size. `.vexml-fit` (added when the layout should scale to fit its
+	 * Base rule: render the score at its intrinsic size times --vexml-scale (a panoramic scale or
+	 * fitHeight, else 1). `.vexml-fit` (added when the layout should scale to fit its
 	 * container: see Stage) then caps the canvas at the container width and lets its height follow via
 	 * the exact score aspect ratio (--vexml-aspect, not the rounded bitmap ratio), so a narrow viewport
 	 * shrinks the score to fit while a wide one lands on a pixel-identical box (the score<->client scale
@@ -985,7 +993,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		const style = document.createElement('style');
 		style.setAttribute('data-vexml-canvas-style', '');
 		style.textContent =
-			':where(.vexml-canvas){width:var(--vexml-width);height:var(--vexml-height);aspect-ratio:var(--vexml-aspect);vertical-align:top}' +
+			':where(.vexml-canvas){width:calc(var(--vexml-width) * var(--vexml-scale, 1));height:calc(var(--vexml-height) * var(--vexml-scale, 1));aspect-ratio:var(--vexml-aspect);vertical-align:top}' +
 			':where(.vexml-canvas.vexml-fit){width:auto;max-width:100%;height:auto;aspect-ratio:var(--vexml-aspect)}';
 		document.head.appendChild(style);
 	}

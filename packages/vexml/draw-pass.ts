@@ -134,6 +134,8 @@ export class DrawPass {
 	private systemContentBottom: number;
 	// Each finished system's content bottom, for pagination (see run's systemExtents).
 	private readonly systemBottoms = new Map<number, number>();
+	// Each system's staff lines: the top line of its top stave to the bottom line of its bottom one.
+	private readonly staveLines = new Map<number, SystemExtent>();
 	private currentSystem = -1;
 	// Per-system collision index of everything already drawn (notes, high ties, placed
 	// chord symbols/words/diagrams). The above-stave annotations query it to nudge clear of
@@ -462,6 +464,7 @@ export class DrawPass {
 		observedVoltaLifts: Map<number, number>;
 		voltasLifted: boolean;
 		systemExtents: Map<number, SystemExtent>;
+		staveLines: Map<number, SystemExtent>;
 		rawNotes: RawNote[];
 		rawMeasures: RawMeasure[];
 		rawChordDiagrams: RawChordDiagram[];
@@ -952,6 +955,7 @@ export class DrawPass {
 			this.columnMultiRests.push({ stave, count: built.multiRestCount });
 			this.systemTop ??= stave;
 			this.systemBottom = stave;
+			this.spanLines(stave);
 			this.staveRow++;
 			return stave;
 		}
@@ -991,6 +995,7 @@ export class DrawPass {
 
 		this.systemTop ??= stave;
 		this.systemBottom = stave;
+		this.spanLines(stave);
 		this.staveRow++;
 		return stave;
 	}
@@ -1153,6 +1158,7 @@ export class DrawPass {
 		observedVoltaLifts: Map<number, number>;
 		voltasLifted: boolean;
 		systemExtents: Map<number, SystemExtent>;
+		staveLines: Map<number, SystemExtent>;
 		rawNotes: RawNote[];
 		rawMeasures: RawMeasure[];
 		rawChordDiagrams: RawChordDiagram[];
@@ -1207,6 +1213,7 @@ export class DrawPass {
 			lyricsStepped: this.lyricPlacer.stepped(),
 			observedVoltaLifts: this.observedVoltaLifts,
 			systemExtents: this.systemExtents(),
+			staveLines: this.staveLines,
 			voltasLifted: [...this.observedVoltaLifts].some(
 				([system, lift]) => lift !== (this.voltaLifts.get(system) ?? 0),
 			),
@@ -1258,6 +1265,17 @@ export class DrawPass {
 	 * the current system IS its system. */
 	private systemOf(stave: Stave): number {
 		return this.spannerResolver.systemOf(stave) ?? this.systemIndex;
+	}
+
+	// Stretch the system's staff-line span over a stave it just drew.
+	private spanLines(stave: Stave): void {
+		const top = stave.getYForLine(0);
+		const bottom = stave.getYForLine(stave.getNumLines() - 1);
+		const lines = this.staveLines.get(this.systemIndex);
+		this.staveLines.set(this.systemIndex, {
+			top: Math.min(lines?.top ?? top, top),
+			bottom: Math.max(lines?.bottom ?? bottom, bottom),
+		});
 	}
 
 	// Each system's ink top (its stave top and anything that rose above it) and content bottom.

@@ -40,6 +40,8 @@ export class TiledSurface implements PaintSink, Resource {
 	private whole = true;
 	// How much fit() stretches the surface on screen, per axis.
 	private shown = { sx: 1, sy: 1 };
+	// Device px per CSS px the tiles are painted at (see rescale).
+	private density: number;
 
 	constructor(
 		readonly host: HTMLElement,
@@ -54,6 +56,7 @@ export class TiledSurface implements PaintSink, Resource {
 		style.top = '0';
 		style.pointerEvents = 'none';
 		host.appendChild(this.plane);
+		this.density = opts.scale;
 		this.budget = new TileBudget(opts.budget);
 		this.grid = new TileGrid(0, 0, opts.tileSize);
 		this.ctx = new PaintContext(
@@ -64,7 +67,17 @@ export class TiledSurface implements PaintSink, Resource {
 	}
 
 	get scale(): number {
-		return this.opts.scale;
+		return this.density;
+	}
+
+	/* Paint the tiles at another density from now on: a surface shown scaled paints at the shown
+	 * resolution rather than resampling a full-size one. Drops what is painted, as resize does. */
+	rescale(scale: number): void {
+		for (const tile of [...this.tiles.keys()]) {
+			this.close(tile);
+		}
+		this.density = scale;
+		this.refresh();
 	}
 
 	get width(): number {

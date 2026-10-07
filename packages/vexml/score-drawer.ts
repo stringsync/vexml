@@ -42,13 +42,15 @@ export interface RawGeometry {
 	chordDiagrams: RawChordDiagram[];
 }
 
-/* The engraving as recorded ops, ready for the stage to replay: its size in score px, and where
- * the recording's origin lands in score space (the headroom above the first system is cropped). */
+/* The engraving as recorded ops, ready for the stage to replay: its size in score px, where
+ * the recording's origin lands in score space (the headroom above the first system is cropped),
+ * and the CSS px each score px is shown at (a panoramic scale or fitHeight; 1 otherwise). */
 export interface Engraving {
 	ops: readonly PaintOp[];
 	width: number;
 	height: number;
 	origin: GridOrigin;
+	scale: number;
 }
 
 /* What a draw hands back: the hit-index geometry, the engraving, the sticky panoramic fold
@@ -231,21 +233,41 @@ export class ScoreDrawer {
 		// never crop past the slack (so a normal score keeps its usual top margin; this is
 		// then a pure shift-and-crop, leaving its output unchanged). Only scores whose first
 		// system rises into the slack show extra headroom.
-		const cropTop =
+		let cropTop =
 			pageTop === Infinity
 				? topSlack
 				: Math.max(0, Math.min(topSlack, pageTop - PAGE_MARGIN_TOP));
-		const cssHeight =
+		let cssHeight =
 			Math.max(activeFloorHeight + topSlack, pageBottom + PAGE_MARGIN_BOTTOM) -
 			cropTop;
+		let scale = layoutConfig.type === 'panoramic' ? layoutConfig.scale : 1;
+		// A fitHeight strip crops the margins off instead: the staves' middle at its middle, and
+		// half its height whatever ink reaches furthest from there, so nothing drawn is cut.
+		const lines = pass.staveLines.get(0);
+		if (
+			layoutConfig.type === 'panoramic' &&
+			layoutConfig.fitHeight !== null &&
+			lines &&
+			pageTop !== Infinity
+		) {
+			const middle = (lines.top + lines.bottom) / 2;
+			const half = Math.max(
+				middle - Math.min(pageTop, lines.top),
+				Math.max(pageBottom, lines.bottom) - middle,
+			);
+			cropTop = middle - half;
+			cssHeight = 2 * half;
+			scale = layoutConfig.fitHeight / cssHeight;
+		}
 		// The pixels shift by whole device pixels so an engraving lands on the same pixel grid at
 		// any crop; the geometry below keeps the exact crop, which is in CSS px.
-		const dpr = this.pixelRatio();
+		const dpr = this.pixelRatio() * scale;
 		const engraving: Engraving = {
 			ops: list.ops,
 			width,
 			height: cssHeight,
 			origin: { x: 0, y: -Math.round(cropTop * dpr) / dpr },
+			scale,
 		};
 
 		// The geometry was collected in the uncropped page; translate every box into final score
@@ -346,6 +368,7 @@ export class ScoreDrawer {
 					x: Math.round(dx * dpr) / dpr,
 					y: -Math.round(cropTop * dpr) / dpr,
 				},
+				scale: 1,
 			},
 			fold: null,
 			pages: Array.from(

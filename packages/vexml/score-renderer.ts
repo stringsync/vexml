@@ -71,6 +71,19 @@ export class ScoreRenderer {
 			throw new RangeError('render: pixelRatio must be positive');
 		}
 		if (
+			layout.type === 'panoramic' &&
+			!(
+				layout.scale > 0 &&
+				Number.isFinite(layout.scale) &&
+				(layout.fitHeight === null ||
+					(layout.fitHeight > 0 && Number.isFinite(layout.fitHeight)))
+			)
+		) {
+			throw new RangeError(
+				'render: a panoramic scale and fitHeight must be positive',
+			);
+		}
+		if (
 			layout.type === 'paged' &&
 			!(
 				layout.margin >= 0 &&

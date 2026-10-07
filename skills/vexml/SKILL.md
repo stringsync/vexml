@@ -71,6 +71,25 @@ CSS variables on the container or any ancestor:
 }
 ```
 
+## Scaling a panoramic line
+
+A panoramic line can be shown smaller or larger than it is engraved. Scale it with the layout
+rather than with CSS `zoom` or a `transform` on an ancestor, which vexml can't see: its canvases
+are painted at the shown size, and layers, markers, decorations, the cursor, element rects and
+the sticky fold all follow.
+
+```ts
+await render(musicXML, element, {
+  scrollContainer: scroller,
+  layout: { type: 'panoramic', stickySignatures: true, fitHeight: 126 }, // or scale: 0.45
+});
+```
+
+`scale` is CSS px per score px. `fitHeight` fits the line into a strip that many CSS px tall
+instead: the staves sit in the middle of the strip, and the line is scaled until whatever
+reaches furthest above or below them touches its edge, so the blank margin around the line is
+cropped off rather than shrinking the music.
+
 ## When a line won't fit
 
 A MusicXML file may carry its own line breaks laid out for a different page. When a

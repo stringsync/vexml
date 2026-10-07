@@ -248,6 +248,18 @@ export type PanoramicLayout = {
 	 * paper), `--vexml-fold-shadow` (the crease's `background`) and
 	 * `--vexml-fold-shadow-width`. */
 	stickySignatures: boolean;
+	/** CSS px each score px is shown at (default: 1). The line is engraved as usual and then
+	 * shown at this size, its canvases painted at the shown resolution: 0.5 is half as tall and
+	 * half as wide, as sharp as at 1. Layers, markers, decorations, cursor positions and element
+	 * rects all follow it, and so does the sticky fold. Scale here rather than with CSS `zoom`
+	 * or a `transform` on an ancestor, which vexml can't see. Ignored when `fitHeight` is set. */
+	scale: number;
+	/** Fit the line into a strip this many CSS px tall, or null to show it whole (default:
+	 * null). The staves are centered in the strip, and the line is scaled so whatever reaches
+	 * furthest above or below them (a high ledger note, a chord symbol, a lyric) touches the
+	 * strip's edge: the blank margin vexml engraves around the line is cropped off rather than
+	 * shrinking the music. The score's box is then exactly this tall. */
+	fitHeight: number | null;
 };
 
 /** Wrap measures onto stacked systems, then fit the systems onto pages of a fixed size, for
@@ -322,6 +334,8 @@ export const DEFAULT_STANDARD_LAYOUT: StandardLayout = {
 export const DEFAULT_PANORAMIC_LAYOUT: PanoramicLayout = {
 	type: 'panoramic',
 	stickySignatures: false,
+	scale: 1,
+	fitHeight: null,
 };
 
 /** The defaults `render` merges a caller's partial paged `layout` onto: US Letter, half-inch

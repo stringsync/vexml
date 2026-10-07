@@ -88,6 +88,7 @@ Two rules cut across the draw stage:
 - **Justifying a complete system to full width; last one left short**: `layout-planner.ts`, `config.ts` (`minLastSystemFill`)
 - **A document line too wide for the page: wrap / allow / widen**: `layout-planner.ts`, `config.ts` (`overflow`)
 - **Panoramic (one endless system) vs standard layout**: `layout-planner.ts`, `config.ts`, `scroll-controller.ts`
+- **A panoramic line shown at a `scale`, or fitted to a `fitHeight` strip**: `score-drawer.ts` (the strip's crop and the scale, from the stave lines `draw-pass.ts` records), `stage.ts` (`--vexml-scale` sizes the box; everything maps through `frame()`), `tiled-surface.ts` (`rescale`: tiles painted at the shown size)
 - **Sticky clef/key fold on a scrolled panorama (`stickySignatures`)**: `signature-fold.ts` (which strip, and engraving it), `fold.ts` (the seam), `stage.ts` (the sticky element, showing it, scroll inset, pointer occlusion), `score-drawer.ts` (builds it)
 - **Label columns reserved left of the first system**: `layout-planner.ts` (`labelIndent`, `partLabelIndent`), `connector-drawer.ts`
 - **Stave offsets within a system: gap inside a part vs between parts**: `layout-planner.ts`, `constants.ts` (`INTRA_PART_SPACING`, `INTER_PART_SPACING`)
