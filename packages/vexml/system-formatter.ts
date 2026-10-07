@@ -420,6 +420,9 @@ export class SystemFormatter {
 			// ponytail: within-measure slurs only. A bow crossing a barline has one endpoint
 			// outside `noteChords`, so slurSpans never pairs it and it registers nothing.
 			// Widen to the system's chords if a wrapping bow ever collides with text.
+			const hasLyrics = p.noteChords.some(({ chord }) =>
+				chord.notes.some((note) => note.lyrics.length > 0),
+			);
 			for (const slur of this.spanners.buildSlurs(
 				p.noteChords.map(({ chord }) => chord),
 				this.byLead,
@@ -435,6 +438,16 @@ export class SystemFormatter {
 						kind: 'tie',
 						band: p.row,
 					});
+					// A bow under the stave hangs where the verse does: the verse drops clear
+					// of it the way it does of a low note. The bow is only known now, after the
+					// verse was pinned, so it lands on the next pass (see LyricPlacer).
+					// Only a bow reaching past the notes' own drop records one: recording the
+					// same drop again reads as columns disagreeing and costs a pass.
+					const drop =
+						slur.bottom + LYRIC_NOTE_CLEARANCE - p.stave.getBottomLineY();
+					if (hasLyrics && drop > (lyricDrops.get(p.row) ?? LYRIC_Y_OFFSET)) {
+						this.lyricPlacer.recordDrop(column.systemIndex, p.row, drop);
+					}
 				}
 			}
 		}

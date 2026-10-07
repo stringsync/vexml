@@ -1566,6 +1566,17 @@ describe('render', () => {
 		);
 	});
 
+	// Treble stave, 4/4: slurs whose <slur> sits on a chord's second (non-lead) note. Every
+	// note is a stem-up quarter, so each slur bows below and meets the chord at its lower
+	// notehead (F4).
+	// - M1: G4 A4 G4 then an F4/A4 chord; the slur runs from the G4 to the chord's A4.
+	// - M2: an F4/A4 chord then G4 A4 G4; the slur runs from the chord's A4 to the last G4.
+	it.concurrent('renders slur_chords.png', async () => {
+		expect(await testing.render('slur_chords.musicxml')).toMatchScreenshot(
+			'slur_chords.png',
+		);
+	});
+
 	// Treble stave, 4/4: three chained slurs over E4, G4, E5, C5: a slur below the
 	// first pair (E4-G4, both stem-up), a slur bridging note 2 to note 3 (G4 stem-up to
 	// E5 stem-down) above because its ends disagree, and a slur above the last pair
@@ -1623,6 +1634,9 @@ describe('render', () => {
 	//   voice 1 above all four quarters (C5-F5), voice 2 below just the first two (E4-F4).
 	//   The two arcs are nested, not crossed: whichever voice a stop is in claims the start
 	//   from that same voice.
+	// - M3: M2's notes and slurs with no placement. Another voice sharing the stave puts each
+	//   slur on its stem side: voice 1's above its stems, voice 2's below its stems, neither
+	//   bowing into the other voice between them.
 	it.concurrent('renders slur_backup_voices.png', async () => {
 		expect(
 			await testing.render('slur_backup_voices.musicxml'),

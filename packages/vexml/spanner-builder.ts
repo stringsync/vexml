@@ -669,18 +669,40 @@ export class SpannerBuilder {
 		const slurs: SlurCurve[] = [];
 		const spans = this.slurSpans(chords);
 		const indexOf = new Map(chords.map((chord, i) => [chord.lead, i]));
+		// A slur can start or stop on any note of a chord, not just its lead, but only a
+		// lead has a StaveNote to anchor to, so each end is read as its chord's lead. A
+		// chord slurred note-for-note into the next one then names the same two leads
+		// once per note, and draws one bow.
+		const leadOf = new Map(
+			chords.flatMap((chord) => chord.notes.map((note) => [note, chord.lead])),
+		);
+		const voiceOf = new Map<StaveNote, string>();
+		for (const chord of chords) {
+			const note = byLead.get(chord.lead);
+			if (note) {
+				voiceOf.set(note, `${chord.lead.staff}/${chord.lead.voice}`);
+			}
+		}
 		chords.forEach((chord, i) => {
 			const from = byLead.get(chord.lead);
 			const isGrace = chord.lead.isGrace;
-			for (const slur of this.slurConnectors(chord.lead, spans)) {
+			const connectors = [
+				...this.slurConnectors(chord.lead, spans),
+				...chord.notes
+					.filter((note) => note !== chord.lead)
+					.flatMap((note) => this.connectorsOf(note).slurs),
+			];
+			const reached = new Set<Note>();
+			for (const slur of connectors) {
 				if (slur.slurType !== 'start' || !slur.partner || !from) {
 					continue;
 				}
-				const partner = slur.partner.note;
+				const partner = leadOf.get(slur.partner.note) ?? slur.partner.note;
 				const to = byLead.get(partner);
-				if (!to) {
+				if (!to || reached.has(partner)) {
 					continue;
 				}
+				reached.add(partner);
 				const j = indexOf.get(partner) ?? -1;
 				// `chords` is the whole score in document order, so the slice between two
 				// notes also sweeps up every other part, stave and voice that happens to be
@@ -713,18 +735,29 @@ export class SpannerBuilder {
 				// A cross-stave slur's two ends sit on different staves, which `chords` lists one
 				// after the other, so the slice above can't hold the notes between them (the
 				// stop can even come first). Both ends are on one system, so what the bow passes
-				// over is every note on either stave between their Xs.
-				if (crossStave) {
+				// over is every note on either stave between their Xs. So does a slur along one
+				// row of staves: the slice misses a second voice written after the stop (a
+				// <backup> replays the measure), and its beam is just as much under the bow.
+				// That row is every measure's stave at the ends' height, not just the two
+				// measures the ends sit in. A grace curve hugs its two notes and keeps the slice.
+				const sameRow =
+					!!fromStave && !!toStave && toStave.getY() === fromStave.getY();
+				if (crossStave || (sameRow && !isGrace)) {
 					const left = from.getAbsoluteX();
 					const right = to.getAbsoluteX();
+					const rows = new Set([fromStave?.getY(), toStave?.getY()]);
+					const sliced = new Set(span);
 					span = chords
 						.map((c) => byLead.get(c.lead))
 						.filter(
 							(n): n is StaveNote =>
 								n !== undefined &&
-								(n.getStave() === fromStave || n.getStave() === toStave) &&
+								rows.has(n.getStave()?.getY() ?? Number.NaN) &&
 								n.getAbsoluteX() >= left &&
-								n.getAbsoluteX() <= right,
+								n.getAbsoluteX() <= right &&
+								// Another voice's rest can make way instead, so only the slice's own
+								// rests count, as they always have.
+								(crossStave || sliced.has(n) || !n.isRest()),
 						);
 				}
 
@@ -747,6 +780,19 @@ export class SpannerBuilder {
 					bulgeUp = true;
 				} else if (slur.placement === 'below') {
 					bulgeUp = false;
+				} else if (
+					from.getStemDirection() === to.getStemDirection() &&
+					span.some(
+						(n) =>
+							!n.isRest() &&
+							voiceOf.get(n) !== undefined &&
+							voiceOf.get(n) !== voiceOf.get(from),
+					)
+				) {
+					// Another voice sharing the stave under the slur puts it on the stem side
+					// (Gould): the notehead side is where the other voice sits, and a bow there
+					// either cuts through it or swings out around it.
+					bulgeUp = from.getStemDirection() === 1;
 				} else {
 					// Stems disagreeing across the slur put it above the notes (Gould): a bow
 					// from a stem-up note to a stem-down one has no notehead side to follow,
