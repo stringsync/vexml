@@ -473,6 +473,35 @@ describe('cursor', () => {
 		expect(result).toEqual([0, 1, 2, 1, 3, 4, 0, 1, 2, 1, 3, 5]);
 	});
 
+	// A hidden note (print-object="no") draws no notehead, so vexflow never places one: its box
+	// reads x 0, the page edge. An onset takes its leftmost note's x, so a beat holding a hidden
+	// note used to start the playhead at the start of the line, then rush back to the next onset.
+	// invisible_notes.png hides treble notes on beats the bass prints: every onset must sit inside
+	// its own measure's box and advance right along its system.
+	it.concurrent('a hidden note leaves its onset where the printed notes are', async () => {
+		const { result } = await testing.eval(
+			'invisible_notes.musicxml',
+			{},
+			({ score }) => {
+				const boxes = score.getElements().measureBoxes();
+				const steps = score.getSequence().getSteps();
+				return steps.map((step, i) => {
+					const box = boxes.find((b) => b.getIndex() === step.measureIndex);
+					const next = steps[i + 1];
+					return {
+						inBox: !!box && step.x > box.rect.x && step.x < box.rect.right,
+						advancesRight:
+							next?.systemRect.y !== step.systemRect.y || next.x > step.x,
+					};
+				});
+			},
+		);
+		expect(result.length).toBeGreaterThan(0);
+		expect(result).toEqual(
+			Array(result.length).fill({ inBox: true, advancesRight: true }),
+		);
+	});
+
 	// A voice that stops before its measure ends (legal, and common in real exports: M1's voice 1 is
 	// one quarter with no trailing rest) has no onset at the note's end, so nothing seeds a step
 	// boundary there and the quarter used to ring until the next measure's onset. The end itself

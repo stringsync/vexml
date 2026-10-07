@@ -146,8 +146,10 @@ export class GeometryCollector {
 				// from the bounding box (this.x + xShift), not getX(): a NoteHead borrows
 				// its StaveNote's tick context, so the inherited Tickable.getX() throws.
 				// The baseline y is the notehead's staff y (ys[i]); noteheads carry no yShift.
+				// A head only learns its x when it draws, so one that never drew (a hidden
+				// print-object="no" note) has no box or glyph: its box would sit at x 0.
 				const head = heads[i];
-				const box = head?.getBoundingBox();
+				const box = head?.isRendered() ? head.getBoundingBox() : undefined;
 				const glyph =
 					head && box
 						? {

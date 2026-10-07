@@ -72,6 +72,7 @@ describe('GeometryCollector', () => {
 		ys: (number | undefined)[],
 		headXs?: number[],
 		modifiers: Modifier[] = [],
+		drawn = true,
 	) =>
 		({
 			getModifiers: () => modifiers,
@@ -89,6 +90,7 @@ describe('GeometryCollector', () => {
 			noteHeads: ys.map((y, i) => ({
 				getText: () => '',
 				getFont: () => '30px Bravura',
+				isRendered: () => drawn,
 				getBoundingBox: () => ({
 					getX: () => headXs?.[i] ?? 11,
 					getY: () => (y ?? 0) - 15,
@@ -173,6 +175,17 @@ describe('GeometryCollector', () => {
 		const rest = collector.notes()[0];
 		expect(rest?.rect).toMatchObject({ x: 11, y: 35, w: 12, h: 30 });
 		expect(rest?.glyph).toMatchObject({ x: 11, y: 50 });
+	});
+
+	it('places a head that never drew (a hidden note) at its column, with no glyph', () => {
+		const collector = new GeometryCollector();
+		// An undrawn head's box reports x 0, which would drag a cursor onset to the page edge.
+		collector.collectStaveNotes(0, [
+			{ note: staveNote([50], [0], [], false), chord: restChord },
+		]);
+		const rest = collector.notes()[0];
+		expect(rest?.rect).toMatchObject({ x: 10, y: 45, w: 12, h: 10 });
+		expect(rest?.glyph).toBeNull();
 	});
 
 	it('skips a chord note the formatter gave no y', () => {
