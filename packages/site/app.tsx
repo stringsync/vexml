@@ -570,7 +570,9 @@ export default function App() {
 								model.config.patch({
 									fonts: {
 										...config.fonts,
-										notation: { family },
+										// vexml ships only Bravura, so any other face needs a url:
+										// the playground serves the woff2 VexFlow 5.0.0 embeds.
+										notation: { family, url: `/fonts/${family}.woff2` },
 									},
 								});
 							}
