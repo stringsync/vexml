@@ -8,6 +8,7 @@ export type {
 	AlphatabContext,
 	AlphatabInput,
 } from './alphatab-renderer';
+export { fileUrl } from './bundle';
 export type { MusescoreInput } from './musescore-renderer';
 export type { OsmdApi, OsmdContext, OsmdInput } from './osmd-renderer';
 export type {

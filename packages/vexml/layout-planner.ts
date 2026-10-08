@@ -5,7 +5,7 @@ import {
 	GraceNoteGroup,
 	Metrics,
 	type Voice,
-} from 'vexflow';
+} from 'vexflow/core';
 import type { Config, Gap } from './config';
 import {
 	BASE_VOICE_WIDTH,

@@ -6,7 +6,7 @@ import {
 	type StaveNote,
 	TabNote,
 	TickContext,
-} from 'vexflow';
+} from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
 import {

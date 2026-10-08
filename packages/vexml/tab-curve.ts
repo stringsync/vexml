@@ -1,4 +1,4 @@
-import type { TieNotes } from 'vexflow';
+import type { TieNotes } from 'vexflow/core';
 import {
 	TAB_CURVE_CP_Y,
 	TAB_CURVE_FULL_WIDTH,

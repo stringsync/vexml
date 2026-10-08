@@ -3,7 +3,7 @@ import {
 	type RenderContext,
 	type StaveNote,
 	type TabNote,
-} from 'vexflow';
+} from 'vexflow/core';
 import {
 	SINGLE_SLIDE_LEN,
 	SINGLE_SLIDE_RISE,

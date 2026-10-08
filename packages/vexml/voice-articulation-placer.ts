@@ -1,4 +1,4 @@
-import { StaveNote, type Tickable } from 'vexflow';
+import { StaveNote, type Tickable } from 'vexflow/core';
 import { NoteheadArticulation } from './notehead-articulation';
 
 /*

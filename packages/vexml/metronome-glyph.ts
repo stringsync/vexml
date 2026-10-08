@@ -1,4 +1,4 @@
-import { Element, type RenderContext } from 'vexflow';
+import { Element, type RenderContext } from 'vexflow/core';
 
 /*
  * The <metronome-note> form of a metronome mark: a note GROUP either side of a relation, e.g.

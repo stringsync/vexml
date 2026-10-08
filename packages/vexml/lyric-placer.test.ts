@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import type { RenderContext, Stave, StaveNote } from 'vexflow';
+import type { RenderContext, Stave, StaveNote } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
 import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT } from './constants';

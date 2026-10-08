@@ -1,5 +1,6 @@
 import { MDocument } from '@stringsync/mdom';
 import { BarlineTranslator } from './barline-translator';
+import { BRAVURA_URL } from './bravura-url';
 import { ChordTranslator } from './chord-translator';
 import {
 	type Config,
@@ -97,7 +98,7 @@ export function render(
 	return new ScoreRenderer(
 		resolved,
 		stage,
-		new DefaultFontLoader(),
+		new DefaultFontLoader(BRAVURA_URL),
 		new DefaultScoreParser(),
 		new LayoutPlanner(translator, tab, signatures, staves, reader, gaps),
 		new ScoreDrawer(

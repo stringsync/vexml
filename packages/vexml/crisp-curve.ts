@@ -1,4 +1,4 @@
-import { Curve, type CurveOptions, type Note as VexNote } from 'vexflow';
+import { Curve, type CurveOptions, type Note as VexNote } from 'vexflow/core';
 
 /* The offset of the second bezier pass that gives a solid slur its lens shape, so the ink
  * reaches this far past the arc's midpoint. Larger than vexflow's default 2 because CrispCurve

@@ -20,7 +20,7 @@ import {
 	type Note as VexNote,
 	Vibrato,
 	type Voice,
-} from 'vexflow';
+} from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import type { ChordTranslator } from './chord-translator';
 import type { CollisionResolver } from './collision-resolver';

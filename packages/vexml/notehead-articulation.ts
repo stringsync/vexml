@@ -1,4 +1,4 @@
-import { Modifier, type StaveNote, Stem } from 'vexflow';
+import { Modifier, type StaveNote, Stem } from 'vexflow/core';
 import { StaveArticulation } from './stave-articulation';
 
 /*

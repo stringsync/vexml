@@ -1,5 +1,9 @@
-import { VexFlow } from 'vexflow';
-import type { FontConfig, FontOverride } from './config';
+import { VexFlow } from 'vexflow/core';
+import {
+	DEFAULT_FONT_CONFIG,
+	type FontConfig,
+	type FontOverride,
+} from './config';
 import { FontFamilies } from './font-families';
 import type { FontLoader } from './font-loader';
 
@@ -8,6 +12,10 @@ import type { FontLoader } from './font-loader';
 // injecting, so the document itself tracks what's been injected: no process-global
 // state. It tracks injected DOM, not font choices.
 export class DefaultFontLoader implements FontLoader {
+	/** @param bravuraUrl where to fetch Bravura when the caller names no notation url:
+	 * vexml's shipped woff2 (BRAVURA_URL) outside tests. */
+	constructor(private readonly bravuraUrl: string) {}
+
 	/** Inject the requested fonts, wait until they are resident, and return the resolved
 	 * family names. The family-name fallbacks are applied here, once, from
 	 * DEFAULT_FONT_CONFIG, callers (the CSS variables) and the VexFlow.setFonts call
@@ -24,7 +32,7 @@ export class DefaultFontLoader implements FontLoader {
 		this.injectNotationFont(config?.notation);
 		this.injectTextFont(config?.text);
 		this.applyFontVariables(container, notation, text);
-		// VexFlow engraves glyphs from its own bundled font modules via global state, not the
+		// VexFlow engraves glyphs in whatever face its global font stack names, not the
 		// --vexml-font-notation CSS var. setFonts sets a CSS font-family stack the browser falls
 		// through per glyph: music glyphs (noteheads, clefs, the stacked "TAB" clef) come from the
 		// notation font, and everything VexFlow types (tab fret numbers, "H"/"P", bend/annotation
@@ -43,7 +51,7 @@ export class DefaultFontLoader implements FontLoader {
 	 * positions every text glyph (tab fret digits, part labels, annotations) by
 	 * measuring it; a cold face measures with substitute metrics and the glyphs land in
 	 * the wrong place once the real face arrives. Faces the loader can see
-	 * (@font-face injections, the Google Fonts link, VexFlow's embedded Bravura) sit in
+	 * (@font-face injections, the Google Fonts link) sit in
 	 * document.fonts and are awaited directly; a bare family (FontOverride.url absent,
 	 * a system font) is invisible to the CSS Font Loading API, so it is forced resident
 	 * by measuring a probe span and waiting for the measurement to stop changing. */
@@ -122,18 +130,21 @@ export class DefaultFontLoader implements FontLoader {
 	}
 
 	private injectNotationFont(override?: FontOverride): void {
-		// No notation config: VexFlow's main entry already Font.load()s Bravura (its embedded
-		// base64 woff2) under this exact family name with display:block, so we inject nothing
-		// and reuse that face: no second copy needed.
-		if (!override) {
+		// A URL: inject the caller's own @font-face, and nothing else, so the one face the
+		// page decodes is the file they host.
+		if (override?.url) {
+			this.injectFontFace(override.family, override.url, 'block');
 			return;
 		}
-		// A URL: inject the caller's own @font-face. A family alone: assume it's already
-		// available (a system font or the caller's own @font-face), per FontOverride.url:
-		// inject nothing, so the family resolves synchronously with no fetch.
-		if (override.url) {
-			this.injectFontFace(override.family, override.url, 'block');
+		// Bravura with no URL (no notation config, or one that only sets a color): vexml's
+		// own shipped woff2. vexml imports vexflow/core, which embeds no fonts, so without
+		// this nothing would define the face.
+		const family = override?.family ?? DEFAULT_FONT_CONFIG.notation.family;
+		if (family === DEFAULT_FONT_CONFIG.notation.family) {
+			this.injectFontFace(family, this.bravuraUrl, 'block');
 		}
+		// Any other family alone: assume it's already available (a system font or the
+		// caller's own @font-face), per FontOverride.url, so it resolves with no fetch.
 	}
 
 	private injectTextFont(override?: FontOverride): void {

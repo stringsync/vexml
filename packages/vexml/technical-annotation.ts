@@ -1,4 +1,4 @@
-import { Annotation, Modifier } from 'vexflow';
+import { Annotation, Modifier } from 'vexflow/core';
 import type { TechnicalMark } from './technical-mark';
 
 /*

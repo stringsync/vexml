@@ -11,7 +11,7 @@ import {
 	type Tickable,
 	type Tuplet,
 	Voice,
-} from 'vexflow';
+} from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import type { BarlineTranslator } from './barline-translator';
 import type { ChordTranslator } from './chord-translator';

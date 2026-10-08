@@ -10,7 +10,7 @@ import {
 	type StemmableNote,
 	TabNote,
 	Vibrato,
-} from 'vexflow';
+} from 'vexflow/core';
 import type { TabStemPlacement } from './config';
 import {
 	TAB_FRET_SCALE,

@@ -1,4 +1,4 @@
-import { Annotation, StaveNote } from 'vexflow';
+import { Annotation, StaveNote } from 'vexflow/core';
 
 /*
  * A note (or rest) marked print-object="no": it holds its tick so the other voices stay

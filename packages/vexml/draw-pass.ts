@@ -7,7 +7,7 @@ import {
 	type StaveNote,
 	type TabNote,
 	type TabStave,
-} from 'vexflow';
+} from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import {
 	type BarlineDecoration,

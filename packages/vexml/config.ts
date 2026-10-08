@@ -108,7 +108,10 @@ export type Config = {
 
 export interface FontOverride {
 	family: string;
-	/** woff2 URL; if omitted, assumed already loaded (system font or user's own @font-face). */
+	/** woff2 URL, loaded with an injected @font-face. If omitted, the family is assumed
+	 * already loaded (a system font or your own @font-face), except notation Bravura, which
+	 * vexml then loads from its shipped `@stringsync/vexml/fonts/bravura.woff2`. Pass that
+	 * file's bundled URL here to preload or cache it yourself. */
 	url?: string;
 	/** CSS color for glyphs drawn in this font; if omitted, the renderer's default is used. */
 	color?: string;
@@ -299,8 +302,8 @@ export type MeasureNumbering =
 	| 'every-2'
 	| 'every-3';
 
-/** Default fonts: bundled Bravura for notation, Source Sans 3 for text. Families only:
- * the font loader resolves these to the bundled woff2 / Google Fonts. The single source
+/** Default fonts: shipped Bravura for notation, Source Sans 3 for text. Families only:
+ * the font loader resolves these to the shipped woff2 / Google Fonts. The single source
  * of the family-name fallbacks. */
 export const DEFAULT_FONT_CONFIG = {
 	notation: { family: 'Bravura' },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import type { RenderContext } from 'vexflow';
+import type { RenderContext } from 'vexflow/core';
 import { ChordDiagramGlyph } from './chord-diagram-glyph';
 
 // Smoke tests only: these exercise the options branches and assert draw() doesn't

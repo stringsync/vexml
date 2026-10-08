@@ -7,7 +7,7 @@ import {
 	Stroke,
 	type TabNote,
 	type TabStave,
-} from 'vexflow';
+} from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
 import { FRET_HALF_H, FRET_HALF_W, NOTEHEAD_HALF_H } from './constants';

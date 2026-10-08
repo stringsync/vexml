@@ -2,16 +2,16 @@
 # This image is the source of pixel determinism: same OS, fonts, and browser build as CI.
 FROM mcr.microsoft.com/playwright:v1.61.1-jammy
 
-# Bake the fonts vexml renders with (Bravura notation, Source Sans 3 text) into the image
-# as system fonts. The app otherwise loads them asynchronously — Bravura from a bundled
-# woff2 @font-face, Source Sans 3 from the Google Fonts CDN — and under parallel tests that
-# async load raced the layout: text measured with fallback metrics settled into a
-# wrong-but-stable layout, off by hundreds of px. A system font is available synchronously
-# at layout time, so renders are deterministic and the container needs no network. Copied
-# early (before the source) so this layer caches until the font files themselves change.
-COPY packages/vexml/assets/fonts/Bravura.otf packages/vexml/assets/fonts/SourceSans3-Light.ttf \
-	packages/vexml/assets/fonts/SourceSans3-Regular.ttf packages/vexml/assets/fonts/SourceSans3-SemiBold.ttf \
-	/usr/share/fonts/truetype/vexml/
+# Bake the text font vexml renders with (Source Sans 3) into the image as a system font.
+# The app otherwise loads it asynchronously from the Google Fonts CDN, and under parallel
+# tests that async load raced the layout: text measured with fallback metrics settled into
+# a wrong-but-stable layout, off by hundreds of px. A system font is available
+# synchronously at layout time, so renders are deterministic and the container needs no
+# network. Bravura is not baked in: vexml loads its shipped woff2 itself and awaits it, and
+# a system copy would hide a broken load. Copied early (before the source) so this layer
+# caches until the font files themselves change.
+COPY packages/vex/fonts/SourceSans3-Light.ttf packages/vex/fonts/SourceSans3-Regular.ttf \
+	packages/vex/fonts/SourceSans3-SemiBold.ttf /usr/share/fonts/truetype/vexml/
 RUN fc-cache -f
 
 # Bun, copied from its official image (no curl install needed).

@@ -1,5 +1,5 @@
 import type { Measure, Part, Score } from '@stringsync/mdom';
-import { Barline, CanvasContext, type Stave } from 'vexflow';
+import { Barline, CanvasContext, type Stave } from 'vexflow/core';
 import { ConnectorDrawer } from './connector-drawer';
 import { FOLD_PADDING, PAGE_MARGIN_X } from './constants';
 import type { Fold } from './fold';

@@ -256,13 +256,42 @@ entirely and wrap purely on width.
 await render(musicXML, element, {
   fonts: {
     // noteheads, clefs, rests, accidentals, etc., default is Bravura
-    notation: { family: 'Petaluma' },
+    notation: { family: 'Petaluma', url: '/fonts/petaluma.woff2' },
     // part/instrument names, lyrics, titles, directions (default is Source Sans 3);
     // optionally specify a font url if it's not already available locally
     text: { family: 'Inter', url: '/fonts/inter.woff2' },
   },
 });
 ```
+
+A notation font other than Bravura needs a `url` (or your own `@font-face`): vexml no
+longer bundles VexFlow's other music fonts (Petaluma, Gonville, Academico).
+
+### Self-hosting and preloading Bravura
+
+vexml ships Bravura as a woff2 file, not as base64 inside its JavaScript, and exports it
+as `@stringsync/vexml/fonts/bravura.woff2`. With no notation `url`, vexml loads that file
+itself: bundlers that understand `new URL('...', import.meta.url)` (Vite, Rollup, webpack 5)
+emit it as a hashed asset next to your code, never from a CDN.
+
+To start the download in parallel with your JavaScript and cache it on its own, import its
+URL, pass it in, and preload it:
+
+```ts
+import bravura from '@stringsync/vexml/fonts/bravura.woff2?url'; // Vite; other bundlers: an asset import
+
+await render(musicXML, element, {
+  fonts: { notation: { family: 'Bravura', url: bravura } },
+});
+```
+
+```html
+<link rel="preload" href="/assets/Bravura-[hash].woff2" as="font" type="font/woff2" crossorigin>
+```
+
+The first layout waits until the face has loaded, so a score never paints with fallback
+glyphs, cold cache or not. A bundler that cannot emit `new URL(..., import.meta.url)`
+assets needs the `url` passed explicitly.
 
 ## Custom colors
 

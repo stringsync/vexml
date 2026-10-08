@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Part } from '@stringsync/mdom';
-import type { RenderContext, Stave } from 'vexflow';
+import type { RenderContext, Stave } from 'vexflow/core';
 import {
 	type ConnectorColumn,
 	ConnectorDrawer,

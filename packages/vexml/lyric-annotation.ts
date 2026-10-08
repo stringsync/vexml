@@ -1,4 +1,4 @@
-import { Annotation, Modifier } from 'vexflow';
+import { Annotation, Modifier } from 'vexflow/core';
 import { LYRIC_FONT_SIZE, LYRIC_PADDING } from './constants';
 import type { LyricMark } from './lyric-mark';
 

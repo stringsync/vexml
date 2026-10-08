@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'bun:test';
+import * as path from 'node:path';
+import { fileUrl } from '@vexml/renderer';
 import { testing } from './setup';
 
 /*
@@ -222,11 +224,19 @@ describe('render', () => {
 	// rest, all on C5), engraved with VexFlow's Petaluma font instead of the default
 	// Bravura (fonts.notation). The notehead, stem flags, treble clef, and rest glyph
 	// all take Petaluma's rounder, hand-drawn shapes, proving the notation FontConfig
-	// option swaps the engraving font.
+	// option swaps the engraving font. The woff2 is the face VexFlow 5.0.0 embeds, loaded
+	// by url since vexml no longer pulls VexFlow's embedded fonts.
 	it.concurrent('renders font_notation_petaluma.png', async () => {
 		expect(
 			await testing.render('font_notation_petaluma.musicxml', {
-				fonts: { notation: { family: 'Petaluma' } },
+				fonts: {
+					notation: {
+						family: 'Petaluma',
+						url: fileUrl(
+							path.resolve(import.meta.dir, '__data__/Petaluma.woff2'),
+						),
+					},
+				},
 			}),
 		).toMatchScreenshot('font_notation_petaluma.png');
 	});

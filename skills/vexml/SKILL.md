@@ -119,12 +119,31 @@ never pass raw untrusted input.
 await render(musicXML, element, {
   fonts: {
     // noteheads, clefs, rests, accidentals; default Bravura
-    notation: { family: 'Petaluma' },
+    notation: { family: 'Petaluma', url: '/fonts/petaluma.woff2' },
     // part names, lyrics, titles, directions; default Source Sans 3
     text: { family: 'Inter', url: '/fonts/inter.woff2' },
   },
 });
 ```
+
+A notation font other than Bravura needs a `url` (or the app's own `@font-face`); vexml
+bundles no other music font.
+
+Bravura ships as a woff2 file, exported as `@stringsync/vexml/fonts/bravura.woff2`. With
+no notation `url` vexml loads it itself through `new URL(..., import.meta.url)`, which
+Vite, Rollup and webpack 5 emit as a hashed asset. To cache it apart from the code and
+preload it, pass its URL and add a preload link:
+
+```ts
+import bravura from '@stringsync/vexml/fonts/bravura.woff2?url'; // Vite
+
+await render(musicXML, element, {
+  fonts: { notation: { family: 'Bravura', url: bravura } },
+});
+// <link rel="preload" href={bravura} as="font" type="font/woff2" crossorigin>
+```
+
+Layout waits for the face, so a score never paints with fallback glyphs.
 
 ## Colors
 

@@ -21,7 +21,7 @@ come from `webappwiz/geometry`, not this repo. Every feature has a fixture in
 
 | Stage | Does | Files |
 | --- | --- | --- |
-| Fonts | Loads Bravura + text face as CSS vars, awaits residency before layout | `font-loader.ts`, `default-font-loader.ts`, `recording-font-loader.ts` (test fake that records loads) |
+| Fonts | Loads Bravura + text face as CSS vars, awaits residency before layout | `font-loader.ts`, `default-font-loader.ts`, `bravura-url.ts` (the shipped `assets/fonts/Bravura.woff2`, VexFlow's own face; vexml imports `vexflow/core`, which embeds none), `recording-font-loader.ts` (test fake that records loads) |
 | Parse | MusicXML text to an mdom document | `score-parser.ts`, `default-score-parser.ts` |
 | Gaps | Finds the caller's silent measures, inserting positioned ones into vexml's own parse | `gaps.ts`, `gap-inserter.ts` |
 | Layout | Measure widths, system breaks, stave offsets, no drawing | `layout-planner.ts` |

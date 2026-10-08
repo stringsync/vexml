@@ -1,4 +1,4 @@
-import type { RenderContext } from 'vexflow';
+import type { RenderContext } from 'vexflow/core';
 import { DEFAULT_TUNING, HARMONY_ACCIDENTALS } from './constants';
 
 /** A `[string, fret]` pair: fret `0` = open, `'x'` = muted, else a (relative) fret number. */

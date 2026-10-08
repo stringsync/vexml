@@ -1,5 +1,5 @@
 import type { Note } from '@stringsync/mdom';
-import { GhostNote } from 'vexflow';
+import { GhostNote } from 'vexflow/core';
 import { EPSILON } from './constants';
 import type { ScoreReader } from './score-reader';
 

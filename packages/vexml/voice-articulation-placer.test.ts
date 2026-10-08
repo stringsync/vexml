@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { Modifier, StaveNote, Voice } from 'vexflow';
+import { Modifier, StaveNote, Voice } from 'vexflow/core';
 import { NoteheadArticulation } from './notehead-articulation';
 import { VoiceArticulationPlacer } from './voice-articulation-placer';
 

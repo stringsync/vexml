@@ -7,7 +7,7 @@ import {
 	Parenthesis,
 	StaveNote,
 	Stem,
-} from 'vexflow';
+} from 'vexflow/core';
 import type { DurationTranslator } from './duration-translator';
 import { InvisibleStaveNote } from './invisible-stave-note';
 import type { NotationTranslator } from './notation-translator';

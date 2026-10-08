@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { Volta } from 'vexflow';
+import { Volta } from 'vexflow/core';
 import { BarlineTranslator, NO_DECORATION } from './barline-translator';
 import type { MeasureRepeat } from './score-reader';
 

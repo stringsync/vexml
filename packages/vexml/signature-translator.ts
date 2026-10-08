@@ -1,5 +1,5 @@
 import type { Clef, Key, Time } from '@stringsync/mdom';
-import { StaveNote } from 'vexflow';
+import { StaveNote } from 'vexflow/core';
 import { ACCIDENTAL_CODES } from './chord-translator';
 
 // MusicXML <key-alter> semitones -> the vexflow accidental code, for a signature written

@@ -1,5 +1,5 @@
 import type { Measure, Part } from '@stringsync/mdom';
-import { Stave, StaveModifierPosition, TabStave } from 'vexflow';
+import { Stave, StaveModifierPosition, TabStave } from 'vexflow/core';
 import { CustomKeySignature } from './custom-key-signature';
 import type { SignatureTranslator } from './signature-translator';
 import type { StavePlan } from './stave-plan';

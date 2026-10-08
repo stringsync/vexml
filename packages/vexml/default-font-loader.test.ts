@@ -2,6 +2,8 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { DefaultFontLoader } from './default-font-loader';
 
+const BRAVURA = '/assets/Bravura-abc123.woff2';
+
 describe('DefaultFontLoader', () => {
 	const realDocument = globalThis.document;
 
@@ -17,40 +19,64 @@ describe('DefaultFontLoader', () => {
 		// @ts-expect-error
 		globalThis.document = undefined;
 		expect(() =>
-			new DefaultFontLoader().load({ style: { setProperty() {} } } as any),
+			new DefaultFontLoader(BRAVURA).load({
+				style: { setProperty() {} },
+			} as any),
 		).not.toThrow();
 	});
 
-	it('injects google fonts only and scopes vars to the container by default', async () => {
+	it('injects the shipped bravura and google fonts, scoping vars to the container by default', async () => {
 		const { head, vars, container } = fakeDom();
-		await new DefaultFontLoader().load(container);
-		// 1 google <link> for Source Sans 3; Bravura comes from VexFlow, so no <style>.
+		await new DefaultFontLoader(BRAVURA).load(container);
+		// 1 google <link> for Source Sans 3, 1 <style> for the shipped Bravura.
 		expect(head.filter((n) => n.tag === 'link').length).toBe(1);
-		expect(head.filter((n) => n.tag === 'style').length).toBe(0);
+		expect(styleText(head)).toContain(`url('${BRAVURA}') format('woff2')`);
+		expect(head.filter((n) => n.tag === 'style').length).toBe(1);
 		expect(vars['--vexml-font-notation']).toBe("'Bravura', serif");
 		expect(vars['--vexml-font-text']).toBe("'Source Sans 3', sans-serif");
 	});
 
 	it('injects nothing new on a second default call', async () => {
 		const { head, container } = fakeDom();
-		await new DefaultFontLoader().load(container); // dedup markers persist on the document
+		await new DefaultFontLoader(BRAVURA).load(container); // dedup markers persist on the document
 		const after = head.length;
-		await new DefaultFontLoader().load(container); // fresh loader, same document: still deduped
+		await new DefaultFontLoader(BRAVURA).load(container); // fresh loader, same document: still deduped
 		expect(head.length).toBe(after); // no new tags
 	});
 
 	it('injects a custom notation url, not the bundled path', async () => {
 		const { head, container } = fakeDom();
-		await new DefaultFontLoader().load(container, {
+		await new DefaultFontLoader(BRAVURA).load(container, {
 			notation: { family: 'Bravura', url: '/static/Custom.woff2' },
 		});
-		const styleText = head
-			.filter((n) => n.tag === 'style')
-			.map((n) => n.textContent)
-			.join('');
-		expect(styleText).toContain('/static/Custom.woff2');
+		expect(styleText(head)).toContain('/static/Custom.woff2');
+		expect(styleText(head)).not.toContain(BRAVURA);
+		expect(head.filter((n) => n.tag === 'style').length).toBe(1);
+	});
+
+	it('loads the shipped bravura when the notation config only sets a color', async () => {
+		const { head, container } = fakeDom();
+		await new DefaultFontLoader(BRAVURA).load(container, {
+			notation: { family: 'Bravura', color: 'red' },
+		});
+		expect(styleText(head)).toContain(BRAVURA);
+	});
+
+	it('injects nothing for another notation family without a url', async () => {
+		const { head, container } = fakeDom();
+		await new DefaultFontLoader(BRAVURA).load(container, {
+			notation: { family: 'Petaluma' },
+		});
+		expect(head.filter((n) => n.tag === 'style').length).toBe(0);
 	});
 });
+
+function styleText(head: any[]): string {
+	return head
+		.filter((n) => n.tag === 'style')
+		.map((n) => n.textContent)
+		.join('');
+}
 
 // Fake minimal DOM to exercise injection + dedup + container scoping.
 function fakeDom() {

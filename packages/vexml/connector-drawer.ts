@@ -4,7 +4,7 @@ import {
 	type Stave,
 	StaveConnector,
 	type StaveConnectorType,
-} from 'vexflow';
+} from 'vexflow/core';
 import {
 	BRACKET_X_SHIFT,
 	CONNECTOR_VERTICAL_OVERHANG,

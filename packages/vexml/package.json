@@ -12,7 +12,8 @@
 			"types": "./index.ts",
 			"import": "./index.ts"
 		},
-		"./css": "./css/vexml.css"
+		"./css": "./css/vexml.css",
+		"./fonts/bravura.woff2": "./assets/fonts/Bravura.woff2"
 	},
 	"files": [
 		"*.ts",

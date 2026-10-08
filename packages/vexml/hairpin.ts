@@ -1,4 +1,4 @@
-import type { RenderContext, Stave, StaveNote } from 'vexflow';
+import type { RenderContext, Stave, StaveNote } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import { HAIRPIN_HEIGHT, HAIRPIN_STAVE_GAP } from './constants';
 

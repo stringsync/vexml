@@ -1,4 +1,4 @@
-import { TabSlide } from 'vexflow';
+import { TabSlide } from 'vexflow/core';
 
 /*
  * vexflow's TabSlide strokes its two-point line with a closePath() in between (tabslide.ts

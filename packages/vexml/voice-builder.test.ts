@@ -8,7 +8,7 @@ import {
 	Stem,
 	type TabNote,
 	type TabStave,
-} from 'vexflow';
+} from 'vexflow/core';
 import { FakeLyricMark } from './fake-lyric-mark';
 import type { ScoreReader, StaffVoice } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';

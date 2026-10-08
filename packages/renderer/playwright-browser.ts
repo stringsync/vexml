@@ -1,5 +1,6 @@
 import { chromium, type Browser as PlaywrightEngine } from 'playwright';
 import type { Browser, OpenOptions } from './browser';
+import { FILE_ORIGIN } from './bundle';
 import { PlaywrightTab } from './playwright-tab';
 import type { Tab } from './tab';
 
@@ -12,6 +13,19 @@ export class PlaywrightBrowser implements Browser {
 		this.engine ??= chromium.launch();
 		const engine = await this.engine;
 		const page = await engine.newPage({ viewport: { width, height } });
+		// Files a bundled module asks for by import.meta.url (see bundle.ts). CORS-open,
+		// since the page's setContent origin differs and fonts are fetched in cors mode.
+		await page.route(`${FILE_ORIGIN}/**`, async (route) => {
+			const path = decodeURIComponent(new URL(route.request().url()).pathname);
+			const file = Bun.file(path);
+			const found = await file.exists();
+			await route.fulfill({
+				status: found ? 200 : 404,
+				headers: { 'access-control-allow-origin': '*' },
+				contentType: file.type,
+				body: found ? Buffer.from(await file.arrayBuffer()) : '',
+			});
+		});
 		await page.setContent(html);
 		for (const content of scripts) {
 			// addScriptTag resolves after the (classic) script has executed, so a script's

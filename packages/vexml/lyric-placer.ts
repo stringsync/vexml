@@ -1,4 +1,4 @@
-import type { RenderContext, Stave, StaveNote } from 'vexflow';
+import type { RenderContext, Stave, StaveNote } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import type { CollisionResolver } from './collision-resolver';
 import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT } from './constants';

@@ -1,4 +1,4 @@
-import { Modifier, type RenderContext, type StaveNote } from 'vexflow';
+import { Modifier, type RenderContext, type StaveNote } from 'vexflow/core';
 import { SLIDE_MIN_SLANT, SLIDE_PADDING } from './constants';
 
 /*

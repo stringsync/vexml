@@ -1,4 +1,4 @@
-import { Stroke } from 'vexflow';
+import { Stroke } from 'vexflow/core';
 
 /*
  * The square bracket of a <notations><non-arpeggiate>, drawn to the left of a chord: a

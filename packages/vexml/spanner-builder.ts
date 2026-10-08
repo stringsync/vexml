@@ -16,7 +16,7 @@ import {
 	type TieNotes,
 	Tuplet,
 	VibratoBracket,
-} from 'vexflow';
+} from 'vexflow/core';
 import {
 	SINGLE_SLIDE_GAP,
 	SLUR_END_ZONE,

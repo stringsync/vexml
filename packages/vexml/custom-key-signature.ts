@@ -1,4 +1,4 @@
-import { KeySignature, Stave } from 'vexflow';
+import { KeySignature, Stave } from 'vexflow/core';
 
 /*
  * A key signature spelled out accidental by accidental, for a <key> written with

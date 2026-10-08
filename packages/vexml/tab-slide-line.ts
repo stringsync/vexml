@@ -1,4 +1,4 @@
-import type { RenderContext, TabSlide } from 'vexflow';
+import type { RenderContext, TabSlide } from 'vexflow/core';
 
 /* The height of the band vexflow's TabNote clears around a fret digit to punch a hole in the
  * string line it sits on (tabnote.ts drawPositions clears y-3 by 6). TabSlideLine reuses it to

@@ -8,7 +8,7 @@ import {
 	type StemmableNote,
 	type TabNote,
 	type TabStave,
-} from 'vexflow';
+} from 'vexflow/core';
 import { BAR_STYLE_TYPES } from './barline-translator';
 import { isLyricMark } from './lyric-mark';
 import type { ScoreReader, StaffVoice } from './score-reader';

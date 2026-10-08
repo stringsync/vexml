@@ -1,5 +1,11 @@
 import type { Chord, Lyric, Note, Technical } from '@stringsync/mdom';
-import { Modifier, Ornament, type StaveNote, Stroke, Tremolo } from 'vexflow';
+import {
+	Modifier,
+	Ornament,
+	type StaveNote,
+	Stroke,
+	Tremolo,
+} from 'vexflow/core';
 import { ACCIDENTAL_CODES } from './chord-translator';
 import { FingeringAnnotation } from './fingering-annotation';
 import { LyricAnnotation } from './lyric-annotation';

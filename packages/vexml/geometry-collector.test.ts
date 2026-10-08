@@ -7,7 +7,7 @@ import {
 	type TabNote,
 	type TabStave,
 	Modifier as VexModifier,
-} from 'vexflow';
+} from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import { GeometryCollector } from './geometry-collector';
 

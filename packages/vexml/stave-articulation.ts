@@ -1,4 +1,4 @@
-import { Articulation, Modifier, Stem } from 'vexflow';
+import { Articulation, Modifier, Stem } from 'vexflow/core';
 
 /*
  * An articulation that clears the beam.

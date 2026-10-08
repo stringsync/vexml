@@ -3,7 +3,7 @@ import {
 	GraceNote,
 	type Note,
 	type StaveNote,
-} from 'vexflow';
+} from 'vexflow/core';
 import { GRACE_START } from './constants';
 import { CrispCurve } from './crisp-curve';
 

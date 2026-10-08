@@ -6,7 +6,7 @@ import {
 	StaveNote,
 	StaveTempo,
 	TabNote,
-} from 'vexflow';
+} from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
 import type { CollisionKind, CollisionResolver } from './collision-resolver';

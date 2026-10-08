@@ -1,4 +1,4 @@
-import { Barline, BarNote, Volta } from 'vexflow';
+import { Barline, BarNote, Volta } from 'vexflow/core';
 import type { MeasureEnding, MeasureRepeat } from './score-reader';
 
 /*

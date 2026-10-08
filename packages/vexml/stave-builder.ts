@@ -4,7 +4,7 @@ import {
 	MultiMeasureRest,
 	type RenderContext,
 	type Stave,
-} from 'vexflow';
+} from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import { BAR_STYLE_TYPES, type BarlineDecoration } from './barline-translator';
 import type { CollisionResolver } from './collision-resolver';

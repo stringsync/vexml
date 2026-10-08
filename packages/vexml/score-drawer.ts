@@ -1,5 +1,5 @@
 import type { Score } from '@stringsync/mdom';
-import { CanvasContext } from 'vexflow';
+import { CanvasContext } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import type { BarlineTranslator } from './barline-translator';
 import type { ChordTranslator } from './chord-translator';

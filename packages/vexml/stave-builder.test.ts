@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import type { RenderContext } from 'vexflow';
+import type { RenderContext } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
 import type { MeasureNumbering } from './config';
