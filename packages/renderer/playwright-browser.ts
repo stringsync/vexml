@@ -26,6 +26,11 @@ export class PlaywrightBrowser implements Browser {
 				body: found ? Buffer.from(await file.arrayBuffer()) : '',
 			});
 		});
+		// vexml's default text face comes from Google Fonts; refused, so renders use the
+		// Source Sans 3 the image installs and never depend on the network.
+		await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, (route) =>
+			route.abort(),
+		);
 		await page.setContent(html);
 		for (const content of scripts) {
 			// addScriptTag resolves after the (classic) script has executed, so a script's

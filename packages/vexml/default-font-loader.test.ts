@@ -1,5 +1,6 @@
 // biome-ignore-all lint/suspicious/noExplicitAny: minimal DOM mocks for unit testing
 import { afterEach, describe, expect, it } from 'bun:test';
+import { DEFAULT_CONFIG } from './config';
 import { DefaultFontLoader } from './default-font-loader';
 
 const BRAVURA = '/assets/Bravura-abc123.woff2';
@@ -34,6 +35,20 @@ describe('DefaultFontLoader', () => {
 		expect(head.filter((n) => n.tag === 'style').length).toBe(1);
 		expect(vars['--vexml-font-notation']).toBe("'Bravura', serif");
 		expect(vars['--vexml-font-text']).toBe("'Source Sans 3', sans-serif");
+	});
+
+	it('loads google fonts under the default config', async () => {
+		const { head, container } = fakeDom();
+		await new DefaultFontLoader(BRAVURA).load(container, DEFAULT_CONFIG.fonts);
+		expect(head.filter((n) => n.tag === 'link').length).toBe(1);
+	});
+
+	it('injects no text font for a named family without a url', async () => {
+		const { head, container } = fakeDom();
+		await new DefaultFontLoader(BRAVURA).load(container, {
+			text: { family: 'Source Sans 3' },
+		});
+		expect(head.filter((n) => n.tag === 'link').length).toBe(0);
 	});
 
 	it('injects nothing new on a second default call', async () => {
@@ -113,6 +128,7 @@ function fakeDom() {
 			setAttribute(name: string, value: string) {
 				this.attrs[name] = value;
 			},
+			addEventListener() {},
 		}),
 	};
 	const container = {

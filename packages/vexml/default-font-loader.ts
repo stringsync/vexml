@@ -80,6 +80,7 @@ export class DefaultFontLoader implements FontLoader {
 		// renders (fret numbers are the metrics-sensitive worst case). Weights mirror what
 		// a render can use: the Google Fonts link loads 300/400/600; a face that lacks a
 		// weight just resolves to the nearest one, which is harmless to await.
+		await this.googleFontsSettled();
 		const specs: Array<{ font: string; sample: string }> = [
 			// G clef, F clef, black notehead, flat, sharp: the SMuFL staples every score paints.
 			{ font: `1em '${notation}'`, sample: '\uE050\uE062\uE0A4\uE260\uE262' },
@@ -171,7 +172,28 @@ export class DefaultFontLoader implements FontLoader {
 		link.href =
 			'https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600&display=swap';
 		link.setAttribute('data-vexml-google-fonts', '');
+		// Marked once the request ends either way, so a later render can tell a failed
+		// stylesheet (blocked, offline) from one still loading.
+		const settle = () =>
+			link.setAttribute('data-vexml-google-fonts', 'settled');
+		link.addEventListener('load', settle, { once: true });
+		link.addEventListener('error', settle, { once: true });
 		document.head.appendChild(link);
+	}
+
+	/** The stylesheet defines the Source Sans 3 faces, so until it arrives document.fonts
+	 * has nothing to load and settle would measure against the fallback face. */
+	private async googleFontsSettled(): Promise<void> {
+		const link = document.head.querySelector<HTMLLinkElement>(
+			'link[data-vexml-google-fonts]',
+		);
+		if (!link || link.getAttribute('data-vexml-google-fonts') === 'settled') {
+			return;
+		}
+		await new Promise((resolve) => {
+			link.addEventListener('load', resolve, { once: true });
+			link.addEventListener('error', resolve, { once: true });
+		});
 	}
 
 	private injectFontFace(

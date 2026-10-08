@@ -354,7 +354,10 @@ export const DEFAULT_PAGED_LAYOUT: PagedLayout = {
 
 /** The defaults `render` merges a caller's `ConfigInput` onto. */
 export const DEFAULT_CONFIG: Config = {
-	fonts: DEFAULT_FONT_CONFIG,
+	// Empty, not DEFAULT_FONT_CONFIG: the font loader reads a missing `text` as "load the
+	// default from Google Fonts" and a named family as "already present", so filling it in
+	// here would stop the default text face from ever loading.
+	fonts: {},
 	pixelRatio: null,
 	backgroundColor: null,
 	gaps: [],

@@ -120,7 +120,8 @@ await render(musicXML, element, {
   fonts: {
     // noteheads, clefs, rests, accidentals; default Bravura
     notation: { family: 'Petaluma', url: '/fonts/petaluma.woff2' },
-    // part names, lyrics, titles, directions; default Source Sans 3
+    // part names, lyrics, titles, directions; default Source Sans 3 from Google Fonts.
+    // A family with no url must already be on the page.
     text: { family: 'Inter', url: '/fonts/inter.woff2' },
   },
 });
