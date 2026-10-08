@@ -71,15 +71,15 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	private readonly knob: Marker;
 	// Null while the settings turn the loupe off.
 	private loupe: Loupe | null = null;
-	// Where the press went down (client px) and whether a finger made it, until it lifts.
-	private press: { x: number; y: number; touch: boolean } | null = null;
+	// Where the press went down (client px), until it lifts.
+	private press: { x: number; y: number } | null = null;
 	// Whether the press has moved past the slop, or been held, into a drag: a tap never shows the
 	// knob or loupe.
 	private dragging = false;
 	// The pending hold that turns a still press into a drag.
 	private hold: Resource | null = null;
-	// The dragging pointer's height (score px): the loupe magnifies the staff the finger is on.
-	private fingerY = 0;
+	// The dragging pointer's height (score px): the loupe magnifies the staff the pointer is on.
+	private pointerY = 0;
 	// Where the playhead bar last landed (score px), for the knob and the loupe.
 	private bar: { x: number; y: number; w: number; h: number } | null = null;
 	// CSS px per score px: the score shrinks to fit a narrow container, and the playhead and knob
@@ -213,11 +213,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.container.setPointerCapture(e.native.pointerId);
 			this.beginSeek({ follow: false });
 			this.scrub(() => this.seekTo(e.point));
-			this.press = {
-				x: e.native.clientX,
-				y: e.native.clientY,
-				touch: e.native.pointerType === 'touch',
-			};
+			this.press = { x: e.native.clientX, y: e.native.clientY };
 			this.hold?.dispose();
 			this.hold = this.timer.setTimeout(() => {
 				this.hold = null;
@@ -571,7 +567,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	// Track the press, and once it has moved past the slop open the drag's visuals, magnifying
 	// whichever staff the pointer is on. A tap just seeks, like the platform magnifiers.
 	private magnify(point: { x: number; y: number }, native: PointerEvent): void {
-		this.fingerY = point.y;
+		this.pointerY = point.y;
 		const press = this.press;
 		if (
 			press &&
@@ -596,9 +592,9 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		}
 	}
 
-	// For as long as a drag lasts, cap the playhead with its handle; for a finger, which covers what
-	// it drags where a mouse or pen doesn't, anchor the loupe above both, so it follows the playhead
-	// rather than the raw finger and covers neither.
+	// For as long as a drag lasts, cap the playhead with its handle and anchor the loupe above both,
+	// so it follows the playhead rather than the raw pointer and covers neither. Any pointer gets it:
+	// a finger hides what it drags, and a mouse or pen still benefits from the closer look.
 	private placeDragAids(): void {
 		const bar = this.bar;
 		if (!this.dragging || !bar) {
@@ -612,11 +608,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			CURSOR_COLOR,
 			{ radius: r },
 		);
-		if (!this.press?.touch) {
-			this.loupe?.hide();
-			return;
-		}
-		const y = Math.min(Math.max(this.fingerY, bar.y), bar.y + bar.h);
+		const y = Math.min(Math.max(this.pointerY, bar.y), bar.y + bar.h);
 		this.loupe?.show(
 			{ x: bar.x - r, y: bar.y - r, w: r * 2, h: bar.h + r },
 			{ x: bar.x, y },
