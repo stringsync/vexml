@@ -73,6 +73,10 @@ export class DirectionPlacer {
 		{ text: string; measure: number }
 	>();
 
+	// Every below-stave words direction placed so far, by its stave: a hairpin resolved later
+	// under the same stave reports the words it ran into (see SpannerResolver).
+	private readonly belowWords = new Map<Stave, Rect[]>();
+
 	// The one dependency this builds rather than takes: it is a pure spelling table with no
 	// state, and nothing about a render varies it.
 	private readonly dynamics = new DynamicGlyphs();
@@ -113,6 +117,12 @@ export class DirectionPlacer {
 		return redundant;
 	}
 
+	/* A hairpin resolves after the words beside it were placed, so it asks which it ran
+	 * into (see SpannerResolver.observeStackedWords). */
+	belowWordsOn(stave: Stave): readonly Rect[] {
+		return this.belowWords.get(stave) ?? [];
+	}
+
 	/*
 	 * Draw the above-stave annotations queued for this measure, after the system is
 	 * formatted so every anchor x is real: words, then chord symbols/diagrams, then
@@ -137,11 +147,19 @@ export class DirectionPlacer {
 					size: WORDS_FONT_SIZE,
 					italic: true,
 					align: this.wordsAlign(w),
+					clearsHairpins: true,
 				},
 			);
 			// A below-stave directive grows the crop downward instead (drawWords already
 			// reported the drop); only above-stave text lifts the measure box's top.
-			if (w.placement !== 'below') {
+			if (w.placement === 'below') {
+				const placedOnStave = this.belowWords.get(w.stave);
+				if (placedOnStave) {
+					placedOnStave.push(placed);
+				} else {
+					this.belowWords.set(w.stave, [placed]);
+				}
+			} else {
 				this.reporter.growPageTop(placed.y);
 				this.spill.growDecorationTop(column.systemIndex, placed.y);
 			}
@@ -753,14 +771,15 @@ export class DirectionPlacer {
 			style.size,
 		);
 		const band = this.reporter.rowOf(stave);
+		const kinds = style.clearsHairpins ? WORDS_CLEAR_KINDS : TEXT_CLEAR_KINDS;
 		const cleared = below
 			? this.collisionResolver.dropClear(natural, WORDS_NOTE_CLEARANCE, {
-					kinds: TEXT_CLEAR_KINDS,
+					kinds,
 					band,
 					xMargin: style.sideGap,
 				})
 			: this.collisionResolver.liftClear(natural, WORDS_NOTE_CLEARANCE, {
-					kinds: TEXT_CLEAR_KINDS,
+					kinds,
 					band,
 					xMargin: style.sideGap,
 				});
@@ -879,6 +898,11 @@ export class DirectionPlacer {
 // nudge logic funnels through the CollisionResolver; see AGENTS.md, "Collisions and nudges".
 const TEXT_CLEAR_KINDS: CollisionKind[] = ['note', 'tie', 'annotation'];
 
+// A words direction also clears the hairpins on its side of the stave, which the previous
+// pass placed (see DrawPassOptions.hairpinBands). A dynamic doesn't: it shares the
+// hairpin's line, at the end the wedge opens from or closes onto.
+const WORDS_CLEAR_KINDS: CollisionKind[] = [...TEXT_CLEAR_KINDS, 'hairpin'];
+
 // A dynamic that sets a sustained LEVEL rather than accenting one note: any run of p's or
 // f's, plus mp/mf. These stay in force until the next one, so an immediate restatement of
 // the level already sounding is redundant and doesn't print. Everything else (sfz, fp, rfz,
@@ -913,6 +937,8 @@ type SideTextStyle = {
 	/** Side clearance the string keeps from other marks it would otherwise abut (see
 	 * ClearOptions.xMargin). 0 when absent. */
 	sideGap?: number;
+	/** Whether the string also clears hairpins (see WORDS_CLEAR_KINDS). */
+	clearsHairpins?: boolean;
 };
 
 /**

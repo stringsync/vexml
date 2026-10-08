@@ -215,7 +215,12 @@ export class CollisionResolver {
 	}
 }
 
-export type CollisionKind = 'note' | 'tie' | 'annotation' | 'diagram';
+export type CollisionKind =
+	| 'note'
+	| 'tie'
+	| 'annotation'
+	| 'diagram'
+	| 'hairpin';
 /*
  * `band` groups obstacles that belong together: the renderer uses one per stave row. A
  * constrained resolve can then ignore the other bands, so an above-stave annotation stacks

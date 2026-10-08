@@ -7,6 +7,7 @@ export interface SpillReport {
 	observedOverflow: ReadonlyMap<number, number>;
 	lyricsStepped: boolean;
 	voltasLifted: boolean;
+	hairpinsStacked: boolean;
 }
 
 /* The resolver's verdict on a first pass: the re-spaced offsets, whether a second pass
@@ -71,6 +72,9 @@ export class SpillResolver {
 		// a measure whose notes climb through it is only visible after the fact. Pass two
 		// redraws the brackets lifted clear.
 		const needsVoltaLift = report.voltasLifted;
+		// Likewise a hairpin, resolved once its system is drawn, can land on words placed with
+		// their measure: pass two drops the words under it.
+		const needsHairpinRoom = report.hairpinsStacked;
 		// Re-spacing makes a system taller, so the page floor and the scratch canvas both
 		// have to grow before the redraw. Sized off the system that grew MOST: systems
 		// grow by different amounts, and every one of them has to fit. Over-allocating
@@ -83,7 +87,12 @@ export class SpillResolver {
 		);
 		return {
 			systemStaveOffsets,
-			needed: respace || needsOverflow || needsLyricPin || needsVoltaLift,
+			needed:
+				respace ||
+				needsOverflow ||
+				needsLyricPin ||
+				needsVoltaLift ||
+				needsHairpinRoom,
 			grewBy,
 		};
 	}

@@ -153,6 +153,7 @@ describe('SpillResolver', () => {
 		observedOverflow: new Map<number, number>(),
 		lyricsStepped: false,
 		voltasLifted: false,
+		hairpinsStacked: false,
 	};
 
 	it('lets a quiet first pass stand', () => {
@@ -193,6 +194,16 @@ describe('SpillResolver', () => {
 		expect(new SpillResolver().revise([0, 120], overflowing, 2).needed).toBe(
 			true,
 		);
+	});
+
+	it('redraws for words a hairpin was drawn through', () => {
+		expect(
+			new SpillResolver().revise(
+				[0, 120],
+				{ ...quietReport, hairpinsStacked: true },
+				1,
+			).needed,
+		).toBe(true);
 	});
 
 	it('redraws for a stepped lyric verse or a climbed-through volta', () => {

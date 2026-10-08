@@ -551,5 +551,49 @@
         </notations>
       </note>
     </measure>
+    <measure number="9">
+      <direction placement="below">
+        <direction-type>
+          <wedge spread="15" type="diminuendo"/>
+        </direction-type>
+      </direction>
+      <direction placement="below">
+        <direction-type>
+          <words font-style="italic">espressivo</words>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>3</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>3</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <direction>
+        <direction-type>
+          <wedge spread="0" type="stop"/>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>3</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>

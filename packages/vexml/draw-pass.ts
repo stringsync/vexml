@@ -52,7 +52,7 @@ import type {
 } from './score-reader';
 import type { SignatureTranslator } from './signature-translator';
 import type { SpannerBuilder } from './spanner-builder';
-import { SpannerResolver } from './spanner-resolver';
+import { type HairpinBand, SpannerResolver } from './spanner-resolver';
 import { SpillTracker, type StaveSpill } from './spill-tracker';
 import { StaveBuilder, type StaveColumn } from './stave-builder';
 import type { StavePlan } from './stave-plan';
@@ -72,6 +72,8 @@ export interface DrawPassOptions {
 	lyricDrops?: Map<string, number>;
 	/* Per system, how far to lift its volta bracket so it clears the notes under it. */
 	voltaLifts?: Map<number, number>;
+	/* Per system, the below-stave hairpins its words have to drop under. */
+	hairpinBands?: Map<number, HairpinBand[]>;
 }
 
 /* How far a system's ink reaches up and down, in the pass's scratch space. */
@@ -254,6 +256,7 @@ export class DrawPass {
 	private readonly spannerResolver: SpannerResolver;
 	// Measured on the previous pass and reserved on this one; empty on the first pass.
 	private readonly voltaLifts: Map<number, number>;
+	private readonly hairpinBands: Map<number, HairpinBand[]>;
 
 	constructor(
 		readonly translator: VoiceTranslator,
@@ -277,6 +280,7 @@ export class DrawPass {
 		opts: DrawPassOptions,
 	) {
 		this.voltaLifts = opts.voltaLifts ?? new Map();
+		this.hairpinBands = opts.hairpinBands ?? new Map();
 		const {
 			measureCount,
 			boxes,
@@ -476,6 +480,8 @@ export class DrawPass {
 		lyricsStepped: boolean;
 		observedVoltaLifts: Map<number, number>;
 		voltasLifted: boolean;
+		observedHairpinBands: Map<number, HairpinBand[]>;
+		hairpinsStacked: boolean;
 		systemExtents: Map<number, SystemExtent>;
 		staveLines: Map<number, SystemExtent>;
 		rawNotes: RawNote[];
@@ -601,6 +607,9 @@ export class DrawPass {
 			this.systemPending.push(...this.pendingStaves);
 			for (const p of this.pendingStaves) {
 				this.spannerResolver.registerStave(p.stave, p.row, this.systemIndex);
+				if (this.isSystemStart) {
+					this.addHairpinObstacles(p.stave, p.row);
+				}
 			}
 
 			// Chord symbols from this measure's <harmony> elements, each bound to the
@@ -1174,6 +1183,8 @@ export class DrawPass {
 		lyricsStepped: boolean;
 		observedVoltaLifts: Map<number, number>;
 		voltasLifted: boolean;
+		observedHairpinBands: Map<number, HairpinBand[]>;
+		hairpinsStacked: boolean;
 		systemExtents: Map<number, SystemExtent>;
 		staveLines: Map<number, SystemExtent>;
 		rawNotes: RawNote[];
@@ -1228,6 +1239,11 @@ export class DrawPass {
 			voltasLifted: [...this.observedVoltaLifts].some(
 				([system, lift]) => lift !== (this.voltaLifts.get(system) ?? 0),
 			),
+			observedHairpinBands: this.spannerResolver.observedHairpinBands(),
+			// Words this pass drew through a hairpin it had no band for yet.
+			hairpinsStacked: [
+				...this.spannerResolver.observedHairpinBands().keys(),
+			].some((system) => !this.hairpinBands.has(system)),
 			rawNotes: this.geometry.notes(),
 			rawMeasures: this.geometry.measures(),
 			rawChordDiagrams: this.geometry.chordDiagrams(),
@@ -1240,6 +1256,25 @@ export class DrawPass {
 			byLead: this.byLead,
 			byTabLead: this.byTabLead,
 		});
+	}
+
+	/*
+	 * The hairpins the previous pass drew under this stave row's words, as obstacles in the
+	 * system's collision index, so the words drop clear of them (see
+	 * SpannerResolver.observeStackedWords). Added with the row's first stave: the index is
+	 * cleared at each system boundary, and every word in the row is placed after this.
+	 */
+	private addHairpinObstacles(stave: Stave, row: number): void {
+		const lineTop = stave.getYForLine(0);
+		for (const band of this.hairpinBands.get(this.systemIndex) ?? []) {
+			if (band.row === row) {
+				this.collisionResolver.add({
+					rect: band.rect.translate(0, lineTop),
+					kind: 'hairpin',
+					band: row,
+				});
+			}
+		}
 	}
 
 	/* Which stave row (of this measure's column) a stave sits on: the collision band its

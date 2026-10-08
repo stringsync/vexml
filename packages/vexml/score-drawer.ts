@@ -197,6 +197,7 @@ export class ScoreDrawer {
 			drawnOpts = {
 				lyricDrops: pass.observedLyricDrops,
 				voltaLifts: pass.observedVoltaLifts,
+				hairpinBands: pass.observedHairpinBands,
 			};
 			pass = runPass(drawnLayout, drawnOverflow, pageHeight, drawnOpts);
 		}

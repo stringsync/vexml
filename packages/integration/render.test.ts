@@ -884,6 +884,9 @@ describe('render', () => {
 	//   into a diminuendo over the last three. Both wedges sit below the ledger-line noteheads
 	//   and the "3"s, clear of both, and on one line, so the pair reads as a single swell
 	//   rather than a step. Wraps to its own system.
+	// - M9: a below diminuendo over three B4s with a below "espressivo" on the first note
+	//   (Beethoven, An die ferne Geliebte m. 9). The hairpin keeps its place at the staff and
+	//   the words sit under it, clear of the wedge, rather than printed through it.
 	// ponytail: a hairpin that wraps across a system break isn't split into two partials the
 	// way a tie or slur is; no fixture reaches that yet.
 	it.concurrent('renders wedges.png', async () => {

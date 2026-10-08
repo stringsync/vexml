@@ -105,6 +105,8 @@ export class SpannerResolver {
 	// Every bow drawn so far, by the stave it bows over: a hairpin clears the slurs and ties
 	// on its stave, and a bow wrapping off the end of a system is drawn with the next one.
 	private readonly bows = new Map<Stave, Rect[]>();
+	// Per system, the below-stave hairpins a words direction ran into (see observeStackedWords).
+	private readonly stackedHairpins = new Map<number, HairpinBand[]>();
 
 	constructor(
 		private readonly context: RenderContext,
@@ -439,6 +441,7 @@ export class SpannerResolver {
 				this.spill.growHighestTop(placement.system, wedge.bounds.top);
 			}
 		}
+		this.observeStackedWords(wedges);
 		// Pedals draw under the stave (vexflow's getYForBottomText), below the notes, so
 		// grow the bottom crop to keep their "Ped…*" text / bracket from being clipped.
 		// ponytail: only the final crop is grown: a pedal on a non-last system isn't
@@ -534,6 +537,60 @@ export class SpannerResolver {
 			? scoped.liftClear(natural, WORDS_NOTE_CLEARANCE, {})
 			: scoped.dropClear(natural, WORDS_NOTE_CLEARANCE, {});
 		wedge.setOffset(wedge.above ? natural.y - placed.y : placed.y - natural.y);
+	}
+
+	/*
+	 * Below-stave words that a hairpin was drawn through. Words are placed with their measure
+	 * and hairpins only once their system is drawn, so the words never saw the wedge: record
+	 * the wedge's band so the next pass drops the words under it (see
+	 * DrawPassOptions.hairpinBands), and report the spill the words will take there so that
+	 * pass opens the gap to the stave below.
+	 */
+	private observeStackedWords(wedges: readonly Hairpin[]): void {
+		for (const wedge of wedges) {
+			const placement = this.staveRows.get(wedge.stave);
+			if (wedge.above || !placement) {
+				continue;
+			}
+			const rect = wedge.rect;
+			const scoped = new CollisionResolver(this.scratchViewport, {});
+			scoped.add({ rect, kind: 'hairpin' });
+			let stacked = false;
+			for (const words of this.directionPlacer.belowWordsOn(wedge.stave)) {
+				const dropped = scoped.dropClear(words, WORDS_NOTE_CLEARANCE, {});
+				if (dropped.y === words.y) {
+					continue;
+				}
+				stacked = true;
+				this.reporter.growPageBottom(dropped.bottom);
+				this.spill.recordDrop(
+					placement.system,
+					placement.row,
+					wedge.stave,
+					dropped,
+				);
+			}
+			if (!stacked) {
+				continue;
+			}
+			const lineTop = wedge.stave.getYForLine(0);
+			const band: HairpinBand = {
+				row: placement.row,
+				rect: rect.translate(0, -lineTop),
+			};
+			const bands = this.stackedHairpins.get(placement.system);
+			if (bands) {
+				bands.push(band);
+			} else {
+				this.stackedHairpins.set(placement.system, [band]);
+			}
+		}
+	}
+
+	/* Per system, the hairpins below-stave words ran into this pass, each relative to its
+	 * stave's top line. */
+	observedHairpinBands(): Map<number, HairpinBand[]> {
+		return this.stackedHairpins;
 	}
 
 	/*
@@ -732,4 +789,11 @@ export interface SpannerResolverOptions {
 	/** The system a document measure is drawn on: where a spanner reaching that measure
 	 * lands, before anything there is drawn. */
 	systemOfMeasure(measureIndex: number): number;
+}
+
+/* A hairpin below-stave words ran into: its stave row, and its box with y measured from the
+ * stave's top line, so the next pass can place it over its re-spaced stave. */
+export interface HairpinBand {
+	row: number;
+	rect: Rect;
 }
