@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import type { Note } from '@stringsync/vexml';
+import type { Note, TabPosition } from '@stringsync/vexml';
 import { testing } from './setup';
 
 describe('markers', () => {
@@ -205,5 +205,48 @@ describe('markers', () => {
 		expect(result.tinted).toBe('153,255,153,255');
 		expect(result.papered).toBe('0,102,0,255');
 		expect(result.topLayer).toBe(true);
+	});
+
+	// vexflow clears the tab lines behind a fret digit, and a decoration turned off clears its own
+	// layer. On screen each erases only its own canvas; in the loupe they once cut see-through
+	// holes in the paper, and the decoration's took the digit under it along.
+	it.concurrent('keeps the paper and the engraving under a clear in a loupe', async () => {
+		const { result } = await testing.eval(
+			'structure_notation_and_tab_parts.musicxml',
+			{},
+			async ({ score }) => {
+				const fret = score
+					.getElements()
+					.notes()
+					.map((note) => note.getTabPosition())
+					.find((position) => position !== null) as TabPosition;
+				fret.color.on('#2962ff');
+				fret.color.off();
+				const at = {
+					x: fret.rect.x + fret.rect.w / 2,
+					y: fret.rect.y + fret.rect.h / 2,
+				};
+				const loupe = score.createLoupe({ width: 40, height: 20, zoom: 2 });
+				loupe.show({ ...at, w: 0, h: 0 }, at);
+				await new Promise(requestAnimationFrame);
+				const canvas = document.querySelector(
+					'.vexml-loupe',
+				) as HTMLCanvasElement;
+				const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+				const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+				const alphas = pixels.filter((_, i) => i % 4 === 3);
+				const dark = Array.from({ length: pixels.length / 4 }, (_, i) =>
+					Array.from(pixels.slice(i * 4, i * 4 + 3)),
+				).filter((rgb) => rgb.every((v) => v < 80)).length;
+				score.dispose();
+				return {
+					seeThrough: alphas.filter((a) => a !== 255).length,
+					dark,
+				};
+			},
+		);
+
+		expect(result.seeThrough).toBe(0);
+		expect(result.dark).toBeGreaterThan(0);
 	});
 });

@@ -202,6 +202,67 @@ export class TiledSurface implements PaintSink, Resource {
 		region: Rect,
 		scale = this.scale,
 	): void {
+		const ops = this.grid.opsIn(region);
+		if (ops.some((op) => op.call.kind === 'clearRect')) {
+			this.composite(ctx, region, ops, scale);
+		} else {
+			this.replay(ctx, region, ops, scale);
+		}
+	}
+
+	dispose(): void {
+		this.reset();
+		this.plane.remove();
+	}
+
+	// A clear erases only this surface's own pixels on screen (its tiles are their own canvases),
+	// but replayed straight into a shared context it would erase whatever was painted there first:
+	// the loupe's paper, the layers under this one. So ops with a clear replay onto a scratch
+	// canvas covering the region's device box, which is then drawn over the target.
+	private composite(
+		ctx: CanvasRenderingContext2D,
+		region: Rect,
+		ops: PaintOp[],
+		scale: number,
+	): void {
+		const t = ctx.getTransform();
+		const box = new Affine(t.a, t.b, t.c, t.d, t.e, t.f).mapBox(
+			region.x,
+			region.y,
+			region.right,
+			region.bottom,
+		);
+		const x0 = Math.max(0, Math.floor(box.x));
+		const y0 = Math.max(0, Math.floor(box.y));
+		const x1 = Math.min(ctx.canvas.width, Math.ceil(box.right));
+		const y1 = Math.min(ctx.canvas.height, Math.ceil(box.bottom));
+		if (x1 <= x0 || y1 <= y0) {
+			return;
+		}
+		const canvas = document.createElement('canvas');
+		canvas.width = x1 - x0;
+		canvas.height = y1 - y0;
+		const scratch = canvas.getContext('2d');
+		if (!scratch) {
+			return;
+		}
+		scratch.setTransform(t.a, t.b, t.c, t.d, t.e - x0, t.f - y0);
+		this.replay(scratch, region, ops, scale);
+		ctx.save();
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		ctx.drawImage(canvas, x0, y0);
+		ctx.restore();
+		// Free the bitmap now rather than at the next GC (see Stage.dispose).
+		canvas.width = 0;
+		canvas.height = 0;
+	}
+
+	private replay(
+		ctx: CanvasRenderingContext2D,
+		region: Rect,
+		ops: PaintOp[],
+		scale: number,
+	): void {
 		const t = ctx.getTransform();
 		const base = new Affine(t.a, t.b, t.c, t.d, t.e, t.f).multiply(
 			Affine.translate(this.grid.origin.x, this.grid.origin.y),
@@ -211,16 +272,11 @@ export class TiledSurface implements PaintSink, Resource {
 		ctx.rect(region.x, region.y, region.w, region.h);
 		ctx.clip();
 		const replayer = new PaintReplayer(ctx, base, { scale, device: null });
-		for (const op of this.grid.opsIn(region)) {
+		for (const op of ops) {
 			replayer.replay(op);
 		}
 		replayer.finish();
 		ctx.restore();
-	}
-
-	dispose(): void {
-		this.reset();
-		this.plane.remove();
 	}
 
 	private refresh(): void {
