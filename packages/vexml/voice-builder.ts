@@ -1,4 +1,9 @@
-import { type Chord, groupBeamRuns, type Note } from '@stringsync/mdom';
+import {
+	type Chord,
+	groupBeamRuns,
+	type Measure,
+	type Note,
+} from '@stringsync/mdom';
 import {
 	BarNote,
 	GhostNote,
@@ -75,6 +80,9 @@ export class VoiceBuilder {
 	// The ghosts each staff put in for a note its voice drew on another staff (see
 	// VoiceTickablesOptions.run), by that note's lead, until the part's tuplets exist.
 	private readonly standIns = new Map<Note, GhostNote[]>();
+	// The stem direction of every note in a beam group crossing the current part's staves,
+	// settled before any of them is built (see planStems).
+	private plannedStems = new Map<Note, 'up' | 'down'>();
 
 	constructor(
 		private readonly translator: VoiceTranslator,
@@ -94,6 +102,88 @@ export class VoiceBuilder {
 	 * the reference is stable. */
 	crossStaveNotes(): ReadonlySet<StaveNote> {
 		return this.crossStave;
+	}
+
+	/*
+	 * Settle the stem direction of each beam group in this measure of a part that crosses its
+	 * staves, before any stave is built, so each note is built pointing the way the beam
+	 * needs (see buildPartBeams for the rule). `staffNumbers` are the part's visible staves,
+	 * top first.
+	 */
+	planStems(measure: Measure, staffNumbers: readonly string[]): void {
+		this.plannedStems = new Map();
+		const rowOf = new Map(staffNumbers.map((staff, row) => [staff, row]));
+		for (const staffNumber of staffNumbers) {
+			const staffVoices = this.reader.staffVoices(measure, staffNumber);
+			staffVoices.forEach((voice, voiceIndex) => {
+				if (voice.beamChords === null) {
+					return;
+				}
+				const defaultStem = voiceStem(voiceIndex, staffVoices.length);
+				const chordOf = new Map(voice.beamChords.map((c) => [c.lead, c]));
+				for (const group of groupBeamRuns(
+					voice.beamChords.map((c) => c.lead),
+				)) {
+					// Each chord's noteheads per row: a chord split across staves draws a note on each.
+					const chords = group.notes.map((lead) => {
+						const heads = new Map<number, number>();
+						for (const note of chordOf.get(lead)?.notes ?? []) {
+							const row = rowOf.get(note.staff);
+							if (row !== undefined) {
+								heads.set(row, (heads.get(row) ?? 0) + 1);
+							}
+						}
+						return heads;
+					});
+					const rows = new Set(chords.flatMap((heads) => [...heads.keys()]));
+					if (rows.size <= 1) {
+						continue;
+					}
+					const bottom = Math.max(...rows);
+					let below = 0;
+					for (const heads of chords) {
+						let lean = 0;
+						for (const [row, count] of heads) {
+							lean += row === bottom ? count : -count;
+						}
+						below += lean > 0 ? 1 : -1;
+					}
+					const stem = defaultStem ?? (below > 0 ? 'up' : 'down');
+					for (const lead of group.notes) {
+						for (const note of chordOf.get(lead)?.notes ?? []) {
+							this.plannedStems.set(note, stem);
+						}
+					}
+				}
+			});
+		}
+	}
+
+	/*
+	 * The beam groups of a voice whose stems vexflow would choose (no written <stem>, no voice
+	 * default) and whose notes all sit on this staff: the translator builds them already
+	 * pointing the group's way. Groups crossing staves are planStems' instead.
+	 */
+	private autoBeams(
+		voice: StaffVoice,
+		defaultStem: 'up' | 'down' | undefined,
+	): Note[][] {
+		if (voice.beamChords === null || defaultStem) {
+			return [];
+		}
+		// By lead and notehead count, not Chord identity: mdom builds fresh Chords per read.
+		const heads = new Map(voice.chords.map((c) => [c.lead, c.notes.length]));
+		const whole = new Map(
+			voice.beamChords.map((c) => [
+				c.lead,
+				heads.get(c.lead) === c.notes.length,
+			]),
+		);
+		return groupBeamRuns(voice.beamChords.map((c) => c.lead))
+			.map((group) => group.notes)
+			.filter((leads) =>
+				leads.every((lead) => !lead.stem && whole.get(lead) === true),
+			);
 	}
 
 	/*
@@ -129,17 +219,7 @@ export class VoiceBuilder {
 		const tiedNotes = new Set<StaveNote>();
 		const noteChords: Array<{ note: StaveNote; chord: Chord }> = [];
 		const graceChords: Array<{ note: StaveNote; chord: Chord }> = [];
-		// Voices sharing a stave stem apart even without explicit <stem>s: the first
-		// voice up, the rest down (engraving convention; matches how exporters that do
-		// write <stem>s separate voices). A lone voice keeps position-based auto-stems.
-		// ponytail: 3+ voices all stem down after the first; alternate up/down if a
-		// real 3-voice-per-stave score ever shows up.
-		const stemFor = (index: number): 'up' | 'down' | undefined => {
-			if (voices.length <= 1) {
-				return undefined;
-			}
-			return index === 0 ? 'up' : 'down';
-		};
+		const stemFor = (index: number) => voiceStem(index, voices.length);
 		// A mid-measure divider belongs to the measure, not to a voice, so it goes in the
 		// first voice only: a second copy in each of the others would draw the same line
 		// again at the same x.
@@ -160,6 +240,8 @@ export class VoiceBuilder {
 			const tickables = this.translator.tickables(chords, clef, {
 				endBeat,
 				run: voice.run,
+				autoBeams: this.autoBeams(voice, stemFor(voiceIndex)),
+				stemOf: (lead) => this.plannedStems.get(lead),
 				recordStandIn: (lead, ghost) => {
 					const ghosts = this.standIns.get(lead);
 					if (ghosts) {
@@ -356,7 +438,10 @@ export class VoiceBuilder {
 						const direction = stem === 'up' ? Stem.UP : Stem.DOWN;
 						const top = Math.min(...notes.map((note) => rowOf.get(note) ?? 0));
 						for (const note of notes) {
-							note.setStemDirection(direction);
+							// planStems built them this way already; a re-stem would rebuild the heads.
+							if (note.getStemDirection() !== direction) {
+								note.setStemDirection(direction);
+							}
 							// Only a stem pointing at the group's other stave crosses the gap; one
 							// pointing away (the top stave's stems when the beam is above it) is an
 							// ordinary stem and still needs room past its own stave.
@@ -500,4 +585,18 @@ function sidesBelow(
 		below += lean > 0 ? 1 : -1;
 	}
 	return below > 0;
+}
+
+/*
+ * Voices sharing a stave stem apart even without explicit <stem>s: the first voice up, the
+ * rest down (engraving convention; matches how exporters that do write <stem>s separate
+ * voices). A lone voice keeps position-based auto-stems.
+ * ponytail: 3+ voices all stem down after the first; alternate up/down if a real
+ * 3-voice-per-stave score ever shows up.
+ */
+function voiceStem(index: number, count: number): 'up' | 'down' | undefined {
+	if (count <= 1) {
+		return undefined;
+	}
+	return index === 0 ? 'up' : 'down';
 }

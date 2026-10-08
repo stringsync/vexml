@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import type { Chord, Note } from '@stringsync/mdom';
+import type { Chord, Measure, Note } from '@stringsync/mdom';
 import {
 	BarNote,
 	GhostNote,
@@ -36,7 +36,7 @@ describe('VoiceBuilder', () => {
 		}) as unknown as Note;
 
 	const chordOf = (l: Note, measureBeat: number) =>
-		({ lead: l, measureBeat }) as unknown as Chord;
+		({ lead: l, notes: [l], measureBeat }) as unknown as Chord;
 
 	const staffVoice = (
 		chords: Chord[],
@@ -45,11 +45,13 @@ describe('VoiceBuilder', () => {
 
 	// A built note the way buildPartBeams sees one: identity, a notehead count, and a
 	// recorded stem set.
-	const staveNote = (mods: unknown[] = [], heads = 1) => {
+	const staveNote = (mods: unknown[] = [], heads = 1, built = 0) => {
 		const note = {
 			stemDirections: [] as number[],
 			getModifiers: () => mods,
 			getKeyProps: () => Array.from({ length: heads }, () => ({ line: 3 })),
+			// `built` is the direction the note was constructed with (0: none settled yet).
+			getStemDirection: () => note.stemDirections.at(-1) ?? built,
 			setStemDirection: (direction: number) => {
 				note.stemDirections.push(direction);
 			},
@@ -137,6 +139,7 @@ describe('VoiceBuilder', () => {
 			octaveShiftByNote?: Map<Note, number>;
 			byLead?: Map<Note, StaveNote>;
 			byTabLead?: Map<Note, TabNote>;
+			staffVoices?: (staffNumber: string) => StaffVoice[];
 		} = {},
 	) =>
 		new VoiceBuilder(
@@ -145,6 +148,8 @@ describe('VoiceBuilder', () => {
 			{
 				endBeatOf: () => overrides.endBeat ?? 0,
 				measureBeatOf: (note: Note) => note.measureBeat,
+				staffVoices: (_voices: unknown, staffNumber: string) =>
+					overrides.staffVoices?.(staffNumber) ?? [],
 			} as unknown as ScoreReader,
 			(overrides.spanners ?? fakeSpanners()) as unknown as SpannerBuilder,
 			{
@@ -451,6 +456,75 @@ describe('VoiceBuilder', () => {
 		]);
 
 		expect(spanners.beamCalls[0]?.stem).toBe('down');
+	});
+
+	it('leaves a note built with the group’s stem alone', () => {
+		const a = lead();
+		const b = lead();
+		const noteA = staveNote([], 1, Stem.DOWN);
+		const noteB = staveNote([], 1, Stem.DOWN);
+		const builder = makeBuilder({
+			spanners,
+			byLead: new Map([
+				[a, noteA],
+				[b, noteB],
+			]),
+		});
+		builder.buildPartBeams([
+			pendingStave({ staveNotes: [noteA], beamPlans: [beamPlan([a, b])] }),
+			pendingStave({ row: 1, staveNotes: [noteB] }),
+		]);
+
+		// Already pointing the beam's way: a re-stem would only rebuild the noteheads.
+		expect(noteA.stemDirections).toEqual([]);
+		expect(noteB.stemDirections).toEqual([]);
+		expect(spanners.beamCalls[0]?.stem).toBe('down');
+	});
+
+	it('plans a cross-staff group’s stems before either staff is built', () => {
+		const begin = lead({ staff: '1', beams: [{ number: '1', text: 'begin' }] });
+		const member = lead({ staff: '2', isChordMember: true });
+		const other = lead({ staff: '2', isChordMember: true });
+		const end = lead({ staff: '2', beams: [{ number: '1', text: 'end' }] });
+		const first = {
+			lead: begin,
+			notes: [begin, member, other],
+		} as unknown as Chord;
+		const last = { lead: end, notes: [end] } as unknown as Chord;
+		const translator = fakeTranslator();
+		const builder = makeBuilder({
+			translator,
+			staffVoices: (staff) =>
+				staff === '1' ? [staffVoice([first], [first, last])] : [],
+		});
+		builder.planStems({} as Measure, ['1', '2']);
+		buildNotes(builder, [staffVoice([first])]);
+
+		// Both chords hold most of their noteheads on the bottom stave: the stems rise from it.
+		const stemOf = translator.calls[0]?.opts.stemOf;
+		expect([begin, member, other, end].map((note) => stemOf?.(note))).toEqual([
+			'up',
+			'up',
+			'up',
+			'up',
+		]);
+	});
+
+	it('hands the translator a lone voice’s same-staff unstemmed beam groups', () => {
+		const begin = lead({ staff: '1', beams: [{ number: '1', text: 'begin' }] });
+		const end = lead({ staff: '1', beams: [{ number: '1', text: 'end' }] });
+		const stemmed = lead({
+			staff: '1',
+			stem: 'up',
+			beams: [{ number: '1', text: 'begin' }],
+		});
+		const close = lead({ staff: '1', beams: [{ number: '1', text: 'end' }] });
+		const chords = [begin, end, stemmed, close].map((l) => chordOf(l, 0));
+		const translator = fakeTranslator();
+		buildNotes(makeBuilder({ translator }), [staffVoice(chords, chords)]);
+
+		// The written <stem> keeps the second group's notes their own.
+		expect(translator.calls[0]?.opts.autoBeams).toEqual([[begin, end]]);
 	});
 
 	it('honors a shared-stave voice’s up stem across the staves', () => {

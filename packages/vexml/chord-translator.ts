@@ -6,7 +6,9 @@ import {
 	Modifier,
 	Parenthesis,
 	StaveNote,
+	type StaveNoteStruct,
 	Stem,
+	VexFlow,
 } from 'vexflow/core';
 import type { DurationTranslator } from './duration-translator';
 import { InvisibleStaveNote } from './invisible-stave-note';
@@ -40,6 +42,9 @@ export const ACCIDENTAL_CODES: Record<string, string> = {
  * ornaments, lyrics) is NotationTranslator's half.
  */
 export class ChordTranslator {
+	// Each note's vexflow key, spelled once: the layout and both draw passes build every note.
+	private readonly keys = new Map<Note, string>();
+
 	constructor(
 		private readonly durations: DurationTranslator,
 		private readonly notations: NotationTranslator,
@@ -59,20 +64,85 @@ export class ChordTranslator {
 	 * direction, and articulations.
 	 */
 	staveNote(chord: Chord, clef: string, opts: VexflowChordOptions): StaveNote {
-		const { alignCenter = false, octaveShift = 0, defaultStem } = opts;
+		const { octaveShift = 0 } = opts;
 		const lead = chord.lead;
-		const duration = this.durations.code(lead);
 		// A hidden note builds as an InvisibleStaveNote: same formatting, no glyphs drawn.
 		// ponytail: hiding is read off the lead only, so a chord with a mix of hidden and
 		// visible members draws all of them; add per-notehead hiding if a fixture needs it.
 		const NoteClass = lead.printObject ? StaveNote : InvisibleStaveNote;
+		if (lead.isRest) {
+			const rest = new NoteClass(this.struct(chord, clef, opts));
+			this.addDots(rest, lead);
+			return rest;
+		}
+		if (lead.isGrace) {
+			const grace = new GraceNote({
+				keys: chord.notes.map((note) => this.vexflowKey(note)),
+				duration: this.durations.code(lead),
+				// Without this vexflow falls back to 'treble' and a grace on any other stave
+				// lands at the wrong staff position: a bass-clef G3 grace drops below the
+				// stave on ledger lines instead of sitting on the top space.
+				clef,
+				octaveShift,
+				// slash="yes" on the <grace> element marks an acciaccatura (a stroke
+				// through the stem/flag); its absence is a plain appoggiatura.
+				slash: lead.graceSlash,
+			});
+			this.addAccidentals(grace, chord);
+			return grace;
+		}
+		const staveNote = new NoteClass(this.struct(chord, clef, opts));
+		this.addAccidentals(staveNote, chord);
+		this.addParentheses(staveNote, chord);
+		this.addDots(staveNote, lead);
+		this.applyStemNone(staveNote, lead);
+		this.addSlashNoteheads(staveNote, chord);
+		this.notations.attach(staveNote, chord);
+		return staveNote;
+	}
+
+	/*
+	 * The staff line of each key the chord's StaveNote would hold (vexflow's keyProps lines,
+	 * 0 the bottom line), without building it: what a beam group's stem direction is decided
+	 * from before its notes exist. Grace notes have none (they never join a main beam).
+	 */
+	keyLines(chord: Chord, clef: string, opts: VexflowChordOptions): number[] {
+		if (chord.lead.isGrace) {
+			return [];
+		}
+		const {
+			keys,
+			clef: keyClef,
+			octaveShift = 0,
+		} = this.struct(chord, clef, opts);
+		// vexflow's own key -> line rule (StaveNote.calculateKeyProps), minus the octave
+		// shift it applies there: seven half-line steps an octave.
+		return keys.map(
+			(key) => VexFlow.keyProperties(key, keyClef).line - 3.5 * octaveShift,
+		);
+	}
+
+	/*
+	 * The StaveNote constructor settings for a rest or a pitched chord, stem included. The
+	 * stem direction goes in here rather than through setStemDirection afterwards: vexflow
+	 * rebuilds every notehead on each setStemDirection, so a note built with its direction
+	 * builds them once.
+	 */
+	private struct(
+		chord: Chord,
+		clef: string,
+		opts: VexflowChordOptions,
+	): StaveNoteStruct & { keys: string[]; clef?: string } {
+		const { alignCenter = false, octaveShift = 0, defaultStem, stem } = opts;
+		const lead = chord.lead;
+		const duration = this.durations.code(lead);
 		// Pass `dots` to the constructor so vexflow counts the dot(s) in the note's ticks
 		// (Dot.buildAndAttach only draws the glyph, it never changes duration). Without it
 		// a dotted note is one tick-position short and its voice falls out of alignment
 		// with the others sharing the stave.
 		if (lead.isRest) {
 			const restKey = this.pitchedRestKey(lead);
-			const rest = new NoteClass({
+			return {
 				keys: [
 					restKey ??
 						(defaultStem ? VOICE_REST_KEY[defaultStem] : undefined) ??
@@ -88,43 +158,37 @@ export class ChordTranslator {
 				// A whole rest alone in a measure is a full-measure rest: engraving convention
 				// centers it horizontally (the formatter does the centering, see VoiceTranslator.tickables).
 				alignCenter,
-			});
-			this.addDots(rest, lead);
-			return rest;
+				// A rest stems up unless its beam group settled otherwise.
+				stemDirection: stem ? STEM[stem] : undefined,
+			};
 		}
-		if (lead.isGrace) {
-			const grace = new GraceNote({
-				keys: chord.notes.map((note) => this.vexflowKey(note)),
-				duration,
-				// Without this vexflow falls back to 'treble' and a grace on any other stave
-				// lands at the wrong staff position: a bass-clef G3 grace drops below the
-				// stave on ledger lines instead of sitting on the top space.
-				clef,
-				octaveShift,
-				// slash="yes" on the <grace> element marks an acciaccatura (a stroke
-				// through the stem/flag); its absence is a plain appoggiatura.
-				slash: lead.graceSlash,
-			});
-			this.addAccidentals(grace, chord);
-			return grace;
-		}
-		const staveNote = new NoteClass({
+		const direction = stem ?? this.stemOf(lead, defaultStem);
+		return {
 			keys: chord.notes.map((note) => this.vexflowKey(note)),
 			duration,
 			dots: lead.dots,
 			clef,
 			octaveShift,
-			// No explicit <stem> and no voice default: let vexflow choose the direction
-			// from staff position.
-			autoStem: !lead.stem && !defaultStem,
-		});
-		this.addAccidentals(staveNote, chord);
-		this.addParentheses(staveNote, chord);
-		this.addDots(staveNote, lead);
-		this.applyStem(staveNote, lead, defaultStem);
-		this.addSlashNoteheads(staveNote, chord);
-		this.notations.attach(staveNote, chord);
-		return staveNote;
+			stemDirection: direction ? STEM[direction] : undefined,
+			// No direction from anywhere: let vexflow choose it from staff position.
+			autoStem: !direction && !lead.stem,
+		};
+	}
+
+	/*
+	 * Honor an explicit <stem>up|down (e.g. to separate two voices on one stave). Absent, fall
+	 * back to the voice's default direction (multi-voice staves stem apart even when the
+	 * exporter omits <stem>), else none: the caller auto-picks from staff position. A written
+	 * <stem>none or double has no direction either, and vexflow's default up stands.
+	 */
+	private stemOf(
+		note: Note,
+		defaultStem?: 'up' | 'down',
+	): 'up' | 'down' | undefined {
+		if (note.stem === 'up' || note.stem === 'down') {
+			return note.stem;
+		}
+		return note.stem ? undefined : defaultStem;
 	}
 
 	/*
@@ -172,6 +236,15 @@ export class ChordTranslator {
 	 * head shapes. Rests have neither; callers handle them.
 	 */
 	private vexflowKey(note: Note): string {
+		let key = this.keys.get(note);
+		if (key === undefined) {
+			key = this.spellKey(note);
+			this.keys.set(note, key);
+		}
+		return key;
+	}
+
+	private spellKey(note: Note): string {
 		const pitch = note.pitch;
 		const key = pitch
 			? `${pitch.step.toLowerCase()}/${pitch.octave}`
@@ -280,43 +353,26 @@ export class ChordTranslator {
 	}
 
 	/*
-	 * Honor an explicit <stem>up|down (e.g. to separate two voices on one stave), or
-	 * <stem>none (bare noteheads, as in a rhythm/chord chart). Absent, fall back to the
-	 * voice's default direction (multi-voice staves stem apart even when the exporter
-	 * omits <stem>), else auto-pick from staff position (see
-	 * staveNote's auto_stem).
+	 * <stem>none: bare noteheads, as in a rhythm/chord chart. vexflow gates the stem on
+	 * glyphProps.stem and the flag on glyphProps.codeFlagUp, so clearing both drops each.
+	 * Replace the object rather than mutating it: it can be the shared entry from vexflow's
+	 * duration table (see Note.getGlyphProps).
+	 * ponytail: <stem>double is left alone: no double stems in vexflow.
 	 */
-	private applyStem(
-		staveNote: StaveNote,
-		note: Note,
-		defaultStem?: 'up' | 'down',
-	): void {
-		switch (note.stem ?? defaultStem) {
-			case 'up':
-				staveNote.setStemDirection(Stem.UP);
-				break;
-			case 'down':
-				staveNote.setStemDirection(Stem.DOWN);
-				break;
-			case 'none':
-				// vexflow gates the stem on glyphProps.stem and the flag on glyphProps.codeFlagUp,
-				// so clearing both drops each. Replace the object rather than mutating it: it can
-				// be the shared entry from vexflow's duration table (see Note.getGlyphProps).
-				// ponytail: <stem>double is left alone: no double stems in vexflow.
-				staveNote.glyphProps = {
-					...staveNote.glyphProps,
-					stem: false,
-					codeFlagUp: undefined,
-				};
-				break;
+	private applyStemNone(staveNote: StaveNote, note: Note): void {
+		if (note.stem === 'none') {
+			staveNote.glyphProps = {
+				...staveNote.glyphProps,
+				stem: false,
+				codeFlagUp: undefined,
+			};
 		}
 	}
 
 	/*
-	 * Replace each slash-head chord member's glyph with the SMuFL slash bar. Must run AFTER
-	 * applyStem: setStemDirection rebuilds the noteheads from scratch and would wipe the override.
-	 * ponytail: beamed slash notes lose this (the Beam resets stem direction, hence the heads,
-	 * after construction); add a post-beam re-apply in spanner-builder if that case shows up.
+	 * Replace each slash-head chord member's glyph with the SMuFL slash bar. A later
+	 * setStemDirection would rebuild the noteheads from scratch and wipe the override, which is
+	 * why every stem direction, a beam group's included, is settled at construction.
 	 */
 	private addSlashNoteheads(staveNote: StaveNote, chord: Chord): void {
 		const byDuration =
@@ -349,7 +405,12 @@ interface VexflowChordOptions {
 	/* Stem direction for notes without an explicit <stem>, set when multiple voices
 	 * share the stave (voice 1 up, the rest down) so the voices stem apart. */
 	defaultStem?: 'up' | 'down';
+	/* The direction the note's beam group settled on, which wins over both of the above: a
+	 * beam stems its notes one way (see VoiceTranslator.tickables, VoiceBuilder.planStems). */
+	stem?: 'up' | 'down';
 }
+
+const STEM = { up: Stem.UP, down: Stem.DOWN } as const;
 
 // Raw SMuFL codepoints (accidentalBracketLeft, accidentalBracketRight) because vexflow has no
 // bracketed accidental of its own (see ChordTranslator.addAccidentals).

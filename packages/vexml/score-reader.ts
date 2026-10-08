@@ -23,6 +23,15 @@ import type { Jump } from './sequence';
 export class ScoreReader {
 	private readonly measureBeats = new Map<Note, number | null>();
 	private readonly lengths = new Map<Note, number | null>();
+	// Read per measure and staff by the layout and every draw pass alike.
+	private readonly midClefCache = new WeakMap<
+		Measure,
+		Map<string, { beat: number; clef: Clef }[]>
+	>();
+	private readonly staffVoiceCache = new WeakMap<
+		Measure,
+		Map<string, StaffVoice[]>
+	>();
 
 	// Only to answer whether a dynamic marking can be drawn as music (see dynamicsOf). The
 	// spelling itself belongs to the draw pass, not to a read.
@@ -63,9 +72,27 @@ export class ScoreReader {
 	 * single-staff case is untouched.
 	 *
 	 * The layout (measuring) and draw passes must select identically, so the projection lives
-	 * here.
+	 * here, read once per measure and staff: mdom rebuilds a measure's voices and chords on
+	 * every read, and the layout, the stem planner and each draw pass all ask.
 	 */
-	staffVoices(voices: ScoreVoice[], staffNumber: string): StaffVoice[] {
+	staffVoices(measure: Measure, staffNumber: string): StaffVoice[] {
+		let byStaff = this.staffVoiceCache.get(measure);
+		if (!byStaff) {
+			byStaff = new Map();
+			this.staffVoiceCache.set(measure, byStaff);
+		}
+		let staffVoices = byStaff.get(staffNumber);
+		if (!staffVoices) {
+			staffVoices = this.projectVoices(measure.voices, staffNumber);
+			byStaff.set(staffNumber, staffVoices);
+		}
+		return staffVoices;
+	}
+
+	private projectVoices(
+		voices: ScoreVoice[],
+		staffNumber: string,
+	): StaffVoice[] {
 		const out: StaffVoice[] = [];
 		for (const voice of voices) {
 			const chords: Chord[] = [];
@@ -184,9 +211,19 @@ export class ScoreReader {
 		measure: Measure,
 		staffNumber: string,
 	): { beat: number; clef: Clef }[] {
-		return measure
-			.clefChanges(staffNumber)
-			.filter((change) => change.beat > EPSILON);
+		let byStaff = this.midClefCache.get(measure);
+		if (!byStaff) {
+			byStaff = new Map();
+			this.midClefCache.set(measure, byStaff);
+		}
+		let changes = byStaff.get(staffNumber);
+		if (!changes) {
+			changes = measure
+				.clefChanges(staffNumber)
+				.filter((change) => change.beat > EPSILON);
+			byStaff.set(staffNumber, changes);
+		}
+		return changes;
 	}
 
 	/*

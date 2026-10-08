@@ -11,6 +11,7 @@ import type { PaintProp, PaintState } from './paint-state';
 export class CanvasPaintProbe implements PaintProbe {
 	private readonly ctx: CanvasRenderingContext2D;
 	private readonly metrics = new Map<string, TextMetrics>();
+	private readonly normalized = new Map<string, unknown>();
 
 	constructor() {
 		const canvas = document.createElement('canvas');
@@ -24,10 +25,26 @@ export class CanvasPaintProbe implements PaintProbe {
 	}
 
 	normalize(prop: PaintProp, value: unknown, current: unknown): unknown {
+		// A string or number reads back the same every time, and every element sets its style
+		// afresh, so the few distinct ones are worth remembering. A gradient or pattern isn't.
+		const key =
+			isPrimitive(value) && isPrimitive(current)
+				? `${prop}|${typeof value}:${value}|${typeof current}:${current}`
+				: null;
+		if (key !== null && this.normalized.has(key)) {
+			return this.normalized.get(key);
+		}
 		const ctx = this.ctx as unknown as Record<PaintProp, unknown>;
 		ctx[prop] = current;
 		ctx[prop] = value;
-		return ctx[prop];
+		const normalized = ctx[prop];
+		if (key !== null) {
+			if (this.normalized.size >= MAX_CACHED_METRICS) {
+				this.normalized.clear();
+			}
+			this.normalized.set(key, normalized);
+		}
+		return normalized;
 	}
 
 	measureText(state: PaintState, text: string): TextMetrics {
@@ -139,3 +156,11 @@ const TEXT_PROPS: PaintProp[] = [
 	'textAlign',
 	'textBaseline',
 ];
+
+function isPrimitive(value: unknown): value is string | number | undefined {
+	return (
+		typeof value === 'string' ||
+		typeof value === 'number' ||
+		value === undefined
+	);
+}

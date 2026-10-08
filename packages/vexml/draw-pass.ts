@@ -450,8 +450,21 @@ export class DrawPass {
 				directionLineSpans,
 				showTabSlideText,
 				scratchViewport: this.scratchViewport,
+				systemOfMeasure: (m) => this.systemOfMeasure(m),
 			},
 		);
+	}
+
+	/* The system measure `m` is drawn on; a measure inside a multirest run is drawn on its
+	 * lead's. */
+	private systemOfMeasure(m: number): number {
+		for (let i = Math.min(m, this.boxes.length - 1); i >= 0; i--) {
+			const box = this.boxes[i];
+			if (box) {
+				return box.systemIndex;
+			}
+		}
+		return 0;
 	}
 
 	run(): {
@@ -560,6 +573,8 @@ export class DrawPass {
 			let partTop: Stave | undefined;
 			let partBottom: Stave | undefined;
 			this.pendingStaves = [];
+			// Before the first stave: a beam crossing staves stems both staves' notes one way.
+			this.voiceBuilder.planStems(measure, staves);
 
 			for (const staffNumber of staves) {
 				const stave = this.buildStave(
@@ -891,6 +906,7 @@ export class DrawPass {
 	private beginSystem(): void {
 		if (this.systemIndex !== this.currentSystem) {
 			if (this.currentSystem >= 0) {
+				this.resolveSpanners(this.currentSystem);
 				this.systemBottoms.set(this.currentSystem, this.systemContentBottom);
 				// Gap below the previous system, plus room reserved for this system's own
 				// upward overflow (high notes/ledger lines) so they clear it, not collide.
@@ -900,6 +916,7 @@ export class DrawPass {
 					(this.topOverflow.get(this.systemIndex) ?? 0);
 			}
 			this.currentSystem = this.systemIndex;
+			this.spannerResolver.beginSystem(this.systemIndex);
 			this.systemContentBottom = this.systemTopY;
 			this.spill.recordSystemTop(this.systemIndex, this.systemTopY);
 			// Leaving the previous system: flag anything that escaped the canvas, then reset
@@ -960,7 +977,7 @@ export class DrawPass {
 			return stave;
 		}
 
-		const voices = this.reader.staffVoices(measure.voices, staffNumber);
+		const voices = this.reader.staffVoices(measure, staffNumber);
 		if (built.isTab && voices.length > 0) {
 			this.pendingStaves.push(
 				this.voiceBuilder.buildTabNotes(
@@ -1167,17 +1184,11 @@ export class DrawPass {
 		// for clipped content here.
 		this.warnEscapes();
 		if (this.currentSystem >= 0) {
+			this.resolveSpanners(this.currentSystem);
 			this.systemBottoms.set(this.currentSystem, this.systemContentBottom);
 		}
 
 		this.geometry.applyDecorationTops(this.spill);
-
-		// Every note is placed now, so the whole-score spanners can finally find both of
-		// their endpoints and draw last, on top of the notes.
-		this.spannerResolver.resolve({
-			byLead: this.byLead,
-			byTabLead: this.byTabLead,
-		});
 
 		// A verse hangs below its stave, in the gap to the stave under it, so it's spill like
 		// any other ink there: a beam or slur the lower stave raises into the gap has to clear
@@ -1221,6 +1232,14 @@ export class DrawPass {
 			rawMeasures: this.geometry.measures(),
 			rawChordDiagrams: this.geometry.chordDiagrams(),
 		};
+	}
+
+	/* Draw the spanners `system` completes, on top of its notes, now that they are placed. */
+	private resolveSpanners(system: number): void {
+		this.spannerResolver.resolveSystem(system, {
+			byLead: this.byLead,
+			byTabLead: this.byTabLead,
+		});
 	}
 
 	/* Which stave row (of this measure's column) a stave sits on: the collision band its

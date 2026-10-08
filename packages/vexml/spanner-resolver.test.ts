@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import type { Chord, Note } from '@stringsync/mdom';
 import type { RenderContext, Stave, StaveNote, TabNote } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
@@ -6,7 +6,11 @@ import { WORDS_NOTE_CLEARANCE } from './constants';
 import type { DirectionLineTask, DirectionPlacer } from './direction-placer';
 import type { Hairpin } from './hairpin';
 import type { DirectionLineSpan, PedalMark, WedgeMark } from './score-reader';
-import type { SpannerBuilder } from './spanner-builder';
+import type {
+	SlideOptions,
+	SpannerBuilder,
+	SpanScope,
+} from './spanner-builder';
 import {
 	SpannerResolver,
 	type SpannerResolverOptions,
@@ -121,6 +125,7 @@ describe('SpannerResolver', () => {
 				directionLineSpans: [],
 				showTabSlideText: true,
 				scratchViewport: new Rect(0, 0, 1000, 1000),
+				systemOfMeasure: () => 0,
 				...opts,
 			},
 		);
@@ -169,9 +174,9 @@ describe('SpannerResolver', () => {
 			buildSlides: (
 				_chords: Chord[],
 				_map: Map<Note, TabNote>,
-				showText: boolean,
+				opts: SlideOptions,
 			) => {
-				slideText = showText;
+				slideText = opts.showText;
 				return [drawable(drawn, 'slide')];
 			},
 		} as unknown as Partial<SpannerBuilder>);
@@ -392,15 +397,25 @@ describe('SpannerResolver', () => {
 	it('resolves direction-line endpoints through the lead map', () => {
 		const from = {} as Note;
 		const to = {} as Note;
+		const hidden = {} as Note;
 		const start = {} as StaveNote;
+		const stop = {} as StaveNote;
 		const span = { from, to } as DirectionLineSpan;
+		const half = { from, to: hidden } as DirectionLineSpan;
 		const { resolver, directionLines } = resolverOf(
 			{},
-			{ directionLineSpans: [span] },
+			{ directionLineSpans: [span, half] },
 		);
-		// Only the start resolves; a stop on a hidden staff stays undefined.
-		resolver.resolve(anchors(new Map([[from, start]])));
-		expect(directionLines).toEqual([{ span, start, stop: undefined }]);
+		// A stop on a hidden staff has no note to reach, so that line is left out.
+		resolver.resolve(
+			anchors(
+				new Map([
+					[from, start],
+					[to, stop],
+				]),
+			),
+		);
+		expect(directionLines).toEqual([{ span, start, stop }]);
 	});
 
 	it('answers system lookups only for registered staves', () => {
@@ -409,5 +424,130 @@ describe('SpannerResolver', () => {
 		expect(resolver.systemOf(s)).toBeUndefined();
 		resolver.registerStave(s, 0, 3);
 		expect(resolver.systemOf(s)).toBe(3);
+	});
+
+	// Across a system break: two systems of one stave each, and a note on each, `a` closing
+	// system 0 and `b` opening 1.
+	const top = stave({ y: 90 });
+	const bottom = stave({ y: 290 });
+	const a = { measure: { index: 0 } } as unknown as Note;
+	const b = { measure: { index: 1 } } as unknown as Note;
+	const onTop = { getStave: () => top } as unknown as StaveNote;
+	const onBottom = { getStave: () => bottom } as unknown as StaveNote;
+	const systems = [
+		{ stave: top, lead: a, note: onTop },
+		{ stave: bottom, lead: b, note: onBottom },
+	];
+	let drawn: string[];
+	let byLead: Map<Note, StaveNote>;
+
+	beforeEach(() => {
+		drawn = [];
+		byLead = new Map();
+	});
+
+	// What the draw pass does per system: register its stave, record its chord, place its
+	// note, then resolve. A system past the two only resolves.
+	const drawSystem = (resolver: SpannerResolver, system: number) => {
+		resolver.beginSystem(system);
+		const placed = systems[system];
+		if (placed) {
+			resolver.registerStave(placed.stave, 0, system);
+			resolver.addChords([
+				{ lead: placed.lead, notes: [placed.lead] } as unknown as Chord,
+			]);
+			byLead.set(placed.lead, placed.note);
+		}
+		resolver.resolveSystem(system, anchors(byLead));
+	};
+
+	// a reaches b, a measure (and a system) later; every builder pairs only what both ends
+	// of were drawn, and only what its scope owns.
+	const pairs = (scope: SpanScope, map: Map<Note, StaveNote>) => {
+		const from = map.get(a);
+		const to = map.get(b);
+		return !!from && !!to && scope.owns(from, to);
+	};
+
+	it('draws a tie across a system break once, with the system its stop lands on', () => {
+		const pools: Note[][] = [];
+		const { resolver } = resolverOf(
+			{
+				reach: () => 1,
+				buildTies: (
+					chords: Chord[],
+					map: Map<Note, StaveNote>,
+					scope: SpanScope,
+				) => {
+					pools.push(chords.map((chord) => chord.lead));
+					return pairs(scope, map) ? [tie(drawn)] : [];
+				},
+			} as unknown as Partial<SpannerBuilder>,
+			{ systemOfMeasure: (m: number) => m },
+		);
+
+		drawSystem(resolver, 0);
+		drawSystem(resolver, 1);
+		drawSystem(resolver, 2);
+
+		// Drawn with system 1, its builders handed the start back from system 0; system 2
+		// neither draws it again nor looks back for it.
+		expect(drawn).toEqual(['tie']);
+		expect(pools).toEqual([[a], [a, b], []]);
+	});
+
+	// A below-stave hairpin parked at y=210..220 on `on`, logging its draw and its offset.
+	const hairpinOn = (on: Stave) => {
+		const placed = { offset: 0 };
+		const wedge = {
+			stave: on,
+			above: false,
+			rect: new Rect(20, 210, 30, 10),
+			bounds: { top: 210, bottom: 220 },
+			setOffset: (o: number) => {
+				placed.offset = o;
+			},
+			getOffset: () => placed.offset,
+			setContext() {
+				drawn.push('wedge');
+				return this;
+			},
+			draw() {},
+		} as unknown as Hairpin;
+		return { wedge, placed };
+	};
+
+	it('holds a hairpin until the slur wrapping off its system is drawn', () => {
+		const { wedge, placed } = hairpinOn(top);
+		const { resolver } = resolverOf(
+			{
+				reach: () => 1,
+				// The slur's first half dips into the wedge's band on the top system.
+				buildSlurs: (
+					_chords: Chord[],
+					map: Map<Note, StaveNote>,
+					scope: SpanScope,
+				) =>
+					pairs(scope, map)
+						? [slur(drawn, { stave: top, top: 190, bottom: 220 })]
+						: [],
+				// The hairpin sits under a alone, all on system 0.
+				buildWedges: (
+					_marks: WedgeMark[],
+					map: Map<Note, StaveNote>,
+					scope: SpanScope,
+				) => {
+					const at = map.get(a);
+					return at && scope.owns(at, at) ? [wedge] : [];
+				},
+			} as unknown as Partial<SpannerBuilder>,
+			{ systemOfMeasure: (m: number) => m },
+		);
+
+		drawSystem(resolver, 0);
+		expect(drawn).toEqual([]);
+		drawSystem(resolver, 1);
+		expect(drawn).toEqual(['slur', 'wedge']);
+		expect(placed.offset).toBe(220 + WORDS_NOTE_CLEARANCE - 210);
 	});
 });

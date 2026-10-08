@@ -46,11 +46,46 @@ import { SingleSlide } from './single-slide';
 import { TabCurve } from './tab-curve';
 import { TabSlideLine } from './tab-slide-line';
 
+/* A drawn note a spanner can end on: all a scope reads is which stave it landed on. */
+export interface SpanEnd {
+	getStave(): Stave | undefined;
+}
+
+/*
+ * Which spanners one build call owns. A whole-score resolve owns all of them; drawing a
+ * system at a time hands the builders a window of chords reaching back to the oldest open
+ * start, and owns only what the system just drawn completes, so a spanner whose two ends
+ * both landed earlier isn't drawn twice.
+ */
+export interface SpanScope {
+	/** Whether the spanner joining these two drawn ends is this call's to draw. */
+	owns(from: SpanEnd, to: SpanEnd): boolean;
+	/** Whether a start left unpaired, drawn alone as a tick, is this call's to draw: it is
+	 * once no partner can arrive anymore. */
+	ownsOpen(start: Note): boolean;
+}
+
+export const WHOLE_SCORE: SpanScope = {
+	owns: () => true,
+	ownsOpen: () => true,
+};
+
+/* How SpannerBuilder.buildSlides draws and which slides it owns. */
+export interface SlideOptions {
+	/** Print the "sl." label on each paired slide (the line always draws). */
+	showText: boolean;
+	scope?: SpanScope;
+}
+
 export class SpannerBuilder {
 	private readonly connectors = new Map<
 		Note,
 		{ slurs: SlurConnector[]; techniques: SlurConnector[] }
 	>();
+	// A note's starting ties with their partners, read once: like a slur's, a tie's partner
+	// re-pairs every tie in the part.
+	private readonly ties = new Map<Note, { partner: Note | null }[]>();
+	private readonly reaches = new Map<Note, number>();
 
 	/*
 	 * Beams: map each beam group's notes to their StaveNotes. Built before formatting
@@ -79,8 +114,13 @@ export class SpannerBuilder {
 				// autoStem would conflict). But explicit <stem>s (e.g. voice separation)
 				// and a multi-voice default direction must stand, so only auto-stem when
 				// neither applies.
+				// The translator builds such a group already stemmed the beam's way, so the Beam
+				// only has to re-stem (rebuilding every notehead, and dropping slash heads) when
+				// it didn't.
 				const autoStem =
-					!defaultStem && group.notes.every((note) => !note.stem);
+					!defaultStem &&
+					group.notes.every((note) => !note.stem) &&
+					!notes.every((note) => note.getStemDirection() === beamStem(notes));
 				const beam = new Beam(notes, autoStem);
 				// The beam just settled stem directions; re-pin articulations placed
 				// against each note's pre-beam direction onto the notehead side.
@@ -275,7 +315,11 @@ export class SpannerBuilder {
 	 * Ties (<tied>) and slurs (<slur>) both connect a start note to its partner;
 	 * ties draw as a StaveTie, slurs as a Curve. Drawn after the notes are placed.
 	 */
-	buildTies(chords: Chord[], byLead: Map<Note, StaveNote>): StaveTie[] {
+	buildTies(
+		chords: Chord[],
+		byLead: Map<Note, StaveNote>,
+		scope: SpanScope = WHOLE_SCORE,
+	): StaveTie[] {
 		// Each chord member can carry its own tie, so map every note (not just the lead)
 		// to its StaveNote and notehead index: the tie must land on the right notehead,
 		// and its partner may itself be a chord member.
@@ -296,11 +340,10 @@ export class SpannerBuilder {
 			const heads = chord.notes.length;
 			for (const note of chord.notes) {
 				const from = placement.get(note);
-				for (const tie of note.ties) {
-					// Only a start draws, and pairing a tie re-pairs every tie in the part.
-					if (tie.tieType !== 'start' || !from) {
-						continue;
-					}
+				if (!from) {
+					continue;
+				}
+				for (const tie of this.tiesOf(note)) {
 					// A tie always joins two notes of the same pitch. When the partner is a
 					// chord, mdom can't tell which member it lands on (chord <tied>s usually
 					// share number "1"), so partner() pairs every start to the chord's first
@@ -308,10 +351,10 @@ export class SpannerBuilder {
 					// notehead.
 					const partnerNote =
 						(tie.partner &&
-							this.samePitchMember(note, chordOf.get(tie.partner.note))) ??
-						tie.partner?.note;
+							this.samePitchMember(note, chordOf.get(tie.partner))) ??
+						tie.partner;
 					const to = partnerNote && placement.get(partnerNote);
-					if (!to) {
+					if (!to || !scope.owns(from.staveNote, to.staveNote)) {
 						continue;
 					}
 					// A chord member's tie bows away from the chord's center: upper-half
@@ -352,7 +395,11 @@ export class SpannerBuilder {
 	 * <hammer-on>/<pull-off> written WITHOUT a companion <slur> draws on the tab stave too;
 	 * otherwise the notation stave shows an arc the tab is missing.
 	 */
-	buildHammerPulls(chords: Chord[], byTabLead: Map<Note, TabNote>): TabCurve[] {
+	buildHammerPulls(
+		chords: Chord[],
+		byTabLead: Map<Note, TabNote>,
+		scope: SpanScope = WHOLE_SCORE,
+	): TabCurve[] {
 		const ties: TabCurve[] = [];
 		const spans = this.slurSpans(chords);
 		for (const chord of chords) {
@@ -368,7 +415,7 @@ export class SpannerBuilder {
 				const lastNote = partner && byTabLead.get(partner);
 				// An unclosed slur (no resolved partner) isn't a real hammer-on/pull-off;
 				// skip it rather than drawing a dangling tie.
-				if (!partner || !lastNote) {
+				if (!partner || !lastNote || !scope.owns(firstNote, lastNote)) {
 					continue;
 				}
 				const { firstIndexes, lastIndexes } = this.pairByString(
@@ -405,10 +452,11 @@ export class SpannerBuilder {
 	buildSlides(
 		chords: Chord[],
 		byTabLead: Map<Note, TabNote>,
-		showText: boolean,
+		opts: SlideOptions,
 	): Array<TabSlideLine | SingleSlide> {
+		const { showText, scope = WHOLE_SCORE } = opts;
 		const slides: Array<TabSlideLine | SingleSlide> = [];
-		const open = new Map<string, { note: TabNote; fret: number }>();
+		const open = new Map<string, { note: TabNote; fret: number; lead: Note }>();
 		for (const chord of chords) {
 			const tabNote = byTabLead.get(chord.lead);
 			if (!tabNote) {
@@ -428,14 +476,19 @@ export class SpannerBuilder {
 				const number = marker.number;
 				const fret = chord.lead.fret ?? 0;
 				if (marker.type === 'start') {
-					open.set(number, { note: tabNote, fret });
+					open.set(number, { note: tabNote, fret, lead: chord.lead });
 				} else if (marker.type === 'stop') {
 					const from = open.get(number);
 					open.delete(number);
 					if (!from) {
 						// A stop with no matching start is a slide *into* this note from an
 						// indeterminate origin: a "/8" tick left of the fret, not a line.
-						slides.push(new SingleSlide(tabNote, 0, 'in', SINGLE_SLIDE_GAP));
+						if (scope.owns(tabNote, tabNote)) {
+							slides.push(new SingleSlide(tabNote, 0, 'in', SINGLE_SLIDE_GAP));
+						}
+						continue;
+					}
+					if (!scope.owns(from.note, tabNote)) {
 						continue;
 					}
 					const notes: TieNotes = {
@@ -458,8 +511,10 @@ export class SpannerBuilder {
 		}
 		// A start left unclosed is a slide *out* of that note to an indeterminate target: a
 		// tick right of the fret. (showText only labels paired "sl." lines, not these ticks.)
-		for (const { note } of open.values()) {
-			slides.push(new SingleSlide(note, 0, 'out', SINGLE_SLIDE_GAP));
+		for (const { note, lead } of open.values()) {
+			if (scope.ownsOpen(lead)) {
+				slides.push(new SingleSlide(note, 0, 'out', SINGLE_SLIDE_GAP));
+			}
 		}
 		return slides;
 	}
@@ -475,6 +530,7 @@ export class SpannerBuilder {
 	buildGlissandos(
 		chords: Chord[],
 		byLead: Map<Note, StaveNote>,
+		scope: SpanScope = WHOLE_SCORE,
 	): Array<NotationSlide | SingleSlide> {
 		// A slide can sit on any chord member (a two-note chord may slide both notes,
 		// each with its own <slide number>), so map every note (not just the lead)
@@ -490,7 +546,10 @@ export class SpannerBuilder {
 		}
 
 		const lines: Array<NotationSlide | SingleSlide> = [];
-		const open = new Map<string, { staveNote: StaveNote; index: number }>();
+		const open = new Map<
+			string,
+			{ staveNote: StaveNote; index: number; note: Note }
+		>();
 		for (const chord of chords) {
 			for (const note of chord.notes) {
 				const at = placement.get(note);
@@ -506,14 +565,19 @@ export class SpannerBuilder {
 				];
 				for (const marker of markers) {
 					if (marker.type === 'start') {
-						open.set(marker.number, at);
+						open.set(marker.number, { ...at, note });
 					} else if (marker.type === 'stop') {
 						const from = open.get(marker.number);
 						open.delete(marker.number);
 						if (!from) {
 							// Stop with no start: a slide *into* this note (a "/" tick left of
 							// the head), the notation counterpart of the tab slide-in.
-							lines.push(new SingleSlide(at.staveNote, at.index, 'in', 0));
+							if (scope.owns(at.staveNote, at.staveNote)) {
+								lines.push(new SingleSlide(at.staveNote, at.index, 'in', 0));
+							}
+							continue;
+						}
+						if (!scope.owns(from.staveNote, at.staveNote)) {
 							continue;
 						}
 						lines.push(
@@ -530,9 +594,11 @@ export class SpannerBuilder {
 		}
 		// A start left unclosed is a slide *out* of that note: a "/" tick right of the head.
 		for (const at of open.values()) {
-			lines.push(
-				new SingleSlide(at.staveNote, at.index, 'out', SINGLE_SLIDE_GAP),
-			);
+			if (scope.ownsOpen(at.note)) {
+				lines.push(
+					new SingleSlide(at.staveNote, at.index, 'out', SINGLE_SLIDE_GAP),
+				);
+			}
 		}
 		return lines;
 	}
@@ -547,7 +613,11 @@ export class SpannerBuilder {
 	 * hairpins the way buildTies splits a wrapped tie; it would draw right-to-left across
 	 * the page. Add the split if a fixture needs one.
 	 */
-	buildWedges(markers: WedgeMark[], byLead: Map<Note, StaveNote>): Hairpin[] {
+	buildWedges(
+		markers: WedgeMark[],
+		byLead: Map<Note, StaveNote>,
+		scope: SpanScope = WHOLE_SCORE,
+	): Hairpin[] {
 		const wedges: Hairpin[] = [];
 		const open = new Map<string, WedgeMark>();
 		for (const marker of markers) {
@@ -561,7 +631,13 @@ export class SpannerBuilder {
 			const lastNote = byLead.get(marker.lead);
 			// A stop with no open start, or either endpoint off a hidden staff, has nothing
 			// to span. Same for a zero-width span (both ends on one note).
-			if (!from || !firstNote || !lastNote || firstNote === lastNote) {
+			if (
+				!from ||
+				!firstNote ||
+				!lastNote ||
+				firstNote === lastNote ||
+				!scope.owns(firstNote, lastNote)
+			) {
 				continue;
 			}
 			wedges.push(
@@ -583,6 +659,7 @@ export class SpannerBuilder {
 	buildWavyLines(
 		chords: Chord[],
 		byLead: Map<Note, StaveNote>,
+		scope: SpanScope = WHOLE_SCORE,
 	): VibratoBracket[] {
 		const brackets: VibratoBracket[] = [];
 		const open = new Map<string, StaveNote>();
@@ -602,7 +679,7 @@ export class SpannerBuilder {
 				const from = open.get(wavy.number);
 				open.delete(wavy.number);
 				// A stop with no open start, or a zero-width span, has no line to draw.
-				if (from && from !== staveNote) {
+				if (from && from !== staveNote && scope.owns(from, staveNote)) {
 					brackets.push(new VibratoBracket({ start: from, stop: staveNote }));
 				}
 			}
@@ -627,6 +704,7 @@ export class SpannerBuilder {
 		markers: PedalMark[],
 		byLead: Map<Note, StaveNote>,
 		chords: Chord[],
+		scope: SpanScope = WHOLE_SCORE,
 	): { marking: PedalMarking; notes: StaveNote[] }[] {
 		const pedals: { marking: PedalMarking; notes: StaveNote[] }[] = [];
 		const open = new Map<string, { note: StaveNote; line: boolean }>();
@@ -640,7 +718,7 @@ export class SpannerBuilder {
 			} else {
 				const from = open.get(marker.number);
 				open.delete(marker.number);
-				if (!from) {
+				if (!from || !scope.owns(from.note, staveNote)) {
 					continue;
 				}
 				const marking = PedalMarking.createSustain([from.note, staveNote]);
@@ -665,6 +743,7 @@ export class SpannerBuilder {
 	buildSlurs(
 		chords: Chord[],
 		byLead: ReadonlyMap<Note, StaveNote>,
+		scope: SpanScope = WHOLE_SCORE,
 	): SlurCurve[] {
 		const slurs: SlurCurve[] = [];
 		const spans = this.slurSpans(chords);
@@ -699,7 +778,7 @@ export class SpannerBuilder {
 				}
 				const partner = leadOf.get(slur.partner.note) ?? slur.partner.note;
 				const to = byLead.get(partner);
-				if (!to || reached.has(partner)) {
+				if (!to || reached.has(partner) || !scope.owns(from, to)) {
 					continue;
 				}
 				reached.add(partner);
@@ -1348,6 +1427,51 @@ export class SpannerBuilder {
 		];
 	}
 
+	/* A note's starting <tied>s with their partners resolved, read once per note. */
+	private tiesOf(note: Note): { partner: Note | null }[] {
+		let ties = this.ties.get(note);
+		if (!ties) {
+			ties = note.ties
+				.filter((tie) => tie.tieType === 'start')
+				.map((tie) => ({ partner: tie.partner?.note ?? null }));
+			this.ties.set(note, ties);
+		}
+		return ties;
+	}
+
+	/*
+	 * The furthest measure index a spanner starting on `note` reaches: its own measure, or
+	 * the measure of the furthest partner of any tie, slur, hammer-on, pull-off, slide,
+	 * glissando or trill line it starts. Read off the document alone, so it is known before
+	 * the far end is drawn: a system-at-a-time resolve keeps the note in its window until
+	 * that measure is on the page.
+	 */
+	reach(note: Note): number {
+		let reach = this.reaches.get(note);
+		if (reach === undefined) {
+			const { slurs, techniques } = this.connectorsOf(note);
+			const partners = [
+				...this.tiesOf(note).map((tie) => tie.partner),
+				...[...slurs, ...techniques].map((c) => c.partner?.note ?? null),
+				...note.slides
+					.filter((s) => s.slideType === 'start')
+					.map((s) => s.partner?.note ?? null),
+				...note.glissandos
+					.filter((g) => g.glissandoType === 'start')
+					.map((g) => g.partner?.note ?? null),
+				...note.wavyLines
+					.filter((w) => w.wavyLineType === 'start')
+					.map((w) => w.partner?.note ?? null),
+			];
+			reach = Math.max(
+				note.measure.index,
+				...partners.map((partner) => partner?.measure.index ?? -1),
+			);
+			this.reaches.set(note, reach);
+		}
+		return reach;
+	}
+
 	/*
 	 * A note's <slur>s and hammer-on/pull-offs with their partners resolved, read once per
 	 * note. mdom pairs a marker by re-pairing every marker of its kind in the part, so each
@@ -1530,3 +1654,18 @@ type SlurConnector = {
 	 * hammer-on/pull-off has no line-type, so it is always solid. */
 	dash: number[] | null;
 };
+
+/*
+ * The direction vexflow's Beam picks when it auto-stems a group (its calculateStemDirection,
+ * which it does not export): the noteheads' summed distance from the middle line, down when
+ * they sit on or above it on balance.
+ */
+function beamStem(notes: readonly StaveNote[]): number {
+	let sum = 0;
+	for (const note of notes) {
+		for (const props of note.getKeyProps()) {
+			sum += props.line - 3;
+		}
+	}
+	return sum >= 0 ? Stem.DOWN : Stem.UP;
+}

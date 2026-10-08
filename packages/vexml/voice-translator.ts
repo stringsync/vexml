@@ -28,47 +28,11 @@ import type { MidClefSpec } from './signature-translator';
  * ClefNotes a mid-measure `<barline>` or `<clef>` puts between them. */
 export type VoiceTickable = StemmableNote | BarNote | ClefNote;
 
+/* vexflow's middle staff line, which a beam group's noteheads are weighed around. */
+const MIDDLE_LINE = 3;
+
 /* The duration codes that draw a flag, and so can carry a beam instead. */
 const FLAGGED_DURATIONS = new Set(['8', '16', '32', '64', '128']);
-
-/* The settings VoiceTranslator.tickables applies to one voice. */
-export interface VoiceTickablesOptions {
-	/* Pad the voice with ghost notes out to this beat, so an underfull measure still
-	 * reserves the trailing space the meter asks for. */
-	endBeat?: number;
-	/* Called with each lead note and the StaveNote built for it, as they are built, so a
-	 * caller can index them. */
-	// scry-ignore objects-over-callbacks: this fires DURING the call, handing back what the
-	// call is building, and one VoiceTranslator is shared by the layout pass and the draw pass
-	// (their measured and drawn widths have to match). An Events surface on it would deliver
-	// the layout pass's notes to the draw pass's listener and back, which is the bug this
-	// per-call collector cannot have.
-	record?: (lead: Note, staveNote: StaveNote) => void;
-	/* Per-note octave shift, since a mid-measure clef change can vary it note by note
-	 * rather than it being one value for the stave. */
-	octaveShiftOf?: (lead: Note) => number;
-	/* The whole voice, across every staff, when `chords` is only this staff's share of it.
-	 * A note the voice drew on another staff leaves a hole here, held by a ghost of that
-	 * note's own written value (see standIns) rather than by a dyadic fill: a triplet 16th
-	 * isn't dyadic, and each staff has to count the voice's time in the same notes the
-	 * voice is written in. */
-	run?: readonly Chord[];
-	/* Called with each stand-in ghost and the lead it holds the place of, so a caller can
-	 * put it under the same tuplet as that note. */
-	// scry-ignore objects-over-callbacks: per-call, for the reason `record` is.
-	recordStandIn?: (lead: Note, ghost: GhostNote) => void;
-	/* Stem direction for notes without an explicit <stem>. */
-	defaultStem?: 'up' | 'down';
-	/* The measure's mid-measure dividers (see ScoreReader.midBarlinesOf), each inserted as
-	 * a zero-duration BarNote just before the first note at or past its beat. */
-	barlines?: readonly { beat: number; style: string }[];
-	/* The measure's mid-measure clef changes (see ScoreReader.midClefsOf). Each one re-aims
-	 * every LATER note's staff position. */
-	midClefs?: readonly MidClefSpec[];
-	/* Also emit the small ClefNote glyph for each midClef. Like a divider, the glyph belongs
-	 * to the measure, so it rides on the first voice only. */
-	drawMidClefs?: boolean;
-}
 
 /*
  * Translates one voice's mdom chords to the vexflow tickables that draw them: a StaveNote per
@@ -112,10 +76,17 @@ export class VoiceTranslator {
 			record,
 			octaveShiftOf = () => 0,
 			defaultStem,
+			autoBeams = [],
+			stemOf = () => undefined,
 			barlines = [],
 			midClefs = [],
 			drawMidClefs = true,
 		} = opts;
+		const beamStems = this.beamStems(chords, clef, {
+			autoBeams,
+			midClefs,
+			octaveShiftOf,
+		});
 		const tickables: VoiceTickable[] = [];
 		// Mid-measure clef changes, consumed the same way the dividers below are. `activeClef`
 		// is what the notes after each one are positioned against.
@@ -198,6 +169,7 @@ export class VoiceTranslator {
 				alignCenter: centerWholeRest,
 				octaveShift: octaveShiftOf(chord.lead),
 				defaultStem,
+				stem: stemOf(chord.lead) ?? beamStems.get(chord.lead),
 			});
 			if (pendingGrace.length > 0) {
 				const group = new GraceNoteGroup(pendingGrace.map((g) => g.note));
@@ -250,6 +222,64 @@ export class VoiceTranslator {
 			tickables.push(...this.gapFill(cursor, endBeat, run, recordStandIn));
 		}
 		return tickables;
+	}
+
+	/*
+	 * The direction each auto-stemmed beam group's notes take, by lead: vexflow's own rule
+	 * (Beam's calculateStemDirection), summing every notehead's distance from the middle line,
+	 * down when the group sits on or above it. Read off the staff lines the notes will have,
+	 * so it runs before any of them is built. Each note is positioned against the clef in
+	 * force at its onset, the same walk through the mid-measure clef changes tickables makes.
+	 */
+	private beamStems(
+		chords: readonly Chord[],
+		clef: string,
+		opts: BeamStemOptions,
+	): Map<Note, 'up' | 'down'> {
+		const stems = new Map<Note, 'up' | 'down'>();
+		if (opts.autoBeams.length === 0) {
+			return stems;
+		}
+		const lines = new Map<Note, number>();
+		let activeClef = clef;
+		let nextClef = 0;
+		let cursor = 0;
+		for (const chord of chords) {
+			if (chord.lead.isGrace) {
+				continue;
+			}
+			const onset = this.reader.measureBeatOf(chord.lead) ?? cursor;
+			for (
+				let change = opts.midClefs[nextClef];
+				change && change.beat <= onset + EPSILON;
+				change = opts.midClefs[nextClef]
+			) {
+				activeClef = change.clef;
+				nextClef++;
+			}
+			const sum = this.chords
+				.keyLines(chord, activeClef, {
+					octaveShift: opts.octaveShiftOf(chord.lead),
+				})
+				.reduce((total, line) => total + line - MIDDLE_LINE, 0);
+			lines.set(chord.lead, sum);
+			cursor = onset + (this.reader.beatsOf(chord.lead) ?? 0);
+		}
+		for (const group of opts.autoBeams) {
+			const leads = group.filter((lead) => lines.has(lead));
+			// A lone note doesn't beam, so it keeps its own auto stem.
+			if (leads.length < 2) {
+				continue;
+			}
+			const sum = leads.reduce(
+				(total, lead) => total + (lines.get(lead) ?? 0),
+				0,
+			);
+			for (const lead of leads) {
+				stems.set(lead, sum >= 0 ? 'down' : 'up');
+			}
+		}
+		return stems;
 	}
 
 	/*
@@ -377,4 +407,60 @@ export class VoiceTranslator {
 			graces.every((g) => FLAGGED_DURATIONS.has(this.durations.code(g.lead)))
 		);
 	}
+}
+
+/* The settings VoiceTranslator.tickables applies to one voice. */
+export interface VoiceTickablesOptions {
+	/* Pad the voice with ghost notes out to this beat, so an underfull measure still
+	 * reserves the trailing space the meter asks for. */
+	endBeat?: number;
+	/* Called with each lead note and the StaveNote built for it, as they are built, so a
+	 * caller can index them. */
+	// scry-ignore objects-over-callbacks: this fires DURING the call, handing back what the
+	// call is building, and one VoiceTranslator is shared by the layout pass and the draw pass
+	// (their measured and drawn widths have to match). An Events surface on it would deliver
+	// the layout pass's notes to the draw pass's listener and back, which is the bug this
+	// per-call collector cannot have.
+	record?: (lead: Note, staveNote: StaveNote) => void;
+	/* Per-note octave shift, since a mid-measure clef change can vary it note by note
+	 * rather than it being one value for the stave. */
+	octaveShiftOf?: (lead: Note) => number;
+	/* The whole voice, across every staff, when `chords` is only this staff's share of it.
+	 * A note the voice drew on another staff leaves a hole here, held by a ghost of that
+	 * note's own written value (see standIns) rather than by a dyadic fill: a triplet 16th
+	 * isn't dyadic, and each staff has to count the voice's time in the same notes the
+	 * voice is written in. */
+	run?: readonly Chord[];
+	/* Called with each stand-in ghost and the lead it holds the place of, so a caller can
+	 * put it under the same tuplet as that note. */
+	// scry-ignore objects-over-callbacks: per-call, for the reason `record` is.
+	recordStandIn?: (lead: Note, ghost: GhostNote) => void;
+	/* Stem direction for notes without an explicit <stem>. */
+	defaultStem?: 'up' | 'down';
+	/* The beam groups (their lead notes) whose stems point wherever vexflow's beam would
+	 * point them: one direction for the whole group, from where its noteheads sit. Each
+	 * group's notes are built stemmed that way, so the Beam has nothing to re-stem. */
+	autoBeams?: readonly (readonly Note[])[];
+	/* A direction settled for a note before its staff was built (a beam crossing staves,
+	 * see VoiceBuilder.planStems), winning over everything else. */
+	stemOf?: (lead: Note) => 'up' | 'down' | undefined;
+	/* The measure's mid-measure dividers (see ScoreReader.midBarlinesOf), each inserted as
+	 * a zero-duration BarNote just before the first note at or past its beat. */
+	barlines?: readonly { beat: number; style: string }[];
+	/* The measure's mid-measure clef changes (see ScoreReader.midClefsOf). Each one re-aims
+	 * every LATER note's staff position. */
+	midClefs?: readonly MidClefSpec[];
+	/* Also emit the small ClefNote glyph for each midClef. Like a divider, the glyph belongs
+	 * to the measure, so it rides on the first voice only. */
+	drawMidClefs?: boolean;
+}
+
+/* What VoiceTranslator.beamStems reads besides the chords and the opening clef. */
+interface BeamStemOptions {
+	/* The auto-stemmed beam groups, by lead. */
+	autoBeams: readonly (readonly Note[])[];
+	/* The measure's clef changes, walked by onset as tickables walks them. */
+	midClefs: readonly MidClefSpec[];
+	/* How far off its sounding pitch each lead is drawn. */
+	octaveShiftOf: (lead: Note) => number;
 }

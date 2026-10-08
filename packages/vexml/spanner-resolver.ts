@@ -27,7 +27,12 @@ import type {
 	PedalMark,
 	WedgeMark,
 } from './score-reader';
-import type { SpannerBuilder } from './spanner-builder';
+import {
+	type SpanEnd,
+	type SpannerBuilder,
+	type SpanScope,
+	WHOLE_SCORE,
+} from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
 import type { VoiceTranslator } from './voice-translator';
 
@@ -56,18 +61,6 @@ export interface SpannerReporter {
 	growPageTop(top: number): void;
 	/** Ink that reached `bottom`: keeps the page crop below it. */
 	growPageBottom(bottom: number): void;
-}
-
-export interface SpannerResolverOptions {
-	/** The score's <octave-shift> spans; the notes were drawn at the shifted position, and
-	 * resolve() draws the bracket that says so over them. */
-	octaveShiftSpans: readonly OctaveShiftSpan[];
-	/** The score's <bracket>/<dashes> spans, drawn alongside the other spanners. */
-	directionLineSpans: readonly DirectionLineSpan[];
-	/** Print the "sl." label on tablature slides (the line always draws). */
-	showTabSlideText: boolean;
-	/** The drawable region of the scratch canvas, bounding the scoped collision probes. */
-	scratchViewport: Rect;
 }
 
 /*
@@ -103,6 +96,15 @@ export class SpannerResolver {
 		Stave,
 		{ row: number; system: number }
 	>();
+	private readonly systemOfMeasure: (measureIndex: number) => number;
+	// Where each system's chords and markers start in the lists above (see beginSystem).
+	private readonly systemStarts = new Map<number, SystemStart>();
+	// Per system, the furthest system any spanner starting on it reaches: it stays in the
+	// window until that system is drawn.
+	private readonly systemReach = new Map<number, number>();
+	// Every bow drawn so far, by the stave it bows over: a hairpin clears the slurs and ties
+	// on its stave, and a bow wrapping off the end of a system is drawn with the next one.
+	private readonly bows = new Map<Stave, Rect[]>();
 
 	constructor(
 		private readonly context: RenderContext,
@@ -117,6 +119,17 @@ export class SpannerResolver {
 		this.directionLineSpans = opts.directionLineSpans;
 		this.showTabSlideText = opts.showTabSlideText;
 		this.scratchViewport = opts.scratchViewport;
+		this.systemOfMeasure = opts.systemOfMeasure;
+	}
+
+	/* Mark where `system`'s chords and markers start, before any of them is recorded. */
+	beginSystem(system: number): void {
+		this.systemStarts.set(system, {
+			chords: this.allChords.length,
+			tabChords: this.allTabChords.length,
+			pedals: this.allPedals.length,
+			wedges: this.allWedges.length,
+		});
 	}
 
 	/* Where a freshly built stave sits: its stave row (the collision/spill band its
@@ -154,10 +167,138 @@ export class SpannerResolver {
 	 * measures). Drawn last, on top of the notes.
 	 */
 	resolve(anchors: SpannerAnchors): void {
-		// The bows, kept for the hairpin pass below: a wedge parks at a fixed gap from the
-		// staff, which is the same band a slur or tie bowing the same way lands in.
-		const bows: { stave: Stave; rect: Rect }[] = [];
-		for (const tie of this.spanners.buildTies(this.allChords, anchors.byLead)) {
+		this.resolveIn(
+			{
+				chords: this.allChords,
+				tabChords: this.allTabChords,
+				pedals: this.allPedals,
+				wedges: this.allWedges,
+				ownPedals: this.allPedals,
+			},
+			WHOLE_SCORE,
+			WHOLE_SCORE,
+			anchors,
+		);
+	}
+
+	/*
+	 * Build and draw the spanners `system` completes, now that its notes are placed: every
+	 * one whose later end landed on it, and every start no partner can reach anymore. The
+	 * builders get the chords back to the oldest system still holding a start that reaches
+	 * this one, so a slur across a system break sees the notes it arcs over on both sides.
+	 *
+	 * Except hairpins, which clear the bows on their stave: a slur wrapping off the end of a
+	 * system is drawn with the system it wraps onto, so a system's hairpins wait until every
+	 * system its spanners reach is drawn.
+	 */
+	resolveSystem(system: number, anchors: SpannerAnchors): void {
+		const own = this.systemStarts.get(system);
+		if (!own) {
+			return;
+		}
+		let reach = system;
+		for (const chord of this.allChords.slice(own.chords)) {
+			for (const note of chord.notes) {
+				reach = Math.max(
+					reach,
+					this.systemOfMeasure(this.spanners.reach(note)),
+				);
+			}
+		}
+		for (const chord of this.allTabChords.slice(own.tabChords)) {
+			for (const note of chord.notes) {
+				reach = Math.max(
+					reach,
+					this.systemOfMeasure(this.spanners.reach(note)),
+				);
+			}
+		}
+		this.systemReach.set(system, reach);
+		const from = this.windowStart(system);
+		const start = this.systemStarts.get(from) ?? own;
+		const systemOf = (end: SpanEnd) => {
+			const stave = end.getStave();
+			return (stave && this.staveRows.get(stave)?.system) ?? system;
+		};
+		const settles = (end: number) =>
+			(this.systemReach.get(end) ?? end) === system;
+		this.resolveIn(
+			{
+				chords: this.allChords.slice(start.chords),
+				tabChords: this.allTabChords.slice(start.tabChords),
+				pedals: this.allPedals.slice(start.pedals),
+				wedges: this.allWedges.slice(start.wedges),
+				ownPedals: this.allPedals.slice(own.pedals),
+			},
+			{
+				owns: (a, b) => Math.max(systemOf(a), systemOf(b)) === system,
+				ownsOpen: (note) =>
+					this.systemOfMeasure(this.spanners.reach(note)) === system,
+			},
+			{
+				owns: (a, b) => settles(Math.max(systemOf(a), systemOf(b))),
+				ownsOpen: () => false,
+			},
+			anchors,
+		);
+	}
+
+	/*
+	 * The oldest system `system`'s window has to reach back to: one holding a start whose
+	 * partner is drawn on `system` or later, or a hairpin or pedal still waiting for its stop.
+	 */
+	private windowStart(system: number): number {
+		let from = system;
+		for (const [earlier, reach] of this.systemReach) {
+			if (earlier < from && reach >= system) {
+				from = earlier;
+			}
+		}
+		for (const [marks, list] of [
+			[this.allWedges, 'wedges'],
+			[this.allPedals, 'pedals'],
+		] as const) {
+			const open = new Map<string, number>();
+			marks.forEach((mark, index) => {
+				if (mark.type === 'start') {
+					open.set(mark.number, index);
+				} else {
+					open.delete(mark.number);
+				}
+			});
+			// The system an open start was recorded on: the last to begin at or before it.
+			for (const index of open.values()) {
+				let recordedOn = from;
+				for (const [earlier, start] of this.systemStarts) {
+					if (start[list] <= index) {
+						recordedOn = earlier;
+					}
+				}
+				from = Math.min(from, recordedOn);
+			}
+		}
+		return from;
+	}
+
+	private resolveIn(
+		pool: {
+			chords: Chord[];
+			tabChords: Chord[];
+			pedals: PedalMark[];
+			wedges: WedgeMark[];
+			// The pedal markers recorded on the system being resolved, whose text the page grows to.
+			ownPedals: PedalMark[];
+		},
+		scope: SpanScope,
+		// Which hairpins this call draws (see resolveSystem).
+		wedgeScope: SpanScope,
+		anchors: SpannerAnchors,
+	): void {
+		for (const tie of this.spanners.buildTies(
+			pool.chords,
+			anchors.byLead,
+			scope,
+		)) {
 			tie.setContext(this.context).draw();
 			// A tie off a note above or below the staff arcs further out than the notehead,
 			// and one running to the end of a system stretches that arc over every note to
@@ -168,12 +309,13 @@ export class SpannerResolver {
 			if (stave) {
 				const rect = this.tieRect(tie);
 				this.reportBow(stave, rect, false);
-				bows.push({ stave, rect });
+				this.addBow(stave, rect);
 			}
 		}
 		for (const slur of this.spanners.buildSlurs(
-			this.allChords,
+			pool.chords,
 			anchors.byLead,
+			scope,
 		)) {
 			// drawWithStyle, not draw: Curve.draw never applies its own style, and a
 			// <slur line-type> rides on the element as a lineDash (see buildSlurs).
@@ -186,7 +328,7 @@ export class SpannerResolver {
 			);
 			if (slur.stave) {
 				this.reportBow(slur.stave, rect, slur.crossStave);
-				bows.push({ stave: slur.stave, rect });
+				this.addBow(slur.stave, rect);
 			} else {
 				this.reporter.growPageTop(slur.top);
 				this.reporter.growPageBottom(slur.bottom);
@@ -194,23 +336,25 @@ export class SpannerResolver {
 		}
 		// Tablature hammer-ons/pull-offs and slides, likewise resolved over the whole score.
 		for (const tie of this.spanners.buildHammerPulls(
-			this.allTabChords,
+			pool.tabChords,
 			anchors.byTabLead,
+			scope,
 		)) {
 			tie.setContext(this.context).draw();
 		}
 		for (const slide of this.spanners.buildSlides(
-			this.allTabChords,
+			pool.tabChords,
 			anchors.byTabLead,
-			this.showTabSlideText,
+			{ showText: this.showTabSlideText, scope },
 		)) {
 			slide.setContext(this.context).draw();
 		}
 		// Standard-notation glissandos/slides (the StaveLine counterpart of the tab
 		// slides above), e.g. a grace note that slides into the note it precedes.
 		for (const line of this.spanners.buildGlissandos(
-			this.allChords,
+			pool.chords,
 			anchors.byLead,
+			scope,
 		)) {
 			line.setContext(this.context).draw();
 		}
@@ -223,7 +367,7 @@ export class SpannerResolver {
 			const start = first && anchors.byLead.get(first);
 			const stop = last && anchors.byLead.get(last);
 			// Either endpoint off a hidden staff leaves nothing to bracket.
-			if (!start || !stop) {
+			if (!start || !stop || !scope.owns(start, stop)) {
 				continue;
 			}
 			const bracket = new TextBracket({
@@ -247,26 +391,33 @@ export class SpannerResolver {
 		// The <bracket>/<dashes> spans, with each endpoint resolved to its drawn note (or
 		// left undefined when it sits on a hidden staff).
 		this.directionPlacer.drawDirectionLines(
-			this.directionLineSpans.map((span) => ({
-				span,
-				start: anchors.byLead.get(span.from),
-				stop: anchors.byLead.get(span.to),
-			})),
+			this.directionLineSpans.flatMap((span) => {
+				const start = anchors.byLead.get(span.from);
+				const stop = anchors.byLead.get(span.to);
+				return start && stop && scope.owns(start, stop)
+					? [{ span, start, stop }]
+					: [];
+			}),
 		);
 		// Trill extension lines, resolved over the whole score like the other spanners so a
 		// trill can be held across a barline.
 		for (const bracket of this.spanners.buildWavyLines(
-			this.allChords,
+			pool.chords,
 			anchors.byLead,
+			scope,
 		)) {
 			bracket.setContext(this.context).draw();
 		}
 		// Hairpins, like the pedals below them, are resolved over the whole score so a wedge
 		// can open in one measure and close in another. A below-stave one reaches under the
 		// staff, so grow the bottom crop to its drawn extent.
-		const wedges = this.spanners.buildWedges(this.allWedges, anchors.byLead);
+		const wedges = this.spanners.buildWedges(
+			pool.wedges,
+			anchors.byLead,
+			wedgeScope,
+		);
 		for (const wedge of wedges) {
-			this.clearWedge(wedge, bows, anchors.byLead.values());
+			this.clearWedge(wedge, anchors.byLead.values());
 		}
 		this.alignWedgeChains(wedges);
 		for (const wedge of wedges) {
@@ -293,14 +444,15 @@ export class SpannerResolver {
 		// ponytail: only the final crop is grown: a pedal on a non-last system isn't
 		// reserved against the system below it; add that if a fixture stacks one there.
 		for (const { marking, notes } of this.spanners.buildPedals(
-			this.allPedals,
+			pool.pedals,
 			anchors.byLead,
-			this.allChords,
+			pool.chords,
+			scope,
 		)) {
 			this.dropPedalClear(marking, notes);
 			marking.setContext(this.context).draw();
 		}
-		for (const marker of this.allPedals) {
+		for (const marker of pool.ownPedals) {
 			const stave = anchors.byLead.get(marker.lead)?.getStave();
 			if (stave) {
 				this.reporter.growPageBottom(
@@ -354,17 +506,11 @@ export class SpannerResolver {
 	 * Scoped like {@link dropPedalClear}: the shared index is per-system and wedges resolve
 	 * after the last one, so this indexes only what was drawn over this wedge's own stave.
 	 */
-	private clearWedge(
-		wedge: Hairpin,
-		bows: { stave: Stave; rect: Rect }[],
-		notes: Iterable<StaveNote>,
-	): void {
+	private clearWedge(wedge: Hairpin, notes: Iterable<StaveNote>): void {
 		const natural = wedge.rect;
 		const scoped = new CollisionResolver(this.scratchViewport, {});
-		for (const bow of bows) {
-			if (bow.stave === wedge.stave) {
-				scoped.add({ rect: bow.rect, kind: 'tie' });
-			}
+		for (const rect of this.bows.get(wedge.stave) ?? []) {
+			scoped.add({ rect, kind: 'tie' });
 		}
 		const tuplets = new Set<Tuplet>();
 		for (const note of notes) {
@@ -423,6 +569,17 @@ export class SpannerResolver {
 				wedge.setOffset(offset);
 				chained.add(wedge);
 			}
+		}
+	}
+
+	/* Keep a drawn bow for the hairpins on its stave to clear: a wedge parks at a fixed gap
+	 * from the staff, the same band a slur or tie bowing the same way lands in. */
+	private addBow(stave: Stave, rect: Rect): void {
+		const bows = this.bows.get(stave);
+		if (bows) {
+			bows.push(rect);
+		} else {
+			this.bows.set(stave, [rect]);
 		}
 	}
 
@@ -552,4 +709,27 @@ export class SpannerResolver {
 			}
 		}
 	}
+}
+
+/* How long each recorded list was when a system began: where its window starts. */
+interface SystemStart {
+	chords: number;
+	tabChords: number;
+	pedals: number;
+	wedges: number;
+}
+
+export interface SpannerResolverOptions {
+	/** The score's <octave-shift> spans; the notes were drawn at the shifted position, and
+	 * resolve() draws the bracket that says so over them. */
+	octaveShiftSpans: readonly OctaveShiftSpan[];
+	/** The score's <bracket>/<dashes> spans, drawn alongside the other spanners. */
+	directionLineSpans: readonly DirectionLineSpan[];
+	/** Print the "sl." label on tablature slides (the line always draws). */
+	showTabSlideText: boolean;
+	/** The drawable region of the scratch canvas, bounding the scoped collision probes. */
+	scratchViewport: Rect;
+	/** The system a document measure is drawn on: where a spanner reaching that measure
+	 * lands, before anything there is drawn. */
+	systemOfMeasure(measureIndex: number): number;
 }

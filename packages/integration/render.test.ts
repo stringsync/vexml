@@ -3285,6 +3285,15 @@ describe('render', () => {
 		).toMatchScreenshot('score_mozart_an_chloe.png');
 	});
 
+	// Schubert, "Gute Nacht" (Winterreise no. 1): 137 measures of voice over two-stave piano,
+	// with lyrics and a dense beamed accompaniment. The longest score here, and the one the render
+	// speed work is measured on; its baseline pins stems, beams and heads across that work.
+	it.concurrent('renders score_schubert_gute_nacht.png', async () => {
+		expect(
+			await testing.render('score_schubert_gute_nacht.musicxml'),
+		).toMatchScreenshot('score_schubert_gute_nacht.png');
+	});
+
 	// Bach, "Air": 19 measures of string quartet with repeats and numbered endings spanning all
 	// four parts.
 	it.concurrent('renders score_bach_air.png', async () => {

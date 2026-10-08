@@ -28,6 +28,7 @@ export class StavePlan {
 	 * one render, over a document that doesn't change under it, so answering once is enough. */
 	private readonly tunings = new Map<Part, Map<string, number[] | null>>();
 	private readonly tabs = new Map<Part, Map<string, boolean>>();
+	private readonly visible = new Map<Part, string[]>();
 	// Likewise the part's connector: mdom finds <part-symbol> by scanning the part's
 	// measures, all of them when it's never declared, and buildStave asks every measure.
 	private readonly symbols = new Map<Part, 'brace' | 'bracket' | null>();
@@ -94,11 +95,18 @@ export class StavePlan {
 	 * alone shows nothing. Layout and draw both iterate this so their stave rows (and the
 	 * offsets/connectors keyed off them) stay aligned. */
 	visibleNumbers(part: Part): string[] {
-		const { showTabs, showNotation } = this.visibility;
-		const all = Array.from({ length: Math.max(part.staveCount, 1) }, (_, s) =>
-			String(s + 1),
-		);
-		return all.filter((n) => (this.isTab(part, n) ? showTabs : showNotation));
+		let visible = this.visible.get(part);
+		if (!visible) {
+			const { showTabs, showNotation } = this.visibility;
+			const all = Array.from({ length: Math.max(part.staveCount, 1) }, (_, s) =>
+				String(s + 1),
+			);
+			visible = all.filter((n) =>
+				this.isTab(part, n) ? showTabs : showNotation,
+			);
+			this.visible.set(part, visible);
+		}
+		return visible;
 	}
 
 	/** True when every stave the part renders is tablature. */

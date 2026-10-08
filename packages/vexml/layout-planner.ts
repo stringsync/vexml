@@ -582,7 +582,7 @@ export class LayoutPlanner {
 				}
 				for (const staffNumber of this.staves.visibleNumbers(part)) {
 					const clef = measure.getClef(staffNumber);
-					const voices = this.reader.staffVoices(measure.voices, staffNumber);
+					const voices = this.reader.staffVoices(measure, staffNumber);
 					if (voices.length > 0) {
 						staves.push({
 							voices,

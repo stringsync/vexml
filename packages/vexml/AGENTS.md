@@ -24,7 +24,7 @@ come from `webappwiz/geometry`, not this repo. Every feature has a fixture in
 | Fonts | Loads Bravura + text face as CSS vars, awaits residency before layout | `font-loader.ts`, `default-font-loader.ts`, `bravura-url.ts` (the shipped `assets/fonts/Bravura.woff2`, VexFlow's own face; vexml imports `vexflow/core`, which embeds none), `recording-font-loader.ts` (test fake that records loads) |
 | Parse | MusicXML text to an mdom document | `score-parser.ts`, `default-score-parser.ts` |
 | Gaps | Finds the caller's silent measures, inserting positioned ones into vexml's own parse | `gaps.ts`, `gap-inserter.ts` |
-| Layout | Measure widths, system breaks, stave offsets, no drawing | `layout-planner.ts` |
+| Layout | Measure widths, system breaks, stave offsets, no drawing | `layout-planner.ts`, `probe-text-canvas.ts` (vexflow's text measuring canvas, answered by the cached probe), `metrics-patch.ts` (vexflow's per-element font/style copies, minus its structuredClone) |
 | Draw | Two passes recorded as paint ops (no canvas); everything engraved | `score-drawer.ts`, `draw-pass.ts` + collaborators below |
 | Elements | Raw geometry to hit-testable wrappers | `element-factory.ts`, `element-index.ts` |
 | Playback | Beats to ms, repeats unrolled, swing applied | `sequence-factory.ts`, `measure-sequence-iterator.ts`, `sequence.ts` |
@@ -103,6 +103,7 @@ Two rules cut across the draw stage:
 ## Spanners (things that connect two notes)
 
 - **Ties, slurs**: `spanner-builder.ts`, `spanner-resolver.ts`, `crisp-curve.ts`, `head-curve.ts`, `tab-curve.ts` (the arcs)
+- **Spanners across a system break**: `spanner-resolver.ts` (`resolveSystem`: each system draws the spanners whose later end it holds, from a window of chords back to the oldest open start; hairpins wait for the bows on their stave), `spanner-builder.ts` (`SpanScope`, `reach`)
 - **Hammer-ons, pull-offs, slides, glissandos**: `spanner-builder.ts`, `spanner-resolver.ts`, `notation-slide.ts`, `single-slide.ts`, `crisp-tab-slide.ts`, `tab-slide-line.ts` (the lines)
 - **Ottava (8va) brackets, pedal lines, hairpins/wedges, bracket-and-dashes lines**: `spanner-resolver.ts`, `score-reader.ts`, `hairpin.ts` (the wedge glyph)
 
@@ -132,7 +133,7 @@ there, then `add` the placed rect. `kinds` narrows which obstacles count;
 | --- | --- | --- |
 | Chord symbols, words, rehearsal marks, tempo marks | notes, ties, slur bows, tuplet numbers, lyrics, technical marks, volta brackets, other placed text (`placement="below"` words drop instead of lifting) | `direction-placer.ts` |
 | Chord diagrams | lift off notes, pull inside the page edge (leaving room for the column's later boxes, so a crowded row packs leftward in chord order), push right of the previous diagrams (iterated until clear), lift again | `direction-placer.ts` |
-| Hairpins, pedal lines, ottava brackets | slur bows and beam-extended stem tips (hairpins also the notes they span, their tuplet numbers and tie arcs, and a crescendo running into a diminuendo shares one line), via a resolver scoped to their own stave (they resolve after the per-system index) | `spanner-resolver.ts` |
+| Hairpins, pedal lines, ottava brackets | slur bows and beam-extended stem tips (hairpins also the notes they span, their tuplet numbers and tie arcs, and a crescendo running into a diminuendo shares one line), via a resolver scoped to their own stave (they resolve after the per-system index, a hairpin once every system its stave's bows reach is drawn) | `spanner-resolver.ts` |
 | Volta (ending) brackets | noteheads, stem tips and slur bows on the top stave (resolved a pass late, see below) | `draw-pass.ts` (`observeVoltaLift`) |
 
 Registered as obstacles: noteheads/stem tips, tie apexes, tab bend arcs, slur

@@ -8,9 +8,11 @@ import type { FontLoader } from './font-loader';
 import type { Gaps } from './gaps';
 import type { Host } from './host';
 import type { LayoutPlanner } from './layout-planner';
+import { MetricsPatch } from './metrics-patch';
 import { Page } from './page';
 import type { PagePainter } from './page-painter';
 import type { PaintProbe } from './paint-probe';
+import { ProbeTextCanvas } from './probe-text-canvas';
 import { type GapInfo, Score } from './score';
 import type { Engraving, RawGeometry, ScoreDrawer } from './score-drawer';
 import type { ScoreParser } from './score-parser';
@@ -107,6 +109,10 @@ export class ScoreRenderer {
 			this.configuredGaps.resolve(mdoc);
 		}
 		const parts = mdoc.score.parts;
+		// Before the layout, which builds the first vexflow elements: each measures its glyph
+		// and copies its category's font and style.
+		new ProbeTextCanvas(this.stage.probe).install();
+		new MetricsPatch().install();
 		const drawn =
 			parts.length > 0
 				? this.scoreDrawer.draw(
