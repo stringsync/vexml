@@ -1,5 +1,5 @@
 /*
- * The strip a panoramic score pins to its scroll box's left edge once the opening scrolls off
+ * The strip a panoramic score pins to its scroll box's left edge as the opening reaches it
  * (config `stickySignatures`): the staves' opening clefs and keys, redrawn as if the page were
  * folded over there. The Stage shows and moves it; SignatureFold engraves it. Everything is in
  * score space (the base canvas's CSS px).

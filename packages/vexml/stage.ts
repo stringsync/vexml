@@ -399,8 +399,8 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 	 * beside a `position: sticky` strip: sticky is what keeps the fold still while the browser
 	 * scrolls (a script-moved overlay lags a compositor scroll), and it can only travel as far as
 	 * its parent is wide: the container is only as wide as its scrollport, the wrapper as wide as
-	 * the score. It stays hidden while any of the system's own opening is still in view, then
-	 * paints whichever strip is in effect.
+	 * the score. It stays hidden until sticky starts holding it back, then paints whichever
+	 * strip is in effect.
 	 */
 	setFold(fold: Fold): void {
 		this.clearFold();
@@ -746,9 +746,10 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		this.updateFold();
 	}
 
-	// Show the fold only once the system's own clefs and keys have scrolled wholly out of view, so
-	// the two never show at once, and paint the strip for whatever the fold now covers: the clef
-	// and key in effect at its right edge. A score that barely scrolls never gets a fold.
+	// Show the fold as soon as sticky holds it back, the way a sticky header catches the moment its
+	// row reaches the edge: until then it sits right over the system's own opening, which shows
+	// instead. Paint the strip for whatever the fold now covers: the clef and key in effect at its
+	// right edge.
 	private updateFold(): void {
 		if (!this.fold) {
 			return;
@@ -758,7 +759,8 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		const edge = el.getBoundingClientRect().left + el.clientLeft;
 		const { left, sx } = this.frame();
 		const pad = this.fold.pad;
-		const shown = left + (fold.left + fold.width) * sx <= edge + 0.5;
+		// Where the element's border box would sit if it scrolled with the score (see placeFold).
+		const shown = left + fold.left * sx - pad < edge - 0.5;
 		if (shown !== this.fold.shown) {
 			this.fold.shown = shown;
 			element.style.visibility = shown ? 'visible' : 'hidden';

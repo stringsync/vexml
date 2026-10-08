@@ -239,11 +239,11 @@ export type StandardLayout = {
 export type PanoramicLayout = {
 	type: 'panoramic';
 	/** Whether the clef and key signature stay in view as the score scrolls right
-	 * (default: false). Once the opening's clefs and keys have scrolled wholly out of view,
-	 * a strip holding the staff lines, braces, clefs and key signatures in effect stays
-	 * pinned to the scroll box's left edge, like the page folded over there, and follows
-	 * clef and key changes as they scroll under it. A score that scrolls less than that
-	 * never shows it. The time signature is not repeated.
+	 * (default: false). Like CSS `position: sticky`, the opening's clefs and keys stop at
+	 * the scroll box's left edge once they reach it: a strip holding the staff lines,
+	 * braces, clefs and key signatures in effect stays pinned there, like the page folded
+	 * over there, while the music scrolls under it, and follows clef and key changes as
+	 * they do. The time signature is not repeated.
 	 *
 	 * The fold's paper runs the full height of the container, over its padding, and takes
 	 * `backgroundColor` or else the nearest painted background behind the score. Restyle it

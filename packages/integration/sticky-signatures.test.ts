@@ -3,8 +3,8 @@ import type { ConfigInput } from '@stringsync/vexml';
 import type { VexmlContext } from '@vexml/renderer';
 import { testing } from './setup';
 
-// A sticky panoramic score pins its clefs and keys at the scroll box's left edge once the opening
-// scrolls off, folded over the music like a page. These scroll the render container sideways and
+// A sticky panoramic score pins its clefs and keys at the scroll box's left edge as the opening
+// reaches it, folded over the music like a page. These scroll the render container sideways and
 // check what the fold shows, that it tracks clef and key changes, and that the music under it
 // can't be pointed at or scrolled to.
 
@@ -32,15 +32,15 @@ describe('stickySignatures', () => {
 		expect(image).toMatchScreenshot('sticky_signatures_clef_change.png');
 	});
 
-	it.concurrent('stays out of the way until the opening scrolls off', async () => {
+	it.concurrent('sticks as soon as the opening reaches the edge', async () => {
 		const { image, result } = await testing.eval(
 			'score_wanna_skip_class.musicxml',
 			STICKY,
 			probe,
 		);
 		expect(result.shownAtStart).toBe(false);
-		// Part of the real opening still shows, so the fold waits.
-		expect(result.shownPartly).toBe(false);
+		// Like CSS sticky: the fold catches the opening the moment it reaches the edge.
+		expect(result.shownNudged).toBe(true);
 		expect(result.shownScrolled).toBe(true);
 		expect(result.foldWidth).toBeGreaterThan(0);
 		// Pinned flush against the scroll box's left edge, and over its padding top to bottom.
@@ -90,11 +90,11 @@ async function probe({ score, container }: VexmlContext) {
 	const shown = () => getComputedStyle(fold).visibility === 'visible';
 	await frame();
 	const shownAtStart = shown();
-	// Scroll less than the fold is wide: the clefs and keys are cut, not gone.
-	container.scrollLeft = fold.getBoundingClientRect().width / 2;
+	// Barely scroll: the opening has only just reached the edge.
+	container.scrollLeft = 2;
 	await frame();
 	await frame();
-	const shownPartly = shown();
+	const shownNudged = shown();
 	container.scrollLeft = 0;
 	await frame();
 	// The first layout is a resize, and scrolling holds off until resizes settle.
@@ -132,7 +132,7 @@ async function probe({ score, container }: VexmlContext) {
 
 	return {
 		shownAtStart,
-		shownPartly,
+		shownNudged,
 		shownScrolled,
 		edge,
 		foldLeft: fr.left,
