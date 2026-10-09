@@ -16,7 +16,7 @@
     },
     "packages/integration": {
       "name": "@vexml/integration",
-      "version": "1.10.0",
+      "version": "1.11.0",
       "dependencies": {
         "@stringsync/vexml": "workspace:*",
         "@vexml/renderer": "workspace:*",
@@ -31,7 +31,7 @@
     },
     "packages/renderer": {
       "name": "@vexml/renderer",
-      "version": "1.10.0",
+      "version": "1.11.0",
       "dependencies": {
         "@coderline/alphatab": "^1.8.4",
         "@stringsync/mdom": "0.7.0",
@@ -43,7 +43,7 @@
     },
     "packages/site": {
       "name": "@vexml/site",
-      "version": "1.10.0",
+      "version": "1.11.0",
       "dependencies": {
         "@fontsource-variable/anybody": "^5.3.0",
         "@fontsource/ibm-plex-mono": "^5.3.0",
@@ -74,7 +74,7 @@
     },
     "packages/vex": {
       "name": "@vexml/vex",
-      "version": "1.10.0",
+      "version": "1.11.0",
       "bin": {
         "vex": "./index.ts",
       },
@@ -87,7 +87,7 @@
     },
     "packages/vexml": {
       "name": "@stringsync/vexml",
-      "version": "1.10.0",
+      "version": "1.11.0",
       "dependencies": {
         "@stringsync/mdom": "0.7.0",
         "vexflow": "5.0.0",
