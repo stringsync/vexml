@@ -1154,16 +1154,23 @@ export class DrawPass {
 			this.context.fillRect(left, top, right - left, bottom - top);
 		}
 		if (gap.style?.border) {
-			// Inset half the line width so the 1px outline lands inside the box.
+			// Inset half the line width so the 1px outline lands inside the box. A leading box
+			// is open on its right, the side facing the bracket and staves it leads into.
+			const l = left + 0.5;
+			const t = top + 0.5;
+			const r = right - 0.5;
+			const b = bottom - 0.5;
 			this.context.setStrokeStyle(gap.style.border);
 			this.context.setLineWidth(1);
 			this.context.beginPath();
-			this.context.rect(
-				left + 0.5,
-				top + 0.5,
-				right - left - 1,
-				bottom - top - 1,
-			);
+			if (this.edge === 'leading') {
+				this.context.moveTo(r, t);
+				this.context.lineTo(l, t);
+				this.context.lineTo(l, b);
+				this.context.lineTo(r, b);
+			} else {
+				this.context.rect(l, t, r - l, b - t);
+			}
 			this.context.stroke();
 		}
 		this.context.restore();

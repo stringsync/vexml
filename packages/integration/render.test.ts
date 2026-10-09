@@ -1345,6 +1345,29 @@ describe('render', () => {
 		).toMatchScreenshot('measures_gap.png');
 	});
 
+	// A leading edge gap before the empty treble+bass grand staff of clef_treble_bass. One
+	// system.
+	// - Gap: a light-gray box, "Intro" centered in it, spanning from the top line of the
+	//   treble stave to the bottom line of the bass stave. It starts at the left margin and
+	//   its right edge touches the brace's left edge. A 1px gray outline runs along its top,
+	//   left and bottom only: the right side, facing the brace, is open.
+	// - M1: the empty grand staff, treble and bass clefs, 4/4 on each stave.
+	it.concurrent('renders measures_gap_grand_staff.png', async () => {
+		expect(
+			await testing.render('clef_treble_bass.musicxml', {
+				gaps: [
+					{
+						beforeMeasureIndex: 0,
+						durationMs: 3000,
+						label: 'Intro',
+						minWidth: 150,
+						style: { fill: '#f2f2f2', border: '#d9d9d9' },
+					},
+				],
+			}),
+		).toMatchScreenshot('measures_gap_grand_staff.png');
+	});
+
 	// Beam variations across eleven 4/4 measures. Wraps across systems. A beam slants only
 	// when its run moves consistently one way (chords count both their outer voices) and
 	// is horizontal otherwise: M3, M5, M6, M9 are the flat cases.
@@ -2088,8 +2111,9 @@ describe('render', () => {
 	// of the bracketed notation+tab pair.
 	// - Leading gap: a light-gray box with a 1px gray outline, "0:26" centered in it,
 	//   spanning from the top line of the notation stave to the bottom line of the tab
-	//   stave. It sits at the left margin with no staff lines, and its right edge touches
-	//   the bracket's left edge. The bracket, treble clef and 4/4 open M1 to its right.
+	//   stave. It sits at the left margin with no staff lines, its right edge touching the
+	//   bracket's left edge. The outline is open on that right side. The bracket, treble
+	//   clef and 4/4 open M1 to its right.
 	// - M1-M4: as in tab_notation_durations, wrapping to a second system.
 	// - Trailing gap: the same box, "50:36", right of M4's thin-thick final barline on the
 	//   last system, its left edge touching the barline. No staff lines run through it.
