@@ -102,8 +102,15 @@ export abstract class Element implements Decoratable {
 		ctx.strokeStyle = color;
 		ctx.lineWidth = 0.5;
 		ctx.lineJoin = 'round';
-		ctx.strokeText(glyph.text, glyph.x, glyph.y);
-		ctx.fillText(glyph.text, glyph.x, glyph.y);
+		if (glyph.outline) {
+			ctx.beginPath();
+			glyph.outline.trace(ctx, glyph.x, glyph.y);
+			ctx.stroke();
+			ctx.fill();
+		} else {
+			ctx.strokeText(glyph.text, glyph.x, glyph.y);
+			ctx.fillText(glyph.text, glyph.x, glyph.y);
+		}
 		ctx.restore();
 	}
 }

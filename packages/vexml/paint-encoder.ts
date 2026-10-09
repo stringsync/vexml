@@ -11,13 +11,16 @@ import {
  * Encodes op lists against tables shared between them, so the engraving and the fold's strips
  * store a state they share once. Coordinates stay exact: rounding them, even to a thousandth of
  * a px, moves glyphs across the rasterizer's subpixel steps. Bounds are rounded out to whole px,
- * which only files an op under a tile it leaves blank. A path segment stores its transform only
- * where it differs from the one before (the op's own, for the first), and its argument count
- * only where the call's varies. Throws on what a snapshot cannot carry: images, Path2D,
- * gradients and patterns, which vexml's own engraving never draws.
+ * which only files an op under a tile it leaves blank, and stored from the op's anchor (see
+ * anchorOf), so the same glyph or line drawn anywhere stores the same four small numbers. A
+ * path segment stores its transform only where it differs from the one before (the op's own,
+ * for the first), and its argument count only where the call's varies. Throws on what a
+ * snapshot cannot carry: images, Path2D, gradients and patterns, which vexml's own engraving
+ * never draws.
  *
- * The op stream, per op: call * 2 + (1 when it has bounds), state, [x, y, w, h], the path's
- * segment count or -1, each segment, then the call's own arguments.
+ * The op stream, per op: call * 4 + (1 when it has bounds) + (2 for text with no maxWidth),
+ * state, [x, y, w, h], the path's segment count or -1, each segment, then the call's own
+ * arguments.
  */
 export class PaintEncoder {
 	private readonly strings: string[] = [];
@@ -30,11 +33,13 @@ export class PaintEncoder {
 	private readonly propsByValue = new Map<string, number>();
 	private readonly clips: EncodedPaint['clips'] = [];
 	private readonly clipsIndex = new Map<readonly Clip[], number>();
+	private readonly clipsByValue = new Map<string, number>();
 	private readonly dashes: number[][] = [];
 	private readonly dashIndex = new Map<readonly number[], number>();
 	private readonly dashByValue = new Map<string, number>();
 	private readonly states: number[] = [];
 	private readonly stateIndex = new Map<PaintState, number>();
+	private readonly stateByValue = new Map<string, number>();
 
 	encode(ops: readonly PaintOp[]): PaintStream {
 		const out: PaintStream = [];
@@ -43,12 +48,26 @@ export class PaintEncoder {
 			if (call < 0) {
 				throw new Error(`vexml: a snapshot cannot hold a ${op.call.kind}`);
 			}
-			out.push(call * 2 + (op.bounds ? 1 : 0), this.state(op.state));
+			const unbounded =
+				(op.call.kind === 'fillText' || op.call.kind === 'strokeText') &&
+				op.call.maxWidth === undefined;
+			out.push(
+				call * CALL_FLAGS +
+					(op.bounds ? HAS_BOUNDS : 0) +
+					(unbounded ? NO_MAX_WIDTH : 0),
+				this.state(op.state),
+			);
 			if (op.bounds) {
 				const { x, y, right, bottom } = op.bounds;
 				const x0 = Math.floor(x);
 				const y0 = Math.floor(y);
-				out.push(x0, y0, Math.ceil(right) - x0, Math.ceil(bottom) - y0);
+				const [ax, ay] = anchorOf(op.state.matrix, op.path, op.call);
+				out.push(
+					x0 - ax,
+					y0 - ay,
+					Math.ceil(right) - x0,
+					Math.ceil(bottom) - y0,
+				);
 			}
 			if (op.path) {
 				out.push(op.path.length);
@@ -92,12 +111,10 @@ export class PaintEncoder {
 				return;
 			case 'fillText':
 			case 'strokeText':
-				out.push(
-					this.string(call.text),
-					exact(call.x),
-					exact(call.y),
-					call.maxWidth === undefined ? null : exact(call.maxWidth),
-				);
+				out.push(this.string(call.text), exact(call.x), exact(call.y));
+				if (call.maxWidth !== undefined) {
+					out.push(exact(call.maxWidth));
+				}
 				return;
 		}
 	}
@@ -151,13 +168,20 @@ export class PaintEncoder {
 		if (known !== undefined) {
 			return known;
 		}
-		const index = this.states.length / 4;
-		this.states.push(
+		// States equal in value are distinct objects wherever the canvas was saved and restored.
+		const entry = [
 			this.propsOf(state.props),
 			this.matrix(state.matrix),
 			this.clipsOf(state.clips),
 			this.dash(state.lineDash),
-		);
+		];
+		const key = entry.join(',');
+		let index = this.stateByValue.get(key);
+		if (index === undefined) {
+			index = this.states.length / 4;
+			this.states.push(...entry);
+			this.stateByValue.set(key, index);
+		}
 		this.stateIndex.set(state, index);
 		return index;
 	}
@@ -230,8 +254,13 @@ export class PaintEncoder {
 				rect ? [rect.x, rect.y, rect.w, rect.h] : null,
 			];
 		});
-		const index = this.clips.length;
-		this.clips.push(encoded);
+		const key = JSON.stringify(encoded);
+		let index = this.clipsByValue.get(key);
+		if (index === undefined) {
+			index = this.clips.length;
+			this.clips.push(encoded);
+			this.clipsByValue.set(key, index);
+		}
 		this.clipsIndex.set(clips, index);
 		return index;
 	}
@@ -319,9 +348,40 @@ export const PATH_ARGS: Partial<Record<PathKind, number>> = {
 	rect: 4,
 	closePath: 0,
 };
+// An op's code: its call times CALL_FLAGS, plus these flags.
+export const CALL_FLAGS = 4;
+export const HAS_BOUNDS = 1;
+export const NO_MAX_WIDTH = 2;
 // A path segment's code: its kind, plus these flags.
 export const SEGMENT_MATRIX = 16;
 export const SEGMENT_COUNT = 32;
+
+/*
+ * The whole device px an op's bounds are stored from: where it starts drawing (its path's first
+ * point, or its rect's or text's x and y) under its transform, floored. The decoder computes it
+ * from the same exact numbers, so it lands on the same px.
+ */
+export function anchorOf(
+	stateMatrix: Affine,
+	path: readonly PathSegment[] | null,
+	call: PaintCall,
+): [number, number] {
+	let matrix = stateMatrix;
+	let x: unknown = 0;
+	let y: unknown = 0;
+	const first = path?.[0];
+	if (first) {
+		matrix = first.matrix;
+		[x, y] = first.args;
+	} else if ('x' in call) {
+		x = call.x;
+		y = call.y;
+	}
+	const px = typeof x === 'number' ? x : 0;
+	const py = typeof y === 'number' ? y : 0;
+	const { a, b, c, d, e, f } = matrix;
+	return [Math.floor(a * px + c * py + e), Math.floor(b * px + d * py + f)];
+}
 
 /* A number as JSON can hold it: NaN and the infinities would come back as null. */
 function exact(value: number): number {

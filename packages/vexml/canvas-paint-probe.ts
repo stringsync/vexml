@@ -4,25 +4,16 @@ import { PaintReplayer } from './paint-replayer';
 import type { PaintProp, PaintState } from './paint-state';
 
 /*
- * The production PaintProbe: a 1x1 canvas the recording asks what a real context would say. Text
+ * The production PaintProbe: a small canvas's context the recording asks what a real context
+ * would say, a browser's or, with no DOM, one a canvas library made (see createSnapshot). Text
  * metrics are cached by everything that shapes them, since an engraving measures the same few
  * glyphs (noteheads, accidentals, digits) tens of thousands of times.
  */
 export class CanvasPaintProbe implements PaintProbe {
-	private readonly ctx: CanvasRenderingContext2D;
 	private readonly metrics = new Map<string, TextMetrics>();
 	private readonly normalized = new Map<string, unknown>();
 
-	constructor() {
-		const canvas = document.createElement('canvas');
-		canvas.width = 1;
-		canvas.height = 1;
-		const ctx = canvas.getContext('2d');
-		if (!ctx) {
-			throw new Error('vexml: 2D context unavailable');
-		}
-		this.ctx = ctx;
-	}
+	constructor(private readonly ctx: CanvasRenderingContext2D) {}
 
 	normalize(prop: PaintProp, value: unknown, current: unknown): unknown {
 		// A string or number reads back the same every time, and every element sets its style

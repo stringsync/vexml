@@ -2,8 +2,9 @@ import { type Config, DEFAULT_FONT_CONFIG, type Layout } from './config';
 
 /* The part of a resolved Config that shapes what a snapshot holds: everything the engraving,
  * the element geometry or the timeline depends on, in a fixed key order so two compare as JSON.
- * What only sizes or places the stage (width, height, their caps, the scroll container) and the
- * pixel ratio are left out: a snapshot engraves at its reference width and replays at any. */
+ * What only sizes or places the stage (width, height, their caps, the scroll container), the
+ * pixel ratio and the colors are left out: a snapshot engraves at its reference width and
+ * replays at any, and its ink takes the colors it is painted with (see Ink). */
 export type SnapshotConfig = {
 	layout: Layout;
 	noteSpacing: number;
@@ -19,14 +20,12 @@ export type SnapshotConfig = {
 	stretchSingleSystem: boolean;
 	maxSystemFill: number;
 	fonts: { notation: SnapshotFont; text: SnapshotFont };
-	backgroundColor: string | null;
 	gaps: SnapshotGap[];
 };
 
 type SnapshotFont = {
 	family: string;
 	url: string | null;
-	color: string | null;
 };
 
 /* A gap as placed: a document gap names its measure by index. */
@@ -53,7 +52,6 @@ export function snapshotConfig(config: Config): SnapshotConfig {
 	): SnapshotFont => ({
 		family: override?.family ?? family,
 		url: override?.url ?? null,
-		color: override?.color ?? null,
 	});
 	return {
 		layout: layoutOf(config.layout),
@@ -76,7 +74,6 @@ export function snapshotConfig(config: Config): SnapshotConfig {
 			),
 			text: font(config.fonts.text, DEFAULT_FONT_CONFIG.text.family),
 		},
-		backgroundColor: config.backgroundColor,
 		gaps: config.gaps.map((gap) => ({
 			beforeMeasureIndex: gap.beforeMeasureIndex ?? null,
 			beforeBarIndex: gap.beforeBarIndex ?? null,

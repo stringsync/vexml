@@ -1,40 +1,21 @@
 import type { MDocument } from '@stringsync/mdom';
-import { BarlineTranslator } from './barline-translator';
 import { BRAVURA_URL } from './bravura-url';
-import { ChordTranslator } from './chord-translator';
-import {
-	type Config,
-	type ConfigInput,
-	DEFAULT_CONFIG,
-	DEFAULT_PAGED_LAYOUT,
-	DEFAULT_PANORAMIC_LAYOUT,
-	DEFAULT_STANDARD_LAYOUT,
-	type Layout,
-	type LayoutInput,
-} from './config';
+import { type ConfigInput, resolveConfig } from './config';
 import { DefaultFontLoader } from './default-font-loader';
 import { DefaultScoreParser } from './default-score-parser';
-import { DurationTranslator } from './duration-translator';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { ElementFactory } from './element-factory';
 import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
-import { LayoutPlanner } from './layout-planner';
-import { NotationTranslator } from './notation-translator';
+import { Ink } from './ink';
 import type { Score } from './score';
-import { ScoreDrawer } from './score-drawer';
+import { ScoreEngraver } from './score-engraver';
 import { ScoreReader } from './score-reader';
 import { ScoreRenderer } from './score-renderer';
 import type { ScoreSnapshot } from './score-snapshot';
 import { SequenceFactory } from './sequence-factory';
-import { SignatureTranslator } from './signature-translator';
 import { SnapshotReader } from './snapshot-reader';
-import { SpannerBuilder } from './spanner-builder';
-import { SpillResolver } from './spill-resolver';
 import { Stage } from './stage';
-import { StavePlan } from './stave-plan';
-import { TabVoiceTranslator } from './tab-voice-translator';
-import { VoiceTranslator } from './voice-translator';
 
 /*
  * Render a MusicXML score into a container: parse text or a compressed .mxl Blob, or reuse an
@@ -55,10 +36,7 @@ export function render(
 	container: HTMLDivElement,
 	config?: ConfigInput,
 ): Promise<Score> {
-	// `layout` is the one nested config object, so the top-level spread would blow away the
-	// knobs a caller left out of `{ type: 'standard' }`. Fill it from its own defaults first.
-	const layout = resolveLayout(config?.layout ?? DEFAULT_CONFIG.layout);
-	const resolved: Config = { ...DEFAULT_CONFIG, ...config, layout };
+	const resolved = resolveConfig(config);
 	const reader = new ScoreReader(new DynamicGlyphs());
 	const gaps = new Gaps(resolved.gaps, new GapInserter(reader));
 	// Before the stage touches the container. A snapshot's gaps were placed when it was
@@ -85,51 +63,20 @@ export function render(
 		pixelRatio: resolved.pixelRatio,
 		fit,
 		scrollContainer: resolved.scrollContainer,
+		ink: new Ink(
+			resolved.fonts.notation?.color ?? null,
+			resolved.fonts.text?.color ?? null,
+		),
 	});
-	const durations = new DurationTranslator(reader);
-	const barlines = new BarlineTranslator();
-	const signatures = new SignatureTranslator();
-	const staves = new StavePlan({
-		showTabs: resolved.showTabs,
-		showNotation: resolved.showNotation,
-	});
-	const tab = new TabVoiceTranslator(durations, resolved.tabStemPlacement);
-	const chords = new ChordTranslator(durations, new NotationTranslator());
-	// ONE translator instance shared by layout and draw: both must build identical vexflow
-	// voices for the measured widths to match the drawn ones.
-	const translator = new VoiceTranslator(chords, durations, barlines, reader);
+	const elements = new ElementFactory();
+	const sequences = new SequenceFactory(reader, gaps);
 	return new ScoreRenderer(
 		resolved,
 		stage,
 		new DefaultFontLoader(BRAVURA_URL),
 		new DefaultScoreParser(),
-		new LayoutPlanner(translator, tab, signatures, staves, reader, gaps),
-		new ScoreDrawer(
-			resolved,
-			translator,
-			chords,
-			tab,
-			signatures,
-			staves,
-			barlines,
-			reader,
-			new SpannerBuilder(),
-			gaps,
-			new SpillResolver(),
-		),
-		new ElementFactory(),
-		new SequenceFactory(reader, gaps),
-		gaps,
+		ScoreEngraver.create(resolved, reader, gaps, elements, sequences),
+		elements,
+		sequences,
 	).render(input);
-}
-
-function resolveLayout(input: LayoutInput): Layout {
-	switch (input.type) {
-		case 'standard':
-			return { ...DEFAULT_STANDARD_LAYOUT, ...input };
-		case 'panoramic':
-			return { ...DEFAULT_PANORAMIC_LAYOUT, ...input };
-		case 'paged':
-			return { ...DEFAULT_PAGED_LAYOUT, ...input };
-	}
 }

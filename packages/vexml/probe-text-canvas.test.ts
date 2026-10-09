@@ -4,8 +4,6 @@ import { CanvasPaintProbe } from './canvas-paint-probe';
 import { ProbeTextCanvas } from './probe-text-canvas';
 
 describe('ProbeTextCanvas', () => {
-	const realDocument = globalThis.document;
-
 	let measured: string[];
 
 	// A real canvas stand-in that logs each measurement by the font it was asked in, installed
@@ -23,14 +21,12 @@ describe('ProbeTextCanvas', () => {
 				};
 			},
 		};
-		(globalThis as unknown as { document: unknown }).document = {
-			createElement: () => ({ getContext: () => ctx }),
-		};
-		new ProbeTextCanvas(new CanvasPaintProbe()).install();
+		new ProbeTextCanvas(
+			new CanvasPaintProbe(ctx as unknown as CanvasRenderingContext2D),
+		).install();
 	});
 
 	afterEach(() => {
-		globalThis.document = realDocument;
 		Element.setTextMeasurementCanvas(undefined as unknown as HTMLCanvasElement);
 	});
 

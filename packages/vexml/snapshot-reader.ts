@@ -3,6 +3,7 @@ import { Rect } from 'webappwiz/geometry';
 import type { Config } from './config';
 import type { ElementModel } from './element-model';
 import type { Fold } from './fold';
+import type { NoteGlyph } from './geometry-collector';
 import { PaintDecoder } from './paint-decoder';
 import { RecordedFold } from './recorded-fold';
 import type { Engraving } from './score-drawer';
@@ -14,6 +15,7 @@ import {
 } from './score-snapshot';
 import type { SequenceModel } from './sequence';
 import { snapshotConfig } from './snapshot-config';
+import { SnapshotFingerprint } from './snapshot-fingerprint';
 import { SnapshotMismatchError } from './snapshot-mismatch-error';
 
 /* A snapshot decoded into what the renderer builds a Score from. */
@@ -69,8 +71,12 @@ export class SnapshotReader {
 	}
 
 	read(snapshot: ScoreSnapshot): ReadSnapshot {
-		const decoder = new PaintDecoder(snapshot.paint);
+		const decoder = new PaintDecoder(snapshot.paint, snapshot.outlines);
 		const { engraving, fold, elements, sequence } = snapshot;
+		const outlined = (glyph: NoteGlyph): NoteGlyph => {
+			const outline = decoder.outline(glyph.font, glyph.text);
+			return outline ? { ...glyph, outline } : glyph;
+		};
 		// A stand-in per note for the elements to look it up by: a snapshot has no mdom notes.
 		const keys = elements.notes.map(() => ({}));
 		return {
@@ -80,6 +86,7 @@ export class SnapshotReader {
 				height: engraving.height,
 				origin: { x: engraving.origin[0], y: engraving.origin[1] },
 				scale: engraving.scale,
+				fingerprint: SnapshotFingerprint.of(snapshot),
 			},
 			fold:
 				fold &&
@@ -123,19 +130,25 @@ export class SnapshotReader {
 						},
 						rect: box,
 						ink: ink ? rect(ink) : box,
-						glyph: glyph && {
-							text: glyph[0],
-							font: elements.fonts[glyph[1]] ?? '',
-							x: glyph[2] ?? x,
-							y: glyph[3],
-						},
+						glyph:
+							glyph &&
+							outlined({
+								text: glyph[0],
+								font: elements.fonts[glyph[1]] ?? '',
+								x: glyph[2] ?? x,
+								y: glyph[3],
+							}),
 						part,
 						measure,
 						chord: note[11] ?? [i],
 						source: null,
 					};
 				}),
-				tabs: elements.tabs.map((tab) => ({ ...tab, rect: rect(tab.rect) })),
+				tabs: elements.tabs.map((tab) => ({
+					...tab,
+					rect: rect(tab.rect),
+					glyph: tab.glyph && outlined(tab.glyph),
+				})),
 				diagrams: elements.diagrams.map((diagram) => ({
 					...diagram,
 					rect: rect(diagram.rect),

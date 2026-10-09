@@ -1,8 +1,13 @@
 import { Rect } from 'webappwiz/geometry';
 import { Affine } from './affine';
+import { GlyphOutline } from './glyph-outline';
 import {
+	anchorOf,
+	CALL_FLAGS,
 	type EncodedPaint,
 	FILL_RULES,
+	HAS_BOUNDS,
+	NO_MAX_WIDTH,
 	PAINT_CALLS,
 	PATH_ARGS,
 	PATH_KINDS,
@@ -12,19 +17,30 @@ import {
 } from './paint-encoder';
 import type { PaintCall, PaintOp, PathSegment } from './paint-op';
 import { type Clip, type PaintProps, PaintState } from './paint-state';
+import type { SnapshotOutlines } from './score-snapshot';
+import { type PlacedGlyph, TextOutline } from './text-outline';
 
 /*
  * Turns PaintEncoder's streams back into ops. Every table entry becomes one object, so ops that
  * shared a state, transform or clip list when recorded share it again, and a replay sets each
- * once per run of them, as it does for a fresh recording.
+ * once per run of them, as it does for a fresh recording. Given a snapshot's outlines, a text
+ * they hold comes back with its TextOutline, which a replay fills in place of the text.
  */
 export class PaintDecoder {
 	private readonly matrices: Affine[] = [];
 	private readonly states: PaintState[] = [];
 	// Each state's matrix index, which its op's path segments start from.
 	private readonly stateMatrices: number[] = [];
+	// Each outlined text by font, then text.
+	private readonly outlines = new Map<string, Map<string, TextOutline>>();
 
-	constructor(private readonly tables: EncodedPaint) {
+	constructor(
+		private readonly tables: EncodedPaint,
+		outlines: SnapshotOutlines | null = null,
+	) {
+		if (outlines) {
+			this.readOutlines(outlines);
+		}
 		const { matrices, props, clips, dashes, states } = tables;
 		for (let i = 0; i < matrices.length; i += 6) {
 			this.matrices.push(
@@ -76,7 +92,7 @@ export class PaintDecoder {
 			const code = next();
 			const stateIndex = next();
 			const state = must(this.states[stateIndex]);
-			const bounds = code & 1 ? new Rect(next(), next(), next(), next()) : null;
+			const box = code & HAS_BOUNDS ? [next(), next(), next(), next()] : null;
 			const length = next();
 			let path: PathSegment[] | null = null;
 			if (length >= 0) {
@@ -89,7 +105,7 @@ export class PaintDecoder {
 					path,
 				);
 			}
-			const kind = PAINT_CALLS[code >> 1];
+			const kind = PAINT_CALLS[Math.floor(code / CALL_FLAGS)];
 			let call: PaintCall;
 			switch (kind) {
 				case 'fill':
@@ -108,15 +124,27 @@ export class PaintDecoder {
 					const text = must(this.tables.strings[next()]);
 					const x = next();
 					const y = next();
-					const maxWidth = stream[at++];
-					call =
-						typeof maxWidth === 'number'
-							? { kind, text, x, y, maxWidth }
-							: { kind, text, x, y };
+					if (!(code & NO_MAX_WIDTH)) {
+						call = { kind, text, x, y, maxWidth: next() };
+						break;
+					}
+					const outline =
+						kind === 'fillText' ? this.outlineOf(state, text) : undefined;
+					call = outline ? { kind, text, x, y, outline } : { kind, text, x, y };
 					break;
 				}
 				default:
 					throw new Error('vexml: unknown paint call in a snapshot');
+			}
+			let bounds: Rect | null = null;
+			if (box) {
+				const [ax, ay] = anchorOf(state.matrix, path, call);
+				bounds = new Rect(
+					ax + must(box[0]),
+					ay + must(box[1]),
+					must(box[2]),
+					must(box[3]),
+				);
 			}
 			ops.push({ state, path, call, bounds });
 		}
@@ -148,6 +176,43 @@ export class PaintDecoder {
 			at += count;
 		}
 		return at;
+	}
+
+	private readOutlines({ glyphs, forms, fonts, texts }: SnapshotOutlines) {
+		const paths = glyphs.map((data) => new GlyphOutline(data));
+		for (const [font, text, ...placed] of texts) {
+			const glyphsOf: PlacedGlyph[] = [];
+			for (let i = 0; i + 3 < placed.length; i += 4) {
+				const form = num(placed[i + 3]) * 2;
+				glyphsOf.push({
+					glyph: must(paths[num(placed[i])]),
+					x: num(placed[i + 1]),
+					y: num(placed[i + 2]),
+					scale: num(forms[form]),
+					skew: num(forms[form + 1]),
+				});
+			}
+			const name = must(fonts[num(font)]);
+			let byText = this.outlines.get(name);
+			if (!byText) {
+				byText = new Map();
+				this.outlines.set(name, byText);
+			}
+			byText.set(
+				must(this.tables.strings[num(text)]),
+				new TextOutline(glyphsOf),
+			);
+		}
+	}
+
+	/* The outline of `text` in a canvas font, when the snapshot carries one. */
+	outline(font: string, text: string): TextOutline | undefined {
+		return this.outlines.get(font)?.get(text);
+	}
+
+	private outlineOf(state: PaintState, text: string): TextOutline | undefined {
+		const font = state.props.font;
+		return typeof font === 'string' ? this.outline(font, text) : undefined;
 	}
 
 	private matrix(index: number): Affine {

@@ -1,13 +1,7 @@
-import { afterEach, describe, expect, it } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import { CanvasPaintProbe } from './canvas-paint-probe';
 
 describe('CanvasPaintProbe', () => {
-	const realDocument = globalThis.document;
-
-	afterEach(() => {
-		globalThis.document = realDocument;
-	});
-
 	// A context that spells colors the way a browser reads them back, and counts the writes.
 	const probe = () => {
 		const writes: unknown[] = [];
@@ -21,10 +15,10 @@ describe('CanvasPaintProbe', () => {
 				fill = value === 'red' ? '#ff0000' : value;
 			},
 		};
-		(globalThis as unknown as { document: unknown }).document = {
-			createElement: () => ({ getContext: () => ctx }),
+		return {
+			probe: new CanvasPaintProbe(ctx as unknown as CanvasRenderingContext2D),
+			writes,
 		};
-		return { probe: new CanvasPaintProbe(), writes };
 	};
 
 	it('asks the real context once per distinct style', () => {

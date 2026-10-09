@@ -76,12 +76,23 @@ describe('SnapshotReader', () => {
 		);
 		expect(
 			reasonOf(snapshotOf(DEFAULT_CONFIG), {
-				fonts: { notation: { family: 'Bravura', color: '#ff0000' } },
+				fonts: { notation: { family: 'Petaluma' } },
 			}),
 		).toBe('config');
-		expect(
-			reasonOf(snapshotOf(DEFAULT_CONFIG), { backgroundColor: '#000000' }),
-		).toBe('config');
+	});
+
+	it('takes any colors, which its ink is painted in', () => {
+		const snapshot = snapshotOf(DEFAULT_CONFIG);
+		expect(() =>
+			new SnapshotReader({
+				...DEFAULT_CONFIG,
+				backgroundColor: '#000000',
+				fonts: {
+					notation: { family: 'Bravura', color: '#ffffff' },
+					text: { family: 'Source Sans 3', color: '#eeeeee' },
+				},
+			}).check(snapshot),
+		).not.toThrow();
 	});
 
 	it('refuses another version', () => {
@@ -140,6 +151,7 @@ function snapshotOf(config: Config): ScoreSnapshot {
 			ties: [],
 		},
 		gaps: [],
+		outlines: null,
 	};
 }
 

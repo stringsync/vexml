@@ -15,6 +15,7 @@ import { LayoutPlanner } from './layout-planner';
 import { NotationTranslator } from './notation-translator';
 import { RecordingFontLoader } from './recording-font-loader';
 import { type Engraving, ScoreDrawer } from './score-drawer';
+import { ScoreEngraver } from './score-engraver';
 import { ScoreReader } from './score-reader';
 import { type RenderStage, ScoreRenderer } from './score-renderer';
 import { SequenceFactory } from './sequence-factory';
@@ -49,28 +50,35 @@ describe('ScoreRenderer', () => {
 		const chords = new ChordTranslator(durations, new NotationTranslator());
 		const translator = new VoiceTranslator(chords, durations, barlines, reader);
 		const gaps = new Gaps([], new GapInserter(reader));
+		const elements = new ElementFactory();
+		const sequences = new SequenceFactory(reader, gaps);
 		return new ScoreRenderer(
 			config,
 			stage,
 			fontLoader,
 			parser,
-			new LayoutPlanner(translator, tab, signatures, staves, reader, gaps),
-			new ScoreDrawer(
+			new ScoreEngraver(
 				config,
-				translator,
-				chords,
-				tab,
-				signatures,
-				staves,
-				barlines,
-				reader,
-				new SpannerBuilder(),
+				new LayoutPlanner(translator, tab, signatures, staves, reader, gaps),
+				new ScoreDrawer(
+					config,
+					translator,
+					chords,
+					tab,
+					signatures,
+					staves,
+					barlines,
+					reader,
+					new SpannerBuilder(),
+					gaps,
+					new SpillResolver(),
+				),
+				elements,
+				sequences,
 				gaps,
-				new SpillResolver(),
 			),
-			new ElementFactory(),
-			new SequenceFactory(reader, gaps),
-			gaps,
+			elements,
+			sequences,
 		);
 	};
 
@@ -136,6 +144,32 @@ describe('ScoreRenderer', () => {
 		]);
 		expect(score.getElements().all()).toEqual([]);
 		expect(score.getDurationMs()).toBe(0);
+	});
+
+	it('builds an outlined snapshot without waiting on its fonts', async () => {
+		const snapshot = (await renderer().render('<xml/>')).snapshot();
+		fontLoader.stalled = true;
+
+		const score = await renderer().render({
+			...snapshot,
+			outlines: { glyphs: [], forms: [], fonts: [], texts: [] },
+		});
+
+		expect(score.getElements().all()).toEqual([]);
+	});
+
+	it('waits on its fonts for a snapshot without outlines', async () => {
+		const snapshot = (await renderer().render('<xml/>')).snapshot();
+		fontLoader.stalled = true;
+
+		const settled = await Promise.race([
+			renderer()
+				.render(snapshot)
+				.then(() => 'rendered'),
+			new Promise((resolve) => setTimeout(() => resolve('waiting'), 20)),
+		]);
+
+		expect(settled).toBe('waiting');
 	});
 
 	it('hands back the snapshot a score was rendered from', async () => {

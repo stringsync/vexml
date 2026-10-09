@@ -24,14 +24,15 @@ export class DefaultFontLoader implements FontLoader {
 		container: HTMLElement,
 		config?: FontConfig,
 	): Promise<{ notation: string; text: string }> {
-		const { notation, text } = new FontFamilies(config);
+		const families = new FontFamilies(config);
+		const { notation, text } = families;
 		if (typeof document === 'undefined') {
 			return { notation, text }; // SSR guard
 		}
 
 		this.injectNotationFont(config?.notation);
 		this.injectTextFont(config?.text);
-		this.applyFontVariables(container, notation, text);
+		this.applyFontVariables(container, families);
 		// VexFlow engraves glyphs in whatever face its global font stack names, not the
 		// --vexml-font-notation CSS var. setFonts sets a CSS font-family stack the browser falls
 		// through per glyph: music glyphs (noteheads, clefs, the stacked "TAB" clef) come from the
@@ -229,16 +230,12 @@ export class DefaultFontLoader implements FontLoader {
 	// on the same page can use different fonts independently.
 	private applyFontVariables(
 		container: HTMLElement,
-		notationFamily: string,
-		textFamily: string,
+		families: FontFamilies,
 	): void {
 		container.style.setProperty(
 			'--vexml-font-notation',
-			`'${notationFamily}', serif`,
+			families.notationStack,
 		);
-		container.style.setProperty(
-			'--vexml-font-text',
-			`'${textFamily}', sans-serif`,
-		);
+		container.style.setProperty('--vexml-font-text', families.textStack);
 	}
 }

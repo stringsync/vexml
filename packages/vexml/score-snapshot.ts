@@ -7,7 +7,7 @@ import type { TempoSegment } from './tempo-map';
 
 /** Bumped whenever a snapshot's shape or meaning changes: a snapshot from another version
  * throws SnapshotMismatchError rather than render wrong. */
-export const SNAPSHOT_VERSION = 1;
+export const SNAPSHOT_VERSION = 3;
 
 /** Marks a ScoreSnapshot among render's other inputs. */
 export const SNAPSHOT_FORMAT = 'vexml-score-snapshot';
@@ -33,6 +33,22 @@ export interface ScoreSnapshot {
 	readonly elements: SnapshotElements;
 	readonly sequence: SnapshotSequence;
 	readonly gaps: GapInfo[];
+	/** Outlines of the text it draws, so `paint` need not wait on fonts: from createSnapshot,
+	 * null from Score.snapshot(). */
+	readonly outlines: SnapshotOutlines | null;
+}
+
+/* Glyph outlines for the texts a snapshot fills. */
+export interface SnapshotOutlines {
+	/* SVG path data per glyph, in its font's units, y up. */
+	glyphs: string[];
+	/* Two numbers per form: the px per font unit, and the slant (a synthesized italic's). */
+	forms: number[];
+	/* The canvas fonts `texts` name by index. */
+	fonts: string[];
+	/* Per text: its font, its index in the paint strings, then four numbers per glyph: the
+	 * glyph, its x and y from the pen in px, and its form. */
+	texts: number[][];
 }
 
 export interface SnapshotEngraving {

@@ -1,5 +1,6 @@
 import { Rect } from 'webappwiz/geometry';
 import { Affine } from './affine';
+import { Ink } from './ink';
 import type { PaintCall, PaintOp, PathKind, PathSegment } from './paint-op';
 import type { PaintProbe } from './paint-probe';
 import type { PaintSink } from './paint-sink';
@@ -44,9 +45,10 @@ export class PaintContext {
 
 	setProp(prop: PaintProp, value: unknown): void {
 		const current = this.state.props[prop];
+		// An ink role is no color a canvas takes: it is kept for the replay to resolve.
 		this.state = this.state.with(
 			prop,
-			this.probe.normalize(prop, value, current),
+			Ink.isRole(value) ? value : this.probe.normalize(prop, value, current),
 		);
 	}
 
@@ -128,6 +130,12 @@ export class PaintContext {
 
 	getTransform(): DOMMatrix {
 		const m = this.state.matrix;
+		// With no DOM (createSnapshot) there is no DOMMatrix. Its six entries are all vexflow
+		// reads, and all setTransform needs to take it back.
+		if (typeof DOMMatrix === 'undefined') {
+			const { a, b, c, d, e, f } = m;
+			return { a, b, c, d, e, f } as DOMMatrix;
+		}
 		return new DOMMatrix([m.a, m.b, m.c, m.d, m.e, m.f]);
 	}
 

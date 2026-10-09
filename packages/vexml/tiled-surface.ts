@@ -1,9 +1,8 @@
 import type { Resource } from 'webappwiz/disposable';
 import { Rect } from 'webappwiz/geometry';
 import { Affine } from './affine';
-import { PaintContext } from './paint-context';
+import type { Ink } from './ink';
 import type { PaintOp } from './paint-op';
-import type { PaintProbe } from './paint-probe';
 import { PaintReplayer } from './paint-replayer';
 import type { PaintSink } from './paint-sink';
 import { TileBudget } from './tile-budget';
@@ -16,6 +15,8 @@ export interface TiledSurfaceOptions {
 	tileSize: number;
 	// Device px² of tiles kept painted (see TILE_BUDGET).
 	budget: number;
+	// The colors the ops' ink roles paint in; the default ink when not set.
+	ink?: Ink;
 }
 
 /*
@@ -25,12 +26,11 @@ export interface TiledSurfaceOptions {
  * canvas, painted at full device resolution. While every tile fits the budget they're all
  * painted; past it, only those in or near the view are, and the rest wait in their op lists.
  *
- * `ctx` records onto it: an op lands in the grid and is replayed at once onto any painted tile it
- * touches. The tiles sit on a plane laid out at the surface's CSS size, or at whatever box
+ * A PaintContext over it records onto it: an op lands in the grid and is replayed at once onto
+ * any painted tile it touches. The tiles sit on a plane laid out at the surface's CSS size, or at whatever box
  * fit() is given to show it at.
  */
 export class TiledSurface implements PaintSink, Resource {
-	readonly ctx: CanvasRenderingContext2D;
 	private readonly plane: HTMLDivElement;
 	private readonly tiles = new Map<number, Tile>();
 	private readonly budget: TileBudget<number>;
@@ -42,10 +42,11 @@ export class TiledSurface implements PaintSink, Resource {
 	private shown = { sx: 1, sy: 1 };
 	// Device px per CSS px the tiles are painted at (see rescale).
 	private density: number;
+	// Tiles painted elsewhere showing these same ops, by index, taken instead of painted (see adopt).
+	private adoptable = new Map<number, HTMLCanvasElement>();
 
 	constructor(
 		readonly host: HTMLElement,
-		probe: PaintProbe,
 		private readonly opts: TiledSurfaceOptions,
 	) {
 		this.plane = document.createElement('div');
@@ -55,15 +56,11 @@ export class TiledSurface implements PaintSink, Resource {
 		style.left = '0';
 		style.top = '0';
 		style.pointerEvents = 'none';
-		host.appendChild(this.plane);
+		// Ahead of what the host holds already: the base's strut is a canvas too.
+		host.prepend(this.plane);
 		this.density = opts.scale;
 		this.budget = new TileBudget(opts.budget);
 		this.grid = new TileGrid(0, 0, opts.tileSize);
-		this.ctx = new PaintContext(
-			this,
-			probe,
-			host,
-		) as unknown as CanvasRenderingContext2D;
 	}
 
 	get scale(): number {
@@ -140,6 +137,18 @@ export class TiledSurface implements PaintSink, Resource {
 	show(view: Rect): void {
 		this.view = view;
 		this.refresh();
+		this.discard();
+	}
+
+	/* Take the tiles in `plane`, which another surface painted from these same ops at this
+	 * density, rather than paint them again: each tile the next load and show open that it
+	 * holds is used as it is, and the rest go once the surface first shows. */
+	adopt(plane: HTMLElement): void {
+		plane
+			.querySelectorAll<HTMLCanvasElement>(`:scope > canvas[${TILE_INDEX}]`)
+			.forEach((canvas) => {
+				this.adoptable.set(Number(canvas.getAttribute(TILE_INDEX)), canvas);
+			});
 	}
 
 	paint(op: PaintOp): void {
@@ -171,10 +180,12 @@ export class TiledSurface implements PaintSink, Resource {
 		const base = Affine.translate(-sx, -sy)
 			.multiply(Affine.scale(s))
 			.multiply(Affine.translate(this.grid.origin.x, this.grid.origin.y));
-		const replayer = new PaintReplayer(ctx, base, {
-			scale: s,
-			device: { x: sx, y: sy },
-		});
+		const replayer = new PaintReplayer(
+			ctx,
+			base,
+			{ scale: s, device: { x: sx, y: sy } },
+			this.opts.ink,
+		);
 		for (const op of this.grid.opsIn(
 			new Rect(sx / s, sy / s, sw / s, sh / s),
 		)) {
@@ -212,6 +223,7 @@ export class TiledSurface implements PaintSink, Resource {
 
 	dispose(): void {
 		this.reset();
+		this.discard();
 		this.plane.remove();
 	}
 
@@ -271,7 +283,12 @@ export class TiledSurface implements PaintSink, Resource {
 		ctx.beginPath();
 		ctx.rect(region.x, region.y, region.w, region.h);
 		ctx.clip();
-		const replayer = new PaintReplayer(ctx, base, { scale, device: null });
+		const replayer = new PaintReplayer(
+			ctx,
+			base,
+			{ scale, device: null },
+			this.opts.ink,
+		);
 		for (const op of ops) {
 			replayer.replay(op);
 		}
@@ -318,11 +335,26 @@ export class TiledSurface implements PaintSink, Resource {
 		// Snap the tile's edges to device pixels so neighbours meet without a seam or overlap.
 		const x0 = Math.round(rect.x * s);
 		const y0 = Math.round(rect.y * s);
-		const canvas = document.createElement('canvas');
-		canvas.width = Math.round(rect.right * s) - x0;
-		canvas.height = Math.round(rect.bottom * s) - y0;
+		const width = Math.round(rect.right * s) - x0;
+		const height = Math.round(rect.bottom * s) - y0;
+		const adopted = this.adoptable.get(index);
+		this.adoptable.delete(index);
+		const painted = adopted?.width === width && adopted.height === height;
+		if (adopted && !painted) {
+			free(adopted);
+		}
+		let canvas: HTMLCanvasElement;
+		if (adopted && painted) {
+			canvas = adopted;
+		} else {
+			// Only a new canvas is sized: setting a canvas's size, even to what it is, clears it.
+			canvas = document.createElement('canvas');
+			canvas.width = width;
+			canvas.height = height;
+		}
 		canvas.style.position = 'absolute';
 		canvas.style.display = 'block';
+		canvas.setAttribute(TILE_INDEX, String(index));
 		this.place(index, canvas);
 		const ctx = canvas.getContext('2d');
 		if (!ctx) {
@@ -331,12 +363,16 @@ export class TiledSurface implements PaintSink, Resource {
 		const base = new Affine(s, 0, 0, s, -x0, -y0).multiply(
 			Affine.translate(this.grid.origin.x, this.grid.origin.y),
 		);
-		const replayer = new PaintReplayer(ctx, base, {
-			scale: s,
-			device: { x: x0, y: y0 },
-		});
-		for (const op of this.grid.ops(index)) {
-			replayer.replay(op);
+		const replayer = new PaintReplayer(
+			ctx,
+			base,
+			{ scale: s, device: { x: x0, y: y0 } },
+			this.opts.ink,
+		);
+		if (!painted) {
+			for (const op of this.grid.ops(index)) {
+				replayer.replay(op);
+			}
 		}
 		this.plane.appendChild(canvas);
 		this.tiles.set(index, { canvas, replayer });
@@ -370,19 +406,34 @@ export class TiledSurface implements PaintSink, Resource {
 		if (!tile) {
 			return;
 		}
-		tile.canvas.remove();
-		// Free the bitmap now, not at the next GC: iOS WebKit counts a dropped canvas against its
-		// memory limit until it's collected.
-		tile.canvas.width = 0;
-		tile.canvas.height = 0;
+		free(tile.canvas);
 		this.tiles.delete(index);
 		this.budget.drop(index);
+	}
+
+	// The adopted tiles no show wanted.
+	private discard(): void {
+		for (const canvas of this.adoptable.values()) {
+			free(canvas);
+		}
+		this.adoptable.clear();
 	}
 
 	private areaOf(index: number): number {
 		const rect = this.grid.tileRect(index);
 		return Math.round(rect.w * this.scale) * Math.round(rect.h * this.scale);
 	}
+}
+
+// Marks a tile canvas with its index, for a surface that adopts it.
+const TILE_INDEX = 'data-vexml-tile';
+
+// Drop a tile and free its bitmap now, not at the next GC: iOS WebKit counts a dropped canvas
+// against its memory limit until it's collected.
+function free(canvas: HTMLCanvasElement): void {
+	canvas.remove();
+	canvas.width = 0;
+	canvas.height = 0;
 }
 
 interface Tile {

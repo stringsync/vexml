@@ -42,6 +42,7 @@ import {
 	type RawMeasure,
 	type RawNote,
 } from './geometry-collector';
+import { Ink } from './ink';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
 import { LyricPlacer } from './lyric-placer';
 import type {
@@ -107,9 +108,9 @@ export class DrawPass {
 	private readonly gaps: ReadonlyMap<number, Gap>;
 	// The multirest bars to draw over this column's staves, once those staves are on the canvas.
 	private columnMultiRests: Array<{ stave: Stave; count: number }> = [];
-	// Ink colors from config.fonts. notationColor is the context's default fill/stroke, so every
-	// vexflow-engraved glyph (noteheads, stems, staves, clefs) inherits it; textColor recolors the
-	// words vexml types itself. Both default to black, keeping an uncolored score byte-identical.
+	// Ink roles (see Ink), resolved to config.fonts' colors when the ops are painted. notationColor
+	// is the context's default fill/stroke, so every vexflow-engraved glyph (noteheads, stems,
+	// staves, clefs) inherits it; textColor marks the words vexml types itself.
 	private readonly notationColor: string;
 	private readonly textColor: string;
 
@@ -302,8 +303,8 @@ export class DrawPass {
 		const { measureNumbering, showTabSlideText } = config;
 		this.showTabs = config.showTabs;
 		this.showNotation = config.showNotation;
-		this.notationColor = config.fonts.notation?.color ?? '#000000';
-		this.textColor = config.fonts.text?.color ?? '#000000';
+		this.notationColor = Ink.NOTATION;
+		this.textColor = Ink.TEXT;
 		this.parts = this.score.parts;
 		this.gaps = configuredGaps.byMeasureIndex();
 		this.partGroups = this.reader.partGroups(this.score);
@@ -489,15 +490,13 @@ export class DrawPass {
 		rawChordDiagrams: RawChordDiagram[];
 	} {
 		// The context's default ink: every vexflow glyph with no explicit style inherits it, and it
-		// survives the save()/restore() pairs below since it's set before any of them. A fresh canvas
-		// (or a resize between passes) resets to black, so setting black here is a no-op: a colored
-		// score is the only thing this changes. Text vexml types itself overrides to textColor inline.
+		// survives the save()/restore() pairs below since it's set before any of them. Text vexml
+		// types itself overrides to textColor inline.
 		this.context.setFillStyle(this.notationColor);
 		this.context.setStrokeStyle(this.notationColor);
 		// Stems ignore the context stroke above: Stem.drawWithStyle paints them with
 		// Metrics.Stem.strokeStyle (hardcoded 'black') on top of it. Override that metric too:
-		// global VexFlow state like setFonts, reset to the default black when no color is set so an
-		// uncolored render stays byte-identical and no color leaks into the next render.
+		// global VexFlow state like setFonts, set afresh by every pass.
 		MetricsDefaults.Stem.strokeStyle = this.notationColor;
 		Metrics.clear('Stem');
 		for (let m = 0; m < this.measureCount; m++) {

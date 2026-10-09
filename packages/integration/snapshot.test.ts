@@ -78,6 +78,24 @@ describe('snapshot', () => {
 		expect(image).toMatchScreenshot('snapshot_gapped.png');
 	});
 
+	// The ink is a role in the snapshot, not a color: one recorded in black paints in the
+	// colors it is rendered with, matching a full render in those colors.
+	it.concurrent('paints its ink in the colors it is rendered with', async () => {
+		const plain = { showPartLabels: true, fonts: FONTS };
+		const { image } = await testing.eval('colors.musicxml', plain, recolor, {
+			config: {
+				...plain,
+				backgroundColor: '#fce4ec',
+				fonts: {
+					notation: { family: 'Bravura', color: '#1d4ed8' },
+					text: { family: 'Source Sans 3', color: '#c2410c' },
+				},
+			},
+			scroll: 0,
+		} satisfies Replay);
+		expect(image).toMatchScreenshot('colors.png');
+	});
+
 	it.concurrent('throws SnapshotMismatchError for another version or config', async () => {
 		const { result } = await testing.eval(
 			'score_amazing_grace.musicxml',
@@ -230,6 +248,15 @@ async function roundTrip(
 		await frame();
 	}
 	return { full, replayed: summarize(replayed), mismatch };
+}
+
+async function recolor(
+	{ score, container, render }: VexmlContext,
+	{ config }: Replay,
+) {
+	const snapshot = JSON.parse(JSON.stringify(score.snapshot()));
+	score.dispose();
+	await render(snapshot, container, config);
 }
 
 async function mismatch(

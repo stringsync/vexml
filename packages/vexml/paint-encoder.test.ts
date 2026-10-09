@@ -64,6 +64,34 @@ describe('PaintEncoder', () => {
 		expect(recorded && op?.bounds?.containsRect(recorded)).toBe(true);
 	});
 
+	it('stores a state once however many times the canvas saved it', () => {
+		ctx.save();
+		ctx.translate(5, 5);
+		ctx.fillRect(0, 0, 1, 1);
+		ctx.restore();
+		ctx.save();
+		ctx.translate(5, 5);
+		ctx.fillRect(2, 2, 1, 1);
+		ctx.restore();
+		const encoder = new PaintEncoder();
+		encoder.encode(list.ops);
+
+		expect(encoder.tables().states).toHaveLength(4);
+	});
+
+	it('keeps bounds drawn under a scale and at negative coordinates', () => {
+		ctx.scale(3, 3);
+		ctx.fillRect(-4.2, -7.9, 2.5, 1.5);
+		ctx.font = '12px serif';
+		ctx.fillText('a', -1.1, 3.3);
+
+		const [rect, text] = roundTrip(list.ops);
+
+		// Recorded at (-13.6, -24.7, 9.5, 6.5) and (-13.9, -36.7, 57.2, 57.2), rounded out.
+		expect(rect?.bounds).toMatchObject({ x: -14, y: -25, w: 10, h: 7 });
+		expect(text?.bounds).toMatchObject({ x: -14, y: -37, w: 58, h: 58 });
+	});
+
 	it('keeps a clip and the segments cut under it', () => {
 		ctx.beginPath();
 		ctx.rect(0, 0, 50, 50);

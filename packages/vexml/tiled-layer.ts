@@ -13,20 +13,18 @@ export interface TiledLayerOwner {
  * over the engraving and stretched to its rendered box by place().
  */
 export class TiledLayer implements Layer {
-	readonly ctx: CanvasRenderingContext2D;
-
 	constructor(
 		readonly kind: LayerKind,
 		readonly element: HTMLDivElement,
 		readonly surface: TiledSurface,
+		// Records onto the surface.
+		readonly ctx: CanvasRenderingContext2D,
 		private readonly owner: TiledLayerOwner,
 		// Where the layer stacks: its effective z-index and its creation (DOM) order among the
 		// stage's overlays. A loupe paints overlays in the same order.
 		readonly zIndex: number,
 		readonly order: number,
-	) {
-		this.ctx = surface.ctx;
-	}
+	) {}
 
 	place(left: number, top: number, width: number, height: number): void {
 		const style = this.element.style;

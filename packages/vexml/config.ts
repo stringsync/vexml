@@ -380,3 +380,31 @@ export const DEFAULT_CONFIG: Config = {
 	maxWidth: null,
 	scrollContainer: null,
 };
+
+/** The full config a partial one stands for: yours over the defaults, as `render` and
+ * `createSnapshot` read it. */
+export function resolveConfig(input?: ConfigInput): Config {
+	// `layout` is the one nested object, so it is filled from its own type's defaults first: a
+	// top-level spread would blow away the knobs a caller left out of `{ type: 'standard' }`.
+	const layout = input?.layout ?? DEFAULT_CONFIG.layout;
+	switch (layout.type) {
+		case 'standard':
+			return {
+				...DEFAULT_CONFIG,
+				...input,
+				layout: { ...DEFAULT_STANDARD_LAYOUT, ...layout },
+			};
+		case 'panoramic':
+			return {
+				...DEFAULT_CONFIG,
+				...input,
+				layout: { ...DEFAULT_PANORAMIC_LAYOUT, ...layout },
+			};
+		case 'paged':
+			return {
+				...DEFAULT_CONFIG,
+				...input,
+				layout: { ...DEFAULT_PAGED_LAYOUT, ...layout },
+			};
+	}
+}

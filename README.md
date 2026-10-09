@@ -24,6 +24,19 @@ const musicXML = await res.text();        // or .blob() for mxl
 await render(musicXML, element);
 ```
 
+The package has three entry points, each for a different place your code runs:
+
+| Import | Runs in | For | Brings along |
+| --- | --- | --- | --- |
+| `@stringsync/vexml` | the browser | rendering and everything you do with a Score | vexflow, the MusicXML parser |
+| `@stringsync/vexml/headless` | Bun or Node, no DOM | `createSnapshot`: making snapshots on a server | fontkit, and reads font files from disk; you install a canvas library such as `@napi-rs/canvas` |
+| `@stringsync/vexml/paint` | the browser, before your app | `paint`: showing a snapshot while the app loads | nothing else (about 8 KB gzipped) |
+
+fontkit is a dependency of the package, so it installs with it, but only `/headless` imports it:
+a browser bundle of `@stringsync/vexml` or `/paint` never includes it. Don't import `/headless`
+in the browser, and don't import the main entry in a page script meant to paint early.
+See [Rendering from a snapshot](#rendering-from-a-snapshot).
+
 ## Listening to events
 
 ```ts
@@ -416,12 +429,13 @@ try {
 
 A snapshot is JSON- and `structuredClone`-safe. It records the config it was engraved with,
 as far as that shapes the engraving (layout, spacing, numbering, tab and notation toggles,
-part labels, fonts and their colors, `backgroundColor`), and the snapshot format's
+part labels, font families), and the snapshot format's
 version (`SNAPSHOT_VERSION`). `render` throws `SnapshotMismatchError` before it touches the
 element when either differs from yours, with `reason` saying which (`'version'`, `'config'`,
 or `'format'` for something that isn't a snapshot): render the MusicXML instead, and
-snapshot that score to replace the stale one. Width, height and `pixelRatio` aren't recorded,
-so one snapshot serves every screen.
+snapshot that score to replace the stale one. Width, height, `pixelRatio`, `backgroundColor`
+and the font colors aren't recorded: the notation and text are painted in the colors you
+render with, so one snapshot serves every screen, in light and dark themes alike.
 
 A snapshot keeps the gaps it was rendered with, and `render` ignores `config.gaps` for one: it
 has no document to place them in. So a score rendered with `insertGaps` gaps replays with them,
@@ -435,6 +449,63 @@ On `score_schubert_gute_nacht.musicxml` (2,928 notes), at 390 CSS px, a pixel ra
 4x CPU throttling with fonts loaded, the MusicXML first paints after about 1.55 s, all of it one
 task. A 1.5 MB snapshot (250 KB gzipped) first paints after about 155 ms, `JSON.parse` included,
 its longest task under 85 ms.
+
+### Snapshots made on a server
+
+`@stringsync/vexml/headless` makes the same snapshot under Bun or Node, with no DOM, so a server
+can draw a score ahead of time. It is server-only: it reads font files from disk and uses fontkit
+to outline glyphs. The canvas library is yours to install (`npm install @napi-rs/canvas`); text
+is measured on a canvas you pass from it, in the font files you give it (vexml brings its own
+Bravura):
+
+```ts
+import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
+import { createSnapshot } from '@stringsync/vexml/headless';
+
+const snapshot = await createSnapshot(musicXML, createCanvas(1, 1), {
+  config, // what the page will render with, gaps included
+  fonts: [{ family: 'Source Sans 3', source: '/fonts/SourceSans3-Regular.ttf' }],
+  fontRegistry: GlobalFonts,
+});
+```
+
+A canvas library measures text a little differently from a browser, so the engraving can sit a
+few px off a browser's own render of the same score; `render(snapshot)` shows it as the server
+engraved it and never lays it out again. Such a snapshot also carries outlines of the glyphs its
+text uses, and fills its text from them, so it draws before any font has loaded. `render` of
+one doesn't wait on fonts either: the Score (events, cursor, playback, note colors) is ready
+as soon as the app runs, and the fonts finish loading for anything you draw yourself.
+
+### Painting before the app loads
+
+`@stringsync/vexml/paint` draws a snapshot with none of the rest of vexml (about 8 KB gzipped: no
+parser, vexflow or fontkit), so a page can show the score while its app is still downloading.
+Load it on its own, in a small script ahead of the app, not from the app's bundle. `render` of the same snapshot
+into the same element later takes the painted canvases over as they are, with no repaint or
+flash, and brings up the full score:
+
+```ts
+// a small script inlined in the page
+import { paint } from '@stringsync/vexml/paint';
+try {
+  paint(snapshot, element, config);
+} catch {
+  // SnapshotMismatchError: another snapshot version; the app renders the file instead
+}
+
+// the app, once it loads
+const score = await render(snapshot, element, config);
+```
+
+Pass `paint` the config you render with: its size, background, pixel ratio and font colors
+apply to the paint too, and a paint in other colors or at another pixel ratio is replaced when
+`render` draws. `paint` throws `SnapshotMismatchError` before touching the element for a
+snapshot of another format version. It returns a `PaintedScore` whose `dispose()` clears the
+element, for a page that falls back to rendering the MusicXML.
+
+On the snapshots `createSnapshot` makes at 390 CSS px, a pixel ratio of 3 and 4x CPU throttling,
+`paint` takes 60 to 90 ms, `JSON.parse` included, with no fonts loaded. The Schubert snapshot is
+224 KB gzipped, 140 KB of it what `paint` reads (the engraving and its glyph outlines).
 
 ## Cleaning up
 

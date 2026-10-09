@@ -12,12 +12,14 @@ import {
 } from './constants';
 import { DrawPass, type DrawPassOptions } from './draw-pass';
 import type { Fold } from './fold';
+import { FontFamilies } from './font-families';
 import type { Gaps } from './gaps';
 import type {
 	RawChordDiagram,
 	RawMeasure,
 	RawNote,
 } from './geometry-collector';
+import { Ink } from './ink';
 import type { ScoreLayout } from './layout-planner';
 import { PagePlanner } from './page-planner';
 import { PaintContext } from './paint-context';
@@ -52,6 +54,9 @@ export interface Engraving {
 	height: number;
 	origin: GridOrigin;
 	scale: number;
+	/* Names the ops, for a snapshot's: a paint of the same snapshot carries it, and the stage
+	 * adopts that paint's tiles (see Stage.engrave). */
+	fingerprint?: string;
 }
 
 /* What a draw hands back: the hit-index geometry, the engraving, the sticky panoramic fold
@@ -88,15 +93,9 @@ export class ScoreDrawer {
 	 * signatures, notes, and the brace/barline connectors that group parts into
 	 * systems. Returns the hit-index geometry (notehead/fret/measure boxes) in final
 	 * score space, the engraving, and the sticky fold when a panoramic layout asks for one.
-	 * `host` is the in-DOM element the font CSS vars are read off; `probe` answers the text
-	 * measurements the recording needs.
+	 * `probe` answers the text measurements the recording needs.
 	 */
-	draw(
-		host: HTMLElement,
-		probe: PaintProbe,
-		score: Score,
-		layout: ScoreLayout,
-	): DrawResult {
+	draw(probe: PaintProbe, score: Score, layout: ScoreLayout): DrawResult {
 		const _parts = score.parts;
 		const { boxes, systemGap, width, floorHeight } = layout;
 
@@ -126,19 +125,13 @@ export class ScoreDrawer {
 			) as unknown as CanvasRenderingContext2D,
 		);
 
-		// Part labels use the text font set on the container by loadFonts() (the only
-		// reader of --vexml-font-text). Falls back to Arial if unset (e.g. SSR/no fonts).
-		// Read from the in-DOM host: the vars are scoped to the container.
-		const labelFont =
-			getComputedStyle(host).getPropertyValue('--vexml-font-text').trim() ||
-			'Arial';
-
-		// The music font, for the few glyphs vexml types itself out of SMuFL codepoints
-		// rather than getting from a vexflow element (dynamics markings today). Same
-		// container-scoped CSS var loadFonts() sets, read off the host like labelFont.
-		const notationFont =
-			getComputedStyle(host).getPropertyValue('--vexml-font-notation').trim() ||
-			'Bravura';
+		// Part labels and words use the text font, and the few glyphs vexml types itself out of
+		// SMuFL codepoints rather than getting from a vexflow element (dynamics markings today)
+		// the music font: the same family lists the font loader puts on the container, taken from
+		// config so a draw with no DOM engraves alike.
+		const families = new FontFamilies(this.config.fonts);
+		const labelFont = families.textStack;
+		const notationFont = families.notationStack;
 
 		// Two clashes only show up once the music is drawn: a system's notes rising above its
 		// top stave into the system before it, and a stave's notes spilling into the stave
@@ -312,8 +305,8 @@ export class ScoreDrawer {
 				),
 				totalStaves: layout.totalStaves,
 				height: cssHeight,
-				notationColor: this.config.fonts.notation?.color ?? '#000000',
-				textColor: this.config.fonts.text?.color ?? '#000000',
+				notationColor: Ink.NOTATION,
+				textColor: Ink.TEXT,
 			},
 		);
 		return { geometry, engraving, fold, pages: [] };

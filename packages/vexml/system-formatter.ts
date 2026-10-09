@@ -34,6 +34,7 @@ import {
 	TECHNICAL_EDGE_GAP,
 	TIE_APEX_RISE,
 } from './constants';
+import { Ink } from './ink';
 import type { LyricPlacer } from './lyric-placer';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
@@ -312,11 +313,11 @@ export class SystemFormatter {
 						strokeStyle: this.notationColor,
 					});
 					// Ledger lines use the stave's hardcoded defaultLedgerLineStyle (gray #444),
-					// overriding the context ink the same way. Only restyle when a notation color
-					// is set so an uncolored render stays byte-identical; lineWidth is left to the
-					// stave default.
-					if (this.notationColor !== '#000000' && note instanceof StaveNote) {
-						note.setLedgerLineStyle({ strokeStyle: this.notationColor });
+					// overriding the context ink the same way. Their own ink role keeps that gray
+					// until a notation color is set (see Ink); lineWidth is left to the stave
+					// default.
+					if (note instanceof StaveNote) {
+						note.setLedgerLineStyle({ strokeStyle: Ink.LEDGER });
 					}
 				}
 			}

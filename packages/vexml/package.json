@@ -12,6 +12,14 @@
 			"types": "./index.ts",
 			"import": "./index.ts"
 		},
+		"./headless": {
+			"types": "./headless.ts",
+			"import": "./headless.ts"
+		},
+		"./paint": {
+			"types": "./paint.ts",
+			"import": "./paint.ts"
+		},
 		"./css": "./css/vexml.css",
 		"./fonts/bravura.woff2": "./assets/fonts/Bravura.woff2"
 	},
@@ -27,6 +35,8 @@
 	],
 	"dependencies": {
 		"@stringsync/mdom": "0.7.0",
+		"@types/fontkit": "2.0.9",
+		"fontkit": "2.0.4",
 		"vexflow": "5.0.0",
 		"webappwiz": "0.0.39"
 	},

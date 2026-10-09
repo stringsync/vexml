@@ -1,4 +1,5 @@
 import { Affine } from './affine';
+import { Ink } from './ink';
 import type { PaintOp, PathKind, PathSegment } from './paint-op';
 import { PAINT_PROPS, type PaintProp, type PaintState } from './paint-state';
 
@@ -30,6 +31,8 @@ export class PaintReplayer {
 		private readonly ctx: CanvasRenderingContext2D,
 		private readonly base: Affine,
 		private readonly target: ReplayTarget,
+		// The colors the recording's ink roles paint in.
+		private readonly ink: Ink = Ink.DEFAULT,
 	) {}
 
 	replay(op: PaintOp): void {
@@ -74,7 +77,11 @@ export class PaintReplayer {
 				ctx.clearRect(call.x, call.y, call.w, call.h);
 				break;
 			case 'fillText':
-				ctx.fillText(call.text, call.x, call.y, call.maxWidth);
+				if (call.outline) {
+					call.outline.fill(ctx, call.x, call.y);
+				} else {
+					ctx.fillText(call.text, call.x, call.y, call.maxWidth);
+				}
 				break;
 			case 'strokeText':
 				ctx.strokeText(call.text, call.x, call.y, call.maxWidth);
@@ -130,7 +137,7 @@ export class PaintReplayer {
 		for (const prop of PAINT_PROPS) {
 			const value = state.props[prop];
 			if (!props.has(prop) || props.get(prop) !== value) {
-				ctx[prop] = value;
+				ctx[prop] = this.ink.resolve(value);
 				props.set(prop, value);
 			}
 		}

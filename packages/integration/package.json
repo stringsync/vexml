@@ -9,6 +9,7 @@
 		"webappwiz": "0.0.39"
 	},
 	"devDependencies": {
+		"@napi-rs/canvas": "^1.0.10",
 		"@types/pngjs": "^6.0.5",
 		"canvas": "^3.2.3",
 		"pixelmatch": "^7.2.0",

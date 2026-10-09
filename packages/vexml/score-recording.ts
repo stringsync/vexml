@@ -170,6 +170,7 @@ export class ScoreRecording implements SnapshotSource {
 				ties: model.ties,
 			},
 			gaps: gaps.map((gap) => ({ ...gap })),
+			outlines: null,
 		};
 	}
 }

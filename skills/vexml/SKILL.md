@@ -304,6 +304,21 @@ try {
 ```
 
 A snapshot score has no document: `getSources()` is empty and `createEditingController` throws.
+Colors aren't recorded: a snapshot paints in the font colors and background you render it with.
+
+Three entry points, each for a different place code runs; don't mix them up:
+
+- `@stringsync/vexml`: the browser app. `render`, the Score and everything else.
+- `@stringsync/vexml/headless`: Bun or Node only, never the browser. `createSnapshot(input,
+  canvas, { config, fonts, fontRegistry })` engraves a snapshot with no DOM. It reads font files
+  from disk and uses fontkit (a dependency, imported only here). The caller installs a canvas
+  library and passes `createCanvas(1, 1)` and `GlobalFonts` from `@napi-rs/canvas`. Its
+  snapshots carry glyph outlines, so they draw (and `render` of them returns) before fonts load.
+- `@stringsync/vexml/paint`: a small page script ahead of the app (about 8 KB, no parser,
+  vexflow or fontkit). `paint(snapshot, element, config)` draws a snapshot; a later
+  `render(snapshot, element, config)` from the main entry adopts the painted canvases without
+  a repaint. It throws `SnapshotMismatchError` for another snapshot version. Don't import the
+  main entry in that script, or it is no longer small.
 
 ## Cleanup
 

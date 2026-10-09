@@ -1,6 +1,7 @@
 import type { Rect } from 'webappwiz/geometry';
 import type { Affine } from './affine';
 import type { PaintState } from './paint-state';
+import type { TextOutline } from './text-outline';
 
 /*
  * One recorded draw: everything a replay needs to put the same pixels on any canvas, plus the
@@ -54,6 +55,8 @@ export type PaintCall =
 			x: number;
 			y: number;
 			maxWidth?: number;
+			// Its glyphs, from a snapshot that carries them, filled instead of the text.
+			outline?: TextOutline;
 	  }
 	| { kind: 'drawImage'; image: CanvasImageSource; args: readonly number[] }
 	// Device pixels of the surface's virtual full-size bitmap, which ignores transform, clip and

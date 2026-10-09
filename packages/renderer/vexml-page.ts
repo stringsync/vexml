@@ -8,6 +8,7 @@ import {
 	type Score,
 	SnapshotMismatchError,
 } from '@stringsync/vexml';
+import { paint } from '@stringsync/vexml/paint';
 import { type EnginePage, registerPage } from './page-registry';
 import type { VexmlContext } from './vexml-renderer';
 
@@ -51,6 +52,7 @@ class VexmlPage implements EnginePage<VexmlInput, VexmlContext> {
 			score,
 			container,
 			render,
+			paint,
 			insertGaps,
 			readTimeline,
 			MDOMParser,

@@ -21,6 +21,18 @@ export class FontFamilies {
 		);
 	}
 
+	/* The notation family as a CSS font-family list, with the generic fallback a missing face
+	 * falls to: the --vexml-font-notation value, and the music font vexml types glyphs in. */
+	get notationStack(): string {
+		return `'${this.notation}', serif`;
+	}
+
+	/* The text family as a CSS font-family list: the --vexml-font-text value, and the font part
+	 * labels and words are drawn in. */
+	get textStack(): string {
+		return `'${this.text}', sans-serif`;
+	}
+
 	/**
 	 * Make a font family or url safe to interpolate into a quoted CSS string, so it can't
 	 * break out of its quotes and inject rules. Spaces stay, so names like "Source Sans 3"

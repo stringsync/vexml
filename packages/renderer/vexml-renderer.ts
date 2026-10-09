@@ -9,6 +9,7 @@ import type {
 	Score,
 	SnapshotMismatchError,
 } from '@stringsync/vexml';
+import type { paint } from '@stringsync/vexml/paint';
 import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
 import type { TabPool } from './pool';
@@ -20,6 +21,7 @@ export interface VexmlContext {
 	score: Score;
 	container: HTMLDivElement;
 	render: typeof render;
+	paint: typeof paint;
 	insertGaps: typeof insertGaps;
 	readTimeline: typeof readTimeline;
 	MDOMParser: typeof MDOMParser;

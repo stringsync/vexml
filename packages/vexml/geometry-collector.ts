@@ -11,6 +11,7 @@ import {
 import { Rect } from 'webappwiz/geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
 import { FRET_HALF_H, FRET_HALF_W, NOTEHEAD_HALF_H } from './constants';
+import type { TextOutline } from './text-outline';
 
 /* A note's engraved glyph, captured so a decoration can re-stamp it in color on an overlay: the
  * SMuFL text, the exact CSS font vexflow drew it with, and its baseline position in score space.
@@ -20,6 +21,9 @@ export interface NoteGlyph {
 	readonly font: string;
 	readonly x: number;
 	readonly y: number;
+	/* Its outline, from a snapshot that carries one: stamped instead, so a note recolors before
+	 * the font has loaded. */
+	readonly outline?: TextOutline;
 }
 
 /* A notehead or fret the draw pass laid out, in score space. `tab` is set when this is a tab
