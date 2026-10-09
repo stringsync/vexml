@@ -273,6 +273,39 @@ describe('SequenceFactory', () => {
 		expect(seq.resolveX(170, 1, 2)).toEqual({ stepIndex: 2, beat: 2 });
 	});
 
+	it('ends a gap on time when the bar after it opens with nothing drawn', () => {
+		const seq = build({
+			measures: [
+				{
+					index: 0,
+					beats: 1,
+					tempoBpm: 120,
+					jumps: [],
+					systemRect: new Rect(0, 0, 100, 100),
+					gapMs: 2000,
+				},
+				{
+					index: 1,
+					beats: 2,
+					tempoBpm: null,
+					jumps: [],
+					systemRect: new Rect(100, 0, 200, 100),
+				},
+			],
+			// An undrawn rest (a tab stave's) fills beat 0, so the first drawn note is on beat 1.
+			notes: [quarter(fakeNote('a'), 1, 1, 220)],
+		});
+		expect(seq.getStep(0)?.endMs).toBe(2000);
+		expect(seq.getStep(1)).toMatchObject({
+			measureIndex: 1,
+			startMs: 2000,
+			x: 100,
+			glideToX: 220,
+			active: [],
+		});
+		expect(seq.getStep(2)?.startMs).toBe(2500);
+	});
+
 	it('a closing gap after the last bar glides across its own box', () => {
 		const seq = build({
 			measures: [
@@ -454,6 +487,47 @@ describe('SequenceFactory', () => {
 		expect(seq.getStepIndexAtMs(500)).toBe(1);
 	});
 
+	// scry-ignore simple-test-setup: the score and gaps are this test's input, used by no other test, so there is no shared setup to hoist
+	it('times a score without geometry: one bar per pass, gaps placed as render places them', async () => {
+		const xml = `<?xml version="1.0"?>
+<score-partwise version="4.0">
+	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+	<part id="P1">
+		<measure number="1"><attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>${metronomeDir(60, 60)}${WHOLE}</measure>
+		<measure number="2"><barline location="left"><repeat direction="forward"/></barline>${WHOLE}<barline location="right"><repeat direction="backward"/></barline></measure>
+		<measure number="3">${WHOLE}</measure>
+	</part>
+</score-partwise>`;
+		const gaps = new Gaps(
+			[
+				{ beforeBarIndex: 0, durationMs: 1500, label: 'Lead-in' },
+				{ beforeBarIndex: 4, durationMs: 500 },
+			],
+			new GapInserter(reader),
+		);
+		const document = await new DefaultScoreParser().parse(xml);
+		gaps.resolve(document);
+		const timeline = new SequenceFactory(reader, gaps).timeline(
+			document.score.parts,
+		);
+		expect(timeline.getBars()).toEqual([
+			{ measureIndex: 0, startMs: 0, endMs: 1500 },
+			{ measureIndex: 1, startMs: 1500, endMs: 5500 },
+			{ measureIndex: 2, startMs: 5500, endMs: 9500 },
+			{ measureIndex: 2, startMs: 9500, endMs: 13500 },
+			{ measureIndex: 3, startMs: 13500, endMs: 17500 },
+			{ measureIndex: 4, startMs: 17500, endMs: 18000 },
+		]);
+		expect(timeline.getGaps()).toEqual([
+			{ measureIndex: 0, label: 'Lead-in', startMs: 0, endMs: 1500 },
+			{ measureIndex: 4, label: null, startMs: 17500, endMs: 18000 },
+		]);
+		expect(timeline.getDurationMs()).toBe(18000);
+		// The gaps' beats are nominal: one each, beside the four whole notes.
+		expect(timeline.getDurationBeats()).toBe(18);
+		expect(timeline.beatsToMs(2)).toBe(2500);
+	});
+
 	// Playback tempo resolution: <sound tempo> drives timing, <metronome> the visuals.
 	const reader = new ScoreReader(new DynamicGlyphs());
 
@@ -530,6 +604,9 @@ const quarter = (
 	x,
 	tiedFrom: null,
 });
+
+const WHOLE =
+	'<note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration><type>whole</type></note>';
 
 const metronomeDir = (bpm: number, sound?: number) =>
 	`<direction><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${bpm}</per-minute></metronome></direction-type>${

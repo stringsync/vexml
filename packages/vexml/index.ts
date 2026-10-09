@@ -77,6 +77,7 @@ export {
 	Playhead,
 	type PlayheadOptions,
 } from './playhead';
+export { readTimeline } from './read-timeline';
 export { render } from './render';
 export { type GapInfo, Score } from './score';
 export { ScoreEditingLayout } from './score-editing-layout';
@@ -96,5 +97,6 @@ export {
 } from './snapshot-mismatch-error';
 export { System } from './system';
 export { TabPosition } from './tab-position';
+export { Timeline, type TimelineBar } from './timeline';
 export type { Toggle } from './toggle';
 export { Voice } from './voice';

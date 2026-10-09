@@ -1,4 +1,4 @@
-import { MDocument } from '@stringsync/mdom';
+import type { MDocument } from '@stringsync/mdom';
 import { BarlineTranslator } from './barline-translator';
 import { BRAVURA_URL } from './bravura-url';
 import { ChordTranslator } from './chord-translator';
@@ -39,9 +39,9 @@ import { VoiceTranslator } from './voice-translator';
 /*
  * Render a MusicXML score into a container: parse text or a compressed .mxl Blob, or reuse an
  * editor-owned MDocument, which is never edited: its gaps must name measures already in it. A
- * ScoreSnapshot (Score.snapshot) skips parsing, layout and drawing; one recorded by another
- * snapshot version or with a different engraving config throws SnapshotMismatchError before
- * the container is touched.
+ * ScoreSnapshot (Score.snapshot) skips parsing, layout and drawing and brings its own gaps
+ * (config.gaps is ignored); one recorded by another snapshot version or with a different
+ * engraving config throws SnapshotMismatchError before the container is touched.
  * Build the stage inside the div, lay the score out, and draw it onto the stage's
  * managed canvas. The caller never sees the canvas: only the returned Score, which owns the DOM
  * and is the handle for events/decorations/layers (and dispose).
@@ -61,17 +61,12 @@ export function render(
 	const resolved: Config = { ...DEFAULT_CONFIG, ...config, layout };
 	const reader = new ScoreReader(new DynamicGlyphs());
 	const gaps = new Gaps(resolved.gaps, new GapInserter(reader));
-	// Before the stage touches the container: a caller's document is never edited, so its gaps
-	// are measures already in it, and a parse vexml makes holds none of the caller's measures. A
-	// snapshot's gaps were placed when it was recorded, and its config must match this one.
+	// Before the stage touches the container. A snapshot's gaps were placed when it was
+	// recorded, so config.gaps is ignored for one, and the rest of its config must match.
 	if (SnapshotReader.isSnapshot(input)) {
 		new SnapshotReader(resolved).check(input);
-	} else if (input instanceof MDocument ? gaps.inserts() : gaps.names()) {
-		throw new Error(
-			input instanceof MDocument
-				? 'render: gaps for an MDocument must name measures in it (see insertGaps)'
-				: 'render: a gap naming a measure needs its MDocument as input',
-		);
+	} else {
+		gaps.check(input);
 	}
 	// Scale-to-fit + center by default for a system-stacked layout that isn't a horizontal scroll
 	// box: the score is engraved once at its reference width, then shrunk to fit a narrower container

@@ -4,6 +4,7 @@ import type {
 	ConfigInput,
 	EditingSession,
 	insertGaps,
+	readTimeline,
 	render,
 	Score,
 	SnapshotMismatchError,
@@ -20,6 +21,7 @@ export interface VexmlContext {
 	container: HTMLDivElement;
 	render: typeof render;
 	insertGaps: typeof insertGaps;
+	readTimeline: typeof readTimeline;
 	MDOMParser: typeof MDOMParser;
 	EditingSession: typeof EditingSession;
 	SnapshotMismatchError: typeof SnapshotMismatchError;

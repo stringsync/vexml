@@ -13,7 +13,13 @@ const FONTS: ConfigInput['fonts'] = {
 	text: { family: 'Source Sans 3' },
 };
 
-type Replay = { config: ConfigInput; scroll: number };
+type Replay = {
+	config: ConfigInput;
+	scroll: number;
+	// When set, the fixture is re-rendered with gaps inserted the way sound2score inserts them,
+	// and `replay: false` stops before the snapshot is replayed.
+	gapped?: { xml: string; replay: boolean };
+};
 
 describe('snapshot', () => {
 	it.concurrent('replays score_schubert_gute_nacht.png', async () => {
@@ -56,6 +62,22 @@ describe('snapshot', () => {
 		expect(result.replayed).toEqual(result.full);
 	});
 
+	// A lead-in, a gap before the middle measure and a closing gap, through insertGaps. The
+	// replay passes no gaps: the snapshot brings them. Both tests match one baseline, so the
+	// replay engraves exactly what the gapped render did.
+	it.concurrent('renders a gapped score', async () => {
+		const { image } = await gapped(false);
+		expect(image).toMatchScreenshot('snapshot_gapped.png');
+	});
+
+	it.concurrent('replays a gapped score with no gaps passed', async () => {
+		const { image, result } = await gapped(true);
+		expect(result.full.gaps).toHaveLength(3);
+		expect(result.replayed).toEqual(result.full);
+		expect(result.mismatch).toBe('config');
+		expect(image).toMatchScreenshot('snapshot_gapped.png');
+	});
+
 	it.concurrent('throws SnapshotMismatchError for another version or config', async () => {
 		const { result } = await testing.eval(
 			'score_amazing_grace.musicxml',
@@ -81,11 +103,22 @@ function replay(file: string, config: ConfigInput = {}, scroll = 0) {
 	} satisfies Replay);
 }
 
+async function gapped(replay: boolean) {
+	const file = 'score_amazing_grace.musicxml';
+	const config = { fonts: FONTS };
+	return testing.eval(file, config, roundTrip, {
+		config,
+		scroll: 0,
+		gapped: { xml: await testing.fixture(file), replay },
+	} satisfies Replay);
+}
+
 // Runs in the page, so it's self-contained: eval serializes it, and nothing outside it exists there.
 async function roundTrip(
-	{ score, container, render }: VexmlContext,
-	{ config, scroll }: Replay,
+	context: VexmlContext,
+	{ config, scroll, gapped }: Replay,
 ) {
+	const { container, render } = context;
 	const box = (r: { x: number; y: number; w: number; h: number }) => [
 		r.x,
 		r.y,
@@ -155,8 +188,39 @@ async function roundTrip(
 				.map((e) => e.type),
 		};
 	};
+	let score = context.score;
+	if (gapped) {
+		const { MDOMParser, readTimeline, insertGaps } = context;
+		const document = new MDOMParser().parseFromString(gapped.xml);
+		const bars = (await readTimeline(document)).getBars().length;
+		const measures = document.score.parts[0]?.measures.length ?? 0;
+		const inserted = insertGaps(document, [
+			{ beforeBarIndex: 0 },
+			{ beforeMeasureIndex: Math.floor(measures / 2) },
+			{ beforeBarIndex: bars },
+		]);
+		score.dispose();
+		score = await render(document, container, {
+			...config,
+			gaps: inserted.map((measure, i) => ({
+				measure,
+				durationMs: 1000 * (i + 1),
+				label: i === 0 ? 'Lead-in' : undefined,
+			})),
+		});
+		if (!gapped.replay) {
+			return { full: summarize(score), replayed: null, mismatch: null };
+		}
+	}
 	const full = summarize(score);
 	const json = JSON.stringify(score.snapshot());
+	let mismatch: string | null = null;
+	try {
+		await render(JSON.parse(json), container, { ...config, noteSpacing: 50 });
+	} catch (e) {
+		mismatch =
+			e instanceof context.SnapshotMismatchError ? e.reason : String(e);
+	}
 	const replayed = await render(JSON.parse(json), container, config);
 	const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
 	if (scroll > 0) {
@@ -165,7 +229,7 @@ async function roundTrip(
 		await frame();
 		await frame();
 	}
-	return { full, replayed: summarize(replayed) };
+	return { full, replayed: summarize(replayed), mismatch };
 }
 
 async function mismatch(

@@ -55,6 +55,21 @@ describe('SnapshotReader', () => {
 		).not.toThrow();
 	});
 
+	it('ignores gaps, which the snapshot brings', () => {
+		const gapped: Config = {
+			...DEFAULT_CONFIG,
+			gaps: [{ beforeBarIndex: 0, durationMs: 1500, label: 'Lead-in' }],
+		};
+
+		expect(() =>
+			new SnapshotReader(DEFAULT_CONFIG).check(snapshotOf(gapped)),
+		).not.toThrow();
+		expect(() =>
+			new SnapshotReader(gapped).check(snapshotOf(DEFAULT_CONFIG)),
+		).not.toThrow();
+		expect(reasonOf(snapshotOf(gapped), { noteSpacing: 50 })).toBe('config');
+	});
+
 	it('refuses another engraving config', () => {
 		expect(reasonOf(snapshotOf(DEFAULT_CONFIG), { noteSpacing: 50 })).toBe(
 			'config',

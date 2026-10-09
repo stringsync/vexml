@@ -26,7 +26,7 @@ export interface ReadSnapshot {
 }
 
 /*
- * Checks a snapshot against the config a caller renders it with, and decodes it. check() runs
+ * Checks a snapshot against the config a caller renders it with (all but its gaps), and decodes it. check() runs
  * before render touches the container, so a caller who catches SnapshotMismatchError can render
  * the MusicXML into the same container instead.
  */
@@ -56,8 +56,11 @@ export class SnapshotReader {
 				`render: the snapshot is version ${snapshot.version}, this vexml reads ${SNAPSHOT_VERSION}`,
 			);
 		}
-		const want = JSON.stringify(snapshotConfig(this.config));
-		if (JSON.stringify(snapshot.config) !== want) {
+		// Gaps are left out: the snapshot holds the gaps it was rendered with (a render of one
+		// has no document to place config.gaps in).
+		const { gaps: _, ...want } = snapshotConfig(this.config);
+		const { gaps: __, ...have } = snapshot.config;
+		if (JSON.stringify(have) !== JSON.stringify(want)) {
 			throw new SnapshotMismatchError(
 				'config',
 				'render: the snapshot was engraved with a different config',

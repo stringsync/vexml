@@ -1,4 +1,4 @@
-import type { MDocument } from '@stringsync/mdom';
+import { MDocument } from '@stringsync/mdom';
 import type { Gap, GapPosition } from './config';
 import type { GapInserter } from './gap-inserter';
 
@@ -32,6 +32,19 @@ export class Gaps {
 	/* Whether any gap names a measure, which only a caller's own MDocument can hold. */
 	names(): boolean {
 		return this.gaps.some((gap) => gap.measure !== undefined);
+	}
+
+	/* Refuse gaps the input can't hold, before it is parsed: a caller's document is never
+	 * edited, so its gaps are measures already in it, and a parse vexml makes holds none of the
+	 * caller's measures. */
+	check(input: string | Blob | MDocument): void {
+		if (input instanceof MDocument ? this.inserts() : this.names()) {
+			throw new Error(
+				input instanceof MDocument
+					? 'render: gaps for an MDocument must name measures in it (see insertGaps)'
+					: 'render: a gap naming a measure needs its MDocument as input',
+			);
+		}
 	}
 
 	/*

@@ -3,6 +3,7 @@ import { Rect } from 'webappwiz/geometry';
 import { DEFAULT_TEMPO_BPM } from './constants';
 import type { Gaps } from './gaps';
 import { MeasureSequenceIterator } from './measure-sequence-iterator';
+import { MNoteFacts } from './mnote-facts';
 import type { Note, NoteKey } from './note';
 import type { RawGeometry } from './score-drawer';
 import type { ScoreReader, Swing } from './score-reader';
@@ -16,6 +17,7 @@ import {
 } from './sequence';
 import { SwingWarp } from './swing-warp';
 import { TempoMap, type TempoSegment } from './tempo-map';
+import { Timeline } from './timeline';
 
 // MusicXML <beat-unit> (a note type) -> quarter notes, so a metronome mark normalizes to quarter BPM.
 const QUARTERS_PER_UNIT: Record<string, number> = {
@@ -33,6 +35,13 @@ const BEAT_EPSILON = 1e-6;
 const GRACE_MS = 65;
 
 type Span = { onset: number; end: number };
+
+const EMPTY_GEOMETRY: RawGeometry = {
+	bounds: new Rect(0, 0, 0, 0),
+	notes: [],
+	measures: [],
+	chordDiagrams: [],
+};
 
 /*
  * Builds the playback timeline: bridges the parsed document (onsets, meter, tempo, repeats, ties)
@@ -54,7 +63,14 @@ export class SequenceFactory {
 		geometry: RawGeometry,
 		notesByMnote: ReadonlyMap<NoteKey, Note>,
 	): Sequence {
-		return this.createFromInput(this.buildInput(parts, geometry, notesByMnote));
+		return this.createFromInput(
+			this.buildInput(
+				parts,
+				geometry,
+				notesByMnote,
+				(mnote) => notesByMnote.get(mnote)?.isSwingExempt() ?? null,
+			),
+		);
 	}
 
 	/* Rebuild a timeline from its model (Sequence.model), its note indexes resolved against
@@ -108,8 +124,6 @@ export class SequenceFactory {
 
 	/* Assemble a Sequence from the pure data seam (what unit tests drive). */
 	createFromInput(input: SequenceInput): Sequence {
-		const order = [...new MeasureSequenceIterator(input.measures)];
-
 		const notesByMeasure = new Map<number, SequenceNote[]>();
 		for (const note of input.notes) {
 			const list = notesByMeasure.get(note.measureIndex);
@@ -120,8 +134,8 @@ export class SequenceFactory {
 			}
 		}
 
-		// Walk playback order: accumulate the measure start beat, build tempo segments, and collect
-		// each note occurrence's absolute [startBeat, endBeat) interval plus the onsets that seed steps.
+		// Walk the measure passes in playback order, collecting each note occurrence's absolute
+		// [startBeat, endBeat) interval plus the onsets that seed steps.
 		type Interval = { note: Note; startBeat: number; endBeat: number };
 		// `x: null` marks an onset seeded by a note *end* rather than a notehead; it's filled in below.
 		// `gap` marks a gap measure's synthesized step, which glides across its own box only.
@@ -138,46 +152,29 @@ export class SequenceFactory {
 			systemRect: Rect;
 			measureIndex: number;
 		}> = [];
-		const segments: TempoSegment[] = [];
-		let totalBeats = 0;
-		// Start at 120; a measure's mark sets the rate from there on, null carries the previous.
-		// Measures before the first mark stay at the default, and a back-jump re-applies marks as
-		// written.
-		let bpm = DEFAULT_TEMPO_BPM;
-		for (const measureIndex of order) {
-			const measure = input.measures[measureIndex];
-			if (!measure) {
-				continue;
-			}
-			if (measure.tempoBpm !== null) {
-				bpm = measure.tempoBpm;
-			}
-			// A gap plays for exactly gapMs: its segment gets the bpm that maps its nominal
-			// beats to that time, without touching the carried tempo (the next measure
-			// resumes at the rate in effect before the gap). Its step is synthesized here (a gap has no notes to seed one), spanning the measure with nothing active, so
-			// the cursor glides across its box and everything sounding before it stops.
+		const { passes, segments, totalBeats } = this.unroll(input.measures);
+		// Where each gap ends, so its step ends there even when the measure after it opens with
+		// nothing drawn (a tab stave's rest): the gap plays exactly gapMs.
+		const gapEnds: Array<{ beat: number; measure: MeasureInfo }> = [];
+		for (const [p, { measure, startBeat: measureStart }] of passes.entries()) {
+			// A gap has no notes to seed a step, so its step is synthesized here, spanning the
+			// measure with nothing active: the cursor glides across its box and everything
+			// sounding before it stops.
 			if (measure.gapMs !== undefined) {
-				segments.push({
-					startBeat: totalBeats,
-					endBeat: totalBeats + measure.beats,
-					bpm: (measure.beats * 60000) / measure.gapMs,
-				});
-				onsets.set(totalBeats, {
+				onsets.set(measureStart, {
 					x: measure.systemRect.x,
 					systemRect: measure.systemRect,
 					measureIndex: measure.index,
 					gap: true,
 				});
-				totalBeats += measure.beats;
+				const next = passes[p + 1];
+				if (next) {
+					gapEnds.push({ beat: next.startBeat, measure: next.measure });
+				}
 				continue;
 			}
-			segments.push({
-				startBeat: totalBeats,
-				endBeat: totalBeats + measure.beats,
-				bpm,
-			});
-			for (const sn of notesByMeasure.get(measureIndex) ?? []) {
-				const startBeat = totalBeats + sn.measureBeat;
+			for (const sn of notesByMeasure.get(measure.index) ?? []) {
+				const startBeat = measureStart + sn.measureBeat;
 				intervals.push({
 					note: sn.note,
 					startBeat,
@@ -200,7 +197,6 @@ export class SequenceFactory {
 					});
 				}
 			}
-			totalBeats += measure.beats;
 		}
 
 		const tiedFrom = new Map<Note, Note>();
@@ -216,6 +212,15 @@ export class SequenceFactory {
 		// already an onset. Matching is epsilon-tolerant (see BEAT_EPSILON) via a quantized key;
 		// an exact-equality test would seed a duplicate micro-step one ULP off a real onset.
 		const quantize = (beat: number) => Math.round(beat / BEAT_EPSILON);
+		for (const { beat, measure } of gapEnds) {
+			if (!onsets.has(beat)) {
+				onsets.set(beat, {
+					x: measure.systemRect.x,
+					systemRect: measure.systemRect,
+					measureIndex: measure.index,
+				});
+			}
+		}
 		const onsetKeys = new Set([...onsets.keys()].map(quantize));
 		for (const end of ends) {
 			const key = quantize(end.beat);
@@ -336,10 +341,86 @@ export class SequenceFactory {
 		);
 	}
 
+	/* Build the timeline's timing alone, with no geometry or note elements: every mdom note
+	 * sounds and reads its swing exemption off the document, which is what the rendered notes
+	 * report, so the numbers equal create()'s for the same parts and gaps. */
+	timeline(parts: Part[]): Timeline {
+		const { measures } = this.buildInput(
+			parts,
+			EMPTY_GEOMETRY,
+			new Map(),
+			(mnote) => new MNoteFacts(mnote, []).swingExempt,
+		);
+		const { passes, segments, totalBeats } = this.unroll(measures);
+		const tempo = new TempoMap(segments);
+		const bars = passes.map(({ measure, startBeat, endBeat }) => ({
+			measureIndex: measure.index,
+			startMs: tempo.msAt(startBeat),
+			endMs: tempo.msAt(endBeat),
+		}));
+		// A gap's first pass, as create()'s gap step (Score.getGaps), in config order.
+		const gaps = this.gaps.documentIndexes().map(({ gap, measureIndex }) => {
+			const bar = bars.find((b) => b.measureIndex === measureIndex);
+			return {
+				measureIndex,
+				label: gap.label ?? null,
+				startMs: bar?.startMs ?? 0,
+				endMs: bar?.endMs ?? 0,
+			};
+		});
+		return new Timeline(tempo, totalBeats, bars, gaps);
+	}
+
+	/*
+	 * Walk the measures in playback order (repeats and voltas expanded), one pass per time a
+	 * measure plays, accumulating each pass's start beat and the tempo segments. A measure's
+	 * mark sets the rate from there on, and null carries the previous; measures before the first
+	 * mark play at the default 120, and a back-jump re-applies marks as written. A gap plays for
+	 * exactly gapMs: its segment gets the bpm that maps its nominal beats to that time, without
+	 * touching the carried tempo (the next measure resumes at the rate in effect before the gap).
+	 */
+	private unroll(measures: readonly MeasureInfo[]): {
+		passes: { measure: MeasureInfo; startBeat: number; endBeat: number }[];
+		segments: TempoSegment[];
+		totalBeats: number;
+	} {
+		const passes: {
+			measure: MeasureInfo;
+			startBeat: number;
+			endBeat: number;
+		}[] = [];
+		const segments: TempoSegment[] = [];
+		let totalBeats = 0;
+		let bpm = DEFAULT_TEMPO_BPM;
+		for (const measureIndex of new MeasureSequenceIterator(measures)) {
+			const measure = measures[measureIndex];
+			if (!measure) {
+				continue;
+			}
+			if (measure.tempoBpm !== null) {
+				bpm = measure.tempoBpm;
+			}
+			const endBeat = totalBeats + measure.beats;
+			segments.push({
+				startBeat: totalBeats,
+				endBeat,
+				bpm:
+					measure.gapMs === undefined
+						? bpm
+						: (measure.beats * 60000) / measure.gapMs,
+			});
+			passes.push({ measure, startBeat: totalBeats, endBeat });
+			totalBeats = endBeat;
+		}
+		return { passes, segments, totalBeats };
+	}
+
 	private buildInput(
 		parts: Part[],
 		geometry: RawGeometry,
 		notesByMnote: ReadonlyMap<NoteKey, Note>,
+		// A note's swing exemption, or null when it doesn't sound (has no rendered note).
+		swingExemptOf: (mnote: MNote) => boolean | null,
 	): SequenceInput {
 		const systemRectByIndex = new Map<number, Rect>();
 		for (const measure of geometry.measures) {
@@ -390,11 +471,11 @@ export class SequenceFactory {
 		const span = (mnote: MNote, measureIndex: number): Span | null => {
 			const measureBeat = this.reader.measureBeatOf(mnote);
 			const beats = this.reader.beatsOf(mnote);
-			const note = notesByMnote.get(mnote);
-			if (!note || measureBeat === null || beats === null) {
+			const exempt = swingExemptOf(mnote);
+			if (exempt === null || measureBeat === null || beats === null) {
 				return null;
 			}
-			const warp = note.isSwingExempt()
+			const warp = exempt
 				? (beat: number) => beat
 				: (beat: number) => swung(measureIndex, beat);
 			return { onset: warp(measureBeat), end: warp(measureBeat + beats) };

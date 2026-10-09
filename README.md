@@ -347,6 +347,28 @@ const score = await render(document, element, {
 
 Read the resulting timing with `score.getGaps()`, which returns `{ measureIndex, label, startMs, endMs }` per gap in the same order they were passed, so join by position to line the score up with your media. Playback treats a gap like any other measure: the cursor glides across it and `getMeasureIndexAtMs` resolves into it.
 
+### Timing before rendering
+
+Sizing gaps to a recording needs the score's playback timing, and a render is a slow way to get it. `readTimeline` parses the score (or reuses your `MDocument`), places any `gaps` the way `render` does, and times it without laying it out or drawing it, so you can size the gaps first and render once:
+
+```ts
+import { insertGaps, readTimeline, render } from '@stringsync/vexml';
+
+const timeline = await readTimeline(document);
+// One entry per measure pass in playback order, repeats and voltas unrolled: a measure
+// that repeats itself back to back appears twice.
+const bars = timeline.getBars(); // [{ measureIndex, startMs, endMs }, ...]
+const measures = insertGaps(document, [{ beforeBarIndex: 0 }, { beforeBarIndex: bars.length }]);
+const score = await render(document, element, {
+  gaps: [
+    { measure: measures[0], durationMs: leadInMs },
+    { measure: measures[1], durationMs: closingMs },
+  ],
+});
+```
+
+For the same document and gaps, a timeline reports exactly what the rendered score does: `getDurationMs()`, `getDurationBeats()`, `beatsToMs(beats)` (the score's `getSequence().beatsToMs`), and `getGaps()`. With the document already parsed, at 4x CPU throttling, it takes 26 to 43 ms on `score_schubert_gute_nacht.musicxml` (the render takes about 1.5 s) and 6 to 15 ms on `score_amazing_grace.musicxml`, with no task over 50 ms.
+
 ## Adding a canvas layer
 
 A layer is a drawing surface that you can draw arbitrary content on without affecting the sheet music. vexml controls its size and position.
@@ -394,12 +416,16 @@ try {
 
 A snapshot is JSON- and `structuredClone`-safe. It records the config it was engraved with,
 as far as that shapes the engraving (layout, spacing, numbering, tab and notation toggles,
-part labels, gaps, fonts and their colors, `backgroundColor`), and the snapshot format's
+part labels, fonts and their colors, `backgroundColor`), and the snapshot format's
 version (`SNAPSHOT_VERSION`). `render` throws `SnapshotMismatchError` before it touches the
 element when either differs from yours, with `reason` saying which (`'version'`, `'config'`,
 or `'format'` for something that isn't a snapshot): render the MusicXML instead, and
 snapshot that score to replace the stale one. Width, height and `pixelRatio` aren't recorded,
 so one snapshot serves every screen.
+
+A snapshot keeps the gaps it was rendered with, and `render` ignores `config.gaps` for one: it
+has no document to place them in. So a score rendered with `insertGaps` gaps replays with them,
+with the same `getGaps()`, measures and playback, whether or not you pass `gaps`.
 
 The score behaves as one from the MusicXML (playback, cursors, events, decorations, layers,
 pages, the sticky fold), with two exceptions, since a snapshot holds no document: elements'

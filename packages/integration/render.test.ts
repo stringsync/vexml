@@ -1284,6 +1284,15 @@ describe('render', () => {
 		).toMatchScreenshot('repeats_multiple_times.png');
 	});
 
+	// One measure opening and closing its own repeat (M2), so it plays twice in a row: heavy-
+	// light forward dots on its left barline, light-heavy backward dots on its right, nothing
+	// between them. timeline.test.ts times the two passes as separate bars.
+	it.concurrent('renders repeats_single_measure.png', async () => {
+		expect(
+			await testing.render('repeats_single_measure.musicxml'),
+		).toMatchScreenshot('repeats_single_measure.png');
+	});
+
 	// Treble stave, common time: a repeat block NESTED inside another, each with its own pair
 	// of alternative endings. repeats.musicxml covers back-to-back blocks and up to three
 	// endings but never nesting. One whole note per measure, ascending C5 to A5, so only the
