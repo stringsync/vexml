@@ -287,6 +287,24 @@ chord members and neighboring voices, Shift extends a range within one part and 
 Command/Ctrl-click toggles a note, drag selects, Escape clears, Command/Ctrl+Z undoes
 and Shift redoes.
 
+## Snapshots
+
+`score.snapshot()` records a rendered score as JSON-safe data; `render(snapshot, element, config)`
+rebuilds it without parsing, layout or drawing (roughly 10x faster on a long score). Cache it,
+and fall back on `SnapshotMismatchError`, thrown before the element is touched when the
+snapshot's version or engraving config differs from yours:
+
+```ts
+try {
+  score = await render(JSON.parse(cached), element, config);
+} catch (e) {
+  if (!(e instanceof SnapshotMismatchError)) throw e;
+  score = await render(musicXML, element, config);
+}
+```
+
+A snapshot score has no document: `getSources()` is empty and `createEditingController` throws.
+
 ## Cleanup
 
 ```ts

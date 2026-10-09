@@ -6,6 +6,7 @@ import type {
 	insertGaps,
 	render,
 	Score,
+	SnapshotMismatchError,
 } from '@stringsync/vexml';
 import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
@@ -21,6 +22,7 @@ export interface VexmlContext {
 	insertGaps: typeof insertGaps;
 	MDOMParser: typeof MDOMParser;
 	EditingSession: typeof EditingSession;
+	SnapshotMismatchError: typeof SnapshotMismatchError;
 }
 
 /** A score as MusicXML text or compressed .mxl bytes, plus the config to render with. */

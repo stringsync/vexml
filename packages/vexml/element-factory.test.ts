@@ -208,8 +208,7 @@ function build() {
 	};
 	return {
 		index: new ElementFactory().build(
-			geometry,
-			parts,
+			new ElementFactory().model(geometry, parts),
 			new FakeViewport(),
 			new FakeDecorations(),
 		),

@@ -515,34 +515,37 @@ function fixture() {
 	const create = (offset = 0, opts: EditingControllerOptions = {}) => {
 		const host = new FakeHost();
 		const decorations = new FakeDecorations();
-		const index = new ElementFactory().build(
-			{
-				bounds: new Rect(0, 0, 200, 100),
-				measures: [
-					{
-						rect: new Rect(0, 0, 200, 100),
-						index: 0,
-						number: '1',
-						systemIndex: 0,
-					},
-				],
-				notes: [first, second, other].map((mnote, i) => ({
-					mnote,
-					rect: new Rect(20 + i * 30 + offset, 40, 8, 8),
-					ink: new Rect(20 + i * 30 + offset, 40, 8, 8),
-					chord: [mnote],
-					measureIndex: 0,
-					tab: i === 2 ? { string: 2, fret: 3 } : null,
-					glyph: {
-						text: i === 2 ? '3' : 'q',
-						font: '30px Bravura',
-						x: 20 + i * 30 + offset,
-						y: 40,
-					},
-				})),
-				chordDiagrams: [],
-			},
-			document.score.parts,
+		const factory = new ElementFactory();
+		const index = factory.build(
+			factory.model(
+				{
+					bounds: new Rect(0, 0, 200, 100),
+					measures: [
+						{
+							rect: new Rect(0, 0, 200, 100),
+							index: 0,
+							number: '1',
+							systemIndex: 0,
+						},
+					],
+					notes: [first, second, other].map((mnote, i) => ({
+						mnote,
+						rect: new Rect(20 + i * 30 + offset, 40, 8, 8),
+						ink: new Rect(20 + i * 30 + offset, 40, 8, 8),
+						chord: [mnote],
+						measureIndex: 0,
+						tab: i === 2 ? { string: 2, fret: 3 } : null,
+						glyph: {
+							text: i === 2 ? '3' : 'q',
+							font: '30px Bravura',
+							x: 20 + i * 30 + offset,
+							y: 40,
+						},
+					})),
+					chordDiagrams: [],
+				},
+				document.score.parts,
+			),
 			new FakeViewport(),
 			decorations,
 		);

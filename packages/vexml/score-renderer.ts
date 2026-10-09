@@ -3,6 +3,7 @@ import { Rect } from 'webappwiz/geometry';
 import type { Config } from './config';
 import { DefaultDecorations } from './default-decorations';
 import type { ElementFactory } from './element-factory';
+import type { ElementIndex } from './element-index';
 import type { Fold } from './fold';
 import type { FontLoader } from './font-loader';
 import type { Gaps } from './gaps';
@@ -16,8 +17,15 @@ import { ProbeTextCanvas } from './probe-text-canvas';
 import { type GapInfo, Score } from './score';
 import type { Engraving, RawGeometry, ScoreDrawer } from './score-drawer';
 import type { ScoreParser } from './score-parser';
+import { ScoreRecording } from './score-recording';
+import type { ScoreSnapshot } from './score-snapshot';
 import type { Scroller } from './scroller';
+import type { Sequence } from './sequence';
 import type { SequenceFactory } from './sequence-factory';
+import { snapshotConfig } from './snapshot-config';
+import { SnapshotReader } from './snapshot-reader';
+import type { SnapshotSource } from './snapshot-source';
+import { StoredSnapshot } from './stored-snapshot';
 
 const EMPTY_GEOMETRY: RawGeometry = {
 	bounds: new Rect(0, 0, 0, 0),
@@ -43,7 +51,8 @@ export interface RenderStage extends Host, PagePainter {
 
 /*
  * Runs the render pipeline over injected collaborators: fonts, parse, plan, draw, then the
- * interaction model (elements/decorations/sequence) wrapped into the returned Score.
+ * interaction model (elements/decorations/sequence) wrapped into the returned Score. A snapshot
+ * skips parse, plan and draw: its engraving, elements and timeline are decoded instead.
  */
 // render() constructs this with the production classes; every collaborator is an interface, so a
 // unit test injects fakes for the ones it does not want to run for real.
@@ -61,7 +70,9 @@ export class ScoreRenderer {
 		private readonly configuredGaps: Gaps,
 	) {}
 
-	async render(input: string | Blob | MDocument): Promise<Score> {
+	async render(
+		input: string | Blob | MDocument | ScoreSnapshot,
+	): Promise<Score> {
 		if (
 			this.config.minLastSystemFill < 0 ||
 			this.config.minLastSystemFill > 1
@@ -101,6 +112,9 @@ export class ScoreRenderer {
 		// (the base element inherits them) and sets VexFlow's global glyph fonts, which both the
 		// planner's measurements and the drawer's engraving read.
 		await this.fontLoader.load(this.stage.container, this.config.fonts);
+		if (SnapshotReader.isSnapshot(input)) {
+			return this.restore(input);
+		}
 
 		const mdoc = await this.parser.parse(input);
 		// A gap is an ordinary measure of the document: found where the caller put it, or
@@ -128,23 +142,14 @@ export class ScoreRenderer {
 						pages: [],
 					};
 		const { geometry } = drawn;
-		if (drawn.engraving) {
-			this.stage.engrave(drawn.engraving);
-		}
-		if (drawn.fold) {
-			this.stage.setFold(drawn.fold);
-		}
+		this.show(drawn.engraving, drawn.fold);
 
 		// The stage is the Viewport (score<->client transform) the elements map through, and the
 		// decorations are what their color/halo toggles delegate to (drawing on overlay layers the
 		// stage hands them). Both feed the factory, which links the elements and indexes them.
 		const decorations = new DefaultDecorations(this.stage);
-		const elements = this.elementFactory.build(
-			geometry,
-			parts,
-			this.stage,
-			decorations,
-		);
+		const model = this.elementFactory.model(geometry, parts);
+		const elements = this.elementFactory.build(model, this.stage, decorations);
 		// The playback timeline: the parsed parts give onsets/meter/tempo/repeats/ties, the
 		// geometry gives note x and system boxes, and noteLookup ties active notes to the same
 		// identities hit-testing returns. Built for every score (empty when there are no parts).
@@ -168,9 +173,74 @@ export class ScoreRenderer {
 						};
 					})
 				: [];
+		const recording = new ScoreRecording(
+			{
+				config: snapshotConfig(this.config),
+				engraving: drawn.engraving,
+				fold: drawn.fold,
+				pages: drawn.pages,
+				elements: model,
+				notes: elements.notes(),
+				sequence,
+				gaps,
+			},
+			this.stage.probe,
+		);
+		return this.score(
+			elements,
+			decorations,
+			sequence,
+			gaps,
+			drawn.pages,
+			recording,
+		);
+	}
+
+	/* Build the Score a snapshot recorded: decoded, not parsed, laid out or drawn. Its config was
+	 * checked against this one before the stage was built (see render.ts). */
+	private restore(snapshot: ScoreSnapshot): Score {
+		const read = new SnapshotReader(this.config).read(snapshot);
+		this.show(read.engraving, read.fold);
+		const decorations = new DefaultDecorations(this.stage);
+		const elements = this.elementFactory.build(
+			read.elements,
+			this.stage,
+			decorations,
+		);
+		const sequence = this.sequenceFactory.restore(
+			read.sequence,
+			elements.notes(),
+		);
+		return this.score(
+			elements,
+			decorations,
+			sequence,
+			snapshot.gaps.map((gap) => ({ ...gap })),
+			read.pages,
+			new StoredSnapshot(snapshot),
+		);
+	}
+
+	private show(engraving: Engraving | null, fold: Fold | null): void {
+		if (engraving) {
+			this.stage.engrave(engraving);
+		}
+		if (fold) {
+			this.stage.setFold(fold);
+		}
+	}
+
+	private score(
+		elements: ElementIndex,
+		decorations: DefaultDecorations,
+		sequence: Sequence,
+		gaps: GapInfo[],
+		pageRects: readonly Rect[],
+		snapshots: SnapshotSource,
+	): Score {
 		// Each page holds the systems whose top lands on it (a system never straddles two).
 		const systems = elements.systems();
-		const pages = drawn.pages.map(
+		const pages = pageRects.map(
 			(rect, index) =>
 				new Page(
 					index,
@@ -190,6 +260,7 @@ export class ScoreRenderer {
 			this.stage.scroller,
 			gaps,
 			pages,
+			snapshots,
 		);
 	}
 }

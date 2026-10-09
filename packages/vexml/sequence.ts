@@ -2,7 +2,7 @@ import type { Note as MNote } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
 import { BAR_WIDTH } from './constants';
 import type { Note } from './note';
-import type { TempoMap } from './tempo-map';
+import type { TempoMap, TempoSegment } from './tempo-map';
 
 /*
  * The playback timeline: the score unrolled into a linear sequence of steps in playback order, with
@@ -45,6 +45,30 @@ export class Sequence {
 
 	get length(): number {
 		return this.steps.length;
+	}
+
+	/* The timeline as data, its notes as indexes into the score's notes (see
+	 * SequenceFactory.restore). */
+	model(indexOf: ReadonlyMap<Note, number>): SequenceModel {
+		const index = (note: Note) => indexOf.get(note) ?? -1;
+		return {
+			steps: this.steps.map((step) => ({
+				measureIndex: step.measureIndex,
+				startBeat: step.startBeat,
+				endBeat: step.endBeat,
+				x: step.x,
+				glideToX: step.glideToX,
+				systemRect: step.systemRect,
+				active: step.active.map(index),
+			})),
+			segments: this.tempo.segments,
+			durationBeats: this.durationBeats,
+			measureCount: this.measureCount,
+			ties: [...this.tiedFrom].map(([note, from]) => [
+				index(note),
+				index(from),
+			]),
+		};
 	}
 
 	getStep(index: number): Step | null {
@@ -367,6 +391,22 @@ export interface Step {
 	readonly glideToX: number;
 	readonly systemRect: Rect;
 	readonly active: readonly Note[];
+}
+
+/* A built timeline as data (Sequence.model): what a snapshot carries instead of the document
+ * the timeline was built from. Notes are indexes into the score's notes; a step's times come
+ * back from the tempo segments. */
+export interface SequenceModel {
+	steps: Array<
+		Omit<Step, 'index' | 'startMs' | 'endMs' | 'active'> & {
+			active: number[];
+		}
+	>;
+	segments: readonly TempoSegment[];
+	durationBeats: number;
+	measureCount: number;
+	/* [note, the note it is tied from]. */
+	ties: Array<[number, number]>;
 }
 
 /* What changed between two cursor positions: notes to attack (a re-struck pitch shows in both

@@ -68,6 +68,16 @@ export class PaintState {
 		readonly lineDash: readonly number[],
 	) {}
 
+	/* A state rebuilt whole, as a snapshot's decoder does. */
+	static of(
+		props: PaintProps,
+		matrix: Affine,
+		clips: readonly Clip[],
+		lineDash: readonly number[],
+	): PaintState {
+		return new PaintState(props, matrix, clips, lineDash);
+	}
+
 	with(prop: PaintProp, value: unknown): PaintState {
 		if (this.props[prop] === value) {
 			return this;

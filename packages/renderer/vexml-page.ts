@@ -5,6 +5,7 @@ import {
 	insertGaps,
 	render,
 	type Score,
+	SnapshotMismatchError,
 } from '@stringsync/vexml';
 import { type EnginePage, registerPage } from './page-registry';
 import type { VexmlContext } from './vexml-renderer';
@@ -52,6 +53,7 @@ class VexmlPage implements EnginePage<VexmlInput, VexmlContext> {
 			insertGaps,
 			MDOMParser,
 			EditingSession,
+			SnapshotMismatchError,
 		};
 	}
 }

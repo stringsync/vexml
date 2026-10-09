@@ -11,6 +11,7 @@ import { FakeDecorations } from './fake-decorations';
 import { FakeViewport } from './fake-viewport';
 import { Measure } from './measure';
 import { MeasureBox } from './measure-box';
+import { MNoteFacts } from './mnote-facts';
 import { Note } from './note';
 import { Part } from './part';
 import { System } from './system';
@@ -179,7 +180,14 @@ function bareMeasure(
 		new System(rect, viewport, 0, []),
 		[],
 	);
-	return new Measure(mmeasure, new Part(mpart, []), box, []);
+	return new Measure(
+		mmeasure,
+		mmeasure.number,
+		mmeasure.index,
+		new Part(mpart, mpart.id, mpart.label, []),
+		box,
+		[],
+	);
 }
 
 function must<T>(value: T | undefined, what: string): T {
@@ -210,7 +218,9 @@ function fixture() {
 	const tabsByMnote = new Map<MNote, TabPosition>();
 	const base = (mnote: MNote, rect: Rect, chord: MNote[]): Note => {
 		const note = new Note({
-			mnote,
+			key: mnote,
+			source: mnote,
+			facts: new MNoteFacts(mnote, chord),
 			rect,
 			ink: rect,
 			viewport,
@@ -250,7 +260,9 @@ function noteOf(inner: string): Note {
 	const mnote = must(mmeasure.notes[0], 'note');
 	const viewport = new FakeViewport();
 	return new Note({
-		mnote,
+		key: mnote,
+		source: mnote,
+		facts: new MNoteFacts(mnote, [mnote]),
 		rect: new Rect(0, 0, 8, 8),
 		ink: new Rect(0, 0, 8, 8),
 		viewport,
@@ -290,7 +302,9 @@ function graceFixture() {
 	const notesByMnote = new Map<MNote, Note>();
 	const build = (mnote: MNote, ink: Rect) => {
 		const note = new Note({
-			mnote,
+			key: mnote,
+			source: mnote,
+			facts: new MNoteFacts(mnote, [mnote]),
 			rect: new Rect(0, 0, 8, 8),
 			ink,
 			viewport,

@@ -84,6 +84,10 @@ export class SignatureFold implements Fold {
 		this.width = right + FOLD_PADDING - this.left;
 	}
 
+	get starts(): number[] {
+		return this.states.map((state) => state.x);
+	}
+
 	indexAt(x: number): number {
 		let index = 0;
 		for (const [i, state] of this.states.entries()) {

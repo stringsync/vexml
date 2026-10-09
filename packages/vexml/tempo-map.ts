@@ -12,7 +12,7 @@ export type TempoSegment = { startBeat: number; endBeat: number; bpm: number };
  * its own steps before there is a Sequence to ask.
  */
 export class TempoMap {
-	constructor(private readonly segments: readonly TempoSegment[]) {}
+	constructor(readonly segments: readonly TempoSegment[]) {}
 
 	/**
 	 * Quarter-note beats -> milliseconds. Folds the elapsed time of every segment the beat spans,

@@ -1,10 +1,9 @@
-import type { Note as MNote } from '@stringsync/mdom';
 import type { Rect } from 'webappwiz/geometry';
 import type { ChordDiagram } from './chord-diagram';
 import type { Element } from './element';
 import type { HitTester } from './hit-tester';
 import type { MeasureBox } from './measure-box';
-import type { Note } from './note';
+import type { Note, NoteKey } from './note';
 import type { Part } from './part';
 import type { System } from './system';
 import type { TabPosition } from './tab-position';
@@ -18,9 +17,9 @@ import type { TabPosition } from './tab-position';
 export class ElementIndex {
 	constructor(
 		private readonly hitTester: HitTester,
-		private readonly noteByMnote: ReadonlyMap<MNote, Note>,
+		private readonly noteByKey: ReadonlyMap<NoteKey, Note>,
 		private readonly boxByIndex: ReadonlyMap<number, MeasureBox>,
-		private readonly tabByMnote: ReadonlyMap<MNote, TabPosition>,
+		private readonly tabByKey: ReadonlyMap<NoteKey, TabPosition>,
 		private readonly diagramList: readonly ChordDiagram[],
 		private readonly partList: readonly Part[],
 		private readonly systemList: readonly System[],
@@ -37,7 +36,7 @@ export class ElementIndex {
 	}
 
 	notes(): Note[] {
-		return [...this.noteByMnote.values()];
+		return [...this.noteByKey.values()];
 	}
 
 	measureBoxes(): MeasureBox[] {
@@ -45,7 +44,7 @@ export class ElementIndex {
 	}
 
 	tabPositions(): TabPosition[] {
-		return [...this.tabByMnote.values()];
+		return [...this.tabByKey.values()];
 	}
 
 	chordDiagrams(): ChordDiagram[] {
@@ -78,8 +77,9 @@ export class ElementIndex {
 	}
 
 	/* Resolves an mdom note to its Note: the seam that keeps timeline identities === hit
-	 * identities (SequenceFactory builds onsets against this same map). */
-	get noteLookup(): ReadonlyMap<MNote, Note> {
-		return this.noteByMnote;
+	 * identities (SequenceFactory builds onsets against this same map). A score rendered from a
+	 * snapshot keys its notes by stand-ins, so no mdom note finds one there. */
+	get noteLookup(): ReadonlyMap<NoteKey, Note> {
+		return this.noteByKey;
 	}
 }

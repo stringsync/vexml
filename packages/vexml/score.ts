@@ -28,9 +28,11 @@ import type { Page } from './page';
 import type { Part } from './part';
 import { Playhead, type PlayheadOptions } from './playhead';
 import { ScoreEditingLayout } from './score-editing-layout';
+import type { ScoreSnapshot } from './score-snapshot';
 import type { Scroller } from './scroller';
 import { SelectionOverlay } from './selection-overlay';
 import type { Sequence } from './sequence';
+import type { SnapshotSource } from './snapshot-source';
 import type { System } from './system';
 import { TabPosition } from './tab-position';
 
@@ -121,6 +123,8 @@ export class Score implements Eventful<ScoreEventMap> {
 		},
 		private readonly gaps: readonly GapInfo[],
 		private readonly pages: readonly Page[] = [],
+		// Null for a score a test built by hand, which has nothing to snapshot.
+		private readonly snapshots: SnapshotSource | null = null,
 	) {
 		// Released in reverse: editors and cursors first, the host they draw on last.
 		this.disposer.use(host);
@@ -224,11 +228,17 @@ export class Score implements Eventful<ScoreEventMap> {
 		return cursor;
 	}
 
-	/** Compose editing input, written/layout navigation, selection visuals and scrolling. */
+	/** Compose editing input, written/layout navigation, selection visuals and scrolling.
+	 * Throws for a score rendered from a snapshot: editing needs the document. */
 	createEditingController(
 		editor: EditingSession,
 		opts: EditingControllerOptions = {},
 	): EditingController {
+		if (this.snapshots && !this.snapshots.hasDocument) {
+			throw new Error(
+				'vexml: a score rendered from a snapshot has no document to edit; render the MusicXML',
+			);
+		}
 		const view =
 			opts.view ??
 			(opts.selection === false
@@ -262,6 +272,18 @@ export class Score implements Eventful<ScoreEventMap> {
 	 * CursorView for your own. */
 	createPlayhead(opts?: PlayheadOptions): Playhead {
 		return new Playhead(this.host.createMarker(), opts);
+	}
+
+	/** A recording of this score that `render` turns back into the same Score, without parsing,
+	 * laying out or drawing it: plain data to cache as JSON. It holds the engraving, the elements
+	 * and the timeline, not the document, so a score rendered from it can't be edited and its
+	 * elements' getSources() are empty. A score rendered from a snapshot hands back that same
+	 * snapshot object. Encoding is paid here, on the first call and every call after. */
+	snapshot(): ScoreSnapshot {
+		if (!this.snapshots) {
+			throw new Error('vexml: this score has nothing to snapshot');
+		}
+		return this.snapshots.snapshot();
 	}
 
 	/* Total playback time of the score, repeats and voltas expanded. */

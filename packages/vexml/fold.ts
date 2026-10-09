@@ -13,6 +13,8 @@ export interface Fold {
 	readonly width: number;
 	/** How tall the strip is: the whole engraving, so its staves line up with the score's. */
 	readonly height: number;
+	/** Where each strip takes effect, in score x, ascending: one per clef/key change. */
+	readonly starts: readonly number[];
 	/** Which strip is in effect at score x: the last clef/key change at or before it. */
 	indexAt(x: number): number;
 	/** Engrave strip `index` onto `context`, whose transform already maps score space onto

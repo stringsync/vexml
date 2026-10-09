@@ -124,6 +124,39 @@ describe('ScoreRenderer', () => {
 		expect(score.getTimeAt({ x: 0, y: 0 })).toBeNull();
 	});
 
+	it('renders a snapshot without parsing', async () => {
+		const snapshot = (await renderer().render('<xml/>')).snapshot();
+
+		const score = await renderer().render(JSON.parse(JSON.stringify(snapshot)));
+
+		expect(parser.parses).toBe(1);
+		expect(fontLoader.calls).toEqual([
+			DEFAULT_CONFIG.fonts,
+			DEFAULT_CONFIG.fonts,
+		]);
+		expect(score.getElements().all()).toEqual([]);
+		expect(score.getDurationMs()).toBe(0);
+	});
+
+	it('hands back the snapshot a score was rendered from', async () => {
+		const snapshot = (await renderer().render('<xml/>')).snapshot();
+
+		const score = await renderer().render(snapshot);
+
+		expect(score.snapshot()).toBe(snapshot);
+	});
+
+	it('refuses to edit a score rendered from a snapshot', async () => {
+		const snapshot = (await renderer().render('<xml/>')).snapshot();
+		const score = await renderer().render(snapshot);
+
+		expect(() =>
+			score.createEditingController(
+				{} as Parameters<typeof score.createEditingController>[0],
+			),
+		).toThrow(/snapshot/);
+	});
+
 	it('hands the stage to the Score it returns, which tears it down on dispose', async () => {
 		const score = await renderer().render('<xml/>');
 		score.dispose();

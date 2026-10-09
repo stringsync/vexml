@@ -9,22 +9,29 @@ import { Toggle } from './toggle';
 import type { Viewport } from './viewport';
 
 /*
- * Resolves an mdom note to the wrapper built for it. The elements reference one another (a note
+ * Resolves a note's key to the wrapper built for it. The elements reference one another (a note
  * to its chordmates, a note to its tab fret), which would be circular at construction; instead
  * each holds a lookup and resolves on demand, once the factory has registered every wrapper. A
- * Map<MNote, …> is the production implementer; tests pass their own.
+ * Map<NoteKey, …> is the production implementer; tests pass their own.
  */
 export interface NoteLookup {
-	get(mnote: MNote): Note | undefined;
+	get(key: NoteKey): Note | undefined;
 }
 export interface TabLookup {
-	get(mnote: MNote): TabPosition | undefined;
+	get(key: NoteKey): TabPosition | undefined;
 }
+
+/* What a note is looked up by: its mdom note in a full render, and a stand-in object of its
+ * own when built from a snapshot, which holds no document. */
+export type NoteKey = object;
 
 /* The dependencies a Note needs. Cross-links resolve through the lookups (see NoteLookup), so
  * construction stays single-phase despite the mutual references. */
 export interface NoteDeps {
-	mnote: MNote;
+	key: NoteKey;
+	/* Its mdom note, or null when built from a snapshot. */
+	source: MNote | null;
+	facts: NoteFacts;
 	rect: Rect;
 	/* The note's drawn extent on its line, its grace notes aside: see RawNote.ink. */
 	ink: Rect;
@@ -32,8 +39,8 @@ export interface NoteDeps {
 	decorations: Decorations;
 	/* This note's own part's measure (the musical node, not the cross-part column). */
 	measure: Measure;
-	/* Every mdom note in this note's chord, including itself (a solo note is a 1-member chord). */
-	chord: MNote[];
+	/* Every note in this note's chord, including itself (a solo note is a 1-member chord). */
+	chord: readonly NoteKey[];
 	/* Resolves chord members to their Notes, and this note's mnote to its tab fret rendering. */
 	notes: NoteLookup;
 	tabs: TabLookup;
@@ -42,11 +49,6 @@ export interface NoteDeps {
 }
 
 /* A single musical note (one notehead). The unit of selection, playback, and editing. */
-/* Whether the note asking counts as one of its own chord siblings. */
-export interface ChordSiblingsOptions {
-	includeSelf: boolean;
-}
-
 export class Note extends Element implements Highlightable, Playable {
 	readonly type = 'note';
 	readonly color: Toggle;
@@ -58,8 +60,9 @@ export class Note extends Element implements Highlightable, Playable {
 		this.halo = new Toggle(this, deps.decorations.halo);
 	}
 
+	/* Empty when the score was rendered from a snapshot, which holds no document. */
 	getSources(): readonly MNote[] {
-		return [this.deps.mnote];
+		return this.deps.source ? [this.deps.source] : [];
 	}
 
 	/* Replay vexflow's own notehead (same glyph text, font, baseline) in the chosen color, so the
@@ -73,21 +76,20 @@ export class Note extends Element implements Highlightable, Playable {
 
 	/* The sounding pitch as a vexflow key ("E/4"), or null for a rest. */
 	getPitch(): string | null {
-		const pitch = this.deps.mnote.pitch;
-		return pitch ? this.pitchToKey(pitch) : null;
+		return this.deps.facts.pitch;
 	}
 
 	/* Duration in quarter-note beats; 0 for a grace note (which steals time: see isGrace). */
 	getDurationBeats(): number {
-		return this.deps.mnote.beats ?? 0;
+		return this.deps.facts.beats;
 	}
 
 	getArticulations(): string[] {
-		return this.deps.mnote.articulations;
+		return [...this.deps.facts.articulations];
 	}
 
 	isGrace(): boolean {
-		return this.deps.mnote.isGrace;
+		return this.deps.facts.grace;
 	}
 
 	/**
@@ -102,10 +104,7 @@ export class Note extends Element implements Highlightable, Playable {
 	 * neither an even triplet nor a swung pair.
 	 */
 	isSwingExempt(): boolean {
-		const { mnote } = this.deps;
-		return (
-			mnote.isGrace || mnote.type === null || mnote.timeModification !== null
-		);
+		return this.deps.facts.swingExempt;
 	}
 
 	/* The grace notes ornamenting this note, in play order: the run of grace notes immediately
@@ -113,7 +112,7 @@ export class Note extends Element implements Highlightable, Playable {
 	 * (see SequenceFactory.placeGraces). Empty for most notes. ponytail: a grace chord comes back as a fast run, not a
 	 * simultaneity. */
 	getGraceNotes(): Note[] {
-		return this.deps.mnote.gracesBefore
+		return this.deps.facts.graces
 			.map((g) => this.deps.notes.get(g))
 			.filter((n) => !!n);
 	}
@@ -136,13 +135,13 @@ export class Note extends Element implements Highlightable, Playable {
 
 	/* True when this note is part of a chord of two or more notes (the lead counts too). */
 	isChordMember(): boolean {
-		return this.deps.chord.length > 1;
+		return this.deps.facts.chordMember;
 	}
 
 	getChordSiblings(opts: ChordSiblingsOptions): Note[] {
 		const all: Note[] = [];
-		for (const mnote of this.deps.chord) {
-			const note = this.deps.notes.get(mnote);
+		for (const key of this.deps.chord) {
+			const note = this.deps.notes.get(key);
 			if (note) {
 				all.push(note);
 			}
@@ -156,22 +155,26 @@ export class Note extends Element implements Highlightable, Playable {
 	}
 
 	getTabPosition(): TabPosition | null {
-		return this.deps.tabs.get(this.deps.mnote) ?? null;
+		return this.deps.tabs.get(this.deps.key) ?? null;
 	}
+}
 
-	/* MusicXML <pitch> -> vexflow key string, e.g. {step:'B', alter:-1, octave:3} -> "Bb/3". */
-	private pitchToKey(p: {
-		step: string;
-		octave: number;
-		alter: number;
-	}): string {
-		const n = Math.round(p.alter);
-		let accidental = '';
-		if (n > 0) {
-			accidental = '#'.repeat(n);
-		} else if (n < 0) {
-			accidental = 'b'.repeat(-n);
-		}
-		return `${p.step}${accidental}/${p.octave}`;
-	}
+/* What a note says about its music: read off its mdom note (MNoteFacts), or carried by a
+ * snapshot. */
+export interface NoteFacts {
+	/* The sounding pitch as a vexflow key ("E/4"), or null for a rest. */
+	readonly pitch: string | null;
+	readonly beats: number;
+	readonly articulations: readonly string[];
+	readonly grace: boolean;
+	readonly swingExempt: boolean;
+	/* Whether its chord has two or more notes, engraved or not. */
+	readonly chordMember: boolean;
+	/* The grace notes before it, in play order. */
+	readonly graces: readonly NoteKey[];
+}
+
+/* Whether the note asking counts as one of its own chord siblings. */
+export interface ChordSiblingsOptions {
+	includeSelf: boolean;
 }

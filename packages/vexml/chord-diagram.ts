@@ -12,7 +12,8 @@ import type { Viewport } from './viewport';
 /* What a ChordDiagram is built from: the <harmony> it came from, the fingering it draws,
  * its printed chord name, and the decoration stores its toggles delegate to. */
 export interface ChordDiagramOptions {
-	source: Harmony;
+	/* Null when built from a snapshot, which holds no document. */
+	source: Harmony | null;
 	frame: ChordFrame;
 	/* The chord name printed above the box ("Gm7b5"), or null when the frame has no symbol text. */
 	title: string | null;
@@ -35,7 +36,7 @@ export class ChordDiagram extends Element implements Highlightable {
 	}
 
 	getSources(): readonly Harmony[] {
-		return [this.opts.source];
+		return this.opts.source ? [this.opts.source] : [];
 	}
 
 	/* The chord name printed above the box ("Gm7b5"), or null when the frame has no symbol text. */

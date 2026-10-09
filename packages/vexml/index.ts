@@ -80,12 +80,20 @@ export {
 export { render } from './render';
 export { type GapInfo, Score } from './score';
 export { ScoreEditingLayout } from './score-editing-layout';
+export {
+	type ScoreSnapshot,
+	SNAPSHOT_VERSION,
+} from './score-snapshot';
 export type { Scroller, ScrollerOptions } from './scroller';
 export {
 	SelectionOverlay,
 	type SelectionOverlayOptions,
 } from './selection-overlay';
 export { Sequence, type Step } from './sequence';
+export {
+	SnapshotMismatchError,
+	type SnapshotMismatchReason,
+} from './snapshot-mismatch-error';
 export { System } from './system';
 export { TabPosition } from './tab-position';
 export type { Toggle } from './toggle';

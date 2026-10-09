@@ -26,9 +26,10 @@ come from `webappwiz/geometry`, not this repo. Every feature has a fixture in
 | Gaps | Finds the caller's silent measures, inserting positioned ones into vexml's own parse | `gaps.ts`, `gap-inserter.ts` |
 | Layout | Measure widths, system breaks, stave offsets, no drawing | `layout-planner.ts`, `probe-text-canvas.ts` (vexflow's text measuring canvas, answered by the cached probe), `metrics-patch.ts` (vexflow's per-element font/style copies, minus its structuredClone) |
 | Draw | Two passes recorded as paint ops (no canvas); everything engraved | `score-drawer.ts`, `draw-pass.ts` + collaborators below |
-| Elements | Raw geometry to hit-testable wrappers | `element-factory.ts`, `element-index.ts` |
+| Elements | Raw geometry to a plain model, the model to hit-testable wrappers | `element-factory.ts` (`model`, `build`), `element-model.ts`, `mnote-facts.ts` (a note's pitch/beats/graces, read lazily), `element-index.ts` |
 | Playback | Beats to ms, repeats unrolled, swing applied | `sequence-factory.ts`, `measure-sequence-iterator.ts`, `sequence.ts` |
 | Result | What `render()` hands back | `score.ts` |
+| Snapshot | A render recorded as data, and rendered back without parse, layout or draw | see "Score snapshots" under Interaction and playback |
 
 Two rules cut across the draw stage:
 
@@ -177,6 +178,7 @@ vexflow's fixed text line, drawn in the finish pass, after the index clears.
 - **Editing navigation in written order and across rendered systems**: `editing-navigator.ts`, `chord-note-order.ts` (staff and written-position order within a chord), `editing-layout.ts`, `score-editing-layout.ts`
 - **Editing keyboard/pointer controller, focus scrolling and selection overlay**: `editing-controller.ts`, `editing-bindings.ts`, `default-editing-bindings.ts`, `editing-view.ts`, `selection-overlay.ts`; default composition in `score.ts`
 - **Rendering an editor-owned mdom document without reparsing**: `render.ts`, `score-parser.ts`, `default-score-parser.ts`, `score-renderer.ts`
+- **Score snapshots (`Score.snapshot`, `render(snapshot)`)**: `score-snapshot.ts` (the format and `SNAPSHOT_VERSION`; bump it with any change to what a snapshot holds), `score-recording.ts` (writes one from a full render, recording the fold's strips), `snapshot-reader.ts` (the version/config check before the stage, and decoding), `snapshot-config.ts` (the config a snapshot records and compares), `snapshot-mismatch-error.ts`, `snapshot-source.ts`, `stored-snapshot.ts`, `paint-encoder.ts` / `paint-decoder.ts` (ops to tables and a number stream, and back), `recorded-fold.ts` (a fold replayed from ops), `element-model.ts`, `Sequence.model` / `SequenceFactory.restore`, `score-renderer.ts` (`restore`)
 - **What a caller gets from a hit test**: `element.ts`, `toggle.ts` (the `color`/`halo` switches), `element-index.ts`, `note.ts`, `measure.ts`, `measure-box.ts`, `voice.ts`, `part.ts`, `system.ts`
 - **A note's boxes: `Note.rect` (the head alone) and `getInkRect` (head plus accidentals, arpeggio, dots, flag, graces)**: `geometry-collector.ts` (`inkOf`), `note.ts`
 - **Pointer position to element**: `hit-tester.ts`, `default-hit-tester.ts`, `element-index.ts`

@@ -558,8 +558,14 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		// frame() follows it; the tiles are painted at the size shown rather than resampled to it.
 		this.base.style.setProperty('--vexml-scale', `${scale}`);
 		this.scale = scale;
-		this.engraving.rescale(this.pixelRatio * scale);
-		this.engraving.load(ops, width, height, origin);
+		const dpr = this.pixelRatio * scale;
+		this.engraving.rescale(dpr);
+		// The pixels shift by whole device pixels so an engraving lands on the same pixel grid at
+		// any crop. The crop is a shift up, rounded as its positive size.
+		this.engraving.load(ops, width, height, {
+			x: Math.round(origin.x * dpr) / dpr,
+			y: -Math.round(-origin.y * dpr) / dpr,
+		});
 		this.fitEngraving();
 		this.updateView();
 	}

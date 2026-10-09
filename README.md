@@ -368,6 +368,48 @@ A `content` layer spans the whole score at full resolution, however long the sco
 
 Pass an optional `zIndex` to order a layer relative to the score, which sits at `zIndex` 0. A positive value draws in front; a negative value draws behind, showing through the score's transparent pixels. Layers with the same `zIndex` stack in the order they were created.
 
+## Rendering from a snapshot
+
+Parsing, laying out and drawing a long score takes a while. `score.snapshot()` records the
+result as plain data (the engraving, every element's geometry, the playback timeline), and
+`render` turns that back into the same score without parsing, laying out or drawing it, so a
+cached snapshot shows a long score in a fraction of the time.
+
+```ts
+import { render, type Score, SnapshotMismatchError } from '@stringsync/vexml';
+
+// first visit
+const score = await render(musicXML, element, config);
+await cache.put(key, JSON.stringify(score.snapshot()));
+
+// later visit
+let score: Score;
+try {
+  score = await render(JSON.parse(cached), element, config);
+} catch (e) {
+  if (!(e instanceof SnapshotMismatchError)) throw e;
+  score = await render(musicXML, element, config);
+}
+```
+
+A snapshot is JSON- and `structuredClone`-safe. It records the config it was engraved with,
+as far as that shapes the engraving (layout, spacing, numbering, tab and notation toggles,
+part labels, gaps, fonts and their colors, `backgroundColor`), and the snapshot format's
+version (`SNAPSHOT_VERSION`). `render` throws `SnapshotMismatchError` before it touches the
+element when either differs from yours, with `reason` saying which (`'version'`, `'config'`,
+or `'format'` for something that isn't a snapshot): render the MusicXML instead, and
+snapshot that score to replace the stale one. Width, height and `pixelRatio` aren't recorded,
+so one snapshot serves every screen.
+
+The score behaves as one from the MusicXML (playback, cursors, events, decorations, layers,
+pages, the sticky fold), with two exceptions, since a snapshot holds no document: elements'
+`getSources()` are empty, and `createEditingController` throws.
+
+On `score_schubert_gute_nacht.musicxml` (2,928 notes), at 390 CSS px, a pixel ratio of 3 and
+4x CPU throttling with fonts loaded, the MusicXML first paints after about 1.55 s, all of it one
+task. A 1.5 MB snapshot (250 KB gzipped) first paints after about 155 ms, `JSON.parse` included,
+its longest task under 85 ms.
+
 ## Cleaning up
 
 When you're done with a layer or the entire rendered score, call `.dispose()` to clean up resources.

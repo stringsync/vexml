@@ -25,8 +25,10 @@ import type { Score } from './score';
 import { ScoreDrawer } from './score-drawer';
 import { ScoreReader } from './score-reader';
 import { ScoreRenderer } from './score-renderer';
+import type { ScoreSnapshot } from './score-snapshot';
 import { SequenceFactory } from './sequence-factory';
 import { SignatureTranslator } from './signature-translator';
+import { SnapshotReader } from './snapshot-reader';
 import { SpannerBuilder } from './spanner-builder';
 import { SpillResolver } from './spill-resolver';
 import { Stage } from './stage';
@@ -36,7 +38,10 @@ import { VoiceTranslator } from './voice-translator';
 
 /*
  * Render a MusicXML score into a container: parse text or a compressed .mxl Blob, or reuse an
- * editor-owned MDocument, which is never edited: its gaps must name measures already in it.
+ * editor-owned MDocument, which is never edited: its gaps must name measures already in it. A
+ * ScoreSnapshot (Score.snapshot) skips parsing, layout and drawing; one recorded by another
+ * snapshot version or with a different engraving config throws SnapshotMismatchError before
+ * the container is touched.
  * Build the stage inside the div, lay the score out, and draw it onto the stage's
  * managed canvas. The caller never sees the canvas: only the returned Score, which owns the DOM
  * and is the handle for events/decorations/layers (and dispose).
@@ -46,7 +51,7 @@ import { VoiceTranslator } from './voice-translator';
  * is built belongs in one of those classes rather than in this function.
  */
 export function render(
-	input: string | Blob | MDocument,
+	input: string | Blob | MDocument | ScoreSnapshot,
 	container: HTMLDivElement,
 	config?: ConfigInput,
 ): Promise<Score> {
@@ -57,8 +62,11 @@ export function render(
 	const reader = new ScoreReader(new DynamicGlyphs());
 	const gaps = new Gaps(resolved.gaps, new GapInserter(reader));
 	// Before the stage touches the container: a caller's document is never edited, so its gaps
-	// are measures already in it, and a parse vexml makes holds none of the caller's measures.
-	if (input instanceof MDocument ? gaps.inserts() : gaps.names()) {
+	// are measures already in it, and a parse vexml makes holds none of the caller's measures. A
+	// snapshot's gaps were placed when it was recorded, and its config must match this one.
+	if (SnapshotReader.isSnapshot(input)) {
+		new SnapshotReader(resolved).check(input);
+	} else if (input instanceof MDocument ? gaps.inserts() : gaps.names()) {
 		throw new Error(
 			input instanceof MDocument
 				? 'render: gaps for an MDocument must name measures in it (see insertGaps)'

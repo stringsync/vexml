@@ -44,7 +44,14 @@ describe('Measure', () => {
 			boxMeasures,
 		);
 		boxes.push(box);
-		measure = new Measure(mmeasure, new Part(mpart, partMeasures), box, []);
+		measure = new Measure(
+			mmeasure,
+			mmeasure.number,
+			mmeasure.index,
+			new Part(mpart, mpart.id, mpart.label, partMeasures),
+			box,
+			[],
+		);
 		boxMeasures.push(measure);
 		partMeasures.push(measure);
 	});

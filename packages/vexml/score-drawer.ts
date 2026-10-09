@@ -43,8 +43,9 @@ export interface RawGeometry {
 }
 
 /* The engraving as recorded ops, ready for the stage to replay: its size in score px, where
- * the recording's origin lands in score space (the headroom above the first system is cropped),
- * and the CSS px each score px is shown at (a panoramic scale or fitHeight; 1 otherwise). */
+ * the recording's origin lands in score space (the headroom above the first system is cropped;
+ * exact, the stage snaps it to its device pixels), and the CSS px each score px is shown at (a
+ * panoramic scale or fitHeight; 1 otherwise). */
 export interface Engraving {
 	ops: readonly PaintOp[];
 	width: number;
@@ -260,14 +261,11 @@ export class ScoreDrawer {
 			cssHeight = 2 * half;
 			scale = layoutConfig.fitHeight / cssHeight;
 		}
-		// The pixels shift by whole device pixels so an engraving lands on the same pixel grid at
-		// any crop; the geometry below keeps the exact crop, which is in CSS px.
-		const dpr = this.pixelRatio() * scale;
 		const engraving: Engraving = {
 			ops: list.ops,
 			width,
 			height: cssHeight,
-			origin: { x: 0, y: -Math.round(cropTop * dpr) / dpr },
+			origin: { x: 0, y: -cropTop },
 			scale,
 		};
 
@@ -338,7 +336,6 @@ export class ScoreDrawer {
 		}
 		const { pageWidth, pageHeight, margin } = layout;
 		const dx = margin - PAGE_MARGIN_X;
-		const dpr = this.pixelRatio();
 		const height = pageCount * pageHeight;
 		const toScore = (r: Rect) => r.translate(dx, -cropTop);
 		return {
@@ -365,10 +362,7 @@ export class ScoreDrawer {
 				ops,
 				width: pageWidth,
 				height,
-				origin: {
-					x: Math.round(dx * dpr) / dpr,
-					y: -Math.round(cropTop * dpr) / dpr,
-				},
+				origin: { x: dx, y: -cropTop },
 				scale: 1,
 			},
 			fold: null,
@@ -377,9 +371,5 @@ export class ScoreDrawer {
 				(_, index) => new Rect(0, index * pageHeight, pageWidth, pageHeight),
 			),
 		};
-	}
-
-	private pixelRatio(): number {
-		return this.config.pixelRatio ?? (window.devicePixelRatio || 1);
 	}
 }

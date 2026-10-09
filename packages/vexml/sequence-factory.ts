@@ -3,13 +3,14 @@ import { Rect } from 'webappwiz/geometry';
 import { DEFAULT_TEMPO_BPM } from './constants';
 import type { Gaps } from './gaps';
 import { MeasureSequenceIterator } from './measure-sequence-iterator';
-import type { Note } from './note';
+import type { Note, NoteKey } from './note';
 import type { RawGeometry } from './score-drawer';
 import type { ScoreReader, Swing } from './score-reader';
 import {
 	type MeasureInfo,
 	Sequence,
 	type SequenceInput,
+	type SequenceModel,
 	type SequenceNote,
 	type Step,
 } from './sequence';
@@ -51,9 +52,58 @@ export class SequenceFactory {
 	create(
 		parts: Part[],
 		geometry: RawGeometry,
-		notesByMnote: ReadonlyMap<MNote, Note>,
+		notesByMnote: ReadonlyMap<NoteKey, Note>,
 	): Sequence {
 		return this.createFromInput(this.buildInput(parts, geometry, notesByMnote));
+	}
+
+	/* Rebuild a timeline from its model (Sequence.model), its note indexes resolved against
+	 * `notes`, the score's notes in index order. */
+	restore(model: SequenceModel, notes: readonly Note[]): Sequence {
+		const tempo = new TempoMap(model.segments);
+		const steps: Step[] = [];
+		const firstStepOfNote = new Map<Note, number>();
+		const firstStepOfMeasure = new Map<number, number>();
+		for (const [i, step] of model.steps.entries()) {
+			const active = step.active.flatMap((n) => notes[n] ?? []);
+			steps.push({
+				index: i,
+				measureIndex: step.measureIndex,
+				startBeat: step.startBeat,
+				endBeat: step.endBeat,
+				startMs: tempo.msAt(step.startBeat),
+				endMs: tempo.msAt(step.endBeat),
+				x: step.x,
+				glideToX: step.glideToX,
+				systemRect: step.systemRect,
+				active,
+			});
+			for (const note of active) {
+				if (!firstStepOfNote.has(note)) {
+					firstStepOfNote.set(note, i);
+				}
+			}
+			if (!firstStepOfMeasure.has(step.measureIndex)) {
+				firstStepOfMeasure.set(step.measureIndex, i);
+			}
+		}
+		const tiedFrom = new Map<Note, Note>();
+		for (const [n, from] of model.ties) {
+			const note = notes[n];
+			const prior = notes[from];
+			if (note && prior) {
+				tiedFrom.set(note, prior);
+			}
+		}
+		return new Sequence(
+			steps,
+			tempo,
+			model.durationBeats,
+			model.measureCount,
+			tiedFrom,
+			firstStepOfNote,
+			firstStepOfMeasure,
+		);
 	}
 
 	/* Assemble a Sequence from the pure data seam (what unit tests drive). */
@@ -289,7 +339,7 @@ export class SequenceFactory {
 	private buildInput(
 		parts: Part[],
 		geometry: RawGeometry,
-		notesByMnote: ReadonlyMap<MNote, Note>,
+		notesByMnote: ReadonlyMap<NoteKey, Note>,
 	): SequenceInput {
 		const systemRectByIndex = new Map<number, Rect>();
 		for (const measure of geometry.measures) {
@@ -628,7 +678,7 @@ export class SequenceFactory {
 	 * does), so a tied chord links member-to-member instead of collapsing onto one note. */
 	private tiedFromOf(
 		mnote: MNote,
-		notesByMnote: ReadonlyMap<MNote, Note>,
+		notesByMnote: ReadonlyMap<NoteKey, Note>,
 		chordSiblings: ReadonlyMap<MNote, readonly MNote[]>,
 	): Note | null {
 		for (const tie of mnote.ties) {
