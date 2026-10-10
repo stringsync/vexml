@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { dev } from './dev';
 import { fix } from './fix';
 import { perf } from './perf';
+import { PerfRun } from './perf-run';
+import { servePerfUi } from './perf-ui';
 import { render } from './render';
 import { ship } from './ship';
 import { slice } from './slice';
@@ -124,8 +126,23 @@ vex
 		default: undefined,
 		description: 'filter fixtures by filename',
 	})
+	.option('ui', bool, {
+		...flag,
+		description: 'also watch the run, and compare the outputs, in a browser',
+	})
 	.use(timing)
-	.action((opts, { log, fs }) => perf({ pattern: opts.pattern, log, fs }));
+	.action(async (opts, { log, fs }) => {
+		if (!opts.ui) {
+			await perf({ pattern: opts.pattern, log, fs });
+			return;
+		}
+		const run = new PerfRun(clock);
+		log.info(`perf ui at ${await servePerfUi(run)}`);
+		await perf({ pattern: opts.pattern, log, fs, listener: run });
+		log.info('run done; the page stays up until ctrl-c');
+		// The server is the point now, and Ctrl-C is how it ends.
+		await new Promise(() => {});
+	});
 
 vex
 	.command('slice')

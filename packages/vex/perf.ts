@@ -1,20 +1,15 @@
 import * as path from 'node:path';
-import { dimensions, type Renderer, renderers } from '@vexml/renderer';
+import {
+	dimensions,
+	type Image,
+	type Renderer,
+	renderers,
+} from '@vexml/renderer';
 import type { Logger } from 'webappwiz/log';
 import type { Fs } from 'webappwiz/system';
+import { type Cell, ENGINES, type Engine } from './perf-events';
 
 const DATA_DIR = path.resolve(import.meta.dir, '../integration/__data__');
-
-/**
- * The engines the corpus is rendered through. MuseScore sits this out: it renders in
- * Docker and takes seconds per score, so its numbers wouldn't share a scale with these.
- */
-const ENGINES = ['vexml', 'osmd', 'alphatab'] as const;
-
-type Engine = (typeof ENGINES)[number];
-
-/** What one render produced, or why it produced nothing. */
-export type Cell = { ms: number; size: string } | { error: string };
 
 /** A fixture's cells, positionally matched to the engine columns. */
 export interface Row {
@@ -22,11 +17,23 @@ export interface Row {
 	cells: Cell[];
 }
 
+/**
+ * Hears the run as it goes, beside the terminal: `vex perf --ui` streams it to a page.
+ * Called inline between renders, never inside the timed span.
+ */
+export interface PerfListener {
+	start(fixtures: string[]): void;
+	/** image is absent exactly when the cell is an error. */
+	render(fixture: string, engine: Engine, cell: Cell, image?: Image): void;
+	done(): void;
+}
+
 export interface PerfOptions {
 	/** Substring of the fixture filename; every fixture when absent. */
 	pattern?: string;
 	log: Logger;
 	fs: Fs;
+	listener?: PerfListener;
 }
 
 /**
@@ -53,6 +60,8 @@ export async function perf(opts: PerfOptions) {
 		`${files.length} ${files.length === 1 ? 'fixture' : 'fixtures'}, ${ENGINES.length} engines, one render each`,
 	);
 
+	opts.listener?.start(files.map(name));
+
 	const rows: Row[] = [];
 	let done = 0;
 	try {
@@ -60,9 +69,10 @@ export async function perf(opts: PerfOptions) {
 			const musicXML = await opts.fs.read(path.join(DATA_DIR, file));
 			const cells: Cell[] = [];
 			for (const engine of ENGINES) {
-				const cell = await measure(build(engine, musicXML));
+				const { cell, image } = await measure(build(engine, musicXML));
 				cells.push(cell);
 				done++;
+				opts.listener?.render(name(file), engine, cell, image);
 				// The whole progress indicator: a line per render, as it lands. It doubles
 				// as the data if someone kills a long run part way through.
 				opts.log.info(
@@ -74,6 +84,7 @@ export async function perf(opts: PerfOptions) {
 	} finally {
 		// One browser serves every render; nothing else here holds a resource.
 		await renderers.disposeAsync();
+		opts.listener?.done();
 	}
 
 	opts.log.info(`\n${table(rows)}`);
@@ -95,14 +106,17 @@ function build(engine: Engine, musicXML: string): Renderer {
 }
 
 /** Times render() alone: no file read, no PNG write, no process startup. */
-async function measure(renderer: Renderer): Promise<Cell> {
+async function measure(
+	renderer: Renderer,
+): Promise<{ cell: Cell; image?: Image }> {
 	const started = Date.now();
 	try {
 		const image = await renderer.render();
-		return { ms: Date.now() - started, size: dimensions(image) };
+		const ms = Date.now() - started;
+		return { cell: { ms, size: dimensions(image) }, image };
 	} catch (e) {
 		// A fixture no engine but vexml can parse shouldn't cost the other 500 renders.
-		return { error: e instanceof Error ? e.message : String(e) };
+		return { cell: { error: e instanceof Error ? e.message : String(e) } };
 	}
 }
 
