@@ -18,7 +18,9 @@ export type Cell = { ms: number; size: string } | { error: string };
 export type PerfEvent =
 	| { type: 'start'; at: number; fixtures: string[] }
 	| { type: 'render'; at: number; fixture: string; engine: Engine; cell: Cell }
-	| { type: 'done'; at: number };
+	| { type: 'done'; at: number }
+	/** A fixture is queued to render again; its renders follow as `render` events. */
+	| { type: 'retry'; at: number; fixture: string };
 
 /** Where the page finds the PNG a render produced. */
 export function imagePath(fixture: string, engine: Engine): string {
@@ -26,3 +28,8 @@ export function imagePath(fixture: string, engine: Engine): string {
 }
 
 export const EVENTS_PATH = '/api/perf/events';
+
+/** POST here to render a fixture through every engine again. */
+export function retryPath(fixture: string): string {
+	return `/api/perf/retry/${encodeURIComponent(fixture)}`;
+}

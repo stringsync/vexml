@@ -26,6 +26,14 @@ export function PerfHeader({
 				<span className="font-mono text-sm text-muted-foreground">perf</span>
 
 				<Status running={running} done={state.done} connected={connected} />
+				{state.retrying.length > 0 && (
+					<span className="inline-flex items-center gap-1.5 text-sm text-secondary-foreground">
+						<Spinner className="size-4" />
+						{state.retrying.length === 1
+							? 'Retrying 1 fixture'
+							: `Retrying ${state.retrying.length} fixtures`}
+					</span>
+				)}
 
 				<div className="ml-auto flex items-center gap-5 font-mono text-xs text-secondary-foreground tabular-nums">
 					{now && (

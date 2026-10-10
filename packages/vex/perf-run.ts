@@ -13,6 +13,7 @@ export class PerfRun implements PerfListener {
 	readonly #events: PerfEvent[] = [];
 	readonly #images = new Map<string, Image>();
 	readonly #subscribers = new Set<(event: PerfEvent) => void>();
+	#fixtures = new Set<string>();
 	#started: Duration | undefined;
 
 	constructor(clock: Clock) {
@@ -21,6 +22,7 @@ export class PerfRun implements PerfListener {
 
 	start(fixtures: string[]) {
 		this.#started = this.#clock.now();
+		this.#fixtures = new Set(fixtures);
 		this.#emit({ type: 'start', at: 0, fixtures });
 	}
 
@@ -33,6 +35,16 @@ export class PerfRun implements PerfListener {
 
 	done() {
 		this.#emit({ type: 'done', at: this.#at() });
+	}
+
+	/** Tells the page a fixture will render again, so it can show it as queued. */
+	retry(fixture: string) {
+		this.#emit({ type: 'retry', at: this.#at(), fixture });
+	}
+
+	/** Whether the fixture is part of this run. */
+	has(fixture: string): boolean {
+		return this.#fixtures.has(fixture);
 	}
 
 	/** Replays every event so far to fn, then hands it each new one until unsubscribed. */

@@ -61,4 +61,22 @@ describe('PerfRun', () => {
 		expect(run.image('a', 'osmd')).toBe(PNG);
 		expect(run.image('a', 'alphatab')).toBeUndefined();
 	});
+
+	it('knows which fixtures the run has', () => {
+		const run = new PerfRun(new FakeClock());
+		run.start(['a']);
+
+		expect(run.has('a')).toBe(true);
+		expect(run.has('b')).toBe(false);
+	});
+
+	it('keeps the newest image when a fixture renders again', () => {
+		const run = new PerfRun(new FakeClock());
+		const retried = Buffer.from('again');
+		run.render('a', 'vexml', { ms: 1, size: '1x1' }, PNG);
+		run.retry('a');
+		run.render('a', 'vexml', { ms: 2, size: '1x1' }, retried);
+
+		expect(run.image('a', 'vexml')).toBe(retried);
+	});
 });

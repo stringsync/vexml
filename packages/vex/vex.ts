@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { dev } from './dev';
 import { fix } from './fix';
 import { perf } from './perf';
+import { RendererBench } from './perf-bench';
+import { Retrier } from './perf-retrier';
 import { PerfRun } from './perf-run';
 import { servePerfUi } from './perf-ui';
 import { render } from './render';
@@ -132,15 +134,23 @@ vex
 	})
 	.use(timing)
 	.action(async (opts, { log, fs }) => {
+		const bench = new RendererBench(fs);
 		if (!opts.ui) {
-			await perf({ pattern: opts.pattern, log, fs });
+			try {
+				await perf({ pattern: opts.pattern, bench, log, fs });
+			} finally {
+				await bench.disposeAsync();
+			}
 			return;
 		}
+		// No dispose: the bench's browser stays warm for retries until Ctrl-C ends the
+		// process, and the browser with it.
 		const run = new PerfRun(clock);
-		log.info(`perf ui at ${await servePerfUi(run)}`);
-		await perf({ pattern: opts.pattern, log, fs, listener: run });
-		log.info('run done; the page stays up until ctrl-c');
-		// The server is the point now, and Ctrl-C is how it ends.
+		const retries = new Retrier({ run, bench, log });
+		log.info(`perf ui at ${await servePerfUi({ run, retries })}`);
+		await perf({ pattern: opts.pattern, bench, log, fs, listener: run });
+		retries.open();
+		log.info('run done; the page stays up, for retries, until ctrl-c');
 		await new Promise(() => {});
 	});
 

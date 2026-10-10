@@ -1,15 +1,8 @@
-import * as path from 'node:path';
-import {
-	dimensions,
-	type Image,
-	type Renderer,
-	renderers,
-} from '@vexml/renderer';
+import type { Image } from '@vexml/renderer';
 import type { Logger } from 'webappwiz/log';
 import type { Fs } from 'webappwiz/system';
+import { type Bench, DATA_DIR } from './perf-bench';
 import { type Cell, ENGINES, type Engine } from './perf-events';
-
-const DATA_DIR = path.resolve(import.meta.dir, '../integration/__data__');
 
 /** A fixture's cells, positionally matched to the engine columns. */
 export interface Row {
@@ -31,6 +24,7 @@ export interface PerfListener {
 export interface PerfOptions {
 	/** Substring of the fixture filename; every fixture when absent. */
 	pattern?: string;
+	bench: Bench;
 	log: Logger;
 	fs: Fs;
 	listener?: PerfListener;
@@ -66,10 +60,9 @@ export async function perf(opts: PerfOptions) {
 	let done = 0;
 	try {
 		for (const file of files) {
-			const musicXML = await opts.fs.read(path.join(DATA_DIR, file));
 			const cells: Cell[] = [];
 			for (const engine of ENGINES) {
-				const { cell, image } = await measure(build(engine, musicXML));
+				const { cell, image } = await opts.bench.measure(name(file), engine);
 				cells.push(cell);
 				done++;
 				opts.listener?.render(name(file), engine, cell, image);
@@ -82,8 +75,6 @@ export async function perf(opts: PerfOptions) {
 			rows.push({ name: name(file), cells });
 		}
 	} finally {
-		// One browser serves every render; nothing else here holds a resource.
-		await renderers.disposeAsync();
 		opts.listener?.done();
 	}
 
@@ -91,32 +82,6 @@ export async function perf(opts: PerfOptions) {
 	const failed = rows.flatMap((row) => row.cells).filter(isError).length;
 	if (failed > 0) {
 		opts.log.error(`${failed} of ${total} renders failed`);
-	}
-}
-
-function build(engine: Engine, musicXML: string): Renderer {
-	switch (engine) {
-		case 'vexml':
-			return renderers.vexml({ musicXML });
-		case 'osmd':
-			return renderers.osmd({ musicXML });
-		case 'alphatab':
-			return renderers.alphatab({ musicXML });
-	}
-}
-
-/** Times render() alone: no file read, no PNG write, no process startup. */
-async function measure(
-	renderer: Renderer,
-): Promise<{ cell: Cell; image?: Image }> {
-	const started = Date.now();
-	try {
-		const image = await renderer.render();
-		const ms = Date.now() - started;
-		return { cell: { ms, size: dimensions(image) }, image };
-	} catch (e) {
-		// A fixture no engine but vexml can parse shouldn't cost the other 500 renders.
-		return { cell: { error: e instanceof Error ? e.message : String(e) } };
 	}
 }
 
@@ -154,7 +119,7 @@ function mean(rows: Row[], engine: number): string {
 	return `${Math.round(total / times.length)}ms`;
 }
 
-function format(cell: Cell): string {
+export function format(cell: Cell): string {
 	// Only the first line: an engine's error can run to a stack trace.
 	return isError(cell)
 		? `error: ${cell.error.split('\n')[0]}`

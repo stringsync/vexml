@@ -7,7 +7,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card';
-import { ENGINES } from '../../vex/perf-events';
+import { ENGINES, retryPath } from '../../vex/perf-events';
 import { Compare, type Layout } from './compare';
 import { ENGINE_LABELS, EngineDot } from './engines';
 import {
@@ -45,6 +45,15 @@ export function PerfApp() {
 		setSelected(fixtures[next]);
 	};
 
+	// A ref like step, read by the key listener.
+	const retry = useRef(() => {});
+	retry.current = () => {
+		if (selected && !state.retrying.includes(selected)) {
+			// Fire and forget: the queued state and the renders come back on the event stream.
+			fetch(retryPath(selected), { method: 'POST' });
+		}
+	};
+
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
 			if (e.target instanceof HTMLInputElement || e.metaKey || e.ctrlKey) {
@@ -56,6 +65,8 @@ export function PerfApp() {
 			} else if (e.key === 'k' || e.key === 'ArrowUp') {
 				e.preventDefault();
 				step.current(-1);
+			} else if (e.key === 'r') {
+				retry.current();
 			} else if (e.key === 'Escape') {
 				setSelected(undefined);
 			}
@@ -80,13 +91,18 @@ export function PerfApp() {
 						onSelect={setSelected}
 					/>
 				</aside>
-				<section className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-5">
+				{/* shrink-0 on the children: a Card clips its overflow, so one allowed to shrink would
+				    squash to the window and cut the chart off rather than let this column scroll. */}
+				<section className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-5 *:shrink-0">
 					<StatCards state={state} />
 					{selected ? (
 						<Compare
 							fixture={selected}
 							cells={state.cells.get(selected) ?? {}}
 							busy={now?.fixture === selected ? now.engine : undefined}
+							queued={state.retrying.includes(selected)}
+							version={state.versions.get(selected) ?? 0}
+							onRetry={() => retry.current()}
 							layout={layout}
 							onLayout={setLayout}
 							onStep={(by) => step.current(by)}

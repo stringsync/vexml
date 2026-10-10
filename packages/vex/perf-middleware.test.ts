@@ -2,20 +2,36 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { FakeClock } from 'webappwiz/time/testing';
-import { EVENTS_PATH, imagePath } from './perf-events';
+import { EVENTS_PATH, imagePath, retryPath } from './perf-events';
 import { perfMiddleware } from './perf-middleware';
+import type { RetryQueue } from './perf-retrier';
 import { PerfRun } from './perf-run';
 
 const PNG = Buffer.from('not really a png');
 
+/** Takes any fixture but 'nope', and remembers what it took. */
+class FakeRetryQueue implements RetryQueue {
+	readonly requested: string[] = [];
+
+	request(fixture: string): boolean {
+		if (fixture === 'nope') {
+			return false;
+		}
+		this.requested.push(fixture);
+		return true;
+	}
+}
+
 describe('perfMiddleware', () => {
 	let run: PerfRun;
+	let retries: FakeRetryQueue;
 	let server: Server;
 	let base: string;
 
 	beforeEach(async () => {
 		run = new PerfRun(new FakeClock());
-		const middleware = perfMiddleware(run);
+		retries = new FakeRetryQueue();
+		const middleware = perfMiddleware({ run, retries });
 		// Whatever the middleware passes on lands here, so a test can tell it let go.
 		server = createServer((req, res) =>
 			middleware(req, res, () => res.writeHead(418).end()),
@@ -64,6 +80,26 @@ describe('perfMiddleware', () => {
 		expect(new TextDecoder().decode(chunk?.value)).toBe(
 			'data: {"type":"start","at":0,"fixtures":["a"]}\n\n',
 		);
+	});
+
+	it('queues a retry, and says it is accepted rather than done', async () => {
+		const res = await fetch(base + retryPath('a b'), { method: 'POST' });
+
+		expect(res.status).toBe(202);
+		expect(retries.requested).toEqual(['a b']);
+	});
+
+	it('404s a retry of a fixture the run does not have', async () => {
+		const res = await fetch(base + retryPath('nope'), { method: 'POST' });
+
+		expect(res.status).toBe(404);
+	});
+
+	it('leaves a GET of the retry path to the next handler', async () => {
+		const res = await fetch(base + retryPath('a'));
+
+		expect(res.status).toBe(418);
+		expect(retries.requested).toEqual([]);
 	});
 
 	it('leaves every other path to the next handler', async () => {

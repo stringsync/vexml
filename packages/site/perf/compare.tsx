@@ -3,6 +3,7 @@ import {
 	ChevronDownIcon,
 	ChevronUpIcon,
 	ExternalLinkIcon,
+	RotateCcwIcon,
 	XIcon,
 } from 'lucide-react';
 import { Segmented } from '@/components/segmented';
@@ -30,18 +31,26 @@ export function Compare({
 	fixture,
 	cells,
 	busy,
+	queued,
+	version,
 	layout,
 	onLayout,
 	onStep,
+	onRetry,
 	onClose,
 }: {
 	fixture: string;
 	cells: Partial<Record<Engine, Cell>>;
-	/** The engine rendering this fixture now, if the run is on it. */
+	/** The engine rendering this fixture now, if the run or a retry is on it. */
 	busy: Engine | undefined;
+	/** Queued to render again and not back yet. */
+	queued: boolean;
+	/** Bumped by each retry, so the images reload rather than show the browser's copies. */
+	version: number;
 	layout: Layout;
 	onLayout: (layout: Layout) => void;
 	onStep: (by: 1 | -1) => void;
+	onRetry: () => void;
 	onClose: () => void;
 }) {
 	// Every image at one scale, the widest filling its column: the engines draw at different
@@ -57,8 +66,12 @@ export function Compare({
 					{fixture}
 				</h2>
 				<span className="hidden text-2xs text-faint lg:inline">
-					j/k to step, esc to close
+					j/k to step, r to retry, esc to close
 				</span>
+				<Button variant="outline" size="sm" onClick={onRetry} disabled={queued}>
+					{queued ? <Spinner /> : <RotateCcwIcon />}
+					{retryLabel(queued, busy)}
+				</Button>
 				<Segmented
 					value={layout}
 					onChange={onLayout}
@@ -108,6 +121,8 @@ export function Compare({
 						engine={engine}
 						cell={cells[engine]}
 						busy={busy === engine}
+						queued={queued}
+						version={version}
 						widest={widest}
 					/>
 				))}
@@ -121,15 +136,19 @@ function Output({
 	engine,
 	cell,
 	busy,
+	queued,
+	version,
 	widest,
 }: {
 	fixture: string;
 	engine: Engine;
 	cell: Cell | undefined;
 	busy: boolean;
+	queued: boolean;
+	version: number;
 	widest: number;
 }) {
-	const src = imagePath(fixture, engine);
+	const src = `${imagePath(fixture, engine)}?v=${version}`;
 	return (
 		<Card size="sm" className="gap-2">
 			<CardContent className="flex items-center gap-2 text-sm">
@@ -161,6 +180,7 @@ function Output({
 					engine={engine}
 					cell={cell}
 					busy={busy}
+					queued={queued}
 					widest={widest}
 				/>
 			</CardContent>
@@ -173,12 +193,14 @@ function OutputBody({
 	engine,
 	cell,
 	busy,
+	queued,
 	widest,
 }: {
 	src: string;
 	engine: Engine;
 	cell: Cell | undefined;
 	busy: boolean;
+	queued: boolean;
 	widest: number;
 }) {
 	if (isError(cell)) {
@@ -199,7 +221,7 @@ function OutputBody({
 						<Spinner className="size-4" /> Rendering
 					</>
 				) : (
-					'Not rendered yet'
+					waitingLabel(queued)
 				)}
 			</div>
 		);
@@ -212,6 +234,18 @@ function OutputBody({
 			className="rounded-md ring-1 ring-border"
 		/>
 	);
+}
+
+function retryLabel(queued: boolean, busy: Engine | undefined): string {
+	if (!queued) {
+		return 'Retry';
+	}
+	return busy ? 'Retrying' : 'Queued';
+}
+
+function waitingLabel(queued: boolean): string {
+	// A retry asked for mid-run waits for the run, so as not to skew either's times.
+	return queued ? 'Queued to retry' : 'Not rendered yet';
 }
 
 /** A rendered cell's pixel width, read off its `WIDTHxHEIGHT`. */
