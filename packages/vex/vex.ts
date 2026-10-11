@@ -16,6 +16,7 @@ import { ship } from './ship';
 import { slice } from './slice';
 import { test } from './test';
 import { validate } from './validate';
+import { WarmBench } from './warm-bench';
 
 /** What `vex`'s commands are run with, on top of what any cli needs. */
 export interface VexDeps extends Deps {
@@ -123,7 +124,7 @@ vex
 vex
 	.command('perf')
 	.description(
-		'render every musicxml fixture through vexml, osmd, and alphatab once, and tabulate time and output size; pattern filters by filename',
+		'render every musicxml fixture through vexml, osmd, and alphatab once (after an untimed warm-up render per engine), and tabulate time and output size; pattern filters by filename',
 	)
 	.arg('pattern', z.string().optional(), {
 		default: undefined,
@@ -135,12 +136,13 @@ vex
 	})
 	.use(timing)
 	.action(async (opts, { log, fs }) => {
-		const bench = new RendererBench(fs);
+		const renderer = new RendererBench(fs);
+		const bench = new WarmBench(renderer);
 		if (!opts.ui) {
 			try {
 				await perf({ pattern: opts.pattern, bench, log, fs });
 			} finally {
-				await bench.disposeAsync();
+				await renderer.disposeAsync();
 			}
 			return;
 		}
