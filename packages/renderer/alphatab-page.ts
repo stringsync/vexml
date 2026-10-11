@@ -46,12 +46,54 @@ class AlphatabPage implements EnginePage<AlphatabInput, AlphatabContext> {
 			alphatab.error.on(reject);
 			// Every track: without the indexes alphaTab draws only the first part, which on a
 			// multi-part score is a fraction of the page vexml and OSMD draw. -1 is its "all".
-			if (!alphatab.load(Uint8Array.fromBase64(input.musicXML), [-1])) {
+			const musicXML = withoutNotationTunings(
+				new TextDecoder().decode(Uint8Array.fromBase64(input.musicXML)),
+			);
+			if (!alphatab.load(new TextEncoder().encode(musicXML), [-1])) {
 				reject(new Error('alphatab could not load the file'));
 			}
 		});
 		return { alphatab, container };
 	}
+}
+
+/**
+ * The MusicXML with <staff-tuning> dropped from every staff that isn't tab. A tuning on a
+ * five-line notation staff is valid MusicXML, but alphaTab's importer can't take it: painting
+ * that staff's lines throws in collectSpaces, and nothing of the score draws. Only a tab
+ * staff reads its tuning, so the notation staves lose nothing alphaTab would have drawn.
+ */
+function withoutNotationTunings(musicXML: string): string {
+	const doc = new DOMParser().parseFromString(musicXML, 'application/xml');
+	for (const part of Array.from(doc.querySelectorAll('part'))) {
+		// A staff keeps its clef until another replaces it, so track signs through the part.
+		const signs = new Map<string, string>();
+		for (const attributes of Array.from(part.querySelectorAll('attributes'))) {
+			for (const clef of Array.from(
+				attributes.querySelectorAll(':scope > clef'),
+			)) {
+				const sign = clef.querySelector('sign')?.textContent?.trim() ?? '';
+				signs.set(clef.getAttribute('number') ?? '1', sign);
+			}
+			for (const details of Array.from(
+				attributes.querySelectorAll(':scope > staff-details'),
+			)) {
+				// Some exporters write a tab staff with a G clef, its string count in <staff-lines>
+				// standing in for the TAB sign; that staff's tuning is what makes it tab.
+				const tab =
+					signs.get(details.getAttribute('number') ?? '1') === 'TAB' ||
+					details.querySelector('staff-lines') !== null;
+				if (!tab) {
+					for (const tuning of Array.from(
+						details.querySelectorAll('staff-tuning'),
+					)) {
+						tuning.remove();
+					}
+				}
+			}
+		}
+	}
+	return new XMLSerializer().serializeToString(doc);
 }
 
 registerPage(new AlphatabPage());
