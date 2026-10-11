@@ -14,7 +14,7 @@ export interface AlphatabInput {
 export interface AlphatabApi {
 	renderFinished: { on(handler: () => void): void };
 	error: { on(handler: (e: Error) => void): void };
-	load(data: Uint8Array): boolean;
+	load(data: Uint8Array, trackIndexes?: number[]): boolean;
 }
 
 /** What alphaTab exposes to eval fns. */

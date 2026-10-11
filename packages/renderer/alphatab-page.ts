@@ -33,6 +33,10 @@ class AlphatabPage implements EnginePage<AlphatabInput, AlphatabContext> {
 				// Workers would need alphaTab's own script URL, which an injected script
 				// doesn't give it.
 				useWorkers: false,
+				// Lazy loading draws each part of the score as it scrolls into view, after
+				// renderFinished, which then only means laid out: the capture would get an empty
+				// page the height of the score. Off, renderFinished means drawn.
+				enableLazyLoading: false,
 				smuflFontSources: { woff2: `data:font/woff2;base64,${input.font}` },
 			},
 			player: { enablePlayer: false },
@@ -40,7 +44,9 @@ class AlphatabPage implements EnginePage<AlphatabInput, AlphatabContext> {
 		await new Promise<void>((resolve, reject) => {
 			alphatab.renderFinished.on(resolve);
 			alphatab.error.on(reject);
-			if (!alphatab.load(Uint8Array.fromBase64(input.musicXML))) {
+			// Every track: without the indexes alphaTab draws only the first part, which on a
+			// multi-part score is a fraction of the page vexml and OSMD draw. -1 is its "all".
+			if (!alphatab.load(Uint8Array.fromBase64(input.musicXML), [-1])) {
 				reject(new Error('alphatab could not load the file'));
 			}
 		});
