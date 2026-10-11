@@ -3,7 +3,7 @@ import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
 import type { TabPool } from './pool';
 import { tabPools } from './tab-pools';
-import { DEFAULT_WIDTH } from './vexml-renderer';
+import { DEFAULT_WIDTH, MARGIN, PADDING } from './vexml-renderer';
 
 export interface OsmdInput {
 	musicXML: string;
@@ -23,9 +23,10 @@ export interface OsmdContext {
 	container: HTMLDivElement;
 }
 
-// OSMD draws SVG into a fixed-width div, as wide as vexml lays out to; white so the PNG
-// isn't transparent.
-const PAGE_HTML = `<body style="margin:0;background:#fff"><div id="screenshot" style="width:${DEFAULT_WIDTH}px"></div></body>`;
+// OSMD draws SVG into #score, a fixed-width div as wide as vexml lays out to. The capture
+// is #screenshot round it, padded as vexml's is: padding on #score itself could widen what
+// OSMD lays out to. White so the PNG isn't transparent.
+const PAGE_HTML = `<body style="margin:0;background:#fff"><div id="screenshot" style="padding:${PADDING}px;display:inline-block"><div id="score" style="width:${DEFAULT_WIDTH}px"></div></div></body>`;
 
 export class OsmdRenderer extends BrowserRenderer<OsmdContext> {
 	constructor(private readonly input: OsmdInput) {
@@ -36,7 +37,7 @@ export class OsmdRenderer extends BrowserRenderer<OsmdContext> {
 		return tabPools.pool('osmd', {
 			html: PAGE_HTML,
 			scripts,
-			width: DEFAULT_WIDTH,
+			width: DEFAULT_WIDTH + MARGIN,
 			height: 600,
 		});
 	}

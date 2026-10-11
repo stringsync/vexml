@@ -3,7 +3,7 @@ import { type EnginePage, registerPage } from './page-registry';
 
 /*
  * The browser side of the alphaTab renderer: bundled to a classic script and injected
- * after alphaTab's UMD build. mount draws SVG into #screenshot and keeps the
+ * after alphaTab's UMD build. mount draws SVG into #score and keeps the
  * AlphatabContext eval fns run against.
  */
 
@@ -25,9 +25,9 @@ type AlphatabInput = {
 class AlphatabPage implements EnginePage<AlphatabInput, AlphatabContext> {
 	async mount(input: AlphatabInput): Promise<AlphatabContext> {
 		const { AlphaTabApi } = (window as unknown as AlphaTabWindow).alphaTab;
-		const container = document.getElementById('screenshot');
+		const container = document.getElementById('score');
 		if (!(container instanceof HTMLDivElement)) {
-			throw new Error('mount: #screenshot container not found');
+			throw new Error('mount: #score container not found');
 		}
 		container.replaceChildren();
 		const alphatab = new AlphaTabApi(container, {

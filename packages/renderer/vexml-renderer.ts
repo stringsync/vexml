@@ -35,11 +35,13 @@ export type VexmlInput = { config?: ConfigInput } & (
 	| { mxl: Uint8Array; musicXML?: undefined }
 );
 
+// The margin round every capture, for engravings that overshoot their box to land in. The
+// reference renderers pad by it too, so their images come out the same size as vexml's.
+export const PADDING = 16;
+
 /* The tab shell every vexml render mounts into: vexml-page.ts's mount targets
- * #screenshot and the screenshots crop to it. The padding gives engravings that
- * overshoot their box a margin to land in; inline-block shrinkwraps the div. */
-const PAGE_HTML =
-	'<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0}#screenshot{padding:16px;display:inline-block}</style></head><body><div id="screenshot"></div></body></html>';
+ * #screenshot and the screenshots crop to it. inline-block shrinkwraps the div. */
+const PAGE_HTML = `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0}#screenshot{padding:${PADDING}px;display:inline-block}</style></head><body><div id="screenshot"></div></body></html>`;
 
 // ponytail: mirrors vexml's DEFAULT_WIDTH. The public API doesn't expose it, so this
 // package doesn't get privileged access. Bump if vexml's default reference width ever
@@ -47,7 +49,7 @@ const PAGE_HTML =
 export const DEFAULT_WIDTH = 900;
 
 // Viewport headroom over the reference width, so the #screenshot padding fits.
-const MARGIN = 64;
+export const MARGIN = 64;
 
 export class VexmlRenderer extends BrowserRenderer<VexmlContext> {
 	constructor(private readonly input: VexmlInput) {
