@@ -16,8 +16,8 @@ import {
 	TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { type Cell, ENGINES, type Engine } from '../../vex/perf-events';
-import { ENGINE_LABELS, EngineDot } from './engines';
-import { current, isError, ms, type RunState } from './run';
+import { ENGINE_COLORS, ENGINE_LABELS, EngineDot } from './engines';
+import { current, fastest, isError, ms, type RunState } from './run';
 
 type SortKey = 'run' | 'fixture' | Engine;
 
@@ -99,30 +99,35 @@ export function FixtureTable({
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{fixtures.map((fixture) => (
-							<TableRow
-								key={fixture}
-								data-state={fixture === selected ? 'selected' : undefined}
-								ref={
-									fixture === selected
-										? (row) => row?.scrollIntoView({ block: 'nearest' })
-										: undefined
-								}
-								onClick={() => onSelect(fixture)}
-								className="cursor-pointer data-[state=selected]:bg-brand-wash"
-							>
-								<TableCell className="max-w-0 truncate" title={fixture}>
-									{fixture}
-								</TableCell>
-								{ENGINES.map((engine) => (
-									<TimeCell
-										key={engine}
-										cell={state.cells.get(fixture)?.[engine]}
-										busy={now?.fixture === fixture && now.engine === engine}
-									/>
-								))}
-							</TableRow>
-						))}
+						{fixtures.map((fixture) => {
+							const best = fastest(state.cells.get(fixture) ?? {});
+							return (
+								<TableRow
+									key={fixture}
+									data-state={fixture === selected ? 'selected' : undefined}
+									ref={
+										fixture === selected
+											? (row) => row?.scrollIntoView({ block: 'nearest' })
+											: undefined
+									}
+									onClick={() => onSelect(fixture)}
+									className="cursor-pointer data-[state=selected]:bg-brand-wash"
+								>
+									<TableCell className="max-w-0 truncate" title={fixture}>
+										{fixture}
+									</TableCell>
+									{ENGINES.map((engine) => (
+										<TimeCell
+											key={engine}
+											engine={engine}
+											cell={state.cells.get(fixture)?.[engine]}
+											busy={now?.fixture === fixture && now.engine === engine}
+											won={best.has(engine)}
+										/>
+									))}
+								</TableRow>
+							);
+						})}
 					</TableBody>
 				</Table>
 			</div>
@@ -164,7 +169,18 @@ function SortHead({
 	);
 }
 
-function TimeCell({ cell, busy }: { cell: Cell | undefined; busy: boolean }) {
+function TimeCell({
+	engine,
+	cell,
+	busy,
+	won,
+}: {
+	engine: Engine;
+	cell: Cell | undefined;
+	busy: boolean;
+	/** Rendered this fixture fastest: marked with the engine's dot, as in the header. */
+	won: boolean;
+}) {
 	if (isError(cell)) {
 		return (
 			<TableCell className="text-right">
@@ -178,7 +194,20 @@ function TimeCell({ cell, busy }: { cell: Cell | undefined; busy: boolean }) {
 		);
 	}
 	if (cell) {
-		return <TableCell className="text-right">{cell.ms}</TableCell>;
+		return (
+			<TableCell
+				className={cn('text-right', won && 'font-medium')}
+				title={won ? `${ENGINE_LABELS[engine]} was fastest` : undefined}
+			>
+				{won && (
+					<span
+						className="mr-1.5 inline-block size-1.5 rounded-full align-middle"
+						style={{ background: ENGINE_COLORS[engine] }}
+					/>
+				)}
+				{cell.ms}
+			</TableCell>
+		);
 	}
 	return (
 		<TableCell className="text-right">

@@ -152,3 +152,24 @@ export function stats(state: RunState, engine: Engine): EngineStats {
 export function slowest(cells: Partial<Record<Engine, Cell>>): number {
 	return Math.max(0, ...ENGINES.map((engine) => ms(cells[engine]) ?? 0));
 }
+
+/**
+ * The engines that rendered a fixture fastest: more than one on a tie, none until every
+ * engine is back, and none unless at least two succeeded, so there was a race to win.
+ */
+export function fastest(cells: Partial<Record<Engine, Cell>>): Set<Engine> {
+	if (!ENGINES.every((engine) => cells[engine])) {
+		return new Set();
+	}
+	const times = ENGINES.flatMap((engine) => {
+		const t = ms(cells[engine]);
+		return t === undefined ? [] : [{ engine, t }];
+	});
+	if (times.length < 2) {
+		return new Set();
+	}
+	const best = Math.min(...times.map(({ t }) => t));
+	return new Set(
+		times.filter(({ t }) => t === best).map(({ engine }) => engine),
+	);
+}
