@@ -21,6 +21,7 @@ import {
 } from './constants';
 import type { DirectionPlacer } from './direction-placer';
 import type { Hairpin } from './hairpin';
+import { Ink } from './ink';
 import type {
 	DirectionLineSpan,
 	OctaveShiftSpan,
@@ -381,6 +382,8 @@ export class SpannerResolver {
 					? TextBracket.Position.TOP
 					: TextBracket.Position.BOTTOM,
 			});
+			// vexflow paints a bracket in its own black, over the context's notation ink.
+			bracket.renderOptions.color = Ink.NOTATION;
 			this.clearOctaveBracket(
 				bracket,
 				span.notes

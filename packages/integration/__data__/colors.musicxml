@@ -77,5 +77,45 @@
         <type>quarter</type>
       </note>
     </measure>
+    <!-- M3: an 8va bracket over the first two quarters (E5, F5) and a sustain pedal under the
+         whole measure. vexflow draws both in its own black, so they prove the notation color
+         reaches them too. -->
+    <measure number="3">
+      <direction placement="above">
+        <direction-type>
+          <octave-shift type="down" size="8"/>
+        </direction-type>
+      </direction>
+      <direction placement="below">
+        <direction-type>
+          <pedal type="start" line="no"/>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+      </note>
+      <direction>
+        <direction-type>
+          <octave-shift type="stop" size="8"/>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>16</duration>
+        <type>half</type>
+      </note>
+      <direction placement="below">
+        <direction-type>
+          <pedal type="stop" line="no"/>
+        </direction-type>
+      </direction>
+    </measure>
   </part>
 </score-partwise>

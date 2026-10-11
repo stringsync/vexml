@@ -207,6 +207,8 @@ describe('render', () => {
 	//   staff, treble clef, and measure number all take the notation color.
 	// - M2: quarter notes above (A5, C6) and below (C4, A3) the staff, so their ledger lines also
 	//   take the notation color, not VexFlow's hardcoded gray.
+	// - M3: an 8va bracket over E5 F5 and a "Ped." to "*" sustain pedal under the measure, both
+	//   in the notation color, not the black VexFlow paints them in.
 	it.concurrent('renders colors.png', async () => {
 		expect(
 			await testing.render('colors.musicxml', {

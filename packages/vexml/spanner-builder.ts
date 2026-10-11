@@ -39,6 +39,7 @@ import { CrispCurve, CURVE_THICKNESS } from './crisp-curve';
 import { CrispTabSlide } from './crisp-tab-slide';
 import { Hairpin } from './hairpin';
 import { HeadCurve } from './head-curve';
+import { Ink } from './ink';
 import { NotationSlide } from './notation-slide';
 import { NoteheadArticulation } from './notehead-articulation';
 import { LINE_TYPE_DASH, type PedalMark, type WedgeMark } from './score-reader';
@@ -722,6 +723,8 @@ export class SpannerBuilder {
 					continue;
 				}
 				const marking = PedalMarking.createSustain([from.note, staveNote]);
+				// vexflow paints a pedal in its own black, over the context's notation ink.
+				marking.renderOptions.color = Ink.NOTATION;
 				if (from.line) {
 					marking.setType(PedalMarking.type.BRACKET);
 				}
