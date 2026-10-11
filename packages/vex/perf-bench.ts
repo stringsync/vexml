@@ -57,7 +57,13 @@ export class RendererBench implements Bench {
 function build(engine: Engine, musicXML: string): Renderer {
 	switch (engine) {
 		case 'vexml':
-			return renderers.vexml({ musicXML });
+			// OSMD and alphaTab leave a short last system ragged, lone or not, and have no
+			// setting for vexml's stretch-once-mostly-full rule, so vexml leaves it ragged too.
+			// The pages then compare one layout, not one score stretched and one not.
+			return renderers.vexml({
+				musicXML,
+				config: { stretchSingleSystem: false, minLastSystemFill: 1 },
+			});
 		case 'osmd':
 			return renderers.osmd({ musicXML });
 		case 'alphatab':

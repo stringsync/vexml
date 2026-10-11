@@ -3,6 +3,7 @@ import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
 import type { TabPool } from './pool';
 import { tabPools } from './tab-pools';
+import { DEFAULT_WIDTH } from './vexml-renderer';
 
 export interface AlphatabInput {
 	musicXML: string;
@@ -12,6 +13,11 @@ export interface AlphatabInput {
 // opinions, not as a library under test.
 /** The slice of alphaTab's api the page keeps. */
 export interface AlphatabApi {
+	scoreLoaded: {
+		on(
+			handler: (score: { stylesheet: { barNumberDisplay: number } }) => void,
+		): void;
+	};
 	renderFinished: { on(handler: () => void): void };
 	error: { on(handler: (e: Error) => void): void };
 	load(data: Uint8Array, trackIndexes?: number[]): boolean;
@@ -23,9 +29,9 @@ export interface AlphatabContext {
 	container: HTMLDivElement;
 }
 
-// alphaTab draws SVG into a fixed-width div; white so the PNG isn't transparent.
-const PAGE_HTML =
-	'<body style="margin:0;background:#fff"><div id="screenshot" style="width:1064px"></div></body>';
+// alphaTab draws SVG into a fixed-width div, as wide as vexml lays out to; white so the PNG
+// isn't transparent.
+const PAGE_HTML = `<body style="margin:0;background:#fff"><div id="screenshot" style="width:${DEFAULT_WIDTH}px"></div></body>`;
 
 export class AlphatabRenderer extends BrowserRenderer<AlphatabContext> {
 	constructor(private readonly input: AlphatabInput) {
@@ -36,7 +42,7 @@ export class AlphatabRenderer extends BrowserRenderer<AlphatabContext> {
 		return tabPools.pool('alphatab', {
 			html: PAGE_HTML,
 			scripts,
-			width: 1064,
+			width: DEFAULT_WIDTH,
 			height: 600,
 		});
 	}

@@ -22,7 +22,21 @@ class OsmdPage implements EnginePage<{ musicXML: string }, OsmdContext> {
 			throw new Error('mount: #screenshot container not found');
 		}
 		container.replaceChildren();
-		const osmd = new OpenSheetMusicDisplay(container, { autoResize: false });
+		const osmd = new OpenSheetMusicDisplay(container, {
+			autoResize: false,
+			// Laid out the way vexml lays out by default, so the two sit side by side as one
+			// score: the document's own system breaks kept, a ragged last system left ragged,
+			// numbers only where a system starts, and none of the header vexml never draws.
+			newSystemFromXML: true,
+			newSystemFromNewPageInXML: true,
+			drawMeasureNumbersOnlyAtSystemStart: true,
+			drawTitle: false,
+			drawSubtitle: false,
+			drawComposer: false,
+			drawLyricist: false,
+			drawCredits: false,
+			drawPartNames: false,
+		});
 		await osmd.load(input.musicXML);
 		osmd.render();
 		return { osmd, container };

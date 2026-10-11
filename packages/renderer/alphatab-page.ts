@@ -13,6 +13,9 @@ type AlphaTabWindow = {
 	};
 };
 
+// alphaTab's BarNumberDisplay.FirstOfSystem.
+const BAR_NUMBERS_FIRST_OF_SYSTEM = 1;
+
 /** `musicXML` and `font` (the Bravura woff2) are both base64. */
 type AlphatabInput = {
 	musicXML: string;
@@ -40,6 +43,26 @@ class AlphatabPage implements EnginePage<AlphatabInput, AlphatabContext> {
 				smuflFontSources: { woff2: `data:font/woff2;base64,${input.font}` },
 			},
 			player: { enablePlayer: false },
+			// The score's header and the track names are text vexml never draws, so they're left
+			// out to keep the two pages the same score.
+			notation: {
+				elements: {
+					scoreTitle: false,
+					scoreSubTitle: false,
+					scoreArtist: false,
+					scoreAlbum: false,
+					scoreWords: false,
+					scoreMusic: false,
+					scoreWordsAndMusic: false,
+					scoreCopyright: false,
+					trackNames: false,
+				},
+			},
+		});
+		// Bars numbered only where a system starts, as vexml numbers them. It's a property of
+		// the score, not the settings, so it's set between loading and the render that follows.
+		alphatab.scoreLoaded.on((score) => {
+			score.stylesheet.barNumberDisplay = BAR_NUMBERS_FIRST_OF_SYSTEM;
 		});
 		await new Promise<void>((resolve, reject) => {
 			alphatab.renderFinished.on(resolve);
@@ -66,9 +89,13 @@ class AlphatabPage implements EnginePage<AlphatabInput, AlphatabContext> {
  *   so the notation staves lose nothing alphaTab would have drawn.
  * - A tab note with a pitch but no <string> or <fret>: given them, derived from the staff's
  *   tuning by vexml's rule (tab-voice-translator.ts), so the two engines fret it alike.
+ *
+ * It also copies each system break into every part (see shareBreaks), which alphaTab reads
+ * without throwing but would otherwise ignore.
  */
 function forAlphatab(musicXML: string): string {
 	const doc = new DOMParser().parseFromString(musicXML, 'application/xml');
+	shareBreaks(doc);
 	for (const part of Array.from(doc.querySelectorAll('part'))) {
 		// A staff keeps its clef and tuning until another replaces them, so they're tracked
 		// through the part in document order, attributes and notes interleaved.
@@ -95,6 +122,46 @@ function forAlphatab(musicXML: string): string {
 		}
 	}
 	return new XMLSerializer().serializeToString(doc);
+}
+
+/**
+ * Writes a measure's system break into every part. Exporters write `<print>` in the first
+ * part alone, where it speaks for the whole score, as vexml reads it; alphaTab breaks the
+ * line only where every part asks, so a multi-part score would ignore its breaks.
+ */
+function shareBreaks(doc: Document) {
+	const parts = Array.from(doc.querySelectorAll('part')).map((part) =>
+		children(part, 'measure'),
+	);
+	const breaks = new Set<number>();
+	for (const measures of parts) {
+		for (const [index, measure] of measures.entries()) {
+			const forced = children(measure, 'print').some(
+				(print) =>
+					print.getAttribute('new-system') === 'yes' ||
+					print.getAttribute('new-page') === 'yes',
+			);
+			if (forced) {
+				breaks.add(index);
+			}
+		}
+	}
+	for (const measures of parts) {
+		for (const index of breaks) {
+			const measure = measures[index];
+			if (!measure) {
+				continue;
+			}
+			let print = child(measure, 'print');
+			if (!print) {
+				print = doc.createElement('print');
+				measure.insertBefore(print, measure.firstElementChild);
+			}
+			if (print.getAttribute('new-page') !== 'yes') {
+				print.setAttribute('new-system', 'yes');
+			}
+		}
+	}
 }
 
 interface StaffState {

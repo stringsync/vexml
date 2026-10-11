@@ -43,8 +43,8 @@ const PAGE_HTML =
 
 // ponytail: mirrors vexml's DEFAULT_WIDTH. The public API doesn't expose it, so this
 // package doesn't get privileged access. Bump if vexml's default reference width ever
-// exceeds this.
-const DEFAULT_WIDTH = 900;
+// exceeds this. The reference renderers draw at it too, so their scores line up with vexml's.
+export const DEFAULT_WIDTH = 900;
 
 // Viewport headroom over the reference width, so the #screenshot padding fits.
 const MARGIN = 64;

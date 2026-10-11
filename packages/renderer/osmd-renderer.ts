@@ -3,6 +3,7 @@ import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
 import type { TabPool } from './pool';
 import { tabPools } from './tab-pools';
+import { DEFAULT_WIDTH } from './vexml-renderer';
 
 export interface OsmdInput {
 	musicXML: string;
@@ -22,9 +23,9 @@ export interface OsmdContext {
 	container: HTMLDivElement;
 }
 
-// OSMD draws SVG into a fixed-width div; white so the PNG isn't transparent.
-const PAGE_HTML =
-	'<body style="margin:0;background:#fff"><div id="screenshot" style="width:1064px"></div></body>';
+// OSMD draws SVG into a fixed-width div, as wide as vexml lays out to; white so the PNG
+// isn't transparent.
+const PAGE_HTML = `<body style="margin:0;background:#fff"><div id="screenshot" style="width:${DEFAULT_WIDTH}px"></div></body>`;
 
 export class OsmdRenderer extends BrowserRenderer<OsmdContext> {
 	constructor(private readonly input: OsmdInput) {
@@ -35,7 +36,7 @@ export class OsmdRenderer extends BrowserRenderer<OsmdContext> {
 		return tabPools.pool('osmd', {
 			html: PAGE_HTML,
 			scripts,
-			width: 1064,
+			width: DEFAULT_WIDTH,
 			height: 600,
 		});
 	}
