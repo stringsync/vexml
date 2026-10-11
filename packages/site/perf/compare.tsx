@@ -227,12 +227,19 @@ function OutputBody({
 		);
 	}
 	return (
-		<img
-			src={src}
-			alt={`${ENGINE_LABELS[engine]}'s rendering`}
+		<a
+			href={src}
+			target="_blank"
+			rel="noreferrer"
 			style={{ width: `${((width(cell) ?? widest) / widest) * 100}%` }}
-			className="rounded-md ring-1 ring-border"
-		/>
+			className="block"
+		>
+			<img
+				src={src}
+				alt={`${ENGINE_LABELS[engine]}'s rendering`}
+				className="w-full rounded-md ring-1 ring-border"
+			/>
+		</a>
 	);
 }
 
