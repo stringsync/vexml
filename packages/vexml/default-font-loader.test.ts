@@ -51,6 +51,14 @@ describe('DefaultFontLoader', () => {
 		expect(head.filter((n) => n.tag === 'link').length).toBe(0);
 	});
 
+	it('loads google fonts when the text config only sets a color', async () => {
+		const { head, container } = fakeDom();
+		await new DefaultFontLoader(BRAVURA).load(container, {
+			text: { color: 'red' },
+		});
+		expect(head.filter((n) => n.tag === 'link').length).toBe(1);
+	});
+
 	it('injects nothing new on a second default call', async () => {
 		const { head, container } = fakeDom();
 		await new DefaultFontLoader(BRAVURA).load(container); // dedup markers persist on the document
@@ -72,7 +80,7 @@ describe('DefaultFontLoader', () => {
 	it('loads the shipped bravura when the notation config only sets a color', async () => {
 		const { head, container } = fakeDom();
 		await new DefaultFontLoader(BRAVURA).load(container, {
-			notation: { family: 'Bravura', color: 'red' },
+			notation: { color: 'red' },
 		});
 		expect(styleText(head)).toContain(BRAVURA);
 	});

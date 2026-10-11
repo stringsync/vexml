@@ -181,15 +181,14 @@ and `backgroundColor` paints the container. Each takes any CSS color string.
 await render(musicXML, element, {
   backgroundColor: '#fce4ec',
   fonts: {
-    notation: { family: 'Bravura', color: '#1d4ed8' },
-    text: { family: 'Inter', url: '/fonts/inter.woff2', color: '#c2410c' },
+    notation: { color: '#1d4ed8' },
+    text: { color: '#c2410c' },
   },
 });
 ```
 
-`FontOverride.family` is required in TypeScript. Naming `Bravura` keeps the bundled
-notation font, but naming the default text family (`Source Sans 3`) without a `url`
-stops vexml loading it from Google Fonts, so give the text font a `url` when coloring it.
+Leave `family` out to recolor a default face, which vexml still loads. A `family` without
+a `url` is assumed already on the page (a system font or your own `@font-face`).
 
 ## Events
 

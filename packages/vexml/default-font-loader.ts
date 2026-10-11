@@ -134,14 +134,14 @@ export class DefaultFontLoader implements FontLoader {
 	private injectNotationFont(override?: FontOverride): void {
 		// A URL: inject the caller's own @font-face, and nothing else, so the one face the
 		// page decodes is the file they host.
+		const family = override?.family ?? DEFAULT_FONT_CONFIG.notation.family;
 		if (override?.url) {
-			this.injectFontFace(override.family, override.url, 'block');
+			this.injectFontFace(family, override.url, 'block');
 			return;
 		}
 		// Bravura with no URL (no notation config, or one that only sets a color): vexml's
 		// own shipped woff2. vexml imports vexflow/core, which embeds no fonts, so without
 		// this nothing would define the face.
-		const family = override?.family ?? DEFAULT_FONT_CONFIG.notation.family;
 		if (family === DEFAULT_FONT_CONFIG.notation.family) {
 			this.injectFontFace(family, this.bravuraUrl, 'block');
 		}
@@ -150,16 +150,20 @@ export class DefaultFontLoader implements FontLoader {
 	}
 
 	private injectTextFont(override?: FontOverride): void {
-		// No text config: load the default (Source Sans 3) from Google Fonts.
-		if (!override) {
-			this.injectGoogleFonts();
+		if (override?.url) {
+			this.injectFontFace(
+				override.family ?? DEFAULT_FONT_CONFIG.text.family,
+				override.url,
+				'swap',
+			);
 			return;
 		}
-		// A URL: inject the caller's own @font-face. A family alone: assume it's already
-		// available (a system font or the caller's own @font-face), per FontOverride.url:
-		// inject nothing, so the family resolves synchronously with no network fetch.
-		if (override.url) {
-			this.injectFontFace(override.family, override.url, 'swap');
+		// No family (no text config, or one that only sets a color): load the default
+		// (Source Sans 3) from Google Fonts. A family alone: assume it's already available (a
+		// system font or the caller's own @font-face), per FontOverride.url: inject nothing, so
+		// the family resolves synchronously with no network fetch.
+		if (!override?.family) {
+			this.injectGoogleFonts();
 		}
 	}
 

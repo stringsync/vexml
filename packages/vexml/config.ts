@@ -107,7 +107,9 @@ export type Config = {
 };
 
 export interface FontOverride {
-	family: string;
+	/** CSS font family (default: Bravura for notation, Source Sans 3 for text). Leave it out to
+	 * only recolor the default face, which vexml then still loads for you. */
+	family?: string;
 	/** woff2 URL, loaded with an injected @font-face. If omitted, the family is assumed
 	 * already loaded (a system font or your own @font-face), except notation Bravura, which
 	 * vexml then loads from its shipped `@stringsync/vexml/fonts/bravura.woff2`. Pass that

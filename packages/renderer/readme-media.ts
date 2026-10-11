@@ -237,8 +237,7 @@ export class ReadmeMedia {
 						backgroundColor: '#0f172a',
 						fonts: {
 							notation: { family: 'Petaluma', url: petaluma, color: '#e2e8f0' },
-							// No family, so the default text face still loads (FontOverride wants one).
-							text: { color: '#fbbf24' } as unknown as { family: string },
+							text: { color: '#fbbf24' },
 						},
 					},
 				);
