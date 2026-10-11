@@ -36,3 +36,4 @@ MusicXML tools:
 - `vex render --input <path>` render a MusicXML file to a PNG. Delete screenshots when you are done, unless you're showing the user something.
 - `vex slice --input <path> --measures <list>` extract measures from a MusicXML file into a smaller one.
 - `vex perf [pattern]` time the fixtures through vexml, OSMD, and alphaTab, one render each.
+- `vex readme` re-record the root README's example images and GIFs into `.github/readme`.

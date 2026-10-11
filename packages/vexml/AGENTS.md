@@ -174,7 +174,7 @@ vexflow's fixed text line, drawn in the finish pass, after the index clears.
 ## Interaction and playback
 
 - **Editing controller activation, selection colors, shaded regions and cursor halo/outline**: `editing-controller.ts`, `selection-overlay.ts`, `color-style.ts`, `halo-style.ts`
-- **Editing focus, active voice, range/set selection and undo/redo**: `editing-session.ts`, `pitch-edit.ts`; public usage and limitations in the root `README.md` (Editing)
+- **Editing focus, active voice, range/set selection and undo/redo**: `editing-session.ts`, `pitch-edit.ts`; public usage and limitations in `skills/vexml/SKILL.md` (Editing)
 - **Editing navigation in written order and across rendered systems**: `editing-navigator.ts`, `chord-note-order.ts` (staff and written-position order within a chord), `editing-layout.ts`, `score-editing-layout.ts`
 - **Editing keyboard/pointer controller, focus scrolling and selection overlay**: `editing-controller.ts`, `editing-bindings.ts`, `default-editing-bindings.ts`, `editing-view.ts`, `selection-overlay.ts`; default composition in `score.ts`
 - **Rendering an editor-owned mdom document without reparsing**: `render.ts`, `score-parser.ts`, `default-score-parser.ts`, `score-renderer.ts`
@@ -194,7 +194,7 @@ vexflow's fixed text line, drawn in the finish pass, after the index clears.
 
 ## Editing implementation contracts
 
-Public integration guidance lives in [`README.md`](../../README.md#editing).
+Public integration guidance lives in [`skills/vexml/SKILL.md`](../../skills/vexml/SKILL.md#editing).
 Keep the session tied to document notes: rendered wrappers and geometry belong to
 one `Score` and must be resolved again after rendering.
 

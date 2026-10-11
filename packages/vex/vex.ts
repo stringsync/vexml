@@ -10,6 +10,7 @@ import { RendererBench } from './perf-bench';
 import { Retrier } from './perf-retrier';
 import { PerfRun } from './perf-run';
 import { servePerfUi } from './perf-ui';
+import { readme } from './readme';
 import { render } from './render';
 import { ship } from './ship';
 import { slice } from './slice';
@@ -166,6 +167,19 @@ vex
 	})
 	.action((opts, { log, fs, invocationDir }) =>
 		slice({ ...opts, cwd: invocationDir, log, fs }),
+	);
+
+vex
+	.command('readme')
+	.description(
+		"record the root README's example images and gifs from fixture slices",
+	)
+	.option('output', z.string().optional(), {
+		description: 'output directory (default: .github/readme)',
+	})
+	.use(timing)
+	.action((opts, { log, fs, invocationDir }) =>
+		readme({ ...opts, cwd: invocationDir, log, fs }),
 	);
 
 vex

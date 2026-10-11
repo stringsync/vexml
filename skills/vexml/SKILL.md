@@ -1,6 +1,6 @@
 ---
 name: vexml
-description: Render MusicXML sheet music in the browser with @stringsync/vexml. Use when installing vexml, rendering a .musicxml or .mxl file into a DOM element, sizing or scaling a score, choosing a layout or overflow mode, customizing fonts and colors, inserting gap measures for media sync, drawing on canvas layers over or under the score, listening to pointer events on notes, or editing notes with EditingSession.
+description: Render MusicXML sheet music in the browser with @stringsync/vexml. Use when installing vexml, rendering a .musicxml or .mxl file into a DOM element, sizing or scaling a score, choosing a layout or overflow mode, printing pages to PNG, customizing fonts and colors, driving a playback cursor or playhead, timing a score with readTimeline, inserting gap measures for media sync, drawing on canvas layers, markers or a loupe over the score, listening to pointer events on notes, editing notes with EditingSession, or caching and server-rendering snapshots.
 ---
 
 # vexml
@@ -23,8 +23,11 @@ const musicXML = await res.text();        // or .blob() for .mxl
 const score = await render(musicXML, element);
 ```
 
-`render(source, element, config?)` accepts a MusicXML string, an `.mxl` Blob, or an
-mdom document, and resolves to a `Score`. Call `score.dispose()` when the score is
+`render(source, element, config?)` accepts a MusicXML string (`.musicxml`, `.xml`), an
+`.mxl` Blob, or an mdom `MDocument`, and resolves to a `Score`. Any format mdom parses works
+through the document: for Guitar Pro 7/8 `.gp`,
+`render(await new GuitarProParser().parseFromBlob(file), element)` with `GuitarProParser`
+from `@stringsync/mdom`. Call `score.dispose()` when the score is
 removed; it releases layers and event subscriptions.
 
 ## Sizing and centering
@@ -41,7 +44,8 @@ Override with the `.vexml-canvas` class:
 
 Capping the container turns it into a scroll box: `width`/`maxWidth` scrolls
 horizontally (pair with `layout: { type: 'panoramic' }` for a single row),
-`height`/`maxHeight` scrolls vertically.
+`height`/`maxHeight` scrolls vertically. `score.setMaxHeight(px | null)` changes the cap
+later without a rerender.
 
 ## Sticky clef and key
 
@@ -89,6 +93,27 @@ await render(musicXML, element, {
 instead: the staves sit in the middle of the strip, and the line is scaled until whatever
 reaches furthest above or below them touches its edge, so the blank margin around the line is
 cropped off rather than shrinking the music.
+
+## Printing pages
+
+A `paged` layout fits systems onto fixed-size pages (never splitting a system) and stacks
+them on screen. Each page has its own canvas, so it prints sharp at any `pixelRatio`.
+Letter is 816x1056 CSS px, A4 794x1123.
+
+```ts
+const score = await render(musicXML, element, {
+  layout: { type: 'paged', pageWidth: 816, pageHeight: 1056, margin: 48 },
+  pixelRatio: 3, // print resolution, independent of window.devicePixelRatio
+  backgroundColor: '#ffffff',
+});
+const pngs = await Promise.all(score.getPages().map((page) => page.toBlob('image/png')));
+```
+
+`page.toBlob()` is the page with margins on opaque paper (`backgroundColor`, else the
+background behind the score, else white), without layers, markers or cursors.
+`page.toCanvas()` returns the canvas, e.g. for a PDF library. The element may be hidden
+(`visibility: hidden`, off screen) but must be in the document. `getPages()` is empty for
+other layouts.
 
 ## When a line won't fit
 
@@ -156,23 +181,33 @@ and `backgroundColor` paints the container. Each takes any CSS color string.
 await render(musicXML, element, {
   backgroundColor: '#fce4ec',
   fonts: {
-    notation: { color: '#1d4ed8' },
-    text: { color: '#c2410c' },
+    notation: { family: 'Bravura', color: '#1d4ed8' },
+    text: { family: 'Inter', url: '/fonts/inter.woff2', color: '#c2410c' },
   },
 });
 ```
 
+`FontOverride.family` is required in TypeScript. Naming `Bravura` keeps the bundled
+notation font, but naming the default text family (`Source Sans 3`) without a `url`
+stops vexml loading it from Google Fonts, so give the text font a `url` when coloring it.
+
 ## Events
 
 `score.events.on(type, handler)` returns an unsubscribe function; call it when done.
-Pointer events carry a `target` whose `type` names the element (`'note'` and others),
-and notes expose a `halo` for highlighting.
+Types: `pointermove`, `pointerdown`, `pointerup`, `click` (each `{ target, point, native }`),
+`hover` (fires once per change of element under the pointer, including while scrolling;
+never for touch), `scroll` and `resize`. `target` is null on empty space; narrow it with
+`instanceof` (`Note`, `TabPosition`, `MeasureBox`, ...), since its `type` string doesn't
+narrow in TypeScript. `point` is in score space. Notes expose `halo` and `color` toggles:
+`.on(cssColor)` / `.off()`.
 
 ```ts
-let previous = null;
+import { Note } from '@stringsync/vexml';
 
-score.events.on('pointermove', (e) => {
-  const current = e.target?.type === 'note' ? e.target : null;
+let previous: Note | null = null;
+
+score.events.on('hover', (e) => {
+  const current = e.target instanceof Note ? e.target : null;
   if (current !== previous) {
     previous?.halo.off();
     current?.halo.on('rgba(41, 98, 255, 0.35)');
@@ -180,6 +215,37 @@ score.events.on('pointermove', (e) => {
   }
 });
 ```
+
+## Playback
+
+`score.createCursor()` is a headless position on the playback timeline (repeats and voltas
+unrolled, tempo from the score). Step it, seek it, and attach visuals and scrolling:
+
+```ts
+const cursor = score.createCursor();
+cursor.sync(score.createPlayhead({ color: '#e11d48', widthPx: 2 })); // a moving bar
+cursor.follow(); // scroll the bar into view when it leaves; pass { behavior: 'smooth' } as 2nd arg
+
+cursor.events.on('change', (e) => {
+  // e.timeMs, e.timeBeats, e.position (score-space box), e.done
+  // e.started / e.sustained / e.stopped / e.active: notes, for driving audio
+  // e.highlighted: active plus notes tied into them, for coloring
+});
+
+const tick = () => {
+  cursor.seekMs(audio.currentTime * 1000); // or next(), previous(), seekBeats(b)
+  if (!cursor.isDone()) requestAnimationFrame(tick);
+};
+```
+
+`sync` and `follow` return a Resource; dispose it to detach. A `visibility` event fires
+when the bar crosses the viewport edge. Implement `CursorView` (`render(event)`, `dispose()`)
+for a custom visual. Disposing the score disposes its cursors.
+
+Timing queries on the score: `getDurationMs()`, `getDurationBeats()`,
+`getMeasureIndexAtMs(ms)`, `getSequence()` (steps and `beatsToMs`, for scheduling audio
+yourself), and `getTimeAt({ x, y })`, which maps a score-space point (e.g. a click's
+`e.point`) to `{ ms, beat, stepMs, stepIndex }`, or null on empty space.
 
 ## Gap measures
 
@@ -210,6 +276,26 @@ measures with `insertGaps(document, positions)` (inside `document.history.edit` 
 `score.getGaps()` returns `{ measureIndex, label, startMs, endMs }` per gap in the order
 passed. Playback treats a gap like any other measure.
 
+### Timing before rendering
+
+`readTimeline(source, config?)` parses (or reuses an `MDocument`), places gaps like `render`,
+and times the score with no layout or drawing, in tens of ms on a long score. Use it to
+size gaps to a recording, then render once:
+
+```ts
+import { insertGaps, readTimeline, render } from '@stringsync/vexml';
+
+const timeline = await readTimeline(document);
+const bars = timeline.getBars(); // [{ measureIndex, startMs, endMs }] per pass, repeats unrolled
+const [intro, outro] = insertGaps(document, [{ beforeBarIndex: 0 }, { beforeBarIndex: bars.length }]);
+await render(document, element, {
+  gaps: [{ measure: intro, durationMs: leadInMs }, { measure: outro, durationMs: closingMs }],
+});
+```
+
+A timeline also has `getDurationMs()`, `getDurationBeats()`, `beatsToMs(beats)` and
+`getGaps()`, matching the rendered score for the same document and gaps.
+
 ## Canvas layers
 
 A layer is a surface you draw on freely with a 2D context; vexml controls its size
@@ -228,6 +314,32 @@ foreground.ctx.fillRect(50, 50, 100, 80);
 
 layer.dispose(); // when done with one layer
 ```
+
+`addLayer('background')` sits behind the score by default. Omit `zIndex` to take the
+kind's default.
+
+## Markers and the loupe
+
+A marker is a solid box over the score with no bitmap, so moving it every frame or pointer
+move is cheap on any score length. Prefer it over a layer for anything that tracks a drag
+(loop regions, a custom playhead). A negative `zIndex` tints behind the notes.
+
+```ts
+const loop = score.createMarker(-1);
+loop.show({ x: 120, y: 40, w: 300, h: 180 }, 'rgba(255, 200, 0, 0.3)', { radius: 6 });
+loop.hide();
+```
+
+A loupe is a magnifier floating over the page, for a finger covering what it drags:
+
+```ts
+const loupe = score.createLoupe({ width: 160, height: 100, zoom: 2 });
+loupe.show(anchorRect, { x, y }); // anchorRect in score px; floats above it
+loupe.configure({ zoom: 3 });
+loupe.hide();
+```
+
+Both are disposed with the score.
 
 ## Editing
 
@@ -282,10 +394,19 @@ Rules that keep an editor correct:
 - Dispose the session when its consumer goes away, then `document.history.dispose()`
   when discarding the document. Reparsing requires a new session.
 
+- Use `editor.history.edit(label, () => { /* mutate editor.document */ })` for any
+  other mdom operation; it may touch any part of the document regardless of selection.
+  No-op transactions emit no `documentchange` and keep redo.
+- Removed notes drop out of the selection; undo restores them. Keep the document and
+  history usable after a render error so users can undo.
+- The host supplies the container's accessible name, any live selection announcements,
+  and whether selection should seek or pause playback.
+
 Default keys: left/right move between chords in the active voice, up/down through
-chord members and neighboring voices, Shift extends a range within one part and voice,
-Command/Ctrl-click toggles a note, drag selects, Escape clears, Command/Ctrl+Z undoes
-and Shift redoes.
+chord members and neighboring voices, Shift (arrows or click) extends a range within
+one part and voice, Command/Ctrl-click toggles a note, drag selects enclosed notes and
+frets (Command/Ctrl-drag adds; touch drag keeps native scrolling), Escape or a
+background click clears, Command/Ctrl+Z undoes and Shift redoes.
 
 ## Snapshots
 
@@ -303,8 +424,14 @@ try {
 }
 ```
 
+The snapshot records the config that shapes engraving (layout, spacing, numbering, tab and
+notation toggles, part labels, font families) and `SNAPSHOT_VERSION`; the error's `reason` is
+`'version'`, `'config'` or `'format'`. Width, height, `pixelRatio`, `backgroundColor` and font
+colors aren't recorded, so one snapshot serves light and dark themes. It keeps the gaps it was
+rendered with and ignores `config.gaps`.
+
 A snapshot score has no document: `getSources()` is empty and `createEditingController` throws.
-Colors aren't recorded: a snapshot paints in the font colors and background you render it with.
+Everything else (playback, cursors, events, layers, pages, the sticky fold) works.
 
 Three entry points, each for a different place code runs; don't mix them up:
 
@@ -317,8 +444,12 @@ Three entry points, each for a different place code runs; don't mix them up:
 - `@stringsync/vexml/paint`: a small page script ahead of the app (about 8 KB, no parser,
   vexflow or fontkit). `paint(snapshot, element, config)` draws a snapshot; a later
   `render(snapshot, element, config)` from the main entry adopts the painted canvases without
-  a repaint. It throws `SnapshotMismatchError` for another snapshot version. Don't import the
-  main entry in that script, or it is no longer small.
+  a repaint. It throws `SnapshotMismatchError` for another snapshot version, and returns a
+  `PaintedScore` whose `dispose()` clears the element for a fallback render. Pass the config
+  you render with. Don't import the main entry in that script, or it is no longer small.
+
+A headless snapshot can sit a few px off a browser engraving (canvas libraries measure text
+slightly differently); `render` shows it as the server engraved it.
 
 ## Cleanup
 
