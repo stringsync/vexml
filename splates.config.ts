@@ -1,8 +1,7 @@
-// arbor runs through `bunx @webappwiz/arbor`, so it is not a dependency here and
-// this file cannot import its `defineConfig`. That costs key-name checking on the
-// object below; arbor validates what it reads anyway.
+// splates runs through `bunx @stringsync/splates`, so it is not a dependency here.
+// Keep the config import-free; splates validates it when loading it.
 export default {
-	// This repo's trunk is master, not arbor's default of main.
+	// This repo's trunk is master, not splates's default of main.
 	trunk: 'master',
 	// A fresh worktree has no node_modules, and a rebase can bring in a
 	// dependency that the preMerge gate needs installed to run.
