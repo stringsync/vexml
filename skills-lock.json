@@ -9,10 +9,10 @@
     },
     "splates": {
       "source": "stringsync/splates",
-      "ref": "v0.0.45",
+      "ref": "v0.0.56",
       "sourceType": "github",
       "skillPath": "skills/splates/SKILL.md",
-      "computedHash": "231477d5edb0221ec24564761c87007d98bc7bc0e60aaae4778f69537a956474"
+      "computedHash": "953e42fe59762e511a036c7fb152679de5906b858d0d24876ac7745b89b04abd"
     }
   }
 }
