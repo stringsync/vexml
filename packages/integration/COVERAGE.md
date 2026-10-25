@@ -17,7 +17,7 @@ by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
 Elements: 214 drawn, 67 ignored, 161 missing; vexml draws 214 of the 375 that show on the page (57%).
-Attributes: 38 drawn, 3 ignored, 73 missing.
+Attributes: 39 drawn, 3 ignored, 73 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -42,12 +42,13 @@ Attributes: 38 drawn, 3 ignored, 73 missing.
 | `*@underline` | missing | task #28; underlined text not drawn; mdom raw only |
 | `*@valign` | missing | task #28; vertical text alignment ignored; mdom raw only |
 | `accent` | drawn | `articulations.musicxml` |
-| `accidental` | drawn | `accidentals.musicxml`: every value but `other`, arrow, triple, Turkish and Persian forms included; cautionary and editorial forms too |
+| `accidental` | drawn | `accidentals.musicxml`: every value, arrow, triple, Turkish and Persian forms included, and `other` by its `@smufl` name; cautionary and editorial forms too |
 | `accidental@bracket` | missing | task #24; honored by chord-translator.ts but no fixture shows it |
 | `accidental@cautionary` | drawn | `accidentals.musicxml`: parenthesized accidental |
 | `accidental@editorial` | drawn | `accidentals.musicxml`: bracketed accidental |
 | `accidental@parentheses` | missing | task #24; honored by chord-translator.ts but no fixture shows it |
 | `accidental@size` | missing | task #9; mdom raw only |
+| `accidental@smufl` | drawn | `accidentals.musicxml` M12: `other` drawn by its SMuFL glyph name |
 | `accidental-mark` | drawn | `ornaments.musicxml`: small accidental on the ornament it follows |
 | `accidental-text` | missing | task #11; mdom raw only |
 | `accord` | missing | task #16; mdom raw only |

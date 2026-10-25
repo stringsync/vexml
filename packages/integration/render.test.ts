@@ -689,6 +689,8 @@ describe('render', () => {
 	//   slash-sharp, slash-flat (a slashed flat) and double-slash-flat.
 	// - M10: Turkish comma sharps, a sharp with a small 1, 2, 3 and 5 above its right.
 	// - M11: Turkish comma flats, a flat with a small 1, 2, 3 and 4 above its right.
+	// - M12: accidental "other" named by @smufl: Wilson plus and Wilson minus, then an
+	//   unknown glyph name and a missing @smufl, which draw no accidental.
 	it.concurrent('renders accidentals.png', async () => {
 		expect(await testing.render('accidentals.musicxml')).toMatchScreenshot(
 			'accidentals.png',

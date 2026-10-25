@@ -487,5 +487,48 @@
         <accidental>flat-4</accidental>
       </note>
     </measure>
+    <!-- M12: accidental "other", drawn from its smufl glyph name: Wilson plus, Wilson minus, an unknown name (nothing drawn), and no smufl at all (nothing drawn). -->
+    <measure number="12">
+      <note>
+        <pitch>
+          <step>C</step>
+          <alter>0.1</alter>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <accidental smufl="accidentalWilsonPlus">other</accidental>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <alter>-0.1</alter>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <accidental smufl="accidentalWilsonMinus">other</accidental>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <alter>0</alter>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <accidental smufl="accidentalNoSuchGlyph">other</accidental>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <alter>0</alter>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <accidental>other</accidental>
+      </note>
+    </measure>
   </part>
 </score-partwise>

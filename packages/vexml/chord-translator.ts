@@ -20,7 +20,7 @@ import type { NotationTranslator } from './notation-translator';
  * straight through: Tables.accidentalCodes returns an unrecognized code verbatim, and
  * the accidental is drawn in the music font either way. The -up/-down values are the
  * Gould arrow quarter-tone glyphs (U+E270-E27B), which SMuFL lays out one per MusicXML
- * value. `other` (a glyph named only by @smufl) is not drawn.
+ * value. `other` has no entry: its glyph is named only by @smufl, resolved by smuflGlyph.
  */
 export const ACCIDENTAL_CODES: Record<string, string> = {
 	sharp: '#',
@@ -64,6 +64,15 @@ export const ACCIDENTAL_CODES: Record<string, string> = {
 	sori: 'o',
 	koron: 'k',
 };
+
+/*
+ * A SMuFL glyph name (<accidental smufl="accidentalWilsonPlus">) -> its codepoint, from
+ * vexflow's Glyphs table. An unknown or missing name draws nothing rather than throwing.
+ */
+export function smuflGlyph(name: string | null): string | undefined {
+	const glyphs: Record<string, string> = VexFlow.Glyphs;
+	return name ? glyphs[name] : undefined;
+}
 
 /*
  * Translates one mdom chord (a lead note plus any <chord/> members) to the vexflow StaveNote
@@ -339,7 +348,11 @@ export class ChordTranslator {
 				return;
 			}
 			const printed = note.accidental;
-			const code = printed && ACCIDENTAL_CODES[printed.value];
+			const code =
+				printed &&
+				(printed.value === 'other'
+					? smuflGlyph(printed.getAttribute('smufl'))
+					: ACCIDENTAL_CODES[printed.value]);
 			if (!printed || !code) {
 				return;
 			}
