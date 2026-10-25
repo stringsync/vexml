@@ -1059,6 +1059,15 @@ describe('render', () => {
 		);
 	});
 
+	// Treble stave, 4/4, two measures of one verse: <humming/> draws "mm" and <laughing/>
+	// draws "ha ha" under their notes; <end-line/> and <end-paragraph/> (alone or after a
+	// syllable) change nothing, so "la" and "end" print as plain syllables.
+	it.concurrent('renders lyrics_sounds.png', async () => {
+		expect(await testing.render('lyrics_sounds.musicxml')).toMatchScreenshot(
+			'lyrics_sounds.png',
+		);
+	});
+
 	// Treble stave, 4/4: lyrics under a stave carrying TWO voices. Both voices number their
 	// verses from 1, so the row a syllable lands on is its verse index offset by the rows the
 	// voices before it already used; otherwise every voice's first verse claims row 0 and the

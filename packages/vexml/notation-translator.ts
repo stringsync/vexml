@@ -306,11 +306,24 @@ export class NotationTranslator {
 		verses.forEach((verse, index) => {
 			const syllabic = verse.syllabic;
 			const hyphen = syllabic === 'begin' || syllabic === 'middle' ? '-' : '';
-			const text = this.syllableOf(verse) + hyphen;
+			const text = (this.syllableOf(verse) || this.soundOf(verse)) + hyphen;
 			if (text) {
 				staveNote.addModifier(new LyricAnnotation(text, index, verse.extend));
 			}
 		});
+	}
+
+	/*
+	 * What a text-less lyric sings: <humming/> is "mm" and <laughing/> is "ha ha", the way
+	 * a vocal score spells them under the notes. <end-line/> and <end-paragraph/> mark where
+	 * a printed lyric breaks its line or paragraph, which a verse hung on one baseline per
+	 * system has no use for, so they draw nothing.
+	 */
+	private soundOf(verse: Lyric): string {
+		if (verse.child('humming')) {
+			return 'mm';
+		}
+		return verse.child('laughing') ? 'ha ha' : '';
 	}
 
 	/*

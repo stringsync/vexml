@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1"><part-name>Voice</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>La</text></lyric>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <lyric number="1"><humming/></lyric>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <lyric number="1"><laughing/></lyric>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>la</text><end-line/></lyric>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>Mm</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <lyric number="1"><humming/><end-paragraph/></lyric>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <lyric number="1"><laughing/><end-line/></lyric>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>end</text><end-paragraph/></lyric>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

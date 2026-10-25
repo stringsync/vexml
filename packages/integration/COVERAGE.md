@@ -16,7 +16,7 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 214 drawn, 67 ignored, 161 missing; vexml draws 214 of the 375 that show on the page (57%).
+Elements: 216 drawn, 69 ignored, 157 missing; vexml draws 216 of the 373 that show on the page (58%).
 Attributes: 39 drawn, 3 ignored, 73 missing.
 
 | Element | Status | Proof or reason |
@@ -154,8 +154,8 @@ Attributes: 39 drawn, 3 ignored, 73 missing.
 | `encoding` | ignored | metadata |
 | `encoding-date` | ignored | metadata |
 | `encoding-description` | ignored | metadata |
-| `end-line` | missing | task #12; mdom raw only |
-| `end-paragraph` | missing | task #12; mdom raw only |
+| `end-line` | ignored | a verse sits on one baseline per system; nothing to break |
+| `end-paragraph` | ignored | a verse sits on one baseline per system; nothing to break |
 | `ending` | drawn | `repeats.musicxml`: volta brackets |
 | `ending@end-length` | missing | task #38; volta hook length fixed; mdom raw only |
 | `ending@number` | drawn | `repeats.musicxml`: volta labels |
@@ -232,7 +232,7 @@ Attributes: 39 drawn, 3 ignored, 73 missing.
 | `hole-closed` | drawn | `technical_marks.musicxml`: closed, open and half; half ignores location |
 | `hole-shape` | missing | every hole draws as a circle; mdom raw only |
 | `hole-type` | missing | the hole label ("thumb") is not printed; mdom raw only |
-| `humming` | missing | task #12; mdom raw only |
+| `humming` | drawn | `lyrics_sounds.musicxml`: text-less lyric draws "mm" |
 | `identification` | missing | task #8 (creator, rights); mdom raw only |
 | `image` | missing | task #15; mdom raw only |
 | `instrument` | ignored | playback instrument link |
@@ -256,7 +256,7 @@ Attributes: 39 drawn, 3 ignored, 73 missing.
 | `key-octave` | drawn | `key_non_traditional.musicxml` |
 | `key-step` | drawn | `key_non_traditional.musicxml` |
 | `kind` | drawn | `harmony_kinds.musicxml`: chord symbol suffix |
-| `laughing` | missing | task #12; mdom raw only |
+| `laughing` | drawn | `lyrics_sounds.musicxml`: text-less lyric draws "ha ha" |
 | `left-divider` | missing | task #20; mdom raw only |
 | `left-margin` | missing | task #20; mdom typed |
 | `level` | missing | task #38; editorial level marks (parenthesized or bracketed additions); mdom raw only |
