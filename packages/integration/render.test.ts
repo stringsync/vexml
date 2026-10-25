@@ -2298,6 +2298,14 @@ describe('render', () => {
 		).toMatchScreenshot('articulations_extended.png');
 	});
 
+	// Treble stave, 4/4: soft-accent on four quarter notes, a stem-down C5 then three stem-up
+	// notes, each marked with the soft accent glyph on the side opposite its stem.
+	it.concurrent('renders soft_accent.png', async () => {
+		expect(await testing.render('soft_accent.musicxml')).toMatchScreenshot(
+			'soft_accent.png',
+		);
+	});
+
 	// Treble stave, 4/4 (lilypond_32a-Notations M7-10): <notations><ornaments> on a notation
 	// stave. Every note is the same C5 quarter, and every note is labelled with a lyric naming
 	// the ornament it should show ("tr.", "turn", "mord.", ...), so the screenshot reads as its

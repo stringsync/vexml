@@ -337,6 +337,7 @@ const ARTICULATION_CODES: Record<
 	'strong-accent': 'a^',
 	'detached-legato': ['\uE4B2', '\uE4B3'], // articTenutoStaccatoAbove/Below
 	spiccato: ['\uE4A8', '\uE4A9'], // articStaccatissimoWedgeAbove/Below
+	'soft-accent': ['\uED40', '\uED41'], // articSoftAccentAbove/Below
 	stress: ['\uE4B6', '\uE4B7'], // articStressAbove/Below
 	unstress: ['\uE4B8', '\uE4B9'], // articUnstressAbove/Below
 };

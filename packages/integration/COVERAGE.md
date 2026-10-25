@@ -16,7 +16,7 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 198 drawn, 67 ignored, 177 missing; vexml draws 198 of the 375 that show on the page (53%).
+Elements: 199 drawn, 67 ignored, 176 missing; vexml draws 199 of the 375 that show on the page (53%).
 Attributes: 38 drawn, 3 ignored, 73 missing.
 
 | Element | Status | Proof or reason |
@@ -459,7 +459,7 @@ Attributes: 38 drawn, 3 ignored, 73 missing.
 | `slur@orientation` | missing | task #17; mdom raw only |
 | `smear` | missing | task #29; brass smear technical mark (wavy stroke above the note); mdom typed |
 | `snap-pizzicato` | drawn | `technical_marks.musicxml` |
-| `soft-accent` | missing | task #4; mdom typed |
+| `soft-accent` | drawn | `soft_accent.musicxml` |
 | `software` | ignored | metadata |
 | `solo` | ignored | metadata (score-instrument role) |
 | `sound` | drawn | `tempo.musicxml`, `swing.musicxml`: tempo and swing read for playback timing |
