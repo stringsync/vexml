@@ -15,10 +15,12 @@ import { InvisibleStaveNote } from './invisible-stave-note';
 import type { NotationTranslator } from './notation-translator';
 
 /*
- * MusicXML <accidental> glyph name -> vexflow accidental code. The natural-sharp and
- * natural-flat courtesy forms have no vexflow code, so they pass their SMuFL glyph
+ * MusicXML <accidental> glyph name -> vexflow accidental code. Forms with no vexflow code
+ * (the courtesy forms, the arrows, the triples, the Turkish commas) pass their SMuFL glyph
  * straight through: Tables.accidentalCodes returns an unrecognized code verbatim, and
- * the accidental is drawn in the music font either way.
+ * the accidental is drawn in the music font either way. The -up/-down values are the
+ * Gould arrow quarter-tone glyphs (U+E270-E27B), which SMuFL lays out one per MusicXML
+ * value. `other` (a glyph named only by @smufl) is not drawn.
  */
 export const ACCIDENTAL_CODES: Record<string, string> = {
 	sharp: '#',
@@ -33,6 +35,34 @@ export const ACCIDENTAL_CODES: Record<string, string> = {
 	'quarter-flat': 'd',
 	'three-quarters-sharp': '++',
 	'three-quarters-flat': 'db',
+	'sharp-down': '', // accidentalQuarterToneSharpArrowDown
+	'sharp-up': '', // accidentalThreeQuarterTonesSharpArrowUp
+	'natural-down': '', // accidentalQuarterToneFlatNaturalArrowDown
+	'natural-up': '', // accidentalQuarterToneSharpNaturalArrowUp
+	'flat-down': '', // accidentalThreeQuarterTonesFlatArrowDown
+	'flat-up': '', // accidentalQuarterToneFlatArrowUp
+	'double-sharp-down': '', // accidentalThreeQuarterTonesSharpArrowDown
+	'double-sharp-up': '', // accidentalFiveQuarterTonesSharpArrowUp
+	'flat-flat-down': '', // accidentalFiveQuarterTonesFlatArrowDown
+	'flat-flat-up': '', // accidentalThreeQuarterTonesFlatArrowUp
+	'arrow-down': '', // accidentalArrowDown
+	'arrow-up': '', // accidentalArrowUp
+	'triple-sharp': '', // accidentalTripleSharp
+	'triple-flat': '', // accidentalTripleFlat
+	'slash-quarter-sharp': '+-', // accidentalKucukMucennebSharp
+	'slash-sharp': '++-', // accidentalBuyukMucennebSharp
+	'slash-flat': 'bs', // accidentalBakiyeFlat
+	'double-slash-flat': 'bss', // accidentalBuyukMucennebFlat
+	'sharp-1': '', // accidental1CommaSharp
+	'sharp-2': '', // accidental2CommaSharp
+	'sharp-3': '', // accidental3CommaSharp
+	'sharp-5': '', // accidental5CommaSharp
+	'flat-1': '', // accidental1CommaFlat
+	'flat-2': '', // accidental2CommaFlat
+	'flat-3': '', // accidental3CommaFlat
+	'flat-4': '', // accidental4CommaFlat
+	sori: 'o',
+	koron: 'k',
 };
 
 /*

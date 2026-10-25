@@ -678,6 +678,17 @@ describe('render', () => {
 	//   does not nest parentheses inside brackets. In every case only the accidental is
 	//   wrapped; the notehead is untouched (unlike notehead_parentheses.musicxml, which
 	//   brackets the head).
+	// - M5: Gould arrow sharps: sharp-down, sharp-up, double-sharp-down, double-sharp-up,
+	//   each a sharp or double-sharp with an arrow off its stem.
+	// - M6: Gould arrow flats: flat-down, flat-up, flat-flat-down, flat-flat-up.
+	// - M7: Gould arrow naturals (natural-down, natural-up), then the bare down and up
+	//   arrows.
+	// - M8: triple-sharp (a sharp beside a double-sharp x), triple-flat (three flats),
+	//   then the Persian sori (a flag-like sharp) and koron (a triangular flat).
+	// - M9: Turkish slash accidentals: slash-quarter-sharp (one slashed stroke),
+	//   slash-sharp, slash-flat (a slashed flat) and double-slash-flat.
+	// - M10: Turkish comma sharps, a sharp with a small 1, 2, 3 and 5 above its right.
+	// - M11: Turkish comma flats, a flat with a small 1, 2, 3 and 4 above its right.
 	it.concurrent('renders accidentals.png', async () => {
 		expect(await testing.render('accidentals.musicxml')).toMatchScreenshot(
 			'accidentals.png',

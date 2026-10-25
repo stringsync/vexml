@@ -42,7 +42,7 @@ Attributes: 38 drawn, 3 ignored, 73 missing.
 | `*@underline` | missing | task #28; underlined text not drawn; mdom raw only |
 | `*@valign` | missing | task #28; vertical text alignment ignored; mdom raw only |
 | `accent` | drawn | `articulations.musicxml` |
-| `accidental` | drawn | `accidentals.musicxml`: cautionary and editorial forms too |
+| `accidental` | drawn | `accidentals.musicxml`: every value but `other`, arrow, triple, Turkish and Persian forms included; cautionary and editorial forms too |
 | `accidental@bracket` | missing | task #24; honored by chord-translator.ts but no fixture shows it |
 | `accidental@cautionary` | drawn | `accidentals.musicxml`: parenthesized accidental |
 | `accidental@editorial` | drawn | `accidentals.musicxml`: bracketed accidental |
