@@ -3,6 +3,7 @@ import { color } from 'webappwiz/log';
 import type { Fs } from 'webappwiz/system';
 import { SystemClock } from 'webappwiz/time';
 import { z } from 'zod';
+import { coverage } from './coverage';
 import { dev } from './dev';
 import { fix } from './fix';
 import { perf } from './perf';
@@ -191,6 +192,13 @@ vex
 	.action((opts, { ps, invocationDir }) =>
 		validate({ input: opts.input, cwd: invocationDir, ps }),
 	);
+
+vex
+	.command('coverage')
+	.description(
+		'sync the MusicXML coverage table with the schema and check its fixtures',
+	)
+	.action((_opts, { log, fs }) => coverage({ log, fs }));
 
 vex
 	.command('ship')

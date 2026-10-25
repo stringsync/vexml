@@ -14,6 +14,11 @@ Files not named here are test fakes (`fake-*.ts`) or the public surface
 come from `webappwiz/geometry`, not this repo. Every feature has a fixture in
 `packages/integration/render.test.ts`, named for the concept.
 
+[`packages/integration/COVERAGE.md`](../integration/COVERAGE.md) lists every
+MusicXML 4.0 element as drawn (with the fixture that shows it), ignored on
+purpose, or missing. A change that draws something new updates its row, and
+`vex coverage` adds rows when the schema grows.
+
 ## The pipeline
 
 `render()` in `render.ts` is the composition root; `ScoreRenderer`

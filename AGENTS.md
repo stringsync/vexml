@@ -35,5 +35,6 @@ MusicXML tools:
 - `vex validate --input <path>` validate a MusicXML file.
 - `vex render --input <path>` render a MusicXML file to a PNG. Delete screenshots when you are done, unless you're showing the user something.
 - `vex slice --input <path> --measures <list>` extract measures from a MusicXML file into a smaller one.
+- `vex coverage` sync `packages/integration/COVERAGE.md` with the MusicXML 4.0 schema and check its fixtures. A change that draws a new element or attribute updates its row.
 - `vex perf [pattern]` time the fixtures through vexml, OSMD, and alphaTab, one render each.
 - `vex readme` re-record the root README's example images and GIFs into `.github/readme`.
