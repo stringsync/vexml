@@ -100,7 +100,11 @@ export class NotationTranslator {
 				staveNote.addModifier(new Tremolo(ornament.tremoloMarks || 1));
 				continue;
 			}
-			const type = ORNAMENT_TYPES[ornament.ornamentType];
+			const slashed = ornament.getAttribute('slash') === 'yes';
+			const type =
+				slashed && SLASHED_TURNS.has(ornament.ornamentType)
+					? SLASHED_TURN
+					: ORNAMENT_TYPES[ornament.ornamentType];
 			if (!type) {
 				continue;
 			}
@@ -382,6 +386,19 @@ const ORNAMENT_TYPES: Record<string, string> = {
 	'inverted-mordent': 'mordent',
 	schleifer: '\uE587', // ornamentSchleifer
 };
+
+/*
+ * slash="yes" on a turn adds the vertical stroke. SMuFL has one stroked turn
+ * (ornamentTurnSlash) and no separate stroked inverted form, so all four turns share it.
+ * <mordent> has no slash attribute in MusicXML 4.0.
+ */
+const SLASHED_TURNS = new Set([
+	'turn',
+	'delayed-turn',
+	'inverted-turn',
+	'delayed-inverted-turn',
+]);
+const SLASHED_TURN = '\uE569';
 
 /*
  * MusicXML <notations><technical> mark -> the glyph it draws on a NOTATION stave: a vexflow

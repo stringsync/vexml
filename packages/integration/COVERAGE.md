@@ -17,7 +17,7 @@ by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
 Elements: 198 drawn, 67 ignored, 177 missing; vexml draws 198 of the 375 that show on the page (53%).
-Attributes: 36 drawn, 3 ignored, 75 missing.
+Attributes: 38 drawn, 3 ignored, 73 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -245,7 +245,7 @@ Attributes: 36 drawn, 3 ignored, 75 missing.
 | `inversion` | missing | task #26; chord inversion in the harmony symbol; mdom raw only |
 | `inverted-mordent` | drawn | `ornaments.musicxml` |
 | `inverted-turn` | drawn | `ornaments.musicxml` |
-| `inverted-turn@slash` | missing | task #7; mdom raw only |
+| `inverted-turn@slash` | drawn | `ornaments.musicxml` |
 | `inverted-vertical-turn` | missing | task #29; inverted vertical turn ornament glyph; mdom typed |
 | `ipa` | ignored | pronunciation for synthesis |
 | `key` | drawn | `key.musicxml` |
@@ -552,7 +552,7 @@ Attributes: 36 drawn, 3 ignored, 75 missing.
 | `tuplet-number` | drawn | `tuplet_display.musicxml` |
 | `tuplet-type` | missing | task #31; note-value glyph beside the tuplet number (3 eighths); mdom typed |
 | `turn` | drawn | `ornaments.musicxml` |
-| `turn@slash` | missing | task #7; mdom raw only |
+| `turn@slash` | drawn | `ornaments.musicxml` |
 | `type` | drawn | `note.musicxml` |
 | `type@size` | missing | task #9; mdom raw only |
 | `unpitched` | drawn | `percussion_display_step.musicxml` |
