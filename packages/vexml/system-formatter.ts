@@ -38,6 +38,7 @@ import { Ink } from './ink';
 import type { LyricPlacer } from './lyric-placer';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
+import { StaveArticulation } from './stave-articulation';
 import { isTechnicalMark } from './technical-mark';
 import { VoiceArticulationPlacer } from './voice-articulation-placer';
 import type { VoiceTranslator } from './voice-translator';
@@ -263,6 +264,12 @@ export class SystemFormatter {
 					drop,
 					this.noteBottom(note) + LYRIC_NOTE_CLEARANCE - floorY,
 				);
+				// Marks stacked under the stave sit where the verse hangs: clear their bottom
+				// edge too. Their y comes from format state, so this is exact on pass one.
+				const marksBottom = this.belowMarksBottom(note, p.stave);
+				if (marksBottom !== null) {
+					drop = Math.max(drop, marksBottom + LYRIC_NOTE_CLEARANCE - floorY);
+				}
 			}
 			lyricDrops.set(p.row, drop);
 			this.lyricPlacer.recordDrop(column.systemIndex, p.row, drop);
@@ -672,6 +679,36 @@ export class SystemFormatter {
 		if (note.getStem()) {
 			const { topY, baseY } = note.getStemExtents();
 			bottom = Math.max(bottom, topY, baseY);
+		}
+		return bottom;
+	}
+
+	/*
+	 * The lowest y the marks hung under a note reach: below articulations (bows, heel, toe)
+	 * and the below column of <technical> labels (as pinTechnicals will stack it). Null when
+	 * the note has none.
+	 */
+	private belowMarksBottom(note: StaveNote, stave: Stave): number | null {
+		let bottom: number | null = null;
+		let column = 0;
+		for (const mod of note.getModifiers()) {
+			if (isTechnicalMark(mod)) {
+				if (mod.below) {
+					column += mod.rowHeight();
+				}
+			} else if (
+				mod instanceof StaveArticulation &&
+				mod.getPosition() === Modifier.Position.BELOW
+			) {
+				bottom = Math.max(bottom ?? -Infinity, mod.belowBottomY());
+			}
+		}
+		if (column > 0) {
+			const edge = Math.max(stave.getBottomLineY(), this.noteBottom(note));
+			bottom = Math.max(
+				bottom ?? -Infinity,
+				edge + TECHNICAL_EDGE_GAP + column,
+			);
 		}
 		return bottom;
 	}

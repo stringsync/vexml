@@ -1019,6 +1019,8 @@ describe('render', () => {
 	// - M5: one verse over notes at wildly different pitches (C4, A5, E3 on ledger lines,
 	//   C6 on ledger lines): the syllables stay on a readable row under the stave instead
 	//   of following each notehead's height.
+	// - M6: a below-placed down-bow, up-bow and two fingerings on a C5 under each syllable: the
+	//   verse drops below the marks instead of printing through them.
 	it.concurrent('renders lyrics.png', async () => {
 		expect(await testing.render('lyrics.musicxml')).toMatchScreenshot(
 			'lyrics.png',

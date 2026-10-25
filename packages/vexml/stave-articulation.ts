@@ -1,4 +1,10 @@
-import { Articulation, Modifier, Stem } from 'vexflow/core';
+import {
+	Articulation,
+	getBottomY,
+	getInitialOffset,
+	Modifier,
+	Stem,
+} from 'vexflow/core';
 
 /*
  * An articulation that clears the beam.
@@ -29,5 +35,25 @@ export class StaveArticulation extends Articulation {
 		this.setTextLine(line + 1);
 		super.draw();
 		this.setTextLine(line);
+	}
+
+	/*
+	 * The lowest y a BELOW mark's ink reaches once drawn, read off the same textLine and
+	 * offset Articulation.draw places it with (plus the beam lift draw adds), one stave space
+	 * of glyph past that origin. Lets the lyric row drop clear of the mark before anything is
+	 * drawn, when the mark has no bounding box yet.
+	 */
+	belowBottomY(): number {
+		const note = this.checkAttachedNote();
+		const stave = note.checkStave();
+		const space = stave.getSpacingBetweenLines();
+		const onStemTip = note.getStemDirection() === Stem.DOWN;
+		const line = this.textLine + (note.hasBeam() && onStemTip ? 1 : 0);
+		const y =
+			getBottomY(note, line) +
+			(line + getInitialOffset(note, Modifier.Position.BELOW)) * space;
+		return (
+			Math.max(stave.getYForBottomText(Articulation.INITIAL_OFFSET), y) + space
+		);
 	}
 }

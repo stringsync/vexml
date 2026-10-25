@@ -252,5 +252,75 @@
         </lyric>
       </note>
     </measure>
+    <measure number="6">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <down-bow placement="below"/>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>down</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <up-bow placement="below"/>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>up</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <fingering placement="below">1</fingering>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>three</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <fingering placement="below">2</fingering>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>four</text>
+        </lyric>
+      </note>
+    </measure>
   </part>
 </score-partwise>
