@@ -16,7 +16,7 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 199 drawn, 67 ignored, 176 missing; vexml draws 199 of the 375 that show on the page (53%).
+Elements: 214 drawn, 67 ignored, 161 missing; vexml draws 214 of the 375 that show on the page (57%).
 Attributes: 38 drawn, 3 ignored, 73 missing.
 
 | Element | Status | Proof or reason |
@@ -61,10 +61,10 @@ Attributes: 38 drawn, 3 ignored, 73 missing.
 | `arpeggiate` | drawn | `arpeggio.musicxml` |
 | `arpeggiate@direction` | drawn | `arpeggio.musicxml`: up and down arrowheads |
 | `arpeggiate@unbroken` | missing | task #38; unbroken arpeggio across staves not drawn; mdom raw only |
-| `arrow` | missing | task #5; mdom typed |
-| `arrow-direction` | missing | task #5; mdom raw only |
-| `arrow-style` | missing | task #5; mdom raw only |
-| `arrowhead` | missing | task #5; mdom raw only |
+| `arrow` | drawn | `technical_marks.musicxml`: single, filled and hollow arrows in the eight compass directions |
+| `arrow-direction` | drawn | `technical_marks.musicxml`: the two-headed directions draw nothing, no SMuFL glyph |
+| `arrow-style` | drawn | `technical_marks.musicxml`: double, paired and combined draw as single |
+| `arrowhead` | drawn | `technical_marks.musicxml` |
 | `articulations` | drawn | `articulations.musicxml`, `articulations_extended.musicxml` |
 | `artificial` | missing | task #30; drawn as a natural harmonic: the stopped note should keep a normal head under the diamond; mdom raw only |
 | `assess` | ignored | listening/assessment only |
@@ -96,14 +96,14 @@ Attributes: 38 drawn, 3 ignored, 73 missing.
 | `bottom-margin` | missing | task #20; mdom raw only |
 | `bracket` | drawn | `direction_lines.musicxml` |
 | `bracket@line-end` | drawn | `direction_lines.musicxml`: hooked bracket ends |
-| `brass-bend` | missing | task #5; mdom typed |
+| `brass-bend` | drawn | `technical_marks.musicxml` |
 | `breath-mark` | drawn | `articulations_extended.musicxml` |
 | `caesura` | drawn | `articulations_extended.musicxml` |
 | `cancel` | missing | task #38; naturals drawn on every key change, but cancel fifths/location not read; mdom raw only |
 | `capo` | missing | task #38; capo fret label for guitar/tab parts; mdom typed |
 | `chord` | drawn | `chord.musicxml` |
 | `chromatic` | ignored | sound only (transposition; written pitch is drawn) |
-| `circular-arrow` | missing | task #5; mdom raw only |
+| `circular-arrow` | missing | no SMuFL glyph to draw it with; mdom raw only |
 | `clef` | drawn | `clef_treble.musicxml`, `clef_c.musicxml` |
 | `clef@additional` | missing | task #38; additional (cautionary) clef form ignored; mdom raw only |
 | `clef@after-barline` | missing | task #19; mdom raw only |
@@ -180,10 +180,10 @@ Attributes: 38 drawn, 3 ignored, 73 missing.
 | `figure-number` | drawn | `figured_bass.musicxml` |
 | `figured-bass` | drawn | `figured_bass.musicxml` |
 | `fingering` | drawn | `fingering.musicxml` |
-| `fingernails` | missing | task #5; mdom typed |
+| `fingernails` | drawn | `technical_marks.musicxml` |
 | `first` | drawn | `swing.musicxml`: swing ratio times playback |
 | `first-fret` | drawn | `chord_diagram.musicxml` |
-| `flip` | missing | task #5; mdom typed |
+| `flip` | drawn | `technical_marks.musicxml` |
 | `footnote` | missing | task #38; footnote text attached to a notation element; mdom raw only |
 | `for-part` | ignored | part extraction data, not shown in the score |
 | `forward` | drawn | `two_voices.musicxml`: onsets via mdom timeline |
@@ -215,22 +215,22 @@ Attributes: 38 drawn, 3 ignored, 73 missing.
 | `group-symbol` | drawn | `structure_part_group_symbols.musicxml` |
 | `group-time` | missing | task #38; one large time signature spanning a group's staves; mdom raw only |
 | `grouping` | ignored | analysis metadata |
-| `half-muted` | missing | task #5; mdom typed |
+| `half-muted` | drawn | `technical_marks.musicxml` |
 | `hammer-on` | drawn | `tab_hammer_pull.musicxml`: H arc between notes |
 | `hammer-on@type` | drawn | `tab_hammer_pull.musicxml`: start/stop arcs |
-| `handbell` | missing | task #5; mdom typed |
-| `harmon-closed` | missing | task #5; mdom raw only |
-| `harmon-mute` | missing | task #5; mdom typed |
+| `handbell` | drawn | `technical_marks.musicxml` |
+| `harmon-closed` | drawn | `technical_marks.musicxml`: closed, open, and half filled on the side location names |
+| `harmon-mute` | drawn | `technical_marks.musicxml` |
 | `harmonic` | drawn | `harmonic.musicxml`, `tab_harmonic.musicxml`: diamond notehead, angle-bracketed fret |
 | `harmony` | drawn | `harmony.musicxml`: chord symbol text above the stave |
 | `harmony@print-frame` | missing | task #26; frame drawn even when print-frame is no; mdom raw only |
 | `harp-pedals` | missing | task #14; mdom raw only |
 | `haydn` | missing | task #29; haydn ornament glyph above the note; mdom typed |
-| `heel` | missing | task #5; mdom typed |
-| `hole` | missing | task #5; mdom typed |
-| `hole-closed` | missing | task #5; mdom raw only |
-| `hole-shape` | missing | task #5; mdom raw only |
-| `hole-type` | missing | task #5; mdom raw only |
+| `heel` | drawn | `technical_marks.musicxml` |
+| `hole` | drawn | `technical_marks.musicxml` |
+| `hole-closed` | drawn | `technical_marks.musicxml`: closed, open and half; half ignores location |
+| `hole-shape` | missing | every hole draws as a circle; mdom raw only |
+| `hole-type` | missing | the hole label ("thumb") is not printed; mdom raw only |
 | `humming` | missing | task #12; mdom raw only |
 | `identification` | missing | task #8 (creator, rights); mdom raw only |
 | `image` | missing | task #15; mdom raw only |
@@ -528,7 +528,7 @@ Attributes: 38 drawn, 3 ignored, 73 missing.
 | `time-modification` | drawn | `tuplet_triplet.musicxml` |
 | `time-relation` | missing | task #18; mdom raw only |
 | `timpani` | missing | task #16; mdom raw only |
-| `toe` | missing | task #5; mdom typed |
+| `toe` | drawn | `technical_marks.musicxml` |
 | `top-margin` | missing | task #20; mdom raw only |
 | `top-system-distance` | missing | task #20; mdom typed |
 | `touching-pitch` | drawn | `technical_marks.musicxml`: every harmonic draws the diamond, the touching-pitch form |

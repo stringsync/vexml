@@ -182,7 +182,7 @@ export class NotationTranslator {
 					}
 					continue;
 				}
-				const code = TECHNICAL_CODES[mark.technicalType];
+				const code = technicalCode(mark);
 				if (code) {
 					staveNote.addModifier(
 						new StaveArticulation(code).setPosition(
@@ -421,4 +421,126 @@ const TECHNICAL_CODES: Record<string, string> = {
 	'thumb-position': '\uE624', // stringsThumbPosition
 	'double-tongue': '\uE5F0', // doubleTongueAbove
 	'triple-tongue': '\uE5F2', // tripleTongueAbove
+	heel: '\uE661', // keyboardPedalHeel1: the organ pedal's "U"
+	toe: '\uE664', // keyboardPedalToe1: the organ pedal's "^"
+	fingernails: '\uE636', // pluckedWithFingernails
+	'brass-bend': '\uE5E3', // brassBend
+	flip: '\uE5E1', // brassFlip
+	'half-muted': '\uE5E6', // brassMuteHalfClosed
 };
+
+/*
+ * <handbell> text -> its SMuFL handbells glyph. "damp" takes handbellsDamp3, the one damp
+ * glyph that reads on its own; the other two are the halves of a two-note damp.
+ */
+const HANDBELL_CODES: Record<string, string> = {
+	belltree: '\uE81F', // handbellsBelltree
+	damp: '\uE81E', // handbellsDamp3
+	echo: '\uE81B', // handbellsEcho1
+	gyro: '\uE81D', // handbellsGyro
+	'hand martellato': '\uE812', // handbellsHandMartellato
+	'mallet lift': '\uE816', // handbellsMalletLft
+	'mallet table': '\uE815', // handbellsMalletBellOnTable
+	martellato: '\uE810', // handbellsMartellato
+	'martellato lift': '\uE811', // handbellsMartellatoLift
+	'muted martellato': '\uE813', // handbellsMutedMartellato
+	'pluck lift': '\uE817', // handbellsPluckLift
+	swing: '\uE81A', // handbellsSwing
+};
+
+/*
+ * <arrow-direction> -> its offset within a SMuFL arrow block, which runs clockwise from up:
+ * arrowBlackUp is U+EB60, arrowBlackUpRight U+EB61, and so on to arrowBlackUpLeft U+EB67.
+ * ponytail: the two-headed directions ("left right", "up down", ...) have no SMuFL glyph and
+ * draw nothing, as does <circular-arrow>.
+ */
+const ARROW_DIRECTIONS: Record<string, number> = {
+	up: 0,
+	northeast: 1,
+	right: 2,
+	southeast: 3,
+	down: 4,
+	southwest: 5,
+	left: 6,
+	northwest: 7,
+};
+
+/*
+ * The glyph a <technical> mark draws, or undefined when it draws none. Most marks are
+ * fixed glyphs in TECHNICAL_CODES; <hole>, <harmon-mute>, <arrow> and <handbell> choose
+ * theirs from what they contain.
+ */
+function technicalCode(mark: Technical): string | undefined {
+	switch (mark.technicalType) {
+		case 'hole':
+			return holeCode(mark);
+		case 'harmon-mute':
+			return harmonMuteCode(mark);
+		case 'arrow':
+			return arrowCode(mark);
+		case 'handbell':
+			return HANDBELL_CODES[mark.text?.trim() ?? ''];
+	}
+	return TECHNICAL_CODES[mark.technicalType];
+}
+
+/*
+ * A woodwind <hole>: its <hole-closed> picks the filled, empty or half-filled circle.
+ * <hole-type> (a label like "thumb") and <hole-shape> are not drawn.
+ */
+function holeCode(mark: Technical): string | undefined {
+	switch (mark.childrenNamed('hole-closed')[0]?.text?.trim()) {
+		case 'yes':
+			return '\uE5F4'; // windClosedHole
+		case 'no':
+			return '\uE5F9'; // windOpenHole
+		case 'half':
+			return '\uE5F6'; // windHalfClosedHole1
+	}
+	return undefined;
+}
+
+/*
+ * A brass <harmon-mute>: its <harmon-closed> picks the closed "+", the open circle, or a
+ * half-closed one filled on the side its location names (left unless it says right).
+ */
+function harmonMuteCode(mark: Technical): string | undefined {
+	const closed = mark.childrenNamed('harmon-closed')[0];
+	switch (closed?.text?.trim()) {
+		case 'yes':
+			return '\uE5E8'; // brassHarmonMuteClosed
+		case 'no':
+			return '\uE5EB'; // brassHarmonMuteStemOpen
+		case 'half':
+			return closed?.getAttribute('location') === 'right'
+				? '\uE5EA' // brassHarmonMuteStemHalfRight
+				: '\uE5E9'; // brassHarmonMuteStemHalfLeft
+	}
+	return undefined;
+}
+
+/*
+ * An <arrow>: <arrow-direction> picks which way it points and <arrow-style> its block,
+ * "single" (the default) the plain open arrow, "filled" the black one, "hollow" the white
+ * one. <arrowhead/> draws the head alone. The doubled styles fall back to a single arrow.
+ */
+function arrowCode(mark: Technical): string | undefined {
+	const direction =
+		ARROW_DIRECTIONS[
+			mark.childrenNamed('arrow-direction')[0]?.text?.trim() ?? ''
+		];
+	if (direction === undefined) {
+		return undefined;
+	}
+	const style = mark.childrenNamed('arrow-style')[0]?.text?.trim();
+	const head = mark.childrenNamed('arrowhead').length > 0;
+	let base: number;
+	if (style === 'filled') {
+		base = head ? 0xeb78 : 0xeb60; // arrowheadBlackUp / arrowBlackUp
+	} else if (style === 'hollow') {
+		base = head ? 0xeb80 : 0xeb68; // arrowheadWhiteUp / arrowWhiteUp
+	} else {
+		base = head ? 0xeb88 : 0xeb70; // arrowheadOpenUp / arrowOpenUp
+	}
+	return String.fromCharCode(base + direction);
+}

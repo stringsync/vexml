@@ -2384,6 +2384,17 @@ describe('render', () => {
 	//   the beam sits above the stave, each carrying a down-bow. The eight brackets ride in a
 	//   row a full stave space clear of the beam; they must not rest on it (see
 	//   StaveArticulation).
+	// - M18: the organ pedal heel "U" and toe "V", the fingernails arc, and the brass-bend
+	//   cup, all above the stave.
+	// - M19: the brass flip hook, the half-muted circled "+", then two <harmon-mute>s: the
+	//   closed one a filled circle under a "+", the open one a ring under a "+".
+	// - M20: a half-closed <harmon-mute> filled on its right, then three <hole>s: closed
+	//   (a filled circle), open (a ring; its hole-type "thumb" is not drawn) and half (a
+	//   half-filled circle).
+	// - M21: four <arrow>s: a plain up arrow, a filled down arrow, a hollow northeast arrow,
+	//   and a lone left arrowhead "<".
+	// - M22: four <handbell> techniques: the martellato triangle, the damp target, the echo
+	//   hook, and the swing pair of up and down arrows.
 	it.concurrent('renders technical_marks.png', async () => {
 		expect(await testing.render('technical_marks.musicxml')).toMatchScreenshot(
 			'technical_marks.png',

@@ -598,5 +598,380 @@
         </notations>
       </note>
     </measure>
+    <measure number="18">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <heel/>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>heel</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <toe/>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>toe</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <fingernails/>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>nails</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <brass-bend/>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>bend</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="19">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <flip/>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>flip</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <half-muted/>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>half-m.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <harmon-mute>
+              <harmon-closed>yes</harmon-closed>
+            </harmon-mute>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>harm. cl.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <harmon-mute>
+              <harmon-closed>no</harmon-closed>
+            </harmon-mute>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>harm. op.</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="20">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <harmon-mute>
+              <harmon-closed location="right">half</harmon-closed>
+            </harmon-mute>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>harm. ½</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <hole>
+              <hole-closed>yes</hole-closed>
+            </hole>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>hole cl.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <hole>
+              <hole-type>thumb</hole-type>
+              <hole-closed>no</hole-closed>
+              <hole-shape>circle</hole-shape>
+            </hole>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>hole op.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <hole>
+              <hole-closed location="bottom">half</hole-closed>
+            </hole>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>hole ½</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="21">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <arrow>
+              <arrow-direction>up</arrow-direction>
+            </arrow>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>arrow</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <arrow>
+              <arrow-direction>down</arrow-direction>
+              <arrow-style>filled</arrow-style>
+            </arrow>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>filled</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <arrow>
+              <arrow-direction>northeast</arrow-direction>
+              <arrow-style>hollow</arrow-style>
+            </arrow>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>hollow</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <arrow>
+              <arrow-direction>left</arrow-direction>
+              <arrowhead/>
+            </arrow>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>head</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="22">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <handbell>martellato</handbell>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>mart.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <handbell>damp</handbell>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>damp</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <handbell>echo</handbell>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>echo</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <handbell>swing</handbell>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>swing</text>
+        </lyric>
+      </note>
+    </measure>
   </part>
 </score-partwise>
