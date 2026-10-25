@@ -217,7 +217,9 @@ export class NotationTranslator {
 	/*
 	 * A <notations><fermata>: the held-note arc-over-dot. Default placement is above
 	 * (vexflow "a@a"); type="inverted" mirrors it below ("a@u"). Unlike articulations,
-	 * the side is the fermata's type, not the stem direction.
+	 * the side is the fermata's type, not the stem direction. The element's text is its
+	 * shape, which mdom does not surface, so it is read off the element itself; a shape
+	 * other than normal draws its own SMuFL glyph through the same Articulation.
 	 */
 	private addFermata(staveNote: StaveNote, note: Note): void {
 		const fermata = note.fermata;
@@ -225,7 +227,12 @@ export class NotationTranslator {
 			return;
 		}
 		const inverted = fermata === 'inverted';
-		const articulation = new StaveArticulation(inverted ? 'a@u' : 'a@a');
+		const shape = note
+			.childrenNamed('notations')
+			.flatMap((notations) => notations.childrenNamed('fermata'))[0]
+			?.text?.trim();
+		const faces = FERMATA_SHAPES[shape ?? ''] ?? NORMAL_FERMATA;
+		const articulation = new StaveArticulation(faces[inverted ? 1 : 0]);
 		// Vexflow defaults every Articulation to ABOVE; the below-shaped glyph also needs the
 		// BELOW position so it sits under the note instead of floating over it.
 		articulation.setPosition(
@@ -340,6 +347,23 @@ const ARTICULATION_CODES: Record<
 	'soft-accent': ['\uED40', '\uED41'], // articSoftAccentAbove/Below
 	stress: ['\uE4B6', '\uE4B7'], // articStressAbove/Below
 	unstress: ['\uE4B8', '\uE4B9'], // articUnstressAbove/Below
+};
+
+/*
+ * MusicXML fermata shape (the <fermata> element's text) -> its [above, below] faces:
+ * vexflow's own codes for normal, which an empty element means too, and raw SMuFL glyphs
+ * for the rest. The curlew has one face, so an inverted one draws the same sign below.
+ */
+const NORMAL_FERMATA: [above: string, below: string] = ['a@a', 'a@u'];
+const FERMATA_SHAPES: Record<string, [above: string, below: string]> = {
+	normal: NORMAL_FERMATA,
+	angled: ['\uE4C4', '\uE4C5'], // fermataShortAbove/Below
+	square: ['\uE4C6', '\uE4C7'], // fermataLongAbove/Below
+	'double-angled': ['\uE4C2', '\uE4C3'], // fermataVeryShortAbove/Below
+	'double-square': ['\uE4C8', '\uE4C9'], // fermataVeryLongAbove/Below
+	'double-dot': ['\uE4CA', '\uE4CB'], // fermataLongHenzeAbove/Below
+	'half-curve': ['\uE4CC', '\uE4CD'], // fermataShortHenzeAbove/Below
+	curlew: ['\uE4D6', '\uE4D6'], // curlewSign
 };
 
 /*

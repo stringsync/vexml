@@ -40,5 +40,145 @@
         </notations>
       </note>
     </measure>
+    <!-- M3: angled, square, double-angled, double-square fermatas on B4 quarters, upright, above. -->
+    <measure number="3">
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata>angled</fermata>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata>square</fermata>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata>double-angled</fermata>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata>double-square</fermata>
+        </notations>
+      </note>
+    </measure>
+    <!-- M4: double-dot, half-curve, curlew, normal fermatas on B4 quarters, upright, above. -->
+    <measure number="4">
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata>double-dot</fermata>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata>half-curve</fermata>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata>curlew</fermata>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata>normal</fermata>
+        </notations>
+      </note>
+    </measure>
+    <!-- M5: angled, square, double-angled, double-square fermatas on B4 quarters, inverted (type="inverted"), below. -->
+    <measure number="5">
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata type="inverted">angled</fermata>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata type="inverted">square</fermata>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata type="inverted">double-angled</fermata>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata type="inverted">double-square</fermata>
+        </notations>
+      </note>
+    </measure>
+    <!-- M6: double-dot, half-curve, curlew, normal fermatas on B4 quarters, inverted (type="inverted"), below. -->
+    <measure number="6">
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata type="inverted">double-dot</fermata>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata type="inverted">half-curve</fermata>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata type="inverted">curlew</fermata>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>quarter</type>
+        <notations>
+          <fermata type="inverted">normal</fermata>
+        </notations>
+      </note>
+    </measure>
   </part>
 </score-partwise>

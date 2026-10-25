@@ -2442,6 +2442,10 @@ describe('render', () => {
 	// set by its type, not the stem direction.
 	// - M1: a normal fermata above a C5 whole note (default placement).
 	// - M2: an inverted fermata (type="inverted") below a C5 whole note.
+	// - M3-M4: every other fermata shape, the element's text, each with its own SMuFL glyph
+	//   above a B4 quarter: angled, square, double-angled, double-square, double-dot,
+	//   half-curve, curlew, then normal for comparison.
+	// - M5-M6: the same shapes inverted, below; the one-faced curlew draws unflipped.
 	it.concurrent('renders fermata.png', async () => {
 		expect(await testing.render('fermata.musicxml')).toMatchScreenshot(
 			'fermata.png',

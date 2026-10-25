@@ -169,7 +169,7 @@ Attributes: 39 drawn, 3 ignored, 73 missing.
 | `f` | drawn | `dynamics.musicxml` |
 | `falloff` | drawn | `articulations_extended.musicxml` |
 | `feature` | ignored | analysis metadata |
-| `fermata` | drawn | `fermata.musicxml` |
+| `fermata` | drawn | `fermata.musicxml`: every shape (normal, angled, square, double-angled, double-square, double-dot, half-curve, curlew) above and below; a `<barline>` fermata is not drawn |
 | `fermata@type` | drawn | `fermata.musicxml`: inverted fermata drawn below |
 | `ff` | drawn | `dynamics.musicxml` |
 | `fff` | drawn | `dynamics.musicxml` |
