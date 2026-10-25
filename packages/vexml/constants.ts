@@ -319,6 +319,13 @@ export const DYNAMICS_FONT_SIZE = 24;
  * it wants to be at least as visible as an "mf". */
 export const NAVIGATION_FONT_SIZE = 24;
 
+/** Barline fermata glyph size: the notation font's own size, so it matches a note's fermata. */
+export const BARLINE_FERMATA_FONT_SIZE = 30;
+
+/** The height of a fermata's ink at BARLINE_FERMATA_FONT_SIZE: SMuFL draws one about a
+ * third of its em tall, and the collision box should hug the arc, not the em. */
+export const BARLINE_FERMATA_INK_HEIGHT = 12;
+
 /** Air a segno/coda keeps beside other above-stave text. A sign sharing a baseline with
  * text it only abuts reads as part of it: "D.S. al Coda" ending on the barline runs straight
  * into the coda that opens the next bar. So text within this distance of the sign's side

@@ -180,5 +180,31 @@
         </notations>
       </note>
     </measure>
+    <!-- M7: an inverted fermata under the right barline. -->
+    <measure number="7">
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>32</duration>
+        <type>whole</type>
+      </note>
+      <barline location="right">
+        <fermata type="inverted">normal</fermata>
+      </barline>
+    </measure>
+    <!-- M8: an empty (normal) fermata on the left barline, over the same bar line as M7's, and a square fermata over the final light-heavy barline. -->
+    <measure number="8">
+      <barline location="left">
+        <fermata/>
+      </barline>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>32</duration>
+        <type>whole</type>
+      </note>
+      <barline location="right">
+        <bar-style>light-heavy</bar-style>
+        <fermata>square</fermata>
+      </barline>
+    </measure>
   </part>
 </score-partwise>

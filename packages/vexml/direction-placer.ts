@@ -11,6 +11,8 @@ import { Rect } from 'webappwiz/geometry';
 import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
 import type { CollisionKind, CollisionResolver } from './collision-resolver';
 import {
+	BARLINE_FERMATA_FONT_SIZE,
+	BARLINE_FERMATA_INK_HEIGHT,
 	CHORD_DIAGRAM_GAP,
 	CHORD_DIAGRAM_HEIGHT,
 	CHORD_DIAGRAM_PADDING,
@@ -40,6 +42,7 @@ import {
 	WORDS_Y_OFFSET,
 } from './constants';
 import { DynamicGlyphs } from './dynamic-glyphs';
+import { FERMATA_GLYPHS, NORMAL_FERMATA_GLYPHS } from './fermata-glyphs';
 import type { GeometryCollector } from './geometry-collector';
 import { MetronomeGlyph, type TempoModulation } from './metronome-glyph';
 import type {
@@ -425,12 +428,47 @@ export class DirectionPlacer {
 			this.reporter.growPageTop(placed.y);
 			this.spill.growDecorationTop(column.systemIndex, placed.y);
 		}
+		for (const f of column.fermatas) {
+			this.drawBarlineFermata(f, column.systemIndex);
+		}
 		if (topStave && measure) {
 			for (const text of this.reader.rehearsalsOf(measure)) {
 				const top = this.drawRehearsal(topStave, text);
 				this.reporter.growPageTop(top);
 				this.spill.growDecorationTop(column.systemIndex, top);
 			}
+		}
+	}
+
+	/*
+	 * A `<barline><fermata>`: the shape's SMuFL glyph centered on the barline it holds,
+	 * standing above the part's top stave, or hanging below its bottom one when inverted.
+	 * Typed in the notation font like a segno, so it clears notes and text the same way.
+	 */
+	private drawBarlineFermata(f: BarlineFermataTask, systemIndex: number): void {
+		const faces = FERMATA_GLYPHS[f.shape] ?? NORMAL_FERMATA_GLYPHS;
+		const x =
+			f.location === 'right'
+				? f.stave.getX() + f.stave.getWidth()
+				: f.stave.getX();
+		const placed = this.drawWords(
+			f.stave,
+			faces[f.inverted ? 1 : 0],
+			x,
+			f.inverted ? 'below' : 'above',
+			{
+				font: this.notationFont,
+				size: BARLINE_FERMATA_FONT_SIZE,
+				italic: false,
+				color: this.notationColor,
+				align: 'center',
+				inkHeight: BARLINE_FERMATA_INK_HEIGHT,
+				hangs: f.inverted,
+			},
+		);
+		if (!f.inverted) {
+			this.reporter.growPageTop(placed.y);
+			this.spill.growDecorationTop(systemIndex, placed.y);
 		}
 	}
 
@@ -764,11 +802,12 @@ export class DirectionPlacer {
 		} else if (style.align === 'right') {
 			alignOffset = w;
 		}
+		const h = style.inkHeight ?? style.size;
 		const natural = new Rect(
 			anchorX - alignOffset,
-			below ? baseY : baseY - style.size,
+			below ? baseY : baseY - h,
 			w,
-			style.size,
+			h,
 		);
 		const band = this.reporter.rowOf(stave);
 		const kinds = style.clearsHairpins ? WORDS_CLEAR_KINDS : TEXT_CLEAR_KINDS;
@@ -819,7 +858,11 @@ export class DirectionPlacer {
 		} else {
 			this.reporter.recordAnnotationSpill(stave, placed);
 		}
-		this.context.fillText(text, placed.x, placed.bottom);
+		this.context.fillText(
+			text,
+			placed.x,
+			style.hangs ? placed.y : placed.bottom,
+		);
 		this.context.restore();
 		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
 		return placed;
@@ -939,6 +982,13 @@ type SideTextStyle = {
 	sideGap?: number;
 	/** Whether the string also clears hairpins (see WORDS_CLEAR_KINDS). */
 	clearsHairpins?: boolean;
+	/** The ink's height, when it is not the font size: a lone SMuFL glyph is far shorter
+	 * than its em, and a box that tall would push neighbors needlessly far. Absent means
+	 * the font size. */
+	inkHeight?: number;
+	/** Whether the ink hangs down from the baseline rather than standing on it, as a
+	 * below-stave SMuFL glyph does. Absent means it stands on it. */
+	hangs?: boolean;
 };
 
 /**
@@ -972,6 +1022,15 @@ export type WordsTask = {
 	/* The direction falls at the bar's end, so it ends at the right barline. Absent means it
 	 * doesn't. */
 	closesBar?: boolean;
+};
+
+/** A queued `<barline><fermata>`: the part stave it sits over (the top one) or under (the
+ * bottom one, when inverted) and the edge of that stave's measure it holds. */
+export type BarlineFermataTask = {
+	stave: Stave;
+	location: 'left' | 'right';
+	shape: string;
+	inverted: boolean;
 };
 
 /** A queued dynamics marking: a words task plus whether the marking spells out of SMuFL's
@@ -1017,6 +1076,7 @@ export interface DirectionColumn {
 	measure: Measure | undefined;
 	/** The printed "Nx" label of a repeat played more than twice, or null. */
 	repeatTimesLabel: string | null;
+	fermatas: readonly BarlineFermataTask[];
 	words: readonly WordsTask[];
 	dynamics: readonly DynamicsTask[];
 	figuredBasses: readonly FiguredBassTask[];

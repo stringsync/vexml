@@ -2448,6 +2448,9 @@ describe('render', () => {
 	//   above a B4 quarter: angled, square, double-angled, double-square, double-dot,
 	//   half-curve, curlew, then normal for comparison.
 	// - M5-M6: the same shapes inverted, below; the one-faced curlew draws unflipped.
+	// - M7-M8: <barline> fermatas, centered on the bar line rather than a note: an inverted
+	//   one under M7's right barline, an empty (normal) one over M8's left barline (the same
+	//   line), and a square one over the final light-heavy barline.
 	it.concurrent('renders fermata.png', async () => {
 		expect(await testing.render('fermata.musicxml')).toMatchScreenshot(
 			'fermata.png',

@@ -199,6 +199,26 @@ export class ScoreReader {
 	}
 
 	/*
+	 * The fermatas a measure's edge `<barline>`s carry: a hold over the bar line itself,
+	 * usually a final one. mdom's Barline has no getter for them, so each `<fermata>` child
+	 * is read off the element: its text is the shape (empty means normal) and type="inverted"
+	 * puts it below. A barline may carry two, one upright and one inverted.
+	 * ponytail: a middle barline's fermata is dropped; it would need the BarNote's x, and no
+	 * fixture asks for one.
+	 */
+	barlineFermatasOf(measure: Measure): BarlineFermata[] {
+		return measure.barlines
+			.filter((barline) => barline.location !== 'middle')
+			.flatMap((barline) =>
+				barline.childrenNamed('fermata').map((fermata) => ({
+					location: barline.location === 'left' ? 'left' : 'right',
+					shape: fermata.text?.trim() || 'normal',
+					inverted: fermata.getAttribute('type') === 'inverted',
+				})),
+			);
+	}
+
+	/*
 	 * A measure's mid-measure <clef> changes for one staff: Measure.clefChanges, minus any
 	 * landing at beat 0.
 	 * ponytail: a change landing at beat 0 is dropped rather than drawn inline; it is the
@@ -1394,6 +1414,13 @@ export type PartGroup = {
 	depth: number;
 	/** The group's `<group-name>`, printed left of its symbol; null when it declares none. */
 	name: string | null;
+};
+
+/** A `<barline><fermata>`: the edge it sits on, its shape, and whether it hangs below. */
+export type BarlineFermata = {
+	location: 'left' | 'right';
+	shape: string;
+	inverted: boolean;
 };
 
 export type MeasureRepeat = {

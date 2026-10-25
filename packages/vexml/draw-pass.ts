@@ -27,6 +27,7 @@ import {
 	VOLTA_NOTE_CLEARANCE,
 } from './constants';
 import {
+	type BarlineFermataTask,
 	type DirectionColumn,
 	DirectionPlacer,
 	type DynamicsTask,
@@ -230,6 +231,8 @@ export class DrawPass {
 	// Words directions (e.g. "ritardando"), each drawn on its stave's `placement` side at
 	// the laid-out x of the note it applies to.
 	private wordsTasks: WordsTask[] = [];
+	// <barline> fermatas, drawn on the barline's laid-out x once the system is formatted.
+	private fermataTasks: BarlineFermataTask[] = [];
 	// Dynamics markings (p, mf, sfz, …), queued like wordsTasks but drawn in the notation
 	// font when `glyph` says the marking spells out of SMuFL's dynamic letters.
 	private dynamicsTasks: DynamicsTask[] = [];
@@ -560,6 +563,7 @@ export class DrawPass {
 		this.tempoTasks = [];
 		this.harmonyTasks = [];
 		this.wordsTasks = [];
+		this.fermataTasks = [];
 		this.dynamicsTasks = [];
 		this.figuredBassTasks = [];
 		this.partStaves = [];
@@ -639,6 +643,16 @@ export class DrawPass {
 			const topStave = this.pendingStaves[0];
 			if ((tempo || modulation) && topStave) {
 				this.tempoTasks.push({ stave: topStave.stave, tempo, modulation });
+			}
+
+			// A <barline> fermata holds this part's bar line: it stands over the part's top
+			// stave, or hangs under its bottom one when inverted.
+			const bottomStave = this.pendingStaves.at(-1);
+			for (const fermata of this.reader.barlineFermatasOf(measure)) {
+				const target = fermata.inverted ? bottomStave : topStave;
+				if (target) {
+					this.fermataTasks.push({ stave: target.stave, ...fermata });
+				}
 			}
 
 			// Words directions (e.g. "ritardando") print on the staff their <staff> names,
@@ -857,6 +871,7 @@ export class DrawPass {
 			topStave: this.systemTop,
 			measure: this.parts[0]?.measures[m],
 			repeatTimesLabel: this.decorations[m]?.repeatTimesLabel ?? null,
+			fermatas: this.fermataTasks,
 			words: this.wordsTasks,
 			dynamics: this.dynamicsTasks,
 			figuredBasses: this.figuredBassTasks,

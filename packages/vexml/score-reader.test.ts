@@ -324,6 +324,28 @@ describe('ScoreReader', () => {
 			closesBar: true,
 		});
 	});
+
+	it('reads each barline fermata with its edge, shape and side', async () => {
+		const mdoc = await new DefaultScoreParser().parse(
+			scoreOf(
+				'<barline location="left"><fermata/></barline>' +
+					'<barline location="right"><bar-style>light-heavy</bar-style>' +
+					'<fermata type="upright">square</fermata>' +
+					'<fermata type="inverted">angled</fermata></barline>',
+			),
+		);
+		const [measure] = mdoc.score.parts[0]?.measures ?? [];
+		if (!measure) {
+			throw new Error('fixture parsed no measures');
+		}
+		expect(
+			new ScoreReader(new DynamicGlyphs()).barlineFermatasOf(measure),
+		).toEqual([
+			{ location: 'left', shape: 'normal', inverted: false },
+			{ location: 'right', shape: 'square', inverted: false },
+			{ location: 'right', shape: 'angled', inverted: true },
+		]);
+	});
 });
 
 /* A one-part score whose measures carry exactly the given <barline>s (and a note, so the

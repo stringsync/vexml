@@ -7,6 +7,7 @@ import {
 	Tremolo,
 } from 'vexflow/core';
 import { ACCIDENTAL_CODES } from './chord-translator';
+import { FERMATA_GLYPHS } from './fermata-glyphs';
 import { FingeringAnnotation } from './fingering-annotation';
 import { LyricAnnotation } from './lyric-annotation';
 import { NonArpeggioBracket } from './non-arpeggio-bracket';
@@ -350,20 +351,13 @@ const ARTICULATION_CODES: Record<
 };
 
 /*
- * MusicXML fermata shape (the <fermata> element's text) -> its [above, below] faces:
- * vexflow's own codes for normal, which an empty element means too, and raw SMuFL glyphs
- * for the rest. The curlew has one face, so an inverted one draws the same sign below.
+ * A note's fermata faces by shape: the SMuFL glyphs, except normal (which an empty element
+ * means too) keeps vexflow's own codes, which carry its articulation metrics.
  */
 const NORMAL_FERMATA: [above: string, below: string] = ['a@a', 'a@u'];
 const FERMATA_SHAPES: Record<string, [above: string, below: string]> = {
+	...FERMATA_GLYPHS,
 	normal: NORMAL_FERMATA,
-	angled: ['\uE4C4', '\uE4C5'], // fermataShortAbove/Below
-	square: ['\uE4C6', '\uE4C7'], // fermataLongAbove/Below
-	'double-angled': ['\uE4C2', '\uE4C3'], // fermataVeryShortAbove/Below
-	'double-square': ['\uE4C8', '\uE4C9'], // fermataVeryLongAbove/Below
-	'double-dot': ['\uE4CA', '\uE4CB'], // fermataLongHenzeAbove/Below
-	'half-curve': ['\uE4CC', '\uE4CD'], // fermataShortHenzeAbove/Below
-	curlew: ['\uE4D6', '\uE4D6'], // curlewSign
 };
 
 /*

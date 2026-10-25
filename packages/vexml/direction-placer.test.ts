@@ -72,6 +72,7 @@ describe('DirectionPlacer', () => {
 		topStave: undefined,
 		measure: undefined,
 		repeatTimesLabel: null,
+		fermatas: [],
 		words: [],
 		dynamics: [],
 		figuredBasses: [],
