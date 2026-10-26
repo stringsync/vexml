@@ -2117,6 +2117,12 @@ describe('render', () => {
 	// - M1: a parenthesized B4 quarter (tab string 1, fret "(2)"), a plain B4 quarter (fret 5),
 	//   then a parenthesized G4/B4/D5 half-note chord, each notehead bracketed on the notation
 	//   stave and each fret "(0)"/"(0)"/"(2)" bracketed on tab strings 3/2/1.
+	it.concurrent('renders notehead_text.png', async () => {
+		expect(await testing.render('notehead_text.musicxml')).toMatchScreenshot(
+			'notehead_text.png',
+		);
+	});
+
 	it.concurrent('renders notehead_parentheses.png', async () => {
 		expect(
 			await testing.render('notehead_parentheses.musicxml'),

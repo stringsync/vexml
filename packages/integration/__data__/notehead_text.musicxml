@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Voice</part-name>
+    </score-part>
+  </part-list>
+  <!-- <notehead-text>: text drawn centered in the notehead, as in named-pitch noteheads.
+       - M1: four quarters labeled do re mi fa, then a half whose label joins a display-text
+         run and an accidental-text run. -->
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notehead>normal</notehead>
+        <notehead-text><display-text>do</display-text></notehead-text>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notehead>normal</notehead>
+        <notehead-text><display-text>re</display-text></notehead-text>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notehead>normal</notehead>
+        <notehead-text><display-text>mi</display-text></notehead-text>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notehead>normal</notehead>
+        <notehead-text><display-text>fa</display-text></notehead-text>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <notehead-text><display-text>s</display-text><accidental-text>sharp</accidental-text></notehead-text>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

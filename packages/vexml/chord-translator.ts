@@ -1,4 +1,4 @@
-import type { Chord, Note } from '@stringsync/mdom';
+import { type Chord, MElement, type Note } from '@stringsync/mdom';
 import {
 	Accidental,
 	Dot,
@@ -14,6 +14,13 @@ import { isCueSized } from './cue-note';
 import type { DurationTranslator } from './duration-translator';
 import { InvisibleStaveNote } from './invisible-stave-note';
 import type { NotationTranslator } from './notation-translator';
+import { NoteheadText } from './notehead-text';
+
+const ACCIDENTAL_SIGNS: Readonly<Record<string, string>> = {
+	sharp: '\u266F',
+	flat: '\u266D',
+	natural: '\u266E',
+};
 
 /*
  * MusicXML <accidental> glyph name -> vexflow accidental code. Forms with no vexflow code
@@ -140,6 +147,7 @@ export class ChordTranslator {
 				: new NoteClass(this.struct(chord, clef, opts));
 		this.addAccidentals(staveNote, chord);
 		this.addParentheses(staveNote, chord);
+		this.addNoteheadText(staveNote, chord);
 		this.addDots(staveNote, lead);
 		this.hideLedgerLines(staveNote, lead);
 		this.applyStemNone(staveNote, lead);
@@ -402,6 +410,32 @@ export class ChordTranslator {
 		if (note.getAttribute('print-leger') === 'no') {
 			staveNote.drawLedgerLines = () => {};
 		}
+	}
+
+	/*
+	 * <notehead-text>: its <display-text> and <accidental-text> runs, in order, centered in the
+	 * member's notehead. mdom has no typed view of it, so it is read off the raw note.
+	 */
+	private addNoteheadText(staveNote: StaveNote, chord: Chord): void {
+		chord.notes.forEach((note, i) => {
+			const runs = note.child('notehead-text')?.children ?? [];
+			const text = runs
+				.filter((run): run is MElement => run instanceof MElement)
+				.map((run) => this.noteheadRun(run))
+				.join('');
+			if (text) {
+				staveNote.addModifier(new NoteheadText(text), i);
+			}
+		});
+	}
+
+	/* A run's text: <display-text> as written, <accidental-text> (a MusicXML accidental name)
+	 * as the sign it names, or the name itself when it has no plain text sign. */
+	private noteheadRun(run: MElement): string {
+		const text = run.text ?? '';
+		return run.tag === 'accidental-text'
+			? (ACCIDENTAL_SIGNS[text] ?? text)
+			: text;
 	}
 
 	private addDots(staveNote: StaveNote, note: Note): void {

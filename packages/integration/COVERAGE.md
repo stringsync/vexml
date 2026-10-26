@@ -16,7 +16,7 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 233 drawn, 69 ignored, 140 missing; vexml draws 233 of the 373 that show on the page (62%).
+Elements: 236 drawn, 69 ignored, 137 missing; vexml draws 236 of the 373 that show on the page (63%).
 Attributes: 53 drawn, 5 ignored, 57 missing.
 
 | Element | Status | Proof or reason |
@@ -50,7 +50,7 @@ Attributes: 53 drawn, 5 ignored, 57 missing.
 | `accidental@size` | missing | task #9; mdom raw only |
 | `accidental@smufl` | drawn | `accidentals.musicxml` M12: `other` drawn by its SMuFL glyph name |
 | `accidental-mark` | drawn | `ornaments.musicxml`: small accidental on the ornament it follows |
-| `accidental-text` | missing | task #11; mdom raw only |
+| `accidental-text` | drawn | `notehead_text.musicxml`: inside notehead-text, its text drawn as written |
 | `accord` | missing | task #16; mdom raw only |
 | `accordion-high` | missing | task #16; mdom raw only |
 | `accordion-low` | missing | task #16; mdom raw only |
@@ -137,7 +137,7 @@ Attributes: 53 drawn, 5 ignored, 57 missing.
 | `directive` | missing | task #38; attributes directive text printed above the staff; mdom raw only |
 | `display-octave` | drawn | `rest_pitched.musicxml`, `percussion_display_step.musicxml` |
 | `display-step` | drawn | `rest_pitched.musicxml`, `percussion_display_step.musicxml` |
-| `display-text` | missing | task #11; mdom raw only |
+| `display-text` | drawn | `notehead_text.musicxml`: inside notehead-text; other parents task #25 |
 | `distance` | missing | task #36; appearance distances (beam, hyphen spacing) not applied; mdom raw only |
 | `divisions` | drawn | `divisions_change.musicxml` |
 | `doit` | drawn | `articulations_extended.musicxml` |
@@ -336,7 +336,7 @@ Attributes: 53 drawn, 5 ignored, 57 missing.
 | `notehead` | drawn | `notehead_shapes.musicxml` |
 | `notehead@filled` | drawn | `notehead_shapes_extended.musicxml`: filled and open shape variants |
 | `notehead@parentheses` | drawn | `notehead_parentheses.musicxml`: per-member parenthesized noteheads |
-| `notehead-text` | missing | task #11; mdom raw only |
+| `notehead-text` | drawn | `notehead_text.musicxml`: display-text and accidental-text runs joined and centered in the head |
 | `numeral` | missing | task #32; roman numeral harmony analysis; mdom raw only |
 | `numeral-alter` | missing | task #32; roman numeral harmony analysis; mdom raw only |
 | `numeral-fifths` | missing | task #32; roman numeral harmony analysis key context; mdom raw only |
