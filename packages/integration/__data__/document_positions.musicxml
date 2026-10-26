@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1"><part-name>Piano</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1: default-y on words (baseline 35 tenths over the top line), a dynamic (75 under it) and a rehearsal mark (55 over). -->
+    <measure number="1">
+      <attributes><divisions>1</divisions><key><fifths>0</fifths></key><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+      <direction placement="above"><direction-type><rehearsal default-y="55">A</rehearsal></direction-type></direction>
+      <direction placement="above"><direction-type><words default-y="35">Andante</words></direction-type></direction>
+      <direction placement="below"><direction-type><dynamics default-y="-75"><f/></dynamics></direction-type></direction>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+    <!-- M2: words with no placement take their side from default-y (under the staff); a dynamic's relative-x/relative-y move it off vexml's own spot, left and down. -->
+    <measure number="2">
+      <direction><direction-type><words default-y="-62">dolce</words></direction-type></direction>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>2</duration><voice>1</voice><type>half</type></note>
+      <direction placement="below"><direction-type><dynamics relative-x="-15" relative-y="-12"><p/></dynamics></direction-type></direction>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>2</duration><voice>1</voice><type>half</type></note>
+    </measure>
+    <!-- M3: a metronome mark and a chord symbol on their default-y; "cresc." placed at 12 tenths over the top line, where the ledger-line notes stand: 'follow' lifts it clear, 'strict' prints it through them. -->
+    <measure number="3">
+      <direction placement="above"><direction-type><metronome default-y="52"><beat-unit>quarter</beat-unit><per-minute>90</per-minute></metronome></direction-type></direction>
+      <harmony default-y="30"><root><root-step>C</root-step></root><kind>major</kind></harmony>
+      <direction placement="above"><direction-type><words default-y="12">cresc.</words></direction-type></direction>
+      <note><pitch><step>C</step><octave>6</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>6</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>E</step><octave>6</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>6</octave></pitch><duration>1</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+    <!-- M4: a segno on its default-y, and a figured-bass stack whose top figure sits on its default-y, the rest under it. -->
+    <measure number="4">
+      <direction placement="above"><direction-type><segno default-y="45"/></direction-type></direction>
+      <figured-bass default-y="-80"><figure><figure-number>6</figure-number></figure><figure><figure-number>4</figure-number></figure></figured-bass>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type></note>
+      <barline location="right"><bar-style>light-heavy</bar-style></barline>
+    </measure>
+  </part>
+</score-partwise>

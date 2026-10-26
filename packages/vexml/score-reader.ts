@@ -684,6 +684,7 @@ export class ScoreReader {
 					dots2: second?.dots ?? 0,
 					parenthesis: metronome.parentheses,
 					justify: this.justifyOf(metronome),
+					position: this.positionOf(metronome),
 				};
 			}
 		}
@@ -724,6 +725,7 @@ export class ScoreReader {
 					parenthesis: metronome.parentheses,
 					arrows: metronome.child('metronome-arrows') !== null,
 					justify: this.justifyOf(metronome),
+					position: this.positionOf(metronome),
 				};
 			}
 		}
@@ -754,6 +756,7 @@ export class ScoreReader {
 					parenthesis: metronome.parentheses,
 					arrows: false,
 					justify: this.justifyOf(metronome),
+					position: this.positionOf(metronome),
 				};
 			}
 		}
@@ -875,6 +878,8 @@ export class ScoreReader {
 	 * An <other-direction> rides along after its direction's words: `glyph` says its text is
 	 * the SMuFL glyph its smufl attribute names, to draw in the notation font; without one
 	 * (or with a name the font lacks) it is its own text, set like words.
+	 * `position` is the element's own document position (see {@link positionOf}), null
+	 * when it sets none.
 	 */
 	wordsOf(measure: Measure): {
 		text: string;
@@ -886,6 +891,7 @@ export class ScoreReader {
 		closesBar: boolean;
 		directive: boolean;
 		format: TextFormat;
+		position: DocumentPosition | null;
 	}[] {
 		const wordFont = this.wordFontOf(measure);
 		const written = measure.directions.flatMap((d) => {
@@ -916,6 +922,7 @@ export class ScoreReader {
 					text: words.text,
 					glyph: false,
 					format: this.formatOf(words, wordFont, wordFont),
+					position: this.positionOf(words, d),
 				}));
 			const others = d
 				.childrenNamed('direction-type')
@@ -930,6 +937,7 @@ export class ScoreReader {
 									text,
 									glyph: glyph !== undefined,
 									format: this.formatOf(other, wordFont, wordFont),
+									position: this.positionOf(other, d),
 								},
 							]
 						: [];
@@ -953,6 +961,7 @@ export class ScoreReader {
 					closesBar: false,
 					directive: true,
 					format: this.formatOf(el, wordFont, wordFont),
+					position: this.positionOf(el),
 				})),
 		);
 		return [...attributed, ...written];
@@ -1018,7 +1027,8 @@ export class ScoreReader {
 	 * draws in the notation font; an <other-dynamics> (or any tag with a stray letter)
 	 * falls back to plain italic text.
 	 * `staffNumber` and `lead` bind it the same way {@link wordsOf} binds a directive, and
-	 * `format` is the <dynamics> element's own (see {@link TextFormat}).
+	 * `format` is the <dynamics> element's own (see {@link TextFormat}), `position` its
+	 * document position (see {@link positionOf}).
 	 * Dynamics engrave BELOW the staff by convention, so that's the placement default here;
 	 * an explicit placement="above" still wins.
 	 */
@@ -1029,6 +1039,7 @@ export class ScoreReader {
 		lead: Note | null;
 		placement: Placement;
 		format: TextFormat;
+		position: DocumentPosition | null;
 	}[] {
 		const wordFont = this.wordFontOf(measure);
 		const musicFont =
@@ -1047,6 +1058,7 @@ export class ScoreReader {
 					staffNumber,
 					lead,
 					placement,
+					position: this.positionOf(dynamics, d),
 				}));
 			});
 		});
@@ -1138,13 +1150,15 @@ export class ScoreReader {
 	 * settings written as SMuFL glyphs in the order a harpist reads them, D C B | E F G A.
 	 * A pedal raised is a flat, centered a natural, lowered a sharp; a string the diagram
 	 * does not name draws centered. The diagram binds to staff and lead note like a
-	 * dynamic and sits above the staff unless it says otherwise.
+	 * dynamic and sits above the staff unless it says otherwise; `position` is its document
+	 * position (see {@link positionOf}).
 	 */
 	harpPedalsOf(measure: Measure): {
 		glyphs: string;
 		staffNumber: string;
 		lead: Note | null;
 		placement: Placement;
+		position: DocumentPosition | null;
 	}[] {
 		return measure.directions.flatMap((d) =>
 			d.children
@@ -1173,6 +1187,7 @@ export class ScoreReader {
 						staffNumber: d.staff,
 						lead: d.nextNote,
 						placement: this.placementOf(d, 'above'),
+						position: this.positionOf(pedals, d),
 					};
 				}),
 		);
@@ -1182,9 +1197,14 @@ export class ScoreReader {
 	 * A measure's <direction><direction-type><rehearsal> section headers (e.g. "A", "B",
 	 * "Chorus"), in document order. These are the boxed letters a player navigates a chart
 	 * by, printed at the measure's left edge above the system's top staff.
-	 * `format` is the <rehearsal> element's own (see {@link TextFormat}).
+	 * `format` is the <rehearsal> element's own (see {@link TextFormat}), `position` its
+	 * document position (see {@link positionOf}).
 	 */
-	rehearsalsOf(measure: Measure): { text: string; format: TextFormat }[] {
+	rehearsalsOf(measure: Measure): {
+		text: string;
+		format: TextFormat;
+		position: DocumentPosition | null;
+	}[] {
 		const wordFont = this.wordFontOf(measure);
 		return measure.directions.flatMap((d) =>
 			d.rehearsals
@@ -1192,6 +1212,7 @@ export class ScoreReader {
 				.map((rehearsal) => ({
 					text: rehearsal.text,
 					format: this.formatOf(rehearsal, null, wordFont),
+					position: this.positionOf(rehearsal),
 				})),
 		);
 	}
@@ -1209,8 +1230,17 @@ export class ScoreReader {
 	 * that follow it, and neither fixture in tmp/ writes one (74a says so in its own
 	 * description). It would hang off this same lead note when one does.
 	 */
-	figuredBassesOf(measure: Measure): { lead: Note; figures: string[] }[] {
-		const out: { lead: Note; figures: string[] }[] = [];
+	figuredBassesOf(measure: Measure): {
+		lead: Note;
+		figures: string[];
+		/* The stack's document position (see positionOf), which its top figure takes. */
+		position: DocumentPosition | null;
+	}[] {
+		const out: {
+			lead: Note;
+			figures: string[];
+			position: DocumentPosition | null;
+		}[] = [];
 		for (const stack of measure.figuredBasses) {
 			const lead = stack.nextNote;
 			if (!lead) {
@@ -1226,7 +1256,7 @@ export class ScoreReader {
 				})
 				.filter(Boolean);
 			if (figures.length > 0) {
-				out.push({ lead, figures });
+				out.push({ lead, figures, position: this.positionOf(stack) });
 			}
 		}
 		return out;
@@ -1237,12 +1267,28 @@ export class ScoreReader {
 	 * document order. These are the landmarks a D.S./D.C. jumps to. The words that drive them
 	 * ("D.S. al Coda", "Fine") are ordinary <words> and already print via {@link wordsOf}; only
 	 * the two GLYPHS are here.
-	 * ponytail: the sign's own placement/x attributes are ignored; MusicXML lets a segno be
-	 * offset anywhere, but every one in tmp/ sits at its measure's start, which is where a
-	 * player looks for it.
+	 * `position` is the sign's document position (see {@link positionOf}), null when it sets
+	 * none.
+	 * ponytail: the sign's placement is ignored; MusicXML lets a segno hang under the staff,
+	 * but every one in tmp/ stands over its measure's start, which is where a player looks
+	 * for it.
 	 */
-	navigationsOf(measure: Measure): Array<'segno' | 'coda'> {
-		return measure.directions.flatMap((d) => d.navigations);
+	navigationsOf(
+		measure: Measure,
+	): { kind: 'segno' | 'coda'; position: DocumentPosition | null }[] {
+		return measure.directions.flatMap((d) =>
+			d
+				.childrenNamed('direction-type')
+				.flatMap((type) => [
+					...type
+						.childrenNamed('segno')
+						.map((sign) => ({ kind: 'segno' as const, sign })),
+					...type
+						.childrenNamed('coda')
+						.map((sign) => ({ kind: 'coda' as const, sign })),
+				])
+				.map(({ kind, sign }) => ({ kind, position: this.positionOf(sign) })),
+		);
 	}
 
 	/*
@@ -1540,6 +1586,7 @@ export class ScoreReader {
 		frame: ChordFrame | null;
 		placement: Placement;
 		source: Harmony;
+		position: DocumentPosition | null;
 	}[] {
 		const harmonies: {
 			lead: Note;
@@ -1548,6 +1595,7 @@ export class ScoreReader {
 			frame: ChordFrame | null;
 			placement: Placement;
 			source: Harmony;
+			position: DocumentPosition | null;
 		}[] = [];
 		const seen = new Set<string>();
 		for (const harmony of measure.harmonies) {
@@ -1581,6 +1629,7 @@ export class ScoreReader {
 				frame,
 				placement,
 				source: harmony,
+				position: this.positionOf(harmony, harmony),
 			});
 		}
 		return harmonies;
@@ -2352,6 +2401,43 @@ export class ScoreReader {
 		return value ? { kind: 'text', text: value } : null;
 	}
 
+	/*
+	 * Where the document puts a mark, from MusicXML's position attributes: `y` its default-y,
+	 * the text baseline in px above the staff's top line (null when unset), `dx` and `dy` its
+	 * relative-x and relative-y, px right and up of wherever it lands (0 when unset). Tenths
+	 * are read as px, as {@link documentLayoutOf} does. Null for an element setting none of
+	 * the three. `side` is the side a default-y puts the mark on when its direction (`host`)
+	 * names no placement: at or above the top line is above, under the bottom line below,
+	 * and null in between or with a placement given, which then stands.
+	 * default-x is not read: the document's horizontal positions go with its measure widths
+	 * and note positions, which vexml spaces itself.
+	 */
+	positionOf(
+		element: MElement,
+		host: { placement: Placement | null } | null = null,
+	): DocumentPosition | null {
+		const read = (name: string) => {
+			const value = element.getAttribute(name);
+			const number = Number(value);
+			return value !== null && Number.isFinite(number) ? number : null;
+		};
+		const y = read('default-y');
+		const dx = read('relative-x');
+		const dy = read('relative-y');
+		if (y === null && dx === null && dy === null) {
+			return null;
+		}
+		let side: Placement | null = null;
+		if (y !== null && host !== null && host.placement === null) {
+			if (y >= 0) {
+				side = 'above';
+			} else if (y < -STAFF_LINES_SPAN) {
+				side = 'below';
+			}
+		}
+		return { y, dx: dx ?? 0, dy: dy ?? 0, side };
+	}
+
 	/* The score's `<defaults><word-font>`, read once per score. */
 	private wordFontOf(measure: Measure): MElement | null {
 		const score = measure.part.score;
@@ -2875,6 +2961,8 @@ export type TempoMark = {
 	dots2?: number;
 	parenthesis?: boolean;
 	justify?: 'left' | 'center' | 'right' | null;
+	/** The `<metronome>`'s document position (see ScoreReader.positionOf). */
+	position?: DocumentPosition | null;
 };
 
 /**
@@ -2907,6 +2995,22 @@ export type StaffVoice = {
 
 /** Which side of the staff a `<direction>` prints on. */
 export type Placement = 'above' | 'below';
+
+/**
+ * Where a document puts a mark, from its position attributes (see ScoreReader.positionOf):
+ * `y` the default-y baseline in px above the staff's top line, or null for none; `dx` and
+ * `dy` the relative-x and relative-y, px right and up of the position that applies; `side`
+ * the side the default-y implies when the direction names no placement, else null.
+ */
+export type DocumentPosition = {
+	y: number | null;
+	dx: number;
+	dy: number;
+	side: Placement | null;
+};
+
+// The staff's five lines span four spaces, 40 tenths: a default-y under this is below the staff.
+const STAFF_LINES_SPAN = 40;
 
 /*
  * The formatting a text element (<words>, <dynamics>, <rehearsal>) asks for. A null field is

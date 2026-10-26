@@ -540,6 +540,12 @@ export class DrawPass {
 			{
 				labelFont,
 				documentFonts: config.documentFonts,
+				// A panoramic layout has no document layout to follow.
+				documentPositions:
+					config.layout.type !== 'panoramic' &&
+					config.layout.documentLayout !== 'ignore'
+						? config.layout.documentLayout
+						: undefined,
 				notationFont,
 				notationColor: this.notationColor,
 				textColor: this.textColor,
@@ -866,6 +872,7 @@ export class DrawPass {
 				frame,
 				placement,
 				source,
+				position,
 			} of this.reader.harmoniesOf(measure)) {
 				const staveNote = this.byLead.get(lead) ?? this.byTabLead.get(lead);
 				if (staveNote) {
@@ -876,6 +883,7 @@ export class DrawPass {
 						frame,
 						placement,
 						source,
+						position,
 					});
 				}
 			}
@@ -897,6 +905,7 @@ export class DrawPass {
 					tempo: rate ? null : tempo,
 					modulations: [rate, modulation].flatMap((m) => (m ? [m] : [])),
 					justify: tempo?.justify ?? modulation?.justify ?? null,
+					position: tempo?.position ?? modulation?.position ?? null,
 				});
 			}
 
@@ -924,6 +933,7 @@ export class DrawPass {
 				closesBar,
 				directive,
 				format,
+				position,
 			} of this.reader.wordsOf(measure)) {
 				const target =
 					this.pendingStaves[staves.indexOf(staffNumber)] ?? topStave;
@@ -941,6 +951,7 @@ export class DrawPass {
 						closesBar,
 						directive,
 						format,
+						position,
 					});
 				}
 			}
@@ -954,6 +965,7 @@ export class DrawPass {
 				lead,
 				placement,
 				format,
+				position,
 			} of this.reader.dynamicsOf(measure)) {
 				if (
 					this.directionPlacer.suppressesDynamic(
@@ -977,6 +989,7 @@ export class DrawPass {
 						anchor: anchor ?? target.staveNotes[0],
 						placement,
 						format,
+						position,
 					});
 				}
 			}
@@ -1009,6 +1022,7 @@ export class DrawPass {
 				staffNumber,
 				lead,
 				placement,
+				position,
 			} of this.reader.harpPedalsOf(measure)) {
 				const target =
 					this.pendingStaves[staves.indexOf(staffNumber)] ?? topStave;
@@ -1021,6 +1035,7 @@ export class DrawPass {
 						glyphs,
 						anchor: anchor ?? target.staveNotes[0],
 						placement,
+						position,
 					});
 				}
 			}
@@ -1052,11 +1067,14 @@ export class DrawPass {
 			// stave, which on a two-stave continuo part is the bass one.
 			const bassStave = this.pendingStaves.at(-1);
 			if (bassStave) {
-				for (const { lead, figures } of this.reader.figuredBassesOf(measure)) {
+				for (const { lead, figures, position } of this.reader.figuredBassesOf(
+					measure,
+				)) {
 					this.figuredBassTasks.push({
 						stave: bassStave.stave,
 						figures,
 						anchor: this.byLead.get(lead) ?? this.byTabLead.get(lead),
+						position,
 					});
 				}
 			}

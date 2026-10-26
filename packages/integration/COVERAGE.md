@@ -20,8 +20,8 @@ are picked by hand.
 | --- | --- | --- |
 | `*@color` | drawn | `note_color.musicxml`: note, notehead and stem colors; other elements' color ignored |
 | `*@dash-length` | drawn | `spanner_line_types.musicxml` M3: dashed ties, glissandos, slides, wedges; slurs and brackets too |
-| `*@default-x` | missing | task #20 (later task in that lane); mdom raw only |
-| `*@default-y` | missing | task #20 (later task in that lane); mdom raw only |
+| `*@default-x` | missing | task #104 (with measure widths and note positions); mdom raw only |
+| `*@default-y` | drawn | `document_positions.musicxml`, under the documentLayout setting (off by default): words, other-direction, dynamics, rehearsal, metronome, harmony text, harp-pedals, figured-bass, segno/coda, the baseline in tenths over the top line; lyrics task #105, frames task #104, notes and stems stay vexml's |
 | `*@enclosure` | drawn | `text_formatting.musicxml` M6-M13, M16-M18: every shape around words, rehearsal marks and dynamics; rehearsal still boxed by default |
 | `*@font-family` | drawn | `text_font_family.musicxml` M2-M6, under the documentFonts setting (off by default, when vexml's text face is used): words, rehearsal marks, other-dynamics text and lyrics in the face named, falling back to the text face for one the browser lacks; SMuFL dynamics keep the notation font |
 | `*@font-size` | drawn | `text_formatting.musicxml` M4: words, rehearsal and other-dynamics text, scaled against the word-font size; SMuFL dynamics and lyrics task #51 |
@@ -32,12 +32,12 @@ are picked by hand.
 | `*@line-type` | drawn | `spanner_line_types.musicxml`, `slur_line_types.musicxml`, `direction_lines.musicxml`: slurs, ties, glissandos, slides, wedges, brackets; tab slides stay solid |
 | `*@placement` | drawn | `direction_lines.musicxml`, `note_color.musicxml`: directions, slurs, tuplets, technical; ornaments ignore it |
 | `*@print-object` | drawn | `invisible_notes.musicxml`: notes; `print_object.musicxml`: notations, ending, staff-details; accidental and direction elements have none in the schema; clef, key, time, lyric and part-name ignore it |
-| `*@relative-x` | missing | task #20 (later task in that lane); mdom raw only |
-| `*@relative-y` | missing | task #20 (later task in that lane); mdom raw only |
+| `*@relative-x` | drawn | `document_positions.musicxml` M2, under the documentLayout setting: the same marks as default-y, moved right of where they land |
+| `*@relative-y` | drawn | `document_positions.musicxml` M2, under the documentLayout setting: the same marks as default-y, moved up from where they land |
 | `*@rotation` | drawn | `text_formatting.musicxml` M20: words |
 | `*@space-length` | drawn | `spanner_line_types.musicxml` M3: dashed and dotted lines, as dash-length |
 | `*@underline` | drawn | `text_formatting.musicxml` M5: words, rehearsal marks and dynamics |
-| `*@valign` | missing | task #50, after default-y (task #20); mdom raw only |
+| `*@valign` | missing | task #50, after default-y (task #21); mdom raw only |
 | `accent` | drawn | `articulations.musicxml` |
 | `accidental` | drawn | `accidentals.musicxml`: every value, arrow, triple, Turkish and Persian forms included, and `other` by its `@smufl` name; cautionary and editorial forms too |
 | `accidental@bracket` | drawn | `accidentals.musicxml`: bracketed sharp and flat |
@@ -490,7 +490,7 @@ are picked by hand.
 | `staff-type` | drawn | `staff_type.musicxml`: ossia and cue staves draw at 75 percent unless staff-size says otherwise, and an ossia staff shows its lines only in measures that hold notes; editorial, regular and alternate draw as a normal staff |
 | `staves` | drawn | `structure_grand_staff.musicxml` |
 | `stem` | drawn | `note.musicxml` |
-| `stem@default-y` | missing | stem length from stem end y; task #20 lane (default-y); mdom raw only |
+| `stem@default-y` | missing | stem length from stem end y; task #104 (document horizontal and note positions); mdom raw only |
 | `step` | drawn | `note.musicxml` |
 | `stick` | drawn | `direction_pictograms.musicxml` M3: SMuFL stick pictograms by type and material; parentheses and dashed-circle ignored |
 | `stick-location` | drawn | `direction_pictograms.musicxml` M2: SMuFL pictogram |

@@ -102,6 +102,7 @@ Two rules cut across the draw stage:
 - **Breaking measures into systems: greedy packing, then evening a lopsided pair**: `layout-planner.ts` (`evenOutSystems`)
 - **A break the document forced (`<print new-system="yes">`)**: `layout-planner.ts` (read off the mdom measure), `config.ts` (`honorSystemBreaks`)
 - **The document's own page, system margins, system and staff distances (`documentLayout`)**: `score-reader.ts` (`documentLayoutOf`: `<defaults>` and each `<print>`), `document-layout.ts` (per-system answers; tenths read as px), `layout-planner.ts` (page width and margins, system indents, `documentSystems`: planned stave gaps and the distances above each system), `draw-pass.ts` (`beginSystem`: system-distance from the lines above, floored by the music), `spill-resolver.ts` (the document's gaps as each system's planned floor), `page-planner.ts` (`DocumentPages`: fit by staff lines, top-system-distance, `new-page`, `blank-page`, a `<print>` page-layout's own page height and top/bottom margins via `pageSize`), `system-draw.ts` and `draw-pass.ts` (`shiftSystem`: an even page's systems drawn at its own left margin, `PageFrame.evenShift`)
+- **A mark's own position (`default-y`, `relative-x`, `relative-y`, under `documentLayout`)**: `score-reader.ts` (`positionOf`: tenths read as px, the baseline over the staff's top line; the side a default-y implies for a direction naming no placement), `direction-placer.ts` (`baselineOf`, `followed`, `pins`: words, dynamics, rehearsal, tempo, chord-symbol text, harp pedals, figured bass, segno/coda start from the document's baseline, and 'strict' pins them there), `draw-pass.ts` (the mode, `documentPositions`); `default-x`, lyrics and chord diagrams stay vexml's (tasks #104, #105)
 - **The document's engraving line widths (`<defaults><appearance>`, under `documentLayout`)**: `score-reader.ts` (`appearanceOf`), `appearance.ts` (tenths read as px), `layout-planner.ts` (`ScoreLayout.appearance`, NONE when ignored), `stem-width.ts` (vexflow's global `Stem.WIDTH`, set by `draw-pass.ts`), `stave-builder.ts` (staff, leger, ending), `detailed-stave.ts` (strokes the staff width), `spanner-builder.ts` (`useAppearance`: beam, tie and slur middles, wedge, tuplet bracket), `lyric-placer.ts` (extend)
 - **The document's glyph overrides (`<appearance><glyph>`, under `documentLayout`)**: `appearance.ts` (`glyph`), `layout-planner.ts` (hands them to the shared translators before it measures), `signature-translator.ts` (`clefGlyph`, `setClefGlyph`), `stave-factory.ts` (opening and system clefs), `voice-translator.ts` (mid-measure clefs), `chord-translator.ts` (`dressRest`: the quarter rest), `spanner-resolver.ts` and `ottava-bracket.ts` (octave-shift labels)
 - **Justifying a complete system to full width; last one left short**: `layout-planner.ts`, `config.ts` (`minLastSystemFill`)
@@ -160,6 +161,13 @@ there, then `add` the placed rect. `kinds` narrows which obstacles count;
 | Chord diagrams | lift off notes, pull inside the page edge (leaving room for the column's later boxes, so a crowded row packs leftward in chord order), push right of the previous diagrams (iterated until clear), lift again | `direction-placer.ts` |
 | Hairpins, pedal lines, ottava brackets | slur bows and beam-extended stem tips (hairpins also the notes they span, their tuplet numbers and tie arcs, and a crescendo running into a diminuendo shares one line), via a resolver scoped to their own stave (they resolve after the per-system index, a hairpin once every system its stave's bows reach is drawn) | `spanner-resolver.ts` |
 | Volta (ending) brackets | noteheads, stem tips and slur bows on the top stave (resolved a pass late, see below) | `draw-pass.ts` (`observeVoltaLift`) |
+
+A mark the document positions (`documentLayout` 'follow') starts from its
+own baseline instead of vexml's and resolves the same way, so the document's
+line is a floor it rises (or drops) from; under 'strict' it is pinned there,
+skipping the clearance but still registered as an obstacle, kept on the page
+and reported to the crop and stave gaps (`direction-placer.ts`,
+`placeBeside`'s `pinned`).
 
 Registered as obstacles: noteheads/stem tips, tie apexes, tab bend arcs, slur
 bows, tuplet numbers, technical marks (`system-formatter.ts`); lyrics and melisma lines

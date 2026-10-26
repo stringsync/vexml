@@ -56,6 +56,7 @@ import type { GeometryCollector } from './geometry-collector';
 import { MetronomeGlyph, type TempoModulation } from './metronome-glyph';
 import type {
 	DirectionLineSpan,
+	DocumentPosition,
 	HarmonySymbol,
 	LineEnd,
 	Pictogram,
@@ -76,6 +77,9 @@ import type { EnclosureShape } from './text-enclosure';
 export class DirectionPlacer {
 	private readonly labelFont: string;
 	private readonly documentFonts: boolean;
+	// How a mark's document position is followed; undefined ignores it (see
+	// DirectionPlacerOptions.documentPositions).
+	private readonly documentPositions: 'follow' | 'strict' | undefined;
 	private readonly notationFont: string;
 	private readonly notationColor: string;
 	private readonly textColor: string;
@@ -109,6 +113,7 @@ export class DirectionPlacer {
 	) {
 		this.labelFont = opts.labelFont;
 		this.documentFonts = opts.documentFonts ?? false;
+		this.documentPositions = opts.documentPositions;
 		this.notationFont = opts.notationFont;
 		this.notationColor = opts.notationColor;
 		this.textColor = opts.textColor;
@@ -171,11 +176,12 @@ export class DirectionPlacer {
 			// The document's own halign or justify overrides either.
 			// Upright unless the document says italic: MusicXML's default font-style is normal,
 			// and exporters mark the italic expressions ("dolce", "cresc.") as such.
+			const placement = this.sideOf(w.placement, w.position);
 			const placed = this.drawWords(
 				w.stave,
 				w.text,
 				this.wordsAnchor(w),
-				w.placement,
+				placement,
 				w.glyph
 					? {
 							font: this.notationFont,
@@ -184,6 +190,7 @@ export class DirectionPlacer {
 							color: this.notationColor,
 							align: w.format?.align ?? this.wordsAlign(w),
 							clearsHairpins: true,
+							position: w.position,
 						}
 					: {
 							font: this.faceOf(w.format),
@@ -192,12 +199,13 @@ export class DirectionPlacer {
 							bold: w.format?.bold ?? false,
 							align: w.format?.align ?? this.wordsAlign(w),
 							clearsHairpins: true,
+							position: w.position,
 							...this.decorationOf(w.format),
 						},
 			);
 			// A below-stave directive grows the crop downward instead (drawWords already
 			// reported the drop); only above-stave text lifts the measure box's top.
-			if (w.placement === 'below') {
+			if (placement === 'below') {
 				const placedOnStave = this.belowWords.get(w.stave);
 				if (placedOnStave) {
 					placedOnStave.push(placed);
@@ -236,11 +244,12 @@ export class DirectionPlacer {
 			}
 		}
 		for (const d of column.dynamics) {
+			const placement = this.sideOf(d.placement, d.position);
 			const placed = this.drawWords(
 				d.stave,
 				d.glyph ? this.dynamics.spell(d.text) : d.text,
 				d.anchor,
-				d.placement,
+				placement,
 				d.glyph
 					? {
 							font: this.notationFont,
@@ -248,6 +257,7 @@ export class DirectionPlacer {
 							italic: false,
 							color: this.notationColor,
 							align: 'center',
+							position: d.position,
 							...this.decorationOf(d.format),
 						}
 					: {
@@ -256,10 +266,11 @@ export class DirectionPlacer {
 							italic: d.format?.italic ?? true,
 							bold: d.format?.bold ?? false,
 							align: 'center',
+							position: d.position,
 							...this.decorationOf(d.format),
 						},
 			);
-			if (d.placement !== 'below') {
+			if (placement !== 'below') {
 				this.reporter.growPageTop(placed.y);
 				this.spill.growDecorationTop(column.systemIndex, placed.y);
 			}
@@ -267,14 +278,16 @@ export class DirectionPlacer {
 		// Harp pedal diagrams: glyphs in the notation font, centered on their note, through
 		// the same clearance as a dynamic.
 		for (const h of column.harpPedals) {
-			const placed = this.drawWords(h.stave, h.glyphs, h.anchor, h.placement, {
+			const placement = this.sideOf(h.placement, h.position);
+			const placed = this.drawWords(h.stave, h.glyphs, h.anchor, placement, {
 				font: this.notationFont,
 				size: DYNAMICS_FONT_SIZE,
 				italic: false,
 				color: this.notationColor,
 				align: 'center',
+				position: h.position,
 			});
-			if (h.placement !== 'below') {
+			if (placement !== 'below') {
 				this.reporter.growPageTop(placed.y);
 				this.spill.growDecorationTop(column.systemIndex, placed.y);
 			}
@@ -290,14 +303,16 @@ export class DirectionPlacer {
 		// through the same below-stave path as a dynamic, so the collision resolver drops each
 		// one clear of the row already placed above it and the stack builds downward on its
 		// own, with no per-row offset arithmetic. Upright rather than italic: the numerals are read
-		// as figures, not as an expression marking.
+		// as figures, not as an expression marking. The document's position places the top
+		// figure; the rows under it stack as ever.
 		for (const f of column.figuredBasses) {
-			for (const figure of f.figures) {
+			for (const [i, figure] of f.figures.entries()) {
 				this.drawWords(f.stave, figure, f.anchor, 'below', {
 					font: this.labelFont,
 					size: WORDS_FONT_SIZE,
 					italic: false,
 					align: 'center',
+					position: i === 0 ? f.position : null,
 				});
 			}
 		}
@@ -455,10 +470,16 @@ export class DirectionPlacer {
 					title: h.text || null,
 				});
 			} else {
-				const top = this.drawHarmony(h.staveNote, h.symbol, h.placement);
+				const placement = this.sideOf(h.placement, h.position);
+				const top = this.drawHarmony(
+					h.staveNote,
+					h.symbol,
+					placement,
+					h.position,
+				);
 				// A below-stave analysis grows the crop downward instead (drawHarmony
 				// reports the drop), like below words.
-				if (h.placement !== 'below') {
+				if (placement !== 'below') {
 					this.reporter.growPageTop(top);
 					this.spill.growDecorationTop(column.systemIndex, top);
 				}
@@ -495,7 +516,7 @@ export class DirectionPlacer {
 		// player scanning for "the sign" looks. Drawn before the rehearsal marks so a mark in
 		// the same measure stacks above rather than over them.
 		if (topStave && measure) {
-			for (const kind of this.reader.navigationsOf(measure)) {
+			for (const { kind, position } of this.reader.navigationsOf(measure)) {
 				const placed = this.drawWords(
 					topStave,
 					NAVIGATION_GLYPHS[kind],
@@ -507,6 +528,7 @@ export class DirectionPlacer {
 						italic: false,
 						color: this.notationColor,
 						sideGap: NAVIGATION_TEXT_GAP,
+						position,
 					},
 				);
 				this.reporter.growPageTop(placed.y);
@@ -537,8 +559,10 @@ export class DirectionPlacer {
 			this.drawBarlineFermata(f, column.systemIndex);
 		}
 		if (topStave && measure) {
-			for (const { text, format } of this.reader.rehearsalsOf(measure)) {
-				const top = this.drawRehearsal(topStave, text, format);
+			for (const { text, format, position } of this.reader.rehearsalsOf(
+				measure,
+			)) {
+				const top = this.drawRehearsal(topStave, text, format, position);
 				this.reporter.growPageTop(top);
 				this.spill.growDecorationTop(column.systemIndex, top);
 			}
@@ -588,6 +612,7 @@ export class DirectionPlacer {
 		stave: Stave,
 		text: string,
 		format?: TextFormat,
+		position?: DocumentPosition | null,
 	): number {
 		const size = REHEARSAL_FONT_SIZE * (format?.scale ?? 1);
 		this.context.save();
@@ -609,15 +634,24 @@ export class DirectionPlacer {
 			enclosure: enclosure === 'none' ? undefined : enclosure,
 			padding: REHEARSAL_PADDING,
 		});
-		const x = stave.getX() - alignOffsetOf(format?.align, formatted.w);
-		const bottom = stave.getYForLine(0) - REHEARSAL_Y_OFFSET;
+		// The document's default-y is the text's baseline; the box reaches its padding under it.
+		const doc = this.followed(position);
+		const x =
+			stave.getX() - alignOffsetOf(format?.align, formatted.w) + (doc?.dx ?? 0);
+		const bottom =
+			doc?.y === null || doc?.y === undefined
+				? stave.getYForLine(0) - REHEARSAL_Y_OFFSET - (doc?.dy ?? 0)
+				: this.baselineOf(stave, 0, doc) +
+					(enclosure === 'none' ? 0 : REHEARSAL_PADDING);
 		const natural = new Rect(x, bottom - formatted.h, formatted.w, formatted.h);
 		const band = this.reporter.rowOf(stave);
 		const placed = this.collisionResolver.nudgeInsideX(
-			this.collisionResolver.liftClear(natural, REHEARSAL_NOTE_CLEARANCE, {
-				kinds: TEXT_CLEAR_KINDS,
-				band,
-			}),
+			this.pins(doc)
+				? natural
+				: this.collisionResolver.liftClear(natural, REHEARSAL_NOTE_CLEARANCE, {
+						kinds: TEXT_CLEAR_KINDS,
+						band,
+					}),
 			this.scratchViewport,
 			PAGE_MARGIN_X,
 		);
@@ -699,7 +733,9 @@ export class DirectionPlacer {
 	 * notes are formatted so the anchor x and the note extents are real.
 	 */
 	private drawTempo(stave: Stave, task: TempoTask): number {
-		const baseY = stave.getYForTopText(1);
+		// The mark stands on vexflow's top text line, or on the document's baseline.
+		const doc = this.followed(task.position);
+		const baseY = this.baselineOf(stave, stave.getYForTopText(1), doc);
 		// vexflow's StaveTempo.draw reads stave.getModifierXShift(position), which uses the
 		// position enum as an index into the stave's modifier array. ABOVE (the default, 3)
 		// indexes modifiers[3], which is undefined (and throws) on a system-start stave that
@@ -712,7 +748,8 @@ export class DirectionPlacer {
 		// so shrink the whole mark with a context scale. Scaling multiplies every coordinate by
 		// TEMPO_SCALE, which would also drag the mark up and left; pre-divide the x/y inputs so it
 		// lands back on its original anchor. Internally StaveTempo draws at (this.x + shiftX + 10,
-		// baseY + this.yShift); solving s·(passed) = target gives the compensated inputs below.
+		// the stave's top-text y + this.yShift); solving s·(passed) = target gives the
+		// compensated inputs below.
 		const anchorX = stave.getX() + shiftX + 10;
 		// `justify` aligns the mark within the measure: left sits it on the anchor, right ends
 		// it at the stave's right edge, center splits the space between. Never left of the anchor.
@@ -722,14 +759,16 @@ export class DirectionPlacer {
 			10 -
 			anchorX -
 			this.tempoLayout(task, anchorX, baseY).rect.w;
-		const targetX = anchorX + Math.max(0, alignOffsetOf(task.justify, free));
+		const targetX =
+			anchorX + Math.max(0, alignOffsetOf(task.justify, free)) + (doc?.dx ?? 0);
 		const band = this.reporter.rowOf(stave);
 		const { rect: natural, markWidth } = this.tempoLayout(task, targetX, baseY);
-		const placed = this.collisionResolver.liftClear(
-			natural,
-			TEMPO_NOTE_CLEARANCE,
-			{ kinds: TEXT_CLEAR_KINDS, band },
-		);
+		const placed = this.pins(doc)
+			? natural
+			: this.collisionResolver.liftClear(natural, TEMPO_NOTE_CLEARANCE, {
+					kinds: TEXT_CLEAR_KINDS,
+					band,
+				});
 		// liftClear only translates, so the box's rise is the mark's y-shift.
 		const shiftY = placed.y - natural.y;
 		this.reporter.recordAnnotationSpill(stave, placed);
@@ -751,7 +790,7 @@ export class DirectionPlacer {
 					parenthesis: tempo.parenthesis,
 				},
 				cursor - shiftX - 10,
-				(baseY + shiftY) / TEMPO_SCALE - baseY,
+				(baseY + shiftY) / TEMPO_SCALE - stave.getYForTopText(1),
 			)
 				.setStave(stave)
 				.setPosition(position)
@@ -861,33 +900,34 @@ export class DirectionPlacer {
 		staveNote: StaveNote | TabNote,
 		symbol: HarmonySymbol,
 		placement: Placement,
+		position?: DocumentPosition | null,
 	): number {
 		const stave = staveNote.getStave();
 		if (!stave) {
 			return Infinity;
 		}
 		const below = placement === 'below';
+		// The document's position, when followed: its default-y is the symbol's baseline.
+		const doc = this.followed(position);
+		const x = staveNote.getAbsoluteX() + (doc?.dx ?? 0);
 		this.context.save();
 		this.context.setFillStyle(this.textColor);
-		const { width, height, depth } = this.harmonyLayout(
-			symbol,
-			staveNote.getAbsoluteX(),
-			0,
-			false,
-		);
+		const { width, height, depth } = this.harmonyLayout(symbol, x, 0, false);
 		const band = this.reporter.rowOf(stave);
 		let placed: Rect;
 		if (below) {
-			const natural = new Rect(
-				staveNote.getAbsoluteX(),
-				stave.getBottomLineY() + WORDS_Y_OFFSET,
-				width,
-				height + depth,
+			const baseline = this.baselineOf(
+				stave,
+				stave.getBottomLineY() + WORDS_Y_OFFSET + height,
+				doc,
 			);
-			placed = this.collisionResolver.dropClear(natural, WORDS_NOTE_CLEARANCE, {
-				kinds: TEXT_CLEAR_KINDS,
-				band,
-			});
+			const natural = new Rect(x, baseline - height, width, height + depth);
+			placed = this.pins(doc)
+				? natural
+				: this.collisionResolver.dropClear(natural, WORDS_NOTE_CLEARANCE, {
+						kinds: TEXT_CLEAR_KINDS,
+						band,
+					});
 			this.reporter.recordAnnotationDrop(stave, placed);
 			this.harmonyLayout(symbol, placed.x, placed.y + height, true);
 		} else {
@@ -896,18 +936,23 @@ export class DirectionPlacer {
 			// nudges the symbol clear of it, leaving a little breathing room. The drawn
 			// baseline stays HARMONY_PADDING above the box bottom, so with nothing in the way
 			// the symbol keeps its default position.
-			const baseY = stave.getYForLine(0) - HARMONY_Y_OFFSET;
+			const baseY = this.baselineOf(
+				stave,
+				stave.getYForLine(0) - HARMONY_Y_OFFSET,
+				doc,
+			);
 			const natural = new Rect(
-				staveNote.getAbsoluteX(),
+				x,
 				baseY - height,
 				width,
 				height + depth + HARMONY_PADDING,
 			);
-			placed = this.collisionResolver.liftClear(
-				natural,
-				HARMONY_NOTE_CLEARANCE,
-				{ kinds: TEXT_CLEAR_KINDS, band },
-			);
+			placed = this.pins(doc)
+				? natural
+				: this.collisionResolver.liftClear(natural, HARMONY_NOTE_CLEARANCE, {
+						kinds: TEXT_CLEAR_KINDS,
+						band,
+					});
 			this.reporter.recordAnnotationSpill(stave, placed);
 			this.harmonyLayout(
 				symbol,
@@ -1040,9 +1085,14 @@ export class DirectionPlacer {
 			padding: ENCLOSURE_PADDING,
 		});
 		const { w, h } = formatted;
+		// vexml's own box stands on (or hangs from) baseY; the document's default-y, when
+		// followed, is the baseline instead, and its relative offsets move whichever applies.
+		const doc = this.followed(style.position);
+		const top = below ? baseY : baseY - h;
+		const baseline = this.baselineOf(stave, style.hangs ? top : top + h, doc);
 		const natural = new Rect(
-			anchorX - alignOffsetOf(style.align, w),
-			below ? baseY : baseY - h,
+			anchorX - alignOffsetOf(style.align, w) + (doc?.dx ?? 0),
+			style.hangs ? baseline : baseline - h,
 			w,
 			h,
 		);
@@ -1054,11 +1104,49 @@ export class DirectionPlacer {
 				below,
 				kinds: style.clearsHairpins ? WORDS_CLEAR_KINDS : TEXT_CLEAR_KINDS,
 				sideGap: style.sideGap,
+				pinned: this.pins(doc),
 			},
 		);
 		formatted.draw(placed);
 		this.context.restore();
 		return placed;
+	}
+
+	/* A mark's document position, under a layout that follows it; null otherwise. */
+	private followed(
+		position: DocumentPosition | null | undefined,
+	): DocumentPosition | null {
+		return this.documentPositions ? (position ?? null) : null;
+	}
+
+	/* Whether a mark at `position` stays put: a 'strict' layout keeps the document's
+	 * positions whatever they print through. A mark the document leaves unplaced resolves
+	 * as usual. */
+	private pins(position: DocumentPosition | null): boolean {
+		return position !== null && this.documentPositions === 'strict';
+	}
+
+	/* The baseline a mark draws on: the document's default-y under the staff's top line when
+	 * followed, else vexml's own `natural`, either moved by the document's relative-y. */
+	private baselineOf(
+		stave: Stave,
+		natural: number,
+		doc: DocumentPosition | null,
+	): number {
+		const base =
+			doc?.y === null || doc?.y === undefined
+				? natural
+				: stave.getYForLine(0) - doc.y;
+		return base - (doc?.dy ?? 0);
+	}
+
+	/* A mark's side: the one its default-y implies when its direction names no placement,
+	 * under a layout that follows the document, else its `placement`. */
+	private sideOf(
+		placement: Placement,
+		position: DocumentPosition | null | undefined,
+	): Placement {
+		return this.followed(position)?.side ?? placement;
 	}
 
 	/*
@@ -1125,27 +1213,38 @@ export class DirectionPlacer {
 	 * drawWords that does not care what the box holds: lifted (or, below, dropped) clear of
 	 * `kinds` in the stave's band, kept inside the page, reported to the crop and registered
 	 * as an annotation. `noteAnchored` bounds it on the left by the stave's note area (see
-	 * below). Returns where to draw it.
+	 * below). A `pinned` box (one the document places under a 'strict' layout) skips the
+	 * clearance and keeps the rest: it still stays on the page, counts for the crop and the
+	 * stave gaps, and stands in the way of what vexml places after it. Returns where to draw
+	 * it.
 	 */
 	private placeBeside(
 		stave: Stave,
 		natural: Rect,
 		noteAnchored: boolean,
-		opts: { below: boolean; kinds: CollisionKind[]; sideGap?: number },
+		opts: {
+			below: boolean;
+			kinds: CollisionKind[];
+			sideGap?: number;
+			pinned?: boolean;
+		},
 	): Rect {
 		const { below, kinds } = opts;
 		const band = this.reporter.rowOf(stave);
-		const cleared = below
-			? this.collisionResolver.dropClear(natural, WORDS_NOTE_CLEARANCE, {
-					kinds,
-					band,
-					xMargin: opts.sideGap,
-				})
-			: this.collisionResolver.liftClear(natural, WORDS_NOTE_CLEARANCE, {
-					kinds,
-					band,
-					xMargin: opts.sideGap,
-				});
+		let cleared = natural;
+		if (!opts.pinned) {
+			cleared = below
+				? this.collisionResolver.dropClear(natural, WORDS_NOTE_CLEARANCE, {
+						kinds,
+						band,
+						xMargin: opts.sideGap,
+					})
+				: this.collisionResolver.liftClear(natural, WORDS_NOTE_CLEARANCE, {
+						kinds,
+						band,
+						xMargin: opts.sideGap,
+					});
+		}
 		// The stave's opening modifiers own everything left of the note start x: clef, key,
 		// time, and a begin-repeat's bars, which on a multi-stave system a connector carries
 		// straight up through the band this text sits in (no lift can clear a line that spans
@@ -1325,6 +1424,9 @@ type SideTextStyle = {
 	/** Whether the ink hangs down from the baseline rather than standing on it, as a
 	 * below-stave SMuFL glyph does. Absent means it stands on it. */
 	hangs?: boolean;
+	/** Where the document puts the string (see ScoreReader.positionOf), followed under
+	 * DirectionPlacerOptions.documentPositions. Absent or null means it sets none. */
+	position?: DocumentPosition | null;
 };
 
 /**
@@ -1337,6 +1439,9 @@ export type TempoTask = {
 	modulations: TempoModulation[];
 	/** Which part of the mark sits on its anchor; the first mark's `justify`. */
 	justify: 'left' | 'center' | 'right' | null;
+	/** The first mark's document position (see ScoreReader.positionOf). Absent or null
+	 * means it sets none. */
+	position?: DocumentPosition | null;
 };
 
 /** A queued chord symbol (or fret diagram) and what to print there. */
@@ -1350,6 +1455,9 @@ export type HarmonyTask = {
 	// The side a plain-text symbol prints on; a chord diagram always stands above.
 	placement: Placement;
 	source: Harmony;
+	/** The <harmony>'s document position (see ScoreReader.positionOf), followed for the
+	 * plain-text symbol. Absent or null means it sets none. */
+	position?: DocumentPosition | null;
 };
 
 /** A queued words direction, drawn on its stave's `placement` side at the laid-out x of
@@ -1372,6 +1480,9 @@ export type WordsTask = {
 	directive?: boolean;
 	/** The <words> element's formatting. Absent means the document asks for none. */
 	format?: TextFormat;
+	/** The <words> element's document position (see ScoreReader.positionOf). Absent or null
+	 * means it sets none. */
+	position?: DocumentPosition | null;
 };
 
 /** A queued `<barline><fermata>`: the part stave it sits over (the top one) or under (the
@@ -1393,6 +1504,9 @@ export type DynamicsTask = {
 	placement: Placement;
 	/** The <dynamics> element's formatting. Absent means the document asks for none. */
 	format?: TextFormat;
+	/** The <dynamics> element's document position (see ScoreReader.positionOf). Absent or
+	 * null means it sets none. */
+	position?: DocumentPosition | null;
 };
 
 /** A queued symbol-style direction: the SMuFL string it engraves, centered on its note. */
@@ -1409,6 +1523,9 @@ export type HarpPedalTask = {
 	glyphs: string;
 	anchor: StaveNote | TabNote | undefined;
 	placement: Placement;
+	/** The <harp-pedals> element's document position (see ScoreReader.positionOf). Absent
+	 * or null means it sets none. */
+	position?: DocumentPosition | null;
 };
 
 /** A queued percussion pictogram, accordion registration or scordatura, drawn on its
@@ -1426,6 +1543,9 @@ export type FiguredBassTask = {
 	stave: Stave;
 	figures: string[];
 	anchor: StaveNote | TabNote | undefined;
+	/** The stack's document position (see ScoreReader.positionOf), which its top figure
+	 * takes; the rest stack under it. Absent or null means it sets none. */
+	position?: DocumentPosition | null;
 };
 
 /** A <bracket>/<dashes> span with its endpoint notes as drawn; undefined when an endpoint
@@ -1493,6 +1613,11 @@ export interface DirectionPlacerOptions {
 	/** Type text in the face its document names, over labelFont (Config.documentFonts).
 	 * Absent means labelFont alone. */
 	documentFonts?: boolean;
+	/** Whether a mark's own default-y, relative-x and relative-y place it
+	 * (Config.layout.documentLayout): 'follow' takes the document's position as the mark's
+	 * natural one and still clears it of what is placed, 'strict' pins it there. Absent
+	 * ignores the document's positions. */
+	documentPositions?: 'follow' | 'strict';
 	/** The SMuFL face for markings that engrave as music (dynamics, segno/coda,
 	 * pictograms). */
 	notationFont: string;

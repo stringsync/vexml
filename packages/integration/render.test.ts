@@ -3640,7 +3640,8 @@ describe('render', () => {
 
 	// documentLayout 'strict' on a score whose document spaces its grand staff tighter than
 	// vexml's engraving needs: the piano's staves keep the document's distance and M3-M4's left
-	// hand runs into the right hand's lines, where 'follow' would open the gap.
+	// hand runs into the right hand's lines, where 'follow' would open the gap. Its "Allegretto"
+	// and dynamics stand on their own default-y too (see document_positions.png).
 	it.concurrent('renders document_layout_strict.png', async () => {
 		expect(
 			await testing.render('score_mozart_das_veilchen.musicxml', {
@@ -3716,6 +3717,30 @@ describe('render', () => {
 				layout: { type: 'standard', documentLayout: 'follow' },
 			}),
 		).toMatchScreenshot('defaults_appearance_glyphs.png');
+	});
+
+	// documentLayout 'follow' on marks with their own positions: M1's rehearsal mark, "Andante"
+	// and f stand on their default-y (tenths from the top line, read as px); M2's "dolce" takes
+	// its side (below) from its default-y, its p moves left and down by its relative-x/-y; M3's
+	// metronome mark and chord symbol stand on theirs, and "cresc.", placed where the
+	// ledger-line notes stand, lifts clear of them; M4's segno and the figured bass's top figure
+	// stand on theirs, the 4 stacking under the 6.
+	it.concurrent('renders document_positions.png', async () => {
+		expect(
+			await testing.render('document_positions.musicxml', {
+				layout: { type: 'standard', documentLayout: 'follow' },
+			}),
+		).toMatchScreenshot('document_positions.png');
+	});
+
+	// The same under 'strict': every placed mark stays exactly on its default-y, so M3's
+	// "cresc." prints through the ledger-line notes rather than lifting.
+	it.concurrent('renders document_positions_strict.png', async () => {
+		expect(
+			await testing.render('document_positions.musicxml', {
+				layout: { type: 'standard', documentLayout: 'strict' },
+			}),
+		).toMatchScreenshot('document_positions_strict.png');
 	});
 
 	// The same sixteen C5 whole-note measures, but with panoramic layout: all sixteen sit

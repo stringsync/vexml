@@ -22,6 +22,7 @@ import {
 	type DirectionColumn,
 	type DirectionLineTask,
 	DirectionPlacer,
+	type DirectionPlacerOptions,
 } from './direction-placer';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { GeometryCollector } from './geometry-collector';
@@ -105,7 +106,10 @@ describe('DirectionPlacer', () => {
 
 	// A real reader with the case's canned answers layered over it. The placer calls reader
 	// methods a given case says nothing about, so a bare object literal leaves holes.
-	const makePlacer = (overrides: Partial<ScoreReader> = {}) => {
+	const makePlacer = (
+		overrides: Partial<ScoreReader> = {},
+		options: Pick<DirectionPlacerOptions, 'documentPositions'> = {},
+	) => {
 		const reader = Object.assign(
 			new ScoreReader(new DynamicGlyphs()),
 			overrides,
@@ -178,6 +182,7 @@ describe('DirectionPlacer', () => {
 				notationColor: '#000001',
 				textColor: '#000002',
 				scratchViewport: new Rect(0, 0, 2000, 2000),
+				...options,
 			},
 		);
 		return {
@@ -385,6 +390,72 @@ describe('DirectionPlacer', () => {
 		expect(pageTops).toEqual([60 - WORDS_NOTE_CLEARANCE - 13]);
 	});
 
+	// A words direction the document puts 30 tenths over the top line: its baseline.
+	const placedWords = (
+		position: { y: number | null; dx: number; dy: number },
+		side: 'above' | 'below' | null = null,
+	) =>
+		column({
+			words: [
+				{
+					stave: stave(),
+					text: 'rit.',
+					anchor: note(200, stave()),
+					placement: 'above',
+					position: { ...position, side },
+				},
+			],
+		});
+
+	it('ignores a document position unless the layout follows the document', () => {
+		const { placer, texts } = makePlacer();
+		placer.placeColumn(placedWords({ y: 30, dx: 0, dy: 0 }));
+		expect(texts[0]?.y).toBe(100 - WORDS_Y_OFFSET);
+	});
+
+	it("stands words on the document's default-y when following it", () => {
+		const { placer, texts } = makePlacer({}, { documentPositions: 'follow' });
+		placer.placeColumn(placedWords({ y: 30, dx: 0, dy: 0 }));
+		expect(texts[0]?.y).toBe(70);
+		expect(texts[0]?.x).toBe(200);
+	});
+
+	it('lifts a followed position clear of a note, but keeps a strict one', () => {
+		const follow = makePlacer({}, { documentPositions: 'follow' });
+		follow.resolver.add({ rect: new Rect(190, 60, 30, 30), kind: 'note' });
+		follow.placer.placeColumn(placedWords({ y: 30, dx: 0, dy: 0 }));
+		expect(follow.texts[0]?.y).toBe(60 - WORDS_NOTE_CLEARANCE);
+
+		const strict = makePlacer({}, { documentPositions: 'strict' });
+		strict.resolver.add({ rect: new Rect(190, 60, 30, 30), kind: 'note' });
+		strict.placer.placeColumn(placedWords({ y: 30, dx: 0, dy: 0 }));
+		expect(strict.texts[0]?.y).toBe(70);
+		// Pinned, it still stands in the way of what vexml places after it.
+		expect(
+			strict.resolver
+				.query(new Rect(200, 65, 1, 1))
+				.filter((c) => c.other.kind === 'annotation').length,
+		).toBe(1);
+	});
+
+	it("moves vexml's own position by the relative offsets", () => {
+		const { placer, texts } = makePlacer({}, { documentPositions: 'follow' });
+		placer.placeColumn(placedWords({ y: null, dx: 5, dy: -8 }));
+		expect(texts[0]?.y).toBe(100 - WORDS_Y_OFFSET + 8);
+		expect(texts[0]?.x).toBe(205);
+	});
+
+	it('takes the side a default-y implies for a direction naming none', () => {
+		const { placer, texts, drops } = makePlacer(
+			{},
+			{ documentPositions: 'follow' },
+		);
+		placer.placeColumn(placedWords({ y: -70, dx: 0, dy: 0 }, 'below'));
+		// Standing text under the staff: its baseline is the box bottom, on the default-y.
+		expect(texts[0]?.y).toBe(170);
+		expect(drops.length).toBe(1);
+	});
+
 	it('engraves a SMuFL dynamic in the notation ink, centered on its note', () => {
 		const { placer, texts } = makePlacer();
 		placer.placeColumn(
@@ -463,7 +534,7 @@ describe('DirectionPlacer', () => {
 	it('boxes a rehearsal mark at the measure left edge over the top stave', () => {
 		const { placer, texts, spills, pageTops } = makePlacer({
 			navigationsOf: () => [],
-			rehearsalsOf: () => [{ text: 'A', format: PLAIN }],
+			rehearsalsOf: () => [{ text: 'A', format: PLAIN, position: null }],
 		});
 		placer.placeColumn(column({ topStave: stave(), measure: {} as Measure }));
 		expect(texts).toEqual([

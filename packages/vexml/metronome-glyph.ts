@@ -1,4 +1,5 @@
 import { Element, type RenderContext } from 'vexflow/core';
+import type { DocumentPosition } from './score-reader';
 
 /*
  * The <metronome-note> form of a metronome mark: a note GROUP either side of a relation, e.g.
@@ -396,6 +397,8 @@ export type TempoModulation = {
 	arrows: boolean;
 	/** `justify`: which part of the mark sits at its anchor. */
 	justify: 'left' | 'center' | 'right' | null;
+	/** The `<metronome>`'s document position (see ScoreReader.positionOf). */
+	position?: DocumentPosition | null;
 };
 
 /**
