@@ -1011,13 +1011,14 @@ describe('render', () => {
 
 	// Treble stave, 4/4, four B4 quarters a measure, rendered with documentFonts: text takes
 	// the face its document names over vexml's Source Sans 3. The word-font and lyric-font
-	// are serif.
+	// are serif. Pin the mono face to the image's WenQuanYi Zen Hei Mono: Chromium
+	// resolves the generic monospace to different installed faces as pooled tabs warm up.
 	// - M1: "serif" above the first note: a words with no face of its own takes the word-font.
-	// - M2: "mono", font-family="monospace": its own face beats the word-font.
+	// - M2: "mono", font-family="WenQuanYi Zen Hei Mono": its face beats the word-font.
 	// - M3: "fallback", font-family="Not A Real Face,music": no such face and a MusicXML
 	//   generic, so it falls back to Source Sans 3, matching vexml's usual text.
-	// - M4: rehearsal mark "A", font-family="monospace": bold monospace in its box.
-	// - M5: an <other-dynamics> "sub. p" under the first note, font-family="monospace":
+	// - M4: rehearsal mark "A" in the same mono face: bold monospace in its box.
+	// - M5: an <other-dynamics> "sub. p" under the first note, in the same mono face:
 	//   italic monospace.
 	// - M6: two lyric verses: "la" in the lyric-font's serif, "do" under it in monospace from
 	//   its own <text font-family>.

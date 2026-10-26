@@ -63,7 +63,7 @@
     <measure number="2">
       <direction placement="above">
         <direction-type>
-          <words font-family="monospace">mono</words>
+          <words font-family="WenQuanYi Zen Hei Mono">mono</words>
         </direction-type>
       </direction>
       <note>
@@ -141,7 +141,7 @@
     <measure number="4">
       <direction placement="above">
         <direction-type>
-          <rehearsal font-family="monospace">A</rehearsal>
+          <rehearsal font-family="WenQuanYi Zen Hei Mono">A</rehearsal>
         </direction-type>
       </direction>
       <note>
@@ -180,7 +180,7 @@
     <measure number="5">
       <direction placement="below">
         <direction-type>
-          <dynamics font-family="monospace"><other-dynamics>sub. p</other-dynamics></dynamics>
+          <dynamics font-family="WenQuanYi Zen Hei Mono"><other-dynamics>sub. p</other-dynamics></dynamics>
         </direction-type>
       </direction>
       <note>
@@ -230,7 +230,7 @@
         </lyric>
         <lyric number="2">
           <syllabic>single</syllabic>
-          <text font-family="monospace">do</text>
+          <text font-family="WenQuanYi Zen Hei Mono">do</text>
         </lyric>
       </note>
       <note>
@@ -246,7 +246,7 @@
         </lyric>
         <lyric number="2">
           <syllabic>single</syllabic>
-          <text font-family="monospace">do</text>
+          <text font-family="WenQuanYi Zen Hei Mono">do</text>
         </lyric>
       </note>
       <note>
@@ -262,7 +262,7 @@
         </lyric>
         <lyric number="2">
           <syllabic>single</syllabic>
-          <text font-family="monospace">do</text>
+          <text font-family="WenQuanYi Zen Hei Mono">do</text>
         </lyric>
       </note>
       <note>
@@ -278,7 +278,7 @@
         </lyric>
         <lyric number="2">
           <syllabic>single</syllabic>
-          <text font-family="monospace">do</text>
+          <text font-family="WenQuanYi Zen Hei Mono">do</text>
         </lyric>
       </note>
     </measure>
