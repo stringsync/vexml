@@ -52,7 +52,34 @@ describe('DefaultScoreParser', () => {
 			new TypeError('render: input is not a string, Blob or MDocument'),
 		);
 	});
+	it('regroups a timewise score as partwise', async () => {
+		const mdoc = await parser.parse(TIMEWISE_XML);
+		expect(mdoc.root.tag).toBe('score-partwise');
+		expect(mdoc.score.parts.map((part) => part.measures.length)).toEqual([
+			2, 2,
+		]);
+		expect(
+			mdoc.score.parts[0]?.measures.map((m) => m.getAttribute('number')),
+		).toEqual(['1', '2']);
+		expect(mdoc.score.parts[1]?.measures[1]?.notes[0]?.pitch?.step).toBe('G');
+	});
 });
+
+const TIMEWISE_XML = `<?xml version="1.0"?>
+<score-timewise version="4.0">
+  <part-list>
+    <score-part id="P1"><part-name>A</part-name></score-part>
+    <score-part id="P2"><part-name>B</part-name></score-part>
+  </part-list>
+  <measure number="1">
+    <part id="P1"><note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration><type>whole</type></note></part>
+    <part id="P2"><note><pitch><step>E</step><octave>4</octave></pitch><duration>4</duration><type>whole</type></note></part>
+  </measure>
+  <measure number="2">
+    <part id="P1"><note><pitch><step>D</step><octave>4</octave></pitch><duration>4</duration><type>whole</type></note></part>
+    <part id="P2"><note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><type>whole</type></note></part>
+  </measure>
+</score-timewise>`;
 
 const XML = `<?xml version="1.0"?>
 <score-partwise version="4.0">

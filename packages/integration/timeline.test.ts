@@ -150,7 +150,7 @@ describe('readTimeline', () => {
 
 // Runs in the page, so it's self-contained: eval serializes it, and nothing outside it exists there.
 async function compare(context: VexmlContext, xml: string) {
-	const { readTimeline, render, container, MDOMParser } = context;
+	const { readTimeline, render, container } = context;
 	type Timeline = Awaited<ReturnType<typeof readTimeline>>;
 	// The Score has steps, not bars. Each bar must hold exactly the steps of its pass: contiguous
 	// bars from 0 to the duration, every step inside one bar of its own measure, and a bar's first
@@ -229,8 +229,9 @@ async function compare(context: VexmlContext, xml: string) {
 
 	const plain = await timed(context.score, await readTimeline(xml));
 
+	// The parser reads timewise roots too, which a bare MDOMParser document cannot answer for.
 	const measures =
-		new MDOMParser().parseFromString(xml).score.parts[0]?.measures.length ?? 0;
+		Math.max(-1, ...plain.bars.map((bar) => bar.measureIndex)) + 1;
 	const gaps = [
 		{ beforeMeasureIndex: 0, durationMs: 1500, label: 'Lead-in' },
 		{ beforeMeasureIndex: Math.floor(measures / 2), durationMs: 750 },

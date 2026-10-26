@@ -1076,6 +1076,14 @@ describe('render', () => {
 		).toMatchScreenshot('text_font_family.png');
 	});
 
+	// Two parts, two measures, written as <score-timewise> (part nested in measure): the parser
+	// regroups it as partwise, so it draws as a flute over a bass.
+	it.concurrent('renders score_timewise.png', async () => {
+		expect(await testing.render('score_timewise.musicxml')).toMatchScreenshot(
+			'score_timewise.png',
+		);
+	});
+
 	// Treble stave, common time: the full <dynamics> vocabulary, one marking per C4 quarter,
 	// drawn as SMuFL glyphs (the bold-italic p/m/f/r/s/z forms, not ordinary text) BELOW the
 	// staff, the engraving default these directions carry no explicit placement for. Every

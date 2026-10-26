@@ -437,7 +437,7 @@ are picked by hand.
 | `score-instrument` | ignored | sound only (instrument metadata) |
 | `score-part` | drawn | `structure_part_labels.musicxml`: part-list entry, part names as labels |
 | `score-partwise` | drawn | `note.musicxml`: document root |
-| `score-timewise` | missing | task #37; timewise root, needs converting to partwise before drawing; mdom raw only |
+| `score-timewise` | drawn | `score_timewise.musicxml`: parser regroups it as partwise |
 | `second` | drawn | `swing.musicxml`: swing ratio for playback timing |
 | `segno` | drawn | `navigation.musicxml` |
 | `semi-pitched` | ignored | sound only (child of play) |
