@@ -893,6 +893,8 @@ export class ScoreReader {
 					number: wedge.number,
 					crescendo: opener === 'crescendo',
 					placement: this.placementOf(direction, 'below'),
+					dash: lineDashOf(wedge),
+					niente: wedge.getAttribute('niente') === 'yes',
 				});
 			}
 		}
@@ -1011,7 +1013,7 @@ export class ScoreReader {
 									kind: 'bracket',
 									type: mark.bracketType,
 									lineEnd: mark.lineEnd,
-									dash: LINE_TYPE_DASH[mark.lineType ?? 'solid'] ?? null,
+									dash: lineDashOf(mark),
 								};
 					const key = `${spec.kind}:${mark.number}`;
 					if (spec.type === 'stop') {
@@ -2247,6 +2249,9 @@ export type WedgeMark = {
 	number: string;
 	crescendo: boolean;
 	placement: Placement;
+	dash: number[] | null;
+	/* The hairpin's point is a circle, not a vertex (<wedge niente="yes"> on its point end). */
+	niente: boolean;
 };
 
 /*
@@ -2290,6 +2295,27 @@ export const LINE_TYPE_DASH: Record<string, number[] | null> = {
 	dotted: [1, 3],
 	wavy: null,
 };
+
+/* The canvas dash array an element's `line-type`, `dash-length` and `space-length` ask for,
+ * or null for a solid line. The lengths are in tenths of a staff space, drawn at one pixel
+ * each (a staff space is ten). dash-length shapes only a dashed line; space-length the gap
+ * of a dashed or dotted one. */
+export function lineDashOf(element: {
+	getAttribute(name: string): string | null;
+}): number[] | null {
+	const lineType = element.getAttribute('line-type') ?? 'solid';
+	const base = LINE_TYPE_DASH[lineType] ?? null;
+	if (!base) {
+		return null;
+	}
+	const length = (name: string): number | null => {
+		const value = Number(element.getAttribute(name));
+		return value > 0 ? value : null;
+	};
+	const dash = lineType === 'dashed' ? length('dash-length') : null;
+	const space = length('space-length');
+	return [dash ?? base[0] ?? 5, space ?? base[1] ?? 5];
+}
 
 // MusicXML <root-alter>/<bass-alter> semitones -> the printed accidental sign, using the
 // real Unicode music symbols (♯ ♭ ♮). 0 prints an explicit natural: rare in a root, but

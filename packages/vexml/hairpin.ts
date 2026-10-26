@@ -1,6 +1,10 @@
 import type { RenderContext, Stave, StaveNote } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
-import { HAIRPIN_HEIGHT, HAIRPIN_STAVE_GAP } from './constants';
+import {
+	HAIRPIN_HEIGHT,
+	HAIRPIN_NIENTE_RADIUS,
+	HAIRPIN_STAVE_GAP,
+} from './constants';
 
 /*
  * A crescendo/diminuendo hairpin between two notes, drawn at a fixed gap from the staff on
@@ -17,6 +21,8 @@ export class Hairpin {
 		private readonly to: StaveNote,
 		private readonly crescendo: boolean,
 		private readonly placement: 'above' | 'below',
+		private readonly dash: number[] | null = null,
+		private readonly niente = false,
 	) {}
 	/*
 	 * Extra distance from the staff, set by the caller when the fixed gap would put the wedge
@@ -72,10 +78,28 @@ export class Hairpin {
 		const x1 = this.from.getAbsoluteX();
 		const x2 = this.to.getAbsoluteX();
 		const [pointX, mouthX] = this.crescendo ? [x1, x2] : [x2, x1];
+		// A niente point is a small circle the two arms run up to, not a shared vertex.
+		const radius = this.niente ? HAIRPIN_NIENTE_RADIUS : 0;
+		const run = Math.abs(mouthX - pointX);
+		const circleX = pointX + (mouthX > pointX ? radius : -radius);
+		const armY = (y: number) => mid + (y - mid) * (run ? radius / run : 0);
+		ctx.save();
+		if (this.dash) {
+			ctx.setLineDash(this.dash);
+		}
 		ctx.beginPath();
 		ctx.moveTo(mouthX, top);
-		ctx.lineTo(pointX, mid);
+		ctx.lineTo(circleX, armY(top));
+		if (radius) {
+			ctx.moveTo(circleX, armY(bottom));
+		}
 		ctx.lineTo(mouthX, bottom);
 		ctx.stroke();
+		ctx.restore();
+		if (radius) {
+			ctx.beginPath();
+			ctx.arc(circleX, mid, radius, 0, Math.PI * 2, false);
+			ctx.stroke();
+		}
 	}
 }

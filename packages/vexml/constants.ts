@@ -348,6 +348,9 @@ export const NAVIGATION_TEXT_GAP = 4;
 /** How tall a crescendo/diminuendo hairpin's open mouth is. */
 export const HAIRPIN_HEIGHT = 10;
 
+/** Radius of the circle at a niente hairpin's point. */
+export const HAIRPIN_NIENTE_RADIUS = 3;
+
 /** Gap between a hairpin's near edge and the staff line it sits off, matched to the air a
  * words directive keeps, so a wedge and a directive on the same side read as one band. */
 export const HAIRPIN_STAVE_GAP = 14;

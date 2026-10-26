@@ -1823,13 +1823,25 @@ describe('render', () => {
 	// - M3: "dotted", the same arc as a run of dots.
 	// - M4: "wavy", falls back to solid, so M4 is drawn identically to M1 rather than
 	//   the slur being dropped (see LINE_TYPE_DASH in packages/vexml/score-reader.ts).
-	// ponytail: the <slur> bezier/orientation attributes (bezier-x/y, orientation) are
-	// still ignored: vexml computes its own control points to clear the spanned notes,
+	// ponytail: the <slur> bezier attributes (bezier-x/y) are still ignored: vexml computes its own control points to clear the spanned notes,
 	// which an exporter's absolute offsets would fight rather than improve.
 	it.concurrent('renders slur_line_types.png', async () => {
 		expect(await testing.render('slur_line_types.musicxml')).toMatchScreenshot(
 			'slur_line_types.png',
 		);
+	});
+
+	// Treble stave, 4/4, ten measures of one spanner each:
+	// - M1-M3: a tie dashed, dotted, and dashed with dash-length 10 and space-length 2.
+	// - M4: <tied orientation="over"> on stem-down notes, bowing up against the stem.
+	// - M5: <slur orientation="under"> with no placement, bowing below.
+	// - M6-M7: a dashed glissando and a dotted slide.
+	// - M8: a dashed crescendo. M9: a crescendo from nothing (a circle at the point).
+	//   M10: a diminuendo to nothing (the circle on the closing point).
+	it.concurrent('renders spanner_line_types.png', async () => {
+		expect(
+			await testing.render('spanner_line_types.musicxml'),
+		).toMatchScreenshot('spanner_line_types.png');
 	});
 
 	// Treble stave, 4/4, two voices: slurs paired across a <backup>, which makes document

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+  <part id="P1">
+    <!-- M1-M3: tied half notes, line-type dashed / dotted / dashed with dash-length and
+         space-length. M4: tie orientation over and under on stem-up and stem-down notes.
+         M5: slur orientation. M6-M7: glissando and slide line-types. M8-M9: wedge
+         line-type, M10: niente crescendo and diminuendo. -->
+    <measure number="1">
+      <attributes><divisions>2</divisions><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start"/>
+        <type>half</type>
+        <notations><tied type="start" line-type="dashed"/></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop"/>
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start"/>
+        <type>half</type>
+        <notations><tied type="start" line-type="dotted"/></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop"/>
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+    </measure>
+    <measure number="3">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="start"/>
+        <type>half</type>
+        <notations><tied type="start" line-type="dashed" dash-length="10" space-length="2"/></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <tie type="stop"/>
+        <type>half</type>
+        <notations><tied type="stop" /></notations>
+      </note>
+    </measure>
+    <measure number="4">
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <stem>down</stem>
+        <notations><tied type="start" orientation="over"/></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <stem>down</stem>
+        <notations><tied type="stop"/></notations>
+      </note>
+    </measure>
+    <measure number="5">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="start" orientation="under"/></notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        
+      </note>
+      <note>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><slur number="1" type="stop" /></notations>
+      </note>
+    </measure>
+    <measure number="6">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><glissando number="1" type="start" line-type="dashed"/></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><glissando number="1" type="stop"/></notations>
+      </note>
+    </measure>
+    <measure number="7">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><slide number="1" type="start" line-type="dotted"/></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><slide number="1" type="stop"/></notations>
+      </note>
+    </measure>
+    <measure number="8">
+      <direction placement="below"><direction-type><wedge type="crescendo" number="1" line-type="dashed"/></direction-type></direction>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        
+      </note>
+      <direction placement="below"><direction-type><wedge type="stop" number="1" /></direction-type></direction>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        
+      </note>
+    </measure>
+    <measure number="9">
+      <direction placement="below"><direction-type><wedge type="crescendo" number="1" niente="yes"/></direction-type></direction>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        
+      </note>
+      <direction placement="below"><direction-type><wedge type="stop" number="1" /></direction-type></direction>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        
+      </note>
+    </measure>
+    <measure number="10">
+      <direction placement="below"><direction-type><wedge type="diminuendo" number="1" /></direction-type></direction>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        
+      </note>
+      <direction placement="below"><direction-type><wedge type="stop" number="1" niente="yes"/></direction-type></direction>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        
+      </note>
+    </measure>
+  </part>
+</score-partwise>

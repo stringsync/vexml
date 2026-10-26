@@ -17,12 +17,12 @@ by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
 Elements: 271 drawn, 69 ignored, 102 missing; vexml draws 271 of the 373 that show on the page (73%).
-Attributes: 68 drawn, 5 ignored, 45 missing.
+Attributes: 75 drawn, 5 ignored, 38 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
 | `*@color` | drawn | `note_color.musicxml`: note, notehead and stem colors; other elements' color ignored |
-| `*@dash-length` | missing | task #17; mdom raw only |
+| `*@dash-length` | drawn | `spanner_line_types.musicxml` M3: dashed ties, glissandos, slides, wedges; slurs and brackets too |
 | `*@default-x` | missing | task #20 (later task in that lane); mdom raw only |
 | `*@default-y` | missing | task #20 (later task in that lane); mdom raw only |
 | `*@enclosure` | drawn | `text_formatting.musicxml` M6-M13, M16-M18: every shape around words, rehearsal marks and dynamics; rehearsal still boxed by default |
@@ -32,13 +32,13 @@ Attributes: 68 drawn, 5 ignored, 45 missing.
 | `*@font-weight` | drawn | `text_formatting.musicxml` M3, M17: words, rehearsal marks and other-dynamics text |
 | `*@halign` | drawn | `text_formatting.musicxml` M15: words and rehearsal marks on their anchor; dynamics stay centered on their note |
 | `*@justify` | drawn | `text_formatting.musicxml` M14: words and rehearsal marks, as halign when that is absent |
-| `*@line-type` | drawn | `slur_line_types.musicxml`, `direction_lines.musicxml`: slurs and brackets; ties, wedges, slides task #17 |
+| `*@line-type` | drawn | `spanner_line_types.musicxml`, `slur_line_types.musicxml`, `direction_lines.musicxml`: slurs, ties, glissandos, slides, wedges, brackets; tab slides stay solid |
 | `*@placement` | drawn | `direction_lines.musicxml`, `note_color.musicxml`: directions, slurs, tuplets, technical; ornaments ignore it |
 | `*@print-object` | drawn | `invisible_notes.musicxml`: notes; `print_object.musicxml`: notations, ending, staff-details; accidental and direction elements have none in the schema; clef, key, time, lyric and part-name ignore it |
 | `*@relative-x` | missing | task #20 (later task in that lane); mdom raw only |
 | `*@relative-y` | missing | task #20 (later task in that lane); mdom raw only |
 | `*@rotation` | missing | task #49; rotated text not drawn; mdom raw only |
-| `*@space-length` | missing | task #17; mdom raw only |
+| `*@space-length` | drawn | `spanner_line_types.musicxml` M3: dashed and dotted lines, as dash-length |
 | `*@underline` | drawn | `text_formatting.musicxml` M5: words, rehearsal marks and dynamics |
 | `*@valign` | missing | task #50, after default-y (task #20); mdom raw only |
 | `accent` | drawn | `articulations.musicxml` |
@@ -200,7 +200,7 @@ Attributes: 68 drawn, 5 ignored, 45 missing.
 | `fz` | drawn | `dynamics.musicxml` |
 | `glass` | missing | task #16; mdom raw only |
 | `glissando` | drawn | `glissando.musicxml`: a straight line between the noteheads, across a barline, or a tick into a lone stop |
-| `glissando@line-type` | missing | task #17; mdom typed |
+| `glissando@line-type` | drawn | `spanner_line_types.musicxml` M6 |
 | `glyph` | missing | task #36; appearance SMuFL glyph overrides not applied; mdom raw only |
 | `golpe` | missing | task #29; golpe (flamenco tap) glyph on the note; mdom typed |
 | `grace` | drawn | `grace_notes.musicxml` |
@@ -457,10 +457,10 @@ Attributes: 68 drawn, 5 ignored, 45 missing.
 | `slash-dot` | drawn | `measure_style.musicxml`: M12's dotted beats |
 | `slash-type` | drawn | `measure_style.musicxml`: M12's quarter slashes |
 | `slide` | drawn | `slide_in.musicxml`, `tab_slide.musicxml` |
-| `slide@line-type` | missing | task #17; mdom typed |
+| `slide@line-type` | drawn | `spanner_line_types.musicxml` M7: notation slides; tab slides stay solid |
 | `slur` | drawn | `slur_default.musicxml` |
 | `slur@bezier-x` | missing | task #38; document curve control points ignored; mdom raw only |
-| `slur@orientation` | missing | task #17; mdom raw only |
+| `slur@orientation` | drawn | `spanner_line_types.musicxml` M5: over/under when placement is absent |
 | `smear` | missing | task #29; brass smear technical mark (wavy stroke above the note); mdom typed |
 | `snap-pizzicato` | drawn | `technical_marks.musicxml` |
 | `soft-accent` | drawn | `soft_accent.musicxml` |
@@ -525,7 +525,7 @@ Attributes: 68 drawn, 5 ignored, 45 missing.
 | `thumb-position` | drawn | `technical_marks.musicxml` |
 | `tie` | ignored | sound only (the drawn arc is tied) |
 | `tied` | drawn | `tie.musicxml` |
-| `tied@orientation` | missing | task #17; mdom raw only |
+| `tied@orientation` | drawn | `spanner_line_types.musicxml` M4 |
 | `time` | drawn | `time.musicxml` |
 | `time@separator` | missing | task #38; separator between numerals not drawn; mdom raw only |
 | `time@symbol` | drawn | `barline_styles.musicxml`: common; cut and single-number also honored; note, dotted-note task #18 |
@@ -571,7 +571,7 @@ Attributes: 68 drawn, 5 ignored, 45 missing.
 | `wait` | ignored | sound only (listening) |
 | `wavy-line` | drawn | `tab_vibrato.musicxml`: vibrato on tab and trill extension line |
 | `wedge` | drawn | `wedges.musicxml` |
-| `wedge@niente` | missing | task #17; mdom raw only |
+| `wedge@niente` | drawn | `spanner_line_types.musicxml` M9-M10: a circle at the point |
 | `wedge@spread` | missing | task #38; hairpin opening fixed; mdom raw only |
 | `wedge@type` | drawn | `wedges.musicxml`: crescendo and diminuendo hairpins |
 | `with-bar` | drawn | `tab_bend.musicxml` M6-M7: dip and scoop glyphs, else "w/bar" text |

@@ -18,6 +18,7 @@ export class NotationSlide {
 		private readonly fromIndex: number,
 		private readonly to: StaveNote,
 		private readonly toIndex: number,
+		private readonly dash: number[] | null = null,
 	) {}
 	setContext(context: RenderContext): this {
 		this.context = context;
@@ -56,9 +57,14 @@ export class NotationSlide {
 		const sign = rise < 0 ? -1 : 1;
 		const dy =
 			sign * Math.min(Math.max(Math.abs(rise), SLIDE_MIN_SLANT), width);
+		ctx.save();
+		if (this.dash) {
+			ctx.setLineDash(this.dash);
+		}
 		ctx.beginPath();
 		ctx.moveTo(x1, startY);
 		ctx.lineTo(x2, startY + dy);
 		ctx.stroke();
+		ctx.restore();
 	}
 }

@@ -8,7 +8,7 @@ import {
 	PedalMarking,
 	type Stave,
 	type StaveNote,
-	StaveTie,
+	type StaveTie,
 	Stem,
 	type StemmableNote,
 	type TabNote,
@@ -37,12 +37,13 @@ import {
 } from './constants';
 import { CrispCurve, CURVE_THICKNESS } from './crisp-curve';
 import { CrispTabSlide } from './crisp-tab-slide';
+import { DashedTie } from './dashed-tie';
 import { Hairpin } from './hairpin';
 import { HeadCurve } from './head-curve';
 import { Ink } from './ink';
 import { NotationSlide } from './notation-slide';
 import { NoteheadArticulation } from './notehead-articulation';
-import { LINE_TYPE_DASH, type PedalMark, type WedgeMark } from './score-reader';
+import { lineDashOf, type PedalMark, type WedgeMark } from './score-reader';
 import { SingleSlide } from './single-slide';
 import { TabCurve } from './tab-curve';
 import { TabSlideLine } from './tab-slide-line';
@@ -85,7 +86,7 @@ export class SpannerBuilder {
 	>();
 	// A note's starting ties with their partners, read once: like a slur's, a tie's partner
 	// re-pairs every tie in the part.
-	private readonly ties = new Map<Note, { partner: Note | null }[]>();
+	private readonly ties = new Map<Note, TieEnd[]>();
 	private readonly reaches = new Map<Note, number>();
 
 	/*
@@ -367,6 +368,12 @@ export class SpannerBuilder {
 					if (heads > 1) {
 						direction = from.index >= (heads - 1) / 2 ? -1 : 1;
 					}
+					// An explicit orientation overrides both defaults.
+					if (tie.orientation === 'over') {
+						direction = -1;
+					} else if (tie.orientation === 'under') {
+						direction = 1;
+					}
 
 					const specs = this.tieSpecs(
 						from.staveNote,
@@ -375,7 +382,7 @@ export class SpannerBuilder {
 						[to.index],
 					);
 					for (const spec of specs) {
-						const staveTie = new StaveTie(spec);
+						const staveTie = new DashedTie(spec, tie.dash);
 						if (direction !== null) {
 							staveTie.setDirection(direction);
 						}
@@ -549,7 +556,12 @@ export class SpannerBuilder {
 		const lines: Array<NotationSlide | SingleSlide> = [];
 		const open = new Map<
 			string,
-			{ staveNote: StaveNote; index: number; note: Note }
+			{
+				staveNote: StaveNote;
+				index: number;
+				note: Note;
+				dash: number[] | null;
+			}
 		>();
 		for (const chord of chords) {
 			for (const note of chord.notes) {
@@ -558,15 +570,20 @@ export class SpannerBuilder {
 					continue;
 				}
 				const markers = [
-					...note.slides.map((s) => ({ number: s.number, type: s.slideType })),
+					...note.slides.map((s) => ({
+						number: s.number,
+						type: s.slideType,
+						dash: lineDashOf(s),
+					})),
 					...note.glissandos.map((g) => ({
 						number: g.number,
 						type: g.glissandoType,
+						dash: lineDashOf(g),
 					})),
 				];
 				for (const marker of markers) {
 					if (marker.type === 'start') {
-						open.set(marker.number, { ...at, note });
+						open.set(marker.number, { ...at, note, dash: marker.dash });
 					} else if (marker.type === 'stop') {
 						const from = open.get(marker.number);
 						open.delete(marker.number);
@@ -587,6 +604,7 @@ export class SpannerBuilder {
 								from.index,
 								at.staveNote,
 								at.index,
+								from.dash ?? marker.dash,
 							),
 						);
 					}
@@ -642,7 +660,14 @@ export class SpannerBuilder {
 				continue;
 			}
 			wedges.push(
-				new Hairpin(firstNote, lastNote, from.crescendo, from.placement),
+				new Hairpin(
+					firstNote,
+					lastNote,
+					from.crescendo,
+					from.placement,
+					from.dash ?? marker.dash,
+					from.niente || marker.niente,
+				),
 			);
 		}
 		return wedges;
@@ -1431,12 +1456,16 @@ export class SpannerBuilder {
 	}
 
 	/* A note's starting <tied>s with their partners resolved, read once per note. */
-	private tiesOf(note: Note): { partner: Note | null }[] {
+	private tiesOf(note: Note): TieEnd[] {
 		let ties = this.ties.get(note);
 		if (!ties) {
 			ties = note.ties
 				.filter((tie) => tie.tieType === 'start')
-				.map((tie) => ({ partner: tie.partner?.note ?? null }));
+				.map((tie) => ({
+					partner: tie.partner?.note ?? null,
+					dash: lineDashOf(tie),
+					orientation: tie.getAttribute('orientation'),
+				}));
 			this.ties.set(note, ties);
 		}
 		return ties;
@@ -1499,8 +1528,8 @@ export class SpannerBuilder {
 					return {
 						slurType: s.slurType,
 						partner: partner && { note: partner },
-						placement: s.placement,
-						dash: LINE_TYPE_DASH[s.lineType ?? 'solid'] ?? null,
+						placement: s.placement ?? placementOfOrientation(s),
+						dash: lineDashOf(s),
 					};
 				}),
 			techniques: [
@@ -1649,6 +1678,24 @@ type TupletDisplay = {
  * ends. The second case is a legato run written as one long <slur> plus a hammer-on/pull-off
  * per adjacent pair: the run gets its one arc, not that arc plus a bump over every pair.
  */
+type TieEnd = {
+	partner: Note | null;
+	dash: number[] | null;
+	/* <tied orientation>: "over" bows the tie up, "under" down. */
+	orientation: string | null;
+};
+
+/* <slur orientation> as the placement it implies, for a slur that states no placement. */
+function placementOfOrientation(slur: {
+	getAttribute(name: string): string | null;
+}): string | null {
+	const orientation = slur.getAttribute('orientation');
+	if (orientation === 'over') {
+		return 'above';
+	}
+	return orientation === 'under' ? 'below' : null;
+}
+
 type SlurConnector = {
 	slurType: string;
 	partner: { note: Note } | null;
