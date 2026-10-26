@@ -9,11 +9,14 @@ import { DurationTranslator } from './duration-translator';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { ElementFactory } from './element-factory';
 import { FakePaintProbe } from './fake-paint-probe';
+import { FontShorthandPatch } from './font-shorthand-patch';
 import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
 import { InertDecoration } from './inert-decoration';
 import { LayoutPlanner } from './layout-planner';
+import { MetricsPatch } from './metrics-patch';
 import { NotationTranslator } from './notation-translator';
+import { ProbeTextCanvas } from './probe-text-canvas';
 import { ProvisionalGeometry } from './provisional-geometry';
 import type { RawGeometry } from './score-drawer';
 import { ScoreEngraver } from './score-engraver';
@@ -62,6 +65,21 @@ describe('ProvisionalGeometry', () => {
 			expect(columnsOf(provisional)).toEqual(columnsOf(drawn));
 		});
 	}
+
+	// A progressive render asks one ProvisionalGeometry again after each system as the forecast
+	// moves: what it read off the document once still lands each note in the box it moved to.
+	it('follows a forecast that moved as a fresh one would', async () => {
+		const { plan, geometry } = await begin(
+			'score_schubert_gute_nacht.musicxml',
+		);
+		const reused = geometry();
+		plan.placeThrough(1);
+		reused.geometryOf(plan.forecast());
+		plan.placeThrough(10);
+		const later = plan.forecast();
+
+		expect(reused.geometryOf(later)).toEqual(geometry().geometryOf(later));
+	});
 });
 
 // Each note the geometry holds, by its mdom note (named by its place in its measure), with how
@@ -78,6 +96,39 @@ function keysOf(geometry: RawGeometry): Set<string> {
 
 function columnsOf(geometry: RawGeometry): string[] {
 	return geometry.measures.map((m) => `${m.index}@${m.systemIndex}`).sort();
+}
+
+// The layout builds vexflow elements, which measure text through the probe.
+new ProbeTextCanvas(new FakePaintProbe()).install();
+new MetricsPatch().install();
+new FontShorthandPatch().install();
+
+// A layout planned a system at a time over `fixture`, and ProvisionalGeometry made over it.
+async function begin(fixture: string) {
+	const config = DEFAULT_CONFIG;
+	const reader = new ScoreReader(new DynamicGlyphs());
+	const durations = new DurationTranslator(reader);
+	const staves = new StavePlan({ showTabs: true, showNotation: true });
+	const gaps = new Gaps([], new GapInserter(reader));
+	const document = await new DefaultScoreParser().parse(
+		await Bun.file(path.join(DATA_DIR, fixture)).text(),
+	);
+	const plan = new LayoutPlanner(
+		new VoiceTranslator(
+			new ChordTranslator(durations, new NotationTranslator()),
+			durations,
+			new BarlineTranslator(),
+			reader,
+		),
+		new TabVoiceTranslator(durations, reader, 'none'),
+		new SignatureTranslator(),
+		staves,
+		reader,
+		gaps,
+	).begin(document.score, config);
+	const geometry = () =>
+		new ProvisionalGeometry(reader, staves, document.score, plan.layout);
+	return { plan, geometry };
 }
 
 async function engrave(fixture: string) {

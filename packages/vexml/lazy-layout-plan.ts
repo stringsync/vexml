@@ -82,6 +82,11 @@ export class LazyLayoutPlan implements LayoutPlan {
 	private finished = false;
 	private version = 0;
 	private forecasted: LayoutForecast | null = null;
+	// The measured and estimated ideal areas of the music before `ratioThrough`, summed as the
+	// plan measures it (see estimateRatio).
+	private measuredSum = 0;
+	private estimatedSum = 0;
+	private ratioThrough = 0;
 
 	constructor(private readonly rules: LayoutRules) {
 		this.layout = {
@@ -208,16 +213,15 @@ export class LazyLayoutPlan implements LayoutPlan {
 	// score's texture holds, so the measured systems calibrate the rest.
 	private estimateRatio(): number {
 		const { rules } = this;
-		let measured = 0;
-		let estimated = 0;
-		for (let m = 0; m < this.next; m++) {
+		for (; this.ratioThrough < this.next; this.ratioThrough++) {
+			const m = this.ratioThrough;
 			if (rules.hidden.has(m) || !rules.isMusic(m)) {
 				continue;
 			}
-			measured += rules.areaOf(m).ideal;
-			estimated += rules.estimateOf(m).ideal;
+			this.measuredSum += rules.areaOf(m).ideal;
+			this.estimatedSum += rules.estimateOf(m).ideal;
 		}
-		return estimated > 0 ? measured / estimated : 1;
+		return this.estimatedSum > 0 ? this.measuredSum / this.estimatedSum : 1;
 	}
 
 	// Pack the next measure: wrap to a new system once its note area would overrun the

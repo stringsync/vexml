@@ -771,6 +771,17 @@ export class LayoutPlanner {
 		// so the consolidated bar and its count have room to read as a multirest.
 		const floorOf = (m: number) =>
 			multiRestLeads.has(m) ? MULTI_REST_MIN_WIDTH : BASE_VOICE_WIDTH;
+		// What a rule reads off the document for measure `m`, read once: the forecast asks again
+		// for every measure past the draw after each system (see LazyLayoutPlan.forecast).
+		const perMeasure = <T>(read: (m: number) => T) => {
+			const values = new Map<number, T>();
+			return (m: number): T => {
+				if (!values.has(m)) {
+					values.set(m, read(m));
+				}
+				return values.get(m) as T;
+			};
+		};
 		// Measured once each, when the plan reaches the measure: building a measure's tickables is
 		// most of the plan's cost, so a plan made a system at a time measures only what it places
 		// (see LazyLayoutPlan). A measure past the end of a short part falls back to an empty bar.
@@ -809,8 +820,7 @@ export class LayoutPlanner {
 		// Following the document, a measure the document gives a width takes it, fixed: the
 		// requested width less its lead (so a system-starting measure's clef and key come out of
 		// it), never narrower than its collision-free minimum unless strict.
-		const areaOf = (m: number, systemStart = false): NoteArea => {
-			const area = measuredAreaOf(m);
+		const documentWidthOf = perMeasure((m): number | null => {
 			const widths =
 				mode === 'ignore' || gaps.has(m)
 					? []
@@ -821,10 +831,15 @@ export class LayoutPlanner {
 								: null;
 							return width === null ? [] : [width];
 						});
-			if (widths.length === 0) {
+			return widths.length === 0 ? null : Math.max(...widths);
+		});
+		const areaOf = (m: number, systemStart = false): NoteArea => {
+			const area = measuredAreaOf(m);
+			const documentWidth = documentWidthOf(m);
+			if (documentWidth === null) {
 				return area;
 			}
-			const requested = Math.max(...widths) - leadOf(m, systemStart);
+			const requested = documentWidth - leadOf(m, systemStart);
 			const width =
 				mode === 'strict' ? requested : Math.max(area.min, requested);
 			return { min: width, ideal: width, fixed: true };
@@ -855,7 +870,7 @@ export class LayoutPlanner {
 		// change clef eats into the note area).
 		// ponytail: fixed, deliberately generous estimates so notes never collide with
 		// the glyphs; measure stave.getNoteStartX() if exact alignment is ever needed.
-		const leadFull = (m: number) => {
+		const leadFull = perMeasure((m) => {
 			// Per STAVE, not per part: the staves of one part can carry different keys
 			// (staves_different_keys), so a part whose first stave is in C still needs the
 			// key's width budgeted when its second stave is not.
@@ -875,23 +890,25 @@ export class LayoutPlanner {
 				(hasKey ? LEAD_KEY : 0) +
 				(m === (firstMusic ?? 0) ? LEAD_TIME : 0)
 			);
-		};
-		const clefChangesAt = (m: number) =>
-			m > 0 &&
-			parts.some((part) =>
-				this.staves.visibleNumbers(part).some(
-					(staffNumber) =>
-						!this.staves.isTab(part, staffNumber) &&
-						this.signatures.vexflowClefSpec(
-							part.measures[m]?.getClef(staffNumber) ?? null,
-						) !==
+		});
+		const clefChangesAt = perMeasure(
+			(m) =>
+				m > 0 &&
+				parts.some((part) =>
+					this.staves.visibleNumbers(part).some(
+						(staffNumber) =>
+							!this.staves.isTab(part, staffNumber) &&
 							this.signatures.vexflowClefSpec(
-								// End of the previous measure, matching buildStave: a change
-								// stated inside it is not restated at this barline.
-								this.reader.clefAtEndOf(part.measures[m - 1], staffNumber),
-							),
+								part.measures[m]?.getClef(staffNumber) ?? null,
+							) !==
+								this.signatures.vexflowClefSpec(
+									// End of the previous measure, matching buildStave: a change
+									// stated inside it is not restated at this barline.
+									this.reader.clefAtEndOf(part.measures[m - 1], staffNumber),
+								),
+					),
 				),
-			);
+		);
 		// The measure's fixed width: everything that isn't note area. Lead glyphs at the front,
 		// trailing-directive room at the back.
 		const leadGlyphs = (m: number, systemStart: boolean) =>
@@ -958,7 +975,7 @@ export class LayoutPlanner {
 			// A <print new-system="yes"/> forces a break before the measure regardless of width,
 			// unless honorSystemBreaks is off. So does a new page: its first measure necessarily
 			// starts a system, whether or not the exporter also said so.
-			printOf: (m) => {
+			printOf: perMeasure((m) => {
 				const print = parts.map((part) => part.measures[m]?.print);
 				return {
 					forcedBreak:
@@ -966,7 +983,7 @@ export class LayoutPlanner {
 					keepsLine:
 						honorSystemBreaks && print.some((p) => p?.systemBreak === 'no'),
 				};
-			},
+			}),
 			isMusic,
 			edgeOf,
 			edgeWidthOf,
