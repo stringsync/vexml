@@ -7,6 +7,8 @@ export const FINDING_KINDS = [
 	'clipped',
 	'staves-collide',
 	'stray-line',
+	'differs',
+	'missing',
 ] as const;
 export type FindingKind = (typeof FINDING_KINDS)[number];
 
@@ -160,6 +162,8 @@ const PENALTY: Record<FindingKind, number> = {
 	clipped: 15,
 	'staves-collide': 20,
 	'stray-line': 20,
+	differs: 20,
+	missing: 10,
 };
 
 // Antialiasing breaks one shape's edge contact into several runs; a few pixels apart,

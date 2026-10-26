@@ -1,0 +1,1396 @@
+{
+	"model": "jev-1.14.0",
+	"questions": "musicxml-v1",
+	"thresholds": {
+		"same": 0.7,
+		"different": 0.3,
+		"missing": 0.1
+	},
+	"calibration": [
+		{
+			"threshold": 0.03,
+			"differs": {
+				"truePositives": 16,
+				"falsePositives": 0,
+				"defects": 17,
+				"precision": 1,
+				"recall": 0.9411764705882353
+			},
+			"missing": {
+				"truePositives": 2,
+				"falsePositives": 0,
+				"defects": 66,
+				"precision": 1,
+				"recall": 0.030303030303030304
+			}
+		},
+		{
+			"threshold": 0.05,
+			"differs": {
+				"truePositives": 16,
+				"falsePositives": 0,
+				"defects": 17,
+				"precision": 1,
+				"recall": 0.9411764705882353
+			},
+			"missing": {
+				"truePositives": 20,
+				"falsePositives": 0,
+				"defects": 66,
+				"precision": 1,
+				"recall": 0.30303030303030304
+			}
+		},
+		{
+			"threshold": 0.1,
+			"differs": {
+				"truePositives": 16,
+				"falsePositives": 0,
+				"defects": 17,
+				"precision": 1,
+				"recall": 0.9411764705882353
+			},
+			"missing": {
+				"truePositives": 62,
+				"falsePositives": 0,
+				"defects": 66,
+				"precision": 1,
+				"recall": 0.9393939393939394
+			}
+		},
+		{
+			"threshold": 0.2,
+			"differs": {
+				"truePositives": 17,
+				"falsePositives": 0,
+				"defects": 17,
+				"precision": 1,
+				"recall": 1
+			},
+			"missing": {
+				"truePositives": 66,
+				"falsePositives": 3,
+				"defects": 66,
+				"precision": 0.9565217391304348,
+				"recall": 1
+			}
+		},
+		{
+			"threshold": 0.3,
+			"differs": {
+				"truePositives": 17,
+				"falsePositives": 0,
+				"defects": 17,
+				"precision": 1,
+				"recall": 1
+			},
+			"missing": {
+				"truePositives": 66,
+				"falsePositives": 3,
+				"defects": 66,
+				"precision": 0.9565217391304348,
+				"recall": 1
+			}
+		},
+		{
+			"threshold": 0.4,
+			"differs": {
+				"truePositives": 17,
+				"falsePositives": 0,
+				"defects": 17,
+				"precision": 1,
+				"recall": 1
+			},
+			"missing": {
+				"truePositives": 66,
+				"falsePositives": 16,
+				"defects": 66,
+				"precision": 0.8048780487804879,
+				"recall": 1
+			}
+		},
+		{
+			"threshold": 0.5,
+			"differs": {
+				"truePositives": 17,
+				"falsePositives": 0,
+				"defects": 17,
+				"precision": 1,
+				"recall": 1
+			},
+			"missing": {
+				"truePositives": 66,
+				"falsePositives": 28,
+				"defects": 66,
+				"precision": 0.7021276595744681,
+				"recall": 1
+			}
+		}
+	],
+	"observations": [
+		{
+			"id": "21986b67-harmony:history",
+			"check": "same",
+			"probability": 0.02,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "21986b67-harmony:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.86,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "21986b67-harmony:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "2e9173fb-words:history",
+			"check": "same",
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "2e9173fb-words:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.91,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "2e9173fb-words:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "3bb0dbbf-staff_details_lines:history",
+			"check": "same",
+			"probability": 0.1,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "3bb0dbbf-staff_details_lines:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.9,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "3bb0dbbf-staff_details_lines:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-clef_treble_octave:history",
+			"check": "same",
+			"probability": 0.62,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-clef_treble_octave:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.93,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-clef_treble_octave:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-cross_stave:history",
+			"check": "same",
+			"probability": 0.07,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-cross_stave:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.89,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-cross_stave:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-invisible_notes:history",
+			"check": "same",
+			"probability": 0.4,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-invisible_notes:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.94,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-invisible_notes:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-rest:history",
+			"check": "same",
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-rest:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.9,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-rest:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.02,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-slur_backup_voices:history",
+			"check": "same",
+			"probability": 0.92,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-slur_backup_voices:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.93,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "6a66854a-slur_backup_voices:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "731be086-score_amazing_grace:history",
+			"check": "same",
+			"probability": 0.04,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "731be086-score_amazing_grace:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.85,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "731be086-score_amazing_grace:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "85bff93a-harmony_grace:history",
+			"check": "same",
+			"probability": 0.84,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "85bff93a-harmony_grace:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.9,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "85bff93a-harmony_grace:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "9676f70d-tempo:history",
+			"check": "same",
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "9676f70d-tempo:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.87,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "9676f70d-tempo:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.02,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "c112375f-repeats:history",
+			"check": "same",
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "c112375f-repeats:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.89,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "c112375f-repeats:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "d46be6fd-dynamics:history",
+			"check": "same",
+			"probability": 0.9,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "d46be6fd-dynamics:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.9,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "d46be6fd-dynamics:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "d46be6fd-staff_dynamics:history",
+			"check": "same",
+			"probability": 0.74,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "d46be6fd-staff_dynamics:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.91,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "d46be6fd-staff_dynamics:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "d46be6fd-structure_tab_parts:history",
+			"check": "same",
+			"probability": 0.8,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "d46be6fd-structure_tab_parts:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.97,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "d46be6fd-structure_tab_parts:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.11,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "d46be6fd-tab_annotation:history",
+			"check": "same",
+			"probability": 0.96,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "d46be6fd-tab_annotation:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.97,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "d46be6fd-tab_annotation:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "f15bcdae-tab_annotation:history",
+			"check": "same",
+			"probability": 0.02,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "f15bcdae-tab_annotation:clean",
+			"check": "same",
+			"expected": true,
+			"probability": 0.92,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "f15bcdae-tab_annotation:blank",
+			"check": "same",
+			"expected": false,
+			"probability": 0.01,
+			"question": "Does `candidate` show the same notes, rests, accidentals and markings as `reference`? Ignore engraving style, spacing, line breaks, part labels, titles and page layout. Compare musical content only."
+		},
+		{
+			"id": "fermata:clean:q0",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.98,
+			"question": "Is the time signature 4/4 visible in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q1",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.96,
+			"question": "Is a G clef visible in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q2",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.62,
+			"question": "Is there a visible whole note at pitch C in octave 5 on note/rest 1 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q3",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.58,
+			"question": "Is there a visible fermata \"normal\" on note/rest 1 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q4",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.4,
+			"question": "Is there a visible whole note at pitch C in octave 5 on note/rest 1 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q5",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.51,
+			"question": "Is there a visible fermata \"normal\" (inverted) on note/rest 1 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q6",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.57,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 1 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q7",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.37,
+			"question": "Is there a visible fermata \"angled\" on note/rest 1 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q8",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.53,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 2 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q9",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.41,
+			"question": "Is there a visible fermata \"square\" on note/rest 2 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q10",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.65,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 3 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q11",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.4,
+			"question": "Is there a visible fermata \"double-angled\" on note/rest 3 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q12",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.68,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 4 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q13",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.63,
+			"question": "Is there a visible fermata \"double-square\" on note/rest 4 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q14",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.49,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 1 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q15",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.44,
+			"question": "Is there a visible fermata \"double-dot\" on note/rest 1 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q16",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.49,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 2 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q17",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.5,
+			"question": "Is there a visible fermata \"half-curve\" on note/rest 2 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q18",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.54,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 3 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q19",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.49,
+			"question": "Is there a visible fermata \"curlew\" on note/rest 3 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q20",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.53,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 4 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q21",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.53,
+			"question": "Is there a visible fermata \"normal\" on note/rest 4 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q22",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.38,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 1 in XML order, staff 1, voice 1, in measure 5, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:clean:q23",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.14,
+			"question": "Is there a visible fermata \"angled\" (inverted) on note/rest 1 in XML order, staff 1, voice 1, in measure 5, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q0",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.06,
+			"question": "Is the time signature 4/4 visible in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q1",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.06,
+			"question": "Is a G clef visible in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q2",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.04,
+			"question": "Is there a visible whole note at pitch C in octave 5 on note/rest 1 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q3",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.03,
+			"question": "Is there a visible fermata \"normal\" on note/rest 1 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q4",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.07,
+			"question": "Is there a visible whole note at pitch C in octave 5 on note/rest 1 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q5",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.06,
+			"question": "Is there a visible fermata \"normal\" (inverted) on note/rest 1 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q6",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.06,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 1 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q7",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.05,
+			"question": "Is there a visible fermata \"angled\" on note/rest 1 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q8",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.07,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 2 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q9",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.07,
+			"question": "Is there a visible fermata \"square\" on note/rest 2 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q10",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.07,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 3 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q11",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.05,
+			"question": "Is there a visible fermata \"double-angled\" on note/rest 3 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q12",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.08,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 4 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q13",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.05,
+			"question": "Is there a visible fermata \"double-square\" on note/rest 4 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q14",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.08,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 1 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q15",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.07,
+			"question": "Is there a visible fermata \"double-dot\" on note/rest 1 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q16",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.08,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 2 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q17",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.07,
+			"question": "Is there a visible fermata \"half-curve\" on note/rest 2 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q18",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.08,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 3 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q19",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.06,
+			"question": "Is there a visible fermata \"curlew\" on note/rest 3 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q20",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.06,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 4 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q21",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.05,
+			"question": "Is there a visible fermata \"normal\" on note/rest 4 in XML order, staff 1, voice 1, in measure 4, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q22",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.07,
+			"question": "Is there a visible quarter note at pitch B in octave 4 on note/rest 1 in XML order, staff 1, voice 1, in measure 5, part 1 (Music)?"
+		},
+		{
+			"id": "fermata:blank:q23",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.06,
+			"question": "Is there a visible fermata \"angled\" (inverted) on note/rest 1 in XML order, staff 1, voice 1, in measure 5, part 1 (Music)?"
+		},
+		{
+			"id": "lyrics_elision:clean:q0",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.94,
+			"question": "Is the time signature 4/4 visible in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:clean:q1",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.97,
+			"question": "Is a G clef visible in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:clean:q2",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.4,
+			"question": "Is there a visible quarter note at pitch C in octave 5 on note/rest 1 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:clean:q3",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.95,
+			"question": "Is the lyric \"a\" visible on note/rest 1 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:clean:q4",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.54,
+			"question": "Is there a visible quarter note at pitch C in octave 5 on note/rest 2 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:clean:q5",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.94,
+			"question": "Is the lyric \"b c\" visible on note/rest 2 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:clean:q6",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.44,
+			"question": "Is there a visible quarter note at pitch C in octave 5 on note/rest 3 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:clean:q7",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.93,
+			"question": "Is the lyric \"d e\" visible on note/rest 3 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:clean:q8",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.52,
+			"question": "Is there a visible quarter note at pitch C in octave 5 on note/rest 4 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:clean:q9",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.96,
+			"question": "Is the lyric \"f g h\" visible on note/rest 4 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:blank:q0",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.08,
+			"question": "Is the time signature 4/4 visible in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:blank:q1",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.12,
+			"question": "Is a G clef visible in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:blank:q2",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.1,
+			"question": "Is there a visible quarter note at pitch C in octave 5 on note/rest 1 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:blank:q3",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.05,
+			"question": "Is the lyric \"a\" visible on note/rest 1 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:blank:q4",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.07,
+			"question": "Is there a visible quarter note at pitch C in octave 5 on note/rest 2 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:blank:q5",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.07,
+			"question": "Is the lyric \"b c\" visible on note/rest 2 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:blank:q6",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.06,
+			"question": "Is there a visible quarter note at pitch C in octave 5 on note/rest 3 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:blank:q7",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.1,
+			"question": "Is the lyric \"d e\" visible on note/rest 3 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:blank:q8",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.05,
+			"question": "Is there a visible quarter note at pitch C in octave 5 on note/rest 4 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "lyrics_elision:blank:q9",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.09,
+			"question": "Is the lyric \"f g h\" visible on note/rest 4 in XML order, staff 1, voice 1, in measure 1, part 1 (MusicXML Part)?"
+		},
+		{
+			"id": "accidentals:clean:q0",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.97,
+			"question": "Is the time signature 4/4 visible in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q1",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.95,
+			"question": "Is a G clef visible in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q2",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.66,
+			"question": "Is there a visible quarter note at pitch C altered by 1 semitones in octave 5 on note/rest 1 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q3",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.97,
+			"question": "Is there a visible sharp accidental on note/rest 1 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q4",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.72,
+			"question": "Is there a visible quarter note at pitch C altered by -1 semitones in octave 5 on note/rest 2 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q5",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.98,
+			"question": "Is there a visible flat accidental on note/rest 2 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q6",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.32,
+			"question": "Is there a visible quarter note at pitch C in octave 5 on note/rest 3 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q7",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.97,
+			"question": "Is there a visible natural accidental on note/rest 3 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q8",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.34,
+			"question": "Is there a visible quarter note at pitch C in octave 5 on note/rest 4 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q9",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.5,
+			"question": "Is there a visible quarter note at pitch C altered by 2 semitones in octave 5 on note/rest 1 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q10",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.55,
+			"question": "Is there a visible double-sharp accidental on note/rest 1 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q11",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.47,
+			"question": "Is there a visible quarter note at pitch C altered by -2 semitones in octave 5 on note/rest 2 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q12",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.77,
+			"question": "Is there a visible flat-flat accidental on note/rest 2 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q13",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.45,
+			"question": "Is there a visible quarter note at pitch C altered by 1 semitones in octave 5 on note/rest 3 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q14",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.4,
+			"question": "Is there a visible natural-sharp accidental on note/rest 3 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q15",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.42,
+			"question": "Is there a visible quarter note at pitch C altered by -1 semitones in octave 5 on note/rest 4 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q16",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.51,
+			"question": "Is there a visible natural-flat accidental on note/rest 4 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q17",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.4,
+			"question": "Is there a visible quarter note at pitch C altered by 0.5 semitones in octave 5 on note/rest 1 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q18",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.33,
+			"question": "Is there a visible quarter-sharp accidental on note/rest 1 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q19",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.4,
+			"question": "Is there a visible quarter note at pitch C altered by 1.5 semitones in octave 5 on note/rest 2 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q20",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.12,
+			"question": "Is there a visible three-quarters-sharp accidental on note/rest 2 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q21",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.19,
+			"question": "Is there a visible quarter note at pitch C altered by -0.5 semitones in octave 5 on note/rest 3 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q22",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.43,
+			"question": "Is there a visible quarter-flat accidental on note/rest 3 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:clean:q23",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.35,
+			"question": "Is there a visible quarter note at pitch C altered by -1.5 semitones in octave 5 on note/rest 4 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q0",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.06,
+			"question": "Is the time signature 4/4 visible in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q1",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.05,
+			"question": "Is a G clef visible in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q2",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.04,
+			"question": "Is there a visible quarter note at pitch C altered by 1 semitones in octave 5 on note/rest 1 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q3",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.03,
+			"question": "Is there a visible sharp accidental on note/rest 1 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q4",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.04,
+			"question": "Is there a visible quarter note at pitch C altered by -1 semitones in octave 5 on note/rest 2 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q5",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.06,
+			"question": "Is there a visible flat accidental on note/rest 2 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q6",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.04,
+			"question": "Is there a visible quarter note at pitch C in octave 5 on note/rest 3 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q7",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.05,
+			"question": "Is there a visible natural accidental on note/rest 3 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q8",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.05,
+			"question": "Is there a visible quarter note at pitch C in octave 5 on note/rest 4 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q9",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.04,
+			"question": "Is there a visible quarter note at pitch C altered by 2 semitones in octave 5 on note/rest 1 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q10",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.06,
+			"question": "Is there a visible double-sharp accidental on note/rest 1 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q11",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.05,
+			"question": "Is there a visible quarter note at pitch C altered by -2 semitones in octave 5 on note/rest 2 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q12",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.08,
+			"question": "Is there a visible flat-flat accidental on note/rest 2 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q13",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.06,
+			"question": "Is there a visible quarter note at pitch C altered by 1 semitones in octave 5 on note/rest 3 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q14",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.06,
+			"question": "Is there a visible natural-sharp accidental on note/rest 3 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q15",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.07,
+			"question": "Is there a visible quarter note at pitch C altered by -1 semitones in octave 5 on note/rest 4 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q16",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.07,
+			"question": "Is there a visible natural-flat accidental on note/rest 4 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q17",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.06,
+			"question": "Is there a visible quarter note at pitch C altered by 0.5 semitones in octave 5 on note/rest 1 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q18",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.09,
+			"question": "Is there a visible quarter-sharp accidental on note/rest 1 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q19",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.05,
+			"question": "Is there a visible quarter note at pitch C altered by 1.5 semitones in octave 5 on note/rest 2 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q20",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.08,
+			"question": "Is there a visible three-quarters-sharp accidental on note/rest 2 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q21",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.05,
+			"question": "Is there a visible quarter note at pitch C altered by -0.5 semitones in octave 5 on note/rest 3 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q22",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.08,
+			"question": "Is there a visible quarter-flat accidental on note/rest 3 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "accidentals:blank:q23",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.04,
+			"question": "Is there a visible quarter note at pitch C altered by -1.5 semitones in octave 5 on note/rest 4 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:clean:q0",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.97,
+			"question": "Is the time signature 3/4 visible in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:clean:q1",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.96,
+			"question": "Is a G clef visible in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:clean:q2",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.93,
+			"question": "Is there a visible whole-measure rest on note/rest 1 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:clean:q3",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.93,
+			"question": "Is the time signature 6/8 visible in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:clean:q4",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.74,
+			"question": "Is there a visible rest on note/rest 1 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:clean:q5",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.83,
+			"question": "Is the time signature 3/4 visible in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:clean:q6",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.94,
+			"question": "Is there a visible rest on note/rest 1 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:clean:q7",
+			"check": "presence",
+			"expected": true,
+			"probability": 0.35,
+			"question": "Is there a visible half note at pitch B in octave 4 on note/rest 2 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:blank:q0",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.09,
+			"question": "Is the time signature 3/4 visible in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:blank:q1",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.08,
+			"question": "Is a G clef visible in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:blank:q2",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.1,
+			"question": "Is there a visible whole-measure rest on note/rest 1 in XML order, staff 1, voice 1, in measure 1, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:blank:q3",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.12,
+			"question": "Is the time signature 6/8 visible in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:blank:q4",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.12,
+			"question": "Is there a visible rest on note/rest 1 in XML order, staff 1, voice 1, in measure 2, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:blank:q5",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.11,
+			"question": "Is the time signature 3/4 visible in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:blank:q6",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.09,
+			"question": "Is there a visible rest on note/rest 1 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		},
+		{
+			"id": "rest_measure_typeless:blank:q7",
+			"check": "presence",
+			"expected": false,
+			"probability": 0.09,
+			"question": "Is there a visible half note at pitch B in octave 4 on note/rest 2 in XML order, staff 1, voice 1, in measure 3, part 1 (Music)?"
+		}
+	]
+}

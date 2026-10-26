@@ -132,6 +132,11 @@ vex
 	.option('input', z.string().optional(), {
 		description: 'input musicxml file',
 	})
+	.option('semantic', z.boolean(), {
+		default: false,
+		description:
+			'also check each measure with Jev: renderer voting and XML presence; skips without TYPESAFE_API_KEY',
+	})
 	.option('corpus', bool, {
 		...flag,
 		description:
@@ -156,7 +161,15 @@ vex
 	.use(timing)
 	.action((opts, { log, fs, invocationDir }) => {
 		if (opts.corpus) {
-			return lintCorpus({ add: opts.add, kind: opts.kind, log });
+			return lintCorpus({
+				add: opts.add,
+				kind: opts.kind,
+				semantic: opts.semantic,
+				output: opts.output,
+				cwd: invocationDir,
+				fs,
+				log,
+			});
 		}
 		if (!opts.input) {
 			throw new Error('--input or --corpus is required');
