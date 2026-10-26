@@ -110,6 +110,10 @@ export class ScoreRecording implements SnapshotSource {
 							staff: voice.staff,
 							notes: [...voice.notes],
 						})),
+						staves: measure.staves.map((stave) => ({
+							...stave,
+							lines: [...stave.lines],
+						})),
 					})),
 				})),
 				fonts,

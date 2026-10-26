@@ -228,12 +228,14 @@ describe('GeometryCollector', () => {
 			index: 0,
 			number: '1',
 			systemIndex: 0,
+			staves: [],
 		});
 		collector.addMeasure({
 			rect: new Rect(0, 40, 100, 60),
 			index: 1,
 			number: '2',
 			systemIndex: 1,
+			staves: [],
 		});
 		const decorated = collector.decoratedMeasures({
 			decorationTopOf: (system: number) => (system === 0 ? 25 : 90),

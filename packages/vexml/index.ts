@@ -98,6 +98,7 @@ export {
 	SnapshotMismatchError,
 	type SnapshotMismatchReason,
 } from './snapshot-mismatch-error';
+export { Stave } from './stave';
 export { System } from './system';
 export { TabPosition } from './tab-position';
 export { Timeline, type TimelineBar } from './timeline';

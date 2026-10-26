@@ -1,4 +1,5 @@
 import type { ChordFrame } from './chord-diagram-glyph';
+import type { StaveModel } from './element-model';
 import type { NoteGlyph } from './geometry-collector';
 import type { EncodedPaint, PaintStream } from './paint-encoder';
 import type { PaintElement } from './paint-op';
@@ -8,7 +9,7 @@ import type { TempoSegment } from './tempo-map';
 
 /** Bumped whenever a snapshot's shape or meaning changes: a snapshot from another version
  * throws SnapshotMismatchError rather than render wrong. */
-export const SNAPSHOT_VERSION = 4;
+export const SNAPSHOT_VERSION = 5;
 
 /** Marks a ScoreSnapshot among render's other inputs. */
 export const SNAPSHOT_FORMAT = 'vexml-score-snapshot';
@@ -87,6 +88,7 @@ export interface SnapshotElements {
 			index: number;
 			number: string;
 			voices: Array<{ id: string; staff: number; notes: number[] }>;
+			staves: StaveModel[];
 		}>;
 	}>;
 	/* Fonts the note glyphs name by index. */

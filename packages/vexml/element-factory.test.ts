@@ -194,7 +194,13 @@ function build() {
 		bounds: new Rect(0, 0, 200, 100),
 		notes,
 		measures: [
-			{ rect: new Rect(0, 0, 200, 100), index: 0, number: '1', systemIndex: 0 },
+			{
+				rect: new Rect(0, 0, 200, 100),
+				index: 0,
+				number: '1',
+				systemIndex: 0,
+				staves: [],
+			},
 		],
 		chordDiagrams: [
 			{

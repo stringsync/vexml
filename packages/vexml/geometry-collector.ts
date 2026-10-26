@@ -374,6 +374,21 @@ export interface RawMeasure {
 	number: string;
 	/* The system (line) this measure column was laid out on. */
 	systemIndex: number;
+	/* Every stave drawn in the column, top to bottom. */
+	staves: RawStave[];
+}
+
+/* One part's stave in a measure column: its line ys top to bottom, its left and right x, and the
+ * x its notes start at. */
+export interface RawStave {
+	/* The part's id. */
+	part: string;
+	/* The 1-based stave within the part. */
+	staff: number;
+	lines: number[];
+	left: number;
+	right: number;
+	noteStartX: number;
 }
 
 /* A chord diagram (fret box) the draw pass placed, in score space. The rect spans the whole

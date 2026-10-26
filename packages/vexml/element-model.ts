@@ -6,7 +6,7 @@ import type {
 } from '@stringsync/mdom';
 import type { Rect } from 'webappwiz/geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
-import type { NoteGlyph } from './geometry-collector';
+import type { NoteGlyph, RawStave } from './geometry-collector';
 import type { NoteFacts, NoteKey } from './note';
 
 /*
@@ -48,7 +48,18 @@ export interface MeasureModel {
 	index: number;
 	number: string;
 	voices: VoiceModel[];
+	/* Its drawn staves, top to bottom; none until its system is drawn. */
+	staves: StaveModel[];
 	source: MMeasure | null;
+}
+
+/* A stave's lines, in score space (see Stave). */
+export interface StaveModel {
+	staff: number;
+	lines: number[];
+	left: number;
+	right: number;
+	noteStartX: number;
 }
 
 export interface VoiceModel {
@@ -86,4 +97,20 @@ export interface DiagramModel {
 	frame: ChordFrame;
 	title: string | null;
 	source: Harmony | null;
+}
+
+/* The staves of a column that belong to part `part`. */
+export function staveModelsOf(
+	staves: readonly RawStave[],
+	part: string,
+): StaveModel[] {
+	return staves
+		.filter((s) => s.part === part)
+		.map(({ staff, lines, left, right, noteStartX }) => ({
+			staff,
+			lines,
+			left,
+			right,
+			noteStartX,
+		}));
 }

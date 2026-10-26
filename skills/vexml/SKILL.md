@@ -371,6 +371,20 @@ layer.dispose(); // when done with one layer
 `addLayer('background')` sits behind the score by default. Omit `zIndex` to take the
 kind's default.
 
+To draw beside the staff lines, read them off each part's measures: `measure.getStaves()`
+gives one `Stave` per staff, top to bottom, with `getNumber()` (the 1-based staff, as
+`Voice.getStave()`), `getLineYs()` (top line first), `getRect()` (left edge to right, top
+line to bottom) and `getNoteStartX()` (right of the clef, key and time). All in score
+space, like a layer's ctx. In a progressive render a measure has none until its system is
+drawn.
+
+```ts
+const [first] = score.getParts()[0].getMeasures();
+for (const stave of first.getStaves()) {
+  stave.getLineYs().forEach((y, i) => foreground.ctx.fillText(`line ${5 - i}`, stave.getRect().x - 40, y));
+}
+```
+
 ## Markers and the loupe
 
 A marker is a solid box over the score with no bitmap, so moving it every frame or pointer

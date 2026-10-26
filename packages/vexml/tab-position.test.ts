@@ -86,6 +86,7 @@ function bareMeasure(
 		new Part(mpart, mpart.id, mpart.label, []),
 		box,
 		[],
+		[],
 	);
 }
 

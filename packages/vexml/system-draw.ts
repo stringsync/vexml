@@ -546,10 +546,20 @@ export class SystemDraw {
 					glyph: toScoreGlyph(n.glyph, system),
 				};
 			}),
-			measures: pass.rawMeasures.map((mm) => ({
-				...mm,
-				rect: toScore(mm.rect, mm.systemIndex),
-			})),
+			measures: pass.rawMeasures.map((mm) => {
+				const dxOf = dx + shiftOf(mm.systemIndex);
+				return {
+					...mm,
+					rect: toScore(mm.rect, mm.systemIndex),
+					staves: mm.staves.map((s) => ({
+						...s,
+						lines: s.lines.map((y) => y - cropTop),
+						left: s.left + dxOf,
+						right: s.right + dxOf,
+						noteStartX: s.noteStartX + dxOf,
+					})),
+				};
+			}),
 			chordDiagrams: pass.rawChordDiagrams.map((d) => ({
 				...d,
 				rect: toScore(d.rect, this.systemOfMeasure(d.measureIndex)),

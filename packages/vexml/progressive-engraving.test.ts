@@ -27,6 +27,7 @@ import { type Engraving, ScoreDrawer } from './score-drawer';
 import { ScoreEngraver } from './score-engraver';
 import { ScoreReader } from './score-reader';
 import { type RenderStage, ScoreRenderer } from './score-renderer';
+import type { ScoreSnapshot } from './score-snapshot';
 import { SequenceFactory } from './sequence-factory';
 import { SignatureTranslator } from './signature-translator';
 import { SpannerBuilder } from './spanner-builder';
@@ -283,6 +284,48 @@ describe('ProgressiveEngraving', () => {
 		expect(snapshot.engraving).toEqual(whole.score.snapshot().engraving);
 	});
 
+	it('gives each measure the lines of its staves, in score space', async () => {
+		const { score } = await render(LONG);
+		const [voice, piano] = score.getParts();
+		const box = voice?.getMeasures()[0]?.getBox();
+
+		const [stave] = voice?.getMeasures()[0]?.getStaves() ?? [];
+		const lines = stave?.getLineYs() ?? [];
+		expect(stave?.getNumber()).toBe(1);
+		expect(lines).toHaveLength(5);
+		expect(
+			new Set(lines.slice(1).map((y, i) => y - (lines[i] ?? 0))).size,
+		).toBe(1);
+		expect(box?.rect.containsRect(stave?.getRect() ?? box.rect)).toBe(true);
+		expect(stave?.getNoteStartX()).toBeGreaterThan(stave?.getRect().x ?? 0);
+		expect(
+			piano
+				?.getMeasures()[0]
+				?.getStaves()
+				.map((s) => s.getNumber()),
+		).toEqual([1, 2]);
+	});
+
+	it("places each measure's staves as its system is drawn", async () => {
+		const whole = await render(LONG);
+		const { score, scheduler } = await render(LONG, { progressive: true });
+		const last = score.getParts()[0]?.getMeasures().at(-1);
+
+		expect(last?.getStaves()).toEqual([]);
+		scheduler.runAll();
+		expect(stavesOf(score)).toEqual(stavesOf(whole.score));
+	});
+
+	it('keeps the staves in a snapshot', async () => {
+		const whole = await render(LONG);
+
+		const { score } = await render(
+			JSON.parse(JSON.stringify(whole.score.snapshot())),
+		);
+
+		expect(stavesOf(score)).toEqual(stavesOf(whole.score));
+	});
+
 	it('draws a panoramic layout whole', async () => {
 		const { score, scheduler } = await render(LONG, {
 			progressive: true,
@@ -342,6 +385,20 @@ function boxesOf(score: Score): string[] {
 		.map((box) => `${box.getIndex()}:${JSON.stringify(box.rect)}`);
 }
 
+function stavesOf(score: Score): string[] {
+	return score
+		.getParts()
+		.flatMap((part) => part.getMeasures())
+		.flatMap((measure) =>
+			measure
+				.getStaves()
+				.map(
+					(s) =>
+						`${measure.getIndex()}:${s.getNumber()}:${s.getLineYs()}:${JSON.stringify(s.getRect())}:${s.getNoteStartX()}`,
+				),
+		);
+}
+
 function stepsOf(score: Score): string[] {
 	return score
 		.getSequence()
@@ -362,7 +419,7 @@ function cursorRectAt(score: Score, ms: number) {
 }
 
 async function render(
-	fixture: string,
+	fixture: string | ScoreSnapshot,
 	overrides: Partial<Config> = {},
 	visibleBottom = 400,
 ) {
@@ -412,7 +469,9 @@ async function render(
 		scheduler,
 	);
 	const score = await renderer.render(
-		await Bun.file(path.join(DATA_DIR, fixture)).text(),
+		typeof fixture === 'string'
+			? await Bun.file(path.join(DATA_DIR, fixture)).text()
+			: fixture,
 	);
 	return { score, stage, scheduler };
 }

@@ -2,6 +2,7 @@ import { type QuadTree, Rect } from 'webappwiz/geometry';
 import { ChordDiagram } from './chord-diagram';
 import type { Decorations } from './decoration';
 import type { Element } from './element';
+import { staveModelsOf } from './element-model';
 import type {
 	RawChordDiagram,
 	RawMeasure,
@@ -54,6 +55,9 @@ export class ElementPlacer {
 				continue;
 			}
 			box.relocate(m.rect);
+			for (const measure of box.getMeasures()) {
+				measure.drawn(staveModelsOf(m.staves, measure.getPart().getId()));
+			}
 			bounds = bounds ? bounds.union(m.rect) : m.rect;
 			this.insert(box);
 		}

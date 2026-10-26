@@ -48,6 +48,7 @@ import {
 	type RawChordDiagram,
 	type RawMeasure,
 	type RawNote,
+	type RawStave,
 } from './geometry-collector';
 import type { GroupTimeSignature } from './group-time-signature';
 import { HeaderPlan } from './header-plan';
@@ -297,6 +298,8 @@ export class DrawPass {
 	// Every stave of the measure column being built, drawn once the whole column exists so a
 	// repeat sign can be lined up across staves that reserve different opening widths.
 	private columnStaves: Stave[] = [];
+	// Whose each of columnStaves is: its part's id and its 1-based staff number.
+	private columnStaveOwners = new Map<Stave, { part: string; staff: number }>();
 	// Where this column's opening repeat sign ended up once aligned, so the connector that
 	// carries it across the staves can be placed there too. Null when there is no such sign.
 	private begRepeatX: number | null = null;
@@ -817,6 +820,7 @@ export class DrawPass {
 		this.systemPending = [];
 		this.columnVoltaBox = null;
 		this.columnStaves = [];
+		this.columnStaveOwners = new Map();
 		this.columnMultiRests = [];
 		this.columnMeasureStyles = [];
 		this.tempoTasks = [];
@@ -1426,6 +1430,10 @@ export class DrawPass {
 		// Queued, not drawn: the column's staves are drawn together once they all exist, so a
 		// repeat sign can be aligned across them first (see SystemFormatter.alignBegModifiers).
 		this.columnStaves.push(stave);
+		this.columnStaveOwners.set(stave, {
+			part: part.id,
+			staff: Number(staffNumber),
+		});
 		// A capo is stated once on a tab staff and labels the part where it opens.
 		const capo = built.isTab
 			? measure.getStaffDetails(staffNumber)?.capo
@@ -1548,8 +1556,30 @@ export class DrawPass {
 				index: m,
 				number: this.parts[0]?.measures[m]?.number ?? String(m + 1),
 				systemIndex: this.systemIndex,
+				staves: this.edge ? [] : this.rawStaves(),
 			});
 		}
+	}
+
+	/* Where this column's staves drew their lines, now that the format has placed the notes'
+	 * start (an opening repeat squared across the staves moves it). */
+	private rawStaves(): RawStave[] {
+		return this.columnStaves.flatMap((stave) => {
+			const owner = this.columnStaveOwners.get(stave);
+			if (!owner) {
+				return [];
+			}
+			const lines = Array.from({ length: stave.getNumLines() }, (_, i) =>
+				stave.getYForLine(i),
+			);
+			return {
+				...owner,
+				lines,
+				left: stave.getX(),
+				right: stave.getX() + stave.getWidth(),
+				noteStartX: stave.getNoteStartX(),
+			};
+		});
 	}
 
 	/*

@@ -51,6 +51,7 @@ describe('Measure', () => {
 			new Part(mpart, mpart.id, mpart.label, partMeasures),
 			box,
 			[],
+			[],
 		);
 		boxMeasures.push(measure);
 		partMeasures.push(measure);

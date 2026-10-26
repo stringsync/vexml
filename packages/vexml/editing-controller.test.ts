@@ -526,6 +526,7 @@ function fixture() {
 							index: 0,
 							number: '1',
 							systemIndex: 0,
+							staves: [],
 						},
 					],
 					notes: [first, second, other].map((mnote, i) => ({

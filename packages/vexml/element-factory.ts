@@ -16,6 +16,7 @@ import type {
 	PartModel,
 	TabModel,
 } from './element-model';
+import { staveModelsOf } from './element-model';
 import { ElementPlacer } from './element-placer';
 import { Measure } from './measure';
 import { MeasureBox } from './measure-box';
@@ -66,6 +67,10 @@ export class ElementFactory {
 			});
 		}
 		const boxes = [...boxByIndex.values()];
+		// A repeated index takes its last drawing's staves, as its box takes its last rect.
+		const stavesByIndex = new Map(
+			geometry.measures.map((m) => [m.index, m.staves]),
+		);
 
 		// Musical axis: one Measure per (part, rendered column). A measure the draw pass emitted no
 		// column for (nothing rendered at that index) gets no Measure.
@@ -82,6 +87,7 @@ export class ElementFactory {
 					index: mmeasure.index,
 					number: mmeasure.number,
 					voices: [],
+					staves: staveModelsOf(stavesByIndex.get(box.index) ?? [], mpart.id),
 					source: mmeasure,
 				});
 			}
@@ -319,6 +325,7 @@ export class ElementFactory {
 					part,
 					box,
 					voices,
+					mm.staves,
 				);
 				measureList.push(measure);
 				measuresOfBox.get(box.getIndex())?.push(measure);
