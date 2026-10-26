@@ -19,6 +19,9 @@ MusicXML 4.0 element as drawn (with the fixture that shows it), ignored on
 purpose, or missing. A change that draws something new updates its row, and
 `vex coverage` adds rows when the schema grows.
 
+
+**A rendering fix lints its fixture before and after** (`vex lint --input <fixture>`).
+The score should rise and the finding should go, and nothing else should drop.
 ## The pipeline
 
 `render()` in `render.ts` is the composition root; `ScoreRenderer`
