@@ -1,0 +1,30 @@
+[
+	{ "screenshot": "note.png", "edit": { "blank": true } },
+	{ "screenshot": "accidentals.png", "edit": { "crop": "right" } },
+	{ "screenshot": "words.png", "edit": { "crop": "top" } },
+	{ "screenshot": "lyrics.png", "edit": { "crop": "bottom" } },
+	{ "screenshot": "dynamics.png", "edit": { "crop": "left" } },
+	{ "screenshot": "chord_diagram.png", "edit": { "crop": "top" } },
+	{ "screenshot": "tab_bend.png", "edit": { "crop": "right" } },
+	{ "screenshot": "structure_grand_staff.png", "edit": { "squeeze": 1 } },
+	{ "screenshot": "structure_two_parts.png", "edit": { "squeeze": 1 } },
+	{ "screenshot": "structure_mixed_staves.png", "edit": { "squeeze": 2 } },
+	{ "screenshot": "clef_treble_bass.png", "edit": { "squeeze": 1 } },
+	{ "screenshot": "voices_grand_staff.png", "edit": { "squeeze": 1 } },
+	{ "screenshot": "part_spacing.png", "edit": { "squeeze": 1 } },
+	{
+		"screenshot": "structure_two_parts.png",
+		"edit": { "squeeze": 1, "gap": 0 },
+		"missed": true
+	},
+	{
+		"screenshot": "structure_grand_staff.png",
+		"edit": { "squeeze": 1, "gap": -1.5 },
+		"missed": true
+	},
+	{
+		"screenshot": "part_spacing.png",
+		"edit": { "squeeze": 1, "gap": -1.5 },
+		"missed": true
+	}
+]

@@ -5,9 +5,15 @@ import type { Logger } from 'webappwiz/log';
 import type { Fs } from 'webappwiz/system';
 import { markFindings } from './finding-markup';
 import { InkMap } from './ink-map';
+import {
+	addDefect,
+	type DefectKind,
+	formatScore,
+	LintCorpus,
+} from './lint-corpus';
 import { locate } from './measure-locator';
 import { describeMeasures, MeasureMap } from './measure-map';
-import { type Finding, RenderLint } from './render-lint';
+import { FINDING_KINDS, type Finding, RenderLint } from './render-lint';
 
 export const ENGINES = ['vexml', 'osmd', 'alphatab', 'musescore'] as const;
 export type Engine = (typeof ENGINES)[number];
@@ -87,6 +93,54 @@ export async function lint(opts: LintOptions) {
 	const json = resolve(outDir, `${stem} lint.json`);
 	await opts.fs.write(json, `${JSON.stringify(reports, null, '\t')}\n`);
 	opts.log.info(`wrote ${json}`);
+}
+
+export interface LintCorpusOptions {
+	/* `<commit>:<screenshot>`: add the defect that commit fixed instead of scoring. */
+	add?: string;
+	kind: string;
+	log: Logger;
+}
+
+// The corpus paths are the repo's own; index.ts chdir'd to the repo root.
+const CORPUS = {
+	corpus: 'packages/integration/__lint__',
+	fixtures: 'packages/integration/__data__',
+	screenshots: 'packages/integration/__screenshots__',
+};
+
+/** Scores the lint against its corpus, or grows the corpus by one defect from history. */
+export async function lintCorpus(opts: LintCorpusOptions) {
+	if (opts.add) {
+		const [commit, screenshot] = opts.add.split(':');
+		if (!commit || !screenshot) {
+			throw new Error(`--add takes <commit>:<screenshot>, not '${opts.add}'`);
+		}
+		const kinds: readonly string[] = ['collision', ...FINDING_KINDS];
+		if (!kinds.includes(opts.kind)) {
+			throw new Error(
+				`unknown kind '${opts.kind}'; expected one of ${kinds.join(', ')}`,
+			);
+		}
+		const label = addDefect({
+			corpus: CORPUS.corpus,
+			commit,
+			screenshot,
+			kind: opts.kind as DefectKind,
+		});
+		const { x, y, w, h } = label.box;
+		opts.log.info(
+			`added ${label.id} (${label.kind}) at x ${x}..${x + w}, y ${y}..${y + h}: ${label.note}`,
+		);
+		return;
+	}
+	const score = new LintCorpus(CORPUS).score();
+	for (const line of formatScore(score)) {
+		opts.log.info(line);
+	}
+	if (score.misses.length > 0 || score.surprises.length > 0) {
+		throw new Error('the lint lost a defect or gained a false positive');
+	}
 }
 
 function parseEngines(spec: string): Engine[] {

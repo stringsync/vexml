@@ -1,0 +1,223 @@
+[
+	{
+		"id": "21986b67-harmony",
+		"kind": "collision",
+		"screenshot": "harmony.png",
+		"commit": "21986b67",
+		"note": "fix clashing harmonies and add a test to ensure systems are spaced appropriately",
+		"box": {
+			"x": 370,
+			"y": 208,
+			"w": 100,
+			"h": 90
+		}
+	},
+	{
+		"id": "2e9173fb-words",
+		"kind": "collision",
+		"screenshot": "words.png",
+		"commit": "2e9173fb",
+		"note": "prevent text annotations from colliding with curves",
+		"box": {
+			"x": 521,
+			"y": 198,
+			"w": 240,
+			"h": 106
+		}
+	},
+	{
+		"id": "3bb0dbbf-staff_details_lines",
+		"kind": "collision",
+		"screenshot": "staff_details_lines.png",
+		"commit": "3bb0dbbf",
+		"note": "prevent measure number from colliding with stave brace",
+		"box": {
+			"x": 29,
+			"y": 65,
+			"w": 11,
+			"h": 19
+		}
+	},
+	{
+		"id": "6a66854a-clef_treble_octave",
+		"kind": "collision",
+		"screenshot": "clef_treble_octave.png",
+		"commit": "6a66854a",
+		"note": "fix rests colliding with other notes",
+		"box": {
+			"x": 366,
+			"y": 109,
+			"w": 178,
+			"h": 27
+		}
+	},
+	{
+		"id": "6a66854a-cross_stave",
+		"kind": "collision",
+		"screenshot": "cross_stave.png",
+		"commit": "6a66854a",
+		"note": "fix rests colliding with other notes",
+		"box": {
+			"x": 551,
+			"y": 107,
+			"w": 267,
+			"h": 111
+		}
+	},
+	{
+		"id": "6a66854a-invisible_notes",
+		"kind": "collision",
+		"screenshot": "invisible_notes.png",
+		"commit": "6a66854a",
+		"note": "fix rests colliding with other notes",
+		"box": {
+			"x": 797,
+			"y": 101,
+			"w": 51,
+			"h": 40
+		}
+	},
+	{
+		"id": "6a66854a-rest",
+		"kind": "collision",
+		"screenshot": "rest.png",
+		"commit": "6a66854a",
+		"note": "fix rests colliding with other notes",
+		"box": {
+			"x": 162,
+			"y": 81,
+			"w": 695,
+			"h": 95
+		}
+	},
+	{
+		"id": "6a66854a-slur_backup_voices",
+		"kind": "collision",
+		"screenshot": "slur_backup_voices.png",
+		"commit": "6a66854a",
+		"note": "fix rests colliding with other notes",
+		"box": {
+			"x": 109,
+			"y": 115,
+			"w": 12,
+			"h": 16
+		}
+	},
+	{
+		"id": "731be086-score_amazing_grace",
+		"kind": "collision",
+		"screenshot": "score_amazing_grace.png",
+		"commit": "731be086",
+		"note": "Keep crowded chord diagrams from printing through each other",
+		"box": {
+			"x": 578,
+			"y": 5182,
+			"w": 156,
+			"h": 89
+		}
+	},
+	{
+		"id": "85bff93a-harmony_grace",
+		"kind": "collision",
+		"screenshot": "harmony_grace.png",
+		"commit": "85bff93a",
+		"note": "add fillFirstSystem config and add spatial primitives to detect collisions",
+		"box": {
+			"x": 112,
+			"y": 63,
+			"w": 11,
+			"h": 19
+		}
+	},
+	{
+		"id": "9676f70d-tempo",
+		"kind": "collision",
+		"screenshot": "tempo.png",
+		"commit": "9676f70d",
+		"note": "fix collisions between metronome marks and chord symbols",
+		"box": {
+			"x": 166,
+			"y": 69,
+			"w": 689,
+			"h": 112
+		}
+	},
+	{
+		"id": "c112375f-repeats",
+		"kind": "collision",
+		"screenshot": "repeats.png",
+		"commit": "c112375f",
+		"note": "fix collisions between chord symbols and volta brackets",
+		"box": {
+			"x": 95,
+			"y": 187,
+			"w": 339,
+			"h": 119
+		}
+	},
+	{
+		"id": "d46be6fd-dynamics",
+		"kind": "collision",
+		"screenshot": "dynamics.png",
+		"commit": "d46be6fd",
+		"note": "prevent bends from colliding with text annotations",
+		"box": {
+			"x": 531,
+			"y": 196,
+			"w": 41,
+			"h": 19
+		}
+	},
+	{
+		"id": "d46be6fd-staff_dynamics",
+		"kind": "collision",
+		"screenshot": "staff_dynamics.png",
+		"commit": "d46be6fd",
+		"note": "prevent bends from colliding with text annotations",
+		"box": {
+			"x": 79,
+			"y": 170,
+			"w": 64,
+			"h": 19
+		}
+	},
+	{
+		"id": "d46be6fd-structure_tab_parts",
+		"kind": "collision",
+		"screenshot": "structure_tab_parts.png",
+		"commit": "d46be6fd",
+		"note": "prevent bends from colliding with text annotations",
+		"box": {
+			"x": 359,
+			"y": 198,
+			"w": 102,
+			"h": 14
+		}
+	},
+	{
+		"id": "d46be6fd-tab_annotation",
+		"kind": "collision",
+		"screenshot": "tab_annotation.png",
+		"commit": "d46be6fd",
+		"note": "prevent bends from colliding with text annotations",
+		"box": {
+			"x": 555,
+			"y": 62,
+			"w": 25,
+			"h": 11
+		}
+	},
+	{
+		"id": "f15bcdae-tab_annotation",
+		"kind": "collision",
+		"screenshot": "tab_annotation.png",
+		"commit": "f15bcdae",
+		"note": "fix collisions between curves and harmonies",
+		"box": {
+			"x": 177,
+			"y": 61,
+			"w": 483,
+			"h": 112
+		}
+	}
+]

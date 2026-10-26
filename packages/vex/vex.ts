@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { coverage } from './coverage';
 import { dev } from './dev';
 import { fix } from './fix';
-import { lint } from './lint';
+import { lint, lintCorpus } from './lint';
 import { perf } from './perf';
 import { RendererBench } from './perf-bench';
 import { Retrier } from './perf-retrier';
@@ -14,6 +14,7 @@ import { PerfRun } from './perf-run';
 import { servePerfUi } from './perf-ui';
 import { readme } from './readme';
 import { render } from './render';
+import { FINDING_KINDS } from './render-lint';
 import { ship } from './ship';
 import { slice } from './slice';
 import { test } from './test';
@@ -128,7 +129,21 @@ vex
 	.description(
 		'render a musicxml file and judge the pixels: a 0..100 score per renderer, the findings that cost it points, and the png with each finding boxed',
 	)
-	.option('input', z.string(), { description: 'input musicxml file' })
+	.option('input', z.string().optional(), {
+		description: 'input musicxml file',
+	})
+	.option('corpus', bool, {
+		...flag,
+		description:
+			'score the lint against its corpus (packages/integration/__lint__) instead: precision, recall and hit rate per finding kind; fails when a defect it found goes unfound or a clean render gains a finding',
+	})
+	.option('add', z.string().optional(), {
+		description:
+			'with --corpus, add the defect a commit fixed, as <commit>:<screenshot>, e.g. 6a66854a:rest.png',
+	})
+	.option('kind', z.string().default('collision'), {
+		description: `with --add, what the defect is: collision, ${FINDING_KINDS.join(', ')}`,
+	})
 	.option('renderer', z.string(), {
 		default: 'vexml',
 		description:
@@ -139,9 +154,15 @@ vex
 			'directory for the marked pngs and the json report (default: .)',
 	})
 	.use(timing)
-	.action((opts, { log, fs, invocationDir }) =>
-		lint({ ...opts, cwd: invocationDir, log, fs }),
-	);
+	.action((opts, { log, fs, invocationDir }) => {
+		if (opts.corpus) {
+			return lintCorpus({ add: opts.add, kind: opts.kind, log });
+		}
+		if (!opts.input) {
+			throw new Error('--input or --corpus is required');
+		}
+		return lint({ ...opts, input: opts.input, cwd: invocationDir, log, fs });
+	});
 
 vex
 	.command('perf')

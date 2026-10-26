@@ -35,6 +35,7 @@ MusicXML tools:
 - `vex validate --input <path>` validate a MusicXML file.
 - `vex render --input <path>` render a MusicXML file to a PNG. Delete screenshots when you are done, unless you're showing the user something.
 - `vex lint --input <path> [--renderer vexml,osmd,alphatab,musescore|all]` judge a render from its pixels: a 0..100 score, findings (clipped ink, staves drawn into each other, nothing drawn) each with its pixel box and the measures it is in (none for MuseScore), and the PNG with each finding boxed. Delete its output as you would a screenshot.
+- `vex lint --corpus` score the lint against `packages/integration/__lint__`: clean fixture baselines, defects from commits that fixed one, and synthetic edits. Prints precision, recall and hit rate per finding kind, and fails when a defect it found goes unfound or a clean render gains a finding. `--add <commit>:<screenshot> [--kind <kind>]` adds the defect a commit fixed.
 - `vex slice --input <path> --measures <list>` extract measures from a MusicXML file into a smaller one.
 - `vex coverage` sync `packages/integration/COVERAGE.md` with the MusicXML 4.0 schema and check its fixtures. A change that draws a new element or attribute updates its row.
 - `vex perf [pattern]` time the fixtures through vexml, OSMD, and alphaTab, one render each.

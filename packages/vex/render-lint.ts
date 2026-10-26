@@ -2,7 +2,13 @@ import { Rect } from 'webappwiz/geometry';
 import type { InkMap } from './ink-map';
 import { type LineGroup, StaffDetector } from './staff-detector';
 
-export type FindingKind = 'blank' | 'clipped' | 'staves-collide' | 'stray-line';
+export const FINDING_KINDS = [
+	'blank',
+	'clipped',
+	'staves-collide',
+	'stray-line',
+] as const;
+export type FindingKind = (typeof FINDING_KINDS)[number];
 
 /** One thing wrong with a render, and the pixels where it is. */
 export interface Finding {
