@@ -1,14 +1,28 @@
 import { writeFileSync } from 'node:fs';
 import { basename, extname, isAbsolute, resolve } from 'node:path';
-import { type Renderer, renderers } from '@vexml/renderer';
+import { renderers } from '@vexml/renderer';
 import type { Logger } from 'webappwiz/log';
 import type { Fs } from 'webappwiz/system';
 import { markFindings } from './finding-markup';
 import { InkMap } from './ink-map';
-import { type LintReport, RenderLint } from './render-lint';
+import { locate } from './measure-locator';
+import { describeMeasures, MeasureMap } from './measure-map';
+import { type Finding, RenderLint } from './render-lint';
 
 export const ENGINES = ['vexml', 'osmd', 'alphatab', 'musescore'] as const;
 export type Engine = (typeof ENGINES)[number];
+
+/** A finding with the measures it is in, which an agent fixing it slices down to. */
+export interface LocatedFinding extends Finding {
+	/** MusicXML measure numbers in score order; empty when the engine can't say. */
+	measures: string[];
+}
+
+/** What `vex lint` reports for one engine. */
+export interface LocatedReport {
+	score: number;
+	findings: LocatedFinding[];
+}
 
 export interface LintOptions {
 	input: string;
@@ -36,11 +50,19 @@ export async function lint(opts: LintOptions) {
 	const musicXML = await opts.fs.read(input);
 
 	const engines = parseEngines(opts.renderer);
-	const reports: Partial<Record<Engine, LintReport>> = {};
+	const reports: Partial<Record<Engine, LocatedReport>> = {};
 	try {
 		for (const engine of engines) {
-			const png = await rendererFor(engine, musicXML).render();
-			const report = new RenderLint(InkMap.fromPng(png)).lint();
+			const { png, measures } = await locate(engine, musicXML);
+			const map = new MeasureMap(measures);
+			const lint = new RenderLint(InkMap.fromPng(png)).lint();
+			const report = {
+				score: lint.score,
+				findings: lint.findings.map((finding) => ({
+					...finding,
+					measures: map.numbersAt(finding.box),
+				})),
+			};
 			reports[engine] = report;
 
 			const marked = resolve(outDir, `${stem} ${engine} lint.png`);
@@ -52,8 +74,9 @@ export async function lint(opts: LintOptions) {
 			);
 			for (const finding of report.findings) {
 				const { x, y, w, h } = finding.box;
+				const where = describeMeasures(finding.measures);
 				opts.log.info(
-					`  - ${finding.kind}: ${finding.message} at x ${x}..${x + w}, y ${y}..${y + h}`,
+					`  - ${finding.kind}: ${finding.message}${where ? ` in ${where}` : ''} at x ${x}..${x + w}, y ${y}..${y + h}`,
 				);
 			}
 		}
@@ -79,17 +102,4 @@ function parseEngines(spec: string): Engine[] {
 		}
 		return engine;
 	});
-}
-
-function rendererFor(engine: Engine, musicXML: string): Renderer {
-	switch (engine) {
-		case 'vexml':
-			return renderers.vexml({ musicXML });
-		case 'osmd':
-			return renderers.osmd({ musicXML });
-		case 'alphatab':
-			return renderers.alphatab({ musicXML });
-		case 'musescore':
-			return renderers.musescore({ musicXML });
-	}
 }
