@@ -30,6 +30,27 @@ through the document: for Guitar Pro 7/8 `.gp`,
 from `@stringsync/mdom`. Call `score.dispose()` when the score is
 removed; it releases layers and event subscriptions.
 
+### Progressive rendering
+
+`progressive: true` shows the first screen of a long score first: `render` resolves once the
+systems filling the visible part of the container (or `scrollContainer`) are drawn, and the
+rest draw in idle slices, top to bottom. The pixels are the same once complete. The `Score`
+is complete from the start: parts, measures, durations and the playback timeline. The
+geometry of a system not yet drawn is the layout's plan for it (its `System`, `MeasureBox`
+and note rects, its steps' `x` and `systemRect`), exact once a `draw` event names the
+system; a pointer over it hits nothing. A cursor moved onto such a system draws through it
+synchronously first, so cursors and `follow()` are always exact. `score.isComplete()` and
+`score.whenComplete()` tell when the whole score is drawn; await the latter before reading
+geometry across the score. `score.snapshot()` draws the rest first. A panoramic or paged
+layout, and a snapshot, draw whole and report complete at once. Disposing the score cancels
+the slices left.
+
+```ts
+const score = await render(musicXML, element, { progressive: true });
+score.events.on('draw', (e) => e.systems.forEach((s) => refreshOverlay(s)));
+score.events.on('complete', () => enableExport());
+```
+
 ## Sizing and centering
 
 The score scales to fit its container and centers itself with no CSS; resizing the
@@ -195,7 +216,8 @@ a `url` is assumed already on the page (a system font or your own `@font-face`).
 `score.events.on(type, handler)` returns an unsubscribe function; call it when done.
 Types: `pointermove`, `pointerdown`, `pointerup`, `click` (each `{ target, point, native }`),
 `hover` (fires once per change of element under the pointer, including while scrolling;
-never for touch), `scroll` and `resize`. `target` is null on empty space; narrow it with
+never for touch), `scroll`, `resize`, and for a progressive render (see Render) `draw`
+(`{ systems: number[] }`, the systems a slice drew) and `complete`. `target` is null on empty space; narrow it with
 `instanceof` (`Note`, `TabPosition`, `MeasureBox`, ...), since its `type` string doesn't
 narrow in TypeScript. `point` is in score space. Notes expose `halo` and `color` toggles:
 `.on(cssColor)` / `.off()`.
@@ -239,7 +261,9 @@ const tick = () => {
 
 `sync` and `follow` return a Resource; dispose it to detach. A `visibility` event fires
 when the bar crosses the viewport edge. Implement `CursorView` (`render(event)`, `dispose()`)
-for a custom visual. Disposing the score disposes its cursors.
+for a custom visual. Disposing the score disposes its cursors. In a progressive render,
+moving a cursor onto a system not yet drawn draws through it first, so its position and
+`isFullyVisible()` are exact.
 
 Timing queries on the score: `getDurationMs()`, `getDurationBeats()`,
 `getMeasureIndexAtMs(ms)`, `getSequence()` (steps and `beatsToMs`, for scheduling audio

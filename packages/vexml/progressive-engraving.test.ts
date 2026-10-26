@@ -1,0 +1,337 @@
+import { describe, expect, it } from 'bun:test';
+import * as path from 'node:path';
+import { BarlineTranslator } from './barline-translator';
+import { ChordTranslator } from './chord-translator';
+import {
+	type Config,
+	DEFAULT_CONFIG,
+	DEFAULT_PANORAMIC_LAYOUT,
+	DEFAULT_STANDARD_LAYOUT,
+} from './config';
+import { DefaultScoreParser } from './default-score-parser';
+import { DurationTranslator } from './duration-translator';
+import { DynamicGlyphs } from './dynamic-glyphs';
+import { ElementFactory } from './element-factory';
+import { FakeCursorView } from './fake-cursor-view';
+import { FakeHost } from './fake-host';
+import { FakeIdleScheduler } from './fake-idle-scheduler';
+import { FakePaintProbe } from './fake-paint-probe';
+import type { Fold } from './fold';
+import { GapInserter } from './gap-inserter';
+import { Gaps } from './gaps';
+import { LayoutPlanner } from './layout-planner';
+import { NotationTranslator } from './notation-translator';
+import { RecordingFontLoader } from './recording-font-loader';
+import type { Score } from './score';
+import { type Engraving, ScoreDrawer } from './score-drawer';
+import { ScoreEngraver } from './score-engraver';
+import { ScoreReader } from './score-reader';
+import { type RenderStage, ScoreRenderer } from './score-renderer';
+import { SequenceFactory } from './sequence-factory';
+import { SignatureTranslator } from './signature-translator';
+import { SpannerBuilder } from './spanner-builder';
+import { SpillResolver } from './spill-resolver';
+import { StavePlan } from './stave-plan';
+import { TabVoiceTranslator } from './tab-voice-translator';
+import { VoiceTranslator } from './voice-translator';
+
+const DATA_DIR = path.resolve(import.meta.dir, '../integration/__data__');
+// Many systems, so a first screen leaves most of the score to the slices.
+const LONG = 'score_schubert_gute_nacht.musicxml';
+// A tie whose two halves sit on either side of a system break.
+const TIE_ACROSS_BREAK = 'tie_system_break.musicxml';
+// Narrow enough to break the tie fixture's two measures onto two systems.
+const NARROW = { ...DEFAULT_STANDARD_LAYOUT, referenceWidth: 360 };
+
+describe('ProgressiveEngraving', () => {
+	it('resolves render() with the first screen drawn and the rest pending', async () => {
+		const whole = await render(LONG);
+		const { score, stage, scheduler } = await render(LONG, {
+			progressive: true,
+		});
+
+		expect(score.isComplete()).toBe(false);
+		expect(scheduler.pending).toBe(1);
+		expect(stage.shownSystems()).toBeLessThan(whole.score.getSystems().length);
+		expect(score.getMeasureCount()).toBe(whole.score.getMeasureCount());
+		expect(score.getDurationMs()).toBe(whole.score.getDurationMs());
+		expect(score.getSequence().length).toBe(whole.score.getSequence().length);
+	});
+
+	it("draws the rest in slices, naming each slice's systems in a draw event, then completes", async () => {
+		const { score, scheduler } = await render(LONG, { progressive: true });
+		const drawn: number[][] = [];
+		let completes = 0;
+		score.events.on('draw', (e) => drawn.push([...e.systems]));
+		score.events.on('complete', () => completes++);
+		const first = drawn.length;
+		const settled = Promise.race([
+			score.whenComplete().then(() => 'complete'),
+			Promise.resolve('pending'),
+		]);
+
+		// A zero budget draws one system per slice, so each event names exactly one.
+		scheduler.run(0);
+		expect(drawn).toHaveLength(first + 1);
+		expect(score.isComplete()).toBe(false);
+		await expect(settled).resolves.toBe('pending');
+		scheduler.runAll();
+
+		const systems = drawn.flat();
+		expect(systems).toEqual([...systems].sort((a, b) => a - b));
+		expect(systems.at(-1)).toBe(score.getSystems().length - 1);
+		expect(score.isComplete()).toBe(true);
+		expect(completes).toBe(1);
+		expect(scheduler.pending).toBe(0);
+		await score.whenComplete();
+	});
+
+	it('spends an idle slice on as many systems as its budget holds', async () => {
+		const { score, scheduler } = await render(LONG, { progressive: true });
+		const drawn: number[][] = [];
+		score.events.on('draw', (e) => drawn.push([...e.systems]));
+
+		scheduler.run(Number.POSITIVE_INFINITY);
+
+		expect(drawn).toHaveLength(1);
+		expect(score.isComplete()).toBe(true);
+	});
+
+	it('matches a whole render once complete: ops, element boxes and step geometry', async () => {
+		const whole = await render(LONG);
+		const { score, stage, scheduler } = await render(LONG, {
+			progressive: true,
+		});
+		scheduler.runAll();
+
+		const engraving = stage.engravings.at(-1);
+		expect(engraving?.ops).toEqual(whole.stage.engravings[0]?.ops ?? []);
+		expect(engraving?.height).toBe(whole.stage.engravings[0]?.height ?? -1);
+		expect(boxesOf(score)).toEqual(boxesOf(whole.score));
+		expect(stepsOf(score)).toEqual(stepsOf(whole.score));
+		expect(score.getElements().all().length).toBe(
+			whole.score.getElements().all().length,
+		);
+	});
+
+	it('shows the stage only the ops each system adds', async () => {
+		const { stage, scheduler } = await render(LONG, { progressive: true });
+		scheduler.runAll();
+
+		for (let i = 1; i < stage.extensions.length; i++) {
+			const previous = stage.extensions[i - 1];
+			const current = stage.extensions[i];
+			expect(current?.from).toBe(previous?.engraving.ops.length ?? -1);
+		}
+	});
+
+	it('places a cursor moved onto an undrawn system where a whole render would', async () => {
+		const whole = await render(LONG);
+		const { score, scheduler } = await render(LONG, { progressive: true });
+		const lastMs = score.getDurationMs() - 1;
+		const expected = cursorRectAt(whole.score, lastMs);
+
+		const before = score.isComplete();
+		const rect = cursorRectAt(score, lastMs);
+
+		expect(before).toBe(false);
+		expect(rect).toEqual(expected);
+		expect(score.isComplete()).toBe(true);
+		scheduler.runAll();
+		expect(scheduler.pending).toBe(0);
+	});
+
+	it('finds nothing under a pointer over an undrawn system', async () => {
+		const whole = await render(LONG);
+		const { score } = await render(LONG, { progressive: true });
+		const box = whole.score.getSystems().at(-1)?.getMeasureBoxes().at(-1);
+		if (!box) {
+			throw new Error('fixture has no measure in its last system');
+		}
+		const point = {
+			x: box.rect.x + box.rect.w / 2,
+			y: box.rect.y + box.rect.h / 2,
+		};
+
+		expect(whole.score.getElements().at(point)).not.toBeNull();
+		expect(score.getElements().at(point)).toBeNull();
+		expect(score.getTimeAt(point)).toBeNull();
+	});
+
+	it('cancels the pending slice on dispose, and a late slice does nothing', async () => {
+		const { score, scheduler } = await render(LONG, { progressive: true });
+		let completes = 0;
+		score.events.on('complete', () => completes++);
+
+		score.dispose();
+
+		expect(scheduler.pending).toBe(0);
+		expect(() => scheduler.runAll()).not.toThrow();
+		expect(completes).toBe(0);
+	});
+
+	it('draws a tie across a system break whole, each half with its system', async () => {
+		const whole = await render(TIE_ACROSS_BREAK, { layout: NARROW });
+		// A view too short for a second system: the tie's end waits for a slice.
+		const { score, stage, scheduler } = await render(
+			TIE_ACROSS_BREAK,
+			{ progressive: true, layout: NARROW },
+			0,
+		);
+		expect(score.getSystems().length).toBeGreaterThan(1);
+		expect(score.isComplete()).toBe(false);
+
+		scheduler.runAll();
+
+		expect(stage.engravings.at(-1)?.ops).toEqual(
+			whole.stage.engravings[0]?.ops ?? [],
+		);
+	});
+
+	it('draws whatever is left before taking a snapshot', async () => {
+		const whole = await render(LONG);
+		const { score } = await render(LONG, { progressive: true });
+
+		const snapshot = score.snapshot();
+
+		expect(score.isComplete()).toBe(true);
+		expect(snapshot.engraving).toEqual(whole.score.snapshot().engraving);
+	});
+
+	it('draws a panoramic layout whole', async () => {
+		const { score, scheduler } = await render(LONG, {
+			progressive: true,
+			layout: DEFAULT_PANORAMIC_LAYOUT,
+		});
+
+		expect(score.isComplete()).toBe(true);
+		expect(scheduler.pending).toBe(0);
+	});
+});
+
+function boxesOf(score: Score): string[] {
+	return score
+		.getElements()
+		.measureBoxes()
+		.map((box) => `${box.getIndex()}:${JSON.stringify(box.rect)}`);
+}
+
+function stepsOf(score: Score): string[] {
+	return score
+		.getSequence()
+		.getSteps()
+		.map(
+			(s) => `${s.index}:${s.x}:${s.glideToX}:${JSON.stringify(s.systemRect)}`,
+		);
+}
+
+function cursorRectAt(score: Score, ms: number) {
+	const cursor = score.createCursor();
+	const view = new FakeCursorView();
+	cursor.sync(view);
+	cursor.seekMs(ms);
+	const rect = view.events.at(-1)?.position.rect;
+	cursor.dispose();
+	return rect;
+}
+
+async function render(
+	fixture: string,
+	overrides: Partial<Config> = {},
+	visibleBottom = 400,
+) {
+	const config = { ...DEFAULT_CONFIG, ...overrides };
+	const stage = new ProgressiveFakeStage(visibleBottom);
+	const scheduler = new FakeIdleScheduler();
+	const reader = new ScoreReader(new DynamicGlyphs());
+	const durations = new DurationTranslator(reader);
+	const barlines = new BarlineTranslator();
+	const signatures = new SignatureTranslator();
+	const staves = new StavePlan({ showTabs: true, showNotation: true });
+	const tab = new TabVoiceTranslator(durations, reader, 'none');
+	const chords = new ChordTranslator(durations, new NotationTranslator());
+	const translator = new VoiceTranslator(chords, durations, barlines, reader);
+	const gaps = new Gaps([], new GapInserter(reader));
+	const elements = new ElementFactory();
+	const sequences = new SequenceFactory(reader, gaps);
+	const renderer = new ScoreRenderer(
+		config,
+		stage,
+		new RecordingFontLoader(),
+		new DefaultScoreParser(),
+		new ScoreEngraver(
+			config,
+			new LayoutPlanner(translator, tab, signatures, staves, reader, gaps),
+			new ScoreDrawer(
+				config,
+				translator,
+				chords,
+				tab,
+				signatures,
+				staves,
+				barlines,
+				reader,
+				new SpannerBuilder(),
+				gaps,
+				new SpillResolver(),
+			),
+			elements,
+			sequences,
+			gaps,
+			reader,
+			staves,
+		),
+		elements,
+		sequences,
+		scheduler,
+	);
+	const score = await renderer.render(
+		await Bun.file(path.join(DATA_DIR, fixture)).text(),
+	);
+	return { score, stage, scheduler };
+}
+
+// A headless stage recording what it is shown: every engraving (whole or extended, the last one
+// current) and each extension's `from`. Its view shows the score down to `bottom` (400 score px
+// by default, a few systems of a long score).
+class ProgressiveFakeStage extends FakeHost implements RenderStage {
+	readonly container = {} as HTMLDivElement;
+	readonly base = {} as HTMLElement;
+	readonly probe = new FakePaintProbe();
+	readonly folds: Fold[] = [];
+	readonly engravings: Engraving[] = [];
+	readonly extensions: Array<{ engraving: Engraving; from: number }> = [];
+	readonly pixelRatio = 1;
+
+	constructor(private readonly bottom: number) {
+		super();
+	}
+
+	engrave(engraving: Engraving): void {
+		this.engravings.push(engraving);
+	}
+
+	extendEngraving(engraving: Engraving, from: number): void {
+		this.engravings.push(engraving);
+		this.extensions.push({ engraving, from });
+	}
+
+	visibleBottom(): number {
+		return this.bottom;
+	}
+
+	/* How many systems the first screen showed: the extensions before render() resolved. */
+	shownSystems(): number {
+		return this.extensions.length;
+	}
+
+	setFold(fold: Fold): void {
+		this.folds.push(fold);
+	}
+
+	paperColor(): string {
+		return '#ffffff';
+	}
+
+	paintEngraving(): void {}
+}

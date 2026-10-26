@@ -10,11 +10,17 @@ import type { ElementIndex } from './element-index';
 import { FontFamilies } from './font-families';
 import { FontShorthandPatch } from './font-shorthand-patch';
 import type { Gaps } from './gaps';
+import type { IdleScheduler } from './idle-scheduler';
 import { LayoutPlanner } from './layout-planner';
 import { MetricsPatch } from './metrics-patch';
 import { NotationTranslator } from './notation-translator';
 import type { PaintProbe } from './paint-probe';
 import { ProbeTextCanvas } from './probe-text-canvas';
+import {
+	ProgressiveEngraving,
+	type ProgressiveSink,
+} from './progressive-engraving';
+import { ProvisionalGeometry } from './provisional-geometry';
 import type { GapInfo } from './score';
 import { type DrawResult, ScoreDrawer } from './score-drawer';
 import type { ScoreReader } from './score-reader';
@@ -57,6 +63,8 @@ export class ScoreEngraver {
 		private readonly elementFactory: ElementFactory,
 		private readonly sequenceFactory: SequenceFactory,
 		private readonly configuredGaps: Gaps,
+		private readonly reader: ScoreReader,
+		private readonly staves: StavePlan,
 	) {}
 
 	/* The engraver wired with the production classes, for the composition roots (render,
@@ -110,6 +118,8 @@ export class ScoreEngraver {
 			elements,
 			sequences,
 			gaps,
+			reader,
+			staves,
 		);
 	}
 
@@ -204,21 +214,7 @@ export class ScoreEngraver {
 			geometry,
 			elements.noteLookup,
 		);
-		// Each gap's sync metadata, in config order (Score.getGaps' contract). A gap
-		// renders exactly one step; under repeats that's its first occurrence.
-		const gaps: GapInfo[] =
-			parts.length > 0
-				? this.configuredGaps.documentIndexes().map(({ gap, measureIndex }) => {
-						const range = sequence.getStepRangeOfMeasure(measureIndex);
-						const step = range ? sequence.getStep(range.start) : null;
-						return {
-							measureIndex,
-							label: gap.label ?? null,
-							startMs: step?.startMs ?? 0,
-							endMs: step?.endMs ?? 0,
-						};
-					})
-				: [];
+		const gaps = parts.length > 0 ? this.gapInfos(sequence) : [];
 		const recording = new ScoreRecording(
 			{
 				config: snapshotConfig(this.config),
@@ -233,5 +229,81 @@ export class ScoreEngraver {
 			probe,
 		);
 		return { drawn, elements, sequence, gaps, recording };
+	}
+
+	/*
+	 * Begin engraving `document` a system at a time (see ProgressiveEngraving): laid out whole,
+	 * its elements and timeline built over the geometry the layout plans, nothing drawn yet.
+	 * Null for a document with no parts, which engrave() handles whole.
+	 */
+	beginProgressive(
+		document: MDocument,
+		probe: PaintProbe,
+		viewport: Viewport,
+		decorations: Decorations,
+		scheduler: IdleScheduler,
+		sink: ProgressiveSink,
+	): ProgressiveEngraving | null {
+		const parts = document.score.parts;
+		if (parts.length === 0) {
+			return null;
+		}
+		this.configuredGaps.resolve(document);
+		new ProbeTextCanvas(probe).install();
+		new MetricsPatch().install();
+		new FontShorthandPatch().install();
+		const layout = this.layoutPlanner.plan(document.score, this.config);
+		const provisional = new ProvisionalGeometry(
+			this.reader,
+			this.staves,
+			document.score,
+			layout,
+		);
+		const planned = provisional.geometry();
+		const model = this.elementFactory.model(planned, parts);
+		const { elements, placer } = this.elementFactory.buildPlaceable(
+			model,
+			viewport,
+			decorations,
+		);
+		const timeline = this.sequenceFactory.begin(
+			parts,
+			planned,
+			elements.noteLookup,
+		);
+		const sequence = timeline.place(planned);
+		return new ProgressiveEngraving({
+			draw: this.scoreDrawer.begin(probe, document.score, layout),
+			provisional,
+			planned,
+			elements,
+			placer,
+			sequence,
+			timeline,
+			gaps: this.gapInfos(sequence),
+			parts,
+			factory: this.elementFactory,
+			config: this.config,
+			probe,
+			scheduler,
+			sink,
+		});
+	}
+
+	// Each gap's sync metadata, in config order (Score.getGaps' contract). A gap renders exactly
+	// one step; under repeats that's its first occurrence.
+	private gapInfos(sequence: Sequence): GapInfo[] {
+		return this.configuredGaps
+			.documentIndexes()
+			.map(({ gap, measureIndex }) => {
+				const range = sequence.getStepRangeOfMeasure(measureIndex);
+				const step = range ? sequence.getStep(range.start) : null;
+				return {
+					measureIndex,
+					label: gap.label ?? null,
+					startMs: step?.startMs ?? 0,
+					endMs: step?.endMs ?? 0,
+				};
+			});
 	}
 }

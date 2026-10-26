@@ -21,6 +21,11 @@ export abstract class BrowserRenderer<C> implements EvalRenderer<C> {
 		return null;
 	}
 
+	/** The CPU slowdown to render under (see Tab.throttle), or null for full speed. */
+	protected cpuThrottle(): number | null {
+		return null;
+	}
+
 	async render(): Promise<Image> {
 		return (await this.run()).image;
 	}
@@ -42,12 +47,23 @@ export abstract class BrowserRenderer<C> implements EvalRenderer<C> {
 			if (viewport) {
 				await tab.resize(viewport.width, viewport.height);
 			}
-			await tab.call('mount', await this.mountInput());
-			const result = fnSrc
-				? await tab.call<unknown>('evaluate', { fnSrc, arg })
-				: undefined;
-			const image = await tab.screenshot('#screenshot');
-			return { image, result };
+			const rate = this.cpuThrottle();
+			if (rate !== null) {
+				await tab.throttle(rate);
+			}
+			try {
+				await tab.call('mount', await this.mountInput());
+				const result = fnSrc
+					? await tab.call<unknown>('evaluate', { fnSrc, arg })
+					: undefined;
+				const image = await tab.screenshot('#screenshot');
+				return { image, result };
+			} finally {
+				// The tab goes back to its pool at full speed.
+				if (rate !== null) {
+					await tab.throttle(1);
+				}
+			}
 		});
 	}
 }

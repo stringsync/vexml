@@ -1,4 +1,5 @@
 import type { Bounded } from './decoration';
+import type { DrawEvent } from './drawing';
 import type { Element } from './element';
 import type { Note } from './note';
 
@@ -36,7 +37,10 @@ export interface ScoreResizeEvent {
 	readonly height: number;
 }
 
-/* The events a Score dispatches, keyed by name. Pointer events hit-test; scroll/resize don't. */
+/* The events a Score dispatches, keyed by name. Pointer events hit-test; scroll/resize don't.
+ * `draw` and `complete` come from a progressive render (see Config.progressive): `draw` names
+ * the systems a slice drew, whose geometry is now exact; `complete` fires once every system
+ * is drawn. A score drawn whole dispatches neither. */
 export type ScoreEventMap = {
 	pointermove: PointerTargetEvent;
 	pointerdown: PointerTargetEvent;
@@ -45,6 +49,8 @@ export type ScoreEventMap = {
 	hover: HoverEvent;
 	scroll: ScoreScrollEvent;
 	resize: ScoreResizeEvent;
+	draw: DrawEvent;
+	complete: undefined;
 };
 
 /* What changed entering the current cursor position. `started` are (re)attacks (a re-struck pitch

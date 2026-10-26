@@ -25,14 +25,17 @@ export class Testing {
 	}
 
 	/** Render a corpus file and run fn against the live render (see EvalRenderer for
-	 * the no-closures contract). The image reflects whatever fn did. */
+	 * the no-closures contract). The image reflects whatever fn did. `opts.cpuThrottle`
+	 * slows the tab's CPU by that factor for the render and the fn, for timing under a
+	 * slow device. */
 	async eval<T, A = undefined>(
 		file: string,
 		config: ConfigInput,
 		fn: (ctx: VexmlContext, arg: A) => T | Promise<T>,
 		arg?: A,
+		opts: { cpuThrottle?: number } = {},
 	): Promise<RenderResult<T>> {
-		return (await this.vexml(file, config)).eval(fn, arg);
+		return (await this.vexml(file, config, opts.cpuThrottle)).eval(fn, arg);
 	}
 
 	/** A corpus fixture's text, for the rare eval fn that needs one as its arg. */
@@ -43,12 +46,21 @@ export class Testing {
 	private async vexml(
 		file: string,
 		config: ConfigInput,
+		cpuThrottle?: number,
 	): Promise<EvalRenderer<VexmlContext>> {
 		const fixture = Bun.file(path.join(DATA_DIR, file));
 		const withFonts = this.withDefaultFonts(config);
 		return file.endsWith('.mxl')
-			? renderers.vexml({ mxl: await fixture.bytes(), config: withFonts })
-			: renderers.vexml({ musicXML: await fixture.text(), config: withFonts });
+			? renderers.vexml({
+					mxl: await fixture.bytes(),
+					config: withFonts,
+					cpuThrottle,
+				})
+			: renderers.vexml({
+					musicXML: await fixture.text(),
+					config: withFonts,
+					cpuThrottle,
+				});
 	}
 
 	/* Default both fonts to the families the Docker image installs as system fonts (see

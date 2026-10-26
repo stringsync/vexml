@@ -4,6 +4,7 @@ import { Rect } from 'webappwiz/geometry';
 import type { CursorHost } from './cursor-host';
 import { CursorPosition } from './cursor-position';
 import type { CursorView } from './cursor-view';
+import type { DrawnThrough } from './drawing';
 import type { CursorChangeEvent, CursorEventMap } from './events';
 import type { Note } from './note';
 import type { Scroller, ScrollerOptions } from './scroller';
@@ -40,6 +41,9 @@ export class CursorController implements Eventful<CursorEventMap>, Resource {
 		// The score's scroller: the default follow()/scrollIntoView() target, and what
 		// cancelScroll() halts.
 		private readonly scroller: Scroller & { cancel(): void },
+		// The score's drawing: a progressive render draws through the cursor's system before
+		// the bar is placed, so it never lands on a planned spot.
+		private readonly drawing: DrawnThrough,
 	) {
 		this.lastVisible = this.isFullyVisible();
 		this.subscriptions.defer(
@@ -121,6 +125,7 @@ export class CursorController implements Eventful<CursorEventMap>, Resource {
 
 	/* Whether the bar's page box lies entirely within the viewport. True when there's nothing to show. */
 	isFullyVisible(): boolean {
+		this.drawThrough();
 		const rect = this.sequence.positionAt(this.ms);
 		if (!rect) {
 			return true;
@@ -201,7 +206,16 @@ export class CursorController implements Eventful<CursorEventMap>, Resource {
 	}
 
 	private barRect(): Rect {
+		this.drawThrough();
 		return this.sequence.positionAt(this.ms) ?? EMPTY_RECT;
+	}
+
+	// Before any geometry of the current step is read: its system drawn, so the geometry is exact.
+	private drawThrough(): void {
+		const step = this.sequence.getStep(this.index);
+		if (step) {
+			this.drawing.drawThroughMeasure(step.measureIndex);
+		}
 	}
 
 	// Build the change payload, classifying note deltas against `from` (the step the cursor came from,

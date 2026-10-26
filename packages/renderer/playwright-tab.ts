@@ -1,4 +1,4 @@
-import type { Page } from 'playwright';
+import type { CDPSession, Page } from 'playwright';
 import type { Tab } from './tab';
 
 export class PlaywrightTab implements Tab {
@@ -18,6 +18,18 @@ export class PlaywrightTab implements Tab {
 			},
 			{ name, arg },
 		)) as T;
+	}
+
+	// The DevTools session holding the CPU throttle; the throttle lasts as long as it does.
+	private throttling: CDPSession | null = null;
+
+	async throttle(rate: number): Promise<void> {
+		this.throttling ??= await this.page.context().newCDPSession(this.page);
+		await this.throttling.send('Emulation.setCPUThrottlingRate', { rate });
+		if (rate === 1) {
+			await this.throttling.detach();
+			this.throttling = null;
+		}
 	}
 
 	async screenshot(selector: string): Promise<Buffer> {

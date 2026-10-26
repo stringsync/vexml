@@ -6,6 +6,7 @@ import { DurationTranslator } from './duration-translator';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { ElementFactory } from './element-factory';
 import { FakeHost } from './fake-host';
+import { FakeIdleScheduler } from './fake-idle-scheduler';
 import { FakePaintProbe } from './fake-paint-probe';
 import { FakeScoreParser } from './fake-score-parser';
 import type { Fold } from './fold';
@@ -76,9 +77,12 @@ describe('ScoreRenderer', () => {
 				elements,
 				sequences,
 				gaps,
+				reader,
+				staves,
 			),
 			elements,
 			sequences,
+			new FakeIdleScheduler(),
 		);
 	};
 
@@ -210,6 +214,14 @@ class FakeStage extends FakeHost implements RenderStage {
 
 	engrave(engraving: Engraving): void {
 		this.engravings.push(engraving);
+	}
+
+	extendEngraving(engraving: Engraving): void {
+		this.engravings.push(engraving);
+	}
+
+	visibleBottom(): number {
+		return 0;
 	}
 
 	setFold(fold: Fold): void {

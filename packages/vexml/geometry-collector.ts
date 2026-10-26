@@ -317,19 +317,23 @@ export class GeometryCollector {
 	 * diagrams are excluded (they don't feed the decoration ceiling), so the cursor bar
 	 * stops at the stave, not the fret box. Called once, at the end of the pass.
 	 */
-	applyDecorationTops(tops: {
+	/* The measure boxes grown up to each system's topmost text decoration, where one rose above
+	 * the box (see SpillTracker.growDecorationTop). A copy: the collected boxes stay as drawn, so
+	 * a partial read while the draw goes on leaves nothing behind. */
+	decoratedMeasures(tops: {
 		decorationTopOf(system: number): number | undefined;
-	}): void {
-		for (const [i, measure] of this.rawMeasures.entries()) {
+	}): RawMeasure[] {
+		return this.rawMeasures.map((measure) => {
 			const top = tops.decorationTopOf(measure.systemIndex);
 			const { rect } = measure;
-			if (top !== undefined && top < rect.y) {
-				this.rawMeasures[i] = {
-					...measure,
-					rect: new Rect(rect.x, top, rect.w, rect.bottom - top),
-				};
+			if (top === undefined || top >= rect.y) {
+				return measure;
 			}
-		}
+			return {
+				...measure,
+				rect: new Rect(rect.x, top, rect.w, rect.bottom - top),
+			};
+		});
 	}
 
 	notes(): RawNote[] {

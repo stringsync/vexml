@@ -109,6 +109,16 @@ export interface SystemObservation {
 	hairpinsStacked: boolean;
 }
 
+/* The page extents and hit-index geometry a pass collected, in its scratch space. */
+export interface DrawPassResult {
+	pageTop: number;
+	pageBottom: number;
+	staveLines: Map<number, SystemExtent>;
+	rawNotes: RawNote[];
+	rawMeasures: RawMeasure[];
+	rawChordDiagrams: RawChordDiagram[];
+}
+
 /* Where a system's draw began, for {@link DrawPass.rewind} to put the pass back to. */
 export interface SystemMark {
 	system: number;
@@ -592,7 +602,7 @@ export class DrawPass {
 
 	/* The system measure `m` is drawn on; a measure inside a multirest run is drawn on its
 	 * lead's. */
-	private systemOfMeasure(m: number): number {
+	systemOfMeasure(m: number): number {
 		for (let i = Math.min(m, this.boxes.length - 1); i >= 0; i--) {
 			const box = this.boxes[i];
 			if (box) {
@@ -1425,29 +1435,21 @@ export class DrawPass {
 		this.drawGapLabel(gap, left, right, top, bottom);
 	}
 
-	/*
-	 * After the last system: draw the header and footer, and hand back the page extents and
-	 * the hit-index geometry.
-	 */
-	finish(): {
-		pageTop: number;
-		pageBottom: number;
-		systemExtents: Map<number, SystemExtent>;
-		staveLines: Map<number, SystemExtent>;
-		rawNotes: RawNote[];
-		rawMeasures: RawMeasure[];
-		rawChordDiagrams: RawChordDiagram[];
-	} {
-		this.geometry.applyDecorationTops(this.spill);
-		this.drawHeader();
+	/* After the last system: draw the footer, and hand back the page extents and the hit-index
+	 * geometry. The header was drawn once the first system was placed (see drawHeader). */
+	finish(): DrawPassResult & { systemExtents: Map<number, SystemExtent> } {
 		this.drawFooter();
+		return { ...this.collected(), systemExtents: this.systemExtents() };
+	}
+
+	/* The page extents and hit-index geometry as they stand, mid-draw or after finish(). */
+	collected(): DrawPassResult {
 		return {
 			pageTop: this.pageTop,
 			pageBottom: this.pageBottom,
-			systemExtents: this.systemExtents(),
 			staveLines: this.staveLines,
 			rawNotes: this.geometry.notes(),
-			rawMeasures: this.geometry.measures(),
+			rawMeasures: this.geometry.decoratedMeasures(this.spill),
 			rawChordDiagrams: this.geometry.chordDiagrams(),
 		};
 	}
@@ -1568,7 +1570,12 @@ export class DrawPass {
 	 * further lifts the header with it rather than running into it. After the spanners are
 	 * resolved, so the bows over the first system count.
 	 */
-	private drawHeader(): void {
+	/*
+	 * Draw the score header over the first system, once that system is placed: it hangs off the
+	 * highest ink there, which nothing drawn later rises above. Lowers the page top to its own,
+	 * which a mark taken before it must learn (see SystemDraw).
+	 */
+	drawHeader(): void {
 		const inkTop = this.spill.systemTops().get(0);
 		if (
 			!this.header ||

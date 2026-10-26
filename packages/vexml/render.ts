@@ -1,5 +1,6 @@
 import type { MDocument } from '@stringsync/mdom';
 import { BRAVURA_URL } from './bravura-url';
+import { BrowserIdleScheduler } from './browser-idle-scheduler';
 import { type ConfigInput, resolveConfig } from './config';
 import { DefaultFontLoader } from './default-font-loader';
 import { DefaultScoreParser } from './default-score-parser';
@@ -78,5 +79,6 @@ export function render(
 		ScoreEngraver.create(resolved, reader, gaps, elements, sequences),
 		elements,
 		sequences,
+		new BrowserIdleScheduler(),
 	).render(input);
 }

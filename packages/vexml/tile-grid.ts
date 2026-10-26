@@ -37,6 +37,17 @@ export class TileGrid {
 		return this.lists.length;
 	}
 
+	/* This grid made taller, keeping every tile's list: a tile's index is its row and column,
+	 * so more rows below leave the filed ops where they are. */
+	grown(height: number): TileGrid {
+		const grid = new TileGrid(this.width, height, this.tileSize, this.origin);
+		for (const [i, list] of this.lists.entries()) {
+			grid.lists[i] = list;
+		}
+		grid.seq = this.seq;
+		return grid;
+	}
+
 	/* The tile's box on the surface; edge tiles are cut short where the surface ends. */
 	tileRect(index: number): Rect {
 		const x = (index % this.cols) * this.tileSize;

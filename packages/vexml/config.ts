@@ -120,6 +120,17 @@ export type Config = {
 	 * event then measure and move this element instead of the (non-scrolling) container.
 	 * It must be an ancestor of the container with `overflow: auto` or `scroll`. */
 	scrollContainer: HTMLElement | null;
+	/** Show the first screen of systems first and draw the rest while the page is idle
+	 * (default: false). `render` then resolves once the systems that fill the visible part of
+	 * the container (or `scrollContainer`) are drawn, and draws the remaining systems in idle
+	 * slices, top to bottom. The Score is complete from the start (parts, measures, timeline,
+	 * durations); the geometry of a system not yet drawn (its `System` and `MeasureBox` rects,
+	 * its notes' rects, its steps' `x` and `systemRect`) is the layout's plan for it until a
+	 * `draw` event names the system, and a pointer over it hits nothing. A cursor moved onto
+	 * such a system draws through it first. `score.isComplete()` and `score.whenComplete()`
+	 * tell when all of it is drawn. A panoramic or paged layout, and a snapshot, draw whole
+	 * regardless. */
+	progressive: boolean;
 };
 
 export interface FontOverride {
@@ -400,6 +411,7 @@ export const DEFAULT_CONFIG: Config = {
 	width: null,
 	maxWidth: null,
 	scrollContainer: null,
+	progressive: false,
 };
 
 /** The full config a partial one stands for: yours over the defaults, as `render` and

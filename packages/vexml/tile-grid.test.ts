@@ -32,6 +32,18 @@ describe('TileGrid', () => {
 		expect(shiftedGrid.append(fill(10, 60, 5, 5))).toEqual([0]);
 	});
 
+	it('grows taller keeping what each tile holds, with rows below for the new height', () => {
+		const op = fill(10, 10, 10, 10);
+		grid.append(op);
+
+		const grown = grid.grown(170);
+
+		expect(grown.rows).toBe(4);
+		expect(grown.ops(0)).toEqual([op]);
+		expect(grown.append(fill(10, 160, 5, 5))).toEqual([6]);
+		expect(grown.tileRect(6)).toEqual(new Rect(0, 150, 50, 20));
+	});
+
 	it('empties a tile a clear covers, keeping no clear for it', () => {
 		grid.append(fill(10, 10, 10, 10));
 		grid.append(clear(0, 0, 50, 50));

@@ -5,6 +5,7 @@ import { DefaultDecorations } from './default-decorations';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import type { Element } from './element';
 import { ElementIndex } from './element-index';
+import { FakeDrawing } from './fake-drawing';
 import { FakeHitTester } from './fake-hit-tester';
 import { FakeHost } from './fake-host';
 import type { FakeLayer } from './fake-layer';
@@ -42,6 +43,39 @@ describe('Score', () => {
 			host.scroller,
 			[],
 		);
+	});
+
+	it('forwards draw and complete from its drawing, and disposes the drawing with itself', () => {
+		const drawing = new FakeDrawing();
+		const progressive = new Score(
+			host,
+			elements,
+			decorations,
+			EMPTY_SEQUENCE,
+			host.scroller,
+			[],
+			[],
+			null,
+			drawing,
+		);
+		const drawn: number[][] = [];
+		let completes = 0;
+		progressive.events.on('draw', (e) => drawn.push([...e.systems]));
+		progressive.events.on('complete', () => completes++);
+
+		expect(progressive.isComplete()).toBe(false);
+		drawing.drew([2, 3]);
+		drawing.finish();
+		progressive.dispose();
+
+		expect(drawn).toEqual([[2, 3]]);
+		expect(completes).toBe(1);
+		expect(progressive.isComplete()).toBe(true);
+		expect(drawing.disposed).toBe(true);
+	});
+
+	it('is complete from the start when drawn whole', () => {
+		expect(score.isComplete()).toBe(true);
 	});
 
 	it('a pointer event hit-tests the point and emits target, score-space point, and native', () => {

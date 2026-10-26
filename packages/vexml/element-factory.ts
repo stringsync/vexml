@@ -16,6 +16,7 @@ import type {
 	PartModel,
 	TabModel,
 } from './element-model';
+import { ElementPlacer } from './element-placer';
 import { Measure } from './measure';
 import { MeasureBox } from './measure-box';
 import { MNoteFacts } from './mnote-facts';
@@ -182,6 +183,61 @@ export class ElementFactory {
 		viewport: Viewport,
 		decorations: Decorations,
 	): ElementIndex {
+		const linked = this.link(model, viewport, decorations);
+		const { tree, notes, tabList, boxes } = linked;
+		for (const target of model.targets) {
+			const element = target < 0 ? tabList[~target] : notes[target];
+			if (element) {
+				tree.insert(element, element.rect);
+			}
+		}
+		for (const box of boxes.values()) {
+			tree.insert(box, box.rect);
+		}
+		return linked.index;
+	}
+
+	/* Make the elements of a model built over planned geometry (see ProvisionalGeometry), with
+	 * the placer that moves each system's into place as it is drawn. The pointer tree starts
+	 * empty: nothing is hit until it is drawn. */
+	buildPlaceable(
+		model: ElementModel,
+		viewport: Viewport,
+		decorations: Decorations,
+	): { elements: ElementIndex; placer: ElementPlacer } {
+		const linked = this.link(model, viewport, decorations);
+		return {
+			elements: linked.index,
+			placer: new ElementPlacer(
+				linked.tree,
+				linked.noteByKey,
+				linked.tabByKey,
+				linked.boxes,
+				linked.systems,
+				linked.diagrams,
+				viewport,
+				decorations,
+			),
+		};
+	}
+
+	// The linked elements and the collections they resolve through, the pointer tree still
+	// empty.
+	private link(
+		model: ElementModel,
+		viewport: Viewport,
+		decorations: Decorations,
+	): {
+		index: ElementIndex;
+		tree: QuadTree<Element>;
+		notes: Note[];
+		tabList: TabPosition[];
+		noteByKey: Map<NoteKey, Note>;
+		tabByKey: Map<NoteKey, TabPosition>;
+		boxes: Map<number, MeasureBox>;
+		systems: Map<number, System>;
+		diagrams: ChordDiagram[];
+	} {
 		// Layout axis: one System per line, its rect the union of the line's measure columns.
 		const rawsBySystem = new Map<number, Rect[]>();
 		for (const m of model.boxes) {
@@ -321,20 +377,11 @@ export class ElementFactory {
 
 		const tree = new QuadTree<Element>(model.bounds);
 		const notes = [...noteByKey.values()];
-		for (const target of model.targets) {
-			const element = target < 0 ? tabList[~target] : notes[target];
-			if (element) {
-				tree.insert(element, element.rect);
-			}
-		}
-		for (const box of boxes.values()) {
-			tree.insert(box, box.rect);
-		}
 		// Systems stay out of the pointer tree: a system-wide target would sit under every
 		// staff-space point and add noise to allAt/within; boxes already cover the hit story.
 		// Chord diagrams are NOT in the pointer tree in v1 (hit-test parity with the old index);
 		// tree insertion is a reviewed fast-follow.
-		return new ElementIndex(
+		const index = new ElementIndex(
 			new DefaultHitTester(tree),
 			noteByKey,
 			boxes,
@@ -343,5 +390,16 @@ export class ElementFactory {
 			partList,
 			[...systems.values()],
 		);
+		return {
+			index,
+			tree,
+			notes,
+			tabList,
+			noteByKey,
+			tabByKey,
+			boxes,
+			systems,
+			diagrams,
+		};
 	}
 }

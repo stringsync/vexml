@@ -26,6 +26,7 @@ export class TabPosition extends Element implements Highlightable {
 	readonly type = 'tab-position';
 	readonly color: Toggle;
 	readonly halo: Toggle;
+	private glyph: NoteGlyph | null;
 
 	constructor(
 		rect: Rect,
@@ -35,6 +36,14 @@ export class TabPosition extends Element implements Highlightable {
 		super(rect, viewport);
 		this.color = new Toggle(this, opts.decorations.color);
 		this.halo = new Toggle(this, opts.decorations.halo);
+		this.glyph = opts.glyph;
+	}
+
+	/* Take the box and fret glyph the draw gave this position, once its system is drawn (see
+	 * ElementPlacer). */
+	drawn(raw: { rect: Rect; glyph: NoteGlyph | null }): void {
+		this.relocate(raw.rect);
+		this.glyph = raw.glyph;
 	}
 
 	/* The same mdom note its Note wraps: one source of truth for both renderings. */
@@ -46,8 +55,8 @@ export class TabPosition extends Element implements Highlightable {
 	 * engraved. No glyph means the fret was omitted (a tie-stop/held string), so there's nothing
 	 * to recolor; draw nothing rather than stamping a phantom ellipse blip on an empty string. */
 	override drawColor(ctx: CanvasRenderingContext2D, color: string): void {
-		if (this.opts.glyph) {
-			this.stampGlyph(ctx, this.opts.glyph, color);
+		if (this.glyph) {
+			this.stampGlyph(ctx, this.glyph, color);
 		}
 	}
 

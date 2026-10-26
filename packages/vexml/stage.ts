@@ -471,8 +471,12 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		);
 	}
 
+	// The engraving shown, as extendEngraving tells whether a longer one still fits its tiles.
+	private shown: Pick<Engraving, 'width' | 'height' | 'origin'> | null = null;
+
 	engrave(engraving: Engraving): void {
 		const { ops, width, height, origin, scale, fingerprint } = engraving;
+		this.shown = { width, height, origin };
 		// frame()/sizeBitmap read the box's size back for the intrinsic dimensions the
 		// score<->client transform needs. The scale sizes the box as a caller's CSS stretching it
 		// would, so everything mapped through frame() follows it; the tiles are painted at the size
@@ -500,6 +504,44 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		this.fitEngraving();
 		this.updateView();
 		painted?.plane.remove();
+	}
+
+	/* Show more of an engraving shown already (a progressive render's next systems): its new
+	 * ops land on the tiles in place, the surface grown when a system took more room than
+	 * planned, unless its width or crop changed, which loads it afresh. */
+	extendEngraving(engraving: Engraving, from: number): void {
+		const { ops, width, height, origin, scale } = engraving;
+		const { shown } = this;
+		if (
+			!shown ||
+			shown.width !== width ||
+			shown.origin.x !== origin.x ||
+			shown.origin.y !== origin.y ||
+			height < shown.height
+		) {
+			this.engrave(engraving);
+			return;
+		}
+		if (height !== shown.height) {
+			shown.height = height;
+			this.box.size(width, height, scale);
+			this.engraving.grow(height);
+		}
+		for (let i = from; i < ops.length; i++) {
+			const op = ops[i];
+			if (op) {
+				this.engraving.paint(op);
+			}
+		}
+		this.fitEngraving();
+		this.updateView();
+	}
+
+	/* The bottom of what the page shows of the score, in score px: the scroll box's, cut to
+	 * the window's. */
+	visibleBottom(): number {
+		const port = this.viewportRect();
+		return this.toScoreSpace(0, Math.min(port.bottom, window.innerHeight)).y;
 	}
 
 	createMarker(zIndex?: number): ManagedMarker {

@@ -29,8 +29,9 @@ export interface VexmlContext {
 	SnapshotMismatchError: typeof SnapshotMismatchError;
 }
 
-/** A score as MusicXML text or compressed .mxl bytes, plus the config to render with. */
-export type VexmlInput = { config?: ConfigInput } & (
+/** A score as MusicXML text or compressed .mxl bytes, plus the config to render with, and
+ * the CPU slowdown to render under (see Tab.throttle; default full speed). */
+export type VexmlInput = { config?: ConfigInput; cpuThrottle?: number } & (
 	| { musicXML: string; mxl?: undefined }
 	| { mxl: Uint8Array; musicXML?: undefined }
 );
@@ -69,6 +70,10 @@ export class VexmlRenderer extends BrowserRenderer<VexmlContext> {
 	 * runtime, so a static viewport exercises the layout deterministically. */
 	protected override viewport(): { width: number; height: number } {
 		return { width: this.referenceWidth() + MARGIN, height: 600 };
+	}
+
+	protected override cpuThrottle(): number | null {
+		return this.input.cpuThrottle ?? null;
 	}
 
 	protected mountInput(): unknown {

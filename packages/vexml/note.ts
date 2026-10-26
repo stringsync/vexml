@@ -53,11 +53,23 @@ export class Note extends Element implements Highlightable, Playable {
 	readonly type = 'note';
 	readonly color: Toggle;
 	readonly halo: Toggle;
+	private ink: Rect;
+	private glyph: NoteGlyph | null;
 
 	constructor(private readonly deps: NoteDeps) {
 		super(deps.rect, deps.viewport);
 		this.color = new Toggle(this, deps.decorations.color);
 		this.halo = new Toggle(this, deps.decorations.halo);
+		this.ink = deps.ink;
+		this.glyph = deps.glyph;
+	}
+
+	/* Take the head, ink and glyph the draw gave this note, once its system is drawn (see
+	 * ElementPlacer). */
+	drawn(raw: { rect: Rect; ink: Rect; glyph: NoteGlyph | null }): void {
+		this.relocate(raw.rect);
+		this.ink = raw.ink;
+		this.glyph = raw.glyph;
 	}
 
 	/* Empty when the score was rendered from a snapshot, which holds no document. */
@@ -69,8 +81,8 @@ export class Note extends Element implements Highlightable, Playable {
 	 * actual head recolors and a hollow head stays hollow. No glyph means nothing was engraved (a rest, or a tie-stop tab string whose fret is omitted), so draw nothing rather than stamping
 	 * a phantom ellipse blip where there's no notehead. */
 	override drawColor(ctx: CanvasRenderingContext2D, color: string): void {
-		if (this.deps.glyph) {
-			this.stampGlyph(ctx, this.deps.glyph, color);
+		if (this.glyph) {
+			this.stampGlyph(ctx, this.glyph, color);
 		}
 	}
 
@@ -124,10 +136,10 @@ export class Note extends Element implements Highlightable, Playable {
 	 * alone: this is the box to keep clear of when marking just short of a note.
 	 */
 	getInkRect(): Rect {
-		let ink = this.deps.ink;
+		let ink = this.ink;
 		for (const sibling of this.getChordSiblings({ includeSelf: true })) {
 			for (const grace of sibling.getGraceNotes()) {
-				ink = ink.union(grace.deps.ink);
+				ink = ink.union(grace.ink);
 			}
 		}
 		return ink;

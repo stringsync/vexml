@@ -47,6 +47,28 @@ export class Sequence {
 		return this.steps.length;
 	}
 
+	/* Take the step geometry (x, glide and system box) of `other`, the same timeline built again
+	 * over newer geometry: a progressive render rebuilds it as each system is drawn, and the
+	 * steps a cursor holds by index keep their places (see ProgressiveEngraving). */
+	adoptGeometry(other: Sequence): void {
+		if (other.steps.length !== this.steps.length) {
+			throw new Error(
+				'vexml: a timeline can only adopt geometry from its own steps',
+			);
+		}
+		for (const [i, step] of other.steps.entries()) {
+			const own = this.steps[i];
+			if (own) {
+				this.steps[i] = {
+					...own,
+					x: step.x,
+					glideToX: step.glideToX,
+					systemRect: step.systemRect,
+				};
+			}
+		}
+	}
+
 	/* The timeline as data, its notes as indexes into the score's notes (see
 	 * SequenceFactory.restore). */
 	model(indexOf: ReadonlyMap<Note, number>): SequenceModel {

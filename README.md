@@ -169,6 +169,18 @@ const snapshot = score.snapshot();
 await render(snapshot, element);
 ```
 
+### Progressive rendering
+
+Show the first screen of a long score at once and draw the rest while the page is idle.
+The score's timeline and measures are complete from the start; `draw` events name each
+system as it lands.
+
+```ts
+const score = await render(musicXML, element, { progressive: true });
+score.events.on('draw', (e) => console.log('drawn systems', e.systems));
+await score.whenComplete();
+```
+
 ## Development
 
 Needs [bun](https://bun.sh) and [docker](https://docs.docker.com/desktop/). The library is

@@ -235,12 +235,14 @@ describe('GeometryCollector', () => {
 			number: '2',
 			systemIndex: 1,
 		});
-		collector.applyDecorationTops({
-			decorationTopOf: (system) => (system === 0 ? 25 : 90),
+		const decorated = collector.decoratedMeasures({
+			decorationTopOf: (system: number) => (system === 0 ? 25 : 90),
 		});
 		// System 0's ceiling (25) is above the box, so the box grows to it; system 1's
 		// ceiling (90) is inside the box and must not shrink it.
-		expect(collector.measures()[0]?.rect).toMatchObject({ y: 25, h: 75 });
-		expect(collector.measures()[1]?.rect).toMatchObject({ y: 40, h: 60 });
+		expect(decorated[0]?.rect).toMatchObject({ y: 25, h: 75 });
+		expect(decorated[1]?.rect).toMatchObject({ y: 40, h: 60 });
+		// The collected boxes stay as drawn.
+		expect(collector.measures()[0]?.rect).toMatchObject({ y: 40, h: 60 });
 	});
 });

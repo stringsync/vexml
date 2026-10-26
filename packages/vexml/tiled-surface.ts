@@ -100,6 +100,24 @@ export class TiledSurface implements PaintSink, Resource {
 		this.placePlane();
 	}
 
+	/* Make the surface taller, keeping what is painted: the tiles above stay, those of the old
+	 * bottom row (cut short at the old edge) are painted again at full height, and the rows
+	 * below open as paint reaches them. */
+	grow(height: number): void {
+		if (height <= this.grid.height) {
+			return;
+		}
+		const lastRow = this.grid.rows - 1;
+		for (const tile of [...this.tiles.keys()]) {
+			if (Math.floor(tile / this.grid.cols) === lastRow) {
+				this.close(tile);
+			}
+		}
+		this.grid = this.grid.grown(height);
+		this.placePlane();
+		this.refresh();
+	}
+
 	/* Replace everything with already recorded ops: the engraving, once its crop is known. */
 	load(
 		ops: readonly PaintOp[],

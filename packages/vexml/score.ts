@@ -5,9 +5,11 @@ import {
 	type Events,
 	type Unlisten,
 } from 'webappwiz/events';
+import { CompleteDrawing } from './complete-drawing';
 import { LOUPE_OPTIONS } from './constants';
 import { CursorController } from './cursor-controller';
 import { CursorHostAdapter } from './cursor-host-adapter';
+import type { Drawing } from './drawing';
 import {
 	EditingController,
 	type EditingControllerOptions,
@@ -125,11 +127,23 @@ export class Score implements Eventful<ScoreEventMap> {
 		private readonly pages: readonly Page[] = [],
 		// Null for a score a test built by hand, which has nothing to snapshot.
 		private readonly snapshots: SnapshotSource | null = null,
+		// How far the engraving has come: whole, unless the render is progressive.
+		private readonly drawing: Drawing = new CompleteDrawing(),
 	) {
 		// Released in reverse: editors and cursors first, the host they draw on last.
 		this.disposer.use(host);
 		this.disposer.use(this.dispatcher);
 		this.disposer.use(decorations);
+		// Disposing cancels whatever a progressive render has left to draw.
+		this.disposer.use(drawing);
+		this.disposer.defer(
+			drawing.events.on('draw', (event) =>
+				this.dispatcher.dispatch('draw', event),
+			),
+		);
+		this.disposer.defer(
+			drawing.events.on('complete', () => this.dispatcher.dispatch('complete')),
+		);
 		// Fires on any change to the container OR the base canvas's rendered box (e.g. a web-font
 		// reflow growing the engraving without the container resizing). Re-sync the layers to the
 		// base's live box every time: that stale placement is exactly what drifts when the base grows
@@ -220,6 +234,7 @@ export class Score implements Eventful<ScoreEventMap> {
 			this.sequence,
 			new CursorHostAdapter(this.host),
 			this.scroller,
+			this.drawing,
 		);
 		// The cursor announces its own disposal, so the score can let go without the cursor
 		// having to know who is holding it.
@@ -283,7 +298,21 @@ export class Score implements Eventful<ScoreEventMap> {
 		if (!this.snapshots) {
 			throw new Error('vexml: this score has nothing to snapshot');
 		}
+		// A snapshot holds the whole engraving: a progressive render draws the rest now.
+		this.drawing.drawAll();
 		return this.snapshots.snapshot();
+	}
+
+	/** Whether every system is drawn: true from the start unless the render is progressive
+	 * (see Config.progressive), then once the last slice lands. */
+	isComplete(): boolean {
+		return this.drawing.isComplete();
+	}
+
+	/** Resolves once every system is drawn (at once for a score drawn whole). Await it before
+	 * reading geometry across the whole score. Never settles for a score disposed first. */
+	whenComplete(): Promise<void> {
+		return this.drawing.whenComplete();
 	}
 
 	/* Total playback time of the score, repeats and voltas expanded. */
@@ -437,6 +466,8 @@ export class Score implements Eventful<ScoreEventMap> {
 	private bind(type: keyof ScoreEventMap): void {
 		switch (type) {
 			case 'resize':
+			case 'draw':
+			case 'complete':
 				return;
 			case 'scroll': {
 				this.listen(type, 'scroll', (native) => {
@@ -491,7 +522,7 @@ export class Score implements Eventful<ScoreEventMap> {
 	// Detach the underlying source when the last subscriber for a Score event leaves. Resize stays
 	// observed (it serves the layers), so it's a no-op here.
 	private unbind(type: keyof ScoreEventMap): void {
-		if (type === 'resize') {
+		if (type === 'resize' || type === 'draw' || type === 'complete') {
 			return;
 		}
 		const handlers = this.bound.get(type);

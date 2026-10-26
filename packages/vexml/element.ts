@@ -54,9 +54,21 @@ export abstract class Element implements Decoratable {
 	abstract readonly type: string;
 
 	constructor(
-		readonly rect: Rect,
+		private box: Rect,
 		protected readonly viewport: Viewport,
 	) {}
+
+	/* The element's box in score px. Exact once its system is drawn; in a progressive render an
+	 * element of a system not yet drawn holds the box the layout planned for it (see
+	 * Config.progressive). */
+	get rect(): Rect {
+		return this.box;
+	}
+
+	/* Put the element where the draw put it, once its system is drawn (see ElementPlacer). */
+	relocate(rect: Rect): void {
+		this.box = rect;
+	}
 
 	/* The mutable mdom nodes this element was built from (a Note's MNote, a MeasureBox's one mdom
 	 * Measure per part, a ChordDiagram's Harmony). */

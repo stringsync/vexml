@@ -16,6 +16,11 @@ import {
 	type SequenceNote,
 	type Step,
 } from './sequence';
+import {
+	SequencePlacer,
+	type SequenceSkeleton,
+	type StepSkeleton,
+} from './sequence-placer';
 import { SwingWarp } from './swing-warp';
 import { TempoMap, type TempoSegment } from './tempo-map';
 import { Timeline } from './timeline';
@@ -125,6 +130,31 @@ export class SequenceFactory {
 
 	/* Assemble a Sequence from the pure data seam (what unit tests drive). */
 	createFromInput(input: SequenceInput): Sequence {
+		return new SequencePlacer(this.skeletonOf(input), new Map()).placeInput(
+			input,
+		);
+	}
+
+	/* Begin the timeline of a score drawn a system at a time: the placer places it on the
+	 * geometry at hand now, and again on each system's drawn geometry later. `geometry` names
+	 * every note that sounds (the layout's plan has them all, see ProvisionalGeometry). */
+	begin(
+		parts: Part[],
+		geometry: RawGeometry,
+		notesByMnote: ReadonlyMap<NoteKey, Note>,
+	): SequencePlacer {
+		const input = this.buildInput(
+			parts,
+			geometry,
+			notesByMnote,
+			(mnote) => notesByMnote.get(mnote)?.isSwingExempt() ?? null,
+		);
+		return new SequencePlacer(this.skeletonOf(input), notesByMnote);
+	}
+
+	// Everything of the timeline but where its steps stand: the passes in playback order, each
+	// step's beats and the notes that start and sound in it, the tempo map and the ties.
+	private skeletonOf(input: SequenceInput): SequenceSkeleton {
 		const notesByMeasure = new Map<number, SequenceNote[]>();
 		for (const note of input.notes) {
 			const list = notesByMeasure.get(note.measureIndex);
@@ -138,39 +168,34 @@ export class SequenceFactory {
 		// Walk the measure passes in playback order, collecting each note occurrence's absolute
 		// [startBeat, endBeat) interval plus the onsets that seed steps.
 		type Interval = { note: Note; startBeat: number; endBeat: number };
-		// `x: null` marks an onset seeded by a note *end* rather than a notehead; it's filled in below.
-		// `gap` marks a gap measure's synthesized step, which glides across its own box only.
 		type Onset = {
-			x: number | null;
-			systemRect: Rect;
 			measureIndex: number;
-			gap?: boolean;
+			kind: StepSkeleton['kind'];
+			notes: Note[];
 		};
 		const intervals: Interval[] = [];
 		const onsets = new Map<number, Onset>();
-		const ends: Array<{
-			beat: number;
-			systemRect: Rect;
-			measureIndex: number;
-		}> = [];
+		const ends: Array<{ beat: number; measureIndex: number }> = [];
 		const { passes, segments, totalBeats } = this.unroll(input.measures);
 		// Where each gap ends, so its step ends there even when the measure after it opens with
 		// nothing drawn (a tab stave's rest): the gap plays exactly gapMs.
-		const gapEnds: Array<{ beat: number; measure: MeasureInfo }> = [];
+		const gapEnds: Array<{ beat: number; measureIndex: number }> = [];
 		for (const [p, { measure, startBeat: measureStart }] of passes.entries()) {
 			// A gap has no notes to seed a step, so its step is synthesized here, spanning the
 			// measure with nothing active: the cursor glides across its box and everything
 			// sounding before it stops.
 			if (measure.gapMs !== undefined) {
 				onsets.set(measureStart, {
-					x: measure.systemRect.x,
-					systemRect: measure.systemRect,
 					measureIndex: measure.index,
-					gap: true,
+					kind: 'gap',
+					notes: [],
 				});
 				const next = passes[p + 1];
 				if (next) {
-					gapEnds.push({ beat: next.startBeat, measure: next.measure });
+					gapEnds.push({
+						beat: next.startBeat,
+						measureIndex: next.measure.index,
+					});
 				}
 				continue;
 			}
@@ -181,20 +206,15 @@ export class SequenceFactory {
 					startBeat,
 					endBeat: startBeat + sn.beats,
 				});
-				ends.push({
-					beat: startBeat + sn.beats,
-					systemRect: measure.systemRect,
-					measureIndex: measure.index,
-				});
+				ends.push({ beat: startBeat + sn.beats, measureIndex: measure.index });
 				const existing = onsets.get(startBeat);
 				if (existing) {
-					// the onset's leftmost notehead anchors the bar
-					existing.x = Math.min(existing.x ?? sn.x, sn.x);
+					existing.notes.push(sn.note);
 				} else {
 					onsets.set(startBeat, {
-						x: sn.x,
-						systemRect: measure.systemRect,
 						measureIndex: measure.index,
+						kind: 'notes',
+						notes: [sn.note],
 					});
 				}
 			}
@@ -213,13 +233,9 @@ export class SequenceFactory {
 		// already an onset. Matching is epsilon-tolerant (see BEAT_EPSILON) via a quantized key;
 		// an exact-equality test would seed a duplicate micro-step one ULP off a real onset.
 		const quantize = (beat: number) => Math.round(beat / BEAT_EPSILON);
-		for (const { beat, measure } of gapEnds) {
+		for (const { beat, measureIndex } of gapEnds) {
 			if (!onsets.has(beat)) {
-				onsets.set(beat, {
-					x: measure.systemRect.x,
-					systemRect: measure.systemRect,
-					measureIndex: measure.index,
-				});
+				onsets.set(beat, { measureIndex, kind: 'left', notes: [] });
 			}
 		}
 		const onsetKeys = new Set([...onsets.keys()].map(quantize));
@@ -235,111 +251,38 @@ export class SequenceFactory {
 			}
 			onsetKeys.add(key);
 			onsets.set(end.beat, {
-				x: null,
-				systemRect: end.systemRect,
 				measureIndex: end.measureIndex,
+				kind: 'seed',
+				notes: [],
 			});
 		}
 
-		// Every rate change is in by now, so the map is complete and can date the steps below.
+		// Every rate change is in by now, so the map is complete and can date the steps.
 		const tempo = new TempoMap(segments);
 		const startBeats = [...onsets.keys()].sort((a, b) => a - b);
-		// Place each seeded end along the glide the cursor was already making between the surrounding
-		// noteheads, so splitting a step leaves the cursor's path unchanged; only the active set
-		// differs. Ascending order means the previous onset is always resolved already; the next one
-		// may be another seed, so scan forward to the next real notehead.
-		for (const [i, startBeat] of startBeats.entries()) {
-			const onset = onsets.get(startBeat);
-			if (!onset || onset.x !== null) {
-				continue;
-			}
-			const prevBeat = startBeats[i - 1] ?? startBeat;
-			const prev = onsets.get(prevBeat);
-			let j = i + 1;
-			while (onsets.get(startBeats[j] ?? -1)?.x === null) {
-				j++;
-			}
-			const nextBeat = startBeats[j];
-			const next = nextBeat === undefined ? undefined : onsets.get(nextBeat);
-			const fromX =
-				prev?.x != null && prev.systemRect.y === onset.systemRect.y
-					? prev.x
-					: onset.systemRect.x;
-			const toX =
-				next?.x != null &&
-				next.systemRect.y === onset.systemRect.y &&
-				next.x > fromX
-					? next.x
-					: onset.systemRect.right;
-			const span = (nextBeat ?? totalBeats) - prevBeat;
-			onset.x =
-				span > 0
-					? fromX + ((toX - fromX) * (startBeat - prevBeat)) / span
-					: fromX;
-		}
-
-		const steps: Step[] = [];
-		const firstStepOfNote = new Map<Note, number>();
-		const firstStepOfMeasure = new Map<number, number>();
+		const steps: StepSkeleton[] = [];
 		for (const [i, startBeat] of startBeats.entries()) {
 			const onset = onsets.get(startBeat);
 			if (!onset) {
 				continue;
 			}
-			const nextBeat = startBeats[i + 1];
-			const endBeat = nextBeat ?? totalBeats;
+			const endBeat = startBeats[i + 1] ?? totalBeats;
 			const active = intervals
 				.filter(
 					(iv) =>
 						iv.startBeat <= startBeat && startBeat < iv.endBeat - BEAT_EPSILON,
 				)
 				.map((iv) => iv.note);
-			// Glide toward the next onset on the same system; at a line break, to the system's right
-			// edge. A gap glides across its own box only: the clef, signatures or barline between its
-			// right edge and the next onset are crossed in a jump, as at a line break, so the cursor
-			// spends the gap's whole time over the gap.
-			const next = nextBeat === undefined ? undefined : onsets.get(nextBeat);
-			// Every x is resolved by now (seeds were filled in above); the fallbacks only satisfy types.
-			const x = onset.x ?? onset.systemRect.x;
-			const sameSystem =
-				next?.x != null &&
-				next.systemRect.y === onset.systemRect.y &&
-				next.x > x;
-			const glideToX =
-				!onset.gap && sameSystem && next?.x != null
-					? next.x
-					: onset.systemRect.right;
 			steps.push({
-				index: i,
-				measureIndex: onset.measureIndex,
 				startBeat,
 				endBeat,
-				startMs: tempo.msAt(startBeat),
-				endMs: tempo.msAt(endBeat),
-				x,
-				glideToX,
-				systemRect: onset.systemRect,
+				measureIndex: onset.measureIndex,
+				kind: onset.kind,
+				notes: onset.notes,
 				active,
 			});
-			for (const note of active) {
-				if (!firstStepOfNote.has(note)) {
-					firstStepOfNote.set(note, i);
-				}
-			}
-			if (!firstStepOfMeasure.has(onset.measureIndex)) {
-				firstStepOfMeasure.set(onset.measureIndex, i);
-			}
 		}
-
-		return new Sequence(
-			steps,
-			tempo,
-			totalBeats,
-			input.measures.length,
-			tiedFrom,
-			firstStepOfNote,
-			firstStepOfMeasure,
-		);
+		return { steps, tempo, totalBeats, measures: input.measures, tiedFrom };
 	}
 
 	/* Build the timeline's timing alone, with no geometry or note elements: every mdom note

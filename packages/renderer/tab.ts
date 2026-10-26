@@ -14,6 +14,9 @@ export interface Tab extends AsyncResource {
 	screenshot(selector: string): Promise<Buffer>;
 	/** Resize the tab's viewport. */
 	resize(width: number, height: number): Promise<void>;
+	/** Slow the tab's CPU by `rate` (DevTools' CPU throttling: 4 is "4x slowdown"); 1 restores
+	 * full speed. */
+	throttle(rate: number): Promise<void>;
 	/** Closes the tab. */
 	disposeAsync(): Promise<void>;
 }

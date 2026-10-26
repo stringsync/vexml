@@ -2,14 +2,18 @@ import type { MDocument } from '@stringsync/mdom';
 import type { Rect } from 'webappwiz/geometry';
 import type { Config } from './config';
 import { DefaultDecorations } from './default-decorations';
+import type { Drawing } from './drawing';
 import type { ElementFactory } from './element-factory';
 import type { ElementIndex } from './element-index';
 import type { Fold } from './fold';
 import type { FontLoader } from './font-loader';
 import type { Host } from './host';
+import type { IdleScheduler } from './idle-scheduler';
 import { Page } from './page';
 import type { PagePainter } from './page-painter';
 import type { PaintProbe } from './paint-probe';
+import type { ProgressiveSink, ProgressiveView } from './progressive-engraving';
+import { ProgressiveRecording } from './progressive-recording';
 import { type GapInfo, Score } from './score';
 import type { Engraving } from './score-drawer';
 import type { ScoreEngraver } from './score-engraver';
@@ -26,7 +30,11 @@ import { StoredSnapshot } from './stored-snapshot';
  * the engraving is shown in, the probe its recording measures text with, where the engraving and
  * a sticky fold go, the Host surface handed to the Score, and the painter its pages draw with.
  * Stage implements it for real; a unit test injects a fake. */
-export interface RenderStage extends Host, PagePainter {
+export interface RenderStage
+	extends Host,
+		PagePainter,
+		ProgressiveSink,
+		ProgressiveView {
 	readonly container: HTMLDivElement;
 	readonly base: HTMLElement;
 	readonly probe: PaintProbe;
@@ -54,6 +62,8 @@ export class ScoreRenderer {
 		private readonly engraver: ScoreEngraver,
 		private readonly elementFactory: ElementFactory,
 		private readonly sequenceFactory: SequenceFactory,
+		// Runs a progressive render's slices (see Config.progressive).
+		private readonly scheduler: IdleScheduler,
 	) {}
 
 	async render(
@@ -81,6 +91,33 @@ export class ScoreRenderer {
 		// The stage is the Viewport (score<->client transform) the elements map through, and the
 		// decorations draw on overlay layers the stage hands them.
 		const decorations = new DefaultDecorations(this.stage);
+		// Only a standard layout is drawn a system at a time: a panoramic line is one system,
+		// and a paged score is placed on its pages as a whole.
+		const progressive =
+			this.config.progressive && this.config.layout.type === 'standard'
+				? this.engraver.beginProgressive(
+						document,
+						this.stage.probe,
+						this.stage,
+						decorations,
+						this.scheduler,
+						this.stage,
+					)
+				: null;
+		if (progressive) {
+			progressive.drawFirstScreen(this.stage);
+			const score = this.score(
+				progressive.elements,
+				decorations,
+				progressive.sequence,
+				progressive.gaps,
+				[],
+				new ProgressiveRecording(progressive),
+				progressive,
+			);
+			progressive.start();
+			return score;
+		}
 		const engraved = this.engraver.engrave(
 			document,
 			this.stage.probe,
@@ -139,6 +176,7 @@ export class ScoreRenderer {
 		gaps: GapInfo[],
 		pageRects: readonly Rect[],
 		snapshots: SnapshotSource,
+		drawing?: Drawing,
 	): Score {
 		// Each page holds the systems whose top lands on it (a system never straddles two).
 		const systems = elements.systems();
@@ -163,6 +201,7 @@ export class ScoreRenderer {
 			gaps,
 			pages,
 			snapshots,
+			drawing,
 		);
 	}
 }

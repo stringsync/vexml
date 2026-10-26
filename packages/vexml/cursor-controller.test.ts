@@ -5,6 +5,7 @@ import { DynamicGlyphs } from './dynamic-glyphs';
 import type { CursorChangeEvent } from './events';
 import { FakeCursorHost } from './fake-cursor-host';
 import { FakeCursorView } from './fake-cursor-view';
+import { FakeDrawing } from './fake-drawing';
 import { FakeScroller } from './fake-scroller';
 import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
@@ -21,7 +22,12 @@ describe('CursorController', () => {
 	beforeEach(() => {
 		host = new FakeCursorHost();
 		scroller = new FakeScroller();
-		cursor = new CursorController(fourQuarters(), host, scroller);
+		cursor = new CursorController(
+			fourQuarters(),
+			host,
+			scroller,
+			new FakeDrawing(),
+		);
 	});
 
 	it('steps forward and back through the tickables, clamping at both ends', () => {
