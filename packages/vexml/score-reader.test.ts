@@ -464,6 +464,61 @@ describe('ScoreReader', () => {
 		]);
 	});
 
+	it('reads percussion pictograms as their glyphs, else as their words', async () => {
+		const measure = await measureOf(
+			'<direction placement="below"><direction-type>' +
+				'<percussion><membrane>snare drum</membrane></percussion>' +
+				'<percussion><timpani/></percussion>' +
+				'<percussion><beater tip="down">snare stick</beater></percussion>' +
+				'<percussion><stick tip="left"><stick-type>yarn</stick-type>' +
+				'<stick-material>hard</stick-material></stick></percussion>' +
+				'<percussion><stick><stick-type>wound</stick-type>' +
+				'<stick-material>x</stick-material></stick></percussion>' +
+				'<percussion><other-percussion>washboard</other-percussion></percussion>' +
+				'<percussion><metal>spoons</metal></percussion>' +
+				'</direction-type></direction>',
+		);
+		const read = reader.pictogramsOf(measure);
+		expect(read.map((s) => s.symbol)).toEqual([
+			{ kind: 'glyph', glyph: '' },
+			{ kind: 'glyph', glyph: '' },
+			{ kind: 'glyph', glyph: '' },
+			{ kind: 'glyph', glyph: '' },
+			{ kind: 'text', text: 'x wound' },
+			{ kind: 'text', text: 'washboard' },
+			{ kind: 'text', text: 'spoons' },
+		]);
+		expect(read.every((s) => s.placement === 'below')).toBe(true);
+	});
+
+	it('reads an accordion registration as the dots in each rank', async () => {
+		const measure = await measureOf(
+			'<direction><direction-type><accordion-registration>' +
+				'<accordion-high/><accordion-middle>2</accordion-middle>' +
+				'</accordion-registration></direction-type></direction>',
+		);
+		expect(reader.pictogramsOf(measure)).toMatchObject([
+			{
+				symbol: { kind: 'accordion', high: true, middle: 2, low: false },
+				placement: 'above',
+			},
+		]);
+	});
+
+	it("reads a scordatura as each string's retuned pitch", async () => {
+		const measure = await measureOf(
+			'<direction><direction-type><scordatura>' +
+				'<accord string="4"><tuning-step>G</tuning-step>' +
+				'<tuning-alter>1</tuning-alter><tuning-octave>3</tuning-octave></accord>' +
+				'<accord string="1"><tuning-step>E</tuning-step>' +
+				'<tuning-alter>-1</tuning-alter><tuning-octave>5</tuning-octave></accord>' +
+				'</scordatura></direction-type></direction>',
+		);
+		expect(reader.pictogramsOf(measure).map((s) => s.symbol)).toEqual([
+			{ kind: 'text', text: 'Scordatura: 4 = G♯, 1 = E♭' },
+		]);
+	});
+
 	it('reads each barline fermata with its edge, shape and side', async () => {
 		const mdoc = await new DefaultScoreParser().parse(
 			scoreOf(

@@ -327,6 +327,14 @@ export const WORDS_NOTE_CLEARANCE = WORDS_Y_OFFSET;
  * footnote next to the noteheads. */
 export const DYNAMICS_FONT_SIZE = 24;
 
+/** Percussion pictogram glyph size. SMuFL draws a pictogram about two staff spaces tall at
+ * the stave's own em, which reads as an instrument picture without crowding the line. */
+export const PICTOGRAM_FONT_SIZE = 30;
+
+/** An accordion registration circle's diameter: two staff spaces, the size SMuFL draws its
+ * register glyphs at, so three middle dots still read as three. */
+export const ACCORDION_REGISTRATION_SIZE = 20;
+
 /** Segno/coda glyph size. Sized like a dynamics marking rather than like text: both are
  * SMuFL glyphs, and a navigation sign is a landmark a player finds while sight-reading, so
  * it wants to be at least as visible as an "mf". */

@@ -48,11 +48,11 @@ are picked by hand.
 | `accidental@smufl` | drawn | `accidentals.musicxml` M12: `other` drawn by its SMuFL glyph name |
 | `accidental-mark` | drawn | `ornaments.musicxml`: small accidental on the ornament it follows |
 | `accidental-text` | drawn | `notehead_text.musicxml`: inside notehead-text, its text drawn as written |
-| `accord` | missing | task #16; mdom raw only |
-| `accordion-high` | missing | task #16; mdom raw only |
-| `accordion-low` | missing | task #16; mdom raw only |
-| `accordion-middle` | missing | task #16; mdom raw only |
-| `accordion-registration` | missing | task #16; mdom raw only |
+| `accord` | drawn | `direction_pictograms.musicxml` M6: each string and its pitch in the scordatura line |
+| `accordion-high` | drawn | `direction_pictograms.musicxml` M5: the dot in the top rank |
+| `accordion-low` | drawn | `direction_pictograms.musicxml` M5: the dot in the bottom rank |
+| `accordion-middle` | drawn | `direction_pictograms.musicxml` M5: one to three dots across the middle rank |
+| `accordion-registration` | drawn | `direction_pictograms.musicxml` M5: the three-rank register circle |
 | `actual-notes` | drawn | `tuplet_triplet.musicxml`: tuplet ratio via timeModification |
 | `alter` | drawn | `accidentals.musicxml`: pitch alter read for note pitch; printed glyph comes from accidental |
 | `appearance` | missing | task #36; line widths, note sizes and distances from defaults not applied; mdom raw only |
@@ -85,7 +85,7 @@ are picked by hand.
 | `beat-unit` | drawn | `tempo.musicxml`: metronome mark note value |
 | `beat-unit-dot` | drawn | `tempo_beat_unit_dot.musicxml` |
 | `beat-unit-tied` | drawn | `tempo_metronome_extras.musicxml`: M1, M3 |
-| `beater` | missing | task #16; mdom raw only |
+| `beater` | drawn | `direction_pictograms.musicxml` M3: SMuFL beater pictograms, tip up or down |
 | `beats` | drawn | `time.musicxml` |
 | `bend` | drawn | `tab_bend.musicxml` |
 | `bend@shape` | drawn | `tab_bend.musicxml` M4: angled legs |
@@ -145,7 +145,7 @@ are picked by hand.
 | `down-bow` | drawn | `technical_marks.musicxml` |
 | `duration` | drawn | `note.musicxml` |
 | `dynamics` | drawn | `dynamics.musicxml` |
-| `effect` | missing | task #16; mdom raw only |
+| `effect` | drawn | `direction_pictograms.musicxml` M2: SMuFL pictogram |
 | `elevation` | ignored | sound only |
 | `elision` | drawn | `lyrics_elision.musicxml` |
 | `encoder` | ignored | metadata |
@@ -195,7 +195,7 @@ are picked by hand.
 | `fret` | drawn | `tab_chord.musicxml`, `chord_diagram.musicxml` |
 | `function` | drawn | `harmony_analysis.musicxml` M6: T, S, D7 under the stave |
 | `fz` | drawn | `dynamics.musicxml` |
-| `glass` | missing | task #16; mdom raw only |
+| `glass` | drawn | `direction_pictograms.musicxml` M2: SMuFL pictogram |
 | `glissando` | drawn | `glissando.musicxml`: a straight line between the noteheads, across a barline, or a tick into a lone stop |
 | `glissando@line-type` | drawn | `spanner_line_types.musicxml` M6 |
 | `glyph` | missing | task #36; appearance SMuFL glyph overrides not applied; mdom raw only |
@@ -280,8 +280,8 @@ are picked by hand.
 | `measure-numbering@system` | drawn | `measure_numbering.musicxml` M5-M14: only-bottom, also-bottom and none, with `staff`; an absent one numbers the system's top stave |
 | `measure-repeat` | drawn | `measure_style.musicxml`: one- and two-bar signs, the count above |
 | `measure-style` | drawn | `rest_multi_measure.musicxml`: multiple-rest child; `measure_style.musicxml`: repeats and slashes |
-| `membrane` | missing | task #16; mdom raw only |
-| `metal` | missing | task #16; mdom raw only |
+| `membrane` | drawn | `direction_pictograms.musicxml` M1, M4: SMuFL pictogram, above or below |
+| `metal` | drawn | `direction_pictograms.musicxml` M1: SMuFL pictogram |
 | `metronome` | drawn | `tempo.musicxml` |
 | `metronome@justify` | drawn | `tempo_metronome_extras.musicxml`: M6-M8, aligned within the measure |
 | `metronome@parentheses` | drawn | `tempo_beat_unit_dot.musicxml`: parenthesized tempo mark |
@@ -360,7 +360,7 @@ are picked by hand.
 | `other-listening` | ignored | interactive performance only |
 | `other-notation` | drawn | `articulations_extended.musicxml` M8: the smufl glyph above (below for placement="below"), else its text; a start/stop pair draws at its start |
 | `other-ornament` | drawn | `ornaments.musicxml` M13, M16: the smufl glyph, else its text |
-| `other-percussion` | missing | task #16; mdom raw only |
+| `other-percussion` | drawn | `direction_pictograms.musicxml` M4: its text, upright |
 | `other-play` | ignored | sound only |
 | `other-technical` | drawn | `tab_annotation.musicxml`: text annotation on tab |
 | `p` | drawn | `dynamics.musicxml` |
@@ -391,10 +391,10 @@ are picked by hand.
 | `pedal-step` | drawn | `harp_pedals.musicxml`: sets each string of the harp pedal diagram |
 | `pedal-tuning` | drawn | `harp_pedals.musicxml`: sets each string of the harp pedal diagram |
 | `per-minute` | drawn | `tempo.musicxml` |
-| `percussion` | missing | task #16; mdom raw only |
+| `percussion` | drawn | `direction_pictograms.musicxml` M1-M4: each pictogram as its SMuFL glyph; the `smufl` attribute ignored |
 | `pf` | drawn | `dynamics.musicxml` |
 | `pitch` | drawn | `note.musicxml` |
-| `pitched` | missing | task #16; mdom raw only |
+| `pitched` | drawn | `direction_pictograms.musicxml` M1: SMuFL pictogram |
 | `play` | ignored | sound only |
 | `player` | ignored | metadata: player assignment |
 | `player-name` | ignored | metadata: player assignment |
@@ -433,7 +433,7 @@ are picked by hand.
 | `scaling` | ignored | tenths are tenths of a staff space and vexml engraves at its own staff size, so no physical scale applies |
 | `schleifer` | drawn | `ornaments.musicxml` |
 | `scoop` | drawn | `articulations_extended.musicxml` |
-| `scordatura` | missing | task #16; mdom raw only |
+| `scordatura` | drawn | `direction_pictograms.musicxml` M6: a "Scordatura: 4 = A, 1 = D" text line |
 | `score-instrument` | ignored | sound only (instrument metadata) |
 | `score-part` | drawn | `structure_part_labels.musicxml`: part-list entry, part names as labels |
 | `score-partwise` | drawn | `note.musicxml`: document root |
@@ -492,10 +492,10 @@ are picked by hand.
 | `stem` | drawn | `note.musicxml` |
 | `stem@default-y` | missing | stem length from stem end y; task #20 lane (default-y); mdom raw only |
 | `step` | drawn | `note.musicxml` |
-| `stick` | missing | task #16; mdom raw only |
-| `stick-location` | missing | task #16; mdom raw only |
-| `stick-material` | missing | task #16; mdom raw only |
-| `stick-type` | missing | task #16; mdom raw only |
+| `stick` | drawn | `direction_pictograms.musicxml` M3: SMuFL stick pictograms by type and material; parentheses and dashed-circle ignored |
+| `stick-location` | drawn | `direction_pictograms.musicxml` M2: SMuFL pictogram |
+| `stick-material` | drawn | `direction_pictograms.musicxml` M3: picks the stick head |
+| `stick-type` | drawn | `direction_pictograms.musicxml` M3: picks the stick |
 | `stopped` | drawn | `technical_marks.musicxml` |
 | `straight` | drawn | `swing.musicxml`: cancels a carried swing in playback timing |
 | `stress` | drawn | `articulations_extended.musicxml` |
@@ -528,7 +528,7 @@ are picked by hand.
 | `time@symbol` | drawn | `barline_styles.musicxml`: common; cut and single-number also honored; `time_extended.musicxml`: note and dotted-note |
 | `time-modification` | drawn | `tuplet_triplet.musicxml` |
 | `time-relation` | drawn | `time_extended.musicxml`: parentheses, bracket, equals, slash, hyphen, space |
-| `timpani` | missing | task #16; mdom raw only |
+| `timpani` | drawn | `direction_pictograms.musicxml` M2: SMuFL pictogram |
 | `toe` | drawn | `technical_marks.musicxml` |
 | `top-margin` | drawn | `document_layout.musicxml`: the page top margin when documentLayout follows the document (paged) |
 | `top-system-distance` | drawn | `document_layout.musicxml`: the first system on each page, when documentLayout follows the document (paged) |
@@ -572,7 +572,7 @@ are picked by hand.
 | `wedge@spread` | missing | task #38; hairpin opening fixed; mdom raw only |
 | `wedge@type` | drawn | `wedges.musicxml`: crescendo and diminuendo hairpins |
 | `with-bar` | drawn | `tab_bend.musicxml` M6-M7: dip and scoop glyphs, else "w/bar" text |
-| `wood` | missing | task #16; mdom raw only |
+| `wood` | drawn | `direction_pictograms.musicxml` M1: SMuFL pictogram |
 | `word-font` | drawn | `text_formatting.musicxml`: its style and weight are the words default, its size the base text sizes scale against; `text_font_family.musicxml` M1: its face, under the documentFonts setting |
 | `words` | drawn | `words.musicxml` |
 | `work` | drawn | `header_catalog.musicxml`: its work-title |

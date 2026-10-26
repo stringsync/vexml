@@ -9,9 +9,11 @@ import {
 	TimeSignature,
 } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
+import { AccordionRegistrationGlyph } from './accordion-registration-glyph';
 import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
 import type { CollisionKind, CollisionResolver } from './collision-resolver';
 import {
+	ACCORDION_REGISTRATION_SIZE,
 	BARLINE_FERMATA_FONT_SIZE,
 	BARLINE_FERMATA_INK_HEIGHT,
 	CHORD_DIAGRAM_GAP,
@@ -34,6 +36,7 @@ import {
 	NAVIGATION_FONT_SIZE,
 	NAVIGATION_TEXT_GAP,
 	PAGE_MARGIN_X,
+	PICTOGRAM_FONT_SIZE,
 	REHEARSAL_FONT_SIZE,
 	REHEARSAL_NOTE_CLEARANCE,
 	REHEARSAL_PADDING,
@@ -55,6 +58,7 @@ import type {
 	DirectionLineSpan,
 	HarmonySymbol,
 	LineEnd,
+	Pictogram,
 	Placement,
 	ScoreReader,
 	TempoMark,
@@ -65,8 +69,8 @@ import type { EnclosureShape } from './text-enclosure';
 
 /*
  * Places and draws the text a score types beside its staves: rehearsal marks, tempo
- * marks, chord symbols and diagrams, words directives, dynamics, figured bass, and
- * direction lines, nudging each clear of the notes and text already placed via the shared
+ * marks, chord symbols and diagrams, words directives, dynamics, figured bass, percussion
+ * pictograms, accordion registrations, scordaturas and direction lines, nudging each clear of the notes and text already placed via the shared
  * collision resolver. One instance lives and dies with its DrawPass.
  */
 export class DirectionPlacer {
@@ -271,6 +275,13 @@ export class DirectionPlacer {
 				align: 'center',
 			});
 			if (h.placement !== 'below') {
+				this.reporter.growPageTop(placed.y);
+				this.spill.growDecorationTop(column.systemIndex, placed.y);
+			}
+		}
+		for (const pictogram of column.pictograms) {
+			const placed = this.drawPictogram(pictogram);
+			if (pictogram.placement !== 'below') {
 				this.reporter.growPageTop(placed.y);
 				this.spill.growDecorationTop(column.systemIndex, placed.y);
 			}
@@ -1035,18 +1046,105 @@ export class DirectionPlacer {
 			w,
 			h,
 		);
+		const placed = this.placeBeside(
+			stave,
+			natural,
+			typeof anchor !== 'number',
+			{
+				below,
+				kinds: style.clearsHairpins ? WORDS_CLEAR_KINDS : TEXT_CLEAR_KINDS,
+				sideGap: style.sideGap,
+			},
+		);
+		formatted.draw(placed);
+		this.context.restore();
+		return placed;
+	}
+
+	/*
+	 * A percussion pictogram, accordion registration or scordatura, from its note's x on its
+	 * placement side, resolved clear like a words directive. A pictogram's box is its glyph's
+	 * ink, which, unlike text, can reach below the baseline (a beater pointing down). A
+	 * <other-percussion> or scordatura is upright words.
+	 */
+	private drawPictogram(task: PictogramTask): Rect {
+		const { stave, symbol, anchor, placement } = task;
+		if (symbol.kind === 'text') {
+			return this.drawWords(stave, symbol.text, anchor, placement, {
+				font: this.labelFont,
+				size: WORDS_FONT_SIZE,
+				italic: false,
+				clearsHairpins: true,
+			});
+		}
+		const below = placement === 'below';
+		const x = anchor?.getAbsoluteX() ?? stave.getNoteStartX();
+		const ink =
+			symbol.kind === 'glyph'
+				? new Element()
+						.setFont(this.notationFont, PICTOGRAM_FONT_SIZE)
+						.setText(symbol.glyph)
+						.getTextMetrics()
+				: null;
+		const w = ink
+			? ink.actualBoundingBoxLeft + ink.actualBoundingBoxRight
+			: ACCORDION_REGISTRATION_SIZE;
+		const h = ink
+			? ink.actualBoundingBoxAscent + ink.actualBoundingBoxDescent
+			: ACCORDION_REGISTRATION_SIZE;
+		const y = below
+			? stave.getBottomLineY() + WORDS_Y_OFFSET
+			: stave.getYForLine(0) - WORDS_Y_OFFSET - h;
+		const placed = this.placeBeside(stave, new Rect(x, y, w, h), true, {
+			below,
+			kinds: WORDS_CLEAR_KINDS,
+		});
+		this.context.save();
+		this.context.setFillStyle(this.notationColor);
+		this.context.setStrokeStyle(this.notationColor);
+		if (ink && symbol.kind === 'glyph') {
+			this.context.setFont(this.notationFont, PICTOGRAM_FONT_SIZE);
+			this.context.fillText(
+				symbol.glyph,
+				placed.x + ink.actualBoundingBoxLeft,
+				placed.y + ink.actualBoundingBoxAscent,
+			);
+		} else if (symbol.kind === 'accordion') {
+			new AccordionRegistrationGlyph(symbol, ACCORDION_REGISTRATION_SIZE).draw(
+				this.context,
+				placed.x,
+				placed.y,
+			);
+		}
+		this.context.restore();
+		return placed;
+	}
+
+	/*
+	 * Resolve a beside-stave mark's natural box clear of what is already placed, the half of
+	 * drawWords that does not care what the box holds: lifted (or, below, dropped) clear of
+	 * `kinds` in the stave's band, kept inside the page, reported to the crop and registered
+	 * as an annotation. `noteAnchored` bounds it on the left by the stave's note area (see
+	 * below). Returns where to draw it.
+	 */
+	private placeBeside(
+		stave: Stave,
+		natural: Rect,
+		noteAnchored: boolean,
+		opts: { below: boolean; kinds: CollisionKind[]; sideGap?: number },
+	): Rect {
+		const { below, kinds } = opts;
 		const band = this.reporter.rowOf(stave);
-		const kinds = style.clearsHairpins ? WORDS_CLEAR_KINDS : TEXT_CLEAR_KINDS;
 		const cleared = below
 			? this.collisionResolver.dropClear(natural, WORDS_NOTE_CLEARANCE, {
 					kinds,
 					band,
-					xMargin: style.sideGap,
+					xMargin: opts.sideGap,
 				})
 			: this.collisionResolver.liftClear(natural, WORDS_NOTE_CLEARANCE, {
 					kinds,
 					band,
-					xMargin: style.sideGap,
+					xMargin: opts.sideGap,
 				});
 		// The stave's opening modifiers own everything left of the note start x: clef, key,
 		// time, and a begin-repeat's bars, which on a multi-stave system a connector carries
@@ -1058,19 +1156,18 @@ export class DirectionPlacer {
 		// overrun it, so the right bound is the page, which the viewport nudge below owns.
 		// Only note-anchored text: a caller passing an explicit x (the segno/coda at the
 		// stave's left edge, the "Nx" on the closing barline) is stating where it wants to be.
-		const bounded =
-			typeof anchor === 'number'
-				? cleared
-				: this.collisionResolver.nudgeInsideX(
-						cleared,
-						new Rect(
-							stave.getNoteStartX(),
-							cleared.y,
-							this.scratchViewport.right - stave.getNoteStartX(),
-							cleared.h,
-						),
-						0,
-					);
+		const bounded = noteAnchored
+			? this.collisionResolver.nudgeInsideX(
+					cleared,
+					new Rect(
+						stave.getNoteStartX(),
+						cleared.y,
+						this.scratchViewport.right - stave.getNoteStartX(),
+						cleared.h,
+					),
+					0,
+				)
+			: cleared;
 		// A mark anchored near the right edge would run off the canvas and be clipped (there's
 		// no horizontal crop-growth knob), so pull it back inside: the same treatment a chord
 		// diagram at the edge gets.
@@ -1084,8 +1181,6 @@ export class DirectionPlacer {
 		} else {
 			this.reporter.recordAnnotationSpill(stave, placed);
 		}
-		formatted.draw(placed);
-		this.context.restore();
 		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
 		return placed;
 	}
@@ -1316,6 +1411,15 @@ export type HarpPedalTask = {
 	placement: Placement;
 };
 
+/** A queued percussion pictogram, accordion registration or scordatura, drawn on its
+ * stave's `placement` side at the laid-out x of the note it applies to. */
+export type PictogramTask = {
+	stave: Stave;
+	symbol: Pictogram;
+	anchor: StaveNote | TabNote | undefined;
+	placement: Placement;
+};
+
 /** A queued <figured-bass> stack. `figures` is the whole stack, top row first; it draws as
  * one row per figure under the stave. */
 export type FiguredBassTask = {
@@ -1353,6 +1457,7 @@ export interface DirectionColumn {
 	words: readonly WordsTask[];
 	dynamics: readonly DynamicsTask[];
 	symbols: readonly SymbolTask[];
+	pictograms: readonly PictogramTask[];
 	figuredBasses: readonly FiguredBassTask[];
 	harpPedals: readonly HarpPedalTask[];
 	harmonies: readonly HarmonyTask[];
@@ -1388,7 +1493,8 @@ export interface DirectionPlacerOptions {
 	/** Type text in the face its document names, over labelFont (Config.documentFonts).
 	 * Absent means labelFont alone. */
 	documentFonts?: boolean;
-	/** The SMuFL face for markings that engrave as music (dynamics, segno/coda). */
+	/** The SMuFL face for markings that engrave as music (dynamics, segno/coda,
+	 * pictograms). */
 	notationFont: string;
 	notationColor: string;
 	textColor: string;

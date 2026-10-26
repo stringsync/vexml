@@ -1303,6 +1303,25 @@ describe('render', () => {
 		).toMatchScreenshot('direction_symbols.png');
 	});
 
+	// Treble stave, 4/4, four B4 quarters a measure, wrapping after M4: percussion pictograms,
+	// accordion registrations and a scordatura, one per note, each left-aligned at its note and
+	// lifted clear above the stave.
+	// - M1: <percussion> instrument pictograms: snare drum, suspended cymbal, wood block,
+	//   xylophone ("Xyl" in a box).
+	// - M2: wind chimes, siren, timpani (the kettle), stick location "rim".
+	// - M3: beaters and sticks: snare stick tip up, wire brush tip down, soft yarn stick,
+	//   hard timpani stick tip down.
+	// - M4: <other-percussion> "washboard" as upright words over the first note, and a bass
+	//   drum placed below the stave under the second.
+	// - M5: <accordion-registration>: the ring cut into three ranks with a dot in the top rank,
+	//   two in the middle, one in the bottom, then high + three middle + low.
+	// - M6: <scordatura>: "Scordatura: 4 = A, 1 = D" over the first note, then the final barline.
+	it.concurrent('renders direction_pictograms.png', async () => {
+		expect(
+			await testing.render('direction_pictograms.musicxml'),
+		).toMatchScreenshot('direction_pictograms.png');
+	});
+
 	// Navigation marks, <segno> and <coda>, on a real (braced) piano score in 4/4, five
 	// measures wrapping onto two systems: four quarters per measure on the treble staff over a
 	// whole rest on the bass staff, so only the marks above the top staff vary. Both signs draw

@@ -94,6 +94,7 @@ describe('DirectionPlacer', () => {
 		words: [],
 		dynamics: [],
 		symbols: [],
+		pictograms: [],
 		figuredBasses: [],
 		harpPedals: [],
 		harmonies: [],

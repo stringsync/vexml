@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN"
+  "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <direction placement="above">
+        <direction-type>
+          <percussion><membrane>snare drum</membrane></percussion>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <percussion><metal>suspended cymbal</metal></percussion>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <percussion><wood>wood block</wood></percussion>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <percussion><pitched>xylophone</pitched></percussion>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+    </measure>
+    <measure number="2">
+      <direction placement="above">
+        <direction-type>
+          <percussion><glass>wind chimes</glass></percussion>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <percussion><effect>siren</effect></percussion>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <percussion><timpani/></percussion>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <percussion><stick-location>rim</stick-location></percussion>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+    </measure>
+    <measure number="3">
+      <direction placement="above">
+        <direction-type>
+          <percussion><beater>snare stick</beater></percussion>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <percussion><beater tip="down">wire brush</beater></percussion>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <percussion><stick><stick-type>yarn</stick-type><stick-material>soft</stick-material></stick></percussion>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <percussion><stick tip="down"><stick-type>timpani</stick-type><stick-material>hard</stick-material></stick></percussion>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+    </measure>
+    <measure number="4">
+      <direction placement="above">
+        <direction-type>
+          <percussion><other-percussion>washboard</other-percussion></percussion>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <direction placement="below">
+        <direction-type>
+          <percussion><membrane>bass drum</membrane></percussion>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+    </measure>
+    <measure number="5">
+      <direction placement="above">
+        <direction-type>
+          <accordion-registration><accordion-high/></accordion-registration>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <accordion-registration><accordion-middle>2</accordion-middle></accordion-registration>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <accordion-registration><accordion-low/></accordion-registration>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <accordion-registration><accordion-high/><accordion-middle>3</accordion-middle><accordion-low/></accordion-registration>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+    </measure>
+    <measure number="6">
+      <direction placement="above">
+        <direction-type>
+          <scordatura><accord string="4"><tuning-step>A</tuning-step><tuning-octave>3</tuning-octave></accord><accord string="1"><tuning-step>D</tuning-step><tuning-octave>5</tuning-octave></accord></scordatura>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <barline location="right">
+        <bar-style>light-heavy</bar-style>
+      </barline>
+    </measure>
+  </part>
+</score-partwise>

@@ -26,6 +26,13 @@ import {
 import type { DynamicGlyphs } from './dynamic-glyphs';
 import { fontScaleOf } from './font-scale';
 import type { ModulationNote, TempoModulation } from './metronome-glyph';
+import {
+	BEATER_GLYPHS,
+	PERCUSSION_GLYPHS,
+	STICK_GLYPHS,
+	TIMPANI_GLYPH,
+	TIP_INDEX,
+} from './percussion-glyphs';
 import type { Jump } from './sequence';
 import { smuflGlyph } from './smufl';
 import { ENCLOSURE_SHAPES, type EnclosureShape } from './text-enclosure';
@@ -1238,6 +1245,40 @@ export class ScoreReader {
 	}
 
 	/*
+	 * A measure's <percussion> pictograms, <accordion-registration> signs and <scordatura>
+	 * tunings, in document order, each bound to its staff and lead note the way
+	 * {@link wordsOf} binds a directive, and above the staff unless placed below.
+	 * mdom types none of the three, so they are read off the <direction-type> children.
+	 * A pictogram engraves as its SMuFL glyph (see percussion-glyphs.ts); an
+	 * <other-percussion>, or a value the schema does not list, prints as its words. A
+	 * scordatura prints as one line naming each retuned string's pitch.
+	 * ponytail: the `smufl` attribute naming a glyph of the document's choosing, and a
+	 * stick's `parentheses`/`dashed-circle`, are ignored; they need SMuFL's name table.
+	 */
+	pictogramsOf(measure: Measure): {
+		symbol: Pictogram;
+		staffNumber: string;
+		lead: Note | null;
+		placement: Placement;
+	}[] {
+		return measure.directions.flatMap((d) => {
+			const placement = this.placementOf(d, 'above');
+			return d
+				.childrenNamed('direction-type')
+				.flatMap((type) => type.children)
+				.filter((child) => child instanceof MElement)
+				.map((child) => this.pictogramElementOf(child))
+				.filter((symbol) => symbol !== null)
+				.map((symbol) => ({
+					symbol,
+					staffNumber: d.staff,
+					lead: d.nextNote,
+					placement,
+				}));
+		});
+	}
+
+	/*
 	 * A measure's pedal markers, in document order: a "start" binds to the next note
 	 * (the pedal goes down there), a "stop" to the previous note (the last note still
 	 * held). Directions sit between notes, so walk the children tracking the last lead
@@ -2191,6 +2232,72 @@ export class ScoreReader {
 		return direction.placement ?? fallback;
 	}
 
+	/* One <direction-type> child as a {@link Pictogram}, or null when it is none of
+	 * the three (words, dynamics and the rest have their own readers). */
+	private pictogramElementOf(element: MElement): Pictogram | null {
+		if (element.tag === 'percussion') {
+			const pictogram = element.children.find((c) => c instanceof MElement);
+			return pictogram ? this.pictogramOf(pictogram) : null;
+		}
+		if (element.tag === 'accordion-registration') {
+			const middle = element.child('accordion-middle');
+			return {
+				kind: 'accordion',
+				high: element.child('accordion-high') !== null,
+				middle: middle ? Math.min(3, Number(middle.text) || 1) : 0,
+				low: element.child('accordion-low') !== null,
+			};
+		}
+		if (element.tag === 'scordatura') {
+			const strings = element
+				.childrenNamed('accord')
+				.map((accord) => {
+					const step = accord.child('tuning-step')?.text?.trim();
+					if (!step) {
+						return null;
+					}
+					const alter = Math.round(
+						Number(accord.child('tuning-alter')?.text ?? 0) || 0,
+					);
+					const sign = (alter < 0 ? '♭' : '♯').repeat(Math.abs(alter));
+					return `${accord.getAttribute('string') ?? '?'} = ${step}${sign}`;
+				})
+				.filter((text) => text !== null);
+			return strings.length > 0
+				? { kind: 'text', text: `Scordatura: ${strings.join(', ')}` }
+				: null;
+		}
+		return null;
+	}
+
+	/* One <percussion> child as its glyph, or as its words when SMuFL has no glyph for it. */
+	private pictogramOf(element: MElement): Pictogram | null {
+		const value = element.text?.trim() ?? '';
+		const tip = TIP_INDEX[element.getAttribute('tip') ?? ''] ?? 0;
+		let glyph: string | undefined;
+		if (element.tag === 'timpani') {
+			glyph = TIMPANI_GLYPH;
+		} else if (element.tag === 'beater') {
+			const beater = BEATER_GLYPHS[value];
+			glyph = Array.isArray(beater) ? (beater[tip] ?? beater[0]) : beater;
+		} else if (element.tag === 'stick') {
+			const type = element.child('stick-type')?.text?.trim() ?? '';
+			const material = element.child('stick-material')?.text?.trim() ?? '';
+			const sticks = STICK_GLYPHS[type]?.[material];
+			glyph = sticks?.[tip] ?? sticks?.[0];
+			if (!glyph) {
+				const text = `${material} ${type}`.trim();
+				return text ? { kind: 'text', text } : null;
+			}
+		} else {
+			glyph = PERCUSSION_GLYPHS[element.tag]?.[value];
+		}
+		if (glyph) {
+			return { kind: 'glyph', glyph };
+		}
+		return value ? { kind: 'text', text: value } : null;
+	}
+
 	/* The score's `<defaults><word-font>`, read once per score. */
 	private wordFontOf(measure: Measure): MElement | null {
 		const score = measure.part.score;
@@ -2781,6 +2888,16 @@ const MAX_UNDERLINES = 3;
 function isEnclosureShape(value: string | null): value is EnclosureShape {
 	return (ENCLOSURE_SHAPES as readonly (string | null)[]).includes(value);
 }
+
+/*
+ * What a <percussion>, <accordion-registration> or <scordatura> direction draws: a SMuFL
+ * glyph, plain text, or the accordion's register circle with a dot for each rank it sounds
+ * (`middle` counts its 0 to 3 dots). See ScoreReader.pictogramsOf.
+ */
+export type Pictogram =
+	| { kind: 'glyph'; glyph: string }
+	| { kind: 'text'; text: string }
+	| { kind: 'accordion'; high: boolean; middle: number; low: boolean };
 
 // A <direction><direction-type><pedal> spanner marker, bound to the lead note it
 // anchors. `line` carries the MusicXML line="yes" flag (bracket pedal vs. the
