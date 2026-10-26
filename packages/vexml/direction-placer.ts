@@ -229,6 +229,21 @@ export class DirectionPlacer {
 				this.spill.growDecorationTop(column.systemIndex, placed.y);
 			}
 		}
+		// Harp pedal diagrams: glyphs in the notation font, centered on their note, through
+		// the same clearance as a dynamic.
+		for (const h of column.harpPedals) {
+			const placed = this.drawWords(h.stave, h.glyphs, h.anchor, h.placement, {
+				font: this.notationFont,
+				size: DYNAMICS_FONT_SIZE,
+				italic: false,
+				color: this.notationColor,
+				align: 'center',
+			});
+			if (h.placement !== 'below') {
+				this.reporter.growPageTop(placed.y);
+				this.spill.growDecorationTop(column.systemIndex, placed.y);
+			}
+		}
 		// Figured bass: one row per <figure> under the stave, top figure first. Each row goes
 		// through the same below-stave path as a dynamic, so the collision resolver drops each
 		// one clear of the row already placed above it and the stack builds downward on its
@@ -1234,6 +1249,14 @@ export type DynamicsTask = {
 	format?: TextFormat;
 };
 
+/** A queued <harp-pedals> diagram: the glyph string, divider included. */
+export type HarpPedalTask = {
+	stave: Stave;
+	glyphs: string;
+	anchor: StaveNote | TabNote | undefined;
+	placement: Placement;
+};
+
 /** A queued <figured-bass> stack. `figures` is the whole stack, top row first; it draws as
  * one row per figure under the stave. */
 export type FiguredBassTask = {
@@ -1271,6 +1294,7 @@ export interface DirectionColumn {
 	words: readonly WordsTask[];
 	dynamics: readonly DynamicsTask[];
 	figuredBasses: readonly FiguredBassTask[];
+	harpPedals: readonly HarpPedalTask[];
 	harmonies: readonly HarmonyTask[];
 	tempos: ReadonlyArray<{ stave: Stave } & TempoTask>;
 	/** Tab staves opening the score with a `<capo>`, printed "Capo N" over their left edge. */

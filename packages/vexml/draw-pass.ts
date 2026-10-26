@@ -35,6 +35,7 @@ import {
 	type DynamicsTask,
 	type FiguredBassTask,
 	type HarmonyTask,
+	type HarpPedalTask,
 	type TempoTask,
 	type WordsTask,
 } from './direction-placer';
@@ -306,6 +307,7 @@ export class DrawPass {
 	private dynamicsTasks: DynamicsTask[] = [];
 	// <figured-bass> stacks, queued like the other note-anchored annotations.
 	private figuredBassTasks: FiguredBassTask[] = [];
+	private harpPedalTasks: HarpPedalTask[] = [];
 	// A part's staves are built here, then formatted and drawn together below so
 	// notes at the same tick align vertically across staves (notation over tab).
 	private pendingStaves: PendingStave[] = [];
@@ -753,6 +755,7 @@ export class DrawPass {
 		this.fermataTasks = [];
 		this.dynamicsTasks = [];
 		this.figuredBassTasks = [];
+		this.harpPedalTasks = [];
 		this.partStaves = [];
 
 		for (const [partIndex, part] of this.parts.entries()) {
@@ -924,6 +927,28 @@ export class DrawPass {
 				}
 			}
 
+			// Harp pedal diagrams bind to staff and lead note like a dynamic.
+			for (const {
+				glyphs,
+				staffNumber,
+				lead,
+				placement,
+			} of this.reader.harpPedalsOf(measure)) {
+				const target =
+					this.pendingStaves[staves.indexOf(staffNumber)] ?? topStave;
+				if (target) {
+					const anchor = lead
+						? (this.byLead.get(lead) ?? this.byTabLead.get(lead))
+						: undefined;
+					this.harpPedalTasks.push({
+						stave: target.stave,
+						glyphs,
+						anchor: anchor ?? target.staveNotes[0],
+						placement,
+					});
+				}
+			}
+
 			// <figured-bass> stacks. They belong under the bass line they figure, so unlike
 			// words/dynamics there is no <staff> to route by: they hang off the part's LAST
 			// stave, which on a two-stave continuo part is the bass one.
@@ -1082,6 +1107,7 @@ export class DrawPass {
 			words: this.wordsTasks,
 			dynamics: this.dynamicsTasks,
 			figuredBasses: this.figuredBassTasks,
+			harpPedals: this.harpPedalTasks,
 			harmonies: this.harmonyTasks,
 			tempos: this.tempoTasks,
 			capos: this.capoTasks,

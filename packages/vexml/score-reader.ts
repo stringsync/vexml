@@ -924,6 +924,51 @@ export class ScoreReader {
 	}
 
 	/*
+	 * A measure's <direction-type><harp-pedals> diagrams, in document order: the pedal
+	 * settings written as SMuFL glyphs in the order a harpist reads them, D C B | E F G A.
+	 * A pedal raised is a flat, centered a natural, lowered a sharp; a string the diagram
+	 * does not name draws centered. The diagram binds to staff and lead note like a
+	 * dynamic and sits above the staff unless it says otherwise.
+	 */
+	harpPedalsOf(measure: Measure): {
+		glyphs: string;
+		staffNumber: string;
+		lead: Note | null;
+		placement: Placement;
+	}[] {
+		return measure.directions.flatMap((d) =>
+			d.children
+				.filter((node): node is MElement => node instanceof MElement)
+				.filter((node) => node.tag === 'direction-type')
+				.flatMap((type) => type.childrenNamed('harp-pedals'))
+				.map((pedals) => {
+					const settings = new Map<string, string>();
+					for (const tuning of pedals.childrenNamed('pedal-tuning')) {
+						const step = tuning.child('pedal-step')?.text?.trim();
+						const alter = Number(tuning.child('pedal-alter')?.text);
+						if (step) {
+							settings.set(
+								step,
+								HARP_PEDAL_GLYPHS[Math.sign(alter) + 1] ?? HARP_PEDAL_CENTERED,
+							);
+						}
+					}
+					const glyph = (step: string) =>
+						settings.get(step) ?? HARP_PEDAL_CENTERED;
+					return {
+						glyphs:
+							['D', 'C', 'B'].map(glyph).join('') +
+							HARP_PEDAL_DIVIDER +
+							['E', 'F', 'G', 'A'].map(glyph).join(''),
+						staffNumber: d.staff,
+						lead: d.nextNote,
+						placement: this.placementOf(d, 'above'),
+					};
+				}),
+		);
+	}
+
+	/*
 	 * A measure's <direction><direction-type><rehearsal> section headers (e.g. "A", "B",
 	 * "Chorus"), in document order. These are the boxed letters a player navigates a chart
 	 * by, printed at the measure's left edge above the system's top staff.
@@ -2406,6 +2451,12 @@ export type TextFormat = {
 
 // The text size MusicXML applications write when they set no word-font: 10pt, the size
 // MuseScore and Finale both default words to.
+// SMuFL harpPedalRaised, harpPedalCentered, harpPedalLowered, indexed by the sign of the
+// pedal-alter plus one (a flat is raised, a sharp lowered), and harpPedalDivider.
+const HARP_PEDAL_GLYPHS = ['\uE680', '\uE681', '\uE682'];
+const HARP_PEDAL_CENTERED = '\uE681';
+const HARP_PEDAL_DIVIDER = '\uE683';
+
 const DEFAULT_TEXT_POINTS = 10;
 
 // The CSS font-size names, as ratios to `medium`, the document's default size.

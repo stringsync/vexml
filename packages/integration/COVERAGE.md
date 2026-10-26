@@ -16,7 +16,7 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 284 drawn, 69 ignored, 89 missing; vexml draws 284 of the 373 that show on the page (76%).
+Elements: 288 drawn, 69 ignored, 85 missing; vexml draws 288 of the 373 that show on the page (77%).
 Attributes: 82 drawn, 5 ignored, 31 missing.
 
 | Element | Status | Proof or reason |
@@ -226,7 +226,7 @@ Attributes: 82 drawn, 5 ignored, 31 missing.
 | `harmonic` | drawn | `harmonic.musicxml`, `tab_harmonic.musicxml`: diamond notehead, angle-bracketed fret |
 | `harmony` | drawn | `harmony.musicxml`: chord symbol text above the stave |
 | `harmony@print-frame` | drawn | `chord_diagram.musicxml` M13: no box, plain symbol |
-| `harp-pedals` | missing | task #14; mdom raw only |
+| `harp-pedals` | drawn | `harp_pedals.musicxml`: raised, centered and lowered pedals with the divider, above and below the staff |
 | `haydn` | missing | task #29; haydn ornament glyph above the note; mdom typed |
 | `heel` | drawn | `technical_marks.musicxml` |
 | `hole` | drawn | `technical_marks.musicxml` |
@@ -390,9 +390,9 @@ Attributes: 82 drawn, 5 ignored, 31 missing.
 | `pedal@line` | drawn | `pedal.musicxml`: bracket line vs Ped. text |
 | `pedal@sign` | missing | task #38; line plus sign (mixed) form not drawn; mdom raw only |
 | `pedal@type` | drawn | `pedal.musicxml`: start/stop only; change, continue, sostenuto, discontinue ignored |
-| `pedal-alter` | missing | task #14; mdom raw only |
-| `pedal-step` | missing | task #14; mdom raw only |
-| `pedal-tuning` | missing | task #14; mdom raw only |
+| `pedal-alter` | drawn | `harp_pedals.musicxml`: sets each string of the harp pedal diagram |
+| `pedal-step` | drawn | `harp_pedals.musicxml`: sets each string of the harp pedal diagram |
+| `pedal-tuning` | drawn | `harp_pedals.musicxml`: sets each string of the harp pedal diagram |
 | `per-minute` | drawn | `tempo.musicxml` |
 | `percussion` | missing | task #16; mdom raw only |
 | `pf` | drawn | `dynamics.musicxml` |

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list><score-part id="P1"><part-name>Harp</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+      <direction placement="above"><direction-type><harp-pedals><pedal-tuning><pedal-step>D</pedal-step><pedal-alter>0</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>C</pedal-step><pedal-alter>0</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>B</pedal-step><pedal-alter>0</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>E</pedal-step><pedal-alter>0</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>F</pedal-step><pedal-alter>0</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>G</pedal-step><pedal-alter>0</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>A</pedal-step><pedal-alter>0</pedal-alter></pedal-tuning></harp-pedals></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+    <measure number="2">
+      <direction placement="above"><direction-type><harp-pedals><pedal-tuning><pedal-step>D</pedal-step><pedal-alter>-1</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>C</pedal-step><pedal-alter>-1</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>B</pedal-step><pedal-alter>-1</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>E</pedal-step><pedal-alter>1</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>F</pedal-step><pedal-alter>1</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>G</pedal-step><pedal-alter>1</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>A</pedal-step><pedal-alter>1</pedal-alter></pedal-tuning></harp-pedals></direction-type></direction>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+    <measure number="3">
+      <direction placement="below"><direction-type><harp-pedals><pedal-tuning><pedal-step>D</pedal-step><pedal-alter>1</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>C</pedal-step><pedal-alter>0</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>B</pedal-step><pedal-alter>-1</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>E</pedal-step><pedal-alter>-1</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>F</pedal-step><pedal-alter>0</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>G</pedal-step><pedal-alter>1</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>A</pedal-step><pedal-alter>0</pedal-alter></pedal-tuning></harp-pedals></direction-type></direction>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+    <measure number="4">
+      <direction placement="above"><direction-type><harp-pedals><pedal-tuning><pedal-step>D</pedal-step><pedal-alter>-1</pedal-alter></pedal-tuning><pedal-tuning><pedal-step>A</pedal-step><pedal-alter>1</pedal-alter></pedal-tuning></harp-pedals></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+  </part>
+</score-partwise>

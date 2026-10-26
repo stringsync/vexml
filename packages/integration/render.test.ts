@@ -1305,6 +1305,15 @@ describe('render', () => {
 		);
 	});
 
+	// Treble stave, 4/4, four whole notes each under a <harp-pedals> diagram (D C B | E F G A):
+	// M1 all centered; M2 D C B raised and E F G A lowered; M3 a mix, placed below the staff;
+	// M4 names only D (raised) and A (lowered), so the other strings draw centered.
+	it.concurrent('renders harp_pedals.png', async () => {
+		expect(await testing.render('harp_pedals.musicxml')).toMatchScreenshot(
+			'harp_pedals.png',
+		);
+	});
+
 	// Treble stave, 4/4: two measures split by a barline, each holding one whole note
 	// (C5, same pitch in both).
 	it.concurrent('renders measures_two.png', async () => {
