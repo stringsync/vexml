@@ -419,6 +419,21 @@ export const REHEARSAL_FONT_SIZE = 14;
 /** Air between a rehearsal mark's text and its enclosing box. */
 export const REHEARSAL_PADDING = 4;
 
+/** Air between a words direction or dynamic and the enclosure its document draws around
+ * it: a little tighter than a rehearsal mark's, as the text is smaller. */
+export const ENCLOSURE_PADDING = 3;
+
+/** Where enclosed text stands in its font-size box, as a share of the box's height from its
+ * top: the ink of a font sits in the box's lower part, so standing on the box's bottom it
+ * reads as low inside its shape. */
+export const ENCLOSED_BASELINE = 0.85;
+
+/** How far a text's first underline sits under its baseline. */
+export const UNDERLINE_OFFSET = 2;
+
+/** The step between a text's underlines when it has more than one. */
+export const UNDERLINE_GAP = 2;
+
 /** How far the bottom of a rehearsal mark's box sits above the top staff line. */
 export const REHEARSAL_Y_OFFSET = 8;
 

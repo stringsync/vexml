@@ -20,6 +20,7 @@ import { DEFAULT_TEMPO_BPM, EPSILON } from './constants';
 import type { DynamicGlyphs } from './dynamic-glyphs';
 import type { ModulationNote, TempoModulation } from './metronome-glyph';
 import type { Jump } from './sequence';
+import { ENCLOSURE_SHAPES, type EnclosureShape } from './text-enclosure';
 
 export class ScoreReader {
 	private readonly measureBeats = new Map<Note, number | null>();
@@ -38,6 +39,7 @@ export class ScoreReader {
 		Part,
 		Map<string, StaffStyle[]>
 	>();
+	private readonly wordFonts = new WeakMap<Score, MElement | null>();
 
 	// Only to answer whether a dynamic marking can be drawn as music (see dynamicsOf). The
 	// spelling itself belongs to the draw pass, not to a read.
@@ -596,8 +598,8 @@ export class ScoreReader {
 	 * begins. `closesBar` says it falls where the bar's content runs out: written after a
 	 * staff's last note (a "D.S. al Coda" before a <backup>), it applies to the barline, not to
 	 * the next note in the file, which is another staff's from the bar's start.
-	 * ponytail: font-style attributes still ignored; every words direction prints in italics.
-	 * Add a style field if a fixture needs upright words.
+	 * `format` is the <words> element's own formatting (see {@link TextFormat}), its style
+	 * and weight falling back to the score's `<defaults><word-font>`.
 	 */
 	wordsOf(measure: Measure): {
 		text: string;
@@ -606,7 +608,9 @@ export class ScoreReader {
 		placement: Placement;
 		opensBar: boolean;
 		closesBar: boolean;
+		format: TextFormat;
 	}[] {
+		const wordFont = this.wordFontOf(measure);
 		return measure.directions.flatMap((d) => {
 			const staffNumber = d.staff;
 			const placement = this.placementOf(d, 'above');
@@ -615,14 +619,17 @@ export class ScoreReader {
 			const closesBar =
 				beat !== null && !opensBar && beat > measure.endBeat - EPSILON;
 			const lead = closesBar ? null : d.nextNote;
-			return d.words.filter(Boolean).map((text) => ({
-				text,
-				staffNumber,
-				lead,
-				placement,
-				opensBar,
-				closesBar,
-			}));
+			return d.wordsElements
+				.filter((words) => words.text)
+				.map((words) => ({
+					text: words.text,
+					staffNumber,
+					lead,
+					placement,
+					opensBar,
+					closesBar,
+					format: this.formatOf(words, wordFont, wordFont),
+				}));
 		});
 	}
 
@@ -634,7 +641,8 @@ export class ScoreReader {
 	 * `glyph` says the marking is spelled entirely out of the SMuFL dynamic letters and so
 	 * draws in the notation font; an <other-dynamics> (or any tag with a stray letter)
 	 * falls back to plain italic text.
-	 * `staffNumber` and `lead` bind it the same way {@link wordsOf} binds a directive.
+	 * `staffNumber` and `lead` bind it the same way {@link wordsOf} binds a directive, and
+	 * `format` is the <dynamics> element's own (see {@link TextFormat}).
 	 * Dynamics engrave BELOW the staff by convention, so that's the placement default here;
 	 * an explicit placement="above" still wins.
 	 */
@@ -644,21 +652,24 @@ export class ScoreReader {
 		staffNumber: string;
 		lead: Note | null;
 		placement: Placement;
+		format: TextFormat;
 	}[] {
+		const wordFont = this.wordFontOf(measure);
 		return measure.directions.flatMap((d) => {
 			const staffNumber = d.staff;
 			const lead = d.nextNote;
 			const placement = this.placementOf(d, 'below');
-			return d.dynamics
-				.flatMap((dynamics) => dynamics.marks)
-				.filter(Boolean)
-				.map((text) => ({
+			return d.dynamics.flatMap((dynamics) => {
+				const format = this.formatOf(dynamics, null, wordFont);
+				return dynamics.marks.filter(Boolean).map((text) => ({
 					text,
 					glyph: this.dynamics.canSpell(text),
 					staffNumber,
 					lead,
 					placement,
+					format,
 				}));
+			});
 		});
 	}
 
@@ -666,13 +677,17 @@ export class ScoreReader {
 	 * A measure's <direction><direction-type><rehearsal> section headers (e.g. "A", "B",
 	 * "Chorus"), in document order. These are the boxed letters a player navigates a chart
 	 * by, printed at the measure's left edge above the system's top staff.
-	 * ponytail: the <rehearsal> enclosure/font attributes are ignored; every mark prints
-	 * boxed in the default style; add an enclosure field if a fixture needs a circle or a
-	 * bare letter.
+	 * `format` is the <rehearsal> element's own (see {@link TextFormat}).
 	 */
-	rehearsalsOf(measure: Measure): string[] {
+	rehearsalsOf(measure: Measure): { text: string; format: TextFormat }[] {
+		const wordFont = this.wordFontOf(measure);
 		return measure.directions.flatMap((d) =>
-			d.rehearsals.map((rehearsal) => rehearsal.text).filter(Boolean),
+			d.rehearsals
+				.filter((rehearsal) => rehearsal.text)
+				.map((rehearsal) => ({
+					text: rehearsal.text,
+					format: this.formatOf(rehearsal, null, wordFont),
+				})),
 		);
 	}
 
@@ -1541,6 +1556,78 @@ export class ScoreReader {
 		return direction.placement ?? fallback;
 	}
 
+	/* The score's `<defaults><word-font>`, read once per score. */
+	private wordFontOf(measure: Measure): MElement | null {
+		const score = measure.part.score;
+		if (!this.wordFonts.has(score)) {
+			this.wordFonts.set(
+				score,
+				score.child('defaults')?.child('word-font') ?? null,
+			);
+		}
+		return this.wordFonts.get(score) ?? null;
+	}
+
+	/*
+	 * A text element's formatting attributes. `fallback` supplies the style and weight the
+	 * element leaves out (the word-font, for words). A size is read against `sizeBase`'s
+	 * font-size, the document's default text size, so vexml keeps its own text sizes and a
+	 * size the document raises or lowers scales them by the same ratio.
+	 */
+	private formatOf(
+		element: MElement,
+		fallback: MElement | null,
+		sizeBase: MElement | null,
+	): TextFormat {
+		const attr = (name: string) =>
+			element.getAttribute(name) ?? fallback?.getAttribute(name) ?? null;
+		const style = attr('font-style');
+		const weight = attr('font-weight');
+		const enclosure = element.getAttribute('enclosure');
+		const align =
+			element.getAttribute('halign') ?? element.getAttribute('justify');
+		const underline = Number(element.getAttribute('underline') ?? 0);
+		return {
+			italic: style === null ? null : style === 'italic',
+			bold: weight === null ? null : weight === 'bold',
+			scale: this.fontScaleOf(
+				element.getAttribute('font-size'),
+				sizeBase?.getAttribute('font-size') ?? null,
+			),
+			enclosure:
+				enclosure === 'none' || isEnclosureShape(enclosure) ? enclosure : null,
+			underline: Number.isInteger(underline)
+				? Math.min(Math.max(underline, 0), MAX_UNDERLINES)
+				: 0,
+			align:
+				align === 'left' || align === 'center' || align === 'right'
+					? align
+					: null,
+		};
+	}
+
+	/* A font-size, in points or a CSS size name, as a ratio to the document's default text
+	 * size (`base`, in points; DEFAULT_TEXT_POINTS when absent). 1 for an absent or
+	 * unreadable size. */
+	private fontScaleOf(size: string | null, base: string | null): number {
+		if (size === null) {
+			return 1;
+		}
+		const named = CSS_FONT_SCALES[size];
+		if (named !== undefined) {
+			return named;
+		}
+		const points = Number(size);
+		const basePoints = Number(base ?? DEFAULT_TEXT_POINTS);
+		if (!(points > 0) || !(basePoints > 0)) {
+			return 1;
+		}
+		return Math.min(
+			Math.max(points / basePoints, MIN_FONT_SCALE),
+			MAX_FONT_SCALE,
+		);
+	}
+
 	/*
 	 * Swap the ASCII accidentals a <kind text="…"> suffix carries for an extension (e.g.
 	 * "7(b9#11)") for the real Unicode signs ("7(♭9♯11)"), so they match the root's ♭/♯
@@ -1894,6 +1981,50 @@ export type StaffVoice = {
 
 /** Which side of the staff a `<direction>` prints on. */
 export type Placement = 'above' | 'below';
+
+/*
+ * The formatting a text element (<words>, <dynamics>, <rehearsal>) asks for. A null field is
+ * one the document leaves to the element's own default: a rehearsal mark is bold and boxed
+ * unless told otherwise, a words direction upright and bare.
+ */
+export type TextFormat = {
+	italic: boolean | null;
+	bold: boolean | null;
+	/** The size as a ratio to the element's usual size; 1 when the document sets none. */
+	scale: number;
+	enclosure: EnclosureShape | 'none' | null;
+	/** How many lines run under the text; 0 for none. */
+	underline: number;
+	/** Where the text sits on its anchor x, from halign, else justify. */
+	align: 'left' | 'center' | 'right' | null;
+};
+
+// The text size MusicXML applications write when they set no word-font: 10pt, the size
+// MuseScore and Finale both default words to.
+const DEFAULT_TEXT_POINTS = 10;
+
+// The CSS font-size names, as ratios to `medium`, the document's default size.
+const CSS_FONT_SCALES: Record<string, number> = {
+	'xx-small': 0.6,
+	'x-small': 0.75,
+	small: 0.89,
+	medium: 1,
+	large: 1.2,
+	'x-large': 1.5,
+	'xx-large': 2,
+};
+
+// A size far off the default is more likely a misread unit than a request; keep text legible
+// and inside its system.
+const MIN_FONT_SCALE = 0.5;
+const MAX_FONT_SCALE = 3;
+
+// More underlines than this is no longer a line under the text but a block.
+const MAX_UNDERLINES = 3;
+
+function isEnclosureShape(value: string | null): value is EnclosureShape {
+	return (ENCLOSURE_SHAPES as readonly (string | null)[]).includes(value);
+}
 
 // A <direction><direction-type><pedal> spanner marker, bound to the lead note it
 // anchors. `line` carries the MusicXML line="yes" flag (bracket pedal vs. the

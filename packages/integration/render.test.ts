@@ -935,6 +935,30 @@ describe('render', () => {
 		);
 	});
 
+	// Treble stave, 4/4, four B4 quarters a bar, a word-font of 10pt in <defaults>: the text
+	// formatting a document sets on <words>, <rehearsal> and <dynamics>, one attribute a bar.
+	// - M1: "upright", no font-style: upright, MusicXML's default, not italic.
+	// - M2: "italic", font-style="italic".
+	// - M3: "bold", font-weight="bold".
+	// - M4: "large", font-size="16": 1.6 times the usual words size, against the 10pt word-font.
+	// - M5: "underlined", underline="1": one line under the text.
+	// - M6-M13: enclosures around words: "boxed" in a rectangle, "oval" in an ellipse, "1" in a
+	//   circle, "2" in a square, "3" in a triangle standing on its base, "4" in a diamond, "5"
+	//   in a hexagon, and "solo" under a bracket whose hooks point down at it. Each shape
+	//   lifts clear of the stave with its text.
+	// - M14: "right", justify="right" on the third note: the text ends at that note.
+	// - M15: "center", halign="center" on the third note: centered on it.
+	// - M16: rehearsal mark "B", enclosure="circle": circled rather than boxed, still bold.
+	// - M17: rehearsal mark "Coda", enclosure="none" and font-weight="normal": bare, regular.
+	// - M18: a dynamic f under the first note, enclosure="rectangle": the box holds the whole
+	//   glyph, its tail included.
+	// - M19: an <other-dynamics> "sub. p", font-style="normal": upright, not the usual italic.
+	it.concurrent('renders text_formatting.png', async () => {
+		expect(await testing.render('text_formatting.musicxml')).toMatchScreenshot(
+			'text_formatting.png',
+		);
+	});
+
 	// Treble stave, common time: the full <dynamics> vocabulary, one marking per C4 quarter,
 	// drawn as SMuFL glyphs (the bold-italic p/m/f/r/s/z forms, not ordinary text) BELOW the
 	// staff, the engraving default these directions carry no explicit placement for. Every

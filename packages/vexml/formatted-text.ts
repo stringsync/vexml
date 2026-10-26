@@ -1,0 +1,102 @@
+import { Element, type RenderContext } from 'vexflow/core';
+import { Rect } from 'webappwiz/geometry';
+import {
+	ENCLOSED_BASELINE,
+	UNDERLINE_GAP,
+	UNDERLINE_OFFSET,
+} from './constants';
+import { type EnclosureShape, TextEnclosure } from './text-enclosure';
+
+/*
+ * One string as the document formatted it: the text, the lines under it and the shape
+ * around it, measured as one box so they clear their neighbors together. The caller sets
+ * the font on the context first, places `w` × `h` with the collision resolver, then draws
+ * into the placed box.
+ */
+export class FormattedText {
+	readonly w: number;
+	readonly h: number;
+	private readonly textW: number;
+	// How far the text's ink reaches left of where it is drawn from: a SMuFL dynamic's tail
+	// hangs back past its origin, out of the advance width measureText reports.
+	private readonly inkLeft: number;
+	// The text box with its underlines, the part an enclosure holds.
+	private readonly innerH: number;
+	private readonly enclosure: TextEnclosure | null;
+
+	constructor(
+		private readonly context: RenderContext,
+		private readonly text: string,
+		private readonly style: FormattedTextStyle,
+	) {
+		this.textW = context.measureText(text).width;
+		this.inkLeft = 0;
+		if (style.enclosure) {
+			// An enclosure holds the ink, not the advance, or a glyph's overhang pokes through it.
+			const { family, size, weight, fontStyle } = style.font;
+			const ink = new Element()
+				.setFont(family, size, weight, fontStyle)
+				.setText(text)
+				.getTextMetrics();
+			this.inkLeft = Math.max(ink.actualBoundingBoxLeft, 0);
+			this.textW =
+				Math.max(this.textW, ink.actualBoundingBoxRight) + this.inkLeft;
+		}
+		const underline = style.underline ?? 0;
+		this.innerH =
+			style.textHeight +
+			(underline > 0 ? UNDERLINE_OFFSET + (underline - 1) * UNDERLINE_GAP : 0);
+		this.enclosure = style.enclosure
+			? new TextEnclosure(style.enclosure, style.padding ?? 0)
+			: null;
+		const size = this.enclosure
+			? this.enclosure.size(this.textW, this.innerH)
+			: { w: this.textW, h: this.innerH };
+		this.w = size.w;
+		this.h = size.h;
+	}
+
+	/** Draw the text, its underlines and its enclosure into `placed`, a `w` × `h` box, in the
+	 * context's current font, fill and stroke. */
+	draw(placed: Rect): void {
+		const inner = this.enclosure
+			? this.enclosure.textBox(placed, this.textW, this.innerH)
+			: new Rect(placed.x, placed.y, this.textW, this.innerH);
+		const { textHeight } = this.style;
+		const textBottom = inner.y + textHeight;
+		// Text standing on the bottom of a font-size box leaves the top of the box empty, which
+		// reads as sitting low inside a shape, so enclosed text stands a little higher.
+		let baseline = this.style.hangs ? inner.y : textBottom;
+		if (this.enclosure && !this.style.hangs) {
+			baseline = inner.y + textHeight * ENCLOSED_BASELINE;
+		}
+		this.context.fillText(this.text, inner.x + this.inkLeft, baseline);
+		const underline = this.style.underline ?? 0;
+		if (underline > 0 || this.enclosure) {
+			this.context.setLineWidth(1);
+		}
+		for (let i = 0; i < underline; i++) {
+			const y = textBottom + UNDERLINE_OFFSET + i * UNDERLINE_GAP;
+			this.context.beginPath();
+			this.context.moveTo(inner.x, y);
+			this.context.lineTo(inner.right, y);
+			this.context.stroke();
+		}
+		this.enclosure?.draw(this.context, placed);
+	}
+}
+
+export type FormattedTextStyle = {
+	/** The face the context is set to, to measure the ink an enclosure holds. */
+	font: { family: string; size: number; weight: string; fontStyle: string };
+	/** The height of the text's box: the font size, or the ink's when that is shorter. */
+	textHeight: number;
+	/** Whether the ink hangs down from the baseline rather than standing on it. */
+	hangs?: boolean;
+	/** How many lines run under the text. Absent means none. */
+	underline?: number;
+	/** The shape drawn around the text. Absent means none. */
+	enclosure?: EnclosureShape;
+	/** Air between the text and its enclosure. */
+	padding?: number;
+};

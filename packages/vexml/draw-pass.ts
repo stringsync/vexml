@@ -695,6 +695,7 @@ export class DrawPass {
 				placement,
 				opensBar,
 				closesBar,
+				format,
 			} of this.reader.wordsOf(measure)) {
 				const target =
 					this.pendingStaves[staves.indexOf(staffNumber)] ?? topStave;
@@ -709,6 +710,7 @@ export class DrawPass {
 						placement,
 						opensBar,
 						closesBar,
+						format,
 					});
 				}
 			}
@@ -721,6 +723,7 @@ export class DrawPass {
 				staffNumber,
 				lead,
 				placement,
+				format,
 			} of this.reader.dynamicsOf(measure)) {
 				if (
 					this.directionPlacer.suppressesDynamic(
@@ -743,6 +746,7 @@ export class DrawPass {
 						glyph,
 						anchor: anchor ?? target.staveNotes[0],
 						placement,
+						format,
 					});
 				}
 			}

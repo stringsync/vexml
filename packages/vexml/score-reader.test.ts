@@ -327,6 +327,60 @@ describe('ScoreReader', () => {
 		});
 	});
 
+	it('reads the formatting a words direction asks for', async () => {
+		const reader = new ScoreReader(new DynamicGlyphs());
+		const measure = await measureOf(
+			'<direction><direction-type>' +
+				'<words>plain</words>' +
+				'<words font-style="italic" font-weight="bold" font-size="15" underline="2" ' +
+				'enclosure="hexagon" justify="right">formatted</words>' +
+				'<words font-size="x-large" enclosure="star" halign="center" justify="right">named</words>' +
+				'</direction-type></direction>',
+		);
+		expect(reader.wordsOf(measure).map((w) => w.format)).toEqual([
+			{
+				italic: null,
+				bold: null,
+				scale: 1,
+				enclosure: null,
+				underline: 0,
+				align: null,
+			},
+			// 15pt against the 10pt default text size.
+			{
+				italic: true,
+				bold: true,
+				scale: 1.5,
+				enclosure: 'hexagon',
+				underline: 2,
+				align: 'right',
+			},
+			// An unknown shape draws none, and halign wins over justify.
+			{
+				italic: null,
+				bold: null,
+				scale: 1.5,
+				enclosure: null,
+				underline: 0,
+				align: 'center',
+			},
+		]);
+	});
+
+	it('reads a rehearsal mark with no enclosure as asking for none', async () => {
+		const reader = new ScoreReader(new DynamicGlyphs());
+		const measure = await measureOf(
+			'<direction><direction-type><rehearsal enclosure="none">A</rehearsal>' +
+				'<rehearsal>B</rehearsal></direction-type></direction>',
+		);
+		expect(
+			reader.rehearsalsOf(measure).map((r) => [r.text, r.format.enclosure]),
+		).toEqual([
+			['A', 'none'],
+			['B', null],
+		]);
+	});
+
 	it('reads each barline fermata with its edge, shape and side', async () => {
 		const mdoc = await new DefaultScoreParser().parse(
 			scoreOf(

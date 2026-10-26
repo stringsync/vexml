@@ -11,7 +11,9 @@ import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
 import {
 	DIRECTION_LINE_HOOK,
+	ENCLOSED_BASELINE,
 	HARMONY_ACCIDENTAL_KERN,
+	REHEARSAL_FONT_SIZE,
 	REHEARSAL_PADDING,
 	WORDS_NOTE_CLEARANCE,
 	WORDS_Y_OFFSET,
@@ -23,10 +25,24 @@ import {
 } from './direction-placer';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { GeometryCollector } from './geometry-collector';
-import { type DirectionLineSpan, ScoreReader } from './score-reader';
+import {
+	type DirectionLineSpan,
+	ScoreReader,
+	type TextFormat,
+} from './score-reader';
 import { SpillTracker } from './spill-tracker';
 
 describe('DirectionPlacer', () => {
+	// A text element that asks for no formatting of its own.
+	const PLAIN: TextFormat = {
+		italic: null,
+		bold: null,
+		scale: 1,
+		enclosure: null,
+		underline: 0,
+		align: null,
+	};
+
 	// The staff-line and note-area geometry every side-text placement reads. One shape
 	// serves notation and direction-line tests; the y anchors are round numbers so the
 	// offset math stays legible in the expectations.
@@ -434,17 +450,24 @@ describe('DirectionPlacer', () => {
 	it('boxes a rehearsal mark at the measure left edge over the top stave', () => {
 		const { placer, texts, spills, pageTops } = makePlacer({
 			navigationsOf: () => [],
-			rehearsalsOf: () => ['A'],
+			rehearsalsOf: () => [{ text: 'A', format: PLAIN }],
 		});
 		placer.placeColumn(column({ topStave: stave(), measure: {} as Measure }));
 		expect(texts).toEqual([
 			{
 				text: 'A',
 				x: 40 + REHEARSAL_PADDING,
-				y: 100 - 8 - REHEARSAL_PADDING,
+				y: expect.any(Number),
 				fill: '#000002',
 			},
 		]);
+		// Enclosed text stands a little up from its box's bottom, so it sits centered in it.
+		expect(texts[0]?.y).toBeCloseTo(
+			100 -
+				8 -
+				REHEARSAL_PADDING -
+				REHEARSAL_FONT_SIZE * (1 - ENCLOSED_BASELINE),
+		);
 		expect(spills).toHaveLength(1);
 		expect(pageTops).toHaveLength(1);
 	});

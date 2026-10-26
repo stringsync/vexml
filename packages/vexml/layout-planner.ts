@@ -325,7 +325,7 @@ export class LayoutPlanner {
 		}
 		let pad = 0;
 		for (const measure of measures) {
-			for (const { text, lead } of this.reader.wordsOf(measure)) {
+			for (const { text, lead, format } of this.reader.wordsOf(measure)) {
 				// A directive naming no note anchors at the measure's first one instead.
 				if (
 					!lead ||
@@ -337,7 +337,10 @@ export class LayoutPlanner {
 					(this.reader.beatsOf(lead) ?? 0) * QUARTER_NOTE_TICKS,
 					noteSpacing,
 				);
-				pad = Math.max(pad, text.length * WORDS_CHAR_WIDTH - room);
+				pad = Math.max(
+					pad,
+					text.length * WORDS_CHAR_WIDTH * format.scale - room,
+				);
 			}
 		}
 		return Math.max(0, pad);
@@ -374,9 +377,13 @@ export class LayoutPlanner {
 			if (!measure) {
 				continue;
 			}
-			for (const { text, staffNumber, lead, closesBar } of this.reader.wordsOf(
-				measure,
-			)) {
+			for (const {
+				text,
+				staffNumber,
+				lead,
+				closesBar,
+				format,
+			} of this.reader.wordsOf(measure)) {
 				// A directive naming no note anchors at the measure's first one instead, unless
 				// it closes the bar, which ends at the right barline instead.
 				if (
@@ -389,7 +396,10 @@ export class LayoutPlanner {
 				if (!this.staves.isTab(part, staffNumber)) {
 					continue;
 				}
-				pad = Math.max(pad, (text.length * WORDS_CHAR_WIDTH) / 2);
+				pad = Math.max(
+					pad,
+					(text.length * WORDS_CHAR_WIDTH * format.scale) / 2,
+				);
 			}
 		}
 		return pad;

@@ -16,8 +16,8 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 260 drawn, 69 ignored, 113 missing; vexml draws 260 of the 373 that show on the page (70%).
-Attributes: 58 drawn, 5 ignored, 55 missing.
+Elements: 261 drawn, 69 ignored, 112 missing; vexml draws 261 of the 373 that show on the page (70%).
+Attributes: 65 drawn, 5 ignored, 48 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -25,22 +25,22 @@ Attributes: 58 drawn, 5 ignored, 55 missing.
 | `*@dash-length` | missing | task #17; mdom raw only |
 | `*@default-x` | missing | task #20 (later task in that lane); mdom raw only |
 | `*@default-y` | missing | task #20 (later task in that lane); mdom raw only |
-| `*@enclosure` | missing | task #28; rehearsal always boxed, words and dynamics never; mdom typed (rehearsal only) |
-| `*@font-family` | missing | task #28; text face from the document ignored; mdom raw only |
-| `*@font-size` | missing | task #28; text size from the document ignored; mdom raw only |
-| `*@font-style` | missing | task #28; words always print italic; mdom typed (words only) |
-| `*@font-weight` | missing | task #28; words weight ignored; mdom typed (words only) |
-| `*@halign` | missing | task #28; horizontal text alignment ignored; mdom raw only |
-| `*@justify` | missing | task #28; text justification ignored; mdom raw only |
+| `*@enclosure` | drawn | `text_formatting.musicxml` M6-M13, M16-M18: every shape around words, rehearsal marks and dynamics; rehearsal still boxed by default |
+| `*@font-family` | missing | task #48; vexml types text in its configured face; mdom raw only |
+| `*@font-size` | drawn | `text_formatting.musicxml` M4: words, rehearsal and other-dynamics text, scaled against the word-font size; SMuFL dynamics and lyrics task #51 |
+| `*@font-style` | drawn | `text_formatting.musicxml` M1-M2, M19: words upright unless italic, other-dynamics italic unless normal |
+| `*@font-weight` | drawn | `text_formatting.musicxml` M3, M17: words, rehearsal marks and other-dynamics text |
+| `*@halign` | drawn | `text_formatting.musicxml` M15: words and rehearsal marks on their anchor; dynamics stay centered on their note |
+| `*@justify` | drawn | `text_formatting.musicxml` M14: words and rehearsal marks, as halign when that is absent |
 | `*@line-type` | drawn | `slur_line_types.musicxml`, `direction_lines.musicxml`: slurs and brackets; ties, wedges, slides task #17 |
 | `*@placement` | drawn | `direction_lines.musicxml`, `note_color.musicxml`: directions, slurs, tuplets, technical; ornaments ignore it |
 | `*@print-object` | drawn | `invisible_notes.musicxml`: notes; `print_object.musicxml`: notations, ending and staff-details; clef, key, time, lyric and part-name ignore it |
 | `*@relative-x` | missing | task #20 (later task in that lane); mdom raw only |
 | `*@relative-y` | missing | task #20 (later task in that lane); mdom raw only |
-| `*@rotation` | missing | task #28; rotated text not drawn; mdom raw only |
+| `*@rotation` | missing | task #49; rotated text not drawn; mdom raw only |
 | `*@space-length` | missing | task #17; mdom raw only |
-| `*@underline` | missing | task #28; underlined text not drawn; mdom raw only |
-| `*@valign` | missing | task #28; vertical text alignment ignored; mdom raw only |
+| `*@underline` | drawn | `text_formatting.musicxml` M5: words, rehearsal marks and dynamics |
+| `*@valign` | missing | task #50, after default-y (task #20); mdom raw only |
 | `accent` | drawn | `articulations.musicxml` |
 | `accidental` | drawn | `accidentals.musicxml`: every value, arrow, triple, Turkish and Persian forms included, and `other` by its `@smufl` name; cautionary and editorial forms too |
 | `accidental@bracket` | drawn | `accidentals.musicxml`: bracketed sharp and flat |
@@ -272,7 +272,7 @@ Attributes: 58 drawn, 5 ignored, 55 missing.
 | `lyric` | drawn | `lyrics.musicxml` |
 | `lyric@justify` | missing | task #38; syllable justification ignored; mdom raw only |
 | `lyric@number` | drawn | `lyrics.musicxml`, `lyrics_two_voices.musicxml`: verse order sets the row |
-| `lyric-font` | missing | task #28; lyric typeface and size from defaults; mdom raw only |
+| `lyric-font` | missing | task #51; lyric typeface and size from defaults; mdom raw only |
 | `lyric-language` | ignored | metadata |
 | `measure` | drawn | `measures_two.musicxml` |
 | `measure@implicit` | drawn | `pickup_measure.musicxml`: pickup sized to its content |
@@ -317,7 +317,7 @@ Attributes: 58 drawn, 5 ignored, 55 missing.
 | `mp` | drawn | `dynamics.musicxml` |
 | `multiple-rest` | drawn | `rest_multi_measure.musicxml` |
 | `multiple-rest@use-symbols` | missing | task #38; old-style rest symbols not drawn; mdom raw only |
-| `music-font` | missing | task #28; notation typeface and size from defaults; mdom raw only |
+| `music-font` | missing | task #51; notation typeface and size from defaults; mdom raw only |
 | `mute` | ignored | sound only |
 | `n` | drawn | `dynamics.musicxml` |
 | `natural` | drawn | `harmonic.musicxml`: drawn as the default harmonic, artificial not told apart |
@@ -576,7 +576,7 @@ Attributes: 58 drawn, 5 ignored, 55 missing.
 | `wedge@type` | drawn | `wedges.musicxml`: crescendo and diminuendo hairpins |
 | `with-bar` | missing | task #34; whammy bar indication on a tab bend; mdom raw only |
 | `wood` | missing | task #16; mdom raw only |
-| `word-font` | missing | task #28; default typeface for words directions not applied; mdom raw only |
+| `word-font` | drawn | `text_formatting.musicxml`: its style and weight are the words default, its size the base text sizes scale against; its face task #48 |
 | `words` | drawn | `words.musicxml` |
 | `work` | drawn | `header_catalog.musicxml`: its work-title |
 | `work-number` | drawn | `header_catalog.musicxml`: a subtitle under the work title in the catalog fallback |

@@ -121,6 +121,7 @@ Two rules cut across the draw stage:
 ## Text and marks around the stave
 
 - **Dynamics, words directions, rehearsal marks, segno/coda, figured bass**: `direction-placer.ts`, `score-reader.ts`, `dynamic-glyphs.ts`
+- **Their formatting: style, weight, size, underline, enclosure, alignment**: `score-reader.ts` (`formatOf`, `TextFormat`; sizes scale against `<defaults><word-font>`), `formatted-text.ts` (text, underlines and enclosure measured and drawn as one box), `text-enclosure.ts` (each enclosure shape)
 - **Tempo and metronome marks**: `direction-placer.ts`, `metronome-glyph.ts` (the note-group form)
 - **Chord symbols (`<harmony>`)**: `direction-placer.ts`
 - **Chord diagrams (fret boxes)**: `chord-diagram-glyph.ts` (drawing), `direction-placer.ts` (placement), `chord-diagram.ts` (the element)

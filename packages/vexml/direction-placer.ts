@@ -20,6 +20,7 @@ import {
 	DIRECTION_LINE_HOOK,
 	DIRECTION_LINE_TEXT_LINE,
 	DYNAMICS_FONT_SIZE,
+	ENCLOSURE_PADDING,
 	HARMONY_ACCIDENTAL_FONT_SIZE,
 	HARMONY_ACCIDENTAL_KERN,
 	HARMONY_ACCIDENTALS,
@@ -45,6 +46,7 @@ import {
 } from './constants';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { FERMATA_GLYPHS, NORMAL_FERMATA_GLYPHS } from './fermata-glyphs';
+import { FormattedText } from './formatted-text';
 import type { GeometryCollector } from './geometry-collector';
 import { MetronomeGlyph, type TempoModulation } from './metronome-glyph';
 import type {
@@ -54,8 +56,10 @@ import type {
 	Placement,
 	ScoreReader,
 	TempoMark,
+	TextFormat,
 } from './score-reader';
 import type { SpillTracker } from './spill-tracker';
+import type { EnclosureShape } from './text-enclosure';
 
 /*
  * Places and draws the text a score types beside its staves: rehearsal marks, tempo
@@ -143,6 +147,9 @@ export class DirectionPlacer {
 			// reads as shifted right of the fret AND of the notehead above it. Center it over a
 			// tab anchor so it lines up with both. On a notation stave, left-anchored at the
 			// notehead is already right (and is what MuseScore draws), so leave that alone.
+			// The document's own halign or justify overrides either.
+			// Upright unless the document says italic: MusicXML's default font-style is normal,
+			// and exporters mark the italic expressions ("dolce", "cresc.") as such.
 			const placed = this.drawWords(
 				w.stave,
 				w.text,
@@ -150,10 +157,12 @@ export class DirectionPlacer {
 				w.placement,
 				{
 					font: this.labelFont,
-					size: WORDS_FONT_SIZE,
-					italic: true,
-					align: this.wordsAlign(w),
+					size: WORDS_FONT_SIZE * (w.format?.scale ?? 1),
+					italic: w.format?.italic ?? false,
+					bold: w.format?.bold ?? false,
+					align: w.format?.align ?? this.wordsAlign(w),
 					clearsHairpins: true,
+					...this.decorationOf(w.format),
 				},
 			);
 			// A below-stave directive grows the crop downward instead (drawWords already
@@ -172,7 +181,9 @@ export class DirectionPlacer {
 		}
 		// Dynamics ride the same path as words: they're just typed in the music font. A
 		// marking spelled out of SMuFL's dynamic letters engraves as glyphs; an
-		// <other-dynamics> keeps its literal text in the words face.
+		// <other-dynamics> keeps its literal text in the words face, italic unless the
+		// document says otherwise. A dynamic stays centered on its note whatever its halign:
+		// exporters pair that with a default-x offset, which alone it would misplace.
 		for (const d of column.dynamics) {
 			const placed = this.drawWords(
 				d.stave,
@@ -186,12 +197,15 @@ export class DirectionPlacer {
 							italic: false,
 							color: this.notationColor,
 							align: 'center',
+							...this.decorationOf(d.format),
 						}
 					: {
 							font: this.labelFont,
-							size: WORDS_FONT_SIZE,
-							italic: true,
+							size: WORDS_FONT_SIZE * (d.format?.scale ?? 1),
+							italic: d.format?.italic ?? true,
+							bold: d.format?.bold ?? false,
 							align: 'center',
+							...this.decorationOf(d.format),
 						},
 			);
 			if (d.placement !== 'below') {
@@ -435,8 +449,8 @@ export class DirectionPlacer {
 			this.drawBarlineFermata(f, column.systemIndex);
 		}
 		if (topStave && measure) {
-			for (const text of this.reader.rehearsalsOf(measure)) {
-				const top = this.drawRehearsal(topStave, text);
+			for (const { text, format } of this.reader.rehearsalsOf(measure)) {
+				const top = this.drawRehearsal(topStave, text, format);
 				this.reporter.growPageTop(top);
 				this.spill.growDecorationTop(column.systemIndex, top);
 			}
@@ -476,40 +490,50 @@ export class DirectionPlacer {
 	}
 
 	/*
-	 * Draw a rehearsal mark (a section header like "A" or "Chorus") as boxed bold text above
-	 * the stave, anchored at the measure's left edge: a player reading "from B" looks for
-	 * the barline, not a note. The collision resolver lifts it clear of anything already in
+	 * Draw a rehearsal mark (a section header like "A" or "Chorus") above the stave, anchored
+	 * at the measure's left edge: a player reading "from B" looks for the barline, not a
+	 * note. Boxed bold text unless its `format` asks for another enclosure, weight or
+	 * alignment on that edge. The collision resolver lifts it clear of anything already in
 	 * its column. Returns the y the box reaches up to so the caller can grow the page crop.
 	 */
-	private drawRehearsal(stave: Stave, text: string): number {
+	private drawRehearsal(
+		stave: Stave,
+		text: string,
+		format?: TextFormat,
+	): number {
+		const size = REHEARSAL_FONT_SIZE * (format?.scale ?? 1);
 		this.context.save();
-		this.context.setFont(this.labelFont, REHEARSAL_FONT_SIZE, 'bold');
+		const font = {
+			family: this.labelFont,
+			size,
+			weight: (format?.bold ?? true) ? 'bold' : 'normal',
+			fontStyle: format?.italic ? 'italic' : 'normal',
+		};
+		this.context.setFont(font.family, font.size, font.weight, font.fontStyle);
 		this.context.setFillStyle(this.textColor);
 		this.context.setStrokeStyle(this.textColor);
-		const w = this.context.measureText(text).width + 2 * REHEARSAL_PADDING;
-		const h = REHEARSAL_FONT_SIZE + 2 * REHEARSAL_PADDING;
+		const enclosure = format?.enclosure ?? 'rectangle';
+		const formatted = new FormattedText(this.context, text, {
+			font,
+			textHeight: size,
+			underline: format?.underline,
+			enclosure: enclosure === 'none' ? undefined : enclosure,
+			padding: REHEARSAL_PADDING,
+		});
+		const x = stave.getX() - alignOffsetOf(format?.align, formatted.w);
 		const bottom = stave.getYForLine(0) - REHEARSAL_Y_OFFSET;
-		const natural = new Rect(stave.getX(), bottom - h, w, h);
+		const natural = new Rect(x, bottom - formatted.h, formatted.w, formatted.h);
 		const band = this.reporter.rowOf(stave);
-		const placed = this.collisionResolver.liftClear(
-			natural,
-			REHEARSAL_NOTE_CLEARANCE,
-			{ kinds: TEXT_CLEAR_KINDS, band },
+		const placed = this.collisionResolver.nudgeInsideX(
+			this.collisionResolver.liftClear(natural, REHEARSAL_NOTE_CLEARANCE, {
+				kinds: TEXT_CLEAR_KINDS,
+				band,
+			}),
+			this.scratchViewport,
+			PAGE_MARGIN_X,
 		);
 		this.reporter.recordAnnotationSpill(stave, placed);
-		this.context.setLineWidth(1);
-		this.context.beginPath();
-		this.context.moveTo(placed.x, placed.y);
-		this.context.lineTo(placed.right, placed.y);
-		this.context.lineTo(placed.right, placed.bottom);
-		this.context.lineTo(placed.x, placed.bottom);
-		this.context.closePath();
-		this.context.stroke();
-		this.context.fillText(
-			text,
-			placed.x + REHEARSAL_PADDING,
-			placed.bottom - REHEARSAL_PADDING,
-		);
+		formatted.draw(placed);
 		this.context.restore();
 		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
 		return placed.y;
@@ -799,8 +823,19 @@ export class DirectionPlacer {
 		return task.anchor instanceof TabNote ? 'center' : 'left';
 	}
 
+	/* The underlines and enclosure a document's `format` draws with a string, for a style. */
+	private decorationOf(
+		format: TextFormat | undefined,
+	): Pick<SideTextStyle, 'underline' | 'enclosure'> {
+		const enclosure = format?.enclosure;
+		return {
+			underline: format?.underline,
+			enclosure: enclosure && enclosure !== 'none' ? enclosure : undefined,
+		};
+	}
+
 	/*
-	 * Draw a words direction (e.g. "ritardando") beside the stave in italics, left-anchored at
+	 * Draw a words direction (e.g. "ritardando") beside the stave in its document's face, left-anchored at
 	 * the x of the note it applies to. `placement` picks the side: 'above' is the default and
 	 * lifts clear of any notehead/tie/annotation in its column, and 'below' is the mirror image:
 	 * it drops clear of everything hanging under the stave (low notes, stems, lyrics, an
@@ -809,8 +844,9 @@ export class DirectionPlacer {
 	 * the caller can grow the page crop on the side the text reached. Drawn after the notes
 	 * are formatted so getAbsoluteX is real.
 	 *
-	 * `style` picks the face: italic text-font by default (a words directive), or the
-	 * notation font at the dynamics size for a marking spelled in SMuFL glyphs.
+	 * `style` picks the face: the text font in the weight, style and size the document asks
+	 * for (a words directive), or the notation font at the dynamics size for a marking spelled
+	 * in SMuFL glyphs, plus any underlines and enclosure, which clear their neighbors with it.
 	 */
 	private drawWords(
 		stave: Stave,
@@ -834,23 +870,26 @@ export class DirectionPlacer {
 			anchorX = (anchor.getNoteHeadBeginX() + anchor.getNoteHeadEndX()) / 2;
 		}
 		this.context.save();
-		this.context.setFont(
-			style.font,
-			style.size,
-			'normal',
-			style.italic ? 'italic' : 'normal',
-		);
+		const font = {
+			family: style.font,
+			size: style.size,
+			weight: style.bold ? 'bold' : 'normal',
+			fontStyle: style.italic ? 'italic' : 'normal',
+		};
+		this.context.setFont(font.family, font.size, font.weight, font.fontStyle);
 		this.context.setFillStyle(style.color ?? this.textColor);
-		const w = this.context.measureText(text).width;
-		let alignOffset = 0;
-		if (style.align === 'center') {
-			alignOffset = w / 2;
-		} else if (style.align === 'right') {
-			alignOffset = w;
-		}
-		const h = style.inkHeight ?? style.size;
+		this.context.setStrokeStyle(style.color ?? this.textColor);
+		const formatted = new FormattedText(this.context, text, {
+			font,
+			textHeight: style.inkHeight ?? style.size,
+			hangs: style.hangs,
+			underline: style.underline,
+			enclosure: style.enclosure,
+			padding: ENCLOSURE_PADDING,
+		});
+		const { w, h } = formatted;
 		const natural = new Rect(
-			anchorX - alignOffset,
+			anchorX - alignOffsetOf(style.align, w),
 			below ? baseY : baseY - h,
 			w,
 			h,
@@ -904,11 +943,7 @@ export class DirectionPlacer {
 		} else {
 			this.reporter.recordAnnotationSpill(stave, placed);
 		}
-		this.context.fillText(
-			text,
-			placed.x,
-			style.hangs ? placed.y : placed.bottom,
-		);
+		formatted.draw(placed);
 		this.context.restore();
 		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
 		return placed;
@@ -1011,13 +1046,30 @@ const NAVIGATION_GLYPHS: Record<'segno' | 'coda', string> = {
 	coda: '\uE048',
 };
 
+// How far a string's left edge sits left of its anchor x, for an alignment on that x.
+function alignOffsetOf(
+	align: 'left' | 'center' | 'right' | null | undefined,
+	w: number,
+): number {
+	if (align === 'center') {
+		return w / 2;
+	}
+	return align === 'right' ? w : 0;
+}
+
 // The face drawWords types a beside-stave string in. A words directive gets the text font
-// in italics; a dynamics marking gets the notation font (SMuFL glyphs are not text) at its
-// own larger size, so it engraves as music.
+// as its document formats it; a dynamics marking gets the notation font (SMuFL glyphs are
+// not text) at its own larger size, so it engraves as music.
 type SideTextStyle = {
 	font: string;
 	size: number;
 	italic: boolean;
+	/** Bold weight. Absent means normal. */
+	bold?: boolean;
+	/** How many lines run under the string. Absent means none. */
+	underline?: number;
+	/** The shape drawn around the string. Absent means none. */
+	enclosure?: EnclosureShape;
 	color?: string;
 	/** Where the string sits relative to its anchor x. Default 'left': a directive is a
 	 * phrase reading rightward from its note; a dynamic centers on its notehead, and a
@@ -1069,6 +1121,8 @@ export type WordsTask = {
 	/* The direction falls at the bar's end, so it ends at the right barline. Absent means it
 	 * doesn't. */
 	closesBar?: boolean;
+	/** The <words> element's formatting. Absent means the document asks for none. */
+	format?: TextFormat;
 };
 
 /** A queued `<barline><fermata>`: the part stave it sits over (the top one) or under (the
@@ -1088,6 +1142,8 @@ export type DynamicsTask = {
 	glyph: boolean;
 	anchor: StaveNote | TabNote | undefined;
 	placement: Placement;
+	/** The <dynamics> element's formatting. Absent means the document asks for none. */
+	format?: TextFormat;
 };
 
 /** A queued <figured-bass> stack. `figures` is the whole stack, top row first; it draws as
