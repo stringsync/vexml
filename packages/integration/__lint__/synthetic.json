@@ -1,5 +1,7 @@
 [
 	{ "screenshot": "note.png", "edit": { "blank": true } },
+	{ "screenshot": "time_single_number.png", "edit": { "line": true } },
+	{ "screenshot": "structure_grand_staff.png", "edit": { "line": true } },
 	{ "screenshot": "accidentals.png", "edit": { "crop": "right" } },
 	{ "screenshot": "words.png", "edit": { "crop": "top" } },
 	{ "screenshot": "lyrics.png", "edit": { "crop": "bottom" } },

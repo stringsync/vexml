@@ -236,6 +236,8 @@ export type Edit =
 	/* Pull the nth staff (from 1) up to `gap` staff spaces (0.5 by default) under the one
 	 * above it; a negative gap draws it into that staff. */
 	| { squeeze: number; gap?: number }
+	/* Lay a lone line the width of the first staff half a staff space above it. */
+	| { line: true }
 	/* Draw nothing. */
 	| { blank: true };
 
@@ -444,7 +446,39 @@ function applyEdit(
 	if ('crop' in edit) {
 		return crop(image, ink, edit.crop);
 	}
+	if ('line' in edit) {
+		return strayLine(image, ink);
+	}
 	return squeeze(image, ink, edit.squeeze, edit.gap ?? 0.5);
+}
+
+// Lay a line, inked like the staff's own, across the first staff half a space above it.
+function strayLine(
+	image: PNG,
+	ink: InkMap,
+): { kind: FindingKind; box: Box; png: Buffer } {
+	const staff = new StaffDetector(ink)
+		.groups()
+		.find((group) => group.lines.length >= 3);
+	const first = staff?.lines[0];
+	if (!staff || !first) {
+		throw new Error('no staff to lay a line above');
+	}
+	const space = staff.box.h / (staff.lines.length - 1);
+	const y = Math.round(first.y - space / 2);
+	const at = (x: number, row: number) => (row * image.width + x) * 4;
+	const stroke = image.data.subarray(
+		at(Math.round(first.start) + 1, Math.round(first.y)),
+		at(Math.round(first.start) + 1, Math.round(first.y)) + 4,
+	);
+	for (let x = Math.round(first.start); x <= Math.round(first.end); x++) {
+		image.data.set(stroke, at(x, y));
+	}
+	return {
+		kind: 'stray-line',
+		box: { x: first.start, y, w: first.end - first.start, h: 1 },
+		png: PNG.sync.write(image),
+	};
 }
 
 // Cut the canvas a little way into the ink, so the ink now runs off that edge.
@@ -557,6 +591,9 @@ function inkBounds(ink: InkMap): Rect {
 function describeEdit(edit: Edit): string {
 	if ('blank' in edit) {
 		return 'blanked';
+	}
+	if ('line' in edit) {
+		return 'line laid above the staff';
 	}
 	if ('crop' in edit) {
 		return `cropped ${edit.crop}`;

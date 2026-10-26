@@ -32,13 +32,7 @@
 	"score_schubert_gute_nacht.ink.png": {
 		"collision": 3
 	},
-	"tab_vibrato.png": {
-		"stray-line": 1
-	},
 	"text_formatting.ink.png": {
 		"collision": 3
-	},
-	"time_single_number.png": {
-		"stray-line": 1
 	}
 }

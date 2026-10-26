@@ -146,7 +146,7 @@ export class RenderLint {
 					);
 					return reach.intersects(lone.box.translate(0, -0.5));
 				});
-				if (!near) {
+				if (!near || !this.isRule(lone, near)) {
 					return [];
 				}
 				return [
@@ -159,10 +159,32 @@ export class RenderLint {
 				];
 			});
 	}
+
+	// A beam spans the notes it joins and a vibrato squiggles between rows, so neither is
+	// a rule drawn across the system: that runs about as far as the staff beside it and,
+	// unlike a squiggle, holds one row for most of its length.
+	private isRule(lone: LineGroup, staff: LineGroup): boolean {
+		if (lone.box.w < staff.box.w * RULE_SPAN) {
+			return false;
+		}
+		const rows = [Math.floor(lone.box.y), Math.ceil(lone.box.y)];
+		const run = Math.max(
+			...rows.map((y) => {
+				const [longest] = this.ink.rowRuns(y);
+				return longest ? longest[1] - longest[0] : 0;
+			}),
+		);
+		return run >= lone.box.w * RULE_RUN;
+	}
 }
 
 // Lines at one spacing it takes to trust that spacing as a staff's.
 const STAFF_LINES = 3;
+
+// The share of its staff's width a lone line spans, and of its own span one row holds
+// unbroken, to be a rule and not a beam or a squiggle.
+const RULE_SPAN = 0.9;
+const RULE_RUN = 0.5;
 
 const PENALTY: Record<FindingKind, number> = {
 	blank: 100,
