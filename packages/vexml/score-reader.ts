@@ -305,9 +305,8 @@ export class ScoreReader {
 	 *
 	 * A <measure-repeat> covers whole measures, from the measure its start sits in up to the
 	 * one its stop sits in. A <beat-repeat>, or a <slash> without stems, replaces the notes
-	 * only when its span covers the whole measure.
-	 * ponytail: a beat-level span starting or stopping mid-measure draws that measure's notes;
-	 * hiding only some of a voice's notes needs per-chord hiding, and no fixture asks for it.
+	 * as a whole only when its span covers the whole measure and excepts no voice; any other
+	 * span hides its notes one by one (see noteStyleOf).
 	 */
 	measureStyleOf(
 		measure: Measure,
@@ -320,8 +319,10 @@ export class ScoreReader {
 		if (style.repeat) {
 			return { kind: 'measure-repeat', ...style.repeat };
 		}
-		const covers = (span: { from: number; to: number }) =>
-			span.from <= EPSILON && span.to >= style.length - EPSILON;
+		const covers = (span: Span & { except: string[] }) =>
+			span.from <= EPSILON &&
+			span.to >= style.length - EPSILON &&
+			span.except.length === 0;
 		const beatRepeat = style.beatRepeats.find(covers);
 		if (beatRepeat) {
 			return {
@@ -343,6 +344,66 @@ export class ScoreReader {
 			};
 		}
 		return null;
+	}
+
+	/*
+	 * What a beat-level span does to one note of a measure it only partly covers (or that
+	 * excepts a voice): hides it, and, on the first hidden note of each of its beats, draws
+	 * the sign standing for that beat. The notes stay in the voice, so their beams, ties and
+	 * the other voices keep their places. One voice carries the signs, so voices sharing a
+	 * span do not stack theirs; a voice named by <except-voice> is left alone.
+	 */
+	noteStyleOf(note: Note): NoteStyle {
+		const measure = note.measure;
+		const style = this.staffStylesOf(measure.part, note.staff)[measure.index];
+		const onset = this.measureBeatOf(note);
+		if (!style || onset === null || note.isGrace) {
+			return NOT_STYLED;
+		}
+		const spanAt = (n: Note, at: number) =>
+			[
+				...style.beatRepeats.map((span) => ({
+					...span,
+					kind: 'beat-repeat' as const,
+				})),
+				...style.slashes
+					.filter((span) => !span.stems)
+					.map((span) => ({ ...span, kind: 'beat-slash' as const })),
+			].find(
+				(span) =>
+					!span.except.includes(n.voice) &&
+					at >= span.from - EPSILON &&
+					at < span.to - EPSILON,
+			);
+		const span = spanAt(note, onset);
+		if (!span) {
+			return NOT_STYLED;
+		}
+		const covered = measure.notes
+			.filter((n) => n.staff === note.staff && !n.isGrace)
+			.flatMap((n) => {
+				const at = this.measureBeatOf(n);
+				return at !== null && spanAt(n, at)?.from === span.from
+					? [{ n, at }]
+					: [];
+			});
+		const owner = covered[0]?.n.voice;
+		const windowOf = (at: number) =>
+			Math.floor((at - span.from + EPSILON) / span.unit);
+		const first = covered.find(
+			({ n, at }) => n.voice === owner && windowOf(at) === windowOf(onset),
+		);
+		const anchored =
+			note.voice === owner && first !== undefined && first.at === onset;
+		const { dots } = span;
+		let sign: StyleSign | null = null;
+		if (anchored) {
+			sign =
+				span.kind === 'beat-repeat'
+					? { kind: 'beat-repeat', slashes: span.slashes, dots }
+					: { kind: 'beat-slash', unit: span.unit, dots };
+		}
+		return { hidden: true, sign };
 	}
 
 	/*
@@ -401,6 +462,9 @@ export class ScoreReader {
 				const starts = element.getAttribute('type') === 'start';
 				const slashes = Number(element.getAttribute('slashes') ?? 1) || 1;
 				const dots = element.getAttribute('use-dots') === 'yes';
+				const except = element
+					.childrenNamed('except-voice')
+					.flatMap((voice) => (voice.text ? [voice.text] : []));
 				if (element.tag === 'measure-repeat') {
 					repeat = starts
 						? { count: Number(element.text) || 1, slashes, start: m }
@@ -410,7 +474,7 @@ export class ScoreReader {
 						style.beatRepeats.push({ ...beatRepeat, to: beat });
 					}
 					beatRepeat = starts
-						? { slashes, dots, unit: unitOf(element), from: beat }
+						? { slashes, dots, except, unit: unitOf(element), from: beat }
 						: null;
 				} else if (element.tag === 'slash') {
 					if (slash) {
@@ -420,6 +484,7 @@ export class ScoreReader {
 						? {
 								stems: element.getAttribute('use-stems') === 'yes',
 								dots,
+								except,
 								unit: unitOf(element),
 								from: beat,
 							}
@@ -2354,6 +2419,16 @@ type BarlineRead = {
 	closed: 'stop' | 'discontinue' | null;
 };
 
+/* The sign a beat-level span draws on a beat, in place of that beat's notes (see noteStyleOf). */
+export type StyleSign =
+	| { kind: 'beat-repeat'; slashes: number; dots: boolean }
+	| { kind: 'beat-slash'; unit: number; dots: boolean };
+
+/* What a span does to one note: hide it, and maybe stand a sign where it was. */
+export type NoteStyle = { hidden: boolean; sign: StyleSign | null };
+
+const NOT_STYLED: NoteStyle = { hidden: false, sign: null };
+
 /* What a staff's <measure-style> draws in place of one measure's notes (see measureStyleOf). */
 export type MeasureStyleMark =
 	| {
@@ -2385,8 +2460,19 @@ export type MeasureStyleMark =
 			length: number;
 	  };
 
-type BeatRepeatStyle = { slashes: number; dots: boolean; unit: number };
-type SlashStyle = { stems: boolean; dots: boolean; unit: number };
+type BeatRepeatStyle = {
+	slashes: number;
+	dots: boolean;
+	unit: number;
+	/** The <except-voice>s, which keep drawing their notes under the style. */
+	except: string[];
+};
+type SlashStyle = {
+	stems: boolean;
+	dots: boolean;
+	unit: number;
+	except: string[];
+};
 type Span = { from: number; to: number };
 
 /* One staff's <measure-style> regions within one measure (see ScoreReader.staffStylesOf). */

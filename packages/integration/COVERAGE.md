@@ -16,7 +16,7 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 261 drawn, 69 ignored, 112 missing; vexml draws 261 of the 373 that show on the page (70%).
+Elements: 262 drawn, 69 ignored, 111 missing; vexml draws 262 of the 373 that show on the page (70%).
 Attributes: 66 drawn, 5 ignored, 47 missing.
 
 | Element | Status | Proof or reason |
@@ -164,7 +164,7 @@ Attributes: 66 drawn, 5 ignored, 47 missing.
 | `ending@text-x` | missing | task #38; volta label offset ignored; mdom raw only |
 | `ending@type` | drawn | `repeats.musicxml`: start and stop hooks; a discontinue close leaves the right end open |
 | `ensemble` | ignored | sound only (instrument definition) |
-| `except-voice` | missing | task #52; mdom raw only |
+| `except-voice` | drawn | `measure_style.musicxml` M15; the named voices keep their notes under a beat repeat or slash (`measure-repeat` has no such child) |
 | `extend` | drawn | `lyrics_melisma.musicxml`: lyric melisma line (figured-bass extend not drawn) |
 | `eyeglasses` | missing | task #15; mdom raw only |
 | `f` | drawn | `dynamics.musicxml` |

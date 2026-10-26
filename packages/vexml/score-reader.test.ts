@@ -677,6 +677,37 @@ describe('ScoreReader', () => {
 		});
 	});
 
+	describe('noteStyleOf', () => {
+		it('hides the notes a beat repeat starting mid-measure covers, one sign per beat', async () => {
+			const [measure] = await styledMeasures([
+				`${QUARTER.repeat(2)}${STYLE('<beat-repeat type="start"/>')}`,
+			]);
+			const reader = new ScoreReader(new DynamicGlyphs());
+			expect(
+				measure?.notes.map((note) => {
+					const { hidden, sign } = reader.noteStyleOf(note);
+					return [hidden, sign?.kind ?? null];
+				}),
+			).toEqual([
+				[false, null],
+				[false, null],
+				[true, 'beat-repeat'],
+				[true, 'beat-repeat'],
+			]);
+		});
+
+		it('leaves a voice named by <except-voice> drawn', async () => {
+			const [measure] = await styledMeasures([
+				STYLE('<slash type="start"><except-voice>2</except-voice></slash>'),
+			]);
+			const reader = new ScoreReader(new DynamicGlyphs());
+			const [first] = measure?.notes ?? [];
+			expect(reader.measureStyleOf(measure as never, '1')).toBeNull();
+			expect(reader.noteStyleOf(first as never).hidden).toBe(true);
+			expect(first?.voice).toBe('1');
+		});
+	});
+
 	it('rhythm-slashes the notes from where a <slash use-stems="yes"> starts', async () => {
 		const [measure] = await styledMeasures([
 			`${QUARTER.repeat(2)}${STYLE('<slash type="start" use-stems="yes"/>')}`,

@@ -1,4 +1,6 @@
 import { Annotation, StaveNote } from 'vexflow/core';
+import { MeasureStyleDrawer } from './measure-style-drawer';
+import type { StyleSign } from './score-reader';
 
 /*
  * A note (or rest) marked print-object="no": it holds its tick so the other voices stay
@@ -18,6 +20,9 @@ export class InvisibleStaveNote extends StaveNote {
 	 */
 	spacingHidden = false;
 
+	/* The <beat-repeat> or <slash> sign this note stands in for, drawn where the note sits. */
+	sign: StyleSign | null = null;
+
 	constructor(...args: ConstructorParameters<typeof StaveNote>) {
 		super(...args);
 		// vexflow's own "this note isn't on the page" flag. Setting it matters beyond its
@@ -35,6 +40,13 @@ export class InvisibleStaveNote extends StaveNote {
 			if (modifier instanceof Annotation) {
 				modifier.setContext(ctx).drawWithStyle();
 			}
+		}
+		if (this.sign) {
+			new MeasureStyleDrawer(ctx).drawSign(
+				this.checkStave(),
+				this.sign,
+				this.getAbsoluteX(),
+			);
 		}
 	}
 }

@@ -171,6 +171,7 @@ export class VoiceTranslator {
 				defaultStem,
 				stem: stemOf(chord.lead) ?? beamStems.get(chord.lead),
 				slashed: this.reader.isRhythmSlashed(chord.lead),
+				styled: this.reader.noteStyleOf(chord.lead),
 			});
 			if (pendingGrace.length > 0) {
 				const group = new GraceNoteGroup(pendingGrace.map((g) => g.note));

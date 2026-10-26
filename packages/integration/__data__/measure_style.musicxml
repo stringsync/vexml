@@ -342,5 +342,147 @@
         <dot/>
       </note>
     </measure>
+    <!-- M13: the slash ends and 4/4 returns; a beat repeat starts on beat 3, so C D are written and beats 3-4 draw one repeat sign each in place of E F. -->
+    <measure number="13">
+      <attributes>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <measure-style>
+          <slash type="stop"/>
+        </measure-style>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <attributes>
+        <measure-style>
+          <beat-repeat type="start"/>
+        </measure-style>
+      </attributes>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+    </measure>
+    <!-- M14: the beat repeat runs through beats 1-2 (signs over C D) and stops on beat 3, so E F are written again. -->
+    <measure number="14">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <attributes>
+        <measure-style>
+          <beat-repeat type="stop"/>
+        </measure-style>
+      </attributes>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+    </measure>
+    <!-- M15: slashes across the whole measure except voice 2: voice 1 draws four slashes, voice 2 keeps its two half notes. -->
+    <measure number="15">
+      <attributes>
+        <measure-style>
+          <slash type="start">
+            <except-voice>2</except-voice>
+          </slash>
+        </measure-style>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <backup>
+        <duration>8</duration>
+      </backup>
+      <note>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <voice>2</voice>
+        <type>half</type>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <voice>2</voice>
+        <type>half</type>
+      </note>
+    </measure>
+    <!-- M16: the slash stops at the barline; the quarters are written again. -->
+    <measure number="16">
+      <attributes>
+        <measure-style>
+          <slash type="stop"/>
+        </measure-style>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>

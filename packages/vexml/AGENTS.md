@@ -63,7 +63,7 @@ Two rules cut across the draw stage:
 - **Fermatas on a barline**: `score-reader.ts` (`barlineFermatasOf`), `direction-placer.ts` (`drawBarlineFermata`), `fermata-glyphs.ts`
 - **Measure numbers**: `stave-builder.ts` (`showsMeasureNumber`)
 - **Multi-measure rests**: `stave-builder.ts` (`drawMultiRest`), `layout-planner.ts`
-- **Measure repeats, beat repeats, slash notation (`<measure-style>`)**: `score-reader.ts` (`measureStyleOf`, `isRhythmSlashed`), `measure-style-drawer.ts` (the signs, drawn in place of the notes), `draw-pass.ts`, `chord-translator.ts` (rhythm slash noteheads), `voice-builder.ts` (their beams stem up)
+- **Measure repeats, beat repeats, slash notation (`<measure-style>`)**: `score-reader.ts` (`measureStyleOf`, `noteStyleOf` for spans that start or stop mid-measure or except a voice, `isRhythmSlashed`), `measure-style-drawer.ts` (the signs, drawn in place of the notes), `invisible-stave-note.ts` (a hidden note draws its beat's sign), `draw-pass.ts`, `chord-translator.ts` (rhythm slash noteheads), `voice-builder.ts` (their beams stem up)
 - **Braces, brackets, part-group connectors, part names and abbreviations**: `connector-drawer.ts`, `score-reader.ts` (`partLabels`, `partGroups`), `draw-pass.ts`, `layout-planner.ts` (`laterLabelIndent`)
 - **Percussion staves, unpitched notes**: `stave-builder.ts`, `chord-translator.ts`
 - **Transposing parts**: `stave-builder.ts`, `system-formatter.ts`

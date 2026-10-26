@@ -1,6 +1,6 @@
 import { Element, type RenderContext, type Stave } from 'vexflow/core';
 import { SLASH_GLYPH_FILLED, SLASH_GLYPHS } from './chord-translator';
-import type { MeasureStyleMark } from './score-reader';
+import type { MeasureStyleMark, StyleSign } from './score-reader';
 
 /*
  * Draws what a <measure-style> shows in place of a measure's written-out notes: a measure
@@ -86,19 +86,42 @@ export class MeasureStyleDrawer {
 				this.drawCentered(glyph, x, y);
 				return;
 			}
-			const head = new Element().setText(glyph);
-			head.renderText(this.context, x, y);
-			if (mark.kind === 'beat-slash' && dotted(mark)) {
-				// An augmentation dot sits in the space above the line its note is on.
-				new Element()
-					.setText(AUGMENTATION_DOT)
-					.renderText(
-						this.context,
-						x + head.getWidth() + DOT_GAP,
-						y - stave.getSpacingBetweenLines() / 2,
-					);
+			if (mark.kind === 'beat-slash') {
+				this.drawSlash(stave, mark, x, y);
 			}
 		});
+	}
+
+	/* One sign with its left edge at `x`: where the first note of a beat the span replaces sat. */
+	drawSign(stave: Stave, sign: StyleSign, x: number): void {
+		const y = middleLineY(stave);
+		if (sign.kind === 'beat-repeat') {
+			new Element()
+				.setText(beatRepeatGlyph(sign))
+				.renderText(this.context, x, y);
+			return;
+		}
+		this.drawSlash(stave, sign, x, y);
+	}
+
+	private drawSlash(
+		stave: Stave,
+		sign: Extract<StyleSign, { kind: 'beat-slash' }>,
+		x: number,
+		y: number,
+	): void {
+		const head = new Element().setText(beatSlashGlyph(sign));
+		head.renderText(this.context, x, y);
+		if (dotted(sign)) {
+			// An augmentation dot sits in the space above the line its note is on.
+			new Element()
+				.setText(AUGMENTATION_DOT)
+				.renderText(
+					this.context,
+					x + head.getWidth() + DOT_GAP,
+					y - stave.getSpacingBetweenLines() / 2,
+				);
+		}
 	}
 
 	private drawCentered(glyph: string, x: number, y: number): void {
@@ -113,9 +136,7 @@ function middleLineY(stave: Stave): number {
 }
 
 /* `slashes` slashes, between the upper-left and lower-right dots when the repeat uses them. */
-function beatRepeatGlyph(
-	mark: Extract<MeasureStyleMark, { kind: 'beat-repeat' }>,
-): string {
+function beatRepeatGlyph(mark: { slashes: number; dots: boolean }): string {
 	const slashes = REPEAT_BAR_SLASH.repeat(mark.slashes);
 	return mark.dots
 		? `${REPEAT_BAR_UPPER_DOT}${slashes}${REPEAT_BAR_LOWER_DOT}`
@@ -123,16 +144,12 @@ function beatRepeatGlyph(
 }
 
 /* Whether the slashes carry a dot: the unit is a dotted length and the slash asks for dots. */
-function dotted(
-	mark: Extract<MeasureStyleMark, { kind: 'beat-slash' }>,
-): boolean {
+function dotted(mark: { dots: boolean; unit: number }): boolean {
 	return mark.dots && !Number.isInteger(Math.log2(mark.unit));
 }
 
 /* The slash notehead for the unit's length: open for a half or longer, else filled. */
-function beatSlashGlyph(
-	mark: Extract<MeasureStyleMark, { kind: 'beat-slash' }>,
-): string {
+function beatSlashGlyph(mark: { unit: number }): string {
 	const { unit } = mark;
 	let head = SLASH_GLYPH_FILLED;
 	if (unit >= 4) {

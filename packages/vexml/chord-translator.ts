@@ -15,6 +15,7 @@ import type { DurationTranslator } from './duration-translator';
 import { InvisibleStaveNote } from './invisible-stave-note';
 import type { NotationTranslator } from './notation-translator';
 import { NoteheadText } from './notehead-text';
+import type { NoteStyle } from './score-reader';
 
 const ACCIDENTAL_SIGNS: Readonly<Record<string, string>> = {
 	sharp: '\u266F',
@@ -118,10 +119,13 @@ export class ChordTranslator {
 		// A hidden note builds as an InvisibleStaveNote: same formatting, no glyphs drawn.
 		// ponytail: hiding is read off the lead only, so a chord with a mix of hidden and
 		// visible members draws all of them; add per-notehead hiding if a fixture needs it.
-		const NoteClass = lead.printObject ? StaveNote : InvisibleStaveNote;
+		// A note a <beat-repeat> or <slash> stands in for is hidden the same way.
+		const visible = lead.printObject && !opts.styled?.hidden;
+		const NoteClass = visible ? StaveNote : InvisibleStaveNote;
 		if (lead.isRest) {
 			const rest = new NoteClass(this.struct(chord, clef, opts));
 			this.hideSpacing(rest, lead);
+			this.attachSign(rest, opts);
 			this.addDots(rest, lead);
 			return rest;
 		}
@@ -145,10 +149,11 @@ export class ChordTranslator {
 		// flag, dots and accidentals of that category at two thirds, and a grace group is
 		// only formed by VoiceTranslator for notes mdom calls grace.
 		const staveNote =
-			lead.printObject && isCueSized(lead)
+			visible && isCueSized(lead)
 				? new GraceNote(this.struct(chord, clef, opts))
 				: new NoteClass(this.struct(chord, clef, opts));
 		this.hideSpacing(staveNote, lead);
+		this.attachSign(staveNote, opts);
 		if (opts.slashed) {
 			// Rhythmic slash notation: one slash on the middle line, carrying no pitch to spell.
 			staveNote.noteHeads[0]?.setText(this.slashGlyph(chord));
@@ -165,6 +170,13 @@ export class ChordTranslator {
 		}
 		this.notations.attach(staveNote, chord);
 		return staveNote;
+	}
+
+	/* The beat sign a hidden note draws where it sits (see ScoreReader.noteStyleOf). */
+	private attachSign(staveNote: StaveNote, opts: VexflowChordOptions): void {
+		if (staveNote instanceof InvisibleStaveNote && opts.styled?.sign) {
+			staveNote.sign = opts.styled.sign;
+		}
 	}
 
 	/* print-spacing="no" on a hidden note: it draws nothing and the measure closes up around it. */
@@ -552,6 +564,8 @@ interface VexflowChordOptions {
 	/* Under a <slash use-stems="yes">: a slash notehead on the middle line in place of the
 	 * chord's pitches, its rhythm and stem kept (see ScoreReader.isRhythmSlashed). */
 	slashed?: boolean;
+	/* Under a <beat-repeat> or <slash> sign: hidden, and maybe the one that draws the sign. */
+	styled?: NoteStyle;
 }
 
 const STEM = { up: Stem.UP, down: Stem.DOWN } as const;
