@@ -595,11 +595,19 @@ describe('render', () => {
 	//   whole, a quarter, a dotted half), so the missing beat is reserved as blank space
 	//   before the end barline rather than the last note being justified flush against it.
 	// - <time symbol="single-number"> is covered below; several pairs printed side by side
-	//   (2/4 + 3/8) is not: vexflow's TimeSignature reads only the first two '/'-separated
-	//   groups, so that form needs its own glyph work before a fixture is worth adding.
+	//   (2/4 + 3/8) are covered by time_extended.
 	it.concurrent('renders time_compound.png', async () => {
 		expect(await testing.render('time_compound.musicxml')).toMatchScreenshot(
 			'time_compound.png',
+		);
+	});
+
+	// <time> forms vexflow's spec string cannot say: a note glyph as the denominator (note,
+	// dotted-note), an <interchangeable> second meter under each time-relation, and several
+	// beats/beat-type pairs printed as 2/4 + 3/8.
+	it.concurrent('renders time_extended.png', async () => {
+		expect(await testing.render('time_extended.musicxml')).toMatchScreenshot(
+			'time_extended.png',
 		);
 	});
 

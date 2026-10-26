@@ -14,6 +14,7 @@ import {
 	VOLTA_LABEL_DROP,
 	VOLTA_STAVE_GAP,
 } from './constants';
+import { ExtendedTimeSignature } from './extended-time-signature';
 import type { Gaps } from './gaps';
 import { MeasureNumberPlan } from './measure-number-plan';
 import type { MeasureStyleMark, PartGroup, ScoreReader } from './score-reader';
@@ -295,7 +296,12 @@ export class StaveBuilder {
 			time?.getAttribute('print-object') !== 'no' &&
 			(column.opensScore || timeSpec !== prevTimeSpec)
 		) {
-			stave.addTimeSignature(timeSpec);
+			const extended = this.signatures.extendedTimeSpec(time);
+			if (extended) {
+				stave.addModifier(new ExtendedTimeSignature(extended));
+			} else {
+				stave.addTimeSignature(timeSpec);
+			}
 		}
 
 		// A gap is non-musical, so it never shows a measure number (its neighbors keep

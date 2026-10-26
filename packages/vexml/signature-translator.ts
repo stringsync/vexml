@@ -1,6 +1,7 @@
 import type { Clef, Key, Time } from '@stringsync/mdom';
 import { StaveNote } from 'vexflow/core';
 import { ACCIDENTAL_CODES } from './chord-translator';
+import type { ExtendedTimeSpec, TimeFace } from './extended-time-signature';
 
 // MusicXML <key-alter> semitones -> the vexflow accidental code, for a signature written
 // without <fifths>. A <key-accidental> naming the glyph outright wins over this (see
@@ -50,10 +51,87 @@ export class SignatureTranslator {
 		if (time?.symbol === 'single-number' && time.beats) {
 			return time.beats;
 		}
+		const extended = this.extendedTimeSpec(time);
+		if (extended) {
+			return JSON.stringify(extended);
+		}
 		if (time?.beats && time?.beatType) {
 			return `${time.beats}/${time.beatType}`;
 		}
 		return null;
+	}
+
+	/*
+	 * The parts of a <time> vexflow's spec string cannot say: a note glyph as the denominator
+	 * (symbol="note"/"dotted-note"), several beats/beat-type pairs and an <interchangeable> second meter. Null for a plain
+	 * signature, which timeSignatureSpec hands to vexflow as before.
+	 */
+	extendedTimeSpec(time: Time | null): ExtendedTimeSpec | null {
+		if (!time?.beats || !time.beatType) {
+			return null;
+		}
+		const symbol = time.symbol;
+		const noted = symbol === 'note' || symbol === 'dotted-note';
+		const interchangeable = time.child('interchangeable');
+		const other = interchangeable?.child('beats')?.text?.trim();
+		const otherType = interchangeable?.child('beat-type')?.text?.trim();
+		const hasOther = Boolean(other && otherType);
+		// A composite meter writes several beats/beat-type pairs, printed side by side as 2/4 + 3/8.
+		const pairs = time.components?.length
+			? time.components
+			: [{ beats: time.beats, beatType: time.beatType }];
+		if (!noted && !hasOther && pairs.length < 2) {
+			return null;
+		}
+		return {
+			faces: pairs.map((pair) =>
+				this.timeFace(pair.beats, pair.beatType, noted ? symbol : null),
+			),
+			interchange:
+				hasOther && other && otherType
+					? {
+							relation:
+								interchangeable?.child('time-relation')?.text?.trim() ?? null,
+							face: this.timeFace(
+								other,
+								otherType,
+								interchangeable?.getAttribute('symbol') === 'note' ||
+									interchangeable?.getAttribute('symbol') === 'dotted-note'
+									? (interchangeable.getAttribute('symbol') as
+											| 'note'
+											| 'dotted-note')
+									: null,
+							),
+						}
+					: null,
+		};
+	}
+
+	// A dotted-note denominator is the beat of a compound meter: 6/8 reads as 2 over a dotted
+	// quarter. A meter whose beats do not group in threes has no such beat, so it falls back
+	// to the plain note.
+	private timeFace(
+		beats: string,
+		beatType: string,
+		note: string | null,
+	): TimeFace {
+		if (note !== 'dotted-note') {
+			return {
+				beats,
+				beatType,
+				note: note === 'note' ? 'note' : null,
+			};
+		}
+		const count = Number(beats);
+		const unit = Number(beatType) / 2;
+		if (Number.isInteger(count) && count % 3 === 0 && unit >= 1) {
+			return {
+				beats: String(count / 3),
+				beatType: String(unit),
+				note: 'dotted-note',
+			};
+		}
+		return { beats, beatType, note: 'note' };
 	}
 
 	/*

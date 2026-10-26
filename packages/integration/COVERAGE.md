@@ -16,7 +16,7 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 282 drawn, 69 ignored, 91 missing; vexml draws 282 of the 373 that show on the page (76%).
+Elements: 284 drawn, 69 ignored, 89 missing; vexml draws 284 of the 373 that show on the page (76%).
 Attributes: 82 drawn, 5 ignored, 31 missing.
 
 | Element | Status | Proof or reason |
@@ -243,7 +243,7 @@ Attributes: 82 drawn, 5 ignored, 31 missing.
 | `instrument-name` | ignored | playback instrument metadata, part-name is the printed label |
 | `instrument-sound` | ignored | sound only |
 | `instruments` | ignored | metadata (instrument count) |
-| `interchangeable` | missing | task #18; mdom raw only |
+| `interchangeable` | drawn | `time_extended.musicxml`: second meter joined by its time-relation |
 | `inversion` | drawn | `harmony.musicxml` M19: bass chord tone spelled from the kind; `harmony_analysis.musicxml` M2: a numeral's figures |
 | `inverted-mordent` | drawn | `ornaments.musicxml` |
 | `inverted-turn` | drawn | `ornaments.musicxml` |
@@ -528,9 +528,9 @@ Attributes: 82 drawn, 5 ignored, 31 missing.
 | `tied@orientation` | drawn | `spanner_line_types.musicxml` M4 |
 | `time` | drawn | `time.musicxml` |
 | `time@separator` | missing | task #38; separator between numerals not drawn; mdom raw only |
-| `time@symbol` | drawn | `barline_styles.musicxml`: common; cut and single-number also honored; note, dotted-note task #18 |
+| `time@symbol` | drawn | `barline_styles.musicxml`: common; cut and single-number also honored; `time_extended.musicxml`: note and dotted-note |
 | `time-modification` | drawn | `tuplet_triplet.musicxml` |
-| `time-relation` | missing | task #18; mdom raw only |
+| `time-relation` | drawn | `time_extended.musicxml`: parentheses, bracket, equals, slash, hyphen, space |
 | `timpani` | missing | task #16; mdom raw only |
 | `toe` | drawn | `technical_marks.musicxml` |
 | `top-margin` | missing | task #20; mdom raw only |

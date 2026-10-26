@@ -18,8 +18,16 @@ describe('SignatureTranslator', () => {
 			symbol: null,
 			beats: null,
 			beatType: null,
+			child: () => null,
 			...overrides,
 		}) as unknown as Time;
+
+	const node = (text: string | null, attributes: Record<string, string> = {}) =>
+		({
+			text,
+			getAttribute: (name: string) => attributes[name] ?? null,
+			child: () => null,
+		}) as unknown;
 
 	it('keys a major signature by its bare tonic', () => {
 		expect(
@@ -148,5 +156,85 @@ describe('SignatureTranslator', () => {
 				'treble',
 			),
 		).toEqual([]);
+	});
+
+	it('leaves a plain meter to vexflow', () => {
+		expect(
+			translator.extendedTimeSpec(time({ beats: '3', beatType: '4' })),
+		).toBeNull();
+	});
+
+	it('prints the beat-type as a note for symbol=note', () => {
+		expect(
+			translator.extendedTimeSpec(
+				time({ symbol: 'note', beats: '3', beatType: '4' }),
+			),
+		).toEqual({
+			faces: [{ beats: '3', beatType: '4', note: 'note' }],
+			interchange: null,
+		});
+	});
+
+	it('reads a dotted-note compound meter as its dotted beat', () => {
+		expect(
+			translator.extendedTimeSpec(
+				time({ symbol: 'dotted-note', beats: '6', beatType: '8' }),
+			)?.faces,
+		).toEqual([{ beats: '2', beatType: '4', note: 'dotted-note' }]);
+	});
+
+	it('falls back to the plain note when the beats do not group in threes', () => {
+		expect(
+			translator.extendedTimeSpec(
+				time({ symbol: 'dotted-note', beats: '4', beatType: '4' }),
+			)?.faces,
+		).toEqual([{ beats: '4', beatType: '4', note: 'note' }]);
+	});
+
+	it('keeps every beats/beat-type pair of a composite meter', () => {
+		expect(
+			translator.extendedTimeSpec(
+				time({
+					beats: '2',
+					beatType: '4',
+					components: [
+						{ beats: '2', beatType: '4' },
+						{ beats: '3', beatType: '8' },
+					],
+				} as Partial<Time>),
+			)?.faces,
+		).toEqual([
+			{ beats: '2', beatType: '4', note: null },
+			{ beats: '3', beatType: '8', note: null },
+		]);
+	});
+
+	it('reads an interchangeable meter and its relation', () => {
+		const parts: Record<string, unknown> = {
+			interchangeable: {
+				getAttribute: () => null,
+				child: (tag: string) =>
+					({
+						beats: node('6'),
+						'beat-type': node('8'),
+						'time-relation': node('equals'),
+					})[tag] ?? null,
+			},
+		};
+		expect(
+			translator.extendedTimeSpec(
+				time({
+					beats: '3',
+					beatType: '4',
+					child: (tag: string) => parts[tag] ?? null,
+				} as Partial<Time>),
+			),
+		).toEqual({
+			faces: [{ beats: '3', beatType: '4', note: null }],
+			interchange: {
+				relation: 'equals',
+				face: { beats: '6', beatType: '8', note: null },
+			},
+		});
 	});
 });
