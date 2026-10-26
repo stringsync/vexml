@@ -683,5 +683,70 @@
         </lyric>
       </note>
     </measure>
+    <measure number="13">
+      <direction>
+        <direction-type>
+          <dynamics>
+            <n/>
+          </dynamics>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <lyric number="1">
+          <text>n</text>
+        </lyric>
+      </note>
+      <direction>
+        <direction-type>
+          <dynamics>
+            <pf/>
+          </dynamics>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <lyric number="1">
+          <text>pf</text>
+        </lyric>
+      </note>
+      <direction>
+        <direction-type>
+          <dynamics>
+            <sfzp/>
+          </dynamics>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <lyric number="1">
+          <text>sfzp</text>
+        </lyric>
+      </note>
+      <note>
+        <rest/>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>

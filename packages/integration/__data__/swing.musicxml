@@ -7,7 +7,7 @@
       <miscellaneous-field name="description">A swung tune with a one-eighth
           pickup: sound/swing 2:1 at quarter=60. M1 is plain eighths, which
           swing; M2 mixes them with a written-out triplet, which must not be
-          swung a second time. Drives the playback timing test, not a
+          swung a second time; M3 is a straight element, which cancels the swing, and M4 swings sixteenths with a swing-type of 16th. Drives the playback timing test, not a
           screenshot.</miscellaneous-field>
     </miscellaneous>
   </identification>
@@ -187,6 +187,131 @@
         <duration>3</duration>
         <voice>1</voice>
         <type>eighth</type>
+      </note>
+    </measure>
+    <measure number="3">
+      <direction>
+        <direction-type>
+          <words>straight</words>
+        </direction-type>
+        <sound>
+          <swing>
+            <straight/>
+          </swing>
+        </sound>
+      </direction>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>3</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>3</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>3</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>3</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>3</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>3</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+      </note>
+    </measure>
+    <measure number="4">
+      <attributes>
+        <divisions>4</divisions>
+      </attributes>
+      <direction>
+        <direction-type>
+          <words>16th swing</words>
+        </direction-type>
+        <sound>
+          <swing>
+            <first>2</first>
+            <second>1</second>
+            <swing-type>16th</swing-type>
+          </swing>
+        </sound>
+      </direction>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>16th</type>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>16th</type>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>16th</type>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>16th</type>
+      </note>
+      <note>
+        <rest/>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>half</type>
       </note>
       <barline location="right">
         <bar-style>light-heavy</bar-style>

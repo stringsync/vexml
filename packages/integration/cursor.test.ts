@@ -435,14 +435,16 @@ describe('cursor', () => {
 		// the last one has no back-jump so the block ends there. M12 opens a fourth block with two
 		// endings: M13, then back to M12 and out through the two-measure 2nd ending (M14 M15).
 		// M16 opens a fifth block the same shape: M17, back to M16, out through M18.
+		// M19 opens a sixth: its one ending (M20, closed with discontinue) plays once, then M19
+		// again and out to M21, the ending skipped.
 		// M8, M13 and M15 are the measures holding two notes rather than a whole note, so each of
 		// their passes contributes two steps; M17 and M18 hold four quarters, so four each.
 		expect(result.order).toEqual([
 			0, 1, 0, 1, 2, 3, 4, 2, 5, 6, 7, 7, 8, 7, 7, 9, 7, 7, 10, 11, 12, 12, 11,
-			13, 14, 14, 15, 16, 16, 16, 16, 15, 17, 17, 17, 17,
+			13, 14, 14, 15, 16, 16, 16, 16, 15, 17, 17, 17, 17, 18, 19, 18, 20,
 		]);
 		// Document order is unchanged: only playback expands.
-		expect(result.measureCount).toBe(18);
+		expect(result.measureCount).toBe(21);
 		expect(result.firstStepOfM2).toBe(1);
 	});
 

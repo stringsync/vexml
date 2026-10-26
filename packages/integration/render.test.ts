@@ -305,6 +305,16 @@ describe('render', () => {
 		).toMatchScreenshot('clef_tab_4_string.png');
 	});
 
+	// A 6-line TAB stave tuned a half step down: each of the six <staff-tuning>s carries a
+	// <tuning-alter> of -1 (E-flat standard). The notes name no string or fret, so the frets are
+	// derived from the tuning, and read 0, 2, 4, 5 on string 1 for E-flat4, F4, G4 and A-flat4,
+	// a fret lower than they would be against plain E standard.
+	it.concurrent('renders clef_tab_tuning_alter.png', async () => {
+		expect(
+			await testing.render('clef_tab_tuning_alter.musicxml'),
+		).toMatchScreenshot('clef_tab_tuning_alter.png');
+	});
+
 	// A 6-line tablature stave whose <clef> is an octave-down treble, not TAB. The stave
 	// is marked as tablature only by the six <staff-tuning>s in <staff-details>, which is
 	// how some exporters write guitar tab. It must still render as TAB: stacked "TAB"
@@ -502,6 +512,8 @@ describe('render', () => {
 	//   double-flat hangs well below the stave, the double-sharp ("x") just under it, the flat
 	//   inside it, and the sharp and natural above it. The five glyphs still march left to
 	//   right in list order and the measure's note follows clear of the last one.
+	// - M3: <key-accidental> naming each glyph outright, so a fractional <key-alter> still draws:
+	//   a quarter-sharp on F, a quarter-flat on B and a slash-flat on E, in that order.
 	// ponytail: the placement rule is "highest position on the stave", which matches every
 	// traditional FLAT and most sharps but not G♯: a <fifths> signature draws that one above
 	// the top line, and an unpinned custom G♯ lands on the G inside the stave instead. Nothing
@@ -703,6 +715,8 @@ describe('render', () => {
 	// - M11: Turkish comma flats, a flat with a small 1, 2, 3 and 4 above its right.
 	// - M12: accidental "other" named by @smufl: Wilson plus and Wilson minus, then an
 	//   unknown glyph name and a missing @smufl, which draw no accidental.
+	// - M13: a sharp and a flat printed with accidental parentheses="yes", then the same pair
+	//   with bracket="yes": "(#)" "(b)" then "[#]" "[b]", each wrapped round its glyph.
 	it.concurrent('renders accidentals.png', async () => {
 		expect(await testing.render('accidentals.musicxml')).toMatchScreenshot(
 			'accidentals.png',
@@ -809,6 +823,9 @@ describe('render', () => {
 	// - M5: both marks in one <direction>, two <direction-type>s deep: "quarter = 60" then
 	//   the same swing figure, side by side on one baseline with a wider gap between them
 	//   than within either. This is what a real exporter writes at the head of a swung tune.
+	// - M6: the <metronome-note> form with <metronome-dot/>s: "dotted quarter = double-dotted
+	//   half". Each note glyph trails one augmentation dot per <metronome-dot/> (one on the
+	//   left, two on the right), and no number prints.
 	// ponytail: playback still reads the mark's bpm as quarter-note bpm, so M1 sounds at 100
 	// quarters rather than 150. That predates the dot (a plain "half = 100" was already read
 	// this way) and belongs with the playback tempo path, not here. The M4/M5 swing figure is
@@ -884,6 +901,8 @@ describe('render', () => {
 	// - M11-12: a whole-measure rest, then a whole note carrying mf again. The restatement is
 	//   two measures past the last one, too far to read as an exporter repeating itself, so
 	//   this mf DOES print: a composer re-marking a level after a rest is a real reminder.
+	// - M13: n, pf, sfzp, three more single-glyph dynamics from the schema's list, each under
+	//   its own quarter, then a quarter rest.
 	it.concurrent('renders dynamics.png', async () => {
 		expect(await testing.render('dynamics.musicxml')).toMatchScreenshot(
 			'dynamics.png',
@@ -1277,6 +1296,10 @@ describe('render', () => {
 	// - M18: the same shape labelled "2.", the block's final ending. It is the last measure, so
 	//   this ending DOES hook at its right end (nothing left to run on into), over the piece's
 	//   thin-thick end barline.
+	// - M19-21: a forward repeat, then a one-measure volta labelled "1." closed with
+	//   type="discontinue" on a backward repeat, then a plain closing measure. The bracket hooks
+	//   down at its left edge only: a discontinued ending is left open on the right, where a
+	//   "stop" would hook, because no matching second ending follows.
 	// Every bracket on a system shares one height, so M9-11's brackets ride at M13/M15's level
 	// too: the second system's brackets are visibly higher than the first system's, and M17's
 	// and M18's sit level with each other above the two slurs.
@@ -1909,6 +1932,19 @@ describe('render', () => {
 		expect(
 			await testing.render('tab_slide_notation.musicxml'),
 		).toMatchScreenshot('tab_slide_notation.png');
+	});
+
+	// Treble stave, 4/4: <glissando> start/stop pairs on a notation stave, each drawn as a
+	// straight line between the two noteheads.
+	// - M1: a glissando up (C4 to E4), then down (G4 to D4).
+	// - M2-3: a dotted half rest and an E4 quarter that starts a glissando; it crosses the
+	//   barline and lands on A4, the first note of M3, as one line rising across the bar.
+	// - M3: then a quarter rest, an F4 carrying a lone stop (a glissando into the note: a short
+	//   "/" tick rising into its left), and a last rest.
+	it.concurrent('renders glissando.png', async () => {
+		expect(await testing.render('glissando.musicxml')).toMatchScreenshot(
+			'glissando.png',
+		);
 	});
 
 	// Notation stave over a 6-line TAB stave, 4/4: a slide INTO a note (an unpaired

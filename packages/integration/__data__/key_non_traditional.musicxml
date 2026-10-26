@@ -76,6 +76,30 @@
         <voice>1</voice>
         <type>half</type>
       </note>
+    </measure>
+    <measure number="3">
+      <attributes>
+        <key>
+          <key-step>F</key-step>
+          <key-alter>0.5</key-alter>
+          <key-accidental>quarter-sharp</key-accidental>
+          <key-step>B</key-step>
+          <key-alter>-0.5</key-alter>
+          <key-accidental>quarter-flat</key-accidental>
+          <key-step>E</key-step>
+          <key-alter>-1</key-alter>
+          <key-accidental>slash-flat</key-accidental>
+        </key>
+      </attributes>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>half</type>
+      </note>
       <barline location="right">
         <bar-style>light-heavy</bar-style>
       </barline>

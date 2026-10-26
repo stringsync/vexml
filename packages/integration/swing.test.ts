@@ -31,9 +31,18 @@ describe('swing', () => {
 		expect(result.steps).toEqual([
 			0, 333, 1000, 1333, 2000, 2333, 3000, 3333, 4000, 4333, 4667, 5000, 5333,
 			6000,
+			// M3's <straight/> cancels the carried swing: six even eighths, 500ms apart.
+			6333,
+			6833, 7333, 7833, 8333, 8833,
+			// M4 swings sixteenths (<swing-type>16th</swing-type>, 2:1): the pair spans 500ms, so
+			// the off-beat sixteenths land 333ms in rather than 250.
+			9333,
+			9667, 9833, 10167,
+			// The half rest after them starts where the fourth sixteenth ends.
+			10333,
 		]);
-		// Straight, the pickup would be 500ms. Swung it is 333ms, and the two full bars stay
+		// Straight, the pickup would be 500ms. Swung it is 333ms, and the four full bars stay
 		// 3000ms each: swing moves notes within a bar, never the barlines.
-		expect(result.durationMs).toBe(6333);
+		expect(result.durationMs).toBe(12333);
 	});
 });

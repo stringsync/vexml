@@ -16,8 +16,8 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 223 drawn, 69 ignored, 150 missing; vexml draws 223 of the 373 that show on the page (60%).
-Attributes: 45 drawn, 5 ignored, 65 missing.
+Elements: 233 drawn, 69 ignored, 140 missing; vexml draws 233 of the 373 that show on the page (62%).
+Attributes: 47 drawn, 5 ignored, 63 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -43,10 +43,10 @@ Attributes: 45 drawn, 5 ignored, 65 missing.
 | `*@valign` | missing | task #28; vertical text alignment ignored; mdom raw only |
 | `accent` | drawn | `articulations.musicxml` |
 | `accidental` | drawn | `accidentals.musicxml`: every value, arrow, triple, Turkish and Persian forms included, and `other` by its `@smufl` name; cautionary and editorial forms too |
-| `accidental@bracket` | missing | task #24; honored by chord-translator.ts but no fixture shows it |
+| `accidental@bracket` | drawn | `accidentals.musicxml`: bracketed sharp and flat |
 | `accidental@cautionary` | drawn | `accidentals.musicxml`: parenthesized accidental |
 | `accidental@editorial` | drawn | `accidentals.musicxml`: bracketed accidental |
-| `accidental@parentheses` | missing | task #24; honored by chord-translator.ts but no fixture shows it |
+| `accidental@parentheses` | drawn | `accidentals.musicxml`: parenthesized sharp and flat |
 | `accidental@size` | missing | task #9; mdom raw only |
 | `accidental@smufl` | drawn | `accidentals.musicxml` M12: `other` drawn by its SMuFL glyph name |
 | `accidental-mark` | drawn | `ornaments.musicxml`: small accidental on the ornament it follows |
@@ -127,7 +127,7 @@ Attributes: 45 drawn, 5 ignored, 65 missing.
 | `degree-alter` | missing | task #26; chord-symbol degree alterations (add9, b5) not appended; mdom raw only |
 | `degree-type` | missing | task #26; chord-symbol degree alterations (add9, b5) not appended; mdom raw only |
 | `degree-value` | missing | task #26; chord-symbol degree alterations (add9, b5) not appended; mdom raw only |
-| `delayed-inverted-turn` | missing | task #24; drawn by notation-translator.ts but no fixture shows it |
+| `delayed-inverted-turn` | drawn | `ornaments.musicxml`: the turn glyph delayed, plain and slashed |
 | `delayed-turn` | drawn | `ornaments.musicxml` |
 | `detached-legato` | drawn | `articulations_extended.musicxml` |
 | `diatonic` | ignored | sound only (transposition; written pitch is drawn) |
@@ -161,7 +161,7 @@ Attributes: 45 drawn, 5 ignored, 65 missing.
 | `ending@number` | drawn | `repeats.musicxml`: volta labels |
 | `ending@print-object` | missing | task #27; hidden ending bracket still drawn; mdom raw only |
 | `ending@text-x` | missing | task #38; volta label offset ignored; mdom raw only |
-| `ending@type` | drawn | `repeats.musicxml`: start/stop hooks; discontinue honored in code but no fixture |
+| `ending@type` | drawn | `repeats.musicxml`: start and stop hooks; a discontinue close leaves the right end open |
 | `ensemble` | ignored | sound only (instrument definition) |
 | `except-voice` | missing | task #10; mdom raw only |
 | `extend` | drawn | `lyrics_melisma.musicxml`: lyric melisma line (figured-bass extend not drawn) |
@@ -198,7 +198,7 @@ Attributes: 45 drawn, 5 ignored, 65 missing.
 | `function` | missing | task #32; Roman-numeral harmony function text; mdom raw only |
 | `fz` | drawn | `dynamics.musicxml` |
 | `glass` | missing | task #16; mdom raw only |
-| `glissando` | missing | task #24; drawn by spanner-builder.ts but no fixture shows it |
+| `glissando` | drawn | `glissando.musicxml`: a straight line between the noteheads, across a barline, or a tick into a lone stop |
 | `glissando@line-type` | missing | task #17; mdom typed |
 | `glyph` | missing | task #36; appearance SMuFL glyph overrides not applied; mdom raw only |
 | `golpe` | missing | task #29; golpe (flamenco tap) glyph on the note; mdom typed |
@@ -251,7 +251,7 @@ Attributes: 45 drawn, 5 ignored, 65 missing.
 | `ipa` | ignored | pronunciation for synthesis |
 | `key` | drawn | `key.musicxml` |
 | `key@number` | drawn | `staves_different_keys.musicxml`: a key per staff |
-| `key-accidental` | missing | task #24; drawn by signature-translator.ts but no fixture shows it |
+| `key-accidental` | drawn | `key_non_traditional.musicxml`: quarter-sharp, quarter-flat and slash-flat key signature glyphs |
 | `key-alter` | drawn | `key_non_traditional.musicxml` |
 | `key-octave` | drawn | `key_non_traditional.musicxml` |
 | `key-step` | drawn | `key_non_traditional.musicxml` |
@@ -287,7 +287,7 @@ Attributes: 45 drawn, 5 ignored, 65 missing.
 | `metronome@parentheses` | drawn | `tempo_beat_unit_dot.musicxml`: parenthesized tempo mark |
 | `metronome-arrows` | missing | task #33; arrows in a metric modulation mark; mdom raw only |
 | `metronome-beam` | drawn | `tempo_beat_unit_dot.musicxml`: beamed note group in the modulation mark |
-| `metronome-dot` | missing | task #24; drawn by metronome-glyph.ts but no fixture shows it |
+| `metronome-dot` | drawn | `tempo_beat_unit_dot.musicxml`: dots after each metronome-note glyph |
 | `metronome-note` | drawn | `tempo_beat_unit_dot.musicxml` |
 | `metronome-relation` | drawn | `tempo_beat_unit_dot.musicxml` |
 | `metronome-tied` | missing | task #33; tie between metronome-note glyphs; mdom raw only |
@@ -316,7 +316,7 @@ Attributes: 45 drawn, 5 ignored, 65 missing.
 | `multiple-rest@use-symbols` | missing | task #38; old-style rest symbols not drawn; mdom raw only |
 | `music-font` | missing | task #28; notation typeface and size from defaults; mdom raw only |
 | `mute` | ignored | sound only |
-| `n` | missing | task #24; drawn by score-reader.ts but no fixture shows it |
+| `n` | drawn | `dynamics.musicxml` |
 | `natural` | drawn | `harmonic.musicxml`: drawn as the default harmonic, artificial not told apart |
 | `non-arpeggiate` | drawn | `non_arpeggiate.musicxml` |
 | `non-arpeggiate@type` | drawn | `non_arpeggiate.musicxml`: bracket from bottom to top member |
@@ -392,7 +392,7 @@ Attributes: 45 drawn, 5 ignored, 65 missing.
 | `pedal-tuning` | missing | task #14; mdom raw only |
 | `per-minute` | drawn | `tempo.musicxml` |
 | `percussion` | missing | task #16; mdom raw only |
-| `pf` | missing | task #24; drawn by score-reader.ts but no fixture shows it |
+| `pf` | drawn | `dynamics.musicxml` |
 | `pitch` | drawn | `note.musicxml` |
 | `pitched` | missing | task #16; mdom raw only |
 | `play` | ignored | sound only |
@@ -447,7 +447,7 @@ Attributes: 45 drawn, 5 ignored, 65 missing.
 | `sfp` | drawn | `dynamics.musicxml` |
 | `sfpp` | drawn | `dynamics.musicxml` |
 | `sfz` | drawn | `dynamics.musicxml` |
-| `sfzp` | missing | task #24; drawn by direction-placer.ts but no fixture shows it |
+| `sfzp` | drawn | `dynamics.musicxml` |
 | `shake` | drawn | `ornaments.musicxml` |
 | `sign` | drawn | `clef_treble.musicxml`, `clef_c.musicxml` |
 | `slash` | missing | task #10; mdom raw only |
@@ -497,7 +497,7 @@ Attributes: 45 drawn, 5 ignored, 65 missing.
 | `stick-material` | missing | task #16; mdom raw only |
 | `stick-type` | missing | task #16; mdom raw only |
 | `stopped` | drawn | `technical_marks.musicxml` |
-| `straight` | missing | task #24; drawn by score-reader.ts (cancels swing in playback) but no fixture shows it |
+| `straight` | drawn | `swing.musicxml`: cancels a carried swing in playback timing |
 | `stress` | drawn | `articulations_extended.musicxml` |
 | `string` | drawn | `string_numbers.musicxml` |
 | `string-mute` | missing | task #15; mdom raw only |
@@ -506,7 +506,7 @@ Attributes: 45 drawn, 5 ignored, 65 missing.
 | `supports` | ignored | metadata |
 | `swing` | drawn | `swing.musicxml`: swing applied to playback timing |
 | `swing-style` | ignored | sound only (descriptive style name, unread) |
-| `swing-type` | missing | task #24; drawn by score-reader.ts (swing unit for playback) but no fixture shows it |
+| `swing-type` | drawn | `swing.musicxml`: sets the swung unit (16th) in playback timing |
 | `syllabic` | drawn | `lyrics.musicxml` |
 | `symbol` | missing | task #15; mdom raw only |
 | `sync` | ignored | sound only (listening) |
@@ -538,7 +538,7 @@ Attributes: 45 drawn, 5 ignored, 65 missing.
 | `tremolo@type` | missing | task #35; start/stop two-note tremolo between notes not drawn; mdom typed |
 | `trill-mark` | drawn | `ornaments.musicxml` |
 | `triple-tongue` | drawn | `technical_marks.musicxml` |
-| `tuning-alter` | missing | task #24; drawn by stave-plan.ts (fret derivation) but no fixture shows it |
+| `tuning-alter` | drawn | `clef_tab_tuning_alter.musicxml`: frets derived from a half-step-down tuning |
 | `tuning-octave` | drawn | `clef_tab_staff_tuning.musicxml` |
 | `tuning-step` | drawn | `clef_tab_staff_tuning.musicxml` |
 | `tuplet` | drawn | `tuplet_triplet.musicxml` |

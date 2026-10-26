@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- A 6-line TAB stave tuned a half step down (E-flat standard): every <staff-tuning>
+         carries a <tuning-alter> of -1. The notes name no string or fret, so the frets are
+         derived from the tuning: E-flat4 is the open first string (0), F4 fret 2, G4 fret 4 and
+         A-flat4 fret 5. Read against plain E standard they would come out a fret higher. -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef>
+          <sign>TAB</sign>
+          <line>5</line>
+        </clef>
+        <staff-details>
+          <staff-lines>6</staff-lines>
+          <staff-tuning line="1"><tuning-step>E</tuning-step><tuning-alter>-1</tuning-alter><tuning-octave>2</tuning-octave></staff-tuning>
+          <staff-tuning line="2"><tuning-step>A</tuning-step><tuning-alter>-1</tuning-alter><tuning-octave>2</tuning-octave></staff-tuning>
+          <staff-tuning line="3"><tuning-step>D</tuning-step><tuning-alter>-1</tuning-alter><tuning-octave>3</tuning-octave></staff-tuning>
+          <staff-tuning line="4"><tuning-step>G</tuning-step><tuning-alter>-1</tuning-alter><tuning-octave>3</tuning-octave></staff-tuning>
+          <staff-tuning line="5"><tuning-step>B</tuning-step><tuning-alter>-1</tuning-alter><tuning-octave>3</tuning-octave></staff-tuning>
+          <staff-tuning line="6"><tuning-step>E</tuning-step><tuning-alter>-1</tuning-alter><tuning-octave>4</tuning-octave></staff-tuning>
+        </staff-details>
+      </attributes>
+      <note>
+        <pitch><step>E</step><alter>-1</alter><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>A</step><alter>-1</alter><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>quarter</type>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

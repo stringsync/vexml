@@ -319,5 +319,59 @@
         <bar-style>light-heavy</bar-style>
       </barline>
     </measure>
+    <measure number="6">
+      <direction directive="yes">
+        <direction-type>
+          <metronome>
+            <metronome-note>
+              <metronome-type>quarter</metronome-type>
+              <metronome-dot/>
+            </metronome-note>
+            <metronome-relation>equals</metronome-relation>
+            <metronome-note>
+              <metronome-type>half</metronome-type>
+              <metronome-dot/>
+              <metronome-dot/>
+            </metronome-note>
+          </metronome>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>
