@@ -292,6 +292,7 @@ export class DrawPass {
 	// carries it across the staves can be placed there too. Null when there is no such sign.
 	private begRepeatX: number | null = null;
 	private tempoTasks: Array<{ stave: Stave } & TempoTask> = [];
+	private capoTasks: Array<{ stave: Stave; fret: number }> = [];
 	// Chord symbols, drawn after the system is formatted so each sits at its
 	// note's laid-out x.
 	private harmonyTasks: HarmonyTask[] = [];
@@ -746,6 +747,7 @@ export class DrawPass {
 		this.columnMultiRests = [];
 		this.columnMeasureStyles = [];
 		this.tempoTasks = [];
+		this.capoTasks = [];
 		this.harmonyTasks = [];
 		this.wordsTasks = [];
 		this.fermataTasks = [];
@@ -1082,6 +1084,7 @@ export class DrawPass {
 			figuredBasses: this.figuredBassTasks,
 			harmonies: this.harmonyTasks,
 			tempos: this.tempoTasks,
+			capos: this.capoTasks,
 		};
 	}
 
@@ -1209,6 +1212,13 @@ export class DrawPass {
 		// Queued, not drawn: the column's staves are drawn together once they all exist, so a
 		// repeat sign can be aligned across them first (see SystemFormatter.alignBegModifiers).
 		this.columnStaves.push(stave);
+		// A capo is stated once on a tab staff and labels the part where it opens.
+		const capo = built.isTab
+			? measure.getStaffDetails(staffNumber)?.capo
+			: null;
+		if (capo && this.isSystemStart && this.systemIndex === 0) {
+			this.capoTasks.push({ stave, fret: capo });
+		}
 		if (built.volta) {
 			this.columnVoltaBox = built.volta.box;
 			// The bracket is the highest ink in this column, so it grows the page crop.

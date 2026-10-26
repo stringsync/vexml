@@ -126,6 +126,7 @@ Two rules cut across the draw stage:
 - **Tempo and metronome marks**: `direction-placer.ts`, `metronome-glyph.ts` (the note-group form, tied units, arrows)
 - **Chord symbols (`<harmony>`)**: `direction-placer.ts`
 - **Roman numeral analysis (`<harmony><numeral>`, `<function>`), hung under the stave**: `score-reader.ts` (`analysisSymbol`: case, quality, figures, key), `direction-placer.ts` (`drawHarmony`'s below side)
+- **Capo label ("Capo N" over a tab part's first system)**: `draw-pass.ts` (`capoTasks`), `direction-placer.ts` (`placeColumn`)
 - **Chord diagrams (fret boxes)**: `chord-diagram-glyph.ts` (drawing), `direction-placer.ts` (placement), `chord-diagram.ts` (the element)
 - **Lyrics, verses, melisma lines**: `lyric-placer.ts`, `lyric-mark.ts`, `lyric-annotation.ts` (the verse drops under below-stave articulations and technical marks: `system-formatter.ts` `belowMarksBottom`, `stave-articulation.ts` `belowBottomY`)
 - **Fingerings, string numbers, other technical marks**: `technical-mark.ts`, `technical-annotation.ts`, `fingering-annotation.ts`, `string-number-annotation.ts` (the ringed digit), `notation-translator.ts`, `system-formatter.ts` (stacking)

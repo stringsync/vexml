@@ -16,7 +16,7 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 277 drawn, 69 ignored, 96 missing; vexml draws 277 of the 373 that show on the page (74%).
+Elements: 278 drawn, 69 ignored, 95 missing; vexml draws 278 of the 373 that show on the page (75%).
 Attributes: 79 drawn, 5 ignored, 34 missing.
 
 | Element | Status | Proof or reason |
@@ -101,7 +101,7 @@ Attributes: 79 drawn, 5 ignored, 34 missing.
 | `breath-mark` | drawn | `articulations_extended.musicxml` |
 | `caesura` | drawn | `articulations_extended.musicxml` |
 | `cancel` | missing | task #38; naturals drawn on every key change, but cancel fifths/location not read; mdom raw only |
-| `capo` | missing | task #38; capo fret label for guitar/tab parts; mdom typed |
+| `capo` | drawn | `staff_details_capo.musicxml` |
 | `chord` | drawn | `chord.musicxml` |
 | `chromatic` | ignored | sound only (transposition; written pitch is drawn) |
 | `circular-arrow` | missing | no SMuFL glyph to draw it with; mdom raw only |

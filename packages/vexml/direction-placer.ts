@@ -416,6 +416,17 @@ export class DirectionPlacer {
 			this.reporter.growPageTop(top);
 			this.spill.growDecorationTop(column.systemIndex, top);
 		}
+		for (const { stave, fret } of column.capos) {
+			const placed = this.drawWords(
+				stave,
+				`Capo ${fret}`,
+				stave.getX(),
+				'above',
+				{ font: this.labelFont, size: WORDS_FONT_SIZE, italic: false },
+			);
+			this.reporter.growPageTop(placed.y);
+			this.spill.growDecorationTop(column.systemIndex, placed.y);
+		}
 		// A rehearsal mark belongs to the measure, not to one part: every part carries the
 		// same one, so it's read from the first part (like the barline decorations) and
 		// printed once, over the column's top stave. It goes last of all: engraving puts the
@@ -1257,6 +1268,8 @@ export interface DirectionColumn {
 	figuredBasses: readonly FiguredBassTask[];
 	harmonies: readonly HarmonyTask[];
 	tempos: ReadonlyArray<{ stave: Stave } & TempoTask>;
+	/** Tab staves opening the score with a `<capo>`, printed "Capo N" over their left edge. */
+	capos: ReadonlyArray<{ stave: Stave; fret: number }>;
 }
 
 /*

@@ -95,6 +95,7 @@ describe('DirectionPlacer', () => {
 		figuredBasses: [],
 		harmonies: [],
 		tempos: [],
+		capos: [],
 		...overrides,
 	});
 

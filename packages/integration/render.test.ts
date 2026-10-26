@@ -355,6 +355,13 @@ describe('render', () => {
 	// how some exporters write guitar tab. It must still render as TAB: stacked "TAB"
 	// label, six lines, its own begin barline, and frets 0/1/3/5 on string 1 (an ascending
 	// E4/F4/G4/A4) drawn as numbers on the top line rather than noteheads on a treble staff.
+	// A capo on a tab staff: "Capo 3" prints above the first system.
+	it.concurrent('renders staff_details_capo.png', async () => {
+		expect(
+			await testing.render('staff_details_capo.musicxml'),
+		).toMatchScreenshot('staff_details_capo.png');
+	});
+
 	it.concurrent('renders clef_tab_staff_tuning.png', async () => {
 		expect(
 			await testing.render('clef_tab_staff_tuning.musicxml'),
