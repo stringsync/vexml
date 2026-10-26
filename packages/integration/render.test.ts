@@ -2819,11 +2819,12 @@ describe('render', () => {
 	// quarter per mark, each lyric-labelled with the mark it should show, wrapping one
 	// measure to a system by the width the labels claim.
 	// - M11: up-bow (the open "V") and down-bow (the filled bracket) above the stave, then
-	//   two <harmonic> notes, which draw as DIAMOND noteheads rather than a mark: vexml
-	//   engraves every harmonic that way (see harmonic.musicxml), so the "o" a natural
-	//   harmonic could take instead is deliberately not drawn on top of it.
-	// - M12: the remaining <harmonic> forms (artificial, and the base/touching/sounding
-	//   pitch variants), all four likewise diamond noteheads, no extra mark.
+	//   two <harmonic> notes, which draw as DIAMOND noteheads rather than a mark: a harmonic
+	//   with no pitch element names the touching pitch, so the "o" a natural harmonic could
+	//   take instead is deliberately not drawn on top of it.
+	// - M12: the remaining <harmonic> forms: artificial and touching-pitch keep the diamond,
+	//   base-pitch is a normal notehead (the stopped or open string), and sounding-pitch is a
+	//   normal notehead with the small circle above.
 	// - M13: the open-string ring and the thumb-position hook above the stave, then an EMPTY
 	//   <fingering/>, which prints nothing at all, then "1".
 	// - M14: fingerings "2", "3", "4", "5", digits centered over their noteheads.

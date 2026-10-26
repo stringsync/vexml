@@ -64,7 +64,7 @@ are picked by hand.
 | `arrow-style` | drawn | `technical_marks.musicxml`: double, paired and combined draw as single |
 | `arrowhead` | drawn | `technical_marks.musicxml` |
 | `articulations` | drawn | `articulations.musicxml`, `articulations_extended.musicxml` |
-| `artificial` | missing | task #30; drawn as a natural harmonic: the stopped note should keep a normal head under the diamond; mdom raw only |
+| `artificial` | drawn | `technical_marks.musicxml`: keeps the diamond; its stopped note is a separate `base-pitch` note |
 | `assess` | ignored | listening/assessment only |
 | `attributes` | drawn | `key.musicxml`, `time.musicxml`: clef, key, time, divisions |
 | `backup` | drawn | `two_voices.musicxml`: onsets via mdom timeline |
@@ -72,7 +72,7 @@ are picked by hand.
 | `barline` | drawn | `barline_styles.musicxml`, `repeats.musicxml` |
 | `barline@location` | drawn | `barline_mid_measure.musicxml`, `barline_styles.musicxml`: left, right and middle barlines |
 | `barre` | drawn | `chord_diagram.musicxml`: barre across the fret box |
-| `base-pitch` | missing | task #30; base-pitch note should keep a normal head, vexml draws every harmonic as a diamond; mdom raw only |
+| `base-pitch` | drawn | `technical_marks.musicxml`: a normal notehead |
 | `bass` | drawn | `harmony.musicxml`: slash chord bass |
 | `bass-alter` | drawn | `harmony.musicxml` |
 | `bass-separator` | drawn | `harmony.musicxml` M20: " over " between chord and bass |
@@ -317,7 +317,7 @@ are picked by hand.
 | `music-font` | drawn | `text_lyric_music_font.musicxml` M4-M6: a SMuFL dynamic's `font-size` scales against its size; its face stays unused on purpose, since vexml engraves in SMuFL Bravura and exporters name non-SMuFL faces (Maestro, Opus) |
 | `mute` | ignored | sound only |
 | `n` | drawn | `dynamics.musicxml` |
-| `natural` | drawn | `harmonic.musicxml`: drawn as the default harmonic, artificial not told apart |
+| `natural` | drawn | `harmonic.musicxml`: the diamond |
 | `non-arpeggiate` | drawn | `non_arpeggiate.musicxml` |
 | `non-arpeggiate@type` | drawn | `non_arpeggiate.musicxml`: bracket from bottom to top member |
 | `normal-dot` | drawn | `tuplet_display.musicxml`: dots on the normal-side glyph (show-type="both") |
@@ -472,7 +472,7 @@ are picked by hand.
 | `sound@segno` | drawn | `navigation.musicxml`: playback follows it (D.S. al Coda) |
 | `sound@tempo` | drawn | `tempo.musicxml`: timed, playback tempo and the tempo mark fallback |
 | `sound@tocoda` | drawn | `navigation.musicxml`: playback follows it (D.S. al Coda) |
-| `sounding-pitch` | missing | task #30; harmonic drawn as sounding pitch (no diamond); vexml diamonds every harmonic; mdom raw only |
+| `sounding-pitch` | drawn | `technical_marks.musicxml`: a normal notehead with the small circle above |
 | `source` | ignored | metadata |
 | `spiccato` | drawn | `articulations_extended.musicxml` |
 | `staccatissimo` | drawn | `articulations.musicxml` |
@@ -532,7 +532,7 @@ are picked by hand.
 | `toe` | drawn | `technical_marks.musicxml` |
 | `top-margin` | drawn | `document_layout.musicxml`: the page top margin when documentLayout follows the document (paged) |
 | `top-system-distance` | drawn | `document_layout.musicxml`: the first system on each page, when documentLayout follows the document (paged) |
-| `touching-pitch` | drawn | `technical_marks.musicxml`: every harmonic draws the diamond, the touching-pitch form |
+| `touching-pitch` | drawn | `technical_marks.musicxml`: the diamond |
 | `transpose` | ignored | sound only (written pitch is drawn as-is) |
 | `tremolo` | drawn | `tremolo.musicxml` |
 | `tremolo@type` | drawn | `beam_tremolo_extras.musicxml` M3-M4: start/stop slashes between two notes; single in `tremolo.musicxml` |

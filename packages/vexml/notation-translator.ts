@@ -683,8 +683,9 @@ const SLASHED_TURN = '\uE569';
  * articulation code where one exists, else the raw SMuFL glyph (Articulation passes an
  * unrecognized code straight through, the same escape hatch accidentals and ornaments use).
  *
- * <harmonic> is deliberately absent: vexml already engraves it as a diamond notehead (see
- * isHarmonic, pinned by harmonic.musicxml), so drawing the "o" as well would mark it twice.
+ * <harmonic> is absent: the touching pitch is engraved as a diamond notehead (see
+ * isDiamondHarmonic, pinned by harmonic.musicxml), so drawing the "o" as well would mark it
+ * twice. technicalCode adds the "o" only for a sounding pitch, which keeps a normal head.
  * The tab-only members of <technical> (<bend>, <other-technical>, <string>/<fret>) belong
  * to TabVoiceTranslator; the two that carry text (<fingering>, <pluck>) and
  * <string> on a notation stave are handled by {@link addTechnicals} instead.
@@ -764,6 +765,10 @@ function technicalCode(mark: Technical): string | undefined {
 			return mark.getAttribute('hand') === 'left'
 				? '\uE840' // guitarLeftHandTapping
 				: '\uE841'; // guitarRightHandTapping
+		case 'harmonic':
+			// a diamond head already marks the touching pitch; a sounding-pitch harmonic keeps
+			// a normal head, so the small circle above is what tells it from a plain note
+			return mark.child('sounding-pitch') ? 'ah' : undefined;
 	}
 	return TECHNICAL_CODES[mark.technicalType];
 }

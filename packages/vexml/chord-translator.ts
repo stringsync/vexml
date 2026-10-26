@@ -12,6 +12,7 @@ import {
 } from 'vexflow/core';
 import { isCueSized } from './cue-note';
 import type { DurationTranslator } from './duration-translator';
+import { isDiamondHarmonic } from './harmonic-kind';
 import { InvisibleStaveNote } from './invisible-stave-note';
 import type { NotationTranslator } from './notation-translator';
 import { NoteheadText } from './notehead-text';
@@ -347,7 +348,7 @@ export class ChordTranslator {
 		if (!key) {
 			return 'b/4';
 		}
-		if (note.isHarmonic) {
+		if (isDiamondHarmonic(note)) {
 			return `${key}/H`;
 		}
 		const notehead = note.notehead;
