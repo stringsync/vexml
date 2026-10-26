@@ -487,7 +487,7 @@ are picked by hand.
 | `staff-lines` | drawn | `staff_details_lines.musicxml` |
 | `staff-size` | drawn | `staff_details_size.musicxml`: line spacing, noteheads and clef shrink; key/time signature glyphs and stem lengths stay full size |
 | `staff-tuning` | drawn | `clef_tab_staff_tuning.musicxml`: tuning derives frets and marks the staff as tab |
-| `staff-type` | missing | task #38; ossia/cue/editorial/alternate staff styling; mdom raw only |
+| `staff-type` | drawn | `staff_type.musicxml`: ossia and cue staves draw at 75 percent unless staff-size says otherwise, and an ossia staff shows its lines only in measures that hold notes; editorial, regular and alternate draw as a normal staff |
 | `staves` | drawn | `structure_grand_staff.musicxml` |
 | `stem` | drawn | `note.musicxml` |
 | `stem@default-y` | missing | stem length from stem end y; task #20 lane (default-y); mdom raw only |

@@ -529,6 +529,13 @@ describe('render', () => {
 		).toMatchScreenshot('staff_details_size.png');
 	});
 
+	// staff-type: an ossia staff draws at 75 percent and only where it holds notes, a cue staff at 75 percent.
+	it.concurrent('renders staff_type.png', async () => {
+		expect(await testing.render('staff_type.musicxml')).toMatchScreenshot(
+			'staff_type.png',
+		);
+	});
+
 	// One system, treble 4/4: key signatures and a mid-system key change. Each measure
 	// holds one C5 whole note.
 	// - M1: opens the system with a treble clef, a 3-sharp key signature (F#, C#, G#),

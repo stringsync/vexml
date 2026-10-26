@@ -8,6 +8,9 @@ import type { StavePlan } from './stave-plan';
 /** vexflow's default space between staff lines, in px. */
 const STAVE_LINE_DISTANCE = 10;
 
+/* The staff-size percent an ossia or cue staff draws at when it states none. */
+const SMALL_STAFF_SIZE = 75;
+
 /* A freshly placed stave, before any clef, key or barline is set on it. */
 export interface PlacedStave {
 	stave: Stave;
@@ -50,7 +53,13 @@ export class StaveFactory {
 		const halfNudge = Math.max(0, (5 - staveLines) / 2 - hiddenAbove);
 		// staff-size is a percentage of normal: the line spacing shrinks with it, and every row
 		// vexflow measures off the stave (notes, ledger lines, clef, key) follows.
-		const size = measure.getStaffDetails(staffNumber)?.staffSize ?? 100;
+		const staffType = measure
+			.getStaffDetails(staffNumber)
+			?.child('staff-type')
+			?.text?.trim();
+		const size =
+			measure.getStaffDetails(staffNumber)?.staffSize ??
+			(staffType === 'ossia' || staffType === 'cue' ? SMALL_STAFF_SIZE : 100);
 		const spacing = (STAVE_LINE_DISTANCE * size) / 100;
 		// The shrunk five lines center on where the full-size ones would sit, so the staff
 		// stays in its row and only the ink shrinks.
@@ -96,7 +105,14 @@ export class StaveFactory {
 			stave.setConfigForLine(row, { visible: false });
 		}
 		// staff-details print-object="no" hides the lines; clef, key and notes stay.
-		if (measure.getStaffDetails(staffNumber)?.printObject === false) {
+		// An ossia staff shows only where it holds notes.
+		const emptyOssia =
+			staffType === 'ossia' &&
+			!measure.notes.some((n) => n.staff === staffNumber && !n.isRest);
+		if (
+			measure.getStaffDetails(staffNumber)?.printObject === false ||
+			emptyOssia
+		) {
 			for (let line = 0; line < 5; line++) {
 				stave.setConfigForLine(line, { visible: false });
 			}
