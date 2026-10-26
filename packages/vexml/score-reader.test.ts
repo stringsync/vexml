@@ -194,6 +194,42 @@ describe('ScoreReader', () => {
 			true,
 		);
 	});
+
+	it('reads <metronome-tied> and <metronome-arrows> and justify', async () => {
+		const mark = await modulationOf(
+			'<metronome-arrows/>' +
+				'<metronome-note><metronome-type>quarter</metronome-type><metronome-tied type="start"/></metronome-note>' +
+				'<metronome-note><metronome-type>eighth</metronome-type><metronome-tied type="stop"/></metronome-note>' +
+				'<metronome-relation>equals</metronome-relation>' +
+				'<metronome-note><metronome-type>half</metronome-type></metronome-note>',
+			'justify="right"',
+		);
+		expect(mark?.arrows).toBe(true);
+		expect(mark?.justify).toBe('right');
+		expect(mark?.left.map((note) => note.tiesToNext)).toEqual([true, false]);
+	});
+
+	it('draws a <beat-unit-tied> mark as glyphs, tied in a row', async () => {
+		const m = await measureOf(
+			'<direction><direction-type><metronome><beat-unit>half</beat-unit><beat-unit-dot/>' +
+				'<beat-unit-tied><beat-unit>quarter</beat-unit></beat-unit-tied>' +
+				'<per-minute>40</per-minute></metronome></direction-type></direction>',
+		);
+		const mark = reader.rateModulationOf(m);
+		expect(mark?.rate).toBe('40');
+		expect(mark?.left).toMatchObject([
+			{ type: 'half', dots: 1, tiesToNext: true },
+			{ type: 'quarter', dots: 0, tiesToNext: false },
+		]);
+	});
+
+	it('leaves an untied <beat-unit> mark to StaveTempo', async () => {
+		const m = await measureOf(
+			'<direction><direction-type><metronome><beat-unit>quarter</beat-unit>' +
+				'<per-minute>60</per-minute></metronome></direction-type></direction>',
+		);
+		expect(reader.rateModulationOf(m)).toBeNull();
+	});
 	it('reads forward and backward repeats off the measure edges', async () => {
 		const result = await repeatsOf(scoreOf(FORWARD, BACKWARD));
 		expect(result.map((r) => [r.repeatBegin, r.repeatEnd])).toEqual([

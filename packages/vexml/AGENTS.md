@@ -123,7 +123,7 @@ Two rules cut across the draw stage:
 
 - **Dynamics, words directions, rehearsal marks, segno/coda, figured bass**: `direction-placer.ts`, `score-reader.ts`, `dynamic-glyphs.ts`
 - **Their formatting: face, style, weight, size, underline, enclosure, alignment**: `score-reader.ts` (`formatOf`, `TextFormat`; sizes scale against `<defaults><word-font>`), `direction-placer.ts` (`faceOf`: the document's face only under `documentFonts`), `font-families.ts` (`documentStack`: a MusicXML font-family over the text face), `notation-translator.ts` (`lyricFaceOf`: a lyric's face from its `<text>` or `<lyric-font>`), `formatted-text.ts` (text, underlines and enclosure measured and drawn as one box), `text-enclosure.ts` (each enclosure shape)
-- **Tempo and metronome marks**: `direction-placer.ts`, `metronome-glyph.ts` (the note-group form)
+- **Tempo and metronome marks**: `direction-placer.ts`, `metronome-glyph.ts` (the note-group form, tied units, arrows)
 - **Chord symbols (`<harmony>`)**: `direction-placer.ts`
 - **Roman numeral analysis (`<harmony><numeral>`, `<function>`), hung under the stave**: `score-reader.ts` (`analysisSymbol`: case, quality, figures, key), `direction-placer.ts` (`drawHarmony`'s below side)
 - **Chord diagrams (fret boxes)**: `chord-diagram-glyph.ts` (drawing), `direction-placer.ts` (placement), `chord-diagram.ts` (the element)

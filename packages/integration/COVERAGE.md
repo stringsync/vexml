@@ -16,8 +16,8 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 274 drawn, 69 ignored, 99 missing; vexml draws 274 of the 373 that show on the page (73%).
-Attributes: 78 drawn, 5 ignored, 35 missing.
+Elements: 277 drawn, 69 ignored, 96 missing; vexml draws 277 of the 373 that show on the page (74%).
+Attributes: 79 drawn, 5 ignored, 34 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -87,7 +87,7 @@ Attributes: 78 drawn, 5 ignored, 35 missing.
 | `beat-type` | drawn | `time.musicxml` |
 | `beat-unit` | drawn | `tempo.musicxml`: metronome mark note value |
 | `beat-unit-dot` | drawn | `tempo_beat_unit_dot.musicxml` |
-| `beat-unit-tied` | missing | task #33; tied note values in a metronome mark; mdom raw only |
+| `beat-unit-tied` | drawn | `tempo_metronome_extras.musicxml`: M1, M3 |
 | `beater` | missing | task #16; mdom raw only |
 | `beats` | drawn | `time.musicxml` |
 | `bend` | drawn | `tab_bend.musicxml` |
@@ -286,14 +286,14 @@ Attributes: 78 drawn, 5 ignored, 35 missing.
 | `membrane` | missing | task #16; mdom raw only |
 | `metal` | missing | task #16; mdom raw only |
 | `metronome` | drawn | `tempo.musicxml` |
-| `metronome@justify` | missing | task #33; metronome justification ignored; mdom raw only |
+| `metronome@justify` | drawn | `tempo_metronome_extras.musicxml`: M6-M8, aligned within the measure |
 | `metronome@parentheses` | drawn | `tempo_beat_unit_dot.musicxml`: parenthesized tempo mark |
-| `metronome-arrows` | missing | task #33; arrows in a metric modulation mark; mdom raw only |
+| `metronome-arrows` | drawn | `tempo_metronome_extras.musicxml`: M2, M5 |
 | `metronome-beam` | drawn | `tempo_beat_unit_dot.musicxml`: beamed note group in the modulation mark |
 | `metronome-dot` | drawn | `tempo_beat_unit_dot.musicxml`: dots after each metronome-note glyph |
 | `metronome-note` | drawn | `tempo_beat_unit_dot.musicxml` |
 | `metronome-relation` | drawn | `tempo_beat_unit_dot.musicxml` |
-| `metronome-tied` | missing | task #33; tie between metronome-note glyphs; mdom raw only |
+| `metronome-tied` | drawn | `tempo_metronome_extras.musicxml`: M4 |
 | `metronome-tuplet` | drawn | `tempo_beat_unit_dot.musicxml` |
 | `metronome-type` | drawn | `tempo_beat_unit_dot.musicxml` |
 | `mf` | drawn | `dynamics.musicxml` |

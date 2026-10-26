@@ -7,6 +7,7 @@ import {
 	type Key,
 	MElement,
 	type Measure,
+	type Metronome,
 	type MetronomeNote,
 	type Note,
 	type Part,
@@ -660,6 +661,7 @@ export class ScoreReader {
 					duration2: second?.type ?? null,
 					dots2: second?.dots ?? 0,
 					parenthesis: metronome.parentheses,
+					justify: this.justifyOf(metronome),
 				};
 			}
 		}
@@ -693,10 +695,98 @@ export class ScoreReader {
 				if (left.length === 0 || right.length === 0) {
 					continue;
 				}
-				return { left, right, parenthesis: metronome.parentheses };
+				return {
+					left,
+					right,
+					rate: null,
+					parenthesis: metronome.parentheses,
+					arrows: metronome.child('metronome-arrows') !== null,
+					justify: this.justifyOf(metronome),
+				};
 			}
 		}
 		return null;
+	}
+
+	/*
+	 * The <beat-unit> form as note glyphs, for a mark StaveTempo cannot draw: one whose units
+	 * carry <beat-unit-tied>. Null for every other mark, which {@link tempoOf} hands to
+	 * StaveTempo. A tied unit is the unit followed by the units tied
+	 * to it, in a row, each tying to the next; the right side is the second unit, or the bpm.
+	 */
+	rateModulationOf(measure: Measure): TempoModulation | null {
+		for (const direction of measure.directions) {
+			for (const metronome of direction.metronomes) {
+				const units = this.tiedUnitsOf(metronome);
+				const [first, second] = units;
+				if (!first || !units.some((unit) => unit.length > 1)) {
+					continue;
+				}
+				const bpm =
+					Number(metronome.perMinute ?? direction.soundTempo) ||
+					DEFAULT_TEMPO_BPM;
+				return {
+					left: this.unitNotesOf(first),
+					right: second ? this.unitNotesOf(second) : [],
+					rate: second ? null : String(bpm),
+					parenthesis: metronome.parentheses,
+					arrows: false,
+					justify: this.justifyOf(metronome),
+				};
+			}
+		}
+		return null;
+	}
+
+	/*
+	 * A <metronome>'s <beat-unit>s with the <beat-unit-tied>s that follow each, flattened to
+	 * one run of notes per unit. mdom types only the units themselves, so this walks the raw
+	 * children: the dots after a unit belong to it, and a tied unit carries its own.
+	 */
+	private tiedUnitsOf(
+		metronome: Metronome,
+	): Array<Array<{ type: string; dots: number }>> {
+		const units: Array<Array<{ type: string; dots: number }>> = [];
+		for (const node of metronome.children) {
+			if (!(node instanceof MElement)) {
+				continue;
+			}
+			if (node.tag === 'beat-unit') {
+				units.push([{ type: node.text?.trim() ?? 'quarter', dots: 0 }]);
+			} else if (node.tag === 'beat-unit-dot') {
+				const note = units.at(-1)?.at(-1);
+				if (note) {
+					note.dots++;
+				}
+			} else if (node.tag === 'beat-unit-tied') {
+				units.at(-1)?.push({
+					type: node.child('beat-unit')?.text?.trim() ?? 'quarter',
+					dots: node.childrenNamed('beat-unit-dot').length,
+				});
+			}
+		}
+		return units;
+	}
+
+	private unitNotesOf(
+		unit: Array<{ type: string; dots: number }>,
+	): ModulationNote[] {
+		return unit.map((note, i) => ({
+			type: note.type,
+			dots: note.dots,
+			beamed: false,
+			beamsToNext: 0,
+			tiesToNext: i < unit.length - 1,
+			tuplet: null,
+		}));
+	}
+
+	/* A <metronome>'s `justify`, which part of the mark sits on its anchor. */
+	private justifyOf(metronome: Metronome): 'left' | 'center' | 'right' | null {
+		const justify = metronome.getAttribute('justify');
+		return justify === 'left' || justify === 'center' || justify === 'right'
+			? justify
+			: null;
 	}
 
 	/*
@@ -1713,6 +1803,8 @@ export class ScoreReader {
 			type: note.type,
 			dots: note.dots,
 			beamed: note.beams.length > 0,
+			tiesToNext:
+				note.child('metronome-tied')?.getAttribute('type') === 'start',
 			beamsToNext: note.beams.filter(
 				(beam) => beam === 'begin' || beam === 'continue',
 			).length,
@@ -2252,6 +2344,7 @@ export type TempoMark = {
 	duration2?: string | null;
 	dots2?: number;
 	parenthesis?: boolean;
+	justify?: 'left' | 'center' | 'right' | null;
 };
 
 /**

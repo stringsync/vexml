@@ -823,9 +823,16 @@ export class DrawPass {
 			// side as one mark, so they travel together and are placed as one box.
 			const tempo = this.reader.tempoOf(measure);
 			const modulation = this.reader.modulationOf(measure);
+			// A rate with tied units or arrows is drawn as glyphs, beside StaveTempo's own.
+			const rate = this.reader.rateModulationOf(measure);
 			const topStave = this.pendingStaves[0];
 			if ((tempo || modulation) && topStave) {
-				this.tempoTasks.push({ stave: topStave.stave, tempo, modulation });
+				this.tempoTasks.push({
+					stave: topStave.stave,
+					tempo: rate ? null : tempo,
+					modulations: [rate, modulation].flatMap((m) => (m ? [m] : [])),
+					justify: tempo?.justify ?? modulation?.justify ?? null,
+				});
 			}
 
 			// A <barline> fermata holds this part's bar line: it stands over the part's top

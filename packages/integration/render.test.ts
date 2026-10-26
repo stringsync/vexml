@@ -934,6 +934,17 @@ describe('render', () => {
 		).toMatchScreenshot('tempo_beat_unit_dot.png');
 	});
 
+	// Treble stave, 4/4, eight marks the other tempo fixtures leave out:
+	// - M1, M3: <beat-unit-tied>, a unit tied to another ("half tied to quarter = 40").
+	// - M2, M5: <metronome-arrows> either side of the note-group form.
+	// - M4: <metronome-tied> between two <metronome-note>s.
+	// - M6-M8: `justify` right, center and left, aligning the mark within its measure.
+	it.concurrent('renders tempo_metronome_extras.png', async () => {
+		expect(
+			await testing.render('tempo_metronome_extras.musicxml'),
+		).toMatchScreenshot('tempo_metronome_extras.png');
+	});
+
 	// Treble stave, 4/4: a words direction from <direction><direction-type><words>, drawn
 	// in italics above the staff at the x of the note it precedes. Four boring quarters per
 	// measure so only the directive and the first note's height vary.

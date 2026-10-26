@@ -601,11 +601,11 @@ export class DirectionPlacer {
 		}
 		// How far the bpm mark alone reaches, which is where the note-group mark starts.
 		const markWidth = w;
-		if (task.modulation) {
-			// The note-group mark follows the bpm one along the same baseline, so the box is the
-			// union of the two: widths add, and a tuplet bracket reaches higher than a beat unit.
-			const group = new MetronomeGlyph(task.modulation);
-			w += (tempo ? TEMPO_MARK_GAP : 0) + group.width;
+		// Each note-group mark follows the one before along the same baseline, so the box is the
+		// union of them: widths add, and a tuplet bracket reaches higher than a beat unit.
+		for (const [i, modulation] of task.modulations.entries()) {
+			const group = new MetronomeGlyph(modulation);
+			w += (tempo || i > 0 ? TEMPO_MARK_GAP : 0) + group.width;
 			ascent = Math.max(ascent, group.ascent);
 			descent = Math.max(descent, group.descent);
 		}
@@ -644,7 +644,16 @@ export class DirectionPlacer {
 		// TEMPO_SCALE, which would also drag the mark up and left; pre-divide the x/y inputs so it
 		// lands back on its original anchor. Internally StaveTempo draws at (this.x + shiftX + 10,
 		// baseY + this.yShift); solving s·(passed) = target gives the compensated inputs below.
-		const targetX = stave.getX() + shiftX + 10;
+		const anchorX = stave.getX() + shiftX + 10;
+		// `justify` aligns the mark within the measure: left sits it on the anchor, right ends
+		// it at the stave's right edge, center splits the space between. Never left of the anchor.
+		const free =
+			stave.getX() +
+			stave.getWidth() -
+			10 -
+			anchorX -
+			this.tempoLayout(task, anchorX, baseY).rect.w;
+		const targetX = anchorX + Math.max(0, alignOffsetOf(task.justify, free));
 		const band = this.reporter.rowOf(stave);
 		const { rect: natural, markWidth } = this.tempoLayout(task, targetX, baseY);
 		const placed = this.collisionResolver.liftClear(
@@ -681,12 +690,10 @@ export class DirectionPlacer {
 				.draw();
 			cursor += markWidth;
 		}
-		if (task.modulation) {
-			new MetronomeGlyph(task.modulation).draw(
-				this.context,
-				cursor,
-				(baseY + shiftY) / TEMPO_SCALE,
-			);
+		for (const modulation of task.modulations) {
+			const group = new MetronomeGlyph(modulation);
+			group.draw(this.context, cursor, (baseY + shiftY) / TEMPO_SCALE);
+			cursor += group.width + TEMPO_MARK_GAP;
 		}
 		this.context.restore();
 		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
@@ -1155,7 +1162,10 @@ type SideTextStyle = {
  */
 export type TempoTask = {
 	tempo: TempoMark | null;
-	modulation: TempoModulation | null;
+	/** Marks drawn as note glyphs after the bpm mark, left to right. */
+	modulations: TempoModulation[];
+	/** Which part of the mark sits on its anchor; the first mark's `justify`. */
+	justify: 'left' | 'center' | 'right' | null;
 };
 
 /** A queued chord symbol (or fret diagram) and what to print there. */

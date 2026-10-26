@@ -18,6 +18,8 @@ export class MetronomeGlyph {
 
 	private readonly placed: Placed[] = [];
 	private readonly bars: Bar[] = [];
+	private readonly curves: Tie[] = [];
+	private readonly arrows: Arrow[] = [];
 
 	/* Laying out and measuring both use these, so the shared cursor state stays in the
 	 * constructor and the group/beam/bracket helpers below mutate it. */
@@ -40,6 +42,10 @@ export class MetronomeGlyph {
 		this.stemWidth = this.noteAscent * STEM_WIDTH;
 		this.top = -this.noteAscent;
 
+		if (modulation.arrows) {
+			this.putArrow(-1);
+			this.x += GAP;
+		}
 		if (modulation.parenthesis) {
 			this.putText('(');
 			this.x += GAP;
@@ -48,10 +54,18 @@ export class MetronomeGlyph {
 		this.x += GAP;
 		this.putText('=');
 		this.x += GAP;
-		this.putGroup(modulation.right);
+		if (modulation.rate !== null) {
+			this.putText(modulation.rate);
+		} else {
+			this.putGroup(modulation.right);
+		}
 		if (modulation.parenthesis) {
 			this.x += GAP;
 			this.putText(')');
+		}
+		if (modulation.arrows) {
+			this.x += GAP;
+			this.putArrow(1);
 		}
 
 		this.width = this.x;
@@ -88,7 +102,8 @@ export class MetronomeGlyph {
 		const spans: Span[] = [];
 		for (const [i, note] of notes.entries()) {
 			if (i > 0) {
-				this.x += GAP;
+				// A tie needs room to arc between the noteheads it joins.
+				this.x += notes[i - 1]?.tiesToNext ? TIE_GAP : GAP;
 			}
 			const left = this.x;
 			this.putGlyph(
@@ -105,6 +120,38 @@ export class MetronomeGlyph {
 		}
 		this.putBeams(notes, spans);
 		this.putBrackets(notes, spans);
+		this.putTies(notes, spans);
+	}
+
+	/* An arrow pointing `direction` (-1 left, 1 right), centered on the notehead line. */
+	private putArrow(direction: -1 | 1): void {
+		this.arrows.push({
+			x: this.x,
+			y: -this.noteAscent * ARROW_RISE,
+			direction,
+		});
+		this.x += this.noteAscent * ARROW_LENGTH;
+	}
+
+	/*
+	 * A tie from each note marked as tied to the one after it, bowing below the noteheads
+	 * (these notes are stem-up). It runs from the first note's notehead to the next one's, so
+	 * an augmentation dot between them sits above the arc rather than being struck through.
+	 */
+	private putTies(notes: ModulationNote[], spans: Span[]): void {
+		for (const [i, note] of notes.entries()) {
+			const from = spans[i];
+			const to = spans[i + 1];
+			if (!note.tiesToNext || !from || !to) {
+				continue;
+			}
+			this.curves.push({
+				x1: from.left + this.noteAscent * TIE_INSET,
+				x2: to.left + this.noteAscent * TIE_INSET,
+				y: this.descent * 0.8,
+				bow: this.noteAscent * TIE_BOW,
+			});
+		}
 	}
 
 	private putBeams(notes: ModulationNote[], spans: Span[]): void {
@@ -214,6 +261,51 @@ export class MetronomeGlyph {
 		for (const bar of this.bars) {
 			context.fillRect(x + bar.x, baseline + bar.y, bar.width, bar.height);
 		}
+		for (const tie of this.curves) {
+			// A crescent: out along one bow and back along a shallower one, so the tie swells in
+			// the middle and thins to points at the noteheads.
+			const mid = x + (tie.x1 + tie.x2) / 2;
+			const y = baseline + tie.y;
+			context.beginPath();
+			context.moveTo(x + tie.x1, y);
+			context.quadraticCurveTo(mid, y + tie.bow * 2, x + tie.x2, y);
+			context.quadraticCurveTo(
+				mid,
+				y + tie.bow * 2 - this.beamThickness * 2,
+				x + tie.x1,
+				y,
+			);
+			context.closePath();
+			context.fill();
+		}
+		for (const arrow of this.arrows) {
+			this.drawArrow(context, x + arrow.x, baseline + arrow.y, arrow.direction);
+		}
+	}
+
+	/* A shaft with a filled triangular head at the end `direction` points to. */
+	private drawArrow(
+		context: RenderContext,
+		x: number,
+		y: number,
+		direction: -1 | 1,
+	): void {
+		const length = this.noteAscent * ARROW_LENGTH;
+		const head = this.noteAscent * ARROW_HEAD;
+		const tip = direction === 1 ? x + length : x;
+		const back = tip - direction * head;
+		context.fillRect(
+			direction === 1 ? x : back,
+			y - this.beamThickness / 2,
+			length - head,
+			this.beamThickness,
+		);
+		context.beginPath();
+		context.moveTo(tip, y);
+		context.lineTo(back, y - head / 2);
+		context.lineTo(back, y + head / 2);
+		context.closePath();
+		context.fill();
 	}
 }
 
@@ -261,6 +353,16 @@ const BRACKET_GAP = 0.16;
 const BRACKET_LEG = 0.14;
 const BRACKET_NUMBER_SIZE = 0.36;
 
+/** Arrow length, head size, and rise above the notehead line, as fractions of a note's ascent. */
+const ARROW_LENGTH = 1;
+const ARROW_HEAD = 0.4;
+const ARROW_RISE = 0.25;
+
+/** Tie: how far in from a note's left edge it starts, and how deep it bows. */
+const TIE_INSET = 0.1;
+const TIE_BOW = 0.22;
+const TIE_GAP = 9;
+
 /** A `<metronome-tuplet>` marker: the ratio's `actual-notes`, and which end of the span this is. */
 export type ModulationTuplet = { actual: number; type: 'start' | 'stop' };
 
@@ -274,6 +376,8 @@ export type ModulationNote = {
 	beamed: boolean;
 	/** How many beams run from this note to the next: its 'begin'/'continue' markers. */
 	beamsToNext: number;
+	/** Tied to the note after it: a `<metronome-tied type="start">`, or a `<beat-unit-tied>`. */
+	tiesToNext: boolean;
 	tuplet: ModulationTuplet | null;
 };
 
@@ -285,7 +389,13 @@ export type ModulationNote = {
 export type TempoModulation = {
 	left: ModulationNote[];
 	right: ModulationNote[];
+	/** Text for the right side instead of notes: the bpm, when a `<beat-unit>` mark is drawn here. */
+	rate: string | null;
 	parenthesis: boolean;
+	/** `<metronome-arrows>`: an arrow either side of the mark. */
+	arrows: boolean;
+	/** `justify`: which part of the mark sits at its anchor. */
+	justify: 'left' | 'center' | 'right' | null;
 };
 
 /**
@@ -299,6 +409,12 @@ type Placed = {
 	y: number;
 	size: number | null;
 };
+
+/** A tie arc from x1 to x2 at y, its control point `bow` below the chord. */
+type Tie = { x1: number; x2: number; y: number; bow: number };
+
+/** An arrow's left edge and centerline, and the way it points. */
+type Arrow = { x: number; y: number; direction: -1 | 1 };
 
 /** An axis-aligned bar. Beams and all three sides of a tuplet bracket are drawn as these. */
 type Bar = { x: number; y: number; width: number; height: number };
