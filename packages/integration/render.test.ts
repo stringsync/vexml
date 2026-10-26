@@ -3643,7 +3643,9 @@ describe('render', () => {
 	// documentLayout 'strict' on a score whose document spaces its grand staff tighter than
 	// vexml's engraving needs: the piano's staves keep the document's distance and M3-M4's left
 	// hand runs into the right hand's lines, where 'follow' would open the gap. Its "Allegretto"
-	// and dynamics stand on their own default-y too (see document_positions.png).
+	// and dynamics stand on their own default-y too (see document_positions.png). Lyrics
+	// and extenders keep their documented baseline 80 tenths below the top line, with
+	// individual relative-x offsets preserved.
 	it.concurrent('renders document_layout_strict.png', async () => {
 		expect(
 			await testing.render('score_mozart_das_veilchen.musicxml', {
@@ -3748,6 +3750,27 @@ describe('render', () => {
 				layout: { type: 'standard', documentLayout: 'follow' },
 			}),
 		).toMatchScreenshot('document_positions.png');
+	});
+
+	// Treble stave, 4/4: document lyric baselines shared across measures.
+	// - M1: two verses at 80 and 110 tenths below the top line.
+	// - M2: inherits verse one's baseline; "two" moves right 12 and up 8 tenths.
+	// - M3: low C3 notes push the shared first verse down in follow mode.
+	it.concurrent('renders document_lyric_positions.png', async () => {
+		expect(
+			await testing.render('document_lyric_positions.musicxml', {
+				layout: { type: 'standard', documentLayout: 'follow' },
+			}),
+		).toMatchScreenshot('document_lyric_positions.png');
+	});
+
+	// Strict keeps the two document baselines exactly, even near M3's ledger notes.
+	it.concurrent('renders document_lyric_positions_strict.png', async () => {
+		expect(
+			await testing.render('document_lyric_positions.musicxml', {
+				layout: { type: 'standard', documentLayout: 'strict' },
+			}),
+		).toMatchScreenshot('document_lyric_positions_strict.png');
 	});
 
 	// The same under 'strict': every placed mark stays exactly on its default-y, so M3's

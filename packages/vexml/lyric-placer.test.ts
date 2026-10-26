@@ -4,12 +4,15 @@ import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
 import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT } from './constants';
 import { FakeLyricMark } from './fake-lyric-mark';
-import { LyricPlacer } from './lyric-placer';
+import { LyricPlacer, type LyricPlacerOptions } from './lyric-placer';
 import type { VoiceTranslator } from './voice-translator';
 
 describe('LyricPlacer', () => {
 	// The stave every note sits on: only its identity is read, as the syllable's stave.
-	const stave = {} as Stave;
+	const stave = {
+		getYForLine: () => 100,
+		getBottomLineY: () => 140,
+	} as unknown as Stave;
 	const note = (x: number, modifiers: unknown[]) =>
 		({
 			getAbsoluteX: () => x,
@@ -19,12 +22,7 @@ describe('LyricPlacer', () => {
 			checkStave: () => stave,
 		}) as unknown as StaveNote;
 
-	interface PlacerOptions {
-		lyricDrops?: Map<string, number>;
-		hyphenDistance?: number;
-	}
-
-	const makePlacer = (opts: PlacerOptions = {}) => {
+	const makePlacer = (opts: LyricPlacerOptions = {}) => {
 		// Captures each stroked segment so a melisma line's endpoints are assertable.
 		const lines: Array<{ x1: number; x2: number; y: number }> = [];
 		let pen = { x: 0, y: 0 };
@@ -48,12 +46,74 @@ describe('LyricPlacer', () => {
 			noteheadHalfWidth: () => 6,
 		} as unknown as VoiceTranslator;
 		const placer = new LyricPlacer(translator, context, resolver, '#123456', {
-			lyricDrops: opts.lyricDrops,
-			hyphenDistance: opts.hyphenDistance,
+			...opts,
 		});
 		const obstacles = () => resolver.query(new Rect(0, 0, 2000, 2000));
 		return { placer, lines, obstacles };
 	};
+
+	it('follows document verse baselines and keeps relative offsets local', () => {
+		const { placer, lines } = makePlacer({ documentPositions: 'follow' });
+		const first = new FakeLyricMark(0, {
+			extend: true,
+			position: { y: -80, dx: 10, dy: 5, side: null },
+		});
+		const next = new FakeLyricMark(0, {});
+		placer.pin([note(100, [first]), note(150, []), note(200, [next])], 0, 160);
+		expect(first.baselineY).toBe(175);
+		expect(next.baselineY).toBe(180);
+		expect(placer.pinnedSyllables()[0]?.left).toBe(106);
+		expect(lines[0]?.y).toBe(175.5);
+		// A later measure needs more clearance: the whole verse follows it down.
+		placer.pin([note(300, [next])], 0, 220);
+		expect(next.baselineY).toBe(220);
+	});
+
+	it('strict pins each verse exactly', () => {
+		const { placer } = makePlacer({ documentPositions: 'strict' });
+		const first = new FakeLyricMark(0, {
+			position: { y: -60, dx: 0, dy: -5, side: null },
+		});
+		const second = new FakeLyricMark(1, {
+			position: { y: -100, dx: 0, dy: 0, side: null },
+		});
+		placer.pin([note(100, [first, second])], 0, 220);
+		expect([first.baselineY, second.baselineY]).toEqual([165, 200]);
+	});
+
+	it('ignore keeps automatic rows and ignores relative offsets', () => {
+		const { placer } = makePlacer();
+		const first = new FakeLyricMark(0, {
+			position: { y: -60, dx: 10, dy: -5, side: null },
+		});
+		const second = new FakeLyricMark(1, {
+			position: { y: -100, dx: 0, dy: 0, side: null },
+		});
+		placer.pin([note(100, [first, second])], 0, 220);
+		expect([first.baselineY, second.baselineY]).toEqual([
+			220,
+			220 + LYRIC_LINE_HEIGHT,
+		]);
+		expect(placer.pinnedSyllables()[0]?.left).toBe(96);
+	});
+
+	it('carries a later measure baseline back without requesting endless redraws', () => {
+		const first = makePlacer({ documentPositions: 'strict' }).placer;
+		const explicit = new FakeLyricMark(0, {
+			position: { y: -80, dx: 0, dy: 0, side: null },
+		});
+		first.pin([note(100, [explicit])], 0, 220);
+		expect(first.stepped(0)).toBe(true);
+		const next = makePlacer({
+			documentPositions: 'strict',
+			lyricDrops: first.observedDrops(),
+		}).placer;
+		const implicit = new FakeLyricMark(0, {});
+		next.pin([note(100, [implicit])], 0, 220);
+		next.pin([note(200, [explicit])], 0, 220);
+		expect(implicit.baselineY).toBe(180);
+		expect(next.stepped(0)).toBe(false);
+	});
 
 	it('keeps the worst drop per row and flags a step when columns disagree', () => {
 		const { placer } = makePlacer();
@@ -127,7 +187,9 @@ describe('LyricPlacer', () => {
 			3,
 			200,
 		);
-		expect(placer.pinnedSyllables()).toEqual([
+		expect(
+			placer.pinnedSyllables().map(({ lyric, ...pinned }) => pinned),
+		).toEqual([
 			{
 				stave,
 				row: 3,

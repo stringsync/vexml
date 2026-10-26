@@ -15,6 +15,7 @@ import {
 	Tremolo,
 } from 'vexflow/core';
 import { ACCIDENTAL_CODES } from './chord-translator';
+import { DynamicGlyphs } from './dynamic-glyphs';
 import { FERMATA_GLYPHS } from './fermata-glyphs';
 import { FingeringAnnotation } from './fingering-annotation';
 import { FontFamilies } from './font-families';
@@ -24,6 +25,7 @@ import { LyricAnnotation } from './lyric-annotation';
 import type { LyricJustify } from './lyric-mark';
 import { NonArpeggioBracket } from './non-arpeggio-bracket';
 import { NoteheadArticulation } from './notehead-articulation';
+import { ScoreReader } from './score-reader';
 import { smuflGlyph } from './smufl';
 import { StaveArticulation } from './stave-articulation';
 import { StringNumberAnnotation } from './string-number-annotation';
@@ -40,6 +42,7 @@ import { UnbrokenArpeggio } from './unbroken-arpeggio';
  */
 export class NotationTranslator {
 	// Each score's `<defaults><lyric-font>`s, read once per score.
+	private readonly reader = new ScoreReader(new DynamicGlyphs());
 	private readonly lyricFonts = new WeakMap<Score, MElement[]>();
 
 	constructor(private readonly opts: NotationTranslatorOptions = {}) {}
@@ -456,6 +459,7 @@ export class NotationTranslator {
 						this.justifyOf(verse),
 						scale,
 						hyphenated,
+						this.reader.positionOf(verse),
 					),
 				);
 			}

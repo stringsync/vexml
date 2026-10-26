@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+  <part-list><score-part id="P1"><part-name>Voice</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type><lyric number="1" default-y="-80"><text>One</text></lyric><lyric number="2" default-y="-110"><text>Verse</text></lyric></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type><lyric number="1" default-y="-80"><text>two</text></lyric><lyric number="2" default-y="-110"><text>Verse</text></lyric></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type><lyric number="1" default-y="-80"><text>three</text></lyric><lyric number="2" default-y="-110"><text>Verse</text></lyric></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type><lyric number="1" default-y="-80"><text>four</text></lyric><lyric number="2" default-y="-110"><text>Verse</text></lyric></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type><lyric number="1"><text>One</text></lyric></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type><lyric number="1" relative-x="12" relative-y="8"><text>two</text></lyric></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type><lyric number="1"><text>three</text></lyric></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type><lyric number="1"><text>four</text></lyric></note>
+    </measure>
+    <measure number="3">
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>1</duration><type>quarter</type><lyric number="1" default-y="-80"><text>One</text></lyric></note>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>1</duration><type>quarter</type><lyric number="1" default-y="-80"><text>two</text></lyric></note>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>1</duration><type>quarter</type><lyric number="1" default-y="-80"><text>three</text></lyric></note>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>1</duration><type>quarter</type><lyric number="1" default-y="-80"><text>four</text></lyric></note>
+    </measure>
+  </part>
+</score-partwise>

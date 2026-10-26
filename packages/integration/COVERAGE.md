@@ -21,7 +21,7 @@ are picked by hand.
 | `*@color` | drawn | `note_color.musicxml`: note, notehead and stem colors; other elements' color ignored |
 | `*@dash-length` | drawn | `spanner_line_types.musicxml` M3: dashed ties, glissandos, slides, wedges; slurs and brackets too |
 | `*@default-x` | missing | task #104 (with measure widths and note positions); mdom raw only |
-| `*@default-y` | drawn | `document_positions.musicxml`, under the documentLayout setting (off by default): words, other-direction, dynamics, rehearsal, metronome, harmony text, harp-pedals, figured-bass, segno/coda, the baseline in tenths over the top line; lyrics task #105, frames task #104, notes and stems stay vexml's |
+| `*@default-y` | drawn | `document_positions.musicxml`, under the documentLayout setting (off by default): words, other-direction, dynamics, rehearsal, metronome, harmony text, harp-pedals, figured-bass, segno/coda, the baseline in tenths over the top line; lyrics (`document_lyric_positions.musicxml`), frames task #104, notes and stems stay vexml's |
 | `*@enclosure` | drawn | `text_formatting.musicxml` M6-M13, M16-M18: every shape around words, rehearsal marks and dynamics; rehearsal still boxed by default |
 | `*@font-family` | drawn | `text_font_family.musicxml` M2-M6, under the documentFonts setting (off by default, when vexml's text face is used): words, rehearsal marks, other-dynamics text and lyrics in the face named, falling back to the text face for one the browser lacks; SMuFL dynamics keep the notation font |
 | `*@font-size` | drawn | `text_formatting.musicxml` M4: words, rehearsal and other-dynamics text, scaled against the word-font size; SMuFL dynamics and lyrics task #51 |
@@ -32,8 +32,8 @@ are picked by hand.
 | `*@line-type` | drawn | `spanner_line_types.musicxml`, `slur_line_types.musicxml`, `direction_lines.musicxml`: slurs, ties, glissandos, slides, wedges, brackets; tab slides stay solid |
 | `*@placement` | drawn | `direction_lines.musicxml`, `note_color.musicxml`: directions, slurs, tuplets, technical; ornaments ignore it |
 | `*@print-object` | drawn | `invisible_notes.musicxml`: notes; `print_object.musicxml`: notations, ending, staff-details; accidental and direction elements have none in the schema; clef, key, time, lyric and part-name ignore it |
-| `*@relative-x` | drawn | `document_positions.musicxml` M2, under the documentLayout setting: the same marks as default-y, moved right of where they land |
-| `*@relative-y` | drawn | `document_positions.musicxml` M2, under the documentLayout setting: the same marks as default-y, moved up from where they land |
+| `*@relative-x` | drawn | `document_positions.musicxml` M2, under the documentLayout setting: the same marks as default-y, including lyrics (`document_lyric_positions.musicxml` M2), moved right of where they land |
+| `*@relative-y` | drawn | `document_positions.musicxml` M2, under the documentLayout setting: the same marks as default-y, including lyrics (`document_lyric_positions.musicxml` M2), moved up from where they land |
 | `*@rotation` | drawn | `text_formatting.musicxml` M20: words |
 | `*@space-length` | drawn | `spanner_line_types.musicxml` M3: dashed and dotted lines, as dash-length |
 | `*@underline` | drawn | `text_formatting.musicxml` M5: words, rehearsal marks and dynamics |

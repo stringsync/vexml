@@ -25,7 +25,6 @@ import {
 	HEADER_GAP,
 	LABEL_FONT_SIZE,
 	LABEL_GAP,
-	LYRIC_LINE_HEIGHT,
 	STAVE_CLEARANCE,
 	VOLTA_NOTE_CLEARANCE,
 } from './constants';
@@ -487,6 +486,11 @@ export class DrawPass {
 			this.notationColor,
 			{
 				lyricDrops: opts.lyricDrops,
+				documentPositions:
+					config.layout.type !== 'panoramic' &&
+					config.layout.documentLayout !== 'ignore'
+						? config.layout.documentLayout
+						: undefined,
 				extendWidth: layout.appearance.lineWidth('extend'),
 				hyphenDistance: layout.appearance.distance('hyphen'),
 			},
@@ -1367,10 +1371,14 @@ export class DrawPass {
 		for (const syllable of this.lyricPlacer
 			.pinnedSyllables()
 			.slice(this.systemLyricStart)) {
-			const baseline =
+			const baseline = this.lyricPlacer.baselineOf(
+				syllable.lyric,
+				syllable.stave,
+				syllable.row,
+				system,
 				syllable.stave.getBottomLineY() +
-				this.lyricPlacer.rowDrop(system, syllable.row) +
-				syllable.verseIndex * LYRIC_LINE_HEIGHT;
+					this.lyricPlacer.rowDrop(system, syllable.row),
+			);
 			this.spill.recordDrop(
 				system,
 				syllable.row,

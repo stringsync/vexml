@@ -1,4 +1,5 @@
 import type { RenderContext } from 'vexflow/core';
+import type { DocumentPosition } from './score-reader';
 
 /*
  * One lyric syllable hanging under a note. The draw pass reads these off a note's
@@ -15,6 +16,8 @@ export type LyricJustify = 'left' | 'center' | 'right';
 export interface LyricMark {
 	/** Tells a lyric apart from the other modifiers a note carries. */
 	readonly kind: 'lyric';
+	readonly documentPosition?: DocumentPosition | null;
+	setPositionX(x: number): void;
 	/** 0-based verse index: which row under the stave this syllable sits on. */
 	readonly verseIndex: number;
 	/** Which edge of its note the syllable lines up with. */

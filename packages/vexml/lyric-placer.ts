@@ -10,6 +10,7 @@ export interface LyricPlacerOptions {
 	 * notes above it, measured on the previous pass and reserved on this one; empty on the
 	 * first pass. */
 	lyricDrops?: Map<string, number>;
+	documentPositions?: 'follow' | 'strict';
 	/** The melisma line's width (`<line-width type="extend">`); 1px when absent. */
 	extendWidth?: number | null;
 	/** The most room between a word's hyphens (`<distance type="hyphen">`): a wider gap to
@@ -25,6 +26,7 @@ export interface PinnedSyllable {
 	readonly width: number;
 	readonly verseIndex: number;
 	readonly textSize: number;
+	readonly lyric: LyricMark;
 }
 
 /*
@@ -37,6 +39,7 @@ export class LyricPlacer {
 	private readonly lyricDrops: Map<string, number>;
 	private readonly extendWidth: number;
 	private readonly hyphenDistance: number | null;
+	private readonly documentPositions: 'follow' | 'strict' | undefined;
 	// Verse baseline feedback, keyed by `<systemIndex>:<staveRow>`: how far below the bottom
 	// staff line this pass hung the row's lyrics, and whether the row's measure columns
 	// disagreed (see recordDrop).
@@ -52,6 +55,7 @@ export class LyricPlacer {
 		opts: LyricPlacerOptions,
 	) {
 		this.lyricDrops = opts.lyricDrops ?? new Map();
+		this.documentPositions = opts.documentPositions;
 		this.extendWidth = opts.extendWidth ?? 1;
 		this.hyphenDistance = opts.hyphenDistance ?? null;
 	}
@@ -94,16 +98,49 @@ export class LyricPlacer {
 	 * draws lyrics itself, so this is the only point where their boxes are known, hence
 	 * each is also kept for {@link pinnedSyllables}.
 	 */
-	pin(notes: StaveNote[], row: number, baseline: number): void {
+	pin(notes: StaveNote[], row: number, baseline: number, system = 0): void {
 		const lyricNotes = notes
 			.map((note) => ({ note, lyrics: this.lyricsOf(note) }))
 			.filter(({ lyrics }) => lyrics.length > 0);
 		if (lyricNotes.length === 0) {
 			return;
 		}
+		// Keep document baselines per verse in the same pass feedback as note clearance.
+		// A later measure can supply the baseline an earlier syllable leaves implicit.
+		if (this.documentPositions) {
+			for (const { note, lyrics } of lyricNotes) {
+				for (const lyric of lyrics) {
+					if (lyric.documentPosition?.y == null) {
+						continue;
+					}
+					const key = `${system}:${row}:${lyric.verseIndex}`;
+					const drop =
+						note.checkStave().getYForLine(0) -
+						lyric.documentPosition.y -
+						note.checkStave().getBottomLineY();
+					const desired = Math.max(
+						this.observedLyricDrops.get(key) ?? -Infinity,
+						drop,
+					);
+					this.observedLyricDrops.set(key, desired);
+					if (desired > (this.lyricDrops.get(key) ?? -Infinity)) {
+						this.steppedSystems.add(system);
+					}
+				}
+			}
+		}
 		for (const { note, lyrics } of lyricNotes) {
 			for (const lyric of lyrics) {
-				const y = baseline + lyric.verseIndex * LYRIC_LINE_HEIGHT;
+				const y = this.baselineOf(
+					lyric,
+					note.checkStave(),
+					row,
+					system,
+					baseline,
+				);
+				lyric.setPositionX(
+					this.documentPositions ? (lyric.documentPosition?.dx ?? 0) : 0,
+				);
 				lyric.setBaselineY(y);
 				// Pin the ink a syllable already draws in. vexflow runs a note's modifiers
 				// inside its notehead's own style, so an uncolored lyric under a note the
@@ -127,11 +164,35 @@ export class LyricPlacer {
 					width: w,
 					verseIndex: lyric.verseIndex,
 					textSize: lyric.textSize,
+					lyric,
 				});
 			}
 		}
-		this.drawMelismas(notes, row, baseline);
+		this.drawMelismas(notes, row, baseline, system);
 		this.drawHyphens(notes);
+	}
+
+	/** Resolve a verse baseline, then apply only this syllable's relative-y. */
+	baselineOf(
+		lyric: LyricMark,
+		stave: Stave,
+		row: number,
+		system: number,
+		baseline: number,
+	): number {
+		const automatic = baseline + lyric.verseIndex * LYRIC_LINE_HEIGHT;
+		if (!this.documentPositions) {
+			return automatic;
+		}
+		const key = `${system}:${row}:${lyric.verseIndex}`;
+		const drop = this.lyricDrops.get(key) ?? this.observedLyricDrops.get(key);
+		const document =
+			drop === undefined ? automatic : stave.getBottomLineY() + drop;
+		return (
+			(this.documentPositions === 'strict'
+				? document
+				: Math.max(automatic, document)) - (lyric.documentPosition?.dy ?? 0)
+		);
 	}
 
 	/* Every syllable this pass pinned: its stave and row, its x span, and its verse. */
@@ -168,6 +229,7 @@ export class LyricPlacer {
 		notes: StaveNote[],
 		row: number,
 		baseline: number,
+		system: number,
 	): void {
 		for (const [i, note] of notes.entries()) {
 			for (const lyric of this.lyricsOf(note)) {
@@ -183,7 +245,13 @@ export class LyricPlacer {
 				if (!last || last === note) {
 					continue;
 				}
-				const y = baseline + lyric.verseIndex * LYRIC_LINE_HEIGHT;
+				const y = this.baselineOf(
+					lyric,
+					note.checkStave(),
+					row,
+					system,
+					baseline,
+				);
 				const x1 =
 					lyric.boxLeft(note.getNoteHeadBeginX(), note.getNoteHeadEndX()) +
 					lyric.getWidth() -
@@ -277,7 +345,8 @@ export class LyricPlacer {
 		return note.getModifiers().filter(isLyricMark);
 	}
 
-	/* Every row's drop (keyed `<systemIndex>:<staveRow>`), for the pass driver to re-pin with. */
+	/* Pass feedback: automatic row clearance keyed `<system>:<row>`, document verse
+	 * baselines keyed `<system>:<row>:<verse>`, both relative to the bottom staff line. */
 	observedDrops(): Map<string, number> {
 		return this.observedLyricDrops;
 	}

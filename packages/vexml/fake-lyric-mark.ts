@@ -1,10 +1,12 @@
 import type { RenderContext } from 'vexflow/core';
 import { LYRIC_FONT_SIZE } from './constants';
 import type { LyricJustify, LyricMark } from './lyric-mark';
+import type { DocumentPosition } from './score-reader';
 
 export interface FakeLyricMarkOptions {
 	/** Whether a melisma line trails the syllable. Default false. */
 	extend?: boolean;
+	position?: DocumentPosition;
 	/** The width the syllable reports. Default 20. */
 	width?: number;
 	/** Which edge of its note the syllable lines up with. Default 'center'. */
@@ -27,6 +29,8 @@ export class FakeLyricMark implements LyricMark {
 	readonly hyphenated: boolean;
 	/** The x of each extra hyphen the placer drew, in order. */
 	readonly hyphens: number[] = [];
+	readonly documentPosition: DocumentPosition | null;
+	private positionX = 0;
 	readonly justify: LyricJustify;
 	readonly textSize = LYRIC_FONT_SIZE;
 	private readonly width: number;
@@ -35,6 +39,7 @@ export class FakeLyricMark implements LyricMark {
 		public verseIndex: number,
 		opts: FakeLyricMarkOptions,
 	) {
+		this.documentPosition = opts.position ?? null;
 		this.extend = opts.extend ?? false;
 		this.hyphenated = opts.hyphenated ?? false;
 		this.width = opts.width ?? 20;
@@ -43,12 +48,14 @@ export class FakeLyricMark implements LyricMark {
 
 	boxLeft(noteheadBeginX: number, noteheadEndX: number): number {
 		if (this.justify === 'left') {
-			return noteheadBeginX;
+			return noteheadBeginX + this.positionX;
 		}
 		if (this.justify === 'right') {
-			return noteheadEndX - this.width;
+			return noteheadEndX - this.width + this.positionX;
 		}
-		return (noteheadBeginX + noteheadEndX) / 2 - this.width / 2;
+		return (
+			(noteheadBeginX + noteheadEndX) / 2 - this.width / 2 + this.positionX
+		);
 	}
 
 	getWidth(): number {
@@ -57,6 +64,10 @@ export class FakeLyricMark implements LyricMark {
 
 	drawHyphen(_ctx: RenderContext, x: number): void {
 		this.hyphens.push(x);
+	}
+
+	setPositionX(x: number): void {
+		this.positionX = x;
 	}
 
 	setBaselineY(y: number): void {

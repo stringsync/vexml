@@ -1,6 +1,7 @@
 import { Annotation, type RenderContext, type StaveNote } from 'vexflow/core';
 import { LYRIC_FONT_SIZE, LYRIC_PADDING } from './constants';
 import type { LyricJustify, LyricMark } from './lyric-mark';
+import type { DocumentPosition } from './score-reader';
 
 /*
  * A lyric syllable under the stave. vexflow's own BOTTOM-justified Annotation hangs its
@@ -20,6 +21,7 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 	readonly textSize: number;
 
 	private baselineY = 0;
+	private positionX = 0;
 
 	constructor(
 		text: string,
@@ -37,6 +39,7 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 		scale = 1,
 		/** Whether the text ends in the hyphen joining it to the next syllable. */
 		readonly hyphenated = false,
+		readonly documentPosition: DocumentPosition | null = null,
 	) {
 		super(text);
 		this.setVerticalJustification(Annotation.VerticalJustify.BOTTOM);
@@ -46,6 +49,10 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 		} else {
 			this.setFontSize(this.textSize);
 		}
+	}
+
+	setPositionX(x: number): void {
+		this.positionX = x;
 	}
 
 	setBaselineY(y: number): void {
@@ -77,11 +84,11 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 		const w = this.getWidth();
 		switch (this.justify) {
 			case 'left':
-				return noteheadBeginX - LYRIC_PADDING;
+				return noteheadBeginX - LYRIC_PADDING + this.positionX;
 			case 'right':
-				return noteheadEndX + LYRIC_PADDING - w;
+				return noteheadEndX + LYRIC_PADDING - w + this.positionX;
 			default:
-				return (noteheadBeginX + noteheadEndX) / 2 - w / 2;
+				return (noteheadBeginX + noteheadEndX) / 2 - w / 2 + this.positionX;
 		}
 	}
 
