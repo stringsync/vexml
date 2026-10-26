@@ -697,3 +697,8 @@ export const VOLTA_LABEL_DROP =
 	// vexflow draws the "1." label hanging below the bracket line, so the box has to reach
 	// past the text.
 	20;
+
+/** A CSS unicode-range: comma-separated `U+` codepoints, ranges (`U+E050-E062`) and wildcards
+ * (`U+E0??`). FontFile.unicodeRange must match, since it is written into a stylesheet. */
+export const UNICODE_RANGE =
+	/^\s*U\+[0-9A-F?]{1,6}(-[0-9A-F]{1,6})?(\s*,\s*U\+[0-9A-F?]{1,6}(-[0-9A-F]{1,6})?)*\s*$/i;

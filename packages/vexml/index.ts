@@ -9,6 +9,7 @@ export type {
 	ConfigInput,
 	DocumentLayoutMode,
 	FontConfig,
+	FontFile,
 	FontOverride,
 	Gap,
 	GapPlacement,

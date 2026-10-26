@@ -3,6 +3,7 @@ import { Rect } from 'webappwiz/geometry';
 import { BarlineTranslator } from './barline-translator';
 import { ChordTranslator } from './chord-translator';
 import type { Config } from './config';
+import { UNICODE_RANGE } from './constants';
 import type { Decorations } from './decoration';
 import { DurationTranslator } from './duration-translator';
 import type { ElementFactory } from './element-factory';
@@ -130,6 +131,23 @@ export class ScoreEngraver {
 			this.config.minLastSystemFill > 1
 		) {
 			throw new RangeError('render: minLastSystemFill must be between 0 and 1');
+		}
+		for (const [name, font] of Object.entries(this.config.fonts)) {
+			if (font?.url && font.faces) {
+				throw new TypeError(
+					`render: fonts.${name} takes a url or faces, not both`,
+				);
+			}
+			for (const face of font?.faces ?? []) {
+				if (
+					face.unicodeRange !== undefined &&
+					!UNICODE_RANGE.test(face.unicodeRange)
+				) {
+					throw new TypeError(
+						`render: fonts.${name} has an invalid unicodeRange: ${face.unicodeRange}`,
+					);
+				}
+			}
 		}
 		const { pixelRatio, layout } = this.config;
 		if (pixelRatio != null && !(pixelRatio > 0)) {

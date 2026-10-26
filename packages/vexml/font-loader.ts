@@ -11,4 +11,11 @@ export interface FontLoader {
 		container: HTMLElement,
 		config?: FontConfig,
 	): Promise<{ notation: string; text: string }>;
+
+	/** Load every face the samples draw in, as a render measured them. True when one of
+	 * them was not resident before, so what was measured with it measured a fallback. */
+	ensure(samples: readonly FontSample[]): Promise<boolean>;
 }
+
+/** Text a render measured, and the CSS font it measured it in. */
+export type FontSample = { font: string; text: string };

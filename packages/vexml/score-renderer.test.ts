@@ -127,6 +127,41 @@ describe('ScoreRenderer', () => {
 		expect(parser.parses).toBe(1);
 	});
 
+	it('engraves once when every face it measured with was resident', async () => {
+		await renderer().render('<xml/>');
+		expect(fontLoader.ensured).toHaveLength(1);
+		expect(parser.parses).toBe(1);
+	});
+
+	it('engraves again, from a fresh parse, when a face it measured with had to load', async () => {
+		fontLoader.cold = true;
+		await renderer().render('<xml/>');
+		expect(fontLoader.ensured).toHaveLength(1);
+		expect(parser.parses).toBe(2);
+	});
+
+	it('rejects a font given both a url and faces before doing any work', async () => {
+		const scoreRenderer = renderer({
+			fonts: { notation: { url: '/a.woff2', faces: [{ url: '/b.woff2' }] } },
+		});
+		await expect(scoreRenderer.render('<xml/>')).rejects.toThrow(TypeError);
+		expect(fontLoader.calls).toHaveLength(0);
+	});
+
+	it('rejects a face whose unicodeRange is not one before doing any work', async () => {
+		const scoreRenderer = renderer({
+			fonts: {
+				notation: {
+					faces: [
+						{ url: '/a.woff2', unicodeRange: 'U+E050; } * { color: red' },
+					],
+				},
+			},
+		});
+		await expect(scoreRenderer.render('<xml/>')).rejects.toThrow(TypeError);
+		expect(fontLoader.calls).toHaveLength(0);
+	});
+
 	it('renders an empty Score without drawing when the document has no parts', async () => {
 		const score = await renderer().render('<xml/>');
 		expect(score.getDurationMs()).toBe(0);

@@ -57,6 +57,10 @@ export class CanvasPaintProbe implements PaintProbe {
 		return metrics;
 	}
 
+	forget(): void {
+		this.metrics.clear();
+	}
+
 	isPointInPath(query: PathQuery): boolean {
 		const { state, path, x, y, fillRule, stroke, scale } = query;
 		const base = Affine.scale(scale);

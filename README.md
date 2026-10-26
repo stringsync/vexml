@@ -124,6 +124,9 @@ await render(musicXML, element, {
 });
 ```
 
+A large font can be split across files by `unicode-range` (`faces` in place of `url`): vexml
+fetches only the files a score's glyphs need, and waits for them before it draws.
+
 ### Gap measures
 
 <img src=".github/readme/gaps.png" width="600" alt="A labeled Intro gap before the first measure">

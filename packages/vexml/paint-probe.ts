@@ -7,6 +7,8 @@ export interface PaintProbe {
 	 * `current` when the browser would reject it. */
 	normalize(prop: PaintProp, value: unknown, current: unknown): unknown;
 	measureText(state: PaintState, text: string): TextMetrics;
+	/* Drop what it remembers of text metrics, measured before a face finished loading. */
+	forget(): void;
 	isPointInPath(query: PathQuery): boolean;
 	createLinearGradient(
 		x0: number,

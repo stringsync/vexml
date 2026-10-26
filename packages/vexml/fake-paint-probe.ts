@@ -23,6 +23,8 @@ export class FakePaintProbe implements PaintProbe {
 		} as TextMetrics;
 	}
 
+	forget(): void {}
+
 	isPointInPath(): boolean {
 		return false;
 	}

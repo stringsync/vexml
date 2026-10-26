@@ -158,7 +158,7 @@ Reach for `'widen'` to get the engraving the file describes. Set
 
 ## Fonts
 
-Font `family` and `url` are interpolated into a `<style>` rule and CSS variables, so
+Font `family`, `url` and `faces` URLs are interpolated into a `<style>` rule and CSS variables, so
 never pass raw untrusted input.
 
 ```ts
@@ -191,6 +191,28 @@ await render(musicXML, element, {
 ```
 
 Layout waits for the face, so a score never paints with fallback glyphs.
+
+To keep a large font off the critical path, split it across files by `unicode-range` with
+`faces` in place of `url` (giving both throws). vexml injects one `@font-face` per file and
+loads every file a score's glyphs need before it draws, so the score matches the one drawn
+with the whole face; a score that needs only the first file never fetches the rest.
+
+```ts
+await render(musicXML, element, {
+  fonts: {
+    notation: {
+      family: 'Bravura',
+      faces: [
+        { url: '/fonts/bravura-common.woff2', unicodeRange: 'U+0000-E4FF' },
+        { url: '/fonts/bravura.woff2', unicodeRange: 'U+E500-10FFFF' },
+      ],
+    },
+  },
+});
+```
+
+Give the files ranges that don't overlap: where two cover a glyph, the browser takes it from
+the one defined last, fetching that file.
 
 ## Colors
 

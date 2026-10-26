@@ -140,10 +140,25 @@ export interface FontOverride {
 	/** woff2 URL, loaded with an injected @font-face. If omitted, the family is assumed
 	 * already loaded (a system font or your own @font-face), except notation Bravura, which
 	 * vexml then loads from its shipped `@stringsync/vexml/fonts/bravura.woff2`. Pass that
-	 * file's bundled URL here to preload or cache it yourself. */
+	 * file's bundled URL here to preload or cache it yourself. Give `faces` instead to split
+	 * the family across files; giving both throws. */
 	url?: string;
+	/** The family split across woff2 files by `unicode-range`, each loaded with its own
+	 * injected @font-face, in place of `url`. Every glyph a render draws is loaded before
+	 * it is measured or painted, so the score matches the one drawn with the whole face.
+	 * A face without `unicodeRange` covers whatever the others leave. */
+	faces?: readonly FontFile[];
 	/** CSS color for glyphs drawn in this font; if omitted, the renderer's default is used. */
 	color?: string;
+}
+
+/** One file of a family split by `unicode-range` (see FontOverride.faces). */
+export interface FontFile {
+	/** woff2 URL. */
+	url: string;
+	/** The CSS unicode-range this file covers, as `U+E050-E062, U+E0A4`; all of it if
+	 * omitted. */
+	unicodeRange?: string;
 }
 
 export interface FontConfig {

@@ -26,7 +26,7 @@ export interface LoadedFont {
  * The fonts of an engraving with no DOM: read from bytes or files, registered with the canvas
  * library that measures them, and named as vexflow's global glyph fonts, as DefaultFontLoader
  * does in a browser. vexml's own Bravura comes along unless the config names another notation
- * font or a url for it.
+ * font or a url (or faces) for it.
  */
 export class HeadlessFonts {
 	private readonly loaded: LoadedFont[] = [];
@@ -47,6 +47,7 @@ export class HeadlessFonts {
 		const bravura =
 			families.notation === DEFAULT_FONT_CONFIG.notation.family &&
 			!config.notation?.url &&
+			!config.notation?.faces &&
 			!sources.some((font) => font.family === families.notation);
 		if (bravura) {
 			sources.push({

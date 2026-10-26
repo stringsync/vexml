@@ -4,8 +4,9 @@ import {
 	type FontConfig,
 	type FontOverride,
 } from './config';
+import { UNICODE_RANGE } from './constants';
 import { FontFamilies } from './font-families';
-import type { FontLoader } from './font-loader';
+import type { FontLoader, FontSample } from './font-loader';
 
 // DOM-derived dedup: injected <style>/<link> elements are tagged with data attributes
 // (data-vexml-font-face="family|url", data-vexml-google-fonts) and checked before
@@ -45,6 +46,34 @@ export class DefaultFontLoader implements FontLoader {
 		VexFlow.setFonts(`'${notation}'`, `'${text}'`, 'sans-serif');
 		await this.settle(notation, text);
 		return { notation, text };
+	}
+
+	/** A face split by unicode-range loads each file on the first glyph it covers, and settle
+	 * waits only on the staples, so a rarer glyph (an ornament, a lyric's accented letter) may
+	 * have been measured in a fallback. Loading what the render measured and comparing each
+	 * matched face's status from before tells whether it was. */
+	async ensure(samples: readonly FontSample[]): Promise<boolean> {
+		if (typeof document === 'undefined' || !document.fonts) {
+			return false;
+		}
+		const cold = new Set<FontFace>();
+		document.fonts.forEach((face) => {
+			if (face.status !== 'loaded') {
+				cold.add(face);
+			}
+		});
+		if (cold.size === 0) {
+			return false;
+		}
+		const loaded = await Promise.all(
+			samples.map(({ font, text }) =>
+				// A face that fails to load leaves its glyphs on the fallback either way.
+				document.fonts.load(font, text).catch(() => []),
+			),
+		);
+		return loaded.some((faces) =>
+			faces.some((face) => cold.has(face) && face.status === 'loaded'),
+		);
 	}
 
 	/** Wait until the resolved faces are resident, so layout never measures text against
@@ -135,8 +164,7 @@ export class DefaultFontLoader implements FontLoader {
 		// A URL: inject the caller's own @font-face, and nothing else, so the one face the
 		// page decodes is the file they host.
 		const family = override?.family ?? DEFAULT_FONT_CONFIG.notation.family;
-		if (override?.url) {
-			this.injectFontFace(family, override.url, 'block');
+		if (this.injectFiles(family, override, 'block')) {
 			return;
 		}
 		// Bravura with no URL (no notation config, or one that only sets a color): vexml's
@@ -150,12 +178,8 @@ export class DefaultFontLoader implements FontLoader {
 	}
 
 	private injectTextFont(override?: FontOverride): void {
-		if (override?.url) {
-			this.injectFontFace(
-				override.family ?? DEFAULT_FONT_CONFIG.text.family,
-				override.url,
-				'swap',
-			);
+		const family = override?.family ?? DEFAULT_FONT_CONFIG.text.family;
+		if (this.injectFiles(family, override, 'swap')) {
 			return;
 		}
 		// No family (no text config, or one that only sets a color): load the default
@@ -165,6 +189,20 @@ export class DefaultFontLoader implements FontLoader {
 		if (!override?.family) {
 			this.injectGoogleFonts();
 		}
+	}
+
+	/* The caller's own files, `faces` or the one `url`: false when they named none. */
+	private injectFiles(
+		family: string,
+		override: FontOverride | undefined,
+		display: 'block' | 'swap',
+	): boolean {
+		const files =
+			override?.faces ?? (override?.url ? [{ url: override.url }] : []);
+		for (const file of files) {
+			this.injectFontFace(family, file.url, display, file.unicodeRange);
+		}
+		return files.length > 0;
 	}
 
 	private injectGoogleFonts(): void {
@@ -205,9 +243,15 @@ export class DefaultFontLoader implements FontLoader {
 		family: string,
 		url: string,
 		display: 'block' | 'swap',
+		unicodeRange?: string,
 	): void {
 		family = FontFamilies.sanitize(family);
 		url = FontFamilies.sanitize(url);
+		// render's config check refused any other range; this one could end the rule early.
+		const range =
+			unicodeRange && UNICODE_RANGE.test(unicodeRange)
+				? `\n\t\t\t\tunicode-range: ${unicodeRange};`
+				: '';
 		const key = `${family}|${url}`;
 		// Dedup via the data-vexml-font-face marker on the injected <style>. The key is safe
 		// to embed in the attribute selector: FontFamilies.sanitize already stripped quotes and
@@ -224,7 +268,7 @@ export class DefaultFontLoader implements FontLoader {
 				src: url('${url}') format('woff2');
 				font-weight: normal;
 				font-style: normal;
-				font-display: ${display};
+				font-display: ${display};${range}
 			}
 		`;
 		document.head.appendChild(style);

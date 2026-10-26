@@ -77,6 +77,98 @@ describe('DefaultFontLoader', () => {
 		expect(head.filter((n) => n.tag === 'style').length).toBe(1);
 	});
 
+	it('injects one face per file of a split notation family, each with its range', async () => {
+		const { head, container } = fakeDom();
+		await new DefaultFontLoader(BRAVURA).load(container, {
+			notation: {
+				family: 'Bravura',
+				faces: [
+					{ url: '/fonts/common.woff2', unicodeRange: 'U+E050-E062, U+E0A4' },
+					{ url: '/fonts/full.woff2' },
+				],
+			},
+		});
+		const styles = head.filter((n) => n.tag === 'style');
+		expect(styles).toHaveLength(2);
+		expect(styles[0].textContent).toContain('/fonts/common.woff2');
+		expect(styles[0].textContent).toContain(
+			'unicode-range: U+E050-E062, U+E0A4;',
+		);
+		expect(styles[0].textContent).toContain('font-display: block');
+		expect(styles[1].textContent).toContain('/fonts/full.woff2');
+		expect(styles[1].textContent).not.toContain('unicode-range');
+		expect(styleText(head)).not.toContain(BRAVURA);
+	});
+
+	it('injects the files of a split text family', async () => {
+		const { head, container } = fakeDom();
+		await new DefaultFontLoader(BRAVURA).load(container, {
+			text: {
+				family: 'Inter',
+				faces: [
+					{ url: '/fonts/inter-latin.woff2', unicodeRange: 'U+0000-00FF' },
+					{ url: '/fonts/inter-ext.woff2' },
+				],
+			},
+		});
+		expect(head.filter((n) => n.tag === 'link')).toHaveLength(0);
+		expect(styleText(head)).toContain('/fonts/inter-latin.woff2');
+		expect(styleText(head)).toContain('/fonts/inter-ext.woff2');
+	});
+
+	it('ensures nothing had to load when every face is resident', async () => {
+		const { fonts } = fakeFonts([{ status: 'loaded' }]);
+		expect(
+			await new DefaultFontLoader(BRAVURA).ensure([
+				{ font: '30pt Bravura', text: '\uE566' },
+			]),
+		).toBe(false);
+		expect(fonts.loads).toEqual([]);
+	});
+
+	it('ensures a measured glyph whose face had to load', async () => {
+		const { fonts, faces } = fakeFonts([
+			{ status: 'loaded' },
+			{ status: 'unloaded' },
+		]);
+		const rare = faces[1];
+		fonts.answer = () => {
+			rare.status = 'loaded';
+			return [rare];
+		};
+		expect(
+			await new DefaultFontLoader(BRAVURA).ensure([
+				{ font: '30pt Bravura', text: '\uE566' },
+			]),
+		).toBe(true);
+		expect(fonts.loads).toEqual([['30pt Bravura', '\uE566']]);
+	});
+
+	it('ensures nothing had to load when the measured glyphs need only resident faces', async () => {
+		const { fonts, faces } = fakeFonts([
+			{ status: 'loaded' },
+			{ status: 'unloaded' },
+		]);
+		fonts.answer = () => [faces[0]];
+		expect(
+			await new DefaultFontLoader(BRAVURA).ensure([
+				{ font: '30pt Bravura', text: '\uE050' },
+			]),
+		).toBe(false);
+	});
+
+	it('ensures past a face that fails to load', async () => {
+		const { fonts } = fakeFonts([{ status: 'unloaded' }]);
+		fonts.answer = () => {
+			throw new Error('404');
+		};
+		expect(
+			await new DefaultFontLoader(BRAVURA).ensure([
+				{ font: '30pt Bravura', text: '\uE566' },
+			]),
+		).toBe(false);
+	});
+
 	it('loads the shipped bravura when the notation config only sets a color', async () => {
 		const { head, container } = fakeDom();
 		await new DefaultFontLoader(BRAVURA).load(container, {
@@ -102,6 +194,23 @@ function styleText(head: any[]): string {
 }
 
 // Fake minimal DOM to exercise injection + dedup + container scoping.
+// document.fonts with the given faces; `answer` decides what a load resolves with.
+function fakeFonts(faces: Array<{ status: string }>) {
+	const fonts = {
+		loads: [] as string[][],
+		answer: (): Array<{ status: string }> => [],
+		forEach(callback: (face: { status: string }) => void) {
+			faces.forEach(callback);
+		},
+		async load(font: string, text: string) {
+			this.loads.push([font, text]);
+			return this.answer();
+		},
+	};
+	(globalThis as any).document = { fonts };
+	return { fonts, faces: faces as any[] };
+}
+
 function fakeDom() {
 	const head: any[] = [];
 	const vars: Record<string, string> = {};

@@ -6,7 +6,9 @@ import type { Drawing } from './drawing';
 import type { ElementFactory } from './element-factory';
 import type { ElementIndex } from './element-index';
 import type { Fold } from './fold';
-import type { FontLoader } from './font-loader';
+import type { FontLoader, FontSample } from './font-loader';
+import { FontSamples } from './font-samples';
+import { GlyphCollector } from './glyph-collector';
 import type { Host } from './host';
 import type { IdleScheduler } from './idle-scheduler';
 import { Page } from './page';
@@ -22,7 +24,7 @@ import type { ScoreSnapshot } from './score-snapshot';
 import type { Scroller } from './scroller';
 import type { Sequence } from './sequence';
 import type { SequenceFactory } from './sequence-factory';
-import { SnapshotReader } from './snapshot-reader';
+import { type ReadSnapshot, SnapshotReader } from './snapshot-reader';
 import type { SnapshotSource } from './snapshot-source';
 import { StoredSnapshot } from './stored-snapshot';
 
@@ -78,15 +80,37 @@ export class ScoreRenderer {
 			// A snapshot that carries its text's outlines draws nothing in a font, its notes'
 			// color stamps included, so its Score needn't wait on one: the fonts finish loading
 			// for whatever a caller draws later. A failed load leaves them on their fallbacks.
+			const read = new SnapshotReader(this.config).read(input);
 			if (input.outlines) {
 				fonts.catch(() => {});
 			} else {
 				await fonts;
+				// Its text paints in the fonts, so every glyph it paints must be resident first.
+				await this.fontLoader.ensure(this.textOf(read.engraving));
 			}
-			return this.restore(input);
+			return this.restore(input, read);
 		}
 		await fonts;
 
+		// A face split by unicode-range loads each file on the first glyph it covers, so the first
+		// engraving may have measured a rare glyph in a fallback. It notes what it measured; when
+		// a face of that had to load, the engraving starts over from a fresh parse (gaps insert
+		// into vexml's own) with the faces resident, as it would have with the whole face loaded.
+		const collector = new GlyphCollector(this.stage.probe);
+		const first = await this.engrave(input, collector);
+		if (!(await this.fontLoader.ensure(collector.samples()))) {
+			return first();
+		}
+		this.stage.probe.forget();
+		return (await this.engrave(input, this.stage.probe))();
+	}
+
+	/* Lay out `input` with `probe` measuring, drawing nothing on the stage yet: the returned
+	 * function shows it and makes the Score. */
+	private async engrave(
+		input: string | Blob | MDocument,
+		probe: PaintProbe,
+	): Promise<() => Score> {
 		const document = await this.parser.parse(input);
 		// The stage is the Viewport (score<->client transform) the elements map through, and the
 		// decorations draw on overlay layers the stage hands them.
@@ -97,7 +121,7 @@ export class ScoreRenderer {
 			this.config.progressive && this.config.layout.type === 'standard'
 				? this.engraver.beginProgressive(
 						document,
-						this.stage.probe,
+						probe,
 						this.stage,
 						decorations,
 						this.scheduler,
@@ -105,40 +129,43 @@ export class ScoreRenderer {
 					)
 				: null;
 		if (progressive) {
-			progressive.drawFirstScreen(this.stage);
-			const score = this.score(
-				progressive.elements,
-				decorations,
-				progressive.sequence,
-				progressive.gaps,
-				[],
-				new ProgressiveRecording(progressive),
-				progressive,
-			);
-			progressive.start();
-			return score;
+			return () => {
+				progressive.drawFirstScreen(this.stage);
+				const score = this.score(
+					progressive.elements,
+					decorations,
+					progressive.sequence,
+					progressive.gaps,
+					[],
+					new ProgressiveRecording(progressive),
+					progressive,
+				);
+				progressive.start();
+				return score;
+			};
 		}
 		const engraved = this.engraver.engrave(
 			document,
-			this.stage.probe,
+			probe,
 			this.stage,
 			decorations,
 		);
-		this.show(engraved.drawn.engraving, engraved.drawn.fold);
-		return this.score(
-			engraved.elements,
-			decorations,
-			engraved.sequence,
-			engraved.gaps,
-			engraved.drawn.pages,
-			engraved.recording,
-		);
+		return () => {
+			this.show(engraved.drawn.engraving, engraved.drawn.fold);
+			return this.score(
+				engraved.elements,
+				decorations,
+				engraved.sequence,
+				engraved.gaps,
+				engraved.drawn.pages,
+				engraved.recording,
+			);
+		};
 	}
 
 	/* Build the Score a snapshot recorded: decoded, not parsed, laid out or drawn. Its config was
 	 * checked against this one before the stage was built (see render.ts). */
-	private restore(snapshot: ScoreSnapshot): Score {
-		const read = new SnapshotReader(this.config).read(snapshot);
+	private restore(snapshot: ScoreSnapshot, read: ReadSnapshot): Score {
 		this.show(read.engraving, read.fold);
 		const decorations = new DefaultDecorations(this.stage);
 		const elements = this.elementFactory.build(
@@ -158,6 +185,17 @@ export class ScoreRenderer {
 			read.pages,
 			new StoredSnapshot(snapshot),
 		);
+	}
+
+	/* The text an engraving paints, by font. */
+	private textOf(engraving: Engraving | null): FontSample[] {
+		const samples = new FontSamples();
+		for (const op of engraving?.ops ?? []) {
+			if (op.call.kind === 'fillText' || op.call.kind === 'strokeText') {
+				samples.add(String(op.state.props.font), op.call.text);
+			}
+		}
+		return samples.list();
 	}
 
 	private show(engraving: Engraving | null, fold: Fold | null): void {
