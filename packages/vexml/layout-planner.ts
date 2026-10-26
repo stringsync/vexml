@@ -482,7 +482,12 @@ export class LayoutPlanner {
 		// here to measure), a hair over the ~6.9px actual, so the longest never clips its
 		// left edge. Measure exactly if a font change makes the estimate drift.
 		const labelChars = config.showPartLabels
-			? Math.max(0, ...parts.map((part) => part.label?.length ?? 0))
+			? Math.max(
+					0,
+					...parts.map(
+						(part) => this.reader.partLabels(part).name?.length ?? 0,
+					),
+				)
 			: 0;
 		const partLabelIndent =
 			labelChars > 0 ? labelChars * LABEL_CHAR_WIDTH + LABEL_GAP : 0;
@@ -500,10 +505,38 @@ export class LayoutPlanner {
 		const labelIndent =
 			partLabelIndent +
 			(groupChars > 0 ? groupChars * LABEL_CHAR_WIDTH + LABEL_GAP : 0);
+		// Systems after the first carry the abbreviations instead, in the same two columns.
+		const abbreviationChars = config.showPartLabels
+			? Math.max(
+					0,
+					...parts.map(
+						(part) => this.reader.partLabels(part).abbreviation?.length ?? 0,
+					),
+				)
+			: 0;
+		const groupAbbreviationChars = config.showPartLabels
+			? Math.max(
+					0,
+					...this.reader
+						.partGroups(score)
+						.map((group) => group.abbreviation?.length ?? 0),
+				)
+			: 0;
+		const abbreviationIndent =
+			abbreviationChars > 0
+				? abbreviationChars * LABEL_CHAR_WIDTH + LABEL_GAP
+				: 0;
+		const laterLabelIndent =
+			abbreviationIndent +
+			(groupAbbreviationChars > 0
+				? groupAbbreviationChars * LABEL_CHAR_WIDTH + LABEL_GAP
+				: 0);
+		const indentOf = (systemIndex: number) =>
+			systemIndex === 0 ? labelIndent : laterLabelIndent;
 		// Reads `width` at call time, so re-running the breaker after 'widen' raises it sees
 		// the wider page.
 		const usableOf = (systemIndex: number) =>
-			width - 2 * x - (systemIndex === 0 ? labelIndent : 0);
+			width - 2 * x - indentOf(systemIndex);
 
 		// --- Edge gaps -----------------------------------------------------------------
 		// A gap before the first measure of music or after the last is an edge gap: a fixed box
@@ -797,9 +830,7 @@ export class LayoutPlanner {
 					width,
 					...systems.map(
 						(measures, systemIndex) =>
-							spanOf(measures, 'ideal') +
-							2 * x +
-							(systemIndex === 0 ? labelIndent : 0),
+							spanOf(measures, 'ideal') + 2 * x + indentOf(systemIndex),
 					),
 				);
 				if (needed <= width) {
@@ -868,7 +899,7 @@ export class LayoutPlanner {
 					? a.ideal * stretch
 					: a.ideal - (a.ideal - a.min) * squeeze;
 			// Leading boxes start at the margin, ahead of the label indent they stand in for.
-			const indent = systemIndex === 0 && start === 0 ? labelIndent : 0;
+			const indent = start === 0 ? indentOf(systemIndex) : 0;
 			let cx = x + indent;
 			measures.forEach((m, i) => {
 				const area = areas[i];
@@ -910,6 +941,8 @@ export class LayoutPlanner {
 			softmaxFactor,
 			labelIndent,
 			partLabelIndent,
+			laterLabelIndent,
+			abbreviationIndent,
 		};
 	}
 }
@@ -962,6 +995,10 @@ export type ScoreLayout = {
 	 * staves inside it, and a group name right-aligns against ITS left edge. 0 when no
 	 * <part-group> declares a <group-name>, in which case it equals labelIndent. */
 	partLabelIndent: number;
+	/** The same two columns on every system after the first, holding the abbreviations:
+	 * the whole indent, and the part-abbreviation column alone. 0 when nothing has one. */
+	laterLabelIndent: number;
+	abbreviationIndent: number;
 	/** Starting page height, before the draw pass grows it for deep ledger lines. */
 	floorHeight: number;
 	/** Resolved spacing curve, shared by this measurement and the draw pass so the

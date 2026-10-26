@@ -124,6 +124,8 @@ export class SignatureFold implements Fold {
 			totalStaves: this.opts.totalStaves,
 			labelIndent: 0,
 			partLabelIndent: 0,
+			laterLabelIndent: 0,
+			abbreviationIndent: 0,
 			labelFont: '',
 			notationColor: this.opts.notationColor,
 			textColor: this.opts.textColor,

@@ -16,8 +16,8 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 217 drawn, 69 ignored, 156 missing; vexml draws 217 of the 373 that show on the page (58%).
-Attributes: 44 drawn, 5 ignored, 66 missing.
+Elements: 223 drawn, 69 ignored, 150 missing; vexml draws 223 of the 373 that show on the page (60%).
+Attributes: 45 drawn, 5 ignored, 65 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -207,12 +207,12 @@ Attributes: 44 drawn, 5 ignored, 66 missing.
 | `grace@slash` | drawn | `grace_notes.musicxml`: slashed acciaccatura |
 | `grace@steal-time-previous` | drawn | `grace_notes.musicxml`: timed, grace plays before the beat |
 | `group` | ignored | metadata (score vs parts version of a part) |
-| `group-abbreviation` | missing | task #25; group abbreviation label on later systems; mdom typed |
-| `group-abbreviation-display` | missing | task #25; formatted group abbreviation (display-text runs); mdom raw only |
+| `group-abbreviation` | drawn | `structure_part_abbreviations.musicxml`: group abbreviation on later systems |
+| `group-abbreviation-display` | drawn | `structure_part_abbreviations.musicxml`: display-text runs override it |
 | `group-barline` | drawn | `structure_part_groups.musicxml`: barlines joined or broken across the group |
 | `group-link` | ignored | file links |
 | `group-name` | drawn | `structure_part_group_symbols.musicxml` |
-| `group-name-display` | missing | task #25; formatted group name (display-text runs); mdom raw only |
+| `group-name-display` | drawn | `structure_part_abbreviations.musicxml`: display-text runs override the name |
 | `group-symbol` | drawn | `structure_part_group_symbols.musicxml` |
 | `group-time` | missing | task #38; one large time signature spanning a group's staves; mdom raw only |
 | `grouping` | ignored | analysis metadata |
@@ -370,16 +370,16 @@ Attributes: 44 drawn, 5 ignored, 66 missing.
 | `page-width` | missing | task #20; mdom raw only |
 | `pan` | ignored | sound only |
 | `part` | drawn | `structure_two_parts.musicxml` |
-| `part-abbreviation` | missing | task #25; short part label on systems after the first; mdom raw only |
-| `part-abbreviation-display` | missing | task #25; display-text override of the part abbreviation; mdom raw only |
+| `part-abbreviation` | drawn | `structure_part_abbreviations.musicxml`: short part label on systems after the first |
+| `part-abbreviation-display` | drawn | `structure_part_abbreviations.musicxml`: display-text and accidental-text runs override it |
 | `part-clef` | ignored | for-part: applies to extracted transposed parts only |
 | `part-group` | drawn | `structure_part_groups.musicxml` |
 | `part-group@type` | drawn | `structure_part_group_bracket_top.musicxml`: group bracket start/stop |
 | `part-link` | ignored | file links |
 | `part-list` | drawn | `structure_two_parts.musicxml` |
 | `part-name` | drawn | `structure_part_labels.musicxml`: printed when showPartLabels is on |
-| `part-name@print-object` | missing | task #25; hidden part name still printed; mdom raw only |
-| `part-name-display` | missing | task #25; display-text override of the part name; mdom raw only |
+| `part-name@print-object` | drawn | `structure_part_abbreviations.musicxml`: print-object="no" hides the name |
+| `part-name-display` | drawn | `structure_part_abbreviations.musicxml`: display-text and accidental-text runs override the name |
 | `part-symbol` | drawn | `clef_notation_and_tab_bracket.musicxml` |
 | `part-transpose` | ignored | for-part: applies to extracted transposed parts only |
 | `pedal` | drawn | `pedal.musicxml` |

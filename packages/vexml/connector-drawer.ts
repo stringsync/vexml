@@ -59,6 +59,8 @@ export class ConnectorDrawer {
 	private readonly totalStaves: number;
 	private readonly labelIndent: number;
 	private readonly partLabelIndent: number;
+	private readonly laterLabelIndent: number;
+	private readonly abbreviationIndent: number;
 	private readonly labelFont: string;
 	private readonly notationColor: string;
 	private readonly textColor: string;
@@ -75,6 +77,8 @@ export class ConnectorDrawer {
 		this.totalStaves = opts.totalStaves;
 		this.labelIndent = opts.labelIndent;
 		this.partLabelIndent = opts.partLabelIndent;
+		this.laterLabelIndent = opts.laterLabelIndent;
+		this.abbreviationIndent = opts.abbreviationIndent;
 		this.labelFont = opts.labelFont;
 		this.notationColor = opts.notationColor;
 		this.textColor = opts.textColor;
@@ -355,7 +359,7 @@ export class ConnectorDrawer {
 	}
 
 	/*
-	 * Print each `<part-group>`'s `<group-name>` at the first system's start, in the column of
+	 * Print each `<part-group>`'s `<group-name>` at the first system's start (its `<group-abbreviation>` on later ones), in the column of
 	 * the left indent that sits OUTSIDE the part labels (see ScoreLayout.partLabelIndent) and
 	 * vertically centered on the parts the group spans: the section heading a bracket in an
 	 * orchestral score carries ("Oboe through Clarinet" over its three staves).
@@ -364,7 +368,10 @@ export class ConnectorDrawer {
 	 * Only drawn with showPartLabels on; the indent it needs is only reserved then.
 	 */
 	private drawPartGroupNames(column: ConnectorColumn): void {
-		if (column.systemIndex !== 0 || this.labelIndent <= this.partLabelIndent) {
+		const first = column.systemIndex === 0;
+		const total = first ? this.labelIndent : this.laterLabelIndent;
+		const inner = first ? this.partLabelIndent : this.abbreviationIndent;
+		if (column.partStaves.length === 0 || total <= inner) {
 			return;
 		}
 		this.context.save();
@@ -373,16 +380,17 @@ export class ConnectorDrawer {
 		for (const group of this.partGroups) {
 			const top = column.partStaves[group.fromPart]?.top;
 			const bottom = column.partStaves[group.toPart]?.bottom;
-			if (!group.name || !top || !bottom) {
+			const text = first ? group.name : group.abbreviation;
+			if (!text || !top || !bottom) {
 				continue;
 			}
-			const width = this.context.measureText(group.name).width;
+			const width = this.context.measureText(text).width;
 			// Centered on the staff lines the group spans, the same measure (and the same
 			// +1.5 baseline nudge) a part label uses.
 			const cy = (top.getYForLine(0) + bottom.getBottomLineY()) / 2;
 			this.context.fillText(
-				group.name,
-				column.measureX - this.partLabelIndent - LABEL_GAP - width,
+				text,
+				column.measureX - inner - LABEL_GAP - width,
 				cy + 1.5,
 			);
 		}
@@ -460,6 +468,9 @@ export interface ConnectorDrawerOptions {
 	 * and the inner band the part labels print in; group names go outside that. */
 	labelIndent: number;
 	partLabelIndent: number;
+	/** The same two columns on systems after the first, holding the abbreviations. */
+	laterLabelIndent: number;
+	abbreviationIndent: number;
 	labelFont: string;
 	notationColor: string;
 	textColor: string;

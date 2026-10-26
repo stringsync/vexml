@@ -82,6 +82,8 @@ describe('ConnectorDrawer', () => {
 				totalStaves: 2,
 				labelIndent: 0,
 				partLabelIndent: 0,
+				laterLabelIndent: 0,
+				abbreviationIndent: 0,
 				labelFont: 'Arial',
 				notationColor: '#000000',
 				textColor: '#000000',

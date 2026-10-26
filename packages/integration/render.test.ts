@@ -186,6 +186,18 @@ describe('render', () => {
 		).toMatchScreenshot('structure_part_labels.png');
 	});
 
+	// Four parts over two systems, part names print on the first system and
+	// abbreviations on the second, in indented columns: "Strings" / "Str." for the bracketed
+	// pair, "Second Violin" / "2nd Vln." from display-text overrides, "B♭ Clarinet" / "B♭ Cl."
+	// from accidental-text, and a fourth part whose print-object="no" hides both names.
+	it.concurrent('renders structure_part_abbreviations.png', async () => {
+		expect(
+			await testing.render('structure_part_abbreviations.musicxml', {
+				showPartLabels: true,
+			}),
+		).toMatchScreenshot('structure_part_abbreviations.png');
+	});
+
 	// Same two labelled parts as structure_part_labels, but with the text font
 	// overridden to Times New Roman (fonts.text). The two instrument names render in
 	// that family instead of the default Source Sans 3, proving the text FontConfig option

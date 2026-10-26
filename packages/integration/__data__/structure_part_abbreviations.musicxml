@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <part-group type="start" number="1">
+      <group-name>Strings</group-name>
+      <group-name-display><display-text>Strings</display-text></group-name-display>
+      <group-abbreviation>Str.</group-abbreviation>
+      <group-abbreviation-display><display-text>Str.</display-text></group-abbreviation-display>
+      <group-symbol>bracket</group-symbol>
+    </part-group>
+    <score-part id="P1">
+      <part-name>Violin I</part-name>
+      <part-abbreviation>Vln. I</part-abbreviation>
+    </score-part>
+    <score-part id="P2">
+      <part-name>Violin II</part-name>
+      <part-name-display><display-text>Second </display-text><display-text>Violin</display-text></part-name-display>
+      <part-abbreviation>Vln. II</part-abbreviation>
+      <part-abbreviation-display><display-text>2nd Vln.</display-text></part-abbreviation-display>
+    </score-part>
+    <part-group type="stop" number="1"/>
+    <score-part id="P3">
+      <part-name>B Clarinet</part-name>
+      <part-name-display><display-text>B</display-text><accidental-text>flat</accidental-text><display-text> Clarinet</display-text></part-name-display>
+      <part-abbreviation>B Cl.</part-abbreviation>
+      <part-abbreviation-display><display-text>B</display-text><accidental-text>flat</accidental-text><display-text> Cl.</display-text></part-abbreviation-display>
+    </score-part>
+    <score-part id="P4">
+      <part-name print-object="no">Hidden</part-name>
+      <part-abbreviation print-object="no">Hid.</part-abbreviation>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+    <measure number="2"><print new-system="yes"/>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+  </part>
+  <part id="P2">
+    <measure number="1">
+      <attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+  </part>
+  <part id="P3">
+    <measure number="1">
+      <attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+  </part>
+  <part id="P4">
+    <measure number="1">
+      <attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+  </part>
+</score-partwise>

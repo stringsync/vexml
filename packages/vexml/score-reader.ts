@@ -5,6 +5,7 @@ import {
 	type Direction,
 	type Harmony,
 	type Key,
+	MElement,
 	type Measure,
 	type MetronomeNote,
 	type Note,
@@ -888,12 +889,34 @@ export class ScoreReader {
 	 * a name or a barline rule (see barlineBreaks), and one spanning a single part has nothing
 	 * to connect. 'square' falls back to 'bracket' (vexflow draws no squared bracket).
 	 *
-	 * ponytail: `<group-abbreviation>` is ignored; it's the short name for systems after the
-	 * first, and vexml prints part labels on the first system only, so nothing would ever use it.
+	 * Names resolve through the display override and print-object (see labelOf), and
+	 * the abbreviation is the short name later systems carry.
 	 */
 	partGroups(score: Score): PartGroup[] {
+		// The start markers per first part, in document order, which is outermost first, the
+		// order Score.partGroups lists spans that open on the same part. They carry the
+		// display-text overrides mdom has no getter for.
+		const starts = new Map<number, MElement[]>();
+		let partCount = 0;
+		for (const node of score.child('part-list')?.children ?? []) {
+			if (!(node instanceof MElement)) {
+				continue;
+			}
+			if (node.tag === 'score-part') {
+				partCount++;
+			} else if (
+				node.tag === 'part-group' &&
+				node.getAttribute('type') === 'start'
+			) {
+				starts.set(partCount, [...(starts.get(partCount) ?? []), node]);
+			}
+		}
+		const taken = new Map<number, number>();
 		return score.partGroups
 			.flatMap((group) => {
+				const k = taken.get(group.fromPartIndex) ?? 0;
+				taken.set(group.fromPartIndex, k + 1);
+				const marker = starts.get(group.fromPartIndex)?.[k] ?? null;
 				const symbol = this.groupSymbol(group.symbol);
 				return symbol && group.toPartIndex > group.fromPartIndex
 					? [
@@ -902,12 +925,79 @@ export class ScoreReader {
 								toPart: group.toPartIndex,
 								symbol,
 								depth: group.depth,
-								name: group.name,
+								name: this.labelOf(
+									marker?.child('group-name') ?? null,
+									marker?.child('group-name-display') ?? null,
+									group.name,
+								),
+								abbreviation: this.labelOf(
+									marker?.child('group-abbreviation') ?? null,
+									marker?.child('group-abbreviation-display') ?? null,
+									group.abbreviation,
+								),
 							},
 						]
 					: [];
 			})
 			.sort((a, b) => a.depth - b.depth);
+	}
+
+	/*
+	 * A part's printed names, from its <score-part>: the full name for the first system and
+	 * the abbreviation for the systems after it. Each is null when the part declares none or
+	 * hides it with print-object="no".
+	 */
+	partLabels(part: Part): { name: string | null; abbreviation: string | null } {
+		const entry = part.score
+			.child('part-list')
+			?.childrenNamed('score-part')
+			.find((scorePart) => scorePart.getAttribute('id') === part.id);
+		return {
+			name: this.labelOf(
+				entry?.child('part-name') ?? null,
+				entry?.child('part-name-display') ?? null,
+				null,
+			),
+			abbreviation: this.labelOf(
+				entry?.child('part-abbreviation') ?? null,
+				entry?.child('part-abbreviation-display') ?? null,
+				null,
+			),
+		};
+	}
+
+	/*
+	 * One printed name: the <*-display> element's text runs when there is one (it overrides the
+	 * plain name, so it carries the formatting a score wants), else the plain element's text,
+	 * else `fallback`. Null when the winning element says print-object="no" or has no text.
+	 * <accidental-text> runs print as their Unicode sign.
+	 */
+	private labelOf(
+		plain: MElement | null,
+		display: MElement | null,
+		fallback: string | null,
+	): string | null {
+		const source = display ?? plain;
+		if (source?.getAttribute('print-object') === 'no') {
+			return null;
+		}
+		if (display) {
+			const text = display.children
+				.map((run) => {
+					if (!(run instanceof MElement)) {
+						return '';
+					}
+					if (run.tag === 'accidental-text') {
+						return ACCIDENTAL_TEXT[run.text?.trim() ?? ''] ?? '';
+					}
+					return run.tag === 'display-text' ? (run.text ?? '') : '';
+				})
+				.join('');
+			if (text.trim()) {
+				return text;
+			}
+		}
+		return plain?.text?.trim() || fallback;
 	}
 
 	/*
@@ -1441,6 +1531,15 @@ const FIGURE_SIGN: Record<string, string> = {
 
 /* Which kinds of stave a render shows, from Config.showTabs/showNotation. Both are asked
  * together everywhere a part's stave rows are derived, so they travel as one value. */
+/* The Unicode sign of each <accidental-text> value a name's display runs may carry. */
+const ACCIDENTAL_TEXT: Record<string, string> = {
+	sharp: '\u266F',
+	flat: '\u266D',
+	natural: '\u266E',
+	'double-sharp': '\uD834\uDD2A',
+	'flat-flat': '\uD834\uDD2B',
+};
+
 /** A `<part-group>` span: the run of parts it brackets, and the connector to draw. */
 export type PartGroup = {
 	/** Index into the rendered `parts` array of the group's first and last part. */
@@ -1451,6 +1550,8 @@ export type PartGroup = {
 	depth: number;
 	/** The group's `<group-name>`, printed left of its symbol; null when it declares none. */
 	name: string | null;
+	/** The group's `<group-abbreviation>`, printed in its place on systems after the first. */
+	abbreviation: string | null;
 };
 
 /** A `<barline><fermata>`: the edge it sits on, its shape, and whether it hangs below. */

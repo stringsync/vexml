@@ -99,6 +99,7 @@ export class DrawPass {
 	private readonly softmaxFactor: number;
 	private readonly systemGap: number;
 	private readonly labelIndent: number;
+	private readonly laterLabelIndent: number;
 	// When false, tab staves are dropped: iterate visibleStaffNumbers, not staveCount.
 	private readonly showTabs: boolean;
 	// When false, notation staves are dropped the same way tab staves are.
@@ -296,6 +297,8 @@ export class DrawPass {
 			width,
 			labelIndent,
 			partLabelIndent,
+			laterLabelIndent,
+			abbreviationIndent,
 		} = layout;
 		this.measureCount = measureCount;
 		this.boxes = boxes;
@@ -303,6 +306,7 @@ export class DrawPass {
 		this.softmaxFactor = softmaxFactor;
 		this.systemGap = systemGap;
 		this.labelIndent = labelIndent;
+		this.laterLabelIndent = laterLabelIndent;
 		const { measureNumbering, showTabSlideText } = config;
 		this.showTabs = config.showTabs;
 		this.showNotation = config.showNotation;
@@ -325,6 +329,8 @@ export class DrawPass {
 			totalStaves: this.totalStaves,
 			labelIndent: this.labelIndent,
 			partLabelIndent,
+			laterLabelIndent,
+			abbreviationIndent,
 			labelFont,
 			notationColor: this.notationColor,
 			textColor: this.textColor,
@@ -748,13 +754,15 @@ export class DrawPass {
 				);
 			}
 
-			// Print the instrument name in the first system's reserved left indent,
-			// right-aligned just before the stave and vertically centered on the part's
-			// staves.
+			// Print the instrument name in the first system's reserved left indent, and its
+			// abbreviation in the one later systems reserve, right-aligned just before the
+			// stave and vertically centered on the part's staves.
+			const labels = this.reader.partLabels(part);
+			const text = this.systemIndex === 0 ? labels.name : labels.abbreviation;
 			if (
-				this.labelIndent > 0 &&
-				part.label &&
-				this.systemIndex === 0 &&
+				(this.systemIndex === 0 ? this.labelIndent : this.laterLabelIndent) >
+					0 &&
+				text &&
 				this.isSystemStart &&
 				partTop &&
 				partBottom
@@ -762,7 +770,7 @@ export class DrawPass {
 				this.context.save();
 				this.context.setFont(this.labelFont, LABEL_FONT_SIZE);
 				this.context.setFillStyle(this.textColor);
-				const tw = this.context.measureText(part.label).width;
+				const tw = this.context.measureText(text).width;
 				// Center on the staff lines themselves: top line of the part's first stave
 				// to bottom line of its last, so a single stave centers on its middle line
 				// and a multi-stave part centers on the group. +1.5 lands the cap-height
@@ -770,11 +778,7 @@ export class DrawPass {
 				const cy = (partTop.getYForLine(0) + partBottom.getBottomLineY()) / 2;
 				// Right-align every label to a fixed gap before the stave, so all parts'
 				// names end at the same x (the gap clears the brace on multi-stave parts).
-				this.context.fillText(
-					part.label,
-					this.measureX - LABEL_GAP - tw,
-					cy + 1.5,
-				);
+				this.context.fillText(text, this.measureX - LABEL_GAP - tw, cy + 1.5);
 				this.context.restore();
 			}
 		}

@@ -63,7 +63,7 @@ Two rules cut across the draw stage:
 - **Fermatas on a barline**: `score-reader.ts` (`barlineFermatasOf`), `direction-placer.ts` (`drawBarlineFermata`), `fermata-glyphs.ts`
 - **Measure numbers**: `stave-builder.ts` (`showsMeasureNumber`)
 - **Multi-measure rests**: `stave-builder.ts` (`drawMultiRest`), `layout-planner.ts`
-- **Braces, brackets, part-group connectors, part names**: `connector-drawer.ts`, `score-reader.ts`
+- **Braces, brackets, part-group connectors, part names and abbreviations**: `connector-drawer.ts`, `score-reader.ts` (`partLabels`, `partGroups`), `draw-pass.ts`, `layout-planner.ts` (`laterLabelIndent`)
 - **Percussion staves, unpitched notes**: `stave-builder.ts`, `chord-translator.ts`
 - **Transposing parts**: `stave-builder.ts`, `system-formatter.ts`
 
