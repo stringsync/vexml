@@ -17,7 +17,7 @@ by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
 Elements: 233 drawn, 69 ignored, 140 missing; vexml draws 233 of the 373 that show on the page (62%).
-Attributes: 47 drawn, 5 ignored, 63 missing.
+Attributes: 53 drawn, 5 ignored, 57 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ Attributes: 47 drawn, 5 ignored, 63 missing.
 | `*@justify` | missing | task #28; text justification ignored; mdom raw only |
 | `*@line-type` | drawn | `slur_line_types.musicxml`, `direction_lines.musicxml`: slurs and brackets; ties, wedges, slides task #17 |
 | `*@placement` | drawn | `direction_lines.musicxml`, `note_color.musicxml`: directions, slurs, tuplets, technical; ornaments ignore it |
-| `*@print-object` | drawn | `invisible_notes.musicxml`: notes only; clef, key, time, lyric, part-name, staff-details ignore it |
+| `*@print-object` | drawn | `invisible_notes.musicxml`: notes; `print_object.musicxml`: notations, ending and staff-details; clef, key, time, lyric and part-name ignore it |
 | `*@relative-x` | missing | task #20 (later task in that lane); mdom raw only |
 | `*@relative-y` | missing | task #20 (later task in that lane); mdom raw only |
 | `*@rotation` | missing | task #28; rotated text not drawn; mdom raw only |
@@ -159,7 +159,7 @@ Attributes: 47 drawn, 5 ignored, 63 missing.
 | `ending` | drawn | `repeats.musicxml`: volta brackets |
 | `ending@end-length` | missing | task #38; volta hook length fixed; mdom raw only |
 | `ending@number` | drawn | `repeats.musicxml`: volta labels |
-| `ending@print-object` | missing | task #27; hidden ending bracket still drawn; mdom raw only |
+| `ending@print-object` | drawn | `print_object.musicxml` M5-6; a hidden bracket still plays its jumps |
 | `ending@text-x` | missing | task #38; volta label offset ignored; mdom raw only |
 | `ending@type` | drawn | `repeats.musicxml`: start and stop hooks; a discontinue close leaves the right end open |
 | `ensemble` | ignored | sound only (instrument definition) |
@@ -324,13 +324,13 @@ Attributes: 47 drawn, 5 ignored, 63 missing.
 | `normal-notes` | drawn | `tuplet_triplet.musicxml`: tuplet ratio from time-modification |
 | `normal-type` | missing | task #31; tuplet show-type note-value glyphs; mdom raw only |
 | `notations` | drawn | `articulations.musicxml` |
-| `notations@print-object` | missing | task #27; hidden notations still drawn; mdom raw only |
+| `notations@print-object` | drawn | `print_object.musicxml` M4; hides every mark in the group, slurs and tuplets excepted |
 | `note` | drawn | `note.musicxml` |
 | `note@dynamics` | ignored | playback velocity only |
 | `note@pizzicato` | ignored | playback only |
-| `note@print-dot` | missing | task #27; hidden dots still drawn; mdom raw only |
-| `note@print-leger` | missing | task #27; ledger lines always drawn; mdom raw only |
-| `note@print-lyric` | missing | task #27; lyrics always drawn; mdom raw only |
+| `note@print-dot` | drawn | `print_object.musicxml` M1 |
+| `note@print-leger` | drawn | `print_object.musicxml` M2 |
+| `note@print-lyric` | drawn | `print_object.musicxml` M3 |
 | `note@print-spacing` | missing | task #27; hidden notes always keep their space; mdom raw only |
 | `note-size` | missing | task #9; mdom raw only |
 | `notehead` | drawn | `notehead_shapes.musicxml` |
@@ -479,7 +479,7 @@ Attributes: 47 drawn, 5 ignored, 63 missing.
 | `staccato` | drawn | `articulations.musicxml` |
 | `staff` | drawn | `voices_grand_staff.musicxml`: assigns notes and directions to staves |
 | `staff-details` | drawn | `staff_details_lines.musicxml` |
-| `staff-details@print-object` | missing | task #27; hidden staff still drawn; mdom typed |
+| `staff-details@print-object` | drawn | `print_object.musicxml` M7; hides the staff lines only, clef and key stay |
 | `staff-details@show-frets` | missing | tab frets as letters; mdom showFrets reads a child element, not this attribute, so mdom needs a fix first |
 | `staff-distance` | missing | task #20; mdom raw only |
 | `staff-divide` | missing | task #15; mdom raw only |

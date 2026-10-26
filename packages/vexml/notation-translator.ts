@@ -28,13 +28,26 @@ export class NotationTranslator {
 	/* Attach everything `chord` asks for to the StaveNote built from it. */
 	attach(staveNote: StaveNote, chord: Chord): void {
 		const lead = chord.lead;
-		this.addArticulations(staveNote, lead);
-		this.addTechnicals(staveNote, chord);
-		this.addOrnaments(staveNote, lead);
-		this.addFermata(staveNote, lead);
-		this.addArpeggio(staveNote, lead);
-		this.addNonArpeggiate(staveNote, chord);
-		this.addLyrics(staveNote, lead);
+		// <notations print-object="no"> hides every mark it holds; the lyrics are a sibling.
+		if (!this.hidesNotations(lead)) {
+			this.addArticulations(staveNote, lead);
+			this.addTechnicals(staveNote, chord);
+			this.addOrnaments(staveNote, lead);
+			this.addFermata(staveNote, lead);
+			this.addArpeggio(staveNote, lead);
+			this.addNonArpeggiate(staveNote, chord);
+		}
+		if (lead.getAttribute('print-lyric') !== 'no') {
+			this.addLyrics(staveNote, lead);
+		}
+	}
+
+	private hidesNotations(note: Note): boolean {
+		const groups = note.childrenNamed('notations');
+		return (
+			groups.length > 0 &&
+			groups.every((group) => group.getAttribute('print-object') === 'no')
+		);
 	}
 
 	private addArticulations(staveNote: StaveNote, note: Note): void {

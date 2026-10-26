@@ -225,6 +225,7 @@ describe('ScoreReader', () => {
 			first: true,
 			last: true,
 			open: false,
+			hidden: false,
 		});
 		expect(result[1]?.ending).toBeNull();
 	});
@@ -235,9 +236,9 @@ describe('ScoreReader', () => {
 			scoreOf(start('1'), '', stop('1', 'stop') + BACKWARD, ''),
 		);
 		expect(result.map((r) => r.ending)).toEqual([
-			{ number: '1', first: true, last: false, open: false },
-			{ number: '1', first: false, last: false, open: false },
-			{ number: '1', first: false, last: true, open: false },
+			{ number: '1', first: true, last: false, open: false, hidden: false },
+			{ number: '1', first: false, last: false, open: false, hidden: false },
+			{ number: '1', first: false, last: true, open: false, hidden: false },
 			null,
 		]);
 	});
@@ -253,8 +254,8 @@ describe('ScoreReader', () => {
 			),
 		);
 		expect(result.map((r) => r.ending)).toEqual([
-			{ number: '1', first: true, last: false, open: false },
-			{ number: '1', first: false, last: true, open: false },
+			{ number: '1', first: true, last: false, open: false, hidden: false },
+			{ number: '1', first: false, last: true, open: false, hidden: false },
 			null,
 		]);
 	});
@@ -302,6 +303,7 @@ describe('ScoreReader', () => {
 			first: true,
 			last: true,
 			open: true,
+			hidden: false,
 		});
 	});
 

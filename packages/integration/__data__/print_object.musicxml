@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1: dotted quarters, the first with print-dot="no" (duration kept, no dot). -->
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note print-dot="no"><pitch><step>C</step><octave>5</octave></pitch><duration>6</duration><type>quarter</type><dot /></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>6</duration><type>quarter</type><dot /></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+    </measure>
+    <!-- M2: C4 and A5 whose ledger lines print, then the same pair with print-leger="no". -->
+    <measure number="2">
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>A</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note print-leger="no"><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note print-leger="no"><pitch><step>A</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+    <!-- M3: four lyric notes; the second and fourth have print-lyric="no". -->
+    <measure number="3">
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type><lyric><syllabic>single</syllabic><text>la</text></lyric></note>
+      <note print-lyric="no"><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type><lyric><syllabic>single</syllabic><text>la</text></lyric></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type><lyric><syllabic>single</syllabic><text>la</text></lyric></note>
+      <note print-lyric="no"><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type><lyric><syllabic>single</syllabic><text>la</text></lyric></note>
+    </measure>
+    <!-- M4: staccato dots, then the same marks inside <notations print-object="no">. -->
+    <measure number="4">
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type><notations><articulations><staccato /></articulations></notations></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type><notations><articulations><staccato /></articulations></notations></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type><notations print-object="no"><articulations><staccato /></articulations></notations></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type><notations print-object="no"><articulations><staccato /></articulations></notations></note>
+    </measure>
+    <!-- M5-6: a first ending with a bracket, then a second ending whose bracket has print-object="no". -->
+    <measure number="5">
+      <barline location="left"><ending number="1" type="start" /></barline>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <barline location="right"><ending number="1" type="stop" /><repeat direction="backward" /></barline>
+    </measure>
+    <measure number="6">
+      <barline location="left"><ending number="2" type="start" print-object="no" /></barline>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <barline location="right"><ending number="2" type="stop" print-object="no" /></barline>
+    </measure>
+    <!-- M7: staff-details print-object="no": the lines are gone, clef and notes stay. -->
+    <measure number="7">
+      <attributes><staff-details print-object="no" /></attributes>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+  </part>
+</score-partwise>

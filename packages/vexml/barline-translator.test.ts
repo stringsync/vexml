@@ -40,9 +40,33 @@ describe('BarlineTranslator', () => {
 
 	it('brackets an ending run as BEGIN, MID, END', () => {
 		const [first, mid, last] = decorations([
-			{ ending: { number: '1', first: true, last: false, open: false } },
-			{ ending: { number: '1', first: false, last: false, open: false } },
-			{ ending: { number: '1', first: false, last: true, open: false } },
+			{
+				ending: {
+					number: '1',
+					first: true,
+					last: false,
+					open: false,
+					hidden: false,
+				},
+			},
+			{
+				ending: {
+					number: '1',
+					first: false,
+					last: false,
+					open: false,
+					hidden: false,
+				},
+			},
+			{
+				ending: {
+					number: '1',
+					first: false,
+					last: true,
+					open: false,
+					hidden: false,
+				},
+			},
 		]);
 		expect(first?.volta).toEqual({ type: Volta.type.BEGIN, label: '1.' });
 		expect(mid?.volta).toEqual({ type: Volta.type.MID, label: '1.' });
@@ -52,7 +76,15 @@ describe('BarlineTranslator', () => {
 	it('closes a one-measure ending with both hooks', () => {
 		expect(
 			decorations([
-				{ ending: { number: '2', first: true, last: true, open: false } },
+				{
+					ending: {
+						number: '2',
+						first: true,
+						last: true,
+						open: false,
+						hidden: false,
+					},
+				},
 			])[0]?.volta,
 		).toEqual({ type: Volta.type.BEGIN_END, label: '2.' });
 	});
@@ -60,7 +92,15 @@ describe('BarlineTranslator', () => {
 	it('keeps a discontinued ending hookless on the right', () => {
 		expect(
 			decorations([
-				{ ending: { number: '2', first: false, last: true, open: true } },
+				{
+					ending: {
+						number: '2',
+						first: false,
+						last: true,
+						open: true,
+						hidden: false,
+					},
+				},
 			])[0]?.volta,
 		).toEqual({ type: Volta.type.MID, label: '2.' });
 	});
@@ -68,7 +108,15 @@ describe('BarlineTranslator', () => {
 	it('prints an ending number list with dots after each pass', () => {
 		expect(
 			decorations([
-				{ ending: { number: '1,2', first: true, last: true, open: false } },
+				{
+					ending: {
+						number: '1,2',
+						first: true,
+						last: true,
+						open: false,
+						hidden: false,
+					},
+				},
 			])[0]?.volta?.label,
 		).toBe('1. 2.');
 	});

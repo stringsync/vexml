@@ -57,10 +57,13 @@ export class BarlineTranslator {
 			// says, so only three or more is worth printing.
 			repeatTimesLabel:
 				repeatEnd && repeatTimes && repeatTimes > 2 ? `${repeatTimes}x` : null,
-			volta: ending && {
-				type: this.voltaType(ending),
-				label: this.voltaLabel(ending.number),
-			},
+			volta:
+				ending && !ending.hidden
+					? {
+							type: this.voltaType(ending),
+							label: this.voltaLabel(ending.number),
+						}
+					: null,
 		}));
 	}
 

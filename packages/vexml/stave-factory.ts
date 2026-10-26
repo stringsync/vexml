@@ -65,6 +65,12 @@ export class StaveFactory {
 				visible: line >= hiddenAbove && line < hiddenAbove + staveLines,
 			});
 		}
+		// staff-details print-object="no" hides the lines; clef, key and notes stay.
+		if (measure.getStaffDetails(staffNumber)?.printObject === false) {
+			for (let line = 0; line < 5; line++) {
+				stave.setConfigForLine(line, { visible: false });
+			}
+		}
 		return { stave, isTab, tabLines };
 	}
 

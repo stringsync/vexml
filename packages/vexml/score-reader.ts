@@ -1018,7 +1018,11 @@ export class ScoreReader {
 		const read = measures.map((measure) => this.readBarlines(measure));
 		const out: MeasureRepeat[] = [];
 		let open: string | null = null;
+		let hidden = false;
 		for (const [i, r] of read.entries()) {
+			if (r.started !== null) {
+				hidden = r.startHidden;
+			}
 			// A measure with no `start` of its own inherits the run already open over it.
 			const number: string | null = r.started ?? open;
 			const first = number !== null && open === null;
@@ -1037,6 +1041,7 @@ export class ScoreReader {
 								number,
 								first,
 								last,
+								hidden,
 								// An ending closes with a down hook only when something jumps back from it, or
 								// when the piece stops there. `discontinue` asks for an open bracket outright;
 								// otherwise the backward repeat is the signal: a final ending runs on into
@@ -1334,6 +1339,7 @@ export class ScoreReader {
 			repeatEnd: false,
 			repeatTimes: null,
 			started: null,
+			startHidden: false,
 			closed: null,
 		};
 		for (const barline of measure.barlines) {
@@ -1346,6 +1352,9 @@ export class ScoreReader {
 			const ending = barline.ending;
 			if (ending?.type === 'start') {
 				read.started = ending.number;
+				read.startHidden = barline
+					.childrenNamed('ending')
+					.some((el) => el.getAttribute('print-object') === 'no');
 			} else if (ending) {
 				read.closed = ending.type;
 			}
@@ -1581,6 +1590,8 @@ export type MeasureEnding = {
 	last: boolean;
 	/** The bracket stays open on the right, with no down hook. */
 	open: boolean;
+	/** `<ending print-object="no">` on the run's start: it still plays, but no bracket is drawn. */
+	hidden: boolean;
 };
 
 type BarlineRead = {
@@ -1588,5 +1599,7 @@ type BarlineRead = {
 	repeatEnd: boolean;
 	repeatTimes: number | null;
 	started: string | null;
+	/** The starting `<ending print-object="no">`: the bracket is not drawn. */
+	startHidden: boolean;
 	closed: 'stop' | 'discontinue' | null;
 };

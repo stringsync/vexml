@@ -758,6 +758,20 @@ describe('render', () => {
 		);
 	});
 
+	// Treble stave, 4/4: print-dot, print-leger, print-lyric, notations and ending print-object, and
+	// staff-details print-object, each hidden on part of a measure.
+	// - M1: dotted quarter + eighth twice; the first dot has print-dot="no", so only the second shows.
+	// - M2: C4 and A5 with ledger lines, then the same pair with print-leger="no" and no ledger lines.
+	// - M3: four "la" lyrics; the second and fourth have print-lyric="no" and print nothing.
+	// - M4: two staccato notes, then two whose <notations print-object="no"> hides the dots.
+	// - M5-6: a first-ending bracket with a repeat, then a second ending with print-object="no": no bracket.
+	// - M7: staff-details print-object="no": the staff lines are gone, the clef and notes remain.
+	it.concurrent('renders print_object.png', async () => {
+		expect(await testing.render('print_object.musicxml')).toMatchScreenshot(
+			'print_object.png',
+		);
+	});
+
 	// A colored Beethoven lied (color.xml M1-2): a vocal treble stave over a piano grand
 	// staff, 3/4 in three flats, with MusicXML's own color attribute on individual elements.
 	// This is NOT colors.png, which tests the vexml-wide fonts.notation.color CONFIG. Here the

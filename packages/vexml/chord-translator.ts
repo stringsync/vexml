@@ -141,6 +141,7 @@ export class ChordTranslator {
 		this.addAccidentals(staveNote, chord);
 		this.addParentheses(staveNote, chord);
 		this.addDots(staveNote, lead);
+		this.hideLedgerLines(staveNote, lead);
 		this.applyStemNone(staveNote, lead);
 		this.addSlashNoteheads(staveNote, chord);
 		this.notations.attach(staveNote, chord);
@@ -396,7 +397,18 @@ export class ChordTranslator {
 		});
 	}
 
+	/* print-leger="no": the notehead sits off the stave without its ledger lines. */
+	private hideLedgerLines(staveNote: StaveNote, note: Note): void {
+		if (note.getAttribute('print-leger') === 'no') {
+			staveNote.drawLedgerLines = () => {};
+		}
+	}
+
 	private addDots(staveNote: StaveNote, note: Note): void {
+		// print-dot="no" keeps the duration but draws no augmentation dot.
+		if (note.getAttribute('print-dot') === 'no') {
+			return;
+		}
 		for (let i = 0; i < note.dots; i++) {
 			Dot.buildAndAttach([staveNote], { all: true });
 		}
