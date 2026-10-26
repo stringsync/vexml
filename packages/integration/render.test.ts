@@ -1583,6 +1583,29 @@ describe('render', () => {
 		).toMatchScreenshot('repeats_single_measure.png');
 	});
 
+	// Treble stave, 4/4, a whole C5 per measure: winged repeat signs (`<repeat winged>`) and
+	// volta brackets shaped by `<ending end-length>` and `<ending text-x>`. Wings reach from
+	// the sign's thick line over its dots, above the top staff line and below the bottom one.
+	// - M1: forward repeat, straight wings: one slanted stroke each way, as heavy as the line.
+	// - M2: backward repeat, curved wings: the line bends over to the left, tapering like a
+	//   bracket's curl.
+	// - M3: plain measure, so the next sign stands alone.
+	// - M4: forward repeat, double-straight wings: a second stroke from the thin line.
+	// - M5: backward repeat, double-curved wings, back to back with M6's forward repeat.
+	// - M6: forward repeat, curved wings reaching right from the shared line M5 closes on,
+	//   so that boundary draws an X of curls; it closes with a plain backward repeat, back
+	//   to back with M7's.
+	// - M7: plain forward repeat, no wings.
+	// - M8: ending "1." with end-length 30: both jogs reach three staff spaces down, and
+	//   text-x 20 sets its label two staff spaces in from the bracket's start.
+	// - M9: ending "2." with end-length 8: short jogs, and text-x 0 puts the label flush
+	//   against the left jog.
+	it.concurrent('renders repeats_geometry.png', async () => {
+		expect(await testing.render('repeats_geometry.musicxml')).toMatchScreenshot(
+			'repeats_geometry.png',
+		);
+	});
+
 	// Treble stave, common time: a repeat block NESTED inside another, each with its own pair
 	// of alternative endings. repeats.musicxml covers back-to-back blocks and up to three
 	// endings but never nesting. One whole note per measure, ascending C5 to A5, so only the

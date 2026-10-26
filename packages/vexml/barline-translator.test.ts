@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { Volta } from 'vexflow/core';
 import { BarlineTranslator, NO_DECORATION } from './barline-translator';
-import type { MeasureRepeat } from './score-reader';
+import { type MeasureRepeat, NO_BARLINE_GEOMETRY } from './score-reader';
 
 describe('BarlineTranslator', () => {
 	const translator = new BarlineTranslator();
@@ -15,6 +15,7 @@ describe('BarlineTranslator', () => {
 				repeatEnd: false,
 				repeatTimes: null,
 				ending: null,
+				geometry: NO_BARLINE_GEOMETRY,
 				...repeat,
 			})),
 		);
@@ -68,9 +69,9 @@ describe('BarlineTranslator', () => {
 				},
 			},
 		]);
-		expect(first?.volta).toEqual({ type: Volta.type.BEGIN, label: '1.' });
-		expect(mid?.volta).toEqual({ type: Volta.type.MID, label: '1.' });
-		expect(last?.volta).toEqual({ type: Volta.type.END, label: '1.' });
+		expect(first?.volta?.type).toBe(Volta.type.BEGIN);
+		expect(mid?.volta?.type).toBe(Volta.type.MID);
+		expect(last?.volta?.type).toBe(Volta.type.END);
 	});
 
 	it('closes a one-measure ending with both hooks', () => {
@@ -85,8 +86,8 @@ describe('BarlineTranslator', () => {
 						hidden: false,
 					},
 				},
-			])[0]?.volta,
-		).toEqual({ type: Volta.type.BEGIN_END, label: '2.' });
+			])[0]?.volta?.type,
+		).toBe(Volta.type.BEGIN_END);
 	});
 
 	it('keeps a discontinued ending hookless on the right', () => {
@@ -101,8 +102,8 @@ describe('BarlineTranslator', () => {
 						hidden: false,
 					},
 				},
-			])[0]?.volta,
-		).toEqual({ type: Volta.type.MID, label: '2.' });
+			])[0]?.volta?.type,
+		).toBe(Volta.type.MID);
 	});
 
 	it('prints an ending number list with dots after each pass', () => {
@@ -119,5 +120,35 @@ describe('BarlineTranslator', () => {
 				},
 			])[0]?.volta?.label,
 		).toBe('1. 2.');
+	});
+
+	it('carries the jogs, label offset and wings through', () => {
+		const [decoration] = decorations([
+			{
+				repeatEnd: true,
+				geometry: {
+					beginWinged: 'none',
+					endWinged: 'curved',
+					startJog: 30,
+					endJog: 20,
+					textX: 8,
+				},
+				ending: {
+					number: '1',
+					first: true,
+					last: true,
+					open: false,
+					hidden: false,
+				},
+			},
+		]);
+		expect(decoration?.endWinged).toBe('curved');
+		expect(decoration?.volta).toEqual({
+			type: Volta.type.BEGIN_END,
+			label: '1.',
+			startJog: 30,
+			endJog: 20,
+			textX: 8,
+		});
 	});
 });

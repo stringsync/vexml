@@ -1778,6 +1778,7 @@ export class ScoreReader {
 				repeatBegin: r.repeatBegin,
 				repeatEnd: r.repeatEnd,
 				repeatTimes: r.repeatTimes,
+				geometry: r.geometry,
 				ending:
 					number === null
 						? null
@@ -2375,25 +2376,45 @@ export class ScoreReader {
 			started: null,
 			startHidden: false,
 			closed: null,
+			geometry: { ...NO_BARLINE_GEOMETRY },
 		};
 		for (const barline of measure.barlines) {
+			const winged = this.wingedOf(barline.childrenNamed('repeat')[0]);
 			if (barline.repeat === 'forward') {
 				read.repeatBegin = true;
+				read.geometry.beginWinged = winged;
 			} else if (barline.repeat === 'backward') {
 				read.repeatEnd = true;
 				read.repeatTimes = barline.repeatTimes;
+				read.geometry.endWinged = winged;
 			}
 			const ending = barline.ending;
+			const endingElement = barline.childrenNamed('ending')[0];
+			const jog = this.tenthsOf(endingElement, 'end-length');
 			if (ending?.type === 'start') {
 				read.started = ending.number;
-				read.startHidden = barline
-					.childrenNamed('ending')
-					.some((el) => el.getAttribute('print-object') === 'no');
+				read.startHidden = endingElement?.getAttribute('print-object') === 'no';
+				read.geometry.startJog = jog;
+				read.geometry.textX = this.tenthsOf(endingElement, 'text-x');
 			} else if (ending) {
 				read.closed = ending.type;
+				read.geometry.endJog = jog;
 			}
 		}
 		return read;
+	}
+
+	/* A `<repeat winged>`, or 'none' (the MusicXML default) when absent or unknown. */
+	private wingedOf(repeat: MElement | undefined): Winged {
+		const value = repeat?.getAttribute('winged');
+		return WINGED.find((w) => w === value) ?? 'none';
+	}
+
+	/* A tenths attribute, or null when absent or not a number. */
+	private tenthsOf(element: MElement | undefined, name: string): number | null {
+		const raw = element?.getAttribute(name);
+		const value = raw == null ? Number.NaN : Number(raw);
+		return Number.isFinite(value) ? value : null;
 	}
 }
 
@@ -2922,6 +2943,43 @@ export type MeasureRepeat = {
 	repeatTimes: number | null;
 	/** The ending (volta) run covering this measure, or null when it's outside one. */
 	ending: MeasureEnding | null;
+	/** How this measure's own repeat signs and ending bracket are shaped. */
+	geometry: BarlineGeometry;
+};
+
+/** The `<repeat winged>` values: extensions above and below a repeat sign's thick line. */
+export const WINGED = [
+	'none',
+	'straight',
+	'curved',
+	'double-straight',
+	'double-curved',
+] as const;
+export type Winged = (typeof WINGED)[number];
+
+/**
+ * The shape attributes on one measure's `<repeat>` and `<ending>` elements. Each is read
+ * off the measure's own barlines: an ending's start jog and label offset sit on its
+ * `start`, its end jog on its `stop`, so the run's first and last measures carry them.
+ * Lengths are in tenths; null means the attribute is absent.
+ */
+export type BarlineGeometry = {
+	beginWinged: Winged;
+	endWinged: Winged;
+	/** `end-length` on this measure's `start` ending: the bracket's left jog. */
+	startJog: number | null;
+	/** `end-length` on this measure's `stop` ending: the bracket's right jog. */
+	endJog: number | null;
+	/** `text-x` on this measure's `start` ending: the label's x from the bracket's start. */
+	textX: number | null;
+};
+
+export const NO_BARLINE_GEOMETRY: BarlineGeometry = {
+	beginWinged: 'none',
+	endWinged: 'none',
+	startJog: null,
+	endJog: null,
+	textX: null,
 };
 
 export type MeasureEnding = {
@@ -2945,6 +3003,7 @@ type BarlineRead = {
 	/** The starting `<ending print-object="no">`: the bracket is not drawn. */
 	startHidden: boolean;
 	closed: 'stop' | 'discontinue' | null;
+	geometry: BarlineGeometry;
 };
 
 /* The sign a beat-level span draws on a beat, in place of that beat's notes (see noteStyleOf). */

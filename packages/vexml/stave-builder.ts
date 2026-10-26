@@ -15,6 +15,7 @@ import {
 	VOLTA_LABEL_DROP,
 	VOLTA_STAVE_GAP,
 } from './constants';
+import { EndingVolta } from './ending-volta';
 import { ExtendedTimeSignature } from './extended-time-signature';
 import type { Gaps } from './gaps';
 import { GroupTimeSignature } from './group-time-signature';
@@ -217,10 +218,12 @@ export class StaveBuilder {
 		const voltaBase = stave.getYForLine(0) - VOLTA_STAVE_GAP;
 		const voltaTop = voltaBase - (this.voltaLifts.get(column.systemIndex) ?? 0);
 		if (volta && column.staveRow === 0) {
-			stave.setVoltaType(
-				volta.type,
-				volta.label,
-				voltaTop - stave.getYForTopText(stave.getNumLines()),
+			stave.addModifier(
+				new EndingVolta(
+					volta,
+					stave.getX(),
+					voltaTop - stave.getYForTopText(stave.getNumLines()),
+				),
 			);
 		}
 

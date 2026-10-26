@@ -343,6 +343,31 @@ describe('ScoreReader', () => {
 		});
 	});
 
+	it('reads repeat wings and each ending edge its own jog and label offset', async () => {
+		const result = await repeatsOf(
+			scoreOf(
+				'<barline location="left"><repeat direction="forward" winged="curved"/><ending number="1" type="start" end-length="30" text-x="12"/></barline>',
+				'<barline location="right"><ending number="1" type="stop" end-length="8"/><repeat direction="backward" winged="bogus"/></barline>',
+			),
+		);
+		expect(result.map((r) => r.geometry)).toEqual([
+			{
+				beginWinged: 'curved',
+				endWinged: 'none',
+				startJog: 30,
+				endJog: null,
+				textX: 12,
+			},
+			{
+				beginWinged: 'none',
+				endWinged: 'none',
+				startJog: null,
+				endJog: 8,
+				textX: null,
+			},
+		]);
+	});
+
 	it('closes the bar with words written after its last note, binding them to no note', async () => {
 		const reader = new ScoreReader(new DynamicGlyphs());
 		const words = (text: string) =>

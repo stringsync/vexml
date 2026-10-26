@@ -155,10 +155,10 @@ are picked by hand.
 | `end-line` | ignored | a verse sits on one baseline per system; nothing to break |
 | `end-paragraph` | ignored | a verse sits on one baseline per system; nothing to break |
 | `ending` | drawn | `repeats.musicxml`: volta brackets |
-| `ending@end-length` | missing | task #38; volta hook length fixed; mdom raw only |
+| `ending@end-length` | drawn | `repeats_geometry.musicxml` M8-9: each jog's length, from its own start or stop |
 | `ending@number` | drawn | `repeats.musicxml`: volta labels |
 | `ending@print-object` | drawn | `print_object.musicxml` M5-6; a hidden bracket still plays its jumps |
-| `ending@text-x` | missing | task #38; volta label offset ignored; mdom raw only |
+| `ending@text-x` | drawn | `repeats_geometry.musicxml` M8-9: the label's offset from the bracket's start |
 | `ending@type` | drawn | `repeats.musicxml`: start and stop hooks; a discontinue close leaves the right end open |
 | `ensemble` | ignored | sound only (instrument definition) |
 | `except-voice` | drawn | `measure_style.musicxml` M15; the named voices keep their notes under a beat repeat or slash (`measure-repeat` has no such child) |
@@ -420,7 +420,7 @@ are picked by hand.
 | `repeat@after-jump` | missing | task #13; mdom raw only |
 | `repeat@direction` | drawn | `repeats_multiple_times.musicxml`, `repeats_notation_and_tab.musicxml`: forward and backward dots |
 | `repeat@times` | drawn | `repeats_multiple_times.musicxml`: Nx label and pass count |
-| `repeat@winged` | missing | task #38; winged repeat brackets not drawn; mdom raw only |
+| `repeat@winged` | drawn | `repeats_geometry.musicxml` M1-6: straight, curved, double-straight and double-curved wings over the system |
 | `rest` | drawn | `rest.musicxml` |
 | `rf` | drawn | `dynamics.musicxml` |
 | `rfz` | drawn | `dynamics.musicxml` |

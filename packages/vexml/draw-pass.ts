@@ -54,6 +54,7 @@ import type { MeasureBox, ScoreLayout } from './layout-planner';
 import { LyricPlacer } from './lyric-placer';
 import { MeasureStyleDrawer } from './measure-style-drawer';
 import type { PaintList } from './paint-list';
+import { RepeatWingDrawer } from './repeat-wing-drawer';
 import type {
 	DirectionLineSpan,
 	MeasureStyleMark,
@@ -269,6 +270,7 @@ export class DrawPass {
 	// and measure-number furniture. Fed the measure loop's locals through staveColumn().
 	private readonly staveBuilder: StaveBuilder;
 	private readonly measureStyleDrawer: MeasureStyleDrawer;
+	private readonly repeatWingDrawer: RepeatWingDrawer;
 	// Translates each staff's mdom voices into the vexflow voices the formatter consumes,
 	// filling byLead/byTabLead as the notes are built; a part's cross-staff beams are built
 	// once all of its staves are pending.
@@ -446,6 +448,7 @@ export class DrawPass {
 			{},
 		);
 		this.measureStyleDrawer = new MeasureStyleDrawer(this.context);
+		this.repeatWingDrawer = new RepeatWingDrawer(this.context);
 		this.staveBuilder = new StaveBuilder(
 			this.signatures,
 			reader,
@@ -1028,6 +1031,9 @@ export class DrawPass {
 			stave.setContext(this.context).draw();
 			this.connectorDrawer.drawCustomBarline(stave, this.connectorColumn());
 		}
+		if (!this.edge) {
+			this.drawRepeatWings(m);
+		}
 		// The consolidated multi-bar rests, over the staves that just landed; they paint
 		// onto staff lines, so the staves have to be on the canvas first.
 		for (const { stave, count, symbols } of this.columnMultiRests) {
@@ -1075,6 +1081,30 @@ export class DrawPass {
 	 * line: vexflow hangs the "1." label below it. The result also grows systemHighestTop,
 	 * so the headroom reserved above this system covers where the bracket is about to move.
 	 */
+	/* The wings of this column's winged repeat signs, spanning the whole system, registered as
+	 * obstacles so above- and below-stave text placed later clears them. */
+	private drawRepeatWings(m: number): void {
+		if (!this.systemTop || !this.systemBottom) {
+			return;
+		}
+		const wings = this.repeatWingDrawer.draw(
+			this.systemTop,
+			this.systemBottom,
+			{
+				begin: this.decoration.beginWinged,
+				end: this.decoration.endWinged,
+				reopen: this.repeatBoth
+					? (this.decorations[m + 1]?.beginWinged ?? 'none')
+					: 'none',
+			},
+		);
+		for (const rect of wings) {
+			this.collisionResolver.add({ rect, kind: 'annotation' });
+			this.pageTop = Math.min(this.pageTop, rect.y);
+			this.pageBottom = Math.max(this.pageBottom, rect.y + rect.h);
+		}
+	}
+
 	private observeVoltaLift(): void {
 		const box = this.columnVoltaBox;
 		if (!box) {

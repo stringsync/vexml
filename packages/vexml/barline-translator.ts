@@ -1,5 +1,5 @@
 import { Barline, BarNote, Volta } from 'vexflow/core';
-import type { MeasureEnding, MeasureRepeat } from './score-reader';
+import type { MeasureEnding, MeasureRepeat, Winged } from './score-reader';
 
 /*
  * The MusicXML <bar-style> values vexflow's own Barline draws. Its Barline knows four
@@ -26,13 +26,28 @@ export type BarlineDecoration = {
 	/** The printed "Nx" label of a repeat played more than twice, or null. A plain backward
 	 * repeat means two passes and is drawn by its dots alone. */
 	repeatTimesLabel: string | null;
-	volta: { type: number; label: string } | null;
+	/** The wings on the opening and closing repeat signs ('none' for plain ones). */
+	beginWinged: Winged;
+	endWinged: Winged;
+	volta: VoltaDecoration | null;
+};
+
+/** A measure's piece of a volta bracket: its vexflow Volta type, printed label, and the
+ * document's own jog lengths and label offset in tenths (null for the defaults). */
+export type VoltaDecoration = {
+	type: number;
+	label: string;
+	startJog: number | null;
+	endJog: number | null;
+	textX: number | null;
 };
 
 export const NO_DECORATION: BarlineDecoration = {
 	repeatBegin: false,
 	repeatEnd: false,
 	repeatTimesLabel: null,
+	beginWinged: 'none',
+	endWinged: 'none',
 	volta: null,
 };
 
@@ -50,21 +65,30 @@ export class BarlineTranslator {
 	 * form.
 	 */
 	decorations(repeats: readonly MeasureRepeat[]): BarlineDecoration[] {
-		return repeats.map(({ repeatBegin, repeatEnd, repeatTimes, ending }) => ({
-			repeatBegin,
-			repeatEnd,
-			// <repeat times> counts the total passes, and two is what a repeat sign already
-			// says, so only three or more is worth printing.
-			repeatTimesLabel:
-				repeatEnd && repeatTimes && repeatTimes > 2 ? `${repeatTimes}x` : null,
-			volta:
-				ending && !ending.hidden
-					? {
-							type: this.voltaType(ending),
-							label: this.voltaLabel(ending.number),
-						}
-					: null,
-		}));
+		return repeats.map(
+			({ repeatBegin, repeatEnd, repeatTimes, ending, geometry }) => ({
+				repeatBegin,
+				repeatEnd,
+				// <repeat times> counts the total passes, and two is what a repeat sign already
+				// says, so only three or more is worth printing.
+				repeatTimesLabel:
+					repeatEnd && repeatTimes && repeatTimes > 2
+						? `${repeatTimes}x`
+						: null,
+				beginWinged: geometry.beginWinged,
+				endWinged: geometry.endWinged,
+				volta:
+					ending && !ending.hidden
+						? {
+								type: this.voltaType(ending),
+								label: this.voltaLabel(ending.number),
+								startJog: geometry.startJog,
+								endJog: geometry.endJog,
+								textX: geometry.textX,
+							}
+						: null,
+			}),
+		);
 	}
 
 	/**
