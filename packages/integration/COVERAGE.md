@@ -16,7 +16,7 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 288 drawn, 69 ignored, 85 missing; vexml draws 288 of the 373 that show on the page (77%).
+Elements: 289 drawn, 69 ignored, 84 missing; vexml draws 289 of the 373 that show on the page (77%).
 Attributes: 83 drawn, 5 ignored, 30 missing.
 
 | Element | Status | Proof or reason |
@@ -215,7 +215,7 @@ Attributes: 83 drawn, 5 ignored, 30 missing.
 | `group-name` | drawn | `structure_part_group_symbols.musicxml` |
 | `group-name-display` | drawn | `structure_part_abbreviations.musicxml`: display-text runs override the name |
 | `group-symbol` | drawn | `structure_part_group_symbols.musicxml` |
-| `group-time` | missing | task #38; one large time signature spanning a group's staves; mdom raw only |
+| `group-time` | drawn | `time_group.musicxml`: one large time signature across the group's staves |
 | `grouping` | ignored | analysis metadata |
 | `half-muted` | drawn | `technical_marks.musicxml` |
 | `hammer-on` | drawn | `tab_hammer_pull.musicxml`: H arc between notes |

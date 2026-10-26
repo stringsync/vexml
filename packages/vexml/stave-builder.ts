@@ -4,6 +4,7 @@ import {
 	MultiMeasureRest,
 	type RenderContext,
 	type Stave,
+	TimeSignature,
 } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import { BAR_STYLE_TYPES, type BarlineDecoration } from './barline-translator';
@@ -16,6 +17,7 @@ import {
 } from './constants';
 import { ExtendedTimeSignature } from './extended-time-signature';
 import type { Gaps } from './gaps';
+import { GroupTimeSignature } from './group-time-signature';
 import { MeasureNumberPlan } from './measure-number-plan';
 import type { MeasureStyleMark, PartGroup, ScoreReader } from './score-reader';
 import type { SignatureTranslator } from './signature-translator';
@@ -43,6 +45,9 @@ export interface StaveColumn {
 	/** Whether this is the score's first measure of music, which prints the time signature.
 	 * Not measure 0 when leading gaps sit before it. */
 	opensScore: boolean;
+	/** The large time signatures of the `<group-time>` groups, by span index, filled by the
+	 * group's first stave and shared by the rest. */
+	groupTimes: Map<number, GroupTimeSignature>;
 	/** Whether this is the last measure DRAWN (it closes with the thin-thick end line). */
 	isLastMeasure: boolean;
 	/** The measure's right <bar-style>, or null when it declares none. */
@@ -71,6 +76,10 @@ export interface StaveColumn {
 export class StaveBuilder {
 	private readonly parts: Part[];
 	private readonly partGroups: PartGroup[];
+	private readonly groupTimeSpans: ReadonlyArray<{
+		fromPart: number;
+		toPart: number;
+	}>;
 	private readonly totalStaves: number;
 	private readonly measureNumbers: MeasureNumberPlan;
 	private readonly textColor: string;
@@ -100,6 +109,7 @@ export class StaveBuilder {
 	) {
 		this.parts = opts.parts;
 		this.partGroups = opts.partGroups;
+		this.groupTimeSpans = opts.groupTimeSpans;
 		this.totalStaves = opts.totalStaves;
 		this.measureNumbers = new MeasureNumberPlan(
 			reader,
@@ -283,6 +293,10 @@ export class StaveBuilder {
 		// <time>, so an unmetered measure is sized by its own content rather than padded out
 		// to four beats. Printing an assumed meter is a convention; spacing to one would be
 		// guessing at the music.
+		const partIndex = this.parts.indexOf(part);
+		const span = this.groupTimeSpans.findIndex(
+			(s) => partIndex >= s.fromPart && partIndex <= s.toPart,
+		);
 		const time = measure.getTime(staffNumber);
 		const timeSpec =
 			this.signatures.timeSignatureSpec(time) ??
@@ -297,16 +311,40 @@ export class StaveBuilder {
 			(column.opensScore || timeSpec !== prevTimeSpec)
 		) {
 			const extended = this.signatures.extendedTimeSpec(time);
-			if (extended) {
-				stave.addModifier(new ExtendedTimeSignature(extended));
+			const make = () =>
+				extended
+					? new ExtendedTimeSignature(extended)
+					: new TimeSignature(timeSpec);
+			if (span >= 0) {
+				// The group's first stave decides what the group prints; the rest reserve the
+				// same room, and the connector draws the one large signature.
+				const group =
+					column.groupTimes.get(span) ??
+					new GroupTimeSignature(
+						make,
+						GroupTimeSignature.scaleFor(
+							this.staves.groupStaveCount(
+								this.parts,
+								this.groupTimeSpans[span] ?? { fromPart: 0, toPart: 0 },
+							),
+						),
+					);
+				column.groupTimes.set(span, group);
+				stave.addModifier(group.placeholder());
+			} else if (extended) {
+				stave.addModifier(make());
 			} else {
 				stave.addTimeSignature(timeSpec);
+			}
+		} else if (span >= 0 && !isTab) {
+			const group = column.groupTimes.get(span);
+			if (group) {
+				stave.addModifier(group.placeholder());
 			}
 		}
 
 		// A gap is non-musical, so it never shows a measure number (its neighbors keep
 		// their own printed numbers; insertion shifts indexes, not labels).
-		const partIndex = this.parts.indexOf(part);
 		const showNumber =
 			!this.gaps.has(m) &&
 			this.measureNumbers.numbers(
@@ -499,6 +537,8 @@ export interface StaveBuilderOptions {
 	parts: Part[];
 	/** The <part-group> spans from the <part-list>, outermost first. Fixed for the score. */
 	partGroups: PartGroup[];
+	/** The part runs whose time signature draws once across them (`<group-time/>`). */
+	groupTimeSpans: ReadonlyArray<{ fromPart: number; toPart: number }>;
 	totalStaves: number;
 	/** When to print measure numbers above the staff. */
 	measureNumbering: MeasureNumbering;

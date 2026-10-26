@@ -57,7 +57,7 @@ Two rules cut across the draw stage:
 
 ## Staves, measures, and the frame
 
-- **Stave, clef, key signature, time signature**: `stave-builder.ts`, `stave-factory.ts` (the stave itself and a system's opening clef/key), `signature-translator.ts`, `extended-time-signature.ts` (note-glyph denominators and interchangeable meters), `custom-key-signature.ts`, `score-reader.ts`
+- **Stave, clef, key signature, time signature**: `stave-builder.ts`, `stave-factory.ts` (the stave itself and a system's opening clef/key), `signature-translator.ts`, `extended-time-signature.ts` (note-glyph denominators and interchangeable meters), `group-time-signature.ts` (`<group-time/>`: placeholders reserve room per stave, the connector drawer draws one scaled signature; spans from `score-reader.ts` `groupTimeSpans`), `custom-key-signature.ts`, `score-reader.ts`
 - **Mid-measure clef changes, mid-measure barlines**: `score-reader.ts` (`midClefsOf`, `midBarlinesOf`), `voice-translator.ts`, `signature-translator.ts`, `barline-translator.ts`, `layout-planner.ts`
 - **Barlines, repeat signs, volta (ending) brackets**: `barline-translator.ts`, `stave-builder.ts`, `connector-drawer.ts`, `score-reader.ts`
 - **Fermatas on a barline**: `score-reader.ts` (`barlineFermatasOf`), `direction-placer.ts` (`drawBarlineFermata`), `fermata-glyphs.ts`

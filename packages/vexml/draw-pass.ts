@@ -47,6 +47,7 @@ import {
 	type RawMeasure,
 	type RawNote,
 } from './geometry-collector';
+import type { GroupTimeSignature } from './group-time-signature';
 import { HeaderPlan } from './header-plan';
 import { Ink } from './ink';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
@@ -317,6 +318,10 @@ export class DrawPass {
 	private partStaves: Array<{ top: Stave; bottom: Stave } | undefined> = [];
 	// The <part-group> spans from the <part-list>, outermost first. Fixed for the score.
 	private readonly partGroups: PartGroup[];
+	// The part runs whose time signature draws once, large, across them (<group-time/>).
+	private readonly groupTimeSpans: Array<{ fromPart: number; toPart: number }>;
+	// This column's large time signatures by span index, filled as its staves are built.
+	private groupTimes = new Map<number, GroupTimeSignature>();
 	// The vertical furniture joining staves: braces/brackets and part-group connectors at a
 	// system start, barline runs across parts, custom/repeat barlines. Fed the measure
 	// loop's locals through connectorColumn().
@@ -392,6 +397,7 @@ export class DrawPass {
 		this.parts = this.score.parts;
 		this.gaps = configuredGaps.byMeasureIndex();
 		this.partGroups = this.reader.partGroups(this.score);
+		this.groupTimeSpans = this.reader.groupTimeSpans(this.score);
 		this.header = HeaderPlan.of(config, this.reader.headerOf(this.score));
 		this.headerWidth = width;
 		// A notation+TAB pair split across parts is ONE instrument that just happens to be
@@ -404,6 +410,7 @@ export class DrawPass {
 		this.connectorDrawer = new ConnectorDrawer(context, reader, this.staves, {
 			parts: this.parts,
 			partGroups: this.partGroups,
+			groupTimeSpans: this.groupTimeSpans,
 			barlineBreaks,
 			totalStaves: this.totalStaves,
 			labelIndent: this.labelIndent,
@@ -450,6 +457,7 @@ export class DrawPass {
 			{
 				parts: this.parts,
 				partGroups: this.partGroups,
+				groupTimeSpans: this.groupTimeSpans,
 				totalStaves: this.totalStaves,
 				measureNumbering,
 				textColor: this.textColor,
@@ -757,6 +765,7 @@ export class DrawPass {
 		this.figuredBassTasks = [];
 		this.harpPedalTasks = [];
 		this.partStaves = [];
+		this.groupTimes = new Map();
 
 		for (const [partIndex, part] of this.parts.entries()) {
 			// The staves this part actually renders: with showTabs/showNotation off, its
@@ -1129,6 +1138,7 @@ export class DrawPass {
 			systemTop: this.systemTop,
 			systemBottom: this.systemBottom,
 			partStaves: this.partStaves,
+			groupTimes: this.groupTimes,
 		};
 	}
 
@@ -1145,6 +1155,7 @@ export class DrawPass {
 			staveRow: this.staveRow,
 			isSystemStart: this.isSystemStart,
 			opensScore: this.opensScore,
+			groupTimes: this.groupTimes,
 			isLastMeasure: this.isLastMeasure,
 			barStyle: this.barStyle,
 			decoration: this.decoration,

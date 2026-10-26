@@ -1368,19 +1368,11 @@ export class ScoreReader {
 	}
 
 	/*
-	 * The `<part-group>` spans that draw a connector, outermost first.
-	 *
-	 * Groups whose `<group-symbol>` is absent or 'none' draw nothing: they exist only to carry
-	 * a name or a barline rule (see barlineBreaks), and one spanning a single part has nothing
-	 * to connect. 'square' falls back to 'bracket' (vexflow draws no squared bracket).
-	 *
-	 * Names resolve through the display override and print-object (see labelOf), and
-	 * the abbreviation is the short name later systems carry.
+	 * The `<part-group type="start">` markers per first part, in document order, which is
+	 * outermost first, the order Score.partGroups lists spans that open on the same part. They
+	 * carry what mdom has no getter for: display-text overrides and `<group-time>`.
 	 */
-	partGroups(score: Score): PartGroup[] {
-		// The start markers per first part, in document order, which is outermost first, the
-		// order Score.partGroups lists spans that open on the same part. They carry the
-		// display-text overrides mdom has no getter for.
+	private groupStarts(score: Score): Map<number, MElement[]> {
 		const starts = new Map<number, MElement[]>();
 		let partCount = 0;
 		for (const node of score.child('part-list')?.children ?? []) {
@@ -1396,6 +1388,40 @@ export class ScoreReader {
 				starts.set(partCount, [...(starts.get(partCount) ?? []), node]);
 			}
 		}
+		return starts;
+	}
+
+	/*
+	 * The part runs of the `<part-group>`s that declare `<group-time/>`: their time signature
+	 * prints once, large, across the whole run instead of on each stave. A group spanning a
+	 * single part has nothing to span and keeps the plain signature.
+	 */
+	groupTimeSpans(score: Score): Array<{ fromPart: number; toPart: number }> {
+		const starts = this.groupStarts(score);
+		const taken = new Map<number, number>();
+		return score.partGroups.flatMap((group) => {
+			const k = taken.get(group.fromPartIndex) ?? 0;
+			taken.set(group.fromPartIndex, k + 1);
+			const marker = starts.get(group.fromPartIndex)?.[k];
+			return marker?.child('group-time') &&
+				group.toPartIndex > group.fromPartIndex
+				? [{ fromPart: group.fromPartIndex, toPart: group.toPartIndex }]
+				: [];
+		});
+	}
+
+	/*
+	 * The `<part-group>` spans that draw a connector, outermost first.
+	 *
+	 * Groups whose `<group-symbol>` is absent or 'none' draw nothing: they exist only to carry
+	 * a name or a barline rule (see barlineBreaks), and one spanning a single part has nothing
+	 * to connect. 'square' falls back to 'bracket' (vexflow draws no squared bracket).
+	 *
+	 * Names resolve through the display override and print-object (see labelOf), and
+	 * the abbreviation is the short name later systems carry.
+	 */
+	partGroups(score: Score): PartGroup[] {
+		const starts = this.groupStarts(score);
 		const taken = new Map<number, number>();
 		return score.partGroups
 			.flatMap((group) => {

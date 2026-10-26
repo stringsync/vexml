@@ -611,6 +611,14 @@ describe('render', () => {
 		);
 	});
 
+	// A <part-group> with <group-time/> draws one large time signature across its four parts'
+	// staves, again at the meter change, while the part outside the group keeps its own.
+	it.concurrent('renders time_group.png', async () => {
+		expect(await testing.render('time_group.musicxml')).toMatchScreenshot(
+			'time_group.png',
+		);
+	});
+
 	// Treble stave, <time symbol="single-number">: three beamed eighths under a signature that
 	// prints the beat count alone, one large "3" centered between the lines the stacked
 	// numerals would occupy, with no "8" beneath it.

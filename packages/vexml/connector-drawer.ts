@@ -12,6 +12,7 @@ import {
 	LABEL_GAP,
 	PART_GROUP_STEP,
 } from './constants';
+import type { GroupTimeSignature } from './group-time-signature';
 import type { PartGroup, ScoreReader } from './score-reader';
 import type { StavePlan } from './stave-plan';
 
@@ -44,6 +45,8 @@ export interface ConnectorColumn {
 	 * from one part's top stave to another's bottom. Sparse: a part with no measure here
 	 * has no entry. */
 	partStaves: ReadonlyArray<{ top: Stave; bottom: Stave } | undefined>;
+	/** The column's large `<group-time>` signatures by span index. */
+	groupTimes?: ReadonlyMap<number, GroupTimeSignature>;
 }
 
 /*
@@ -55,6 +58,10 @@ export interface ConnectorColumn {
 export class ConnectorDrawer {
 	private readonly parts: Part[];
 	private readonly partGroups: PartGroup[];
+	private readonly groupTimeSpans: ReadonlyArray<{
+		fromPart: number;
+		toPart: number;
+	}>;
 	private readonly barlineBreaks: ReadonlySet<number>;
 	private readonly totalStaves: number;
 	private readonly labelIndent: number;
@@ -73,6 +80,7 @@ export class ConnectorDrawer {
 	) {
 		this.parts = opts.parts;
 		this.partGroups = opts.partGroups;
+		this.groupTimeSpans = opts.groupTimeSpans ?? [];
 		this.barlineBreaks = opts.barlineBreaks;
 		this.totalStaves = opts.totalStaves;
 		this.labelIndent = opts.labelIndent;
@@ -89,6 +97,7 @@ export class ConnectorDrawer {
 	 * system start, and a closing line at the system end.
 	 */
 	drawConnectors(column: ConnectorColumn): void {
+		this.drawGroupTimes(column);
 		const { systemTop, systemBottom } = column;
 		if (systemTop && systemBottom && this.totalStaves > 1) {
 			if (column.isSystemStart) {
@@ -139,6 +148,21 @@ export class ConnectorDrawer {
 					.setType(type)
 					.setContext(this.context)
 					.draw();
+			}
+		}
+	}
+
+	/*
+	 * Each `<group-time/>` group's one large time signature, stood across its staves from the
+	 * first part's top stave to the last part's bottom one.
+	 */
+	private drawGroupTimes(column: ConnectorColumn): void {
+		for (const [index, sign] of column.groupTimes ?? []) {
+			const span = this.groupTimeSpans[index];
+			const top = column.partStaves[span?.fromPart ?? -1]?.top;
+			const bottom = column.partStaves[span?.toPart ?? -1]?.bottom;
+			if (top && bottom) {
+				sign.draw(this.context, top, bottom);
 			}
 		}
 	}
@@ -458,6 +482,8 @@ export interface ConnectorDrawerOptions {
 	parts: Part[];
 	/** The <part-group> spans from the <part-list>, outermost first. Fixed for the score. */
 	partGroups: PartGroup[];
+	/** The part runs whose time signature draws once across them (`<group-time/>`). */
+	groupTimeSpans?: ReadonlyArray<{ fromPart: number; toPart: number }>;
 	/** Part boundaries a barline must not run across (<group-barline>no</group-barline>).
 	 * Empty for every score that doesn't ask, which is nearly all of them. */
 	barlineBreaks: ReadonlySet<number>;

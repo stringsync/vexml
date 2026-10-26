@@ -109,6 +109,16 @@ export class StavePlan {
 		return visible;
 	}
 
+	/** How many staves the parts in the run `from..to` (inclusive) render. */
+	groupStaveCount(
+		parts: readonly Part[],
+		span: { fromPart: number; toPart: number },
+	): number {
+		return parts
+			.slice(span.fromPart, span.toPart + 1)
+			.reduce((n, part) => n + this.visibleNumbers(part).length, 0);
+	}
+
 	/** True when every stave the part renders is tablature. */
 	isAllTab(part: Part): boolean {
 		const staves = this.visibleNumbers(part);
