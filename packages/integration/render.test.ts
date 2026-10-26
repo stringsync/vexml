@@ -2466,6 +2466,16 @@ describe('render', () => {
 		);
 	});
 
+	// Treble stave, 4/4: cue notes, printed at cue size and silent in playback.
+	// - M1: C5, a <cue/> D5, an E5 with <type size="cue"> and F5; the cue D5 and E5 are small.
+	// - M2: a beamed cue eighth pair (F#5 with its accidental, A5), a dotted cue quarter on
+	//   ledger lines (A3) and a cue half chord (C5/E5), all small.
+	it.concurrent('renders cue_notes.png', async () => {
+		expect(await testing.render('cue_notes.musicxml')).toMatchScreenshot(
+			'cue_notes.png',
+		);
+	});
+
 	// Treble stave, 4/4: arpeggios from <notations><arpeggiate>, drawn as a wavy vertical
 	// line down the left side of a C5/E5/G5 whole-note chord (one chord per measure). The
 	// stroke spans all three noteheads; direction sets the arrowhead.

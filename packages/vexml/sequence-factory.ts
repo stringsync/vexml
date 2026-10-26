@@ -1,6 +1,7 @@
 import type { Note as MNote, Part } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
 import { DEFAULT_TEMPO_BPM } from './constants';
+import { isCueNote } from './cue-note';
 import type { Gaps } from './gaps';
 import { MeasureSequenceIterator } from './measure-sequence-iterator';
 import { MNoteFacts } from './mnote-facts';
@@ -610,7 +611,8 @@ export class SequenceFactory {
 		const notes: SequenceNote[] = [];
 		for (const rn of geometry.notes) {
 			const note = notesByMnote.get(rn.mnote);
-			if (!note) {
+			// A cue note holds its place in the measure but makes no sound.
+			if (!note || isCueNote(rn.mnote)) {
 				continue;
 			}
 			let played: Span | null;

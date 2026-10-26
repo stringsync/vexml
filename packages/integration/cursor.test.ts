@@ -14,6 +14,22 @@ const GLIDE_GAPS = [
 ];
 
 describe('cursor', () => {
+	// cue_notes.musicxml M1 holds C5, a <cue/> D5, an E5 sized as a cue that still sounds, and
+	// F5. The <cue/> note makes no sound, so it never gets a step.
+	it.concurrent('a cue note has no step but a sized-cue note keeps its own', async () => {
+		const { result } = await testing.eval(
+			'cue_notes.musicxml',
+			{},
+			({ score }) =>
+				score
+					.getSequence()
+					.getSteps()
+					.filter((step) => step.measureIndex === 0)
+					.flatMap((step) => step.active.map((n) => n.getPitch())),
+		);
+		expect(result).toEqual(['C/5', 'E/5', 'F/5']);
+	});
+
 	// M5's piano triplets share a column with ordinary bass notes/rests. Each
 	// onset must advance to the right, and its midpoint must glide toward the
 	// next onset instead of falling back to the barline.

@@ -10,6 +10,7 @@ import {
 	Stem,
 	VexFlow,
 } from 'vexflow/core';
+import { isCueSized } from './cue-note';
 import type { DurationTranslator } from './duration-translator';
 import { InvisibleStaveNote } from './invisible-stave-note';
 import type { NotationTranslator } from './notation-translator';
@@ -130,7 +131,13 @@ export class ChordTranslator {
 			this.addAccidentals(grace, chord);
 			return grace;
 		}
-		const staveNote = new NoteClass(this.struct(chord, clef, opts));
+		// A cue note is a GraceNote that keeps its duration: vexflow sizes the head, stem,
+		// flag, dots and accidentals of that category at two thirds, and a grace group is
+		// only formed by VoiceTranslator for notes mdom calls grace.
+		const staveNote =
+			lead.printObject && isCueSized(lead)
+				? new GraceNote(this.struct(chord, clef, opts))
+				: new NoteClass(this.struct(chord, clef, opts));
 		this.addAccidentals(staveNote, chord);
 		this.addParentheses(staveNote, chord);
 		this.addDots(staveNote, lead);

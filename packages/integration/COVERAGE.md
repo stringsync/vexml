@@ -16,8 +16,8 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 216 drawn, 69 ignored, 157 missing; vexml draws 216 of the 373 that show on the page (58%).
-Attributes: 39 drawn, 3 ignored, 73 missing.
+Elements: 217 drawn, 69 ignored, 156 missing; vexml draws 217 of the 373 that show on the page (58%).
+Attributes: 40 drawn, 3 ignored, 72 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -118,7 +118,7 @@ Attributes: 39 drawn, 3 ignored, 73 missing.
 | `credit-symbol` | missing | task #8; mdom raw only |
 | `credit-type` | missing | task #8; mdom raw only |
 | `credit-words` | missing | task #8; mdom raw only |
-| `cue` | missing | task #9; mdom raw only |
+| `cue` | drawn | `cue_notes.musicxml`: cue-size note, silent in playback |
 | `damp` | missing | task #15; mdom raw only |
 | `damp-all` | missing | task #15; mdom raw only |
 | `dashes` | drawn | `direction_lines.musicxml` |
@@ -555,7 +555,7 @@ Attributes: 39 drawn, 3 ignored, 73 missing.
 | `turn` | drawn | `ornaments.musicxml` |
 | `turn@slash` | drawn | `ornaments.musicxml` |
 | `type` | drawn | `note.musicxml` |
-| `type@size` | missing | task #9; mdom raw only |
+| `type@size` | drawn | `cue_notes.musicxml`: size="cue" and "grace-cue" draw small; size="large" is not drawn larger |
 | `unpitched` | drawn | `percussion_display_step.musicxml` |
 | `unstress` | drawn | `articulations_extended.musicxml` |
 | `up-bow` | drawn | `technical_marks.musicxml` |
