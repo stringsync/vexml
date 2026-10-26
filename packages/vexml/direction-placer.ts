@@ -590,29 +590,34 @@ export class DirectionPlacer {
 	 * Typed in the notation font like a segno, so it clears notes and text the same way.
 	 */
 	private drawBarlineFermata(f: BarlineFermataTask, systemIndex: number): void {
-		const faces = FERMATA_GLYPHS[f.shape] ?? NORMAL_FERMATA_GLYPHS;
-		const x =
-			f.location === 'right'
-				? f.stave.getX() + f.stave.getWidth()
-				: f.stave.getX();
-		const placed = this.drawWords(
-			f.stave,
-			faces[f.inverted ? 1 : 0],
-			x,
-			f.inverted ? 'below' : 'above',
-			{
-				font: this.notationFont,
-				size: BARLINE_FERMATA_FONT_SIZE,
-				italic: false,
-				color: this.notationColor,
-				align: 'center',
-				inkHeight: BARLINE_FERMATA_INK_HEIGHT,
-				hangs: f.inverted,
-			},
-		);
-		if (!f.inverted) {
-			this.reporter.growPageTop(placed.y);
-			this.spill.growDecorationTop(systemIndex, placed.y);
+		this.context.openGroup('vexml-fermata');
+		try {
+			const faces = FERMATA_GLYPHS[f.shape] ?? NORMAL_FERMATA_GLYPHS;
+			const x =
+				f.location === 'right'
+					? f.stave.getX() + f.stave.getWidth()
+					: f.stave.getX();
+			const placed = this.drawWords(
+				f.stave,
+				faces[f.inverted ? 1 : 0],
+				x,
+				f.inverted ? 'below' : 'above',
+				{
+					font: this.notationFont,
+					size: BARLINE_FERMATA_FONT_SIZE,
+					italic: false,
+					color: this.notationColor,
+					align: 'center',
+					inkHeight: BARLINE_FERMATA_INK_HEIGHT,
+					hangs: f.inverted,
+				},
+			);
+			if (!f.inverted) {
+				this.reporter.growPageTop(placed.y);
+				this.spill.growDecorationTop(systemIndex, placed.y);
+			}
+		} finally {
+			this.context.closeGroup();
 		}
 	}
 
@@ -629,58 +634,67 @@ export class DirectionPlacer {
 		format?: TextFormat,
 		position?: DocumentPosition | null,
 	): number {
-		const size = REHEARSAL_FONT_SIZE * (format?.scale ?? 1);
-		this.context.save();
-		const font = {
-			family: this.faceOf(format),
-			size,
-			weight: (format?.bold ?? true) ? 'bold' : 'normal',
-			fontStyle: format?.italic ? 'italic' : 'normal',
-		};
-		this.context.setFont(font.family, font.size, font.weight, font.fontStyle);
-		this.context.setFillStyle(this.textColor);
-		this.context.setStrokeStyle(this.textColor);
-		const enclosure = format?.enclosure ?? 'rectangle';
-		const formatted = new FormattedText(this.context, text, {
-			font,
-			textHeight: size,
-			underline: format?.underline,
-			rotation: format?.rotation,
-			enclosure: enclosure === 'none' ? undefined : enclosure,
-			padding: REHEARSAL_PADDING,
-			enclosureWidth: this.enclosureWidth,
-		});
-		// The document's default-y is the text's baseline; the box reaches its padding under it.
-		const doc = this.followed(position);
-		const x =
-			this.xOf(stave, stave.getX(), doc) -
-			alignOffsetOf(format?.align, formatted.w);
-		const bottom =
-			doc?.y === null || doc?.y === undefined
-				? stave.getYForLine(0) - REHEARSAL_Y_OFFSET - (doc?.dy ?? 0)
-				: this.baselineOf(stave, 0, doc) +
-					(enclosure === 'none' ? 0 : REHEARSAL_PADDING);
-		const top =
-			doc?.y != null && format?.valign
-				? formatted.topAt(this.baselineOf(stave, 0, doc), format.valign)
-				: bottom - formatted.h;
-		const natural = new Rect(x, top, formatted.w, formatted.h);
-		const band = this.reporter.rowOf(stave);
-		const placed = this.collisionResolver.nudgeInsideX(
-			this.pins(doc)
-				? natural
-				: this.collisionResolver.liftClear(natural, REHEARSAL_NOTE_CLEARANCE, {
-						kinds: TEXT_CLEAR_KINDS,
-						band,
-					}),
-			this.scratchViewport,
-			PAGE_MARGIN_X,
-		);
-		this.reporter.recordAnnotationSpill(stave, placed);
-		formatted.draw(placed);
-		this.context.restore();
-		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
-		return placed.y;
+		this.context.openGroup('vexml-rehearsal');
+		try {
+			const size = REHEARSAL_FONT_SIZE * (format?.scale ?? 1);
+			this.context.save();
+			const font = {
+				family: this.faceOf(format),
+				size,
+				weight: (format?.bold ?? true) ? 'bold' : 'normal',
+				fontStyle: format?.italic ? 'italic' : 'normal',
+			};
+			this.context.setFont(font.family, font.size, font.weight, font.fontStyle);
+			this.context.setFillStyle(this.textColor);
+			this.context.setStrokeStyle(this.textColor);
+			const enclosure = format?.enclosure ?? 'rectangle';
+			const formatted = new FormattedText(this.context, text, {
+				font,
+				textHeight: size,
+				underline: format?.underline,
+				rotation: format?.rotation,
+				enclosure: enclosure === 'none' ? undefined : enclosure,
+				padding: REHEARSAL_PADDING,
+				enclosureWidth: this.enclosureWidth,
+			});
+			// The document's default-y is the text's baseline; the box reaches its padding under it.
+			const doc = this.followed(position);
+			const x =
+				this.xOf(stave, stave.getX(), doc) -
+				alignOffsetOf(format?.align, formatted.w);
+			const bottom =
+				doc?.y === null || doc?.y === undefined
+					? stave.getYForLine(0) - REHEARSAL_Y_OFFSET - (doc?.dy ?? 0)
+					: this.baselineOf(stave, 0, doc) +
+						(enclosure === 'none' ? 0 : REHEARSAL_PADDING);
+			const top =
+				doc?.y != null && format?.valign
+					? formatted.topAt(this.baselineOf(stave, 0, doc), format.valign)
+					: bottom - formatted.h;
+			const natural = new Rect(x, top, formatted.w, formatted.h);
+			const band = this.reporter.rowOf(stave);
+			const placed = this.collisionResolver.nudgeInsideX(
+				this.pins(doc)
+					? natural
+					: this.collisionResolver.liftClear(
+							natural,
+							REHEARSAL_NOTE_CLEARANCE,
+							{
+								kinds: TEXT_CLEAR_KINDS,
+								band,
+							},
+						),
+				this.scratchViewport,
+				PAGE_MARGIN_X,
+			);
+			this.reporter.recordAnnotationSpill(stave, placed);
+			formatted.draw(placed);
+			this.context.restore();
+			this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
+			return placed.y;
+		} finally {
+			this.context.closeGroup();
+		}
 	}
 
 	/*
@@ -754,82 +768,91 @@ export class DirectionPlacer {
 	 * notes are formatted so the anchor x and the note extents are real.
 	 */
 	private drawTempo(stave: Stave, task: TempoTask): number {
-		// The mark stands on vexflow's top text line, or on the document's baseline.
-		const doc = this.followed(task.position);
-		const baseY = this.baselineOf(stave, stave.getYForTopText(1), doc);
-		// vexflow's StaveTempo.draw reads stave.getModifierXShift(position), which uses the
-		// position enum as an index into the stave's modifier array. ABOVE (the default, 3)
-		// indexes modifiers[3], which is undefined (and throws) on a system-start stave that
-		// re-states a clef but no time signature (begin barline + clef + end barline = 3
-		// modifiers). CENTER (0) points at the always-present begin barline instead, yielding
-		// the same start-of-notes x offset without the out-of-bounds read.
-		const position = 0;
-		const shiftX = stave.getModifierXShift(position);
-		// StaveTempo's font sizes come from vexflow Metrics, which isn't reachable to override,
-		// so shrink the whole mark with a context scale. Scaling multiplies every coordinate by
-		// TEMPO_SCALE, which would also drag the mark up and left; pre-divide the x/y inputs so it
-		// lands back on its original anchor. Internally StaveTempo draws at (this.x + shiftX + 10,
-		// the stave's top-text y + this.yShift); solving s·(passed) = target gives the
-		// compensated inputs below.
-		const anchorX = stave.getX() + shiftX + 10;
-		// `justify` aligns the mark within the measure: left sits it on the anchor, right ends
-		// it at the stave's right edge, center splits the space between. Never left of the anchor.
-		const free =
-			stave.getX() +
-			stave.getWidth() -
-			10 -
-			anchorX -
-			this.tempoLayout(task, anchorX, baseY).rect.w;
-		const targetX = this.xOf(
-			stave,
-			anchorX + Math.max(0, alignOffsetOf(task.justify, free)),
-			doc,
-		);
-		const band = this.reporter.rowOf(stave);
-		const { rect: natural, markWidth } = this.tempoLayout(task, targetX, baseY);
-		const placed = this.pins(doc)
-			? natural
-			: this.collisionResolver.liftClear(natural, TEMPO_NOTE_CLEARANCE, {
-					kinds: TEXT_CLEAR_KINDS,
-					band,
-				});
-		// liftClear only translates, so the box's rise is the mark's y-shift.
-		const shiftY = placed.y - natural.y;
-		this.reporter.recordAnnotationSpill(stave, placed);
-		this.context.save();
-		this.context.scale(TEMPO_SCALE, TEMPO_SCALE);
-		// Everything below is drawn in the scaled space, so its coordinates are pre-divided too.
-		let cursor = targetX / TEMPO_SCALE;
-		const tempo = task.tempo;
-		if (tempo) {
-			new StaveTempo(
-				{
-					duration: tempo.duration,
-					dots: tempo.dots,
-					bpm: tempo.bpm,
-					// StaveTempo prints the bpm only when there is no second unit, so the
-					// metric-modulation form drops the number on its own.
-					duration2: tempo.duration2 ?? undefined,
-					dots2: tempo.dots2,
-					parenthesis: tempo.parenthesis,
-				},
-				cursor - shiftX - 10,
-				(baseY + shiftY) / TEMPO_SCALE - stave.getYForTopText(1),
-			)
-				.setStave(stave)
-				.setPosition(position)
-				.setContext(this.context)
-				.draw();
-			cursor += markWidth;
+		this.context.openGroup('vexml-tempo');
+		try {
+			// The mark stands on vexflow's top text line, or on the document's baseline.
+			const doc = this.followed(task.position);
+			const baseY = this.baselineOf(stave, stave.getYForTopText(1), doc);
+			// vexflow's StaveTempo.draw reads stave.getModifierXShift(position), which uses the
+			// position enum as an index into the stave's modifier array. ABOVE (the default, 3)
+			// indexes modifiers[3], which is undefined (and throws) on a system-start stave that
+			// re-states a clef but no time signature (begin barline + clef + end barline = 3
+			// modifiers). CENTER (0) points at the always-present begin barline instead, yielding
+			// the same start-of-notes x offset without the out-of-bounds read.
+			const position = 0;
+			const shiftX = stave.getModifierXShift(position);
+			// StaveTempo's font sizes come from vexflow Metrics, which isn't reachable to override,
+			// so shrink the whole mark with a context scale. Scaling multiplies every coordinate by
+			// TEMPO_SCALE, which would also drag the mark up and left; pre-divide the x/y inputs so it
+			// lands back on its original anchor. Internally StaveTempo draws at (this.x + shiftX + 10,
+			// the stave's top-text y + this.yShift); solving s·(passed) = target gives the
+			// compensated inputs below.
+			const anchorX = stave.getX() + shiftX + 10;
+			// `justify` aligns the mark within the measure: left sits it on the anchor, right ends
+			// it at the stave's right edge, center splits the space between. Never left of the anchor.
+			const free =
+				stave.getX() +
+				stave.getWidth() -
+				10 -
+				anchorX -
+				this.tempoLayout(task, anchorX, baseY).rect.w;
+			const targetX = this.xOf(
+				stave,
+				anchorX + Math.max(0, alignOffsetOf(task.justify, free)),
+				doc,
+			);
+			const band = this.reporter.rowOf(stave);
+			const { rect: natural, markWidth } = this.tempoLayout(
+				task,
+				targetX,
+				baseY,
+			);
+			const placed = this.pins(doc)
+				? natural
+				: this.collisionResolver.liftClear(natural, TEMPO_NOTE_CLEARANCE, {
+						kinds: TEXT_CLEAR_KINDS,
+						band,
+					});
+			// liftClear only translates, so the box's rise is the mark's y-shift.
+			const shiftY = placed.y - natural.y;
+			this.reporter.recordAnnotationSpill(stave, placed);
+			this.context.save();
+			this.context.scale(TEMPO_SCALE, TEMPO_SCALE);
+			// Everything below is drawn in the scaled space, so its coordinates are pre-divided too.
+			let cursor = targetX / TEMPO_SCALE;
+			const tempo = task.tempo;
+			if (tempo) {
+				new StaveTempo(
+					{
+						duration: tempo.duration,
+						dots: tempo.dots,
+						bpm: tempo.bpm,
+						// StaveTempo prints the bpm only when there is no second unit, so the
+						// metric-modulation form drops the number on its own.
+						duration2: tempo.duration2 ?? undefined,
+						dots2: tempo.dots2,
+						parenthesis: tempo.parenthesis,
+					},
+					cursor - shiftX - 10,
+					(baseY + shiftY) / TEMPO_SCALE - stave.getYForTopText(1),
+				)
+					.setStave(stave)
+					.setPosition(position)
+					.setContext(this.context)
+					.draw();
+				cursor += markWidth;
+			}
+			for (const modulation of task.modulations) {
+				const group = new MetronomeGlyph(modulation);
+				group.draw(this.context, cursor, (baseY + shiftY) / TEMPO_SCALE);
+				cursor += group.width + TEMPO_MARK_GAP;
+			}
+			this.context.restore();
+			this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
+			return placed.y;
+		} finally {
+			this.context.closeGroup();
 		}
-		for (const modulation of task.modulations) {
-			const group = new MetronomeGlyph(modulation);
-			group.draw(this.context, cursor, (baseY + shiftY) / TEMPO_SCALE);
-			cursor += group.width + TEMPO_MARK_GAP;
-		}
-		this.context.restore();
-		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
-		return placed.y;
 	}
 
 	/*
@@ -926,69 +949,74 @@ export class DirectionPlacer {
 		placement: Placement,
 		position?: DocumentPosition | null,
 	): number {
-		const stave = staveNote.getStave();
-		if (!stave) {
-			return Infinity;
+		this.context.openGroup('vexml-harmony');
+		try {
+			const stave = staveNote.getStave();
+			if (!stave) {
+				return Infinity;
+			}
+			const below = placement === 'below';
+			// The document's position, when followed: its default-y is the symbol's baseline.
+			const doc = this.followed(position);
+			const x = this.xOf(stave, staveNote.getAbsoluteX(), doc);
+			this.context.save();
+			this.context.setFillStyle(this.textColor);
+			const { width, height, depth } = this.harmonyLayout(symbol, x, 0, false);
+			const band = this.reporter.rowOf(stave);
+			let placed: Rect;
+			if (below) {
+				const baseline = this.baselineOf(
+					stave,
+					stave.getBottomLineY() + WORDS_Y_OFFSET + height,
+					doc,
+				);
+				const natural = new Rect(x, baseline - height, width, height + depth);
+				placed = this.pins(doc)
+					? natural
+					: this.collisionResolver.dropClear(natural, WORDS_NOTE_CLEARANCE, {
+							kinds: TEXT_CLEAR_KINDS,
+							band,
+						});
+				this.reporter.recordAnnotationDrop(stave, placed);
+				this.harmonyLayout(symbol, placed.x, placed.y + height, true);
+			} else {
+				// Pad the box below the text baseline so liftClear's downward probe reaches a
+				// notehead sitting just under the baseline (a note in the top stave space) and
+				// nudges the symbol clear of it, leaving a little breathing room. The drawn
+				// baseline stays HARMONY_PADDING above the box bottom, so with nothing in the way
+				// the symbol keeps its default position.
+				const baseY = this.baselineOf(
+					stave,
+					stave.getYForLine(0) - HARMONY_Y_OFFSET,
+					doc,
+				);
+				const natural = new Rect(
+					x,
+					baseY - height,
+					width,
+					height + depth + HARMONY_PADDING,
+				);
+				placed = this.pins(doc)
+					? natural
+					: this.collisionResolver.liftClear(natural, HARMONY_NOTE_CLEARANCE, {
+							kinds: TEXT_CLEAR_KINDS,
+							band,
+						});
+				this.reporter.recordAnnotationSpill(stave, placed);
+				this.harmonyLayout(
+					symbol,
+					placed.x,
+					placed.bottom - HARMONY_PADDING - depth,
+					true,
+				);
+			}
+			this.context.restore();
+			// Register the placed symbol so a later annotation in this system stacks clear of it.
+			this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
+			return placed.y;
+		} finally {
+			this.context.closeGroup();
 		}
-		const below = placement === 'below';
-		// The document's position, when followed: its default-y is the symbol's baseline.
-		const doc = this.followed(position);
-		const x = this.xOf(stave, staveNote.getAbsoluteX(), doc);
-		this.context.save();
-		this.context.setFillStyle(this.textColor);
-		const { width, height, depth } = this.harmonyLayout(symbol, x, 0, false);
-		const band = this.reporter.rowOf(stave);
-		let placed: Rect;
-		if (below) {
-			const baseline = this.baselineOf(
-				stave,
-				stave.getBottomLineY() + WORDS_Y_OFFSET + height,
-				doc,
-			);
-			const natural = new Rect(x, baseline - height, width, height + depth);
-			placed = this.pins(doc)
-				? natural
-				: this.collisionResolver.dropClear(natural, WORDS_NOTE_CLEARANCE, {
-						kinds: TEXT_CLEAR_KINDS,
-						band,
-					});
-			this.reporter.recordAnnotationDrop(stave, placed);
-			this.harmonyLayout(symbol, placed.x, placed.y + height, true);
-		} else {
-			// Pad the box below the text baseline so liftClear's downward probe reaches a
-			// notehead sitting just under the baseline (a note in the top stave space) and
-			// nudges the symbol clear of it, leaving a little breathing room. The drawn
-			// baseline stays HARMONY_PADDING above the box bottom, so with nothing in the way
-			// the symbol keeps its default position.
-			const baseY = this.baselineOf(
-				stave,
-				stave.getYForLine(0) - HARMONY_Y_OFFSET,
-				doc,
-			);
-			const natural = new Rect(
-				x,
-				baseY - height,
-				width,
-				height + depth + HARMONY_PADDING,
-			);
-			placed = this.pins(doc)
-				? natural
-				: this.collisionResolver.liftClear(natural, HARMONY_NOTE_CLEARANCE, {
-						kinds: TEXT_CLEAR_KINDS,
-						band,
-					});
-			this.reporter.recordAnnotationSpill(stave, placed);
-			this.harmonyLayout(
-				symbol,
-				placed.x,
-				placed.bottom - HARMONY_PADDING - depth,
-				true,
-			);
-		}
-		this.context.restore();
-		// Register the placed symbol so a later annotation in this system stacks clear of it.
-		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
-		return placed.y;
 	}
 
 	/*
@@ -1076,71 +1104,76 @@ export class DirectionPlacer {
 		placement: Placement,
 		style: SideTextStyle,
 	): Rect {
-		const below = placement === 'below';
-		const baseY = below
-			? stave.getBottomLineY() + WORDS_Y_OFFSET
-			: stave.getYForLine(0) - WORDS_Y_OFFSET;
-		// A note's x is its left edge, where its noteheads begin. Text centered under a note
-		// (a dynamic, a bass figure) centers on the noteheads instead, or it reads as
-		// belonging half a notehead to the left.
-		let anchorX =
-			typeof anchor === 'number'
-				? anchor
-				: (anchor?.getAbsoluteX() ?? stave.getNoteStartX());
-		if (anchor instanceof StaveNote && style.align === 'center') {
-			anchorX = (anchor.getNoteHeadBeginX() + anchor.getNoteHeadEndX()) / 2;
+		this.context.openGroup('vexml-words');
+		try {
+			const below = placement === 'below';
+			const baseY = below
+				? stave.getBottomLineY() + WORDS_Y_OFFSET
+				: stave.getYForLine(0) - WORDS_Y_OFFSET;
+			// A note's x is its left edge, where its noteheads begin. Text centered under a note
+			// (a dynamic, a bass figure) centers on the noteheads instead, or it reads as
+			// belonging half a notehead to the left.
+			let anchorX =
+				typeof anchor === 'number'
+					? anchor
+					: (anchor?.getAbsoluteX() ?? stave.getNoteStartX());
+			if (anchor instanceof StaveNote && style.align === 'center') {
+				anchorX = (anchor.getNoteHeadBeginX() + anchor.getNoteHeadEndX()) / 2;
+			}
+			this.context.save();
+			const font = {
+				family: style.font,
+				size: style.size,
+				weight: style.bold ? 'bold' : 'normal',
+				fontStyle: style.italic ? 'italic' : 'normal',
+			};
+			this.context.setFont(font.family, font.size, font.weight, font.fontStyle);
+			this.context.setFillStyle(style.color ?? this.textColor);
+			this.context.setStrokeStyle(style.color ?? this.textColor);
+			const formatted = new FormattedText(this.context, text, {
+				font,
+				textHeight: style.inkHeight ?? style.size,
+				hangs: style.hangs,
+				underline: style.underline,
+				rotation: style.rotation,
+				enclosure: style.enclosure,
+				padding: ENCLOSURE_PADDING,
+				enclosureWidth: this.enclosureWidth,
+			});
+			const { w, h } = formatted;
+			// vexml's own box stands on (or hangs from) baseY; the document's default-y, when
+			// followed, is the baseline instead, and its relative offsets move whichever applies.
+			const doc = this.followed(style.position);
+			const top = below ? baseY : baseY - h;
+			const baseline = this.baselineOf(stave, style.hangs ? top : top + h, doc);
+			let textTop = style.hangs ? baseline : baseline - h;
+			if (doc?.y != null && style.valign) {
+				textTop = formatted.topAt(baseline, style.valign);
+			}
+			const natural = new Rect(
+				this.xOf(stave, anchorX, doc) - alignOffsetOf(style.align, w),
+				textTop,
+				w,
+				h,
+			);
+			const placed = this.placeBeside(
+				stave,
+				natural,
+				typeof anchor !== 'number' && doc?.x == null,
+				{
+					below,
+					kinds: style.clearsHairpins ? WORDS_CLEAR_KINDS : TEXT_CLEAR_KINDS,
+					sideGap: style.sideGap,
+					pinned: this.pins(doc),
+					pinnedX: this.pins(doc) && doc?.x != null,
+				},
+			);
+			formatted.draw(placed);
+			this.context.restore();
+			return placed;
+		} finally {
+			this.context.closeGroup();
 		}
-		this.context.save();
-		const font = {
-			family: style.font,
-			size: style.size,
-			weight: style.bold ? 'bold' : 'normal',
-			fontStyle: style.italic ? 'italic' : 'normal',
-		};
-		this.context.setFont(font.family, font.size, font.weight, font.fontStyle);
-		this.context.setFillStyle(style.color ?? this.textColor);
-		this.context.setStrokeStyle(style.color ?? this.textColor);
-		const formatted = new FormattedText(this.context, text, {
-			font,
-			textHeight: style.inkHeight ?? style.size,
-			hangs: style.hangs,
-			underline: style.underline,
-			rotation: style.rotation,
-			enclosure: style.enclosure,
-			padding: ENCLOSURE_PADDING,
-			enclosureWidth: this.enclosureWidth,
-		});
-		const { w, h } = formatted;
-		// vexml's own box stands on (or hangs from) baseY; the document's default-y, when
-		// followed, is the baseline instead, and its relative offsets move whichever applies.
-		const doc = this.followed(style.position);
-		const top = below ? baseY : baseY - h;
-		const baseline = this.baselineOf(stave, style.hangs ? top : top + h, doc);
-		let textTop = style.hangs ? baseline : baseline - h;
-		if (doc?.y != null && style.valign) {
-			textTop = formatted.topAt(baseline, style.valign);
-		}
-		const natural = new Rect(
-			this.xOf(stave, anchorX, doc) - alignOffsetOf(style.align, w),
-			textTop,
-			w,
-			h,
-		);
-		const placed = this.placeBeside(
-			stave,
-			natural,
-			typeof anchor !== 'number' && doc?.x == null,
-			{
-				below,
-				kinds: style.clearsHairpins ? WORDS_CLEAR_KINDS : TEXT_CLEAR_KINDS,
-				sideGap: style.sideGap,
-				pinned: this.pins(doc),
-				pinnedX: this.pins(doc) && doc?.x != null,
-			},
-		);
-		formatted.draw(placed);
-		this.context.restore();
-		return placed;
 	}
 
 	private xOf(
@@ -1195,100 +1228,106 @@ export class DirectionPlacer {
 	 * <other-percussion> or scordatura is upright words.
 	 */
 	private drawPictogram(task: PictogramTask): Rect {
-		const { stave, symbol, anchor, placement } = task;
-		if (symbol.kind === 'text') {
-			return this.drawWords(stave, symbol.text, anchor, placement, {
-				font: this.labelFont,
-				size: WORDS_FONT_SIZE,
-				italic: false,
-				clearsHairpins: true,
-			});
-		}
-		const below = placement === 'below';
-		const x = anchor?.getAbsoluteX() ?? stave.getNoteStartX();
-		const metrics = (glyph: string) =>
-			new Element()
-				.setFont(this.notationFont, PICTOGRAM_FONT_SIZE)
-				.setText(glyph)
-				.getTextMetrics();
-		const ink = symbol.kind === 'glyph' ? metrics(symbol.glyph) : null;
-		const layers =
-			ink && symbol.kind === 'glyph'
-				? [{ glyph: symbol.glyph, ink, x: 0, y: 0 }]
-				: [];
-		if (ink && symbol.kind === 'glyph' && symbol.enclosure) {
-			const { head, tip, glyphs } = symbol.enclosure;
-			const upright = metrics(head);
-			// SMuFL's round head has the upright beater's width. Even the left/right
-			// variants lean diagonally: the head stays at the upper outer corner.
-			const diameter =
-				upright.actualBoundingBoxLeft + upright.actualBoundingBoxRight;
-			const left = -ink.actualBoundingBoxLeft;
-			const right = ink.actualBoundingBoxRight;
-			const top = -ink.actualBoundingBoxAscent;
-			const bottom = ink.actualBoundingBoxDescent;
-			let cx = (left + right) / 2;
-			if (tip === 2) {
-				cx = left + diameter / 2;
-			} else if (tip === 3) {
-				cx = right - diameter / 2;
-			}
-			const cy = tip === 1 ? bottom - diameter / 2 : top + diameter / 2;
-			for (const glyph of glyphs) {
-				const mark = metrics(glyph);
-				layers.push({
-					glyph,
-					ink: mark,
-					x:
-						cx - (mark.actualBoundingBoxRight - mark.actualBoundingBoxLeft) / 2,
-					y:
-						cy +
-						(mark.actualBoundingBoxAscent - mark.actualBoundingBoxDescent) / 2,
+		this.context.openGroup('vexml-pictogram');
+		try {
+			const { stave, symbol, anchor, placement } = task;
+			if (symbol.kind === 'text') {
+				return this.drawWords(stave, symbol.text, anchor, placement, {
+					font: this.labelFont,
+					size: WORDS_FONT_SIZE,
+					italic: false,
+					clearsHairpins: true,
 				});
 			}
-		}
-		const left = Math.min(
-			...layers.map((l) => l.x - l.ink.actualBoundingBoxLeft),
-		);
-		const top = Math.min(
-			...layers.map((l) => l.y - l.ink.actualBoundingBoxAscent),
-		);
-		const w = ink
-			? Math.max(...layers.map((l) => l.x + l.ink.actualBoundingBoxRight)) -
-				left
-			: ACCORDION_REGISTRATION_SIZE;
-		const h = ink
-			? Math.max(...layers.map((l) => l.y + l.ink.actualBoundingBoxDescent)) -
-				top
-			: ACCORDION_REGISTRATION_SIZE;
-		const y = below
-			? stave.getBottomLineY() + WORDS_Y_OFFSET
-			: stave.getYForLine(0) - WORDS_Y_OFFSET - h;
-		const placed = this.placeBeside(stave, new Rect(x, y, w, h), true, {
-			below,
-			kinds: WORDS_CLEAR_KINDS,
-		});
-		this.context.save();
-		this.context.setFillStyle(this.notationColor);
-		this.context.setStrokeStyle(this.notationColor);
-		if (ink && symbol.kind === 'glyph') {
-			this.context.setFont(this.notationFont, PICTOGRAM_FONT_SIZE);
-			for (const layer of layers) {
-				this.context.fillText(
-					layer.glyph,
-					placed.x - left + layer.x,
-					placed.y - top + layer.y,
-				);
+			const below = placement === 'below';
+			const x = anchor?.getAbsoluteX() ?? stave.getNoteStartX();
+			const metrics = (glyph: string) =>
+				new Element()
+					.setFont(this.notationFont, PICTOGRAM_FONT_SIZE)
+					.setText(glyph)
+					.getTextMetrics();
+			const ink = symbol.kind === 'glyph' ? metrics(symbol.glyph) : null;
+			const layers =
+				ink && symbol.kind === 'glyph'
+					? [{ glyph: symbol.glyph, ink, x: 0, y: 0 }]
+					: [];
+			if (ink && symbol.kind === 'glyph' && symbol.enclosure) {
+				const { head, tip, glyphs } = symbol.enclosure;
+				const upright = metrics(head);
+				// SMuFL's round head has the upright beater's width. Even the left/right
+				// variants lean diagonally: the head stays at the upper outer corner.
+				const diameter =
+					upright.actualBoundingBoxLeft + upright.actualBoundingBoxRight;
+				const left = -ink.actualBoundingBoxLeft;
+				const right = ink.actualBoundingBoxRight;
+				const top = -ink.actualBoundingBoxAscent;
+				const bottom = ink.actualBoundingBoxDescent;
+				let cx = (left + right) / 2;
+				if (tip === 2) {
+					cx = left + diameter / 2;
+				} else if (tip === 3) {
+					cx = right - diameter / 2;
+				}
+				const cy = tip === 1 ? bottom - diameter / 2 : top + diameter / 2;
+				for (const glyph of glyphs) {
+					const mark = metrics(glyph);
+					layers.push({
+						glyph,
+						ink: mark,
+						x:
+							cx -
+							(mark.actualBoundingBoxRight - mark.actualBoundingBoxLeft) / 2,
+						y:
+							cy +
+							(mark.actualBoundingBoxAscent - mark.actualBoundingBoxDescent) /
+								2,
+					});
+				}
 			}
-		} else if (symbol.kind === 'accordion') {
-			new AccordionRegistrationGlyph(symbol, ACCORDION_REGISTRATION_SIZE).draw(
-				this.context,
-				placed.x,
-				placed.y,
+			const left = Math.min(
+				...layers.map((l) => l.x - l.ink.actualBoundingBoxLeft),
 			);
+			const top = Math.min(
+				...layers.map((l) => l.y - l.ink.actualBoundingBoxAscent),
+			);
+			const w = ink
+				? Math.max(...layers.map((l) => l.x + l.ink.actualBoundingBoxRight)) -
+					left
+				: ACCORDION_REGISTRATION_SIZE;
+			const h = ink
+				? Math.max(...layers.map((l) => l.y + l.ink.actualBoundingBoxDescent)) -
+					top
+				: ACCORDION_REGISTRATION_SIZE;
+			const y = below
+				? stave.getBottomLineY() + WORDS_Y_OFFSET
+				: stave.getYForLine(0) - WORDS_Y_OFFSET - h;
+			const placed = this.placeBeside(stave, new Rect(x, y, w, h), true, {
+				below,
+				kinds: WORDS_CLEAR_KINDS,
+			});
+			this.context.save();
+			this.context.setFillStyle(this.notationColor);
+			this.context.setStrokeStyle(this.notationColor);
+			if (ink && symbol.kind === 'glyph') {
+				this.context.setFont(this.notationFont, PICTOGRAM_FONT_SIZE);
+				for (const layer of layers) {
+					this.context.fillText(
+						layer.glyph,
+						placed.x - left + layer.x,
+						placed.y - top + layer.y,
+					);
+				}
+			} else if (symbol.kind === 'accordion') {
+				new AccordionRegistrationGlyph(
+					symbol,
+					ACCORDION_REGISTRATION_SIZE,
+				).draw(this.context, placed.x, placed.y);
+			}
+			this.context.restore();
+			return placed;
+		} finally {
+			this.context.closeGroup();
 		}
-		this.context.restore();
-		return placed;
 	}
 
 	/*

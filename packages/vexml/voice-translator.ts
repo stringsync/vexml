@@ -1,7 +1,7 @@
 import type { Chord, Note } from '@stringsync/mdom';
 import {
 	type BarNote,
-	ClefNote,
+	type ClefNote,
 	GhostNote,
 	type GraceNote,
 	GraceNoteGroup,
@@ -14,6 +14,7 @@ import {
 } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import type { Appearance } from './appearance';
+import { AttributedClefNote } from './attributed-clef-note';
 import type { BarlineTranslator } from './barline-translator';
 import type { ChordTranslator } from './chord-translator';
 import {
@@ -111,7 +112,7 @@ export class VoiceTranslator {
 			) {
 				activeClef = change.clef;
 				if (drawMidClefs) {
-					const note = new ClefNote(
+					const note = new AttributedClefNote(
 						change.clef,
 						change.size.size,
 						change.annotation,

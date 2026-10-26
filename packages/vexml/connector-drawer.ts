@@ -184,10 +184,15 @@ export class ConnectorDrawer {
 			// so the bracket sits just outside the system line with a small gap, then
 			// restore.
 			systemTop.setX(column.measureX - BRACKET_X_SHIFT);
-			new StaveConnector(systemTop, systemBottom)
-				.setType('bracket')
-				.setContext(this.context)
-				.draw();
+			this.context.openGroup('vexml-staveconnector');
+			try {
+				new StaveConnector(systemTop, systemBottom)
+					.setType('bracket')
+					.setContext(this.context)
+					.draw();
+			} finally {
+				this.context.closeGroup();
+			}
 			systemTop.setX(column.measureX);
 		}
 		this.drawPartGroupConnectors(column);
@@ -214,10 +219,15 @@ export class ConnectorDrawer {
 		if (symbol === 'bracket') {
 			top.setX(measureX - BRACKET_X_SHIFT);
 		}
-		new StaveConnector(top, bottom)
-			.setType(symbol)
-			.setContext(this.context)
-			.draw();
+		this.context.openGroup('vexml-staveconnector');
+		try {
+			new StaveConnector(top, bottom)
+				.setType(symbol)
+				.setContext(this.context)
+				.draw();
+		} finally {
+			this.context.closeGroup();
+		}
 		top.setX(measureX);
 	}
 
@@ -278,39 +288,44 @@ export class ConnectorDrawer {
 	 * `stave` (see CUSTOM_BAR_STYLES). A style vexflow does draw is a no-op here: it was
 	 * already drawn with the stave, or with the mid-measure BarNote standing in its place. */
 	paintBarStyle(stave: Stave, x: number, barStyle: string): void {
-		const style = CUSTOM_BAR_STYLES[barStyle];
-		if (!style) {
-			return;
-		}
-		const spacing = stave.getSpacingBetweenLines();
-		const topY = stave.getTopLineTopY();
-		// A `span` is measured in staff spaces down from the top line; without one the bar
-		// runs the full stave height, the way every vexflow barline does.
-		const [from, to] = style.span ?? [0, 0];
-		const y = style.span ? topY + from * spacing : topY;
-		const height = style.span
-			? (to - from) * spacing
-			: stave.getBottomLineBottomY() - topY;
-		this.context.save();
-		this.context.setFillStyle(this.notationColor);
-		for (const [offset, width] of barRects(style.bars, style.gap)) {
-			if (style.dash) {
-				// fillRect can't dash, so walk the stroke in [on, off] runs. The last run is
-				// clipped to the bar's height rather than overshooting past the bottom line.
-				const [on, off] = style.dash;
-				for (let dy = 0; dy < height; dy += on + off) {
-					this.context.fillRect(
-						x + offset,
-						y + dy,
-						width,
-						Math.min(on, height - dy),
-					);
-				}
-			} else {
-				this.context.fillRect(x + offset, y, width, height);
+		this.context.openGroup('vexml-stavebarline');
+		try {
+			const style = CUSTOM_BAR_STYLES[barStyle];
+			if (!style) {
+				return;
 			}
+			const spacing = stave.getSpacingBetweenLines();
+			const topY = stave.getTopLineTopY();
+			// A `span` is measured in staff spaces down from the top line; without one the bar
+			// runs the full stave height, the way every vexflow barline does.
+			const [from, to] = style.span ?? [0, 0];
+			const y = style.span ? topY + from * spacing : topY;
+			const height = style.span
+				? (to - from) * spacing
+				: stave.getBottomLineBottomY() - topY;
+			this.context.save();
+			this.context.setFillStyle(this.notationColor);
+			for (const [offset, width] of barRects(style.bars, style.gap)) {
+				if (style.dash) {
+					// fillRect can't dash, so walk the stroke in [on, off] runs. The last run is
+					// clipped to the bar's height rather than overshooting past the bottom line.
+					const [on, off] = style.dash;
+					for (let dy = 0; dy < height; dy += on + off) {
+						this.context.fillRect(
+							x + offset,
+							y + dy,
+							width,
+							Math.min(on, height - dy),
+						);
+					}
+				} else {
+					this.context.fillRect(x + offset, y, width, height);
+				}
+			}
+			this.context.restore();
+		} finally {
+			this.context.closeGroup();
 		}
-		this.context.restore();
 	}
 
 	/*
@@ -369,10 +384,15 @@ export class ConnectorDrawer {
 					BRACKET_X_SHIFT -
 					PART_GROUP_STEP * (maxDepth - group.depth),
 			);
-			new StaveConnector(top, bottom)
-				.setType(group.symbol === 'line' ? 'singleLeft' : group.symbol)
-				.setContext(this.context)
-				.draw();
+			this.context.openGroup('vexml-staveconnector');
+			try {
+				new StaveConnector(top, bottom)
+					.setType(group.symbol === 'line' ? 'singleLeft' : group.symbol)
+					.setContext(this.context)
+					.draw();
+			} finally {
+				this.context.closeGroup();
+			}
 			top.setX(column.measureX);
 		}
 	}

@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
+import type { InkMask } from './ink-mask';
 import type { TabPool } from './pool';
 import { tabPools } from './tab-pools';
 import { DEFAULT_WIDTH, MARGIN, PADDING } from './vexml-renderer';
@@ -20,6 +21,7 @@ export interface OsmdApi {
 /** What OSMD exposes to eval fns. */
 export interface OsmdContext {
 	osmd: OsmdApi;
+	inkMasks(): Promise<InkMask[]>;
 	container: HTMLDivElement;
 }
 

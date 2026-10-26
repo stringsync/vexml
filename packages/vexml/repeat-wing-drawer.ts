@@ -38,22 +38,27 @@ export class RepeatWingDrawer {
 		bottom: Stave,
 		wings: { begin: Winged; end: Winged; reopen: Winged },
 	): Rect[] {
-		const begin = this.repeatX(top, StaveModifierPosition.BEGIN, [
-			Barline.type.REPEAT_BEGIN,
-		]);
-		const end = this.repeatX(top, StaveModifierPosition.END, [
-			Barline.type.REPEAT_END,
-			Barline.type.REPEAT_BOTH,
-		]);
-		const boxes: Rect[] = [];
-		if (begin !== null) {
-			boxes.push(...this.drawSign(top, bottom, begin, 1, wings.begin));
+		this.context.openGroup('vexml-repeat-wing');
+		try {
+			const begin = this.repeatX(top, StaveModifierPosition.BEGIN, [
+				Barline.type.REPEAT_BEGIN,
+			]);
+			const end = this.repeatX(top, StaveModifierPosition.END, [
+				Barline.type.REPEAT_END,
+				Barline.type.REPEAT_BOTH,
+			]);
+			const boxes: Rect[] = [];
+			if (begin !== null) {
+				boxes.push(...this.drawSign(top, bottom, begin, 1, wings.begin));
+			}
+			if (end !== null) {
+				boxes.push(...this.drawSign(top, bottom, end, -1, wings.end));
+				boxes.push(...this.drawSign(top, bottom, end, 1, wings.reopen));
+			}
+			return boxes;
+		} finally {
+			this.context.closeGroup();
 		}
-		if (end !== null) {
-			boxes.push(...this.drawSign(top, bottom, end, -1, wings.end));
-			boxes.push(...this.drawSign(top, bottom, end, 1, wings.reopen));
-		}
-		return boxes;
 	}
 
 	/* The x vexflow drew a repeat barline of one of `types` at, or null when there is none. */

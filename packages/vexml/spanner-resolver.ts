@@ -333,7 +333,9 @@ export class SpannerResolver {
 			anchors.byLead,
 			scope,
 		)) {
+			this.context.openGroup('vexml-tie');
 			tie.setContext(this.context).draw();
+			this.context.closeGroup();
 			// A tie off a note above or below the staff arcs further out than the notehead,
 			// and one running to the end of a system stretches that arc over every note to
 			// the barline: the band a hairpin or the neighbouring stave sits in.
@@ -353,7 +355,9 @@ export class SpannerResolver {
 		)) {
 			// drawWithStyle, not draw: Curve.draw never applies its own style, and a
 			// <slur line-type> rides on the element as a lineDash (see buildSlurs).
+			this.context.openGroup('vexml-slur');
 			slur.curve.setContext(this.context).drawWithStyle();
+			this.context.closeGroup();
 			const rect = new Rect(
 				slur.left,
 				slur.top,
@@ -374,14 +378,18 @@ export class SpannerResolver {
 			anchors.byTabLead,
 			scope,
 		)) {
+			this.context.openGroup('vexml-tie');
 			tie.setContext(this.context).draw();
+			this.context.closeGroup();
 		}
 		for (const slide of this.spanners.buildSlides(
 			pool.tabChords,
 			anchors.byTabLead,
 			{ showText: this.showTabSlideText, scope },
 		)) {
+			this.context.openGroup('vexml-slide');
 			slide.setContext(this.context).draw();
+			this.context.closeGroup();
 		}
 		// Standard-notation glissandos/slides (the StaveLine counterpart of the tab
 		// slides above), e.g. a grace note that slides into the note it precedes.
@@ -390,7 +398,9 @@ export class SpannerResolver {
 			anchors.byLead,
 			scope,
 		)) {
+			this.context.openGroup('vexml-glissando');
 			line.setContext(this.context).draw();
+			this.context.closeGroup();
 		}
 		// Ottava brackets (<octave-shift>): the "8va"/"15mb" label and its dashed line over
 		// (or under) the notes it covers. The notes were already drawn at the shifted
@@ -432,7 +442,9 @@ export class SpannerResolver {
 					.filter((note): note is StaveNote => note !== undefined),
 				span.above,
 			);
+			this.context.openGroup('vexml-bracket');
 			bracket.setContext(this.context).draw();
+			this.context.closeGroup();
 		}
 		// The <bracket>/<dashes> spans, with each endpoint resolved to its drawn note (or
 		// left undefined when it sits on a hidden staff).
@@ -452,7 +464,9 @@ export class SpannerResolver {
 			anchors.byLead,
 			scope,
 		)) {
+			this.context.openGroup('vexml-bracket');
 			bracket.setContext(this.context).draw();
+			this.context.closeGroup();
 		}
 		// Hairpins, like the pedals below them, are resolved over the whole score so a wedge
 		// can open in one measure and close in another. A below-stave one reaches under the
@@ -467,7 +481,9 @@ export class SpannerResolver {
 		}
 		this.alignWedgeChains(wedges);
 		for (const wedge of wedges) {
+			this.context.openGroup('vexml-hairpin');
 			wedge.setContext(this.context).draw();
+			this.context.closeGroup();
 			this.reporter.growPageTop(wedge.bounds.top);
 			this.reporter.growPageBottom(wedge.bounds.bottom);
 			// A wedge pushed out past a slur can reach the neighbouring stave, so report the band
@@ -497,7 +513,9 @@ export class SpannerResolver {
 			scope,
 		)) {
 			this.dropPedalClear(marking, notes);
+			this.context.openGroup('vexml-pedal');
 			marking.setContext(this.context).draw();
+			this.context.closeGroup();
 		}
 		for (const marker of pool.ownPedals) {
 			const stave = anchors.byLead.get(marker.lead)?.getStave();

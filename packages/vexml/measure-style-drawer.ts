@@ -12,16 +12,21 @@ export class MeasureStyleDrawer {
 	constructor(private readonly context: RenderContext) {}
 
 	draw(stave: Stave, mark: MeasureStyleMark): void {
-		switch (mark.kind) {
-			case 'measure-repeat':
-				this.drawMeasureRepeat(stave, mark);
-				return;
-			case 'beat-repeat':
-				this.drawPerBeat(stave, mark, beatRepeatGlyph(mark), 'center');
-				return;
-			case 'beat-slash':
-				this.drawPerBeat(stave, mark, beatSlashGlyph(mark), 'start');
-				return;
+		this.context.openGroup('vexml-measure-style');
+		try {
+			switch (mark.kind) {
+				case 'measure-repeat':
+					this.drawMeasureRepeat(stave, mark);
+					return;
+				case 'beat-repeat':
+					this.drawPerBeat(stave, mark, beatRepeatGlyph(mark), 'center');
+					return;
+				case 'beat-slash':
+					this.drawPerBeat(stave, mark, beatSlashGlyph(mark), 'start');
+					return;
+			}
+		} finally {
+			this.context.closeGroup();
 		}
 	}
 
@@ -94,14 +99,19 @@ export class MeasureStyleDrawer {
 
 	/* One sign with its left edge at `x`: where the first note of a beat the span replaces sat. */
 	drawSign(stave: Stave, sign: StyleSign, x: number): void {
-		const y = middleLineY(stave);
-		if (sign.kind === 'beat-repeat') {
-			new Element()
-				.setText(beatRepeatGlyph(sign))
-				.renderText(this.context, x, y);
-			return;
+		this.context.openGroup('vexml-measure-style');
+		try {
+			const y = middleLineY(stave);
+			if (sign.kind === 'beat-repeat') {
+				new Element()
+					.setText(beatRepeatGlyph(sign))
+					.renderText(this.context, x, y);
+				return;
+			}
+			this.drawSlash(stave, sign, x, y);
+		} finally {
+			this.context.closeGroup();
 		}
-		this.drawSlash(stave, sign, x, y);
 	}
 
 	private drawSlash(

@@ -103,7 +103,7 @@ describe('SpannerResolver', () => {
 		const page = { top: Infinity, bottom: 0 };
 		const obstacles = new Map<StaveNote, Rect>();
 		const resolver = new SpannerResolver(
-			{} as unknown as RenderContext,
+			{ openGroup() {}, closeGroup() {} } as unknown as RenderContext,
 			builder(spanners),
 			{ noteheadHalfWidth: () => 5 } as unknown as VoiceTranslator,
 			spill,

@@ -1,6 +1,7 @@
 import type { ChordFrame } from './chord-diagram-glyph';
 import type { NoteGlyph } from './geometry-collector';
 import type { EncodedPaint, PaintStream } from './paint-encoder';
+import type { PaintElement } from './paint-op';
 import type { GapInfo } from './score';
 import type { SnapshotConfig } from './snapshot-config';
 import type { TempoSegment } from './tempo-map';
@@ -53,6 +54,8 @@ export interface SnapshotOutlines {
 
 export interface SnapshotEngraving {
 	ops: PaintStream;
+	/** Optional diagnostic identities, in op order. They never affect a replay. */
+	elements?: Array<PaintElement | null>;
 	width: number;
 	height: number;
 	/* Exact, in score px: the stage snaps it to its own device pixels. */

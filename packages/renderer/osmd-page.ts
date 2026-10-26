@@ -1,5 +1,6 @@
 import type { OsmdApi, OsmdContext } from './osmd-renderer';
 import { type EnginePage, registerPage } from './page-registry';
+import { SvgInkMasks } from './svg-ink-masks';
 
 /*
  * The browser side of the OSMD renderer: bundled to a classic script and injected
@@ -39,7 +40,11 @@ class OsmdPage implements EnginePage<{ musicXML: string }, OsmdContext> {
 		});
 		await osmd.load(input.musicXML);
 		osmd.render();
-		return { osmd, container };
+		return {
+			osmd,
+			container,
+			inkMasks: () => new SvgInkMasks(container).capture(),
+		};
 	}
 }
 

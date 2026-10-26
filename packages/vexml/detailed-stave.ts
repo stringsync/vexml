@@ -30,20 +30,25 @@ export class DetailedStave extends Stave {
 
 	override draw(): void {
 		const ctx = this.checkContext();
-		for (const { row, width, color, dash } of this.styledLines) {
-			const thickness = width ?? this.getStyle().lineWidth ?? 1;
-			const y = this.getYForLine(row) + (thickness % 2 === 0 ? 0 : 0.5);
-			ctx.save();
-			ctx.setLineWidth(thickness);
-			if (color) {
-				ctx.setStrokeStyle(color);
+		ctx.openGroup('stave');
+		try {
+			for (const { row, width, color, dash } of this.styledLines) {
+				const thickness = width ?? this.getStyle().lineWidth ?? 1;
+				const y = this.getYForLine(row) + (thickness % 2 === 0 ? 0 : 0.5);
+				ctx.save();
+				ctx.setLineWidth(thickness);
+				if (color) {
+					ctx.setStrokeStyle(color);
+				}
+				ctx.setLineDash(dash);
+				ctx.beginPath();
+				ctx.moveTo(this.x, y);
+				ctx.lineTo(this.x + this.width, y);
+				ctx.stroke();
+				ctx.restore();
 			}
-			ctx.setLineDash(dash);
-			ctx.beginPath();
-			ctx.moveTo(this.x, y);
-			ctx.lineTo(this.x + this.width, y);
-			ctx.stroke();
-			ctx.restore();
+		} finally {
+			ctx.closeGroup();
 		}
 		// vexflow reads a styled line width only to align the lines on the pixel grid, and
 		// strokes them at the context's: a document's staff width goes on the context here.

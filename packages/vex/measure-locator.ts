@@ -1,6 +1,7 @@
 import {
 	type AlphatabContext,
 	type Image,
+	type InkMask,
 	type OsmdContext,
 	renderers,
 	type VexmlContext,
@@ -12,6 +13,7 @@ import type { PlacedMeasure } from './measure-map';
 /** A render and where its measures landed in it. */
 export interface LocatedRender {
 	png: Image;
+	masks?: InkMask[];
 	/** In score order; empty when the engine can't say (MuseScore). */
 	measures: PlacedMeasure[];
 }
@@ -29,28 +31,45 @@ export async function locate(
 		case 'vexml': {
 			const { image, result } = await renderers
 				.vexml({ musicXML })
-				.eval(vexmlMeasures);
-			return { png: image, measures: result.map(placed) };
+				.eval(vexmlCapture);
+			return {
+				png: image,
+				measures: result.measures.map(placed),
+				masks: result.masks,
+			};
 		}
 		case 'osmd': {
 			const { image, result } = await renderers
 				.osmd({ musicXML })
-				.eval(osmdMeasures);
-			return { png: image, measures: numbered(result, musicXML) };
+				.eval(osmdCapture);
+			return {
+				png: image,
+				measures: numbered(result.measures, musicXML),
+				masks: result.masks,
+			};
 		}
 		case 'alphatab': {
 			const { image, result } = await renderers
 				.alphatab({ musicXML })
-				.eval(alphatabMeasures);
-			return { png: image, measures: numbered(result, musicXML) };
+				.eval(alphatabCapture);
+			return {
+				png: image,
+				measures: numbered(result.measures, musicXML),
+				masks: result.masks,
+			};
 		}
-		case 'musescore':
+		case 'musescore': {
+			const { image, masks } = await renderers
+				.musescore({ musicXML })
+				.capture();
 			// No browser behind it, so nothing to ask. ponytail: MuseScore can write measure
 			// positions (.mpos) beside the PNG, if its findings ever need measures.
 			return {
-				png: await renderers.musescore({ musicXML }).render(),
+				png: image,
+				masks,
 				measures: [],
 			};
+		}
 	}
 }
 
@@ -93,10 +112,15 @@ function measureNumbers(musicXML: string): string[] {
 // closing over module scope. Each measures from #screenshot, the element the capture is
 // of, and scales by the device pixel ratio, since the PNG is in device pixels.
 
-function vexmlMeasures({ score }: VexmlContext): RawMeasure[] {
+function vexmlCapture({ score, inkMasks }: VexmlContext): {
+	measures: RawMeasure[];
+	masks: InkMask[];
+} {
+	// Snapshotting the ink finishes a progressive render before measuring it.
+	const masks = inkMasks();
 	const origin = document.getElementById('screenshot')?.getBoundingClientRect();
 	const ratio = window.devicePixelRatio;
-	return score
+	const measures = score
 		.getElements()
 		.measureBoxes()
 		.map((box) => {
@@ -109,12 +133,17 @@ function vexmlMeasures({ score }: VexmlContext): RawMeasure[] {
 				h: rect.height * ratio,
 			};
 		});
+	return { measures, masks };
 }
 
 // OSMD lays out in units of 10px at zoom 1, from the top left of its one SVG (the
 // default endless page format draws a single page). It has a box per staff, not per
 // column, so a finding between staves goes to the nearest.
-function osmdMeasures({ osmd, container }: OsmdContext): RawMeasure[] {
+async function osmdCapture({
+	osmd,
+	container,
+	inkMasks,
+}: OsmdContext): Promise<{ measures: RawMeasure[]; masks: InkMask[] }> {
 	type Box = {
 		AbsolutePosition: { x: number; y: number };
 		BorderLeft: number;
@@ -135,7 +164,7 @@ function osmdMeasures({ osmd, container }: OsmdContext): RawMeasure[] {
 	const unit = 10 * live.Zoom;
 	const dx = (svg?.x ?? 0) - (origin?.x ?? 0);
 	const dy = (svg?.y ?? 0) - (origin?.y ?? 0);
-	return live.GraphicSheet.MeasureList.flatMap((staves) =>
+	const measures = live.GraphicSheet.MeasureList.flatMap((staves) =>
 		staves.flatMap((measure) => {
 			if (!measure) {
 				return [];
@@ -156,13 +185,15 @@ function osmdMeasures({ osmd, container }: OsmdContext): RawMeasure[] {
 			];
 		}),
 	);
+	return { measures, masks: await inkMasks() };
 }
 
 // alphaTab's bounds are in pixels from the top left of the surface it draws on.
-function alphatabMeasures({
+async function alphatabCapture({
 	alphatab,
 	container,
-}: AlphatabContext): RawMeasure[] {
+	inkMasks,
+}: AlphatabContext): Promise<{ measures: RawMeasure[]; masks: InkMask[] }> {
 	type Bounds = { x: number; y: number; w: number; h: number };
 	const live = alphatab as unknown as {
 		boundsLookup: {
@@ -178,7 +209,7 @@ function alphatabMeasures({
 	const ratio = window.devicePixelRatio;
 	const dx = surface.x - (origin?.x ?? 0);
 	const dy = surface.y - (origin?.y ?? 0);
-	return (live.boundsLookup?.staffSystems ?? []).flatMap((system) =>
+	const measures = (live.boundsLookup?.staffSystems ?? []).flatMap((system) =>
 		system.bars.map((bar) => ({
 			index: bar.index,
 			x: (dx + bar.realBounds.x) * ratio,
@@ -187,4 +218,5 @@ function alphatabMeasures({
 			h: bar.realBounds.h * ratio,
 		})),
 	);
+	return { measures, masks: await inkMasks() };
 }

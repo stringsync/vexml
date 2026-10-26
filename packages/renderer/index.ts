@@ -10,6 +10,7 @@ export type {
 	AlphatabInput,
 } from './alphatab-renderer';
 export { fileUrl } from './bundle';
+export type { InkMask } from './ink-mask';
 export type { MusescoreInput } from './musescore-renderer';
 export type { OsmdApi, OsmdContext, OsmdInput } from './osmd-renderer';
 export { ReadmeMedia, type ReadmeSources } from './readme-media';

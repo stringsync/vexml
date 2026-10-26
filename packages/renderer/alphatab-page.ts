@@ -1,5 +1,6 @@
 import type { AlphatabApi, AlphatabContext } from './alphatab-renderer';
 import { type EnginePage, registerPage } from './page-registry';
+import { SvgInkMasks } from './svg-ink-masks';
 
 /*
  * The browser side of the alphaTab renderer: bundled to a classic script and injected
@@ -76,7 +77,11 @@ class AlphatabPage implements EnginePage<AlphatabInput, AlphatabContext> {
 				reject(new Error('alphatab could not load the file'));
 			}
 		});
-		return { alphatab, container };
+		return {
+			alphatab,
+			container,
+			inkMasks: () => new SvgInkMasks(container).capture(),
+		};
 	}
 }
 

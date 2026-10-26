@@ -27,25 +27,30 @@ export class GroupTimeSignature {
 	}
 
 	draw(ctx: RenderContext, top: Stave, bottom: Stave): void {
-		if (this.x === null) {
-			return;
+		ctx.openGroup('vexml-time-signature');
+		try {
+			if (this.x === null) {
+				return;
+			}
+			// The signature spans the top stave's middle line on its own; scaling about the
+			// group's vertical center keeps it centered however many staves the group has.
+			const middle = top.getYForLine(2);
+			const center = (middle + bottom.getYForLine(2)) / 2;
+			const k = this.scale;
+			// The context scales about its origin, so the signature is drawn against a stand-in
+			// stave whose lines already sit where the scaling carries them to the group's center.
+			const frame = {
+				getYForLine: (line: number) =>
+					center / k + top.getYForLine(line) - middle,
+				getSpacingBetweenLines: () => top.getSpacingBetweenLines(),
+			} as unknown as Stave;
+			ctx.save();
+			ctx.scale(k, k);
+			this.make().drawAt(ctx, frame, this.x / k);
+			ctx.restore();
+		} finally {
+			ctx.closeGroup();
 		}
-		// The signature spans the top stave's middle line on its own; scaling about the
-		// group's vertical center keeps it centered however many staves the group has.
-		const middle = top.getYForLine(2);
-		const center = (middle + bottom.getYForLine(2)) / 2;
-		const k = this.scale;
-		// The context scales about its origin, so the signature is drawn against a stand-in
-		// stave whose lines already sit where the scaling carries them to the group's center.
-		const frame = {
-			getYForLine: (line: number) =>
-				center / k + top.getYForLine(line) - middle,
-			getSpacingBetweenLines: () => top.getSpacingBetweenLines(),
-		} as unknown as Stave;
-		ctx.save();
-		ctx.scale(k, k);
-		this.make().drawAt(ctx, frame, this.x / k);
-		ctx.restore();
 	}
 }
 

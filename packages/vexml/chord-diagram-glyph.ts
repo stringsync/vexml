@@ -85,102 +85,107 @@ export class ChordDiagramGlyph {
 	private drawnTop: number | null = null;
 
 	draw(context: RenderContext): void {
-		const { chord, position, positionText, barres, tuning } = this;
-		const { spacing, fretSpacing, originX, originY } = this;
+		context.openGroup('vexml-chord-diagram');
+		try {
+			const { chord, position, positionText, barres, tuning } = this;
+			const { spacing, fretSpacing, originX, originY } = this;
 
-		// The strings overhang past the last fret line at the bottom and, when a position
-		// label is shown (no nut), past the top fret line too, so the neck reads as
-		// continuing beyond the diagram.
-		const overhang = fretSpacing * 0.4;
-		const topOverhang = position > 1 ? overhang : 0;
-		// A marker (X muted / O open) is drawn for any muted or open string. With none, the
-		// top band is empty whitespace, so drop the title down next to the board instead of
-		// floating it above an empty row. An empty `unplayed` draws no mute marker.
-		const hasMarkers = chord.some(
-			([, fret]) => (fret === 'x' && this.unplayed !== '') || fret === 0,
-		);
+			// The strings overhang past the last fret line at the bottom and, when a position
+			// label is shown (no nut), past the top fret line too, so the neck reads as
+			// continuing beyond the diagram.
+			const overhang = fretSpacing * 0.4;
+			const topOverhang = position > 1 ? overhang : 0;
+			// A marker (X muted / O open) is drawn for any muted or open string. With none, the
+			// top band is empty whitespace, so drop the title down next to the board instead of
+			// floating it above an empty row. An empty `unplayed` draws no mute marker.
+			const hasMarkers = chord.some(
+				([, fret]) => (fret === 'x' && this.unplayed !== '') || fret === 0,
+			);
 
-		if (this.title) {
-			const size = this.titleSize;
-			const topY = hasMarkers
-				? this.y - size * 1.4 // above the box, clearing the marker row
-				: originY - topOverhang - fretSpacing * 0.5 - size * 0.73; // just above the board
-			this.titleText(
-				context,
-				this.x + this.style.width / 2,
-				topY,
-				this.title,
-				size,
-			);
-			// titleText draws the baseline at topY + size*0.73, but a font's real ascent is closer to
-			// a full em, so the cap tops land ~size above the baseline (about 0.27*size ABOVE topY).
-			// Bound the title at that true top so callers reserving space above it (the page crop, the
-			// playback cursor/scroll box) cover those pixels instead of clipping them.
-			const titleTop = topY + size * 0.73 - size;
-			this.drawnTop = Math.min(titleTop, originY - topOverhang);
-		} else {
-			this.drawnTop = originY - topOverhang;
-		}
+			if (this.title) {
+				const size = this.titleSize;
+				const topY = hasMarkers
+					? this.y - size * 1.4 // above the box, clearing the marker row
+					: originY - topOverhang - fretSpacing * 0.5 - size * 0.73; // just above the board
+				this.titleText(
+					context,
+					this.x + this.style.width / 2,
+					topY,
+					this.title,
+					size,
+				);
+				// titleText draws the baseline at topY + size*0.73, but a font's real ascent is closer to
+				// a full em, so the cap tops land ~size above the baseline (about 0.27*size ABOVE topY).
+				// Bound the title at that true top so callers reserving space above it (the page crop, the
+				// playback cursor/scroll box) cover those pixels instead of clipping them.
+				const titleTop = topY + size * 0.73 - size;
+				this.drawnTop = Math.min(titleTop, originY - topOverhang);
+			} else {
+				this.drawnTop = originY - topOverhang;
+			}
 
-		// Nut (open position) or fret-position label.
-		if (position <= 1) {
-			const w = spacing * (this.stringCount - 1) + this.style.strokeWidth;
-			context.save();
-			context.setFillStyle(this.style.color);
-			context.fillRect(
-				originX - this.style.strokeWidth / 2,
-				originY - this.bridgeWidth,
-				w,
-				this.bridgeWidth,
-			);
-			context.restore();
-		} else {
-			this.text(
-				context,
-				originX - spacing / 2 - spacing * 0.45,
-				originY + fretSpacing * positionText,
-				String(position),
-				this.fontSize,
-			);
-		}
-
-		// Strings (vertical) and frets (horizontal); see `overhang` above.
-		for (let i = 0; i < this.stringCount; i += 1) {
-			this.line(
-				context,
-				originX + spacing * i,
-				originY - topOverhang,
-				originX + spacing * i,
-				originY + fretSpacing * this.fretCount + overhang,
-			);
-		}
-		for (let i = 0; i < this.fretCount + 1; i += 1) {
-			this.line(
-				context,
-				originX,
-				originY + fretSpacing * i,
-				originX + spacing * (this.stringCount - 1),
-				originY + fretSpacing * i,
-			);
-		}
-
-		if (this.style.showTuning && tuning.length > 0) {
-			for (let i = 0; i < Math.min(this.stringCount, tuning.length); i += 1) {
+			// Nut (open position) or fret-position label.
+			if (position <= 1) {
+				const w = spacing * (this.stringCount - 1) + this.style.strokeWidth;
+				context.save();
+				context.setFillStyle(this.style.color);
+				context.fillRect(
+					originX - this.style.strokeWidth / 2,
+					originY - this.bridgeWidth,
+					w,
+					this.bridgeWidth,
+				);
+				context.restore();
+			} else {
 				this.text(
 					context,
-					originX + spacing * i,
-					originY + this.fretCount * fretSpacing + fretSpacing / 2,
-					tuning[i] ?? '',
+					originX - spacing / 2 - spacing * 0.45,
+					originY + fretSpacing * positionText,
+					String(position),
 					this.fontSize,
 				);
 			}
-		}
 
-		for (const [string, fret] of chord) {
-			this.lightUp(context, string, fret, position, positionText);
-		}
-		for (const barre of barres) {
-			this.lightBar(context, barre, position, positionText);
+			// Strings (vertical) and frets (horizontal); see `overhang` above.
+			for (let i = 0; i < this.stringCount; i += 1) {
+				this.line(
+					context,
+					originX + spacing * i,
+					originY - topOverhang,
+					originX + spacing * i,
+					originY + fretSpacing * this.fretCount + overhang,
+				);
+			}
+			for (let i = 0; i < this.fretCount + 1; i += 1) {
+				this.line(
+					context,
+					originX,
+					originY + fretSpacing * i,
+					originX + spacing * (this.stringCount - 1),
+					originY + fretSpacing * i,
+				);
+			}
+
+			if (this.style.showTuning && tuning.length > 0) {
+				for (let i = 0; i < Math.min(this.stringCount, tuning.length); i += 1) {
+					this.text(
+						context,
+						originX + spacing * i,
+						originY + this.fretCount * fretSpacing + fretSpacing / 2,
+						tuning[i] ?? '',
+						this.fontSize,
+					);
+				}
+			}
+
+			for (const [string, fret] of chord) {
+				this.lightUp(context, string, fret, position, positionText);
+			}
+			for (const barre of barres) {
+				this.lightBar(context, barre, position, positionText);
+			}
+		} finally {
+			context.closeGroup();
 		}
 	}
 

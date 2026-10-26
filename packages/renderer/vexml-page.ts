@@ -10,6 +10,7 @@ import {
 } from '@stringsync/vexml';
 import { paint } from '@stringsync/vexml/paint';
 import { type EnginePage, registerPage } from './page-registry';
+import { VexmlInkMasks } from './vexml-ink-masks';
 import type { VexmlContext } from './vexml-renderer';
 
 /*
@@ -50,6 +51,12 @@ class VexmlPage implements EnginePage<VexmlInput, VexmlContext> {
 		this.score = score;
 		return {
 			score,
+			inkMasks: () =>
+				new VexmlInkMasks(
+					score,
+					container,
+					input.config?.pixelRatio ?? window.devicePixelRatio,
+				).capture(),
 			container,
 			render,
 			paint,

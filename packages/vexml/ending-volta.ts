@@ -26,39 +26,44 @@ export class EndingVolta extends Volta {
 	}
 
 	override draw(): void {
-		const stave = this.checkStave();
-		const x = stave.getModifierXShift(this.getPosition());
-		const ctx = stave.checkContext();
-		this.setRendered();
-		const space = stave.getSpacingBetweenLines();
-		const px = (tenths: number | null, fallback: number) =>
-			tenths === null ? fallback : (tenths * space) / 10;
-		const defaultJog = 1.5 * space;
-		const left = this.x + x;
-		const topY = stave.getYForTopText(stave.getNumLines()) + this.yShift;
-		const { type, startJog, endJog, textX } = this.decoration;
-		const line = this.lineWidth ?? 1;
-		const begins = type === Volta.type.BEGIN || type === Volta.type.BEGIN_END;
-		// vexflow pulls a closing jog in off the barline so it doesn't merge into it.
-		let width = stave.getWidth() - x;
-		if (type === Volta.type.END) {
-			width -= 5;
-		} else if (type === Volta.type.BEGIN_END) {
-			width -= 3;
+		this.checkStave().checkContext().openGroup('vexml-volta');
+		try {
+			const stave = this.checkStave();
+			const x = stave.getModifierXShift(this.getPosition());
+			const ctx = stave.checkContext();
+			this.setRendered();
+			const space = stave.getSpacingBetweenLines();
+			const px = (tenths: number | null, fallback: number) =>
+				tenths === null ? fallback : (tenths * space) / 10;
+			const defaultJog = 1.5 * space;
+			const left = this.x + x;
+			const topY = stave.getYForTopText(stave.getNumLines()) + this.yShift;
+			const { type, startJog, endJog, textX } = this.decoration;
+			const line = this.lineWidth ?? 1;
+			const begins = type === Volta.type.BEGIN || type === Volta.type.BEGIN_END;
+			// vexflow pulls a closing jog in off the barline so it doesn't merge into it.
+			let width = stave.getWidth() - x;
+			if (type === Volta.type.END) {
+				width -= 5;
+			} else if (type === Volta.type.BEGIN_END) {
+				width -= 3;
+			}
+			if (begins) {
+				ctx.fillRect(left, topY, line, px(startJog, defaultJog));
+			}
+			if (type === Volta.type.END || type === Volta.type.BEGIN_END) {
+				ctx.fillRect(left + width, topY, line, px(endJog, defaultJog));
+			}
+			if (begins) {
+				this.renderText(
+					ctx,
+					x + px(textX, DEFAULT_TEXT_X),
+					topY - this.yShift + TEXT_DROP,
+				);
+			}
+			ctx.fillRect(left, topY, width, line);
+		} finally {
+			this.checkStave().checkContext().closeGroup();
 		}
-		if (begins) {
-			ctx.fillRect(left, topY, line, px(startJog, defaultJog));
-		}
-		if (type === Volta.type.END || type === Volta.type.BEGIN_END) {
-			ctx.fillRect(left + width, topY, line, px(endJog, defaultJog));
-		}
-		if (begins) {
-			this.renderText(
-				ctx,
-				x + px(textX, DEFAULT_TEXT_X),
-				topY - this.yShift + TEXT_DROP,
-			);
-		}
-		ctx.fillRect(left, topY, width, line);
 	}
 }

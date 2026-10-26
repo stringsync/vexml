@@ -52,6 +52,7 @@ export class ScoreRecording implements SnapshotSource {
 		const encoder = new PaintEncoder();
 		const engraved = engraving && {
 			ops: encoder.encode(engraving.ops),
+			elements: engraving.ops.map((op) => op.element ?? null),
 			width: engraving.width,
 			height: engraving.height,
 			origin: [engraving.origin.x, engraving.origin.y] as [number, number],

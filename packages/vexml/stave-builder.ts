@@ -525,18 +525,23 @@ export class StaveBuilder {
 	 * to space it against.
 	 */
 	drawMultiRest(stave: Stave, count: number, symbols: boolean): void {
-		// vexflow measures its padding from the stave's x, so the left inset has to clear
-		// the clef/key/time first: otherwise the bar starts under the time signature and
-		// ends well short of the barline instead of centering in the note area.
-		new MultiMeasureRest(count, {
-			numberOfMeasures: count,
-			useSymbols: symbols,
-			paddingLeft: stave.getNoteStartX() - stave.getX() + MULTI_REST_PADDING,
-			paddingRight: MULTI_REST_PADDING,
-		})
-			.setStave(stave)
-			.setContext(this.context)
-			.draw();
+		this.context.openGroup('vexml-multi-rest');
+		try {
+			// vexflow measures its padding from the stave's x, so the left inset has to clear
+			// the clef/key/time first: otherwise the bar starts under the time signature and
+			// ends well short of the barline instead of centering in the note area.
+			new MultiMeasureRest(count, {
+				numberOfMeasures: count,
+				useSymbols: symbols,
+				paddingLeft: stave.getNoteStartX() - stave.getX() + MULTI_REST_PADDING,
+				paddingRight: MULTI_REST_PADDING,
+			})
+				.setStave(stave)
+				.setContext(this.context)
+				.draw();
+		} finally {
+			this.context.closeGroup();
+		}
 	}
 
 	/*

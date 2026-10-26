@@ -1,4 +1,6 @@
+import type { InkMask } from '@vexml/renderer';
 import { Rect } from 'webappwiz/geometry';
+import { InkCollisions } from './ink-collisions';
 import type { InkMap } from './ink-map';
 import { type LineGroup, StaffDetector } from './staff-detector';
 
@@ -7,6 +9,7 @@ export const FINDING_KINDS = [
 	'clipped',
 	'staves-collide',
 	'stray-line',
+	'collision',
 	'differs',
 	'missing',
 ] as const;
@@ -33,7 +36,10 @@ export interface LintReport {
  * takes its kind's penalty off it.
  */
 export class RenderLint {
-	constructor(private readonly ink: InkMap) {}
+	constructor(
+		private readonly ink: InkMap,
+		private readonly masks: readonly InkMask[] = [],
+	) {}
 
 	lint(): LintReport {
 		if (this.ink.isBlank) {
@@ -49,6 +55,7 @@ export class RenderLint {
 			...this.clipped(),
 			...this.collidingStaves(groups),
 			...this.strayLines(groups),
+			...new InkCollisions(this.masks).findings(),
 		];
 		const penalty = findings.reduce((sum, f) => sum + PENALTY[f.kind], 0);
 		return { score: Math.max(0, 100 - penalty), findings };
@@ -162,6 +169,7 @@ const PENALTY: Record<FindingKind, number> = {
 	clipped: 15,
 	'staves-collide': 20,
 	'stray-line': 20,
+	collision: 15,
 	differs: 20,
 	missing: 10,
 };

@@ -3,12 +3,21 @@ import type { Affine } from './affine';
 import type { PaintState } from './paint-state';
 import type { TextOutline } from './text-outline';
 
+/** Identity of the notation that emitted an op, local to one recording. The replay ignores it. */
+export interface PaintElement {
+	readonly id: number;
+	readonly kind: string;
+	readonly parent?: number;
+	readonly ancestors?: readonly number[];
+}
+
 /*
  * One recorded draw: everything a replay needs to put the same pixels on any canvas, plus the
  * box those pixels can land in. A tiled surface files each op under the tiles its box touches and
  * replays only those, so the box must hold every pixel the op can touch (it may hold more).
  */
 export interface PaintOp {
+	readonly element?: PaintElement;
 	readonly state: PaintState;
 	// The path rebuilt before a fill or stroke of the current path; null for the calls that draw
 	// without one (fillRect, fillText, drawImage, ...).

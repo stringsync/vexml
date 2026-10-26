@@ -6,11 +6,13 @@
 		"commit": "21986b67",
 		"note": "fix clashing harmonies and add a test to ensure systems are spaced appropriately",
 		"box": {
-			"x": 370,
-			"y": 208,
-			"w": 100,
-			"h": 90
-		}
+			"x": 393,
+			"y": 207,
+			"w": 18,
+			"h": 28
+		},
+		"inputCommit": "21986b67",
+		"missed": true
 	},
 	{
 		"id": "2e9173fb-words",
@@ -19,11 +21,13 @@
 		"commit": "2e9173fb",
 		"note": "prevent text annotations from colliding with curves",
 		"box": {
-			"x": 521,
+			"x": 544,
 			"y": 198,
-			"w": 240,
-			"h": 106
-		}
+			"w": 230,
+			"h": 55
+		},
+		"inputCommit": "2e9173fb",
+		"missed": false
 	},
 	{
 		"id": "3bb0dbbf-staff_details_lines",
@@ -33,10 +37,12 @@
 		"note": "prevent measure number from colliding with stave brace",
 		"box": {
 			"x": 29,
-			"y": 65,
-			"w": 11,
-			"h": 19
-		}
+			"y": 64,
+			"w": 10,
+			"h": 20
+		},
+		"inputCommit": "3bb0dbbf",
+		"missed": true
 	},
 	{
 		"id": "6a66854a-clef_treble_octave",
@@ -45,11 +51,13 @@
 		"commit": "6a66854a",
 		"note": "fix rests colliding with other notes",
 		"box": {
-			"x": 366,
-			"y": 109,
+			"x": 367,
+			"y": 108,
 			"w": 178,
-			"h": 27
-		}
+			"h": 28
+		},
+		"inputCommit": "6a66854a",
+		"missed": true
 	},
 	{
 		"id": "6a66854a-cross_stave",
@@ -59,10 +67,12 @@
 		"note": "fix rests colliding with other notes",
 		"box": {
 			"x": 551,
-			"y": 107,
+			"y": 105,
 			"w": 267,
-			"h": 111
-		}
+			"h": 113
+		},
+		"inputCommit": "6a66854a",
+		"missed": true
 	},
 	{
 		"id": "6a66854a-invisible_notes",
@@ -71,11 +81,13 @@
 		"commit": "6a66854a",
 		"note": "fix rests colliding with other notes",
 		"box": {
-			"x": 797,
-			"y": 101,
-			"w": 51,
-			"h": 40
-		}
+			"x": 805,
+			"y": 100,
+			"w": 47,
+			"h": 41
+		},
+		"inputCommit": "6a66854a",
+		"missed": true
 	},
 	{
 		"id": "6a66854a-rest",
@@ -84,11 +96,13 @@
 		"commit": "6a66854a",
 		"note": "fix rests colliding with other notes",
 		"box": {
-			"x": 162,
-			"y": 81,
-			"w": 695,
-			"h": 95
-		}
+			"x": 735,
+			"y": 88,
+			"w": 12,
+			"h": 38
+		},
+		"inputCommit": "6a66854a",
+		"missed": false
 	},
 	{
 		"id": "6a66854a-slur_backup_voices",
@@ -101,7 +115,10 @@
 			"y": 115,
 			"w": 12,
 			"h": 16
-		}
+		},
+		"inputCommit": "6a66854a",
+		"missedReason": "same fixture produces identical ink before and after on replay",
+		"missed": true
 	},
 	{
 		"id": "731be086-score_amazing_grace",
@@ -110,11 +127,13 @@
 		"commit": "731be086",
 		"note": "Keep crowded chord diagrams from printing through each other",
 		"box": {
-			"x": 578,
-			"y": 5182,
-			"w": 156,
-			"h": 89
-		}
+			"x": 582,
+			"y": 5180,
+			"w": 157,
+			"h": 91
+		},
+		"inputCommit": "731be086",
+		"missed": false
 	},
 	{
 		"id": "85bff93a-harmony_grace",
@@ -123,11 +142,13 @@
 		"commit": "85bff93a",
 		"note": "add fillFirstSystem config and add spatial primitives to detect collisions",
 		"box": {
-			"x": 112,
-			"y": 63,
-			"w": 11,
-			"h": 19
-		}
+			"x": 111,
+			"y": 62,
+			"w": 12,
+			"h": 21
+		},
+		"inputCommit": "85bff93a",
+		"missed": true
 	},
 	{
 		"id": "9676f70d-tempo",
@@ -136,11 +157,13 @@
 		"commit": "9676f70d",
 		"note": "fix collisions between metronome marks and chord symbols",
 		"box": {
-			"x": 166,
-			"y": 69,
-			"w": 689,
-			"h": 112
-		}
+			"x": 373,
+			"y": 70,
+			"w": 309,
+			"h": 39
+		},
+		"inputCommit": "9676f70d",
+		"missed": false
 	},
 	{
 		"id": "c112375f-repeats",
@@ -149,11 +172,13 @@
 		"commit": "c112375f",
 		"note": "fix collisions between chord symbols and volta brackets",
 		"box": {
-			"x": 95,
-			"y": 187,
-			"w": 339,
-			"h": 119
-		}
+			"x": 124,
+			"y": 186,
+			"w": 52,
+			"h": 57
+		},
+		"inputCommit": "c112375f",
+		"missed": false
 	},
 	{
 		"id": "d46be6fd-dynamics",
@@ -162,11 +187,13 @@
 		"commit": "d46be6fd",
 		"note": "prevent bends from colliding with text annotations",
 		"box": {
-			"x": 531,
-			"y": 196,
-			"w": 41,
-			"h": 19
-		}
+			"x": 532,
+			"y": 195,
+			"w": 39,
+			"h": 20
+		},
+		"inputCommit": "d46be6fd",
+		"missed": true
 	},
 	{
 		"id": "d46be6fd-staff_dynamics",
@@ -176,10 +203,12 @@
 		"note": "prevent bends from colliding with text annotations",
 		"box": {
 			"x": 79,
-			"y": 170,
-			"w": 64,
-			"h": 19
-		}
+			"y": 169,
+			"w": 63,
+			"h": 20
+		},
+		"inputCommit": "d46be6fd",
+		"missed": true
 	},
 	{
 		"id": "d46be6fd-structure_tab_parts",
@@ -188,11 +217,13 @@
 		"commit": "d46be6fd",
 		"note": "prevent bends from colliding with text annotations",
 		"box": {
-			"x": 359,
+			"x": 356,
 			"y": 198,
-			"w": 102,
+			"w": 108,
 			"h": 14
-		}
+		},
+		"inputCommit": "d46be6fd",
+		"missed": true
 	},
 	{
 		"id": "d46be6fd-tab_annotation",
@@ -201,11 +232,13 @@
 		"commit": "d46be6fd",
 		"note": "prevent bends from colliding with text annotations",
 		"box": {
-			"x": 555,
-			"y": 62,
-			"w": 25,
-			"h": 11
-		}
+			"x": 554,
+			"y": 60,
+			"w": 28,
+			"h": 13
+		},
+		"inputCommit": "d46be6fd",
+		"missed": true
 	},
 	{
 		"id": "f15bcdae-tab_annotation",
@@ -214,10 +247,12 @@
 		"commit": "f15bcdae",
 		"note": "fix collisions between curves and harmonies",
 		"box": {
-			"x": 177,
-			"y": 61,
-			"w": 483,
-			"h": 112
-		}
+			"x": 567,
+			"y": 60,
+			"w": 27,
+			"h": 34
+		},
+		"inputCommit": "f15bcdae",
+		"missed": false
 	}
 ]

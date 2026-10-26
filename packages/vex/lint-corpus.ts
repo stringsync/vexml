@@ -1,11 +1,196 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import {
+	existsSync,
+	readdirSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from 'node:fs';
 import { basename, extname, join } from 'node:path';
+import { gunzipSync } from 'node:zlib';
+import type { InkMask } from '@vexml/renderer';
 import { PNG } from 'pngjs';
 import { Rect } from 'webappwiz/geometry';
 import { InkMap } from './ink-map';
 import { FINDING_KINDS, type FindingKind, RenderLint } from './render-lint';
 import { StaffDetector } from './staff-detector';
+
+/**
+ * The lint's test suite: renders known to be clean, renders known to be wrong and where,
+ * and how well the lint tells them apart. The clean set is every fixture's screenshot
+ * baseline, plus each defect's fixed render; any finding there is a false positive. The
+ * defects come from commits that fixed one (the baseline before and after the commit, the
+ * pixels it changed as the box), and from edits of clean baselines for the kinds history
+ * never fixed. A defect counts as found when the lint names its kind, and as localized
+ * when that finding's box overlaps the defect's.
+ */
+export class LintCorpus {
+	constructor(private readonly paths: CorpusPaths) {}
+
+	score(): CorpusScore {
+		const defects = this.defects();
+		const kinds = new Map<DefectKind, KindScore>(
+			[...FINDING_KINDS, 'collision' as const].map((kind) => [
+				kind,
+				{ kind, defects: 0, found: 0, localized: 0, falsePositives: 0 },
+			]),
+		);
+		const misses: Miss[] = [];
+		const caught: string[] = [];
+		for (const defect of defects) {
+			const score = kinds.get(defect.kind) as KindScore;
+			score.defects++;
+			const findings = new RenderLint(InkMap.fromPng(defect.png), defect.masks)
+				.lint()
+				.findings.filter((finding) => finding.kind === defect.kind);
+			const box = new Rect(
+				defect.box.x,
+				defect.box.y,
+				defect.box.w,
+				defect.box.h,
+			);
+			const found = findings.length > 0;
+			const localized = findings.some((finding) => finding.box.intersects(box));
+			score.found += Number(found);
+			score.localized += Number(localized);
+			// Only a kind the lint names can be held to; the rest are its backlog.
+			if (defect.missed) {
+				if (localized) {
+					caught.push(defect.id);
+				}
+			} else if (isFindingKind(defect.kind) && !localized) {
+				misses.push({
+					id: defect.id,
+					kind: defect.kind,
+					reason: found ? 'elsewhere' : 'unfound',
+				});
+			}
+		}
+
+		const known = this.json<KnownFalsePositives>('clean.json');
+		const surprises: Surprise[] = [];
+		const clean = this.clean();
+		for (const { screenshot, png, masks } of clean) {
+			const counts: Partial<Record<FindingKind, number>> = {};
+			for (const finding of new RenderLint(InkMap.fromPng(png), masks).lint()
+				.findings) {
+				counts[finding.kind] = (counts[finding.kind] ?? 0) + 1;
+			}
+			for (const kind of FINDING_KINDS) {
+				const count = counts[kind] ?? 0;
+				(kinds.get(kind) as KindScore).falsePositives += count;
+				const allowed = known[screenshot]?.[kind] ?? 0;
+				if (count > allowed) {
+					surprises.push({ screenshot, kind, count, known: allowed });
+				}
+			}
+		}
+		return {
+			kinds: [...kinds.values()],
+			clean: clean.length,
+			maskClean: clean.filter((item) => item.masks !== undefined).length,
+			maskDefects: defects.filter((item) => item.masks !== undefined).length,
+			misses,
+			caught,
+			surprises,
+		};
+	}
+
+	/** Every defect with the render that has it. */
+	defects(): Array<{
+		id: string;
+		kind: DefectKind;
+		box: Box;
+		png: Buffer;
+		masks?: InkMask[];
+		missed?: boolean;
+	}> {
+		const history = this.json<DefectLabel[]>('defects.json').map((label) => ({
+			id: label.id,
+			missed: label.missed,
+			masks: this.masks(
+				join(this.paths.corpus, 'defects', `${label.id}.before.png`),
+			),
+			kind: label.kind,
+			box: label.box,
+			png: readFileSync(
+				join(this.paths.corpus, 'defects', `${label.id}.before.png`),
+			),
+		}));
+		const synthetic = this.json<SyntheticSpec[]>('synthetic.json').map(
+			(spec) => ({
+				id: `${stemOf(spec.screenshot)} ${describeEdit(spec.edit)}`,
+				missed: spec.missed,
+				...applyEdit(
+					readFileSync(join(this.paths.screenshots, spec.screenshot)),
+					spec.edit,
+				),
+			}),
+		);
+		return [...history, ...synthetic];
+	}
+
+	/** Every render known to be right: each fixture's baseline and each defect's fix. */
+	clean(): Array<{ screenshot: string; png: Buffer; masks?: InkMask[] }> {
+		const baselines = readdirSync(this.paths.fixtures)
+			.filter((file) => file.endsWith('.musicxml'))
+			.map((file) => `${stemOf(file)}.png`)
+			.filter((png) => existsSync(join(this.paths.screenshots, png)))
+			.sort()
+			.map((screenshot) => ({
+				screenshot,
+				png: readFileSync(join(this.paths.screenshots, screenshot)),
+			}));
+		const fixed = this.json<DefectLabel[]>('defects.json').map((label) => {
+			const screenshot = `${label.id}.after.png`;
+			return {
+				screenshot,
+				masks: this.masks(join(this.paths.corpus, 'defects', screenshot)),
+				png: readFileSync(join(this.paths.corpus, 'defects', screenshot)),
+			};
+		});
+		const dir = join(this.paths.corpus, 'clean-masks');
+		const captured = existsSync(dir)
+			? readdirSync(dir)
+					.filter((file) => file.endsWith('.json.gz'))
+					.sort()
+					.map((file) => {
+						const { png, masks } = JSON.parse(
+							gunzipSync(readFileSync(join(dir, file))).toString(),
+						) as { png: string; masks: InkMask[] };
+						return {
+							screenshot: file.replace(/\.musicxml\.json\.gz$/, '.ink.png'),
+							png: Buffer.from(png, 'base64'),
+							masks,
+						};
+					})
+			: [];
+		return [...baselines, ...fixed, ...captured];
+	}
+
+	private masks(png: string): InkMask[] | undefined {
+		const path = `${png}.masks.json.gz`;
+		if (!existsSync(path)) {
+			return undefined;
+		}
+		const capture = JSON.parse(gunzipSync(readFileSync(path)).toString()) as {
+			pngHash: string;
+			masks: InkMask[];
+		};
+		if (
+			capture.pngHash !==
+			createHash('sha256').update(readFileSync(png)).digest('hex')
+		) {
+			throw new Error(`stale ink masks for ${png}; rebuild the corpus capture`);
+		}
+		return capture.masks;
+	}
+
+	private json<T>(file: string): T {
+		return JSON.parse(readFileSync(join(this.paths.corpus, file), 'utf8')) as T;
+	}
+}
 
 /** What is wrong with a defect: a kind the lint names, or one it has no check for yet,
  * which the corpus still counts so recall shows what the lint misses. */
@@ -20,6 +205,11 @@ export interface Box {
 
 /** A render a commit fixed: `<id>.before.png` has the defect, `<id>.after.png` the fix. */
 export interface DefectLabel {
+	/** Both sides were rendered from this revision's identical fixture. */
+	inputCommit?: string;
+	/** Counts against recall until captured ink detects it. */
+	missed?: boolean;
+	missedReason?: string;
 	id: string;
 	kind: DefectKind;
 	/* The screenshot baseline the commit changed. */
@@ -81,6 +271,8 @@ export interface Surprise {
 export interface CorpusScore {
 	kinds: KindScore[];
 	clean: number;
+	maskClean: number;
+	maskDefects: number;
 	misses: Miss[];
 	/* Defects marked missed that the lint now finds where they are. */
 	caught: string[];
@@ -92,140 +284,6 @@ export interface CorpusPaths {
 	corpus: string;
 	fixtures: string;
 	screenshots: string;
-}
-
-/**
- * The lint's test suite: renders known to be clean, renders known to be wrong and where,
- * and how well the lint tells them apart. The clean set is every fixture's screenshot
- * baseline, plus each defect's fixed render; any finding there is a false positive. The
- * defects come from commits that fixed one (the baseline before and after the commit, the
- * pixels it changed as the box), and from edits of clean baselines for the kinds history
- * never fixed. A defect counts as found when the lint names its kind, and as localized
- * when that finding's box overlaps the defect's.
- */
-export class LintCorpus {
-	constructor(private readonly paths: CorpusPaths) {}
-
-	score(): CorpusScore {
-		const defects = this.defects();
-		const kinds = new Map<DefectKind, KindScore>(
-			[...FINDING_KINDS, 'collision' as const].map((kind) => [
-				kind,
-				{ kind, defects: 0, found: 0, localized: 0, falsePositives: 0 },
-			]),
-		);
-		const misses: Miss[] = [];
-		const caught: string[] = [];
-		for (const defect of defects) {
-			const score = kinds.get(defect.kind) as KindScore;
-			score.defects++;
-			const findings = new RenderLint(InkMap.fromPng(defect.png))
-				.lint()
-				.findings.filter((finding) => finding.kind === defect.kind);
-			const box = new Rect(
-				defect.box.x,
-				defect.box.y,
-				defect.box.w,
-				defect.box.h,
-			);
-			const found = findings.length > 0;
-			const localized = findings.some((finding) => finding.box.intersects(box));
-			score.found += Number(found);
-			score.localized += Number(localized);
-			// Only a kind the lint names can be held to; the rest are its backlog.
-			if (defect.missed) {
-				if (localized) {
-					caught.push(defect.id);
-				}
-			} else if (isFindingKind(defect.kind) && !localized) {
-				misses.push({
-					id: defect.id,
-					kind: defect.kind,
-					reason: found ? 'elsewhere' : 'unfound',
-				});
-			}
-		}
-
-		const known = this.json<KnownFalsePositives>('clean.json');
-		const surprises: Surprise[] = [];
-		const clean = this.clean();
-		for (const { screenshot, png } of clean) {
-			const counts: Partial<Record<FindingKind, number>> = {};
-			for (const finding of new RenderLint(InkMap.fromPng(png)).lint()
-				.findings) {
-				counts[finding.kind] = (counts[finding.kind] ?? 0) + 1;
-			}
-			for (const kind of FINDING_KINDS) {
-				const count = counts[kind] ?? 0;
-				(kinds.get(kind) as KindScore).falsePositives += count;
-				const allowed = known[screenshot]?.[kind] ?? 0;
-				if (count > allowed) {
-					surprises.push({ screenshot, kind, count, known: allowed });
-				}
-			}
-		}
-		return {
-			kinds: [...kinds.values()],
-			clean: clean.length,
-			misses,
-			caught,
-			surprises,
-		};
-	}
-
-	/** Every defect with the render that has it. */
-	defects(): Array<{
-		id: string;
-		kind: DefectKind;
-		box: Box;
-		png: Buffer;
-		missed?: boolean;
-	}> {
-		const history = this.json<DefectLabel[]>('defects.json').map((label) => ({
-			id: label.id,
-			kind: label.kind,
-			box: label.box,
-			png: readFileSync(
-				join(this.paths.corpus, 'defects', `${label.id}.before.png`),
-			),
-		}));
-		const synthetic = this.json<SyntheticSpec[]>('synthetic.json').map(
-			(spec) => ({
-				id: `${stemOf(spec.screenshot)} ${describeEdit(spec.edit)}`,
-				missed: spec.missed,
-				...applyEdit(
-					readFileSync(join(this.paths.screenshots, spec.screenshot)),
-					spec.edit,
-				),
-			}),
-		);
-		return [...history, ...synthetic];
-	}
-
-	/** Every render known to be right: each fixture's baseline and each defect's fix. */
-	clean(): Array<{ screenshot: string; png: Buffer }> {
-		const baselines = readdirSync(this.paths.fixtures)
-			.filter((file) => file.endsWith('.musicxml'))
-			.map((file) => `${stemOf(file)}.png`)
-			.filter((png) => existsSync(join(this.paths.screenshots, png)))
-			.sort()
-			.map((screenshot) => ({
-				screenshot,
-				png: readFileSync(join(this.paths.screenshots, screenshot)),
-			}));
-		const fixed = this.json<DefectLabel[]>('defects.json').map((label) => {
-			const screenshot = `${label.id}.after.png`;
-			return {
-				screenshot,
-				png: readFileSync(join(this.paths.corpus, 'defects', screenshot)),
-			};
-		});
-		return [...baselines, ...fixed];
-	}
-
-	private json<T>(file: string): T {
-		return JSON.parse(readFileSync(join(this.paths.corpus, file), 'utf8')) as T;
-	}
 }
 
 /** The score as a table, one row per kind, then what failed the check. */
@@ -264,7 +322,9 @@ export function formatScore(score: CorpusScore): string[] {
 			.join('  ')
 			.trimEnd(),
 	);
-	lines.push(`${score.clean} clean renders`);
+	lines.push(
+		`${score.clean} clean renders; masks for ${score.maskClean} clean renders and ${score.maskDefects} defects`,
+	);
 	for (const miss of score.misses) {
 		lines.push(
 			miss.reason === 'unfound'
@@ -273,7 +333,7 @@ export function formatScore(score: CorpusScore): string[] {
 		);
 	}
 	for (const id of score.caught) {
-		lines.push(`now found ${id}: drop its missed flag in synthetic.json`);
+		lines.push(`now found ${id}: drop its missed flag in the corpus labels`);
 	}
 	for (const s of score.surprises) {
 		lines.push(
@@ -312,6 +372,7 @@ export function addDefect(opts: {
 	}
 
 	const label: DefectLabel = {
+		missed: opts.kind === 'collision' ? true : undefined,
 		id: `${commit}-${stemOf(opts.screenshot)}`,
 		kind: opts.kind,
 		screenshot: opts.screenshot,
@@ -319,6 +380,12 @@ export function addDefect(opts: {
 		note: git('log', '-1', '--format=%s', commit).toString().trim(),
 		box,
 	};
+	for (const side of ['before', 'after']) {
+		rmSync(
+			join(opts.corpus, 'defects', `${label.id}.${side}.png.masks.json.gz`),
+			{ force: true },
+		);
+	}
 	writeFileSync(join(opts.corpus, 'defects', `${label.id}.before.png`), before);
 	writeFileSync(join(opts.corpus, 'defects', `${label.id}.after.png`), after);
 	const file = join(opts.corpus, 'defects.json');

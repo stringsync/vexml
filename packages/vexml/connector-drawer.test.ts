@@ -64,6 +64,8 @@ describe('ConnectorDrawer', () => {
 		// Captures every filled bar so a custom barline's strokes are assertable.
 		const rects: FillRect[] = [];
 		const context = {
+			openGroup() {},
+			closeGroup() {},
 			save() {},
 			restore() {},
 			setFillStyle() {},

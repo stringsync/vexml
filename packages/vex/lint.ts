@@ -88,10 +88,10 @@ export async function lint(opts: LintOptions) {
 	const renders = new Map<Engine, LocatedRender>();
 	try {
 		for (const engine of engines) {
-			const { png, measures } = await locate(engine, musicXML);
+			const { png, measures, masks } = await locate(engine, musicXML);
 			renders.set(engine, { png, measures });
 			const map = new MeasureMap(measures);
-			const lint = new RenderLint(InkMap.fromPng(png)).lint();
+			const lint = new RenderLint(InkMap.fromPng(png), masks).lint();
 			const report = {
 				score: lint.score,
 				findings: lint.findings.map((finding) => ({

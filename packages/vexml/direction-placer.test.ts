@@ -125,6 +125,8 @@ describe('DirectionPlacer', () => {
 		let fill = '';
 		let pen = { x: 0, y: 0 };
 		const context = {
+			openGroup() {},
+			closeGroup() {},
 			save() {},
 			restore() {},
 			setFont() {},

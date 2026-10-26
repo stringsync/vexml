@@ -1,6 +1,8 @@
 import * as path from 'node:path';
+import { AlphatabAttribution } from './alphatab-attribution';
 import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
+import type { InkMask } from './ink-mask';
 import type { TabPool } from './pool';
 import { tabPools } from './tab-pools';
 import { DEFAULT_WIDTH, MARGIN, PADDING } from './vexml-renderer';
@@ -26,6 +28,7 @@ export interface AlphatabApi {
 /** What alphaTab exposes to eval fns. */
 export interface AlphatabContext {
 	alphatab: AlphatabApi;
+	inkMasks(): Promise<InkMask[]>;
 	container: HTMLDivElement;
 }
 
@@ -70,7 +73,9 @@ function scripts(): Promise<string[]> {
 	// alphaTab's UMD build hangs the library off the window; alphatab-page.ts reaches
 	// it there.
 	script ??= Promise.all([
-		Bun.file(dist('alphaTab.min.js')).text(),
+		Bun.file(dist('alphaTab.js'))
+			.text()
+			.then((source) => AlphatabAttribution.instrument(source)),
 		bundle(path.resolve(import.meta.dir, 'alphatab-page.ts')),
 	]);
 	return script;

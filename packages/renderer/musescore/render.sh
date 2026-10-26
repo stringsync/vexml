@@ -35,7 +35,8 @@ in_dir="$(cd "$(dirname "$input")" && pwd)"
 in_file="$(basename "$input")"
 out_dir="$(cd "$(dirname "$output")" && pwd)"
 out_file="$(basename "$output")"
-stem="${out_file%.png}"
+extension="${out_file##*.}"
+stem="${out_file%.*}"
 
 if docker image inspect "$image" >/dev/null 2>&1; then
 	# Near-free once the layers are cached, and picks up Dockerfile edits — a stale
@@ -48,7 +49,7 @@ fi
 
 # MuseScore writes one file per page, suffixed -1, -2, … — never the bare name.
 # Clear the previous run's pages so a shorter score can't leave stale ones behind.
-for stale in "$out_dir/$stem"-[0-9]*.png; do
+for stale in "$out_dir/$stem"-[0-9]*."$extension"; do
 	rm -f "$stale"
 done
 
@@ -57,7 +58,13 @@ docker run --rm \
 	-v "$out_dir:/out" \
 	"$image" -T "$margin" -r "$dpi" -o "/out/$out_file" "/in/$in_file"
 
-pages=("$out_dir/$stem"-[0-9]*.png)
+# SVG export may write a single unsuffixed file.
+if [ -f "$output" ] && [ "$extension" = svg ]; then
+	echo "wrote $output"
+	exit 0
+fi
+
+pages=("$out_dir/$stem"-[0-9]*."$extension")
 case "${#pages[@]}" in
 	0)
 		echo "render.sh: MuseScore wrote no pages" >&2

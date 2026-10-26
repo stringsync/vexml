@@ -12,6 +12,7 @@ import type {
 import type { paint } from '@stringsync/vexml/paint';
 import { BrowserRenderer } from './browser-renderer';
 import { bundle } from './bundle';
+import type { InkMask } from './ink-mask';
 import type { TabPool } from './pool';
 import { tabPools } from './tab-pools';
 
@@ -19,6 +20,7 @@ import { tabPools } from './tab-pools';
  * and the library entry itself (so a fn can drive a re-render, as the stage tests do). */
 export interface VexmlContext {
 	score: Score;
+	inkMasks(): InkMask[];
 	container: HTMLDivElement;
 	render: typeof render;
 	paint: typeof paint;

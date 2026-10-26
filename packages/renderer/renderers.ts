@@ -10,7 +10,7 @@ import {
 	type OsmdInput,
 	OsmdRenderer,
 } from './osmd-renderer';
-import type { EvalRenderer, Renderer } from './renderer';
+import type { EvalRenderer } from './renderer';
 import { tabPools } from './tab-pools';
 import {
 	type VexmlContext,
@@ -40,7 +40,7 @@ export class renderers {
 		return new AlphatabRenderer(input);
 	}
 
-	static musescore(input: MusescoreInput): Renderer {
+	static musescore(input: MusescoreInput): MusescoreRenderer {
 		return new MusescoreRenderer(input);
 	}
 

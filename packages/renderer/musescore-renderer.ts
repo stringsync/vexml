@@ -1,7 +1,10 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
+import { bundle } from './bundle';
+import type { InkMask } from './ink-mask';
 import type { Image, Renderer } from './renderer';
+import { tabPools } from './tab-pools';
 
 export interface MusescoreInput {
 	musicXML: string;
@@ -14,6 +17,45 @@ export interface MusescoreInput {
  */
 export class MusescoreRenderer implements Renderer {
 	constructor(private readonly input: MusescoreInput) {}
+
+	async capture(): Promise<{ image: Image; masks: InkMask[] }> {
+		const dir = await mkdtemp(path.join(tmpdir(), 'vexml-musescore-ink-'));
+		try {
+			const input = path.join(dir, 'score.musicxml'),
+				output = path.join(dir, 'score.svg');
+			await Bun.write(input, this.input.musicXML);
+			const proc = Bun.spawn(
+				[path.resolve(import.meta.dir, 'musescore/render.sh'), input, output],
+				{ stdout: 'pipe', stderr: 'inherit' },
+			);
+			if ((await proc.exited) !== 0) {
+				throw new Error('MuseScore SVG export failed');
+			}
+			if (!(await Bun.file(output).exists())) {
+				throw new Error(
+					'MuseScore paginated the score; slice down to fewer measures',
+				);
+			}
+			const svg = await Bun.file(output).text();
+			const pool = tabPools.pool('musescore-svg', {
+				html: '<body style="margin:0;background:white"><div id="screenshot" style="display:inline-block;overflow:hidden;vertical-align:top"></div></body>',
+				scripts: async () => [
+					await bundle(path.resolve(import.meta.dir, 'musescore-page.ts')),
+				],
+				width: 1100,
+				height: 600,
+			});
+			return pool.withTab(async (tab) => {
+				await tab.call('mount', { svg });
+				const { masks } = await tab.call<{ masks: InkMask[] }>('evaluate', {
+					fnSrc: 'ctx => ctx',
+				});
+				return { image: await tab.screenshot('#screenshot'), masks };
+			});
+		} finally {
+			await rm(dir, { recursive: true, force: true });
+		}
+	}
 
 	async render(): Promise<Image> {
 		// The one engine with no browser behind it: MuseScore runs in Docker (see

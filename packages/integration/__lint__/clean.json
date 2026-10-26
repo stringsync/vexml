@@ -1,6 +1,42 @@
 {
+	"731be086-score_amazing_grace.after.png": {
+		"collision": 7
+	},
+	"articulations_extended.ink.png": {
+		"collision": 4
+	},
+	"defaults_appearance.ink.png": {
+		"collision": 1
+	},
+	"document_positions.ink.png": {
+		"collision": 3
+	},
+	"grace_notes.ink.png": {
+		"collision": 1
+	},
+	"lyrics_voice_and_piano.ink.png": {
+		"collision": 3
+	},
+	"ornaments.ink.png": {
+		"collision": 6
+	},
+	"score_beethoven_an_die_ferne_geliebte.ink.png": {
+		"collision": 2
+	},
+	"score_debussy_mandoline.ink.png": {
+		"collision": 2
+	},
+	"score_land_der_berge.ink.png": {
+		"collision": 5
+	},
+	"score_schubert_gute_nacht.ink.png": {
+		"collision": 3
+	},
 	"tab_vibrato.png": {
 		"stray-line": 1
+	},
+	"text_formatting.ink.png": {
+		"collision": 3
 	},
 	"time_single_number.png": {
 		"stray-line": 1

@@ -368,6 +368,10 @@ export class DrawPass {
 		private readonly list: PaintList,
 		opts: DrawPassOptions,
 	) {
+		// CanvasContext discards VexFlow's notation groups. Keep them on the recording
+		// sink, where diagnostic mask replays can separate elements without changing paint.
+		this.context.openGroup = (kind) => this.list.openGroup(kind ?? 'element');
+		this.context.closeGroup = () => this.list.closeGroup();
 		this.voltaLifts = opts.voltaLifts ?? new Map();
 		this.hairpinBands = opts.hairpinBands ?? new Map();
 		const {

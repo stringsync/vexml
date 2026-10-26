@@ -108,21 +108,26 @@ export function drawBarConnector(
 	type: StaveConnectorType,
 	xShift = 0,
 ): void {
-	const kinds = CONNECTOR_BARS[type];
-	if (!BarlineWidths.custom() || !kinds) {
-		new StaveConnector(top, bottom)
-			.setType(type)
-			.setXShift(xShift)
-			.setContext(ctx)
-			.draw();
-		return;
-	}
-	const topY = top.getYForLine(0);
-	const botY = bottom.getYForLine(bottom.getNumLines() - 1);
-	const left = type === 'singleLeft' || type === 'boldDoubleLeft';
-	const x = top.getX() + (left ? xShift : top.getWidth());
-	for (const [offset, width] of left ? leftRects(kinds) : barRects(kinds)) {
-		ctx.fillRect(x + offset, topY, width, botY - topY);
+	ctx.openGroup('vexml-staveconnector');
+	try {
+		const kinds = CONNECTOR_BARS[type];
+		if (!BarlineWidths.custom() || !kinds) {
+			new StaveConnector(top, bottom)
+				.setType(type)
+				.setXShift(xShift)
+				.setContext(ctx)
+				.draw();
+			return;
+		}
+		const topY = top.getYForLine(0);
+		const botY = bottom.getYForLine(bottom.getNumLines() - 1);
+		const left = type === 'singleLeft' || type === 'boldDoubleLeft';
+		const x = top.getX() + (left ? xShift : top.getWidth());
+		for (const [offset, width] of left ? leftRects(kinds) : barRects(kinds)) {
+			ctx.fillRect(x + offset, topY, width, botY - topY);
+		}
+	} finally {
+		ctx.closeGroup();
 	}
 }
 
