@@ -104,7 +104,7 @@ are picked by hand.
 | `circular-arrow` | missing | no SMuFL glyph to draw it with; mdom raw only |
 | `clef` | drawn | `clef_treble.musicxml`, `clef_c.musicxml` |
 | `clef@additional` | missing | task #38; additional (cautionary) clef form ignored; mdom raw only |
-| `clef@after-barline` | missing | task #19; mdom raw only |
+| `clef@after-barline` | drawn | `clef_after_barline.musicxml`: an end-of-measure clef opens the next measure past the barline |
 | `clef@size` | missing | task #38; cue or large clef size ignored; mdom raw only |
 | `clef-octave-change` | drawn | `clef_treble_octave.musicxml`: the 8 above or below the clef |
 | `coda` | drawn | `navigation.musicxml` |
@@ -261,7 +261,7 @@ are picked by hand.
 | `left-margin` | missing | task #20; mdom typed |
 | `level` | drawn | `editorial_marks.musicxml` M1; parentheses and bracket wrap a note heads; size and non-note parents not drawn |
 | `line` | drawn | `clef_c.musicxml`: clef staff line |
-| `line-detail` | missing | task #19; mdom typed |
+| `line-detail` | drawn | `line_detail.musicxml`: per-line width, color, dashed or dotted line-type, print-object |
 | `line-width` | missing | task #36; engraving line thicknesses from defaults appearance; mdom raw only |
 | `link` | ignored | file links |
 | `listen` | ignored | interactive performance only |

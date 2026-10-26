@@ -504,6 +504,18 @@ describe('render', () => {
 	// A count that changes MID-measure is still unsupported: vexml reads <attributes> at the
 	// measure start (the same limit clef_mid_measure works around above), so this fixture puts
 	// M3's change at the barline rather than after its first note, where lilypond_14a had it.
+	it.concurrent('renders line_detail.png', async () => {
+		expect(await testing.render('line_detail.musicxml')).toMatchScreenshot(
+			'line_detail.png',
+		);
+	});
+
+	it.concurrent('renders clef_after_barline.png', async () => {
+		expect(
+			await testing.render('clef_after_barline.musicxml'),
+		).toMatchScreenshot('clef_after_barline.png');
+	});
+
 	it.concurrent('renders staff_details_lines.png', async () => {
 		expect(
 			await testing.render('staff_details_lines.musicxml'),

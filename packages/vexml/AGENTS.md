@@ -57,7 +57,7 @@ Two rules cut across the draw stage:
 
 ## Staves, measures, and the frame
 
-- **Stave, clef, key signature, time signature**: `stave-builder.ts`, `stave-factory.ts` (the stave itself and a system's opening clef/key), `signature-translator.ts`, `extended-time-signature.ts` (note-glyph denominators and interchangeable meters), `group-time-signature.ts` (`<group-time/>`: placeholders reserve room per stave, the connector drawer draws one scaled signature; spans from `score-reader.ts` `groupTimeSpans`), `custom-key-signature.ts`, `score-reader.ts`
+- **Stave, clef, key signature, time signature**: `stave-builder.ts`, `stave-factory.ts` (the stave itself and a system's opening clef/key), `signature-translator.ts`, `extended-time-signature.ts` (note-glyph denominators and interchangeable meters), `group-time-signature.ts` (`<group-time/>`: placeholders reserve room per stave, the connector drawer draws one scaled signature; spans from `score-reader.ts` `groupTimeSpans`), `custom-key-signature.ts`, `detailed-stave.ts` (staff lines with their own width, color, dash), `score-reader.ts` (`midClefsOf` holds `after-barline` clefs for the next measure)
 - **Mid-measure clef changes, mid-measure barlines**: `score-reader.ts` (`midClefsOf`, `midBarlinesOf`), `voice-translator.ts`, `signature-translator.ts`, `barline-translator.ts`, `layout-planner.ts`
 - **Barlines, repeat signs, volta (ending) brackets**: `barline-translator.ts`, `stave-builder.ts`, `connector-drawer.ts`, `score-reader.ts`
 - **Fermatas on a barline**: `score-reader.ts` (`barlineFermatasOf`), `direction-placer.ts` (`drawBarlineFermata`), `fermata-glyphs.ts`
@@ -79,7 +79,7 @@ Two rules cut across the draw stage:
 - **Staff size (`staff-size`)**: `stave-factory.ts` (line spacing, clef), `system-formatter.ts` (`shrinkNoteheads`)
 - **Editorial marks (`<level>` parentheses/brackets round a note, `<footnote>` text above it)**: `chord-translator.ts` (`addLevel`), `notation-translator.ts`, `footnote-annotation.ts` (stacked by `system-formatter.ts` with the technical labels)
 - **Invisible notes (`print-object="no"`), hidden dots/ledger lines (`print-dot`, `print-leger`), note colors**: `chord-translator.ts`, `invisible-stave-note.ts` (the hidden StaveNote)
-- **Hidden lyrics (`print-lyric`), notations (`<notations print-object>`), staff lines (`staff-details`), ending brackets (`<ending print-object>`)**: `notation-translator.ts`, `stave-factory.ts`, `score-reader.ts` (`measureRepeats`), `barline-translator.ts`
+- **Hidden lyrics (`print-lyric`), notations (`<notations print-object>`), staff lines (`staff-details`, per-line `line-detail` via `detailed-stave.ts`), ending brackets (`<ending print-object>`)**: `notation-translator.ts`, `stave-factory.ts`, `score-reader.ts` (`measureRepeats`), `barline-translator.ts`
 - **Formatting a measure column: note x, note extents, alignment**: `system-formatter.ts`
 
 ## Horizontal spacing (how wide a measure is, where a note sits in it)

@@ -265,7 +265,13 @@ export class ScoreReader {
 		if (!changes) {
 			changes = measure
 				.clefChanges(staffNumber)
-				.filter((change) => change.beat > EPSILON);
+				// after-barline="yes" holds the clef back from the end of the measure to the
+				// next one's opening, past the barline.
+				.filter(
+					(change) =>
+						change.beat > EPSILON &&
+						change.clef.getAttribute('after-barline') !== 'yes',
+				);
 			byStaff.set(staffNumber, changes);
 		}
 		return changes;

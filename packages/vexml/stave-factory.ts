@@ -1,6 +1,7 @@
-import type { Measure, Part } from '@stringsync/mdom';
-import { Stave, StaveModifierPosition, TabStave } from 'vexflow/core';
+import type { LineDetail, Measure, Part } from '@stringsync/mdom';
+import { type Stave, StaveModifierPosition, TabStave } from 'vexflow/core';
 import { CustomKeySignature } from './custom-key-signature';
+import { DetailedStave, type LineStyle } from './detailed-stave';
 import type { SignatureTranslator } from './signature-translator';
 import type { StavePlan } from './stave-plan';
 
@@ -54,28 +55,45 @@ export class StaveFactory {
 		// The shrunk five lines center on where the full-size ones would sit, so the staff
 		// stays in its row and only the ink shrinks.
 		const centering = 2 * (STAVE_LINE_DISTANCE - spacing);
+		const details = isTab
+			? []
+			: this.lineDetails(measure, staffNumber, staveLines, hiddenAbove);
+		const styled = details.flatMap((detail) =>
+			detail.style ? [detail.style] : [],
+		);
 		const stave = isTab
 			? new TabStave(x, y, width, { numLines: tabLines })
-			: new Stave(x, y, width, {
-					// A reduced stave keeps the five-line frame and HIDES the lines it doesn't
-					// draw, rather than declaring fewer of them. vexflow anchors a shorter stave
-					// at the top: its lines come off the bottom, so a 1-line percussion stave
-					// draws where a five-line stave's TOP line goes, while leaving note rows,
-					// ledger lines, clef and time signature in the five-line frame regardless.
-					// Hiding instead centers the drawn lines the way MuseScore and OSMD do (the
-					// single line lands on the middle line, with the percussion clef straddling
-					// it) and leaves everything measured off the stave (note rows, connectors,
-					// part spacing) exactly as it was.
-					spaceAboveStaffLn:
-						((4 + halfNudge) * STAVE_LINE_DISTANCE + centering) / spacing,
-					spacingBetweenLinesPx: spacing,
-				});
+			: new DetailedStave(
+					x,
+					y,
+					width,
+					{
+						// A reduced stave keeps the five-line frame and HIDES the lines it doesn't
+						// draw, rather than declaring fewer of them. vexflow anchors a shorter stave
+						// at the top: its lines come off the bottom, so a 1-line percussion stave
+						// draws where a five-line stave's TOP line goes, while leaving note rows,
+						// ledger lines, clef and time signature in the five-line frame regardless.
+						// Hiding instead centers the drawn lines the way MuseScore and OSMD do (the
+						// single line lands on the middle line, with the percussion clef straddling
+						// it) and leaves everything measured off the stave (note rows, connectors,
+						// part spacing) exactly as it was.
+						spaceAboveStaffLn:
+							((4 + halfNudge) * STAVE_LINE_DISTANCE + centering) / spacing,
+						spacingBetweenLinesPx: spacing,
+					},
+					styled,
+				);
 		// Tab is exempt: its line count IS its string count, so a 4-string stave draws four
 		// lines and means it.
 		for (let line = 0; line < 5 && !isTab && staveLines < 5; line++) {
 			stave.setConfigForLine(line, {
 				visible: line >= hiddenAbove && line < hiddenAbove + staveLines,
 			});
+		}
+		// A <line-detail> hides its line from vexflow: a styled one is drawn by DetailedStave
+		// instead, and print-object="no" draws nothing.
+		for (const { row } of details) {
+			stave.setConfigForLine(row, { visible: false });
 		}
 		// staff-details print-object="no" hides the lines; clef, key and notes stay.
 		if (measure.getStaffDetails(staffNumber)?.printObject === false) {
@@ -84,6 +102,46 @@ export class StaveFactory {
 			}
 		}
 		return { stave, isTab, tabLines };
+	}
+
+	/*
+	 * The `<line-detail>` overrides of a notation stave, as stave rows. `style` is null for a
+	 * line that print-object="no" removes. line="1" is the bottom line, the last drawn row.
+	 */
+	private lineDetails(
+		measure: Measure,
+		staffNumber: string,
+		staveLines: number,
+		hiddenAbove: number,
+	): Array<{ row: number; style: LineStyle | null }> {
+		const details: Array<{ row: number; style: LineStyle | null }> = [];
+		for (const detail of measure.getLineDetails(staffNumber)) {
+			const row = hiddenAbove + staveLines - detail.line;
+			if (detail.line < 1 || detail.line > staveLines) {
+				continue;
+			}
+			if (detail.getAttribute('print-object') === 'no') {
+				details.push({ row, style: null });
+				continue;
+			}
+			const width = detail.width;
+			const color = detail.getAttribute('color');
+			const dash = this.dashOf(detail);
+			if (width === null && !color && dash.length === 0) {
+				continue;
+			}
+			details.push({ row, style: { row, width, color, dash } });
+		}
+		return details;
+	}
+
+	private dashOf(detail: LineDetail): number[] {
+		const type = detail.getAttribute('line-type');
+		if (type !== 'dashed' && type !== 'dotted') {
+			return [];
+		}
+		// line-detail has no dash-length or space-length of its own.
+		return type === 'dotted' ? [1, 3] : [5, 3];
 	}
 
 	/*
