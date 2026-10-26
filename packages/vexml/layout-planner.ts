@@ -39,12 +39,15 @@ import {
 import type { DocumentLayout, DocumentPage, PageSize } from './document-layout';
 import type { Gaps } from './gaps';
 import { HeaderPlan } from './header-plan';
+import type { LayoutPlan } from './layout-plan';
+import { type LayoutRules, LazyLayoutPlan } from './lazy-layout-plan';
 import type { ScoreReader, StaffVoice } from './score-reader';
 import type { MidClefSpec, SignatureTranslator } from './signature-translator';
 import { StaveFactory } from './stave-factory';
 import type { StavePlan } from './stave-plan';
 import type { TabVoiceTranslator } from './tab-voice-translator';
 import type { VoiceTranslator } from './voice-translator';
+import { WholeLayoutPlan } from './whole-layout-plan';
 
 export class LayoutPlanner {
 	constructor(
@@ -80,80 +83,6 @@ export class LayoutPlanner {
 			GraceNoteGroup.CATEGORY,
 		);
 		return group ? group.getWidth() + GRACE_SPACING : 0;
-	}
-
-	/*
-	 * Even out a lopsided pair of systems the width breaker produced. Packing is greedy, so
-	 * it fills a system to the brim and drops whatever is left onto the next one: a document
-	 * line that misses fitting by a single measure comes out as one system squashed until its
-	 * lyrics collide followed by that one measure stretched across the whole page. Hand the
-	 * last measure of a system back to the next one for as long as that brings the
-	 * worse-fitting of the two closer to the line width.
-	 *
-	 * Left alone are the boundaries this isn't entitled to move: one the document forced with
-	 * <print new-system="yes">, and the score's trailing system, which is meant to be short.
-	 * A system keeps at least one measure of music, so a leading gap never sits alone.
-	 * A pair the breaker already balanced never improves on the first try, so it doesn't move.
-	 */
-	private evenOutSystems(
-		systems: number[][],
-		forcedStarts: Set<number>,
-		isMusic: (m: number) => boolean,
-		measure: (
-			measures: number[],
-			systemIndex: number,
-		) => { intrinsic: number; minimum: number; usable: number },
-	): void {
-		// How far a system is from filling its line, as a ratio >= 1 in either direction, so
-		// a squashed system and a stretched one are directly comparable.
-		const misfit = (measures: number[], systemIndex: number) => {
-			const { intrinsic, usable } = measure(measures, systemIndex);
-			return intrinsic > usable ? intrinsic / usable : usable / intrinsic;
-		};
-		// Whether a system's music no longer fits the line even at its collision-free minimum.
-		// Evening out the ragged edges is cosmetic; the minimum is not, so a move that would
-		// overrun it is refused however much better the two lines would look.
-		const overruns = (measures: number[], systemIndex: number) => {
-			const { minimum, usable } = measure(measures, systemIndex);
-			return minimum > usable;
-		};
-		for (let s = 0; s + 2 < systems.length; s++) {
-			const start = systems[s];
-			const follow = systems[s + 1];
-			const boundary = follow?.[0];
-			if (!start || !follow || boundary === undefined) {
-				continue;
-			}
-			if (forcedStarts.has(boundary)) {
-				continue;
-			}
-			let head: number[] = start;
-			let tail: number[] = follow;
-			let worst = Math.max(misfit(head, s), misfit(tail, s + 1));
-			while (head.length > 1) {
-				const nextHead = head.slice(0, -1);
-				if (!nextHead.some(isMusic)) {
-					break;
-				}
-				const nextTail = head.slice(-1).concat(tail);
-				// The tail is the one growing, so it's the only one that can newly overrun.
-				if (overruns(nextTail, s + 1)) {
-					break;
-				}
-				const candidate = Math.max(
-					misfit(nextHead, s),
-					misfit(nextTail, s + 1),
-				);
-				if (candidate >= worst) {
-					break;
-				}
-				head = nextHead;
-				tail = nextTail;
-				worst = candidate;
-			}
-			systems[s] = head;
-			systems[s + 1] = tail;
-		}
 	}
 
 	// A measure's note-area widths: `ideal` is the sum of its notes' logarithmic widths (denser
@@ -228,6 +157,52 @@ export class LayoutPlanner {
 		}
 		const min = Math.max(floor, minNotes);
 		return { min, ideal: Math.max(min, logWidth) };
+	}
+
+	/*
+	 * A measure's note area estimated from its beats alone, no vexflow built: each voice's
+	 * notes' logarithmic widths with the trailing room drawNotes pads an underfull voice to the
+	 * meter with, a grace's lead clearance per grace, the busiest voice wins, and a tab measure
+	 * floored by its note count as above. Blind to vexflow's collision minimum, which decides
+	 * most of a dense measure's width, so a plan scales it by what its measured measures showed
+	 * (see LazyLayoutPlan.forecast). Only a forecast reads it: the layout is measureNoteArea's.
+	 */
+	private estimateNoteArea(
+		staves: StaveSpec[],
+		floor: number,
+		noteSpacing: number,
+	): NoteArea {
+		let logWidth = 0;
+		for (const { voices, meterFloor, isTab } of staves) {
+			const endBeat = Math.max(this.reader.endBeatOf(voices), meterFloor);
+			for (const voice of voices) {
+				let w = 0;
+				let last = 0;
+				let count = 0;
+				for (const chord of voice.chords) {
+					if (chord.lead.isGrace) {
+						w += GRACE_SPACING;
+						continue;
+					}
+					const beat = this.reader.measureBeatOf(chord.lead) ?? 0;
+					const beats = this.reader.beatsOf(chord.lead) ?? 0;
+					w += this.noteLogWidth(beats * QUARTER_NOTE_TICKS, noteSpacing);
+					last = Math.max(last, beat + beats);
+					count++;
+				}
+				if (endBeat > last + EPSILON) {
+					w += this.noteLogWidth(
+						(endBeat - last) * QUARTER_NOTE_TICKS,
+						noteSpacing,
+					);
+				}
+				if (isTab) {
+					w = Math.max(w, count * TAB_MIN_NOTE_SPACING);
+				}
+				logWidth = Math.max(logWidth, w);
+			}
+		}
+		return { min: floor, ideal: Math.max(floor, logWidth) };
 	}
 
 	/*
@@ -469,7 +444,7 @@ export class LayoutPlanner {
 	 */
 	private documentSystems(
 		parts: Part[],
-		systems: number[][],
+		systems: readonly (readonly number[])[],
 		planned: number[],
 		document: DocumentLayout,
 		strict: boolean,
@@ -527,6 +502,16 @@ export class LayoutPlanner {
 	 * the music and the options, never on the live container: the finished result is
 	 * scaled to fit its container. */
 	plan(score: Score, config: Config): ScoreLayout {
+		return this.begin(score, config).complete();
+	}
+
+	/**
+	 * Begin the layout `plan` makes, to place a system at a time (see LayoutPlan): the systems
+	 * the first screen of a progressive render needs before the rest of the score is measured.
+	 * The plan comes complete where it rests on the whole score: a panoramic line, an
+	 * `overflow: 'widen'` page, and a layout following the document's own.
+	 */
+	begin(score: Score, config: Config): LayoutPlan {
 		const parts = score.parts;
 		// documentLayout: the page, system and staff layout the document asks for. Null when
 		// ignored, which leaves every number below exactly as vexml's own.
@@ -728,9 +713,9 @@ export class LayoutPlanner {
 			edgeWidthOf(m) +
 			(m === lastLeading ? Math.max(0, systemOverhang - labelIndent) : 0);
 		// Index of a system's first and last measure of music, which open and close it.
-		const musicStartOf = (measures: number[]) =>
+		const _musicStartOf = (measures: number[]) =>
 			Math.max(0, measures.findIndex(isMusic));
-		const musicEndOf = (measures: number[]) => {
+		const _musicEndOf = (measures: number[]) => {
 			const i = measures.findLastIndex(isMusic);
 			return i === -1 ? measures.length - 1 : i;
 		};
@@ -746,21 +731,16 @@ export class LayoutPlanner {
 		// them (see ScoreReader.multiRestsOf).
 		const { leads: multiRestLeads, hidden: multiRestHidden } =
 			this.reader.multiRestsOf(parts);
-		const noteAreas = Array.from({ length: measureCount }, (_, m) => {
-			// An edge gap's box is all lead (see edgeLeadOf): nothing to stretch.
-			if (!isMusic(m)) {
-				return { min: 0, ideal: 0 };
-			}
-			// A gap has no notes to size it: floor its (empty) note area at the caller's
-			// minWidth and at the label's estimated width so the text fits. It stretches
-			// with its system like any measure: minWidth is a floor, not an exact width.
-			const gap = gaps.get(m);
-			if (gap) {
-				// The label has to fit, so it sets the gap's hard minimum; the caller's minWidth is
-				// a preference, so it only raises the ideal and squeezes away like note spacing.
-				const min = Math.max(BASE_VOICE_WIDTH, this.gapLabelWidth(gap));
-				return { min, ideal: Math.max(min, gap.minWidth ?? 0) };
-			}
+		// A gap has no notes to size it: floor its (empty) note area at the caller's minWidth and
+		// at the label's estimated width so the text fits. It stretches with its system like any
+		// measure: minWidth is a floor, not an exact width. The label has to fit, so it sets the
+		// gap's hard minimum; the caller's minWidth is a preference, so it only raises the ideal
+		// and squeezes away like note spacing.
+		const gapAreaOf = (gap: Gap): NoteArea => {
+			const min = Math.max(BASE_VOICE_WIDTH, this.gapLabelWidth(gap));
+			return { min, ideal: Math.max(min, gap.minWidth ?? 0) };
+		};
+		const staveSpecsOf = (m: number): StaveSpec[] => {
 			const staves: StaveSpec[] = [];
 			for (const part of parts) {
 				const measure = part.measures[m];
@@ -785,21 +765,52 @@ export class LayoutPlanner {
 					}
 				}
 			}
-			// A multirest lead holds one whole rest, which would size it like any empty bar:
-			// floor it so the consolidated bar and its count have room to read as a multirest.
-			return this.measureNoteArea(
-				staves,
-				multiRestLeads.has(m) ? MULTI_REST_MIN_WIDTH : BASE_VOICE_WIDTH,
+			return staves;
+		};
+		// A multirest lead holds one whole rest, which would size it like any empty bar: floor it
+		// so the consolidated bar and its count have room to read as a multirest.
+		const floorOf = (m: number) =>
+			multiRestLeads.has(m) ? MULTI_REST_MIN_WIDTH : BASE_VOICE_WIDTH;
+		// Measured once each, when the plan reaches the measure: building a measure's tickables is
+		// most of the plan's cost, so a plan made a system at a time measures only what it places
+		// (see LazyLayoutPlan). A measure past the end of a short part falls back to an empty bar.
+		const memoized = (measure: (m: number) => NoteArea) => {
+			const areas = new Map<number, NoteArea>();
+			return (m: number): NoteArea => {
+				let area = areas.get(m);
+				if (!area) {
+					const gap = gaps.get(m);
+					// An edge gap's box is all lead (see edgeLeadOf): nothing to stretch.
+					if (!isMusic(m)) {
+						area = { min: 0, ideal: 0 };
+					} else if (gap) {
+						area = gapAreaOf(gap);
+					} else {
+						area = measure(m);
+					}
+					areas.set(m, area);
+				}
+				return area;
+			};
+		};
+		const measuredAreaOf = memoized((m) =>
+			this.measureNoteArea(
+				staveSpecsOf(m),
+				floorOf(m),
 				noteSpacing,
 				softmaxFactor,
-			);
-		});
-		// Measures past the end of a short part have no entry; they fall back to an empty bar.
+			),
+		);
+		// The same, estimated from the beats alone (see estimateNoteArea), for the forecast of
+		// the measures the plan has not reached.
+		const estimateOf = memoized((m) =>
+			this.estimateNoteArea(staveSpecsOf(m), floorOf(m), noteSpacing),
+		);
+		// Following the document, a measure the document gives a width takes it, fixed: the
+		// requested width less its lead (so a system-starting measure's clef and key come out of
+		// it), never narrower than its collision-free minimum unless strict.
 		const areaOf = (m: number, systemStart = false): NoteArea => {
-			const area = noteAreas[m] ?? {
-				min: BASE_VOICE_WIDTH,
-				ideal: BASE_VOICE_WIDTH,
-			};
+			const area = measuredAreaOf(m);
 			const widths =
 				mode === 'ignore' || gaps.has(m)
 					? []
@@ -897,105 +908,85 @@ export class LayoutPlanner {
 				? leadGlyphs(m, systemStart) + padOf(m) + leadingPadOf(m, systemStart)
 				: edgeLeadOf(m);
 
-		// A system's width at each of the two note-area sizes: `ideal` is what it wants,
-		// `min` is the narrowest it can be drawn without its notes colliding. Leads are fixed
-		// glyph widths, so they count the same in both.
-		const spanOf = (measures: number[], key: 'min' | 'ideal') =>
+		// A system's width at each of the two note-area sizes, for 'widen' below: `ideal` is what
+		// it wants. Leads are fixed glyph widths.
+		const spanOf = (measures: readonly number[]) =>
 			measures.reduce(
 				(sum, m, i) =>
 					sum +
-					leadOf(m, i === musicStartOf(measures)) +
-					areaOf(m, i === musicStartOf(measures))[key],
+					leadOf(m, i === Math.max(0, measures.findIndex(isMusic))) +
+					areaOf(m, i === Math.max(0, measures.findIndex(isMusic))).ideal,
 				0,
 			);
 
-		// --- Breaks -------------------------------------------------------------------
-		// Standard: wrap to a new system once the next measure's note area would overrun
-		// the reference width. Panoramic: one system holding every measure. Either way
-		// breaks depend only on the music and width, never on the live container.
-		const breakIntoSystems = (): number[][] => {
-			if (layoutMode === 'panoramic') {
-				return [
-					Array.from({ length: measureCount }, (_, m) => m).filter(
-						(m) => !multiRestHidden.has(m),
-					),
-				];
-			}
-			const systems: number[][] = [];
-			let row: number[] = [];
-			let rowWidth = 0;
-			let rowMinWidth = 0;
-			// First measure of every system the document forced, so the evening-out pass
-			// below knows which boundaries are the document's and not the breaker's.
-			const forcedStarts = new Set<number>();
-			for (let m = 0; m < measureCount; m++) {
-				if (multiRestHidden.has(m)) {
-					continue;
-				}
-				let area = areaOf(m, !row.some(isMusic));
+		// --- Breaks and placement -----------------------------------------------------
+		// The plan breaks the measures into systems and places them, a system at a time or whole
+		// (see LazyLayoutPlan); the rules are everything above, read per measure.
+		const rules: LayoutRules = {
+			layoutMode,
+			overflow,
+			strict: mode === 'strict',
+			maxSystemFill: config.maxSystemFill,
+			minLastSystemFill: config.minLastSystemFill,
+			stretchSingleSystem: config.stretchSingleSystem,
+			// Read at call time, so re-running the plan after 'widen' raises it sees the wider page.
+			get width() {
+				return width;
+			},
+			measureCount,
+			hidden: multiRestHidden,
+			left: x,
+			right,
+			lastLeading,
+			labelIndent,
+			systemOverhang,
+			base: {
+				measureCount,
+				totalStaves,
+				staveOffsets,
+				top: y,
+				systemGap: config.systemSpacing,
+				appearance,
+				page,
+				floorHeight: y + offset + PAGE_MARGIN_BOTTOM,
+				softmaxFactor,
+				labelIndent,
+				partLabelIndent,
+				laterLabelIndent,
+				abbreviationIndent,
+			},
+			// A <print new-system="yes"/> forces a break before the measure regardless of width,
+			// unless honorSystemBreaks is off. So does a new page: its first measure necessarily
+			// starts a system, whether or not the exporter also said so.
+			printOf: (m) => {
 				const print = parts.map((part) => part.measures[m]?.print);
-				// A <print new-system="yes"/> forces a break before this measure regardless of
-				// width, unless honorSystemBreaks is off. So does a new page: its first measure
-				// necessarily starts a system, whether or not the exporter also said so.
-				const forcedBreak =
-					honorSystemBreaks && print.some((p) => p?.newSystem || p?.newPage);
-				// An explicit <print new-system="no"/> is a statement, not silence: the document
-				// laid this line out and wants the measure to stay on it. Honor it by squeezing
-				// the system rather than wrapping, but only while its notes still fit at their
-				// collision-free minimum. Past that the document's line and the reference width
-				// genuinely can't both hold, and `overflow` says which one gives: 'wrap' breaks
-				// the line here, 'allow' and 'widen' keep it and pay for it in page width.
-				// Strict keeps an explicitly unbroken document line even when rounded
-				// measure widths overrun it: those exact boxes cannot squeeze to fit.
-				const keepsLine =
-					honorSystemBreaks && print.some((p) => p?.systemBreak === 'no');
-				const usable = usableOf(systems.length, row[0] ?? m);
-				const overruns = keepsLine
-					? mode !== 'strict' &&
-						overflow === 'wrap' &&
-						rowMinWidth + LEAD_BARLINE + area.min > usable
-					: rowWidth + LEAD_BARLINE + area.ideal >
-						usable * config.maxSystemFill;
-				// ponytail: a lone measure has nowhere to wrap to, so one whose own minimum
-				// exceeds the usable width stays put and spills like overflow: 'allow'. That is the
-				// documented hole in 'wrap'. Needs a tiny referenceWidth or a huge noteSpacing
-				// to reach; splitting a measure across systems is the only real fix and no
-				// caller has wanted one.
-				// Edge gaps stay with the music they frame: a system never ends before a trailing
-				// gap, nor holds only leading ones.
-				const canBreak = isMusic(m) && row.some(isMusic);
-				if (canBreak && (forcedBreak || overruns)) {
-					if (forcedBreak) {
-						forcedStarts.add(m);
-					}
-					systems.push(row);
-					row = [];
-					rowWidth = 0;
-					rowMinWidth = 0;
-				}
-				area = areaOf(m, !row.some(isMusic));
-				const lead = leadOf(m, !row.some(isMusic));
-				rowWidth += lead + area.ideal;
-				rowMinWidth += lead + area.min;
-				row.push(m);
-			}
-			if (row.length > 0) {
-				systems.push(row);
-			}
-			this.evenOutSystems(
-				systems,
-				forcedStarts,
-				isMusic,
-				(measures, systemIndex) => ({
-					intrinsic: spanOf(measures, 'ideal'),
-					minimum: spanOf(measures, 'min'),
-					usable: usableOf(systemIndex, measures[0] ?? 0),
-				}),
-			);
-			return systems;
+				return {
+					forcedBreak:
+						honorSystemBreaks && print.some((p) => p?.newSystem || p?.newPage),
+					keepsLine:
+						honorSystemBreaks && print.some((p) => p?.systemBreak === 'no'),
+				};
+			},
+			isMusic,
+			edgeOf,
+			edgeWidthOf,
+			areaOf,
+			estimateOf,
+			leadOf,
+			padOf,
+			leadingPadOf,
+			indentOf,
+			rightIndentOf,
+			usableOf,
 		};
-
-		let systems = breakIntoSystems();
+		// Planned whole when the plan rests on what only the whole score tells: a panoramic line
+		// is one system, 'widen' re-breaks everything at the width the systems ask for, and a
+		// layout following the document sizes its page by its deepest system.
+		if (layoutMode !== 'panoramic' && overflow !== 'widen' && !document) {
+			return new LazyLayoutPlan(rules);
+		}
+		let plan = new LazyLayoutPlan(rules);
+		plan.complete();
 
 		// 'widen': grow the page until every system fits at its ideal spacing, then re-break
 		// at the new width. Widening only ever removes wraps, and a system the breaker itself
@@ -1007,163 +998,53 @@ export class LayoutPlanner {
 			for (let pass = 0; pass < 4; pass++) {
 				const needed = Math.max(
 					width,
-					...systems.map(
-						(measures, systemIndex) =>
-							spanOf(measures, 'ideal') +
-							x +
-							right +
-							indentOf(systemIndex, measures[0] ?? 0) +
-							rightIndentOf(measures[0] ?? 0),
-					),
+					...plan
+						.systemMeasures()
+						.map(
+							(measures, systemIndex) =>
+								spanOf(measures) +
+								x +
+								right +
+								indentOf(systemIndex, measures[0] ?? 0) +
+								rightIndentOf(measures[0] ?? 0),
+						),
 				);
 				if (needed <= width) {
 					break;
 				}
 				width = needed;
-				systems = breakIntoSystems();
+				plan = new LazyLayoutPlan(rules);
+				plan.complete();
 			}
 		}
 
-		// --- Placement ----------------------------------------------------------------
-		// Lay each system left to right at intrinsic (note-area) widths. Full systems are
-		// justified to the reference width by stretching note areas proportionally (the
-		// per-tick rate stays uniform within the system); the last/partial system of a
-		// multi-system score stays ragged unless it already fills minLastSystemFill
-		// of the line (then it justifies too), and all of panoramic stays ragged, so a short
-		// trailing line keeps its natural width instead of being needlessly stretched. A score
-		// that fits on a single system is justified, so a lone line fills the page width.
-		const boxes: MeasureBox[] = [];
-		let naturalWidth = width;
-		systems.forEach((measures, systemIndex) => {
-			const start = musicStartOf(measures);
-			const end = musicEndOf(measures);
-			const leads = measures.map((m, i) => leadOf(m, i === start));
-			const areas = measures.map((m, i) => areaOf(m, i === start));
-			const areaSum = areas.reduce((sum, a) => sum + a.ideal, 0);
-			const intrinsic = leads.reduce((sum, l) => sum + l, 0) + areaSum;
-			const first = measures[0] ?? 0;
-			const cap =
-				layoutMode === 'standard' ? usableOf(systemIndex, first) : Infinity;
-			// The last system of a multi-system score stays ragged unless its measures already
-			// fill most of the line: once their intrinsic width reaches minLastSystemFill
-			// of the reference width, justify it so a nearly-full trailing line snaps to the page
-			// edge instead of leaving a sliver of margin. Full systems always justify. A lone
-			// single system also always justifies, unless stretchSingleSystem is off, which
-			// makes it obey the same minLastSystemFill rule as a trailing line, so a short
-			// excerpt keeps its natural width instead of being blown up across the page.
-			const isLastOfMany =
-				systemIndex === systems.length - 1 && systems.length > 1;
-			const isRaggableLone =
-				systems.length === 1 && !config.stretchSingleSystem;
-			const obeysMinFill = isLastOfMany || isRaggableLone;
-			const justify =
-				layoutMode === 'standard' &&
-				(!obeysMinFill || intrinsic >= cap * config.minLastSystemFill);
-			// Justified systems fill the page; ragged systems keep their intrinsic width,
-			// and every standard system is capped at the page width, so an over-wide system
-			// squeezes toward it. Panoramic (cap = Infinity) is untouched and grows the page.
-			const target = Math.min(cap, justify ? cap : intrinsic);
-			// The note areas absorb the difference between what the system wants and what it
-			// gets. Stretching is uniform: every measure grows by the same factor, keeping the
-			// spacing curve's proportions. Squeezing is NOT: each measure gives up the same
-			// fraction of its own give (ideal - min), so a measure with none to give (an empty
-			// bar already at the floor, a bar of 16ths already at its minimum) holds its width
-			// while its roomier neighbors close up. A uniform squeeze would instead let the
-			// least compressible measure in the line dictate terms for all of them.
-			//
-			// Once every measure sits at its minimum the system stops shrinking and spills past
-			// the page. That floor is what makes cut-off notes unreachable: every width decision
-			// above may push against it, none may pass it, and naturalWidth below grows to cover
-			// whatever spilled so the score scales down instead of clipping.
-			const fixed = areas.reduce((sum, a) => sum + (a.fixed ? a.ideal : 0), 0);
-			const flexibleSum = areaSum - fixed;
-			const areaTarget = target - leads.reduce((sum, l) => sum + l, 0);
-			const give = areaSum - areas.reduce((sum, a) => sum + a.min, 0);
-			const squeeze = give > 0 ? Math.min(1, (areaSum - areaTarget) / give) : 1;
-			const stretch = flexibleSum > 0 ? (areaTarget - fixed) / flexibleSum : 1;
-			const areaWidth = (a: NoteArea) => {
-				if (a.fixed) {
-					return a.ideal;
-				}
-				return areaTarget >= areaSum
-					? a.ideal * stretch
-					: a.ideal - (a.ideal - a.min) * squeeze;
-			};
-			// Leading boxes start at the margin, ahead of the label indent they stand in for.
-			const indent = start === 0 ? indentOf(systemIndex, first) : 0;
-			let cx = x + indent;
-			measures.forEach((m, i) => {
-				const area = areas[i];
-				const edge = edgeOf(m);
-				const w = edge
-					? edgeWidthOf(m)
-					: (leads[i] ?? 0) + (area ? areaWidth(area) : 0);
-				boxes[m] = {
-					x: cx,
-					width: w,
-					trailingPad: padOf(m),
-					leadingPad: edge ? 0 : leadingPadOf(m, i === start),
-					systemIndex,
-					isSystemStart: i === start && !edge,
-					isSystemEnd: i === end && !edge,
-					edge,
-				};
-				cx +=
-					w + (m === lastLeading ? Math.max(labelIndent, systemOverhang) : 0);
-			});
-			// The page box always covers what was actually drawn. Short lines sit left with
-			// margin and never widen it; panoramic grows it to fit its single long system,
-			// and a standard system that bottomed out on its minimum grows it by however far
-			// it spilled, so the score scales down into its container rather than clipping.
-			naturalWidth = Math.max(naturalWidth, cx + right + rightIndentOf(first));
-		});
-
+		const planned = plan.complete();
 		// The document's vertical layout, per system: its stave gaps and the distance above it.
-		const documentSystems = document
-			? this.documentSystems(
-					parts,
-					systems,
-					staveOffsets,
-					document,
-					mode === 'strict',
-				)
-			: null;
-		const systemStaveOffsets = documentSystems
-			? new Map(documentSystems.map((system, s) => [s, system.staveOffsets]))
-			: undefined;
-		// The deepest system sets the floor: the trailing gap the planned offsets end on, past
-		// the last stave of whichever system reaches furthest down.
-		const lastPlanned = staveOffsets.at(-1) ?? 0;
-		const deepest = Math.max(
-			lastPlanned,
-			...(documentSystems ?? []).map(
-				(system) => system.staveOffsets.at(-1) ?? 0,
-			),
-		);
-		const floorHeight =
-			y + offset + (deepest - lastPlanned) + PAGE_MARGIN_BOTTOM;
-
-		return {
-			measureCount,
-			totalStaves,
-			boxes,
-			staveOffsets,
-			systemStaveOffsets,
-			top: y,
-			systemGap: config.systemSpacing,
-			appearance,
-			documentSystems: documentSystems?.map(
+		if (document) {
+			const documentSystems = this.documentSystems(
+				parts,
+				plan.systemMeasures(),
+				staveOffsets,
+				document,
+				mode === 'strict',
+			);
+			planned.systemStaveOffsets = new Map(
+				documentSystems.map((system, s) => [s, system.staveOffsets]),
+			);
+			planned.documentSystems = documentSystems.map(
 				({ staveOffsets: _, ...system }) => system,
-			),
-			page,
-			width: naturalWidth,
-			floorHeight,
-			softmaxFactor,
-			labelIndent,
-			partLabelIndent,
-			laterLabelIndent,
-			abbreviationIndent,
-		};
+			);
+			// The deepest system sets the floor: the trailing gap the planned offsets end on,
+			// past the last stave of whichever system reaches furthest down.
+			const lastPlanned = staveOffsets.at(-1) ?? 0;
+			const deepest = Math.max(
+				lastPlanned,
+				...documentSystems.map((system) => system.staveOffsets.at(-1) ?? 0),
+			);
+			planned.floorHeight =
+				y + offset + (deepest - lastPlanned) + PAGE_MARGIN_BOTTOM;
+		}
+		return new WholeLayoutPlan(planned);
 	}
 }
 
@@ -1234,11 +1115,11 @@ export type ScoreLayout = {
 	/** Each stave's y-offset within a system, indexed by global stave row. The planned
 	 * spacing (from the fixed constants) and the floor no system goes below. */
 	staveOffsets: number[];
-	/** What pass one measured each system actually needs, indexed by system (see
-	 * SpillResolver.spacedOffsets). On pass one, the document's own stave gaps when
-	 * documentLayout follows the document, and absent otherwise, where every system uses the planned
-	 * offsets; a system missing from it falls back to them too. */
-	systemStaveOffsets?: ReadonlyMap<number, number[]>;
+	/** What each system actually needs once drawn, indexed by system (see
+	 * SpillResolver.spacedOffsets), which the draw fills in. Before it, the document's own stave
+	 * gaps when documentLayout follows the document, else empty: a system missing from it uses
+	 * the planned offsets. */
+	systemStaveOffsets: Map<number, number[]>;
 	/** The document's vertical layout per system, indexed by system; absent unless
 	 * documentLayout follows the document. */
 	documentSystems?: DocumentSystem[];
@@ -1274,7 +1155,7 @@ export type ScoreLayout = {
 /** The two widths a measure's note area can take. `ideal` is what the spacing curve wants;
  * `min` is the hard floor below which the notes no longer fit. Layout squeezes between them
  * and never past `min`, so no configuration can produce a system with cut-off notes. */
-type NoteArea = {
+export type NoteArea = {
 	min: number;
 	ideal: number;
 	fixed?: boolean;

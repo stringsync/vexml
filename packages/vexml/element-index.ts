@@ -22,7 +22,8 @@ export class ElementIndex {
 		private readonly tabByKey: ReadonlyMap<NoteKey, TabPosition>,
 		private readonly diagramList: readonly ChordDiagram[],
 		private readonly partList: readonly Part[],
-		private readonly systemList: readonly System[],
+		// Live: a progressive render's forecast adds and drops systems until it is complete.
+		private readonly systemByIndex: ReadonlyMap<number, System>,
 	) {}
 
 	all(): Element[] {
@@ -58,7 +59,9 @@ export class ElementIndex {
 
 	/* The layout axis: one System per line, each System -> MeasureBox, top to bottom. */
 	systems(): System[] {
-		return [...this.systemList];
+		return [...this.systemByIndex.values()].sort(
+			(a, b) => a.getIndex() - b.getIndex(),
+		);
 	}
 
 	/* The element under a score-space point (a fret/notehead beats its measure background). */

@@ -14,6 +14,7 @@ import { FontFamilies } from './font-families';
 import type { Gaps } from './gaps';
 import type { RawNote } from './geometry-collector';
 import { Ink } from './ink';
+import type { LayoutPlan } from './layout-plan';
 import type { PageFrame, ScoreLayout } from './layout-planner';
 import { PagePlanner, type PageWalk } from './page-planner';
 import { PaintContext } from './paint-context';
@@ -64,8 +65,6 @@ export class SystemDraw {
 	private readonly layout: ScoreLayout;
 	private readonly drawing: DrawPass;
 	private readonly list = new PaintList();
-	private readonly systems: number[];
-	private readonly systemCount: number;
 	private readonly topSlack = LEDGER_HEADROOM;
 	private readonly walk: PageWalk | null;
 	// Per system, how far right its page's margins put it (see PageFrame.evenShift).
@@ -93,21 +92,24 @@ export class SystemDraw {
 	// The header's ops, drawn once the first system is placed and kept apart from the systems'
 	// so a system rewound after it leaves it be; they lead the engraving.
 	private headerOps: PaintOp[] = [];
+	// The page width the header was drawn at; a lazy plan may widen the page after it.
+	private pageWidth: number;
 	private finished: ReturnType<DrawPass['finish']> | null = null;
 
 	constructor(
 		private readonly deps: SystemDrawDeps,
 		probe: PaintProbe,
 		private readonly score: Score,
-		layout: ScoreLayout,
+		private readonly plan: LayoutPlan,
 	) {
 		const { config } = deps;
-		const { boxes, systemGap, floorHeight } = layout;
+		const { layout } = plan;
+		const { systemGap, floorHeight, measureCount } = layout;
 		// The page height is only discovered while drawing (systems stack downward, deep ledger
 		// lines extend further), so the pass draws into an oversized page and the result is
-		// cropped to content afterwards.
-		this.systemCount =
-			boxes.reduce((n, b) => (b ? Math.max(n, b.systemIndex + 1) : n), 0) || 1;
+		// cropped to content afterwards. How many systems there will be is not known either when
+		// the plan is made a system at a time, so the page is sized for a system per measure.
+		const systemCount = measureCount;
 		const perSystem = floorHeight - layout.top + systemGap + LEDGER_HEADROOM;
 		// A system can still grow when its staves are re-spaced or a paged layout pushes it onto
 		// the next page, neither known before it is drawn, so the scratch page is sized for systems
@@ -119,12 +121,14 @@ export class SystemDraw {
 		const pageHeight =
 			layout.top +
 			this.topSlack +
-			this.systemCount * 2 * perSystem +
-			(layout.page ? this.systemCount * tallestPage : 0);
+			systemCount * 2 * perSystem +
+			(layout.page ? systemCount * tallestPage : 0);
 		this.activeFloorHeight = floorHeight;
-		this.plannedStaveOffsets = layout.systemStaveOffsets;
-		// Seeded with the document's own stave gaps, when the layout follows the document.
-		this.systemStaveOffsets = new Map(layout.systemStaveOffsets ?? []);
+		// The layout's map, seeded with the document's own stave gaps when the layout follows
+		// the document, which this draw fills in as systems are re-spaced; the planned copy is
+		// each such system's floor.
+		this.plannedStaveOffsets = new Map(layout.systemStaveOffsets);
+		this.systemStaveOffsets = layout.systemStaveOffsets;
 		this.fixedGaps = layout.documentSystems
 			? new Map(
 					layout.documentSystems.map((system, s) => [s, system.fixedGaps]),
@@ -148,8 +152,10 @@ export class SystemDraw {
 		// config so a draw with no DOM engraves alike.
 		const families = new FontFamilies(config.fonts);
 
-		// The layout the systems draw with: the staves re-spaced where a system needed it.
-		this.layout = { ...layout, systemStaveOffsets: this.systemStaveOffsets };
+		// The layout the systems draw with, live: the staves re-spaced where a system needed it,
+		// and the boxes of each system as the plan places it.
+		this.layout = layout;
+		this.pageWidth = layout.width;
 		this.drawing = new DrawPass(
 			deps.translator,
 			deps.chords,
@@ -180,17 +186,16 @@ export class SystemDraw {
 		this.walk = page
 			? new PagePlanner(page.height, page.marginTop, page.marginBottom).walk()
 			: null;
-		this.systems = this.drawing.systems();
 	}
 
 	/* Whether every system is settled. */
 	done(): boolean {
-		return this.settled >= this.systems.length;
+		return this.plan.isComplete() && this.settled >= this.plan.placedSystems();
 	}
 
 	/* The systems settled so far, in order. */
 	settledSystems(): number[] {
-		return this.systems.slice(0, this.settled);
+		return Array.from({ length: this.settled }, (_, i) => i);
 	}
 
 	/* The system measure `m` is drawn on. */
@@ -205,11 +210,15 @@ export class SystemDraw {
 	 * and the one drawn ahead with it, once this one is placed.
 	 */
 	drawNext(): number | null {
-		const system = this.systems[this.settled];
-		if (system === undefined) {
+		if (this.done()) {
 			return null;
 		}
-		const next = this.systems[this.settled + 1];
+		// The plan places this system and the next, which the pass reads the barline between
+		// them from and this draw draws ahead; a plan already complete has nothing to do.
+		const system = this.settled;
+		this.plan.placeThrough(system + 1);
+		const next =
+			system + 1 < this.plan.placedSystems() ? system + 1 : undefined;
 		if (!this.drawnAhead) {
 			this.draw(system);
 		}
@@ -257,13 +266,19 @@ export class SystemDraw {
 		this.settled++;
 		if (this.settled === 1) {
 			this.drawHeader();
+		} else if (this.layout.width !== this.pageWidth) {
+			// A later system was wider than the page: the header is drawn again across the
+			// widened page. Earlier systems keep their draw (see SKILL.md, Progressive rendering).
+			this.drawing.widenPage(this.layout.width);
+			this.drawHeader();
 		}
 		return system;
 	}
 
 	/* The bottom of `system`'s content in final score space, once it is settled. */
 	bottomOf(system: number): number {
-		const isLast = system === this.systems[this.systems.length - 1];
+		const isLast =
+			this.plan.isComplete() && system === this.plan.placedSystems() - 1;
 		return this.drawing.extentOf(system, isLast).bottom - this.cropTop();
 	}
 
@@ -381,7 +396,8 @@ export class SystemDraw {
 				voltasLifted: seen.voltasLifted,
 				hairpinsStacked: seen.hairpinsStacked,
 			},
-			this.systemCount,
+			// Only whether a system has one above it matters: the next is placed by now.
+			this.plan.placedSystems(),
 			this.plannedStaveOffsets,
 			this.fixedGaps,
 		);
@@ -417,6 +433,7 @@ export class SystemDraw {
 	// the mark of the system drawn ahead still counts the ops before that system, and the mark
 	// learns the page top the header lowered, which its rewind would otherwise put back.
 	private drawHeader(): void {
+		this.pageWidth = this.layout.width;
 		const at = this.list.ops.length;
 		this.drawing.drawHeader();
 		this.headerOps = this.list.ops.splice(at);
@@ -429,9 +446,7 @@ export class SystemDraw {
 	// The ops of the settled systems: everything before the system drawn ahead, whose draw may
 	// yet be rewound.
 	private settledOps(): PaintOp[] {
-		const ahead = this.drawnAhead
-			? this.marks.get(this.systems[this.settled] ?? -1)
-			: undefined;
+		const ahead = this.drawnAhead ? this.marks.get(this.settled) : undefined;
 		return ahead ? this.list.ops.slice(0, ahead.ops) : this.list.ops;
 	}
 
@@ -446,7 +461,7 @@ export class SystemDraw {
 		if (!this.drawnAhead) {
 			return pass;
 		}
-		const ahead = this.systems[this.settled];
+		const ahead = this.settled;
 		return {
 			...pass,
 			rawNotes: pass.rawNotes.filter(

@@ -1,4 +1,4 @@
-import type { QuadTree, Rect } from 'webappwiz/geometry';
+import { type QuadTree, Rect } from 'webappwiz/geometry';
 import { ChordDiagram } from './chord-diagram';
 import type { Decorations } from './decoration';
 import type { Element } from './element';
@@ -9,7 +9,7 @@ import type {
 } from './geometry-collector';
 import type { MeasureBox } from './measure-box';
 import type { Note, NoteKey } from './note';
-import type { System } from './system';
+import { System } from './system';
 import type { TabPosition } from './tab-position';
 import type { Viewport } from './viewport';
 
@@ -22,10 +22,11 @@ export interface DrawnSystem {
 
 /*
  * Moves the elements of a progressive render into place as each system is drawn: they were
- * built over the geometry the layout planned (see ProvisionalGeometry), so this gives each its
+ * built over the geometry the layout forecast (see ProvisionalGeometry), so this gives each its
  * drawn box and glyph and puts it in the pointer tree, which holds nothing of a system until
  * then: a pointer over an undrawn system hits nothing rather than a planned spot. Chord
- * diagrams exist only once drawn, so they are made here. Built by ElementFactory.buildPlaceable
+ * diagrams exist only once drawn, so they are made here. Until a system is drawn, its elements
+ * follow the forecast as the plan advances (see forecast). Built by ElementFactory.buildPlaceable
  * over the same collections the ElementIndex reads.
  */
 export class ElementPlacer {
@@ -36,7 +37,9 @@ export class ElementPlacer {
 		private readonly noteByKey: ReadonlyMap<NoteKey, Note>,
 		private readonly tabByKey: ReadonlyMap<NoteKey, TabPosition>,
 		private readonly boxByIndex: ReadonlyMap<number, MeasureBox>,
-		private readonly systemByIndex: ReadonlyMap<number, System>,
+		// The systems and their box lists, which this adds to and drops from as the forecast moves.
+		private readonly systemByIndex: Map<number, System>,
+		private readonly boxesOfSystem: Map<number, MeasureBox[]>,
 		private readonly diagrams: ChordDiagram[],
 		private readonly viewport: Viewport,
 		private readonly decorations: Decorations,
@@ -94,6 +97,92 @@ export class ElementPlacer {
 				}),
 			);
 		}
+	}
+
+	/*
+	 * Move the elements of systems not yet drawn to where the plan now forecasts them (see
+	 * LayoutPlan.forecast): each column onto the system it is forecast on, its notes to their
+	 * share of it, each touched system's rect over its columns, and a System made for each
+	 * line the forecast gained or dropped for each it lost. `forecast` holds the undrawn
+	 * measures whose place moved, and their notes.
+	 */
+	forecast(
+		forecast: Omit<DrawnSystem, 'chordDiagrams'>,
+		systemCount: number,
+	): void {
+		const touched = new Set<number>();
+		for (const m of forecast.measures) {
+			const box = this.boxByIndex.get(m.index);
+			if (!box || this.placed.has(box)) {
+				continue;
+			}
+			const from = box.getSystem().getIndex();
+			if (from !== m.systemIndex) {
+				const list = this.boxesOfSystem.get(from);
+				list?.splice(list.indexOf(box), 1);
+				const { system, boxes } = this.systemAt(m.systemIndex);
+				boxes.push(box);
+				boxes.sort((a, b) => a.getIndex() - b.getIndex());
+				box.rehome(system);
+				touched.add(from);
+			}
+			box.relocate(m.rect);
+			touched.add(m.systemIndex);
+		}
+		for (let s = this.systemByIndex.size - 1; s >= systemCount; s--) {
+			if ((this.boxesOfSystem.get(s)?.length ?? 0) === 0) {
+				this.systemByIndex.delete(s);
+				this.boxesOfSystem.delete(s);
+				touched.delete(s);
+			}
+		}
+		for (let s = this.systemByIndex.size; s < systemCount; s++) {
+			this.systemAt(s);
+		}
+		for (const s of touched) {
+			const system = this.systemByIndex.get(s);
+			if (system) {
+				system.relocate(
+					this.boxesOfSystem
+						.get(s)
+						?.reduce<Rect | null>(
+							(all, box) => (all ? all.union(box.rect) : box.rect),
+							null,
+						) ?? new Rect(0, 0, 0, 0),
+				);
+			}
+		}
+		const tabOf = new Map<NoteKey, RawNote>();
+		for (const rn of forecast.notes) {
+			if (rn.tab) {
+				tabOf.set(rn.mnote, rn);
+			}
+		}
+		for (const rn of forecast.notes) {
+			const note = this.noteByKey.get(rn.mnote);
+			if (!note || this.placed.has(note)) {
+				continue;
+			}
+			note.drawn(rn);
+			const tabRaw = tabOf.get(rn.mnote);
+			const tab = this.tabByKey.get(rn.mnote);
+			if (tabRaw && tab) {
+				tab.drawn({ rect: tabRaw.rect, glyph: tabRaw.glyph });
+			}
+		}
+	}
+
+	// The system at `index`, made empty if the forecast had none there yet.
+	private systemAt(index: number): { system: System; boxes: MeasureBox[] } {
+		let system = this.systemByIndex.get(index);
+		let boxes = this.boxesOfSystem.get(index);
+		if (!system || !boxes) {
+			boxes = [];
+			system = new System(new Rect(0, 0, 0, 0), this.viewport, index, boxes);
+			this.systemByIndex.set(index, system);
+			this.boxesOfSystem.set(index, boxes);
+		}
+		return { system, boxes };
 	}
 
 	private insert(element: Element): void {

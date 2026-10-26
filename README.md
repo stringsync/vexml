@@ -179,8 +179,8 @@ await render(snapshot, element);
 ### Progressive rendering
 
 Show the first screen of a long score at once and draw the rest while the page is idle.
-The score's timeline and measures are complete from the start; `draw` events name each
-system as it lands.
+The score's timeline and measures are complete from the start; the systems not yet drawn
+are a forecast until `draw` events name them as they land.
 
 ```ts
 const score = await render(musicXML, element, { progressive: true });

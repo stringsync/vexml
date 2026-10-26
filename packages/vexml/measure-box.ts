@@ -20,7 +20,7 @@ export class MeasureBox extends Element {
 		private readonly index: number,
 		/* One mdom Measure per part at this index (a system-wide column shares one box). */
 		private readonly sources: readonly MMeasure[],
-		private readonly system: System,
+		private system: System,
 		/* The per-part Measures in this column; the factory fills the array before any query. */
 		private readonly measureList: readonly Measure[],
 	) {
@@ -41,9 +41,15 @@ export class MeasureBox extends Element {
 		return this.index;
 	}
 
-	/* The system (line) this column was laid out on. */
+	/* The system (line) this column was laid out on. In a progressive render, the one it is
+	 * forecast to land on until its system is drawn (see ElementPlacer.forecast). */
 	getSystem(): System {
 		return this.system;
+	}
+
+	/* Move the column onto `system`: the forecast of a system not yet planned moved it. */
+	rehome(system: System): void {
+		this.system = system;
 	}
 
 	/* The musical content of this column: one Measure per part, in part order. */

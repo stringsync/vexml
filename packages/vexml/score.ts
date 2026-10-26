@@ -362,7 +362,9 @@ export class Score implements Eventful<ScoreEventMap> {
 		return this.elements.parts();
 	}
 
-	/* The layout axis: one System per engraved line, each System -> MeasureBox, top to bottom. */
+	/* The layout axis: one System per engraved line, each System -> MeasureBox, top to bottom. In
+	 * a progressive render, the systems not yet drawn are a forecast: their count and measures
+	 * can change until the `draw` event names them. */
 	getSystems(): System[] {
 		return this.elements.systems();
 	}

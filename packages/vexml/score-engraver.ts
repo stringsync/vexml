@@ -250,8 +250,9 @@ export class ScoreEngraver {
 	}
 
 	/*
-	 * Begin engraving `document` a system at a time (see ProgressiveEngraving): laid out whole,
-	 * its elements and timeline built over the geometry the layout plans, nothing drawn yet.
+	 * Begin engraving `document` a system at a time (see ProgressiveEngraving): the layout
+	 * planned as far as the first screen's draw needs and the rest forecast (see
+	 * LazyLayoutPlan), its elements and timeline built over that forecast, nothing drawn yet.
 	 * Null for a document with no parts, which engrave() handles whole.
 	 */
 	beginProgressive(
@@ -270,14 +271,17 @@ export class ScoreEngraver {
 		new ProbeTextCanvas(probe).install();
 		new MetricsPatch().install();
 		new FontShorthandPatch().install();
-		const layout = this.layoutPlanner.plan(document.score, this.config);
+		// The first system and the next are planned exactly, which the forecast of the rest is
+		// scaled from; each draw step plans one more.
+		const plan = this.layoutPlanner.begin(document.score, this.config);
+		plan.placeThrough(1);
 		const provisional = new ProvisionalGeometry(
 			this.reader,
 			this.staves,
 			document.score,
-			layout,
+			plan.layout,
 		);
-		const planned = provisional.geometry();
+		const planned = provisional.geometryOf(plan.forecast());
 		const model = this.elementFactory.model(planned, parts);
 		const { elements, placer } = this.elementFactory.buildPlaceable(
 			model,
@@ -291,7 +295,8 @@ export class ScoreEngraver {
 		);
 		const sequence = timeline.place(planned);
 		return new ProgressiveEngraving({
-			draw: this.scoreDrawer.begin(probe, document.score, layout),
+			draw: this.scoreDrawer.begin(probe, document.score, plan),
+			plan,
 			provisional,
 			planned,
 			elements,

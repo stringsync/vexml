@@ -36,14 +36,19 @@ removed; it releases layers and event subscriptions.
 systems filling the visible part of the container (or `scrollContainer`) are drawn, and the
 rest draw in idle slices, top to bottom. The pixels are the same once complete. The `Score`
 is complete from the start: parts, measures, durations and the playback timeline. The
-geometry of a system not yet drawn is the layout's plan for it (its `System`, `MeasureBox`
-and note rects, its steps' `x` and `systemRect`), exact once a `draw` event names the
-system; a pointer over it hits nothing. A cursor moved onto such a system draws through it
-synchronously first, so cursors and `follow()` are always exact. `score.isComplete()` and
-`score.whenComplete()` tell when the whole score is drawn; await the latter before reading
-geometry across the score. `score.snapshot()` draws the rest first. A panoramic or paged
-layout, and a snapshot, draw whole and report complete at once. Disposing the score cancels
-the slices left.
+layout is planned as the systems draw, so the systems not yet drawn are a forecast: how
+many there are, which measures each holds and their geometry (each `System`, `MeasureBox`
+and note rect, each step's `x` and `systemRect`) can change after every `draw` event until
+the event names the system, from when it is exact; `getSystems()` reads the current count.
+A pointer over an undrawn system hits nothing. A cursor moved onto such a system draws
+through it synchronously first, so cursors and `follow()` are always exact.
+`score.isComplete()` and `score.whenComplete()` tell when the whole score is drawn; await
+the latter before reading geometry across the score. `score.snapshot()` draws the rest
+first. A panoramic or paged layout, a layout following the document (`documentLayout`) or
+widening on overflow, and a snapshot, draw whole and report complete at once. A system
+found wider than the page after the first screen widens the page from then on (the header
+is drawn again across it; systems already drawn keep their draw). Disposing the score
+cancels the slices left.
 
 ```ts
 const score = await render(musicXML, element, { progressive: true });

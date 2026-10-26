@@ -23,6 +23,7 @@ import { SignatureTranslator } from './signature-translator';
 import { StavePlan } from './stave-plan';
 import { TabVoiceTranslator } from './tab-voice-translator';
 import { VoiceTranslator } from './voice-translator';
+import { WholeLayoutPlan } from './whole-layout-plan';
 
 const DATA_DIR = path.resolve(import.meta.dir, '../integration/__data__');
 
@@ -124,6 +125,6 @@ async function engrave(fixture: string) {
 		staves,
 		document.score,
 		layout,
-	).geometry();
+	).geometryOf(new WholeLayoutPlan(layout).forecast());
 	return { drawn, provisional };
 }

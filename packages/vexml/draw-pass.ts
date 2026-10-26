@@ -206,14 +206,13 @@ export class DrawPass {
 	// The score header (showHeader), drawn above the first system once its ink is known, and
 	// the page width it centers on. headerTop is where it was drawn, for the crop and pages.
 	private readonly header: HeaderPlan | null;
-	private readonly headerWidth: number;
+	private headerWidth: number;
 	private headerTop: number | null = null;
 	// Each system's staff lines: the top line of its top stave to the bottom line of its bottom one.
 	private readonly staveLines = new Map<number, SystemExtent>();
 	private currentSystem = -1;
 	// The measures each system draws, in order; a measure with no box (inside a multirest run)
 	// draws nothing and belongs to none.
-	private readonly systemMeasures = new Map<number, number[]>();
 	// Where the system being drawn began pinning lyrics, for its spill report.
 	private systemLyricStart = 0;
 	// Per-system collision index of everything already drawn (notes, high ties, placed
@@ -372,7 +371,6 @@ export class DrawPass {
 		this.voltaLifts = opts.voltaLifts ?? new Map();
 		this.hairpinBands = opts.hairpinBands ?? new Map();
 		const {
-			measureCount,
 			boxes,
 			staveOffsets,
 			systemStaveOffsets,
@@ -385,15 +383,9 @@ export class DrawPass {
 			laterLabelIndent,
 			abbreviationIndent,
 		} = layout;
+		// Read as drawn, never copied: a plan made a system at a time fills them in as it goes
+		// (see LayoutPlan), the system after the one drawn always placed before it.
 		this.boxes = boxes;
-		for (let m = 0; m < measureCount; m++) {
-			const box = boxes[m];
-			if (box) {
-				const measures = this.systemMeasures.get(box.systemIndex) ?? [];
-				measures.push(m);
-				this.systemMeasures.set(box.systemIndex, measures);
-			}
-		}
 		this.totalStaves = totalStaves;
 		this.softmaxFactor = softmaxFactor;
 		this.systemGap = systemGap;
@@ -615,9 +607,15 @@ export class DrawPass {
 		);
 	}
 
-	/* The systems to draw, in order. */
-	systems(): number[] {
-		return [...this.systemMeasures.keys()].sort((a, b) => a - b);
+	/* The measures of `system`, in order: the ones whose box the plan placed on it. */
+	private measuresOf(system: number): number[] {
+		const measures: number[] = [];
+		for (const [m, box] of this.boxes.entries()) {
+			if (box?.systemIndex === system) {
+				measures.push(m);
+			}
+		}
+		return measures;
 	}
 
 	/*
@@ -704,10 +702,7 @@ export class DrawPass {
 		this.directionPlacer.rewind(mark.dynamics);
 		this.lyricPlacer.rewind(mark.lyrics);
 		this.spannerResolver.rewind(mark.spanners);
-		for (const system of this.systems()) {
-			if (system < mark.system || system > through) {
-				continue;
-			}
+		for (let system = mark.system; system <= through; system++) {
 			this.lyricPlacer.forgetSystem(system);
 			this.spannerResolver.forgetSystem(system);
 			this.spill.forgetSystem(system);
@@ -733,7 +728,7 @@ export class DrawPass {
 			canvas?.translate(shift, 0);
 		}
 		this.beginSystem(system);
-		for (const m of this.systemMeasures.get(system) ?? []) {
+		for (const m of this.measuresOf(system)) {
 			this.drawMeasureColumn(m);
 		}
 		this.endSystem(system);
@@ -1798,12 +1793,19 @@ export class DrawPass {
 	 * further lifts the header with it rather than running into it. After the spanners are
 	 * resolved, so the bows over the first system count.
 	 */
+	/* The page is `width` wide from here on: a system placed later was wider than the page (see
+	 * LazyLayoutPlan), so the header centers on the new width when drawn again. */
+	widenPage(width: number): void {
+		this.headerWidth = width;
+	}
+
 	/*
 	 * Draw the score header over the first system, once that system is placed: it hangs off the
 	 * highest ink there, which nothing drawn later rises above. Lowers the page top to its own,
-	 * which a mark taken before it must learn (see SystemDraw).
+	 * which a mark taken before it must learn (see SystemDraw). Drawn again when the page widens.
 	 */
 	drawHeader(): void {
+		this.headerTop = null;
 		const inkTop = this.spill.systemTops().get(0);
 		if (
 			!this.header ||

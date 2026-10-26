@@ -10,6 +10,7 @@ import type {
 	RawMeasure,
 	RawNote,
 } from './geometry-collector';
+import type { LayoutPlan } from './layout-plan';
 import type { ScoreLayout } from './layout-planner';
 import type { PaintOp } from './paint-op';
 import type { PaintProbe } from './paint-probe';
@@ -22,6 +23,7 @@ import { SystemDraw } from './system-draw';
 import type { TabVoiceTranslator } from './tab-voice-translator';
 import type { GridOrigin } from './tile-grid';
 import type { VoiceTranslator } from './voice-translator';
+import { WholeLayoutPlan } from './whole-layout-plan';
 
 /* Everything the draw pass emits for the index, in score space (crop already applied). */
 export interface RawGeometry {
@@ -84,15 +86,16 @@ export class ScoreDrawer {
 	 * `probe` answers the text measurements the recording needs.
 	 */
 	draw(probe: PaintProbe, score: Score, layout: ScoreLayout): DrawResult {
-		const run = this.begin(probe, score, layout);
+		const run = this.begin(probe, score, new WholeLayoutPlan(layout));
 		while (!run.done()) {
 			run.drawNext();
 		}
 		return run.result();
 	}
 
-	/* Begin a draw to continue a system at a time (see SystemDraw). */
-	begin(probe: PaintProbe, score: Score, layout: ScoreLayout): SystemDraw {
+	/* Begin a draw to continue a system at a time (see SystemDraw), over a layout placed as the
+	 * systems are drawn or planned whole (see LayoutPlan). */
+	begin(probe: PaintProbe, score: Score, plan: LayoutPlan): SystemDraw {
 		return new SystemDraw(
 			{
 				config: this.config,
@@ -109,7 +112,7 @@ export class ScoreDrawer {
 			},
 			probe,
 			score,
-			layout,
+			plan,
 		);
 	}
 }

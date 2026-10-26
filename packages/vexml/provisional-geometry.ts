@@ -7,26 +7,27 @@ import {
 	PAGE_MARGIN_BOTTOM,
 } from './constants';
 import type { RawMeasure, RawNote } from './geometry-collector';
+import type { LayoutForecast } from './layout-plan';
 import type { ScoreLayout } from './layout-planner';
 import type { RawGeometry } from './score-drawer';
 import type { ScoreReader } from './score-reader';
 import type { StavePlan } from './stave-plan';
 
 /*
- * The hit-index geometry of a score before it is drawn, from the layout alone: every measure
- * column at its planned place, with one note per mdom note the draw will collect, each in its
- * measure's box at a share of the width its beat suggests. It stands in for the systems a
- * progressive render has yet to draw, so the score's elements and timeline exist from the start
- * and keep their identities as each system's exact geometry replaces its share of this. Which
- * notes it lists is what matters: it walks the same visible staves and staff voices the draw
- * pass builds its notes from (see DrawPass.buildStave), so the sets agree.
+ * The hit-index geometry of a score before it is drawn, from the layout's forecast alone (see
+ * LayoutPlan.forecast): every measure column at its forecast place, with one note per mdom note
+ * the draw will collect, each in its measure's box at a share of the width its beat suggests.
+ * It stands in for the systems a progressive render has yet to draw, so the score's elements
+ * and timeline exist from the start and keep their identities as each system's exact geometry
+ * replaces its share of this. Which notes it lists is what matters: it walks the same visible
+ * staves and staff voices the draw pass builds its notes from (see DrawPass.buildStave), so the
+ * sets agree.
  */
 export class ProvisionalGeometry {
-	private readonly systemCount: number;
-	// Each system's planned top in score space, and the height of its stave stack: the
-	// layout plans every system at one pitch (see LayoutPlanner.plan's floorHeight).
-	private readonly pitch: number;
+	// Each system's stave stack height, and its pitch down the page: the layout plans every
+	// system at one height (see LayoutPlanner.plan's floorHeight), a gap apart.
 	private readonly stack: number;
+	private readonly pitch: number;
 	// Each part's staves' rows in the system's stave stack, by part index then staff number.
 	private readonly rows: Map<string, number>[];
 
@@ -34,19 +35,12 @@ export class ProvisionalGeometry {
 		private readonly reader: ScoreReader,
 		private readonly staves: StavePlan,
 		private readonly score: Score,
-		private readonly layout: ScoreLayout,
+		private readonly layout: Pick<
+			ScoreLayout,
+			'top' | 'floorHeight' | 'systemGap' | 'staveOffsets' | 'width'
+		>,
 	) {
-		this.systemCount =
-			layout.boxes.reduce(
-				(n, b) => (b ? Math.max(n, b.systemIndex + 1) : n),
-				0,
-			) || 1;
-		const stacks =
-			layout.floorHeight -
-			PAGE_MARGIN_BOTTOM -
-			layout.top -
-			(this.systemCount - 1) * layout.systemGap;
-		this.stack = stacks / this.systemCount;
+		this.stack = layout.floorHeight - PAGE_MARGIN_BOTTOM - layout.top;
 		this.pitch = this.stack + layout.systemGap;
 		let row = 0;
 		this.rows = score.parts.map((part) => {
@@ -58,38 +52,31 @@ export class ProvisionalGeometry {
 		});
 	}
 
-	/* The system measure `m` is laid out on; a measure with no box of its own (one inside a
-	 * multirest run) is on its lead's. */
-	systemOfMeasure(m: number): number {
-		for (let i = Math.min(m, this.layout.boxes.length - 1); i >= 0; i--) {
-			const box = this.layout.boxes[i];
-			if (box) {
-				return box.systemIndex;
-			}
-		}
-		return 0;
-	}
-
-	/* Where `system`'s stave stack is planned to start, in score space. */
+	/* Where `system`'s stave stack is forecast to start, in score space. */
 	systemTop(system: number): number {
 		return this.layout.top + system * this.pitch;
 	}
 
-	/* Every measure box and note the layout plans, in score space. */
-	geometry(): RawGeometry {
-		const measures: RawMeasure[] = [];
+	/* Every measure box and note `forecast` places, or only those of `measures`, in score
+	 * space. */
+	geometryOf(
+		forecast: LayoutForecast,
+		measures: Iterable<number> = forecast.boxes.keys(),
+	): RawGeometry {
+		const columns: RawMeasure[] = [];
 		const notes: RawNote[] = [];
 		const { parts } = this.score;
 		// A multirest lead draws the consolidated bar in place of its notes, and a stave under a
 		// measure style (a measure repeat, or beat repeats or slashes across the whole measure)
 		// draws its sign instead (see DrawPass.buildStave).
 		const multiRestLeads = this.reader.multiRestsOf(parts).leads;
-		this.layout.boxes.forEach((box, m) => {
+		for (const m of measures) {
+			const box = forecast.boxes[m];
 			if (!box) {
-				return;
+				continue;
 			}
 			const top = this.systemTop(box.systemIndex);
-			measures.push({
+			columns.push({
 				rect: new Rect(box.x, top, box.width, this.stack),
 				index: m,
 				number: parts[0]?.measures[m]?.number ?? String(m + 1),
@@ -115,11 +102,16 @@ export class ProvisionalGeometry {
 					notes.push(...this.notesOf(chords, m, box.x, box.width, y, isTab));
 				}
 			});
-		});
+		}
+		const height =
+			this.layout.top +
+			forecast.systemCount * this.pitch -
+			this.layout.systemGap +
+			PAGE_MARGIN_BOTTOM;
 		return {
-			bounds: new Rect(0, 0, this.layout.width, this.layout.floorHeight),
+			bounds: new Rect(0, 0, this.layout.width, height),
 			notes,
-			measures,
+			measures: columns,
 			chordDiagrams: [],
 		};
 	}

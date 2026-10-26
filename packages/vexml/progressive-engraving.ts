@@ -8,6 +8,7 @@ import type { ElementIndex } from './element-index';
 import type { ElementPlacer } from './element-placer';
 import type { RawMeasure, RawNote } from './geometry-collector';
 import type { IdleScheduler, IdleSlice } from './idle-scheduler';
+import type { LayoutPlan } from './layout-plan';
 import type { PaintProbe } from './paint-probe';
 import type { ProvisionalGeometry } from './provisional-geometry';
 import type { GapInfo } from './score';
@@ -30,12 +31,14 @@ export interface ProgressiveView {
 	visibleBottom(): number;
 }
 
-/* What a progressive engraving works over: the draw to continue, the score's model built over
- * the layout's planned geometry (see ProvisionalGeometry) with the placer that moves it into
- * place, and what the recording a snapshot takes is built from. */
+/* What a progressive engraving works over: the draw to continue and the plan it reads, the
+ * score's model built over the plan's forecast geometry (see ProvisionalGeometry) with the
+ * placer that moves it into place, and what the recording a snapshot takes is built from. */
 export interface ProgressiveEngravingDeps {
 	draw: SystemDraw;
+	plan: LayoutPlan;
 	provisional: ProvisionalGeometry;
+	// The forecast geometry the model was built over.
 	planned: RawGeometry;
 	elements: ElementIndex;
 	placer: ElementPlacer;
@@ -53,21 +56,25 @@ export interface ProgressiveEngravingDeps {
 
 /*
  * A score drawn a system at a time while its Score is in use (see Config.progressive): the
- * first screen's systems before render() resolves, the rest in idle slices. As each system
- * settles, its elements move into place, the timeline takes its exact step geometry (rebuilt
- * over the drawn systems' geometry and the plan for the rest, so the steps keep their indexes),
- * and the stage shows its ops. A cursor moving onto a system not yet drawn draws through it at
- * once, and a snapshot draws everything left.
+ * first screen's systems before render() resolves, the rest in idle slices. The plan is made
+ * as the draw goes (see LazyLayoutPlan), so the undrawn systems are a forecast that moves as
+ * it advances: after each step, the undrawn measures take the new forecast (their columns
+ * rehomed as it adds or drops systems), each settled system's elements move into place, the
+ * timeline takes its exact step geometry (rebuilt over the drawn systems' geometry and the
+ * forecast for the rest, so the steps keep their indexes), and the stage shows its ops. A
+ * cursor moving onto a system not yet drawn draws through it at once, and a snapshot draws
+ * everything left.
  */
 export class ProgressiveEngraving implements Drawing {
 	private readonly dispatcher = new Dispatcher<DrawingEventMap>();
 	readonly events: Events<DrawingEventMap> = this.dispatcher.events;
-	// The planned geometry of each system, for the timeline until the system is drawn.
-	private readonly plannedBySystem = new Map<
+	// The forecast geometry of each measure not yet drawn, for the timeline until it is.
+	private readonly forecastByMeasure = new Map<
 		number,
-		{ notes: RawNote[]; measures: RawMeasure[] }
+		{ measure: RawMeasure; notes: RawNote[] }
 	>();
-	private readonly systems: number[];
+	// Which forecast the undrawn measures hold (see LayoutForecast.version).
+	private forecastVersion: number;
 	// Systems settled since the last `draw` event.
 	private pending: number[] = [];
 	// How many of the engraving's ops the sink has been shown.
@@ -81,16 +88,8 @@ export class ProgressiveEngraving implements Drawing {
 	private finish: () => void = () => {};
 
 	constructor(private readonly deps: ProgressiveEngravingDeps) {
-		const { planned, provisional } = deps;
-		for (const m of planned.measures) {
-			this.plannedFor(m.systemIndex).measures.push(m);
-		}
-		for (const n of planned.notes) {
-			this.plannedFor(provisional.systemOfMeasure(n.measureIndex)).notes.push(
-				n,
-			);
-		}
-		this.systems = [...this.plannedBySystem.keys()].sort((a, b) => a - b);
+		this.holdForecast(deps.planned);
+		this.forecastVersion = deps.plan.forecast().version;
 		this.done = new Promise<void>((resolve) => {
 			this.finish = resolve;
 		});
@@ -140,8 +139,12 @@ export class ProgressiveEngraving implements Drawing {
 	}
 
 	drawThroughMeasure(m: number): void {
-		const system = this.deps.provisional.systemOfMeasure(m);
-		while (!this.deps.draw.done() && !this.isSettled(system)) {
+		// A forecast system is never settled, so this reads the plan again after each step until
+		// the measure's system is placed and drawn.
+		while (
+			!this.deps.draw.done() &&
+			!this.isSettled(this.deps.plan.systemOfMeasure(m))
+		) {
 			this.step();
 		}
 		this.flush();
@@ -188,13 +191,32 @@ export class ProgressiveEngraving implements Drawing {
 		this.dispatcher.dispose();
 	}
 
-	private plannedFor(system: number) {
-		let planned = this.plannedBySystem.get(system);
-		if (!planned) {
-			planned = { notes: [], measures: [] };
-			this.plannedBySystem.set(system, planned);
+	// Hold `geometry` as the forecast of the measures it covers.
+	private holdForecast(
+		geometry: Pick<RawGeometry, 'measures' | 'notes'>,
+	): void {
+		for (const m of geometry.measures) {
+			this.forecastByMeasure.set(m.index, { measure: m, notes: [] });
 		}
-		return planned;
+		for (const n of geometry.notes) {
+			this.forecastByMeasure.get(n.measureIndex)?.notes.push(n);
+		}
+	}
+
+	// Take the plan's forecast for the measures still undrawn when it has moved since the last.
+	private refreshForecast(): void {
+		const { plan, provisional, placer } = this.deps;
+		const forecast = plan.forecast();
+		if (forecast.version === this.forecastVersion) {
+			return;
+		}
+		this.forecastVersion = forecast.version;
+		const geometry = provisional.geometryOf(
+			forecast,
+			this.forecastByMeasure.keys(),
+		);
+		this.holdForecast(geometry);
+		placer.forecast(geometry, forecast.systemCount);
 	}
 
 	private isSettled(system: number): boolean {
@@ -211,10 +233,14 @@ export class ProgressiveEngraving implements Drawing {
 		}
 		const result = this.result();
 		const { geometry } = result;
-		const ofSystem = (m: number) =>
-			this.deps.provisional.systemOfMeasure(m) === system;
+		const measures = geometry.measures.filter((m) => m.systemIndex === system);
+		for (const m of measures) {
+			this.forecastByMeasure.delete(m.index);
+		}
+		this.refreshForecast();
+		const ofSystem = (m: number) => draw.systemOfMeasure(m) === system;
 		placer.place(system, {
-			measures: geometry.measures.filter((m) => m.systemIndex === system),
+			measures,
 			notes: geometry.notes.filter((n) => ofSystem(n.measureIndex)),
 			chordDiagrams: geometry.chordDiagrams.filter((d) =>
 				ofSystem(d.measureIndex),
@@ -239,20 +265,17 @@ export class ProgressiveEngraving implements Drawing {
 		return this.deps.draw.result();
 	}
 
-	// The drawn systems' geometry followed by the plan for the rest, in system order, which is
-	// the order a whole draw collects in.
+	// The drawn systems' geometry followed by the forecast for the rest, in system order, which
+	// is the order a whole draw collects in: the undrawn measures all follow the drawn.
 	private merged(drawn: RawGeometry): RawGeometry {
-		const settled = new Set(this.deps.draw.settledSystems());
 		const notes = [...drawn.notes];
 		const measures = [...drawn.measures];
-		for (const system of this.systems) {
-			if (settled.has(system)) {
-				continue;
-			}
-			const planned = this.plannedBySystem.get(system);
-			if (planned) {
-				notes.push(...planned.notes);
-				measures.push(...planned.measures);
+		const undrawn = [...this.forecastByMeasure.keys()].sort((a, b) => a - b);
+		for (const m of undrawn) {
+			const forecast = this.forecastByMeasure.get(m);
+			if (forecast) {
+				notes.push(...forecast.notes);
+				measures.push(forecast.measure);
 			}
 		}
 		return { ...drawn, notes, measures };

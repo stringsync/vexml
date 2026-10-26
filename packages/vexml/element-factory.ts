@@ -214,6 +214,7 @@ export class ElementFactory {
 				linked.tabByKey,
 				linked.boxes,
 				linked.systems,
+				linked.boxesOfSystem,
 				linked.diagrams,
 				viewport,
 				decorations,
@@ -236,6 +237,8 @@ export class ElementFactory {
 		tabByKey: Map<NoteKey, TabPosition>;
 		boxes: Map<number, MeasureBox>;
 		systems: Map<number, System>;
+		// Each System's own box list, which it reads live.
+		boxesOfSystem: Map<number, MeasureBox[]>;
 		diagrams: ChordDiagram[];
 	} {
 		// Layout axis: one System per line, its rect the union of the line's measure columns.
@@ -388,7 +391,7 @@ export class ElementFactory {
 			tabByKey,
 			diagrams,
 			partList,
-			[...systems.values()],
+			systems,
 		);
 		return {
 			index,
@@ -399,6 +402,7 @@ export class ElementFactory {
 			tabByKey,
 			boxes,
 			systems,
+			boxesOfSystem,
 			diagrams,
 		};
 	}

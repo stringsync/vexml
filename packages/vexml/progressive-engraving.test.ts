@@ -141,6 +141,47 @@ describe('ProgressiveEngraving', () => {
 		expect(scheduler.pending).toBe(0);
 	});
 
+	it('forecasts the undrawn systems, keeping every column on a system until the count settles', async () => {
+		const whole = await render(LONG);
+		const { score, scheduler } = await render(LONG, { progressive: true });
+		const counts = [score.getSystems().length];
+		const strays = straySystemsOf(score);
+		// A zero budget draws one system per slice: the systems are checked after each.
+		score.events.on('draw', () => {
+			counts.push(score.getSystems().length);
+			strays.push(...straySystemsOf(score));
+		});
+		scheduler.runAll(0);
+
+		// The forecast moves the count as the plan lands; the drawn systems hold it afterwards.
+		expect(strays).toEqual([]);
+		expect(new Set(counts).size).toBeGreaterThan(1);
+		expect(counts.at(-1)).toBe(whole.score.getSystems().length);
+		expect(boxesOf(score)).toEqual(boxesOf(whole.score));
+	});
+
+	it('widens the page when a later system is wider, drawing the header again across it', async () => {
+		// Too narrow for the score's widest measures: a system planned after the first screen
+		// widens the page, which a whole render knew from the start.
+		const layout = { ...DEFAULT_STANDARD_LAYOUT, referenceWidth: 200 };
+		const whole = await render(LONG, { layout });
+		const { stage, scheduler } = await render(LONG, {
+			progressive: true,
+			layout,
+		});
+		const firstScreen = stage.engravings.at(-1);
+		scheduler.runAll();
+
+		// The systems drawn before the page widened keep their draw, so only the header, drawn
+		// again, and the page are the whole render's.
+		const final = stage.engravings.at(-1);
+		expect(firstScreen?.width).toBeLessThan(final?.width ?? 0);
+		expect(final?.width).toBe(whole.stage.engravings[0]?.width ?? -1);
+		expect(textOpsOf(final, 'Gute Nacht')).toEqual(
+			textOpsOf(whole.stage.engravings[0], 'Gute Nacht'),
+		);
+	});
+
 	it('finds nothing under a pointer over an undrawn system', async () => {
 		const whole = await render(LONG);
 		const { score } = await render(LONG, { progressive: true });
@@ -208,6 +249,47 @@ describe('ProgressiveEngraving', () => {
 		expect(scheduler.pending).toBe(0);
 	});
 });
+
+// The ops drawing `text`, as the title's placement: once, centered on the page.
+function textOpsOf(engraving: Engraving | undefined, text: string) {
+	return (engraving?.ops ?? []).filter(
+		(op) =>
+			(op.call.kind === 'fillText' || op.call.kind === 'strokeText') &&
+			op.call.text === text,
+	);
+}
+
+// What is wrong with the score's systems right now, as `system:measure` entries: a system not
+// at its index, a column listed by a system other than its own or out of measure order, or a
+// measure column no system lists. Empty when every column sits on exactly one system.
+function straySystemsOf(score: Score): string[] {
+	const systems = score.getSystems();
+	const strays = systems
+		.filter((system, i) => system.getIndex() !== i)
+		.map((system) => `${system.getIndex()}:index`);
+	const listed: number[] = [];
+	for (const system of systems) {
+		const boxes = system.getMeasureBoxes();
+		strays.push(
+			...boxes
+				.filter(
+					(box, i) =>
+						box.getSystem() !== system ||
+						(i > 0 && box.getIndex() < (boxes[i - 1]?.getIndex() ?? 0)),
+				)
+				.map((box) => `${system.getIndex()}:${box.getIndex()}`),
+		);
+		listed.push(...boxes.map((box) => box.getIndex()));
+	}
+	const all = score
+		.getElements()
+		.measureBoxes()
+		.map((box) => box.getIndex());
+	strays.push(
+		...all.filter((m) => !listed.includes(m)).map((m) => `none:${m}`),
+	);
+	return strays;
+}
 
 function boxesOf(score: Score): string[] {
 	return score

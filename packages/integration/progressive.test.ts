@@ -44,6 +44,9 @@ describe('progressive', () => {
 		expect(result.systemsAtResolve).toBeGreaterThan(0);
 		expect(result.systemsAtResolve).toBeLessThan(result.systems);
 		expect(result.firstScreenMs).toBeLessThan(result.wholeMs);
+		// The layout is planned a system ahead of the draw (see LazyLayoutPlan), so the first
+		// screen costs its own systems, not the whole score's plan.
+		expect(result.firstScreenMs).toBeLessThan(500);
 	}, 60_000);
 });
 
