@@ -183,7 +183,7 @@ are picked by hand.
 | `first` | drawn | `swing.musicxml`: swing ratio times playback |
 | `first-fret` | drawn | `chord_diagram.musicxml` |
 | `flip` | drawn | `technical_marks.musicxml` |
-| `footnote` | missing | task #38; footnote text attached to a notation element; mdom raw only |
+| `footnote` | drawn | `editorial_marks.musicxml` M1; a note footnote prints small above the stave; notes only |
 | `for-part` | ignored | part extraction data, not shown in the score |
 | `forward` | drawn | `two_voices.musicxml`: onsets via mdom timeline |
 | `fp` | drawn | `dynamics.musicxml` |
@@ -259,7 +259,7 @@ are picked by hand.
 | `laughing` | drawn | `lyrics_sounds.musicxml`: text-less lyric draws "ha ha" |
 | `left-divider` | missing | task #20; mdom raw only |
 | `left-margin` | missing | task #20; mdom typed |
-| `level` | missing | task #38; editorial level marks (parenthesized or bracketed additions); mdom raw only |
+| `level` | drawn | `editorial_marks.musicxml` M1; parentheses and bracket wrap a note heads; size and non-note parents not drawn |
 | `line` | drawn | `clef_c.musicxml`: clef staff line |
 | `line-detail` | missing | task #19; mdom typed |
 | `line-width` | missing | task #36; engraving line thicknesses from defaults appearance; mdom raw only |

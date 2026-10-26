@@ -879,6 +879,17 @@ describe('render', () => {
 		).toMatchScreenshot('print_object_signatures.png');
 	});
 
+	// Editorial marks on notes (editorial_marks.musicxml M1), 4/4 treble:
+	// - quarter 1: <level parentheses="yes"> wraps the head in round parentheses.
+	// - quarter 2: <level bracket="yes"> wraps it in square brackets.
+	// - quarter 3: a <footnote> prints its text small above the stave.
+	// - quarter 4: a footnote and a parenthesized level together.
+	it.concurrent('renders editorial_marks.png', async () => {
+		expect(await testing.render('editorial_marks.musicxml')).toMatchScreenshot(
+			'editorial_marks.png',
+		);
+	});
+
 	// A colored Beethoven lied (color.xml M1-2): a vocal treble stave over a piano grand
 	// staff, 3/4 in three flats, with MusicXML's own color attribute on individual elements.
 	// This is NOT colors.png, which tests the vexml-wide fonts.notation.color CONFIG. Here the

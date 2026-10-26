@@ -17,6 +17,7 @@ import { ACCIDENTAL_CODES } from './chord-translator';
 import { FERMATA_GLYPHS } from './fermata-glyphs';
 import { FingeringAnnotation } from './fingering-annotation';
 import { FontFamilies } from './font-families';
+import { FootnoteAnnotation } from './footnote-annotation';
 import { LyricAnnotation } from './lyric-annotation';
 import type { LyricJustify } from './lyric-mark';
 import { NonArpeggioBracket } from './non-arpeggio-bracket';
@@ -51,6 +52,10 @@ export class NotationTranslator {
 			this.addFermata(staveNote, lead);
 			this.addArpeggio(staveNote, lead);
 			this.addNonArpeggiate(staveNote, chord);
+		}
+		const footnote = lead.child('footnote')?.text?.trim();
+		if (footnote) {
+			staveNote.addModifier(new FootnoteAnnotation(footnote), 0);
 		}
 		if (lead.getAttribute('print-lyric') !== 'no') {
 			this.addLyrics(staveNote, lead);

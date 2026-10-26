@@ -160,6 +160,7 @@ export class ChordTranslator {
 		} else {
 			this.addAccidentals(staveNote, chord);
 			this.addParentheses(staveNote, chord);
+			this.addLevel(staveNote, chord);
 			this.addNoteheadText(staveNote, chord);
 		}
 		this.addDots(staveNote, lead);
@@ -444,6 +445,38 @@ export class ChordTranslator {
 		});
 	}
 
+	/*
+	 * <level parentheses="yes"> or bracket="yes": the editorial mark wraps every head of the
+	 * chord, in round parentheses or square brackets (the brackets win when both are set).
+	 * A head already parenthesized by its <notehead> keeps just that pair.
+	 */
+	private addLevel(staveNote: StaveNote, chord: Chord): void {
+		const level = chord.lead.child('level');
+		const bracket = level?.getAttribute('bracket') === 'yes';
+		if (!level || (!bracket && level.getAttribute('parentheses') !== 'yes')) {
+			return;
+		}
+		chord.notes.forEach((note, i) => {
+			if (!bracket && note.notehead?.parentheses) {
+				return;
+			}
+			for (const position of [
+				Modifier.Position.LEFT,
+				Modifier.Position.RIGHT,
+			]) {
+				const mark = new Parenthesis(position);
+				if (bracket) {
+					mark.setText(
+						position === Modifier.Position.LEFT
+							? NOTEHEAD_BRACKET_LEFT
+							: NOTEHEAD_BRACKET_RIGHT,
+					);
+				}
+				staveNote.addModifier(mark, i);
+			}
+		});
+	}
+
 	/* print-leger="no": the notehead sits off the stave without its ledger lines. */
 	private hideLedgerLines(staveNote: StaveNote, note: Note): void {
 		if (note.getAttribute('print-leger') === 'no') {
@@ -579,6 +612,8 @@ const MIDDLE_KEY_CANDIDATES = [2, 3, 4, 5].flatMap((octave) =>
 
 // Raw SMuFL codepoints (accidentalBracketLeft, accidentalBracketRight) because vexflow has no
 // bracketed accidental of its own (see ChordTranslator.addAccidentals).
+const NOTEHEAD_BRACKET_LEFT = '\uE26C';
+const NOTEHEAD_BRACKET_RIGHT = '\uE26D';
 const ACCIDENTAL_BRACKET_LEFT = '\uE26C';
 const ACCIDENTAL_BRACKET_RIGHT = '\uE26D';
 
