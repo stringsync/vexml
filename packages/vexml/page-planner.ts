@@ -34,7 +34,8 @@ export interface DocumentPlacement {
  * Following the document, a system fits by its staff lines rather than its ink, so a low note
  * hangs into the bottom margin as it does in print; a system opening a page puts its top staff
  * line its top-system-distance below the top margin instead of its ink at the margin; and a
- * system the document starts a page with starts one whether or not it fits.
+ * system the document starts a page with starts one whether or not it fits, after the blank
+ * pages it asks for (not before the first system, which opens the drawing).
  */
 export class PagePlanner {
 	constructor(
@@ -117,7 +118,7 @@ export class PageWalk {
 		const forced = document?.system.startsPage ?? false;
 		let pushed = 0;
 		if (this.index > 0 && (forced || (fitsTo > pageBottom && top > pageTop))) {
-			this.page += 1;
+			this.page += 1 + (forced ? (document?.system.blankPages ?? 0) : 0);
 			pushed = Math.max(
 				0,
 				this.page * height + anchor.offset - (anchor.top - this.cropTop),

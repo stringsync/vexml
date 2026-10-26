@@ -1619,12 +1619,16 @@ export class ScoreReader {
 				const row =
 					prints.get(m) ??
 					Array.from({ length: score.parts.length }, () => null);
-				row[partIndex] = this.layoutBlockOf(print, print.newPage);
+				row[partIndex] = this.layoutBlockOf(
+					print,
+					print.newPage,
+					this.blankPagesOf(print),
+				);
 				prints.set(m, row);
 			});
 		});
 		return new DocumentLayout(
-			this.layoutBlockOf(score.child('defaults'), false),
+			this.layoutBlockOf(score.child('defaults'), false, 0),
 			prints,
 		);
 	}
@@ -1633,6 +1637,7 @@ export class ScoreReader {
 	private layoutBlockOf(
 		element: MElement | null,
 		newPage: boolean,
+		blankPages: number,
 	): LayoutBlock {
 		const number = (parent: MElement | null | undefined, tag: string) => {
 			const text = parent?.child(tag)?.text?.trim();
@@ -1666,7 +1671,14 @@ export class ScoreReader {
 			topSystemDistance: number(system, 'top-system-distance'),
 			staffDistances,
 			newPage,
+			blankPages,
 		};
+	}
+
+	// A `<print blank-page>`, a count of whole pages; a malformed one is none. mdom keeps it raw.
+	private blankPagesOf(print: MElement): number {
+		const count = Number(print.getAttribute('blank-page'));
+		return Number.isInteger(count) && count > 0 ? count : 0;
 	}
 
 	private pageMarginsOf(margins: MElement): PageMargins {

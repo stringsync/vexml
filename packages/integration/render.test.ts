@@ -3571,6 +3571,17 @@ describe('render', () => {
 		).toMatchScreenshot('document_layout_paged.png');
 	});
 
+	// M5's <print new-page="yes" blank-page="2"> leaves two blank pages between page 2 and
+	// the page M5 starts; M7's plain new-page leaves none.
+	it.concurrent('renders blank_page.png', async () => {
+		expect(
+			await testing.render('blank_page.musicxml', {
+				layout: { type: 'paged', documentLayout: 'follow' },
+				backgroundColor: '#ffffff',
+			}),
+		).toMatchScreenshot('blank_page.png');
+	});
+
 	// The same sixteen C5 whole-note measures, but with panoramic layout: all sixteen sit
 	// on a single uninterrupted system (no system break).
 	it.concurrent('renders layout_panoramic.png', async () => {

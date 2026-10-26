@@ -1027,6 +1027,17 @@ describe('ScoreReader', () => {
 			expect(layout.startsPage(0)).toBe(false);
 			expect(layout.startsPage(1)).toBe(true);
 		});
+
+		it('counts blank pages only where a page is started', async () => {
+			const layout = await documentLayoutOf('', [
+				'<print blank-page="3"/>',
+				'<print new-page="yes" blank-page="2"/>',
+				'<print new-page="yes"/>',
+			]);
+			expect(layout.blankPages(0)).toBe(0);
+			expect(layout.blankPages(1)).toBe(2);
+			expect(layout.blankPages(2)).toBe(0);
+		});
 	});
 });
 

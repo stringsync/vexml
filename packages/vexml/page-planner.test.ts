@@ -72,6 +72,7 @@ describe('PagePlanner', () => {
 			topSystemDistance: 5,
 			lineTop: 0,
 			startsPage: false,
+			blankPages: 0,
 			strict: false,
 			fixedGaps: [],
 			...overrides,
@@ -137,6 +138,25 @@ describe('PagePlanner', () => {
 				},
 			);
 			expect([...plan.pushes]).toEqual([[1, 73]]);
+		});
+
+		it('leaves the blank pages the document asks for before a page it starts', () => {
+			const plan = planner.plan(
+				[
+					{ top: 0, bottom: 30 },
+					{ top: 40, bottom: 50 },
+				],
+				{
+					lines: [
+						{ top: 15, bottom: 25 },
+						{ top: 42, bottom: 48 },
+					],
+					systems: [system(), system({ startsPage: true, blankPages: 2 })],
+				},
+			);
+			// Two pages of 100 more than the plain page break.
+			expect([...plan.pushes]).toEqual([[1, 273]]);
+			expect(plan.pageCount).toBe(4);
 		});
 	});
 });

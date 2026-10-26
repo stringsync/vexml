@@ -80,6 +80,17 @@ export class DocumentLayout {
 		return this.prints.get(m)?.some((print) => print?.newPage) ?? false;
 	}
 
+	/* The blank pages the document leaves before the page it starts at measure `m`. The spec
+	 * ignores them without new-page, so they count only where {@link startsPage} does. */
+	blankPages(m: number): number {
+		return this.startsPage(m)
+			? Math.max(
+					0,
+					...(this.prints.get(m) ?? []).map((p) => p?.blankPages ?? 0),
+				)
+			: 0;
+	}
+
 	// A system-layout value is the score's, not a part's: the first part that sets it wins.
 	private systemValue(
 		m: number,
@@ -112,6 +123,9 @@ export type LayoutBlock = {
 	staffDistances: ReadonlyMap<string, number>;
 	/* A `<print new-page="yes">`; always false for `<defaults>`. */
 	newPage: boolean;
+	/* A `<print blank-page="N">`: pages left blank before the one a new-page print starts; 0
+	 * for `<defaults>`. */
+	blankPages: number;
 };
 
 export type PageMargins = {

@@ -409,7 +409,7 @@ are picked by hand.
 | `prefix` | drawn | `figured_bass.musicxml` |
 | `principal-voice` | missing | task #15; mdom raw only |
 | `print` | drawn | `print_new_system.musicxml`: new-system and new-page breaks honored |
-| `print@blank-page` | missing | task #38; blank pages not inserted; mdom raw only |
+| `print@blank-page` | drawn | `blank_page.musicxml`: blank pages left before a new-page print in paged layout; mdom raw only |
 | `print@new-page` | missing | task #20; only a system break, no page break in paged layout; mdom typed |
 | `print@new-system` | drawn | `print_new_system.musicxml`: forced system break |
 | `pull-off` | drawn | `tab_hammer_pull.musicxml` |

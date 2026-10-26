@@ -511,6 +511,7 @@ export class LayoutPlanner {
 				topSystemDistance: document.topSystemDistance(first),
 				lineTop: lines[0]?.top ?? 0,
 				startsPage: document.startsPage(first),
+				blankPages: document.blankPages(first),
 				strict,
 				fixedGaps,
 			};
@@ -1130,6 +1131,8 @@ export type DocumentSystem = {
 	lineTop: number;
 	/** Whether the document starts a page with this system (`<print new-page="yes">`). */
 	startsPage: boolean;
+	/** Blank pages the document leaves before the page this system starts. */
+	blankPages: number;
 	/** documentLayout 'strict': the system distance is kept even where the music runs into
 	 * the system above. */
 	strict: boolean;
