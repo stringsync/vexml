@@ -97,11 +97,14 @@ export class StaveFactory {
 		// buildNotes already positions its notes with, and what MuseScore and OSMD draw.
 		// Without it the stave opened with an empty gap where the glyph belongs (the lead
 		// width reserves the room either way).
-		stave.addClef(
-			this.clefName(measure, staffNumber),
-			undefined,
-			this.signatures.vexflowClefAnnotation(clef?.octaveChange ?? null),
-		);
+		// print-object="no" on the <clef> keeps it in force (the notes still sit by it) but draws no glyph.
+		if (clef?.getAttribute('print-object') !== 'no') {
+			stave.addClef(
+				this.clefName(measure, staffNumber),
+				undefined,
+				this.signatures.vexflowClefAnnotation(clef?.octaveChange ?? null),
+			);
+		}
 		this.addKey(stave, measure, staffNumber, cancelKeySpec);
 	}
 
@@ -114,6 +117,9 @@ export class StaveFactory {
 		cancelKeySpec?: string,
 	): void {
 		const key = measure.getKey(staffNumber);
+		if (key?.getAttribute('print-object') === 'no') {
+			return;
+		}
 		const customKey = this.customKey(measure, staffNumber);
 		if (customKey.length > 0) {
 			stave.addModifier(

@@ -828,6 +828,15 @@ describe('render', () => {
 		);
 	});
 
+	// print-object="no" on <key>, <time> and <clef>:
+	// - M1: 3/4 in D major with all three hidden: the stave opens bare, the notes still read as treble.
+	// - M2: a key change to A major without print-object, so its three sharps show.
+	it.concurrent('renders print_object_signatures.png', async () => {
+		expect(
+			await testing.render('print_object_signatures.musicxml'),
+		).toMatchScreenshot('print_object_signatures.png');
+	});
+
 	// A colored Beethoven lied (color.xml M1-2): a vocal treble stave over a piano grand
 	// staff, 3/4 in three flats, with MusicXML's own color attribute on individual elements.
 	// This is NOT colors.png, which tests the vexml-wide fonts.notation.color CONFIG. Here the

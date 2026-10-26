@@ -265,7 +265,12 @@ export class StaveBuilder {
 		if (column.isSystemStart) {
 			this.factory.addOpening(placed, measure, staffNumber, cancelKeySpec);
 		} else {
-			if (clef && clefChanged && !isTab) {
+			if (
+				clef &&
+				clefChanged &&
+				!isTab &&
+				clef.getAttribute('print-object') !== 'no'
+			) {
 				stave.addClef(
 					this.signatures.vexflowClef(clef.sign, clef.line),
 					'small',
@@ -298,6 +303,7 @@ export class StaveBuilder {
 		if (
 			timeSpec &&
 			!isTab &&
+			time?.getAttribute('print-object') !== 'no' &&
 			(column.opensScore || timeSpec !== prevTimeSpec)
 		) {
 			stave.addTimeSignature(timeSpec);

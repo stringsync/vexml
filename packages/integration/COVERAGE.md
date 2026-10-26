@@ -334,7 +334,7 @@ Attributes: 65 drawn, 5 ignored, 48 missing.
 | `note@print-dot` | drawn | `print_object.musicxml` M1 |
 | `note@print-leger` | drawn | `print_object.musicxml` M2 |
 | `note@print-lyric` | drawn | `print_object.musicxml` M3 |
-| `note@print-spacing` | missing | task #27; hidden notes always keep their space; mdom raw only |
+| `note@print-spacing` | missing | hidden notes always keep their space: vexflow spaces by tick, so zeroing a note's width changes nothing; mdom raw only |
 | `note-size` | missing | task #9; mdom raw only |
 | `notehead` | drawn | `notehead_shapes.musicxml` |
 | `notehead@filled` | drawn | `notehead_shapes_extended.musicxml`: filled and open shape variants |
