@@ -12,7 +12,6 @@ import {
 	type Part,
 	type PartGroupSpan,
 	type Score,
-	type Voice as ScoreVoice,
 	type Time,
 } from '@stringsync/mdom';
 import type { ChordFrame } from './chord-diagram-glyph';
@@ -34,6 +33,7 @@ export class ScoreReader {
 		Measure,
 		Map<string, StaffVoice[]>
 	>();
+	private readonly voiceCache = new WeakMap<Measure, MeasureVoice[]>();
 	// One staff's <measure-style> regions, walked once per part and staff (see staffStylesOf).
 	private readonly staffStyleCache = new WeakMap<
 		Part,
@@ -91,14 +91,30 @@ export class ScoreReader {
 		}
 		let staffVoices = byStaff.get(staffNumber);
 		if (!staffVoices) {
-			staffVoices = this.projectVoices(measure.voices, staffNumber);
+			staffVoices = this.projectVoices(this.voicesOf(measure), staffNumber);
 			byStaff.set(staffNumber, staffVoices);
 		}
 		return staffVoices;
 	}
 
+	/*
+	 * A measure's voices and their chords, read once: mdom rebuilds both on every read, and a
+	 * measure is asked once per staff and again for its onsets.
+	 */
+	voicesOf(measure: Measure): MeasureVoice[] {
+		let voices = this.voiceCache.get(measure);
+		if (!voices) {
+			voices = measure.voices.map((voice) => ({
+				staff: voice.staff,
+				chords: voice.chords,
+			}));
+			this.voiceCache.set(measure, voices);
+		}
+		return voices;
+	}
+
 	private projectVoices(
-		voices: ScoreVoice[],
+		voices: MeasureVoice[],
 		staffNumber: string,
 	): StaffVoice[] {
 		const out: StaffVoice[] = [];
@@ -2252,6 +2268,12 @@ export type Swing = { first: number; second: number; unit: number };
  * crossing staves is grouped exactly once (off the notes the `<beam>` markers were written
  * on), and the beam then spans both staves instead of breaking at the staff change.
  */
+/** One of a measure's voices: the staff mdom gives it (its first note's) and its chords. */
+export type MeasureVoice = {
+	staff: string;
+	chords: Chord[];
+};
+
 export type StaffVoice = {
 	chords: Chord[];
 	beamChords: Chord[] | null;

@@ -312,9 +312,13 @@ export class LayoutPlanner {
 		// formatted together, so a note in ANY part is room a directive can print over.
 		// Compared against onsets rather than against the column's end beat, so a whole-measure
 		// rest (which ENDS last but starts at beat 0) isn't mistaken for a note at the barline.
+		const words = measures.flatMap((measure) => this.reader.wordsOf(measure));
+		if (words.length === 0) {
+			return 0;
+		}
 		let lastOnset = 0;
 		for (const measure of measures) {
-			for (const voice of measure.voices) {
+			for (const voice of this.reader.voicesOf(measure)) {
 				for (const chord of voice.chords) {
 					lastOnset = Math.max(
 						lastOnset,
@@ -324,24 +328,19 @@ export class LayoutPlanner {
 			}
 		}
 		let pad = 0;
-		for (const measure of measures) {
-			for (const { text, lead, format } of this.reader.wordsOf(measure)) {
-				// A directive naming no note anchors at the measure's first one instead.
-				if (
-					!lead ||
-					(this.reader.measureBeatOf(lead) ?? 0) + EPSILON < lastOnset
-				) {
-					continue;
-				}
-				const room = this.noteLogWidth(
-					(this.reader.beatsOf(lead) ?? 0) * QUARTER_NOTE_TICKS,
-					noteSpacing,
-				);
-				pad = Math.max(
-					pad,
-					text.length * WORDS_CHAR_WIDTH * format.scale - room,
-				);
+		for (const { text, lead, format } of words) {
+			// A directive naming no note anchors at the measure's first one instead.
+			if (
+				!lead ||
+				(this.reader.measureBeatOf(lead) ?? 0) + EPSILON < lastOnset
+			) {
+				continue;
 			}
+			const room = this.noteLogWidth(
+				(this.reader.beatsOf(lead) ?? 0) * QUARTER_NOTE_TICKS,
+				noteSpacing,
+			);
+			pad = Math.max(pad, text.length * WORDS_CHAR_WIDTH * format.scale - room);
 		}
 		return Math.max(0, pad);
 	}
@@ -360,9 +359,19 @@ export class LayoutPlanner {
 		// The column's first onset, across every part, voice and staff, matching the last-onset
 		// read in trailingWordsPad, so "anchored at the measure's first note" means the same
 		// thing on both sides even when one part rests through the downbeat.
+		const words = parts.flatMap((part) => {
+			const measure = part.measures[m];
+			return measure
+				? this.reader.wordsOf(measure).map((w) => ({ part, ...w }))
+				: [];
+		});
+		if (words.length === 0) {
+			return 0;
+		}
 		let firstOnset = Number.POSITIVE_INFINITY;
 		for (const part of parts) {
-			for (const voice of part.measures[m]?.voices ?? []) {
+			const measure = part.measures[m];
+			for (const voice of measure ? this.reader.voicesOf(measure) : []) {
 				for (const chord of voice.chords) {
 					firstOnset = Math.min(
 						firstOnset,
@@ -372,35 +381,19 @@ export class LayoutPlanner {
 			}
 		}
 		let pad = 0;
-		for (const part of parts) {
-			const measure = part.measures[m];
-			if (!measure) {
+		for (const { part, text, staffNumber, lead, closesBar, format } of words) {
+			// A directive naming no note anchors at the measure's first one instead, unless
+			// it closes the bar, which ends at the right barline instead.
+			if (
+				closesBar ||
+				(lead && (this.reader.measureBeatOf(lead) ?? 0) > firstOnset + EPSILON)
+			) {
 				continue;
 			}
-			for (const {
-				text,
-				staffNumber,
-				lead,
-				closesBar,
-				format,
-			} of this.reader.wordsOf(measure)) {
-				// A directive naming no note anchors at the measure's first one instead, unless
-				// it closes the bar, which ends at the right barline instead.
-				if (
-					closesBar ||
-					(lead &&
-						(this.reader.measureBeatOf(lead) ?? 0) > firstOnset + EPSILON)
-				) {
-					continue;
-				}
-				if (!this.staves.isTab(part, staffNumber)) {
-					continue;
-				}
-				pad = Math.max(
-					pad,
-					(text.length * WORDS_CHAR_WIDTH * format.scale) / 2,
-				);
+			if (!this.staves.isTab(part, staffNumber)) {
+				continue;
 			}
+			pad = Math.max(pad, (text.length * WORDS_CHAR_WIDTH * format.scale) / 2);
 		}
 		return pad;
 	}
