@@ -560,6 +560,30 @@ export class ScoreReader {
 		);
 	}
 
+	/**
+	 * The `<print><measure-numbering>` that leads `measure`, or null when its <print> sets none.
+	 * It holds from here on in its part until the next one, which the caller carries forward.
+	 * `system` (which part of the system shows the number) and `staff` (which of the part's
+	 * staves the number rides) are null when absent.
+	 */
+	measureNumberingOf(measure: Measure): MeasureNumberingMark | null {
+		const element = measure.print?.child('measure-numbering');
+		if (!element) {
+			return null;
+		}
+		const text = element.text?.trim();
+		const value =
+			text === 'none' || text === 'measure' || text === 'system'
+				? text
+				: 'system';
+		const system = element.getAttribute('system');
+		return {
+			value,
+			system: SYSTEM_RELATIONS.find((relation) => relation === system) ?? null,
+			staff: element.getAttribute('staff'),
+		};
+	}
+
 	/*
 	 * A measure's metronome mark from the first <direction> that carries a
 	 * <metronome>, or null when none does. MusicXML's <beat-unit> names ('quarter',
@@ -2156,6 +2180,25 @@ export type HarmonySymbol = {
  * the note-equals-note metric modulation, and the parenthesized form. Only the drawing
  * path reads them; playback needs `bpm` alone.
  */
+/** Where a part's measure numbers go, from its `<print><measure-numbering>`. */
+export type MeasureNumberingMark = {
+	/** 'none' numbers nothing, 'measure' every measure, 'system' each system's first. */
+	value: 'none' | 'measure' | 'system';
+	system: SystemRelation | null;
+	staff: string | null;
+};
+
+/** MusicXML's system-relation-number: which part of the system shows the number. */
+export type SystemRelation = (typeof SYSTEM_RELATIONS)[number];
+
+const SYSTEM_RELATIONS = [
+	'only-top',
+	'only-bottom',
+	'also-top',
+	'also-bottom',
+	'none',
+] as const;
+
 export type TempoMark = {
 	duration: string;
 	bpm: number;

@@ -15,6 +15,7 @@ import {
 	VOLTA_STAVE_GAP,
 } from './constants';
 import type { Gaps } from './gaps';
+import { MeasureNumberPlan } from './measure-number-plan';
 import type { MeasureStyleMark, PartGroup, ScoreReader } from './score-reader';
 import type { SignatureTranslator } from './signature-translator';
 import type { SpillTracker } from './spill-tracker';
@@ -53,8 +54,6 @@ export interface StaveColumn {
 	/** Whether the previous measure's backward repeat already closed this boundary, so
 	 * this measure skips its own opening dots. */
 	suppressBegRepeat: boolean;
-	/** Whether an earlier stave of this column already printed the measure number. */
-	measureNumbered: boolean;
 	/** The next measure's box when it carries a volta on this same system, or null;
 	 * see the early obstacle registration in build. */
 	nextVolta: { x: number; width: number } | null;
@@ -72,7 +71,7 @@ export class StaveBuilder {
 	private readonly parts: Part[];
 	private readonly partGroups: PartGroup[];
 	private readonly totalStaves: number;
-	private readonly measureNumbering: MeasureNumbering;
+	private readonly measureNumbers: MeasureNumberPlan;
 	private readonly textColor: string;
 	private readonly staveOffsets: number[];
 	private readonly systemStaveOffsets:
@@ -99,7 +98,12 @@ export class StaveBuilder {
 		this.parts = opts.parts;
 		this.partGroups = opts.partGroups;
 		this.totalStaves = opts.totalStaves;
-		this.measureNumbering = opts.measureNumbering;
+		this.measureNumbers = new MeasureNumberPlan(
+			reader,
+			staves,
+			opts.parts,
+			opts.measureNumbering,
+		);
 		this.textColor = opts.textColor;
 		this.staveOffsets = opts.staveOffsets;
 		this.systemStaveOffsets = opts.systemStaveOffsets;
@@ -110,25 +114,6 @@ export class StaveBuilder {
 		// the measure loop skips them without any extra guard here.
 		this.multiRests = this.reader.multiRestsOf(this.parts).leads;
 		this.factory = new StaveFactory(signatures, staves);
-	}
-
-	/**
-	 * Whether the measure at 0-based `index` (system-start or not) shows its number under the
-	 * configured mode. 'every-N' numbers every Nth measure plus every system start.
-	 */
-	showsMeasureNumber(index: number, isSystemStart: boolean): boolean {
-		switch (this.measureNumbering) {
-			case 'none':
-				return false;
-			case 'system':
-				return isSystemStart;
-			case 'every':
-				return true;
-			case 'every-2':
-				return isSystemStart || index % 2 === 0;
-			case 'every-3':
-				return isSystemStart || index % 3 === 0;
-		}
 	}
 
 	/*
@@ -311,8 +296,15 @@ export class StaveBuilder {
 
 		// A gap is non-musical, so it never shows a measure number (its neighbors keep
 		// their own printed numbers; insertion shifts indexes, not labels).
+		const partIndex = this.parts.indexOf(part);
 		const showNumber =
-			!this.gaps.has(m) && this.showsMeasureNumber(m, column.isSystemStart);
+			!this.gaps.has(m) &&
+			this.measureNumbers.numbers(
+				partIndex,
+				staffNumber,
+				m,
+				column.isSystemStart,
+			);
 		// A bracket (drawn below) has a top curl that sits where vexflow's
 		// setMeasure centers the measure number, so the number gets occluded: true
 		// for a multi-stave part's own bracket, for the system bracket of a
@@ -320,17 +312,22 @@ export class StaveBuilder {
 		// starts on the top part (the only one whose curl reaches the number). Only
 		// for a bracket do we draw the number ourselves, left-aligned just right of
 		// the barline and lifted above the curl; the curly brace doesn't reach that
-		// high, so it keeps vexflow's placement. The number prints once
-		// (measureNumbered), on the top stave.
+		// high, so it keeps vexflow's placement. A curl only tops a part's first stave, and
+		// the system bracket only the top part's.
+		const partTop = this.staves.visibleNumbers(part)[0] === staffNumber;
 		const numberOccluded =
 			column.isSystemStart &&
+			partTop &&
 			((visibleCount > 1 && this.staves.symbolOf(part) === 'bracket') ||
-				this.staves.partsPairTabWithNotation(this.parts) ||
+				(partIndex === 0 && this.staves.partsPairTabWithNotation(this.parts)) ||
 				this.partGroups.some(
-					(group) => group.symbol === 'bracket' && group.fromPart === 0,
+					(group) => group.symbol === 'bracket' && group.fromPart === partIndex,
 				));
-		let numbered = false;
-		if (showNumber && !column.measureNumbered && !numberOccluded) {
+		// Below the system's top stave, the system's connector and the part's barlines climb
+		// past the stave's top, through a number centered on its x, so there the number sits
+		// left-aligned just right of the line, at vexflow's height.
+		const numberBeside = !numberOccluded && column.staveRow > 0;
+		if (showNumber && !numberOccluded && !numberBeside) {
 			stave.setMeasure(Number(measure.number));
 			// vexflow centers the number on the stave's x, baselined 3px under its top-text
 			// line (Stave.draw).
@@ -343,7 +340,6 @@ export class StaveBuilder {
 				true,
 			);
 			this.context.restore();
-			numbered = true;
 		}
 
 		// The volta bracket is drawn with the stave, so register the band it occupies as an
@@ -381,23 +377,19 @@ export class StaveBuilder {
 			});
 		}
 
-		if (showNumber && !column.measureNumbered && numberOccluded) {
+		if (showNumber && (numberOccluded || numberBeside)) {
+			const baseline = stave.getYForTopText(0) + (numberOccluded ? -14 : 3);
 			this.context.save();
 			this.context.setFont(stave.getFont());
 			this.context.setFillStyle(this.textColor);
-			this.context.fillText(
-				measure.number,
-				stave.getX() + 4,
-				stave.getYForTopText(0) - 14,
-			);
+			this.context.fillText(measure.number, stave.getX() + 4, baseline);
 			this.addMeasureNumberObstacle(
 				measure.number,
 				stave.getX() + 4,
-				stave.getYForTopText(0) - 14,
+				baseline,
 				false,
 			);
 			this.context.restore();
-			numbered = true;
 		}
 		// Seed this row's spill record even when nothing is drawn on it, so the re-spacing
 		// pass still knows where its staff lines sit (a tab stave is taller than a
@@ -421,7 +413,6 @@ export class StaveBuilder {
 					: null,
 			multiRestCount: this.multiRests.get(m) ?? null,
 			measureStyle: this.reader.measureStyleOf(measure, staffNumber),
-			numbered,
 		};
 	}
 
@@ -487,8 +478,6 @@ export interface BuiltStave {
 	/** The sign the stave's <measure-style> draws in place of its notes (a measure repeat,
 	 * beat repeats, beat slashes), or null when the measure draws its own notes. */
 	measureStyle: MeasureStyleMark | null;
-	/** Whether this stave printed the measure number. */
-	numbered: boolean;
 }
 
 export interface StaveBuilderOptions {

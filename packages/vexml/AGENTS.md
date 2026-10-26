@@ -61,7 +61,7 @@ Two rules cut across the draw stage:
 - **Mid-measure clef changes, mid-measure barlines**: `score-reader.ts` (`midClefsOf`, `midBarlinesOf`), `voice-translator.ts`, `signature-translator.ts`, `barline-translator.ts`, `layout-planner.ts`
 - **Barlines, repeat signs, volta (ending) brackets**: `barline-translator.ts`, `stave-builder.ts`, `connector-drawer.ts`, `score-reader.ts`
 - **Fermatas on a barline**: `score-reader.ts` (`barlineFermatasOf`), `direction-placer.ts` (`drawBarlineFermata`), `fermata-glyphs.ts`
-- **Measure numbers**: `stave-builder.ts` (`showsMeasureNumber`)
+- **Measure numbers**: `measure-number-plan.ts` (which staves number which measures: the config's cadence, or the document's `<print><measure-numbering>` and its `system`/`staff`), `score-reader.ts` (`measureNumberingOf`), `stave-builder.ts` (drawing them)
 - **Multi-measure rests**: `stave-builder.ts` (`drawMultiRest`), `layout-planner.ts`
 - **Measure repeats, beat repeats, slash notation (`<measure-style>`)**: `score-reader.ts` (`measureStyleOf`, `noteStyleOf` for spans that start or stop mid-measure or except a voice, `isRhythmSlashed`), `measure-style-drawer.ts` (the signs, drawn in place of the notes), `invisible-stave-note.ts` (a hidden note draws its beat's sign), `draw-pass.ts`, `chord-translator.ts` (rhythm slash noteheads), `voice-builder.ts` (their beams stem up)
 - **Braces, brackets, part-group connectors, part names and abbreviations**: `connector-drawer.ts`, `score-reader.ts` (`partLabels`, `partGroups`), `draw-pass.ts`, `layout-planner.ts` (`laterLabelIndent`)

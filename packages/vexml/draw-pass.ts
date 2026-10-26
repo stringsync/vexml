@@ -237,8 +237,6 @@ export class DrawPass {
 	private decoration: BarlineDecoration = NO_DECORATION;
 	private repeatBoth = false;
 	private suppressBegRepeat = false;
-	// Number is printed once per measure, above the system's top stave only.
-	private measureNumbered = false;
 	private systemY = 0;
 	private staveRow = 0;
 	private systemTop: Stave | undefined;
@@ -723,7 +721,6 @@ export class DrawPass {
 			this.decoration.repeatEnd && nextBegins && !nextIsSystemStart;
 		this.suppressBegRepeat =
 			!this.isSystemStart && this.decorations[m - 1]?.repeatEnd === true;
-		this.measureNumbered = false;
 		this.systemY = this.systemTopY;
 		this.staveRow = 0;
 		this.systemTop = undefined;
@@ -1102,7 +1099,6 @@ export class DrawPass {
 			decoration: this.decoration,
 			repeatBoth: this.repeatBoth,
 			suppressBegRepeat: this.suppressBegRepeat,
-			measureNumbered: this.measureNumbered,
 			nextVolta:
 				nextBox &&
 				nextBox.systemIndex === this.systemIndex &&
@@ -1195,9 +1191,6 @@ export class DrawPass {
 			this.columnVoltaBox = built.volta.box;
 			// The bracket is the highest ink in this column, so it grows the page crop.
 			this.pageTop = Math.min(this.pageTop, built.volta.top);
-		}
-		if (built.numbered) {
-			this.measureNumbered = true;
 		}
 		const staveBottom = stave.getBottomY();
 		this.pageBottom = Math.max(this.pageBottom, staveBottom);

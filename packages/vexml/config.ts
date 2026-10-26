@@ -52,8 +52,10 @@ export type Config = {
 	 * and `<identification><creator>`. Off by default since a host page usually titles the
 	 * score itself. Not drawn in a panoramic layout. */
 	showHeader: boolean;
-	/** When to print measure numbers above the staff (default: 'system'). 'none' prints
-	 * none; 'system' numbers the first measure of each system; 'every' numbers every
+	/** When to print measure numbers above the staff (default: 'document'). 'document'
+	 * follows the score's `<print><measure-numbering>` and its `system` attribute, numbering
+	 * like 'system' when the score sets none; any other value overrides the score. 'none'
+	 * prints none; 'system' numbers the first measure of each system; 'every' numbers every
 	 * measure; 'every-2'/'every-3' number every 2nd/3rd measure plus every system start. */
 	measureNumbering: MeasureNumbering;
 	/** Print the "sl." label on tablature slides (default: false). The slide line always
@@ -304,6 +306,7 @@ export type TabStemPlacement = 'none' | 'above' | 'below';
 
 /** When to print measure numbers above the staff. */
 export type MeasureNumbering =
+	| 'document'
 	| 'none'
 	| 'system'
 	| 'every'
@@ -375,7 +378,7 @@ export const DEFAULT_CONFIG: Config = {
 	systemSpacing: SYSTEM_GAP,
 	showPartLabels: false,
 	showHeader: false,
-	measureNumbering: 'system',
+	measureNumbering: 'document',
 	showTabSlideText: false,
 	tabStemPlacement: 'none',
 	showTabs: true,

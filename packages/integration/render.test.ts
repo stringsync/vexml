@@ -3445,6 +3445,23 @@ describe('render', () => {
 		).toMatchScreenshot('measure_numbering_every_3.png');
 	});
 
+	// A flute over a two-stave piano, four systems forced by <print new-system>, numbered by
+	// the document's <print><measure-numbering> under the 'document' default.
+	// - M1-4: the flute says "measure" with no system attribute, which belongs to the system:
+	//         1-4 above the flute, the top stave, and nothing on the piano.
+	// - M5-8: "measure" system="only-bottom": 5-8 above the piano's treble stave, the bottom
+	//         part's top stave, left-aligned just right of the barline (the system's connector
+	//         runs up through where a centered number would sit); the flute is unnumbered.
+	// - M9-12: "system" system="also-bottom": only M9, the system start, numbered, above both
+	//          the flute and the piano's treble stave.
+	// - M13-14: the flute says "none" and the piano "measure" system="none" staff="2": 13 and
+	//           14 above the piano's bass stave only, right of the brace and barlines.
+	it.concurrent('renders measure_numbering.png', async () => {
+		expect(
+			await testing.render('measure_numbering.musicxml'),
+		).toMatchScreenshot('measure_numbering.png');
+	});
+
 	// Treble, 4/4, narrowed to 660px so it wraps to two systems of three measures each.
 	// Tests vertical spacing between stacked systems: the first system's notes hang far
 	// below its staff and the second system's notes rise far above its staff, the worst

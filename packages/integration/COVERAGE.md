@@ -16,8 +16,8 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 271 drawn, 69 ignored, 102 missing; vexml draws 271 of the 373 that show on the page (73%).
-Attributes: 75 drawn, 5 ignored, 38 missing.
+Elements: 272 drawn, 69 ignored, 101 missing; vexml draws 272 of the 373 that show on the page (73%).
+Attributes: 76 drawn, 5 ignored, 37 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -279,8 +279,8 @@ Attributes: 75 drawn, 5 ignored, 38 missing.
 | `measure@width` | missing | task #20; mdom raw only |
 | `measure-distance` | missing | task #20; mdom raw only |
 | `measure-layout` | missing | task #20; mdom raw only |
-| `measure-numbering` | missing | task #38; honor the score's measure-numbering choice (config decides now); mdom raw only |
-| `measure-numbering@system` | missing | task #38; document numbering per system ignored, config decides; mdom raw only |
+| `measure-numbering` | drawn | `measure_numbering.musicxml`: followed under the `measureNumbering: 'document'` default, any other config value overrides it |
+| `measure-numbering@system` | drawn | `measure_numbering.musicxml` M5-M14: only-bottom, also-bottom and none, with `staff`; an absent one numbers the system's top stave |
 | `measure-repeat` | drawn | `measure_style.musicxml`: one- and two-bar signs, the count above |
 | `measure-style` | drawn | `rest_multi_measure.musicxml`: multiple-rest child; `measure_style.musicxml`: repeats and slashes |
 | `membrane` | missing | task #16; mdom raw only |
