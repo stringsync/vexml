@@ -54,6 +54,8 @@ export class RenderLint {
 		const findings = [
 			...this.clipped(),
 			...this.collidingStaves(groups),
+			...this.mergedStaves(groups),
+			...this.interleavedStaves(groups),
 			...this.strayLines(groups),
 			...new InkCollisions(this.masks).findings(),
 		];
@@ -128,6 +130,54 @@ export class RenderLint {
 		});
 	}
 
+	// Two staves touching share a line, and the pair reads as one staff of nine or ten lines
+	// at one spacing. No score asks for that many.
+	private mergedStaves(groups: LineGroup[]): Finding[] {
+		return groups
+			.filter((group) => group.lines.length >= MERGED_LINES)
+			.map((group) => ({
+				kind: 'staves-collide' as const,
+				message: `${group.lines.length} lines at one spacing: two staves touching`,
+				box: group.box,
+			}));
+	}
+
+	// Two staves drawn into each other interleave their lines: the overlap keeps a spacing
+	// of half a staff space, bounded on either side by the staves' own lines a full space
+	// apart. A staff does not change spacing partway.
+	private interleavedStaves(groups: LineGroup[]): Finding[] {
+		return groups.flatMap((group, i) => {
+			if (group.lines.length < STAFF_LINES) {
+				return [];
+			}
+			const space = group.box.h / (group.lines.length - 1);
+			const sides = [groups[i - 1], groups[i + 1]].filter(
+				(other): other is LineGroup => {
+					if (!other || other.lines.length < 2) {
+						return false;
+					}
+					const wider = other.box.h / (other.lines.length - 1);
+					const near = [group.box, other.box].sort((a, b) => a.top - b.top);
+					const gap = (near[1]?.top ?? 0) - (near[0]?.bottom ?? 0);
+					return (
+						Math.abs(wider - 2 * space) <= Math.max(1, 2 * space * 0.2) &&
+						Math.abs(gap - wider) <= Math.max(1, wider * 0.2)
+					);
+				},
+			);
+			if (sides.length === 0) {
+				return [];
+			}
+			return [
+				{
+					kind: 'staves-collide' as const,
+					message: `lines change spacing from ${Math.round(space * 2)}px to ${Math.round(space)}px mid-staff: staves drawn into each other`,
+					box: sides.reduce((box, side) => box.union(side.box), group.box),
+				},
+			];
+		});
+	}
+
 	// A lone line across the system within a staff space of a staff is ink the staff
 	// didn't draw: another staff drawn into it (its lines no longer keep one spacing, so
 	// they fall out of their run), or a spanner lying on it.
@@ -180,6 +230,8 @@ export class RenderLint {
 
 // Lines at one spacing it takes to trust that spacing as a staff's.
 const STAFF_LINES = 3;
+// Lines at one spacing that are two staves touching, not one staff.
+const MERGED_LINES = 9;
 
 // The share of its staff's width a lone line spans, and of its own span one row holds
 // unbroken, to be a rule and not a beam or a squiggle.

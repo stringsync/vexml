@@ -75,6 +75,24 @@ describe('RenderLint', () => {
 		expect(report.findings[0]?.box).toMatchObject({ y: 4, h: 86 });
 	});
 
+	it('flags two touching staves as colliding', () => {
+		const rows = canvas(40, 90, [
+			...staff(4, 2, 38, 10),
+			...staff(44, 2, 38, 10),
+		]);
+		const report = new RenderLint(InkMap.fromRows(rows)).lint();
+		expect(report.findings.map((f) => f.kind)).toEqual(['staves-collide']);
+	});
+
+	it('flags two staves with interleaved lines as colliding', () => {
+		const rows = canvas(40, 80, [
+			...staff(4, 2, 38, 10),
+			...staff(29, 2, 38, 10),
+		]);
+		const report = new RenderLint(InkMap.fromRows(rows)).lint();
+		expect(report.findings.map((f) => f.kind)).toContain('staves-collide');
+	});
+
 	it('accepts two staves a staff space or more apart', () => {
 		const rows = canvas(40, 110, [
 			...staff(4, 2, 38, 10),
