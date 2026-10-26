@@ -10,6 +10,7 @@ import {
 	Stem,
 	VexFlow,
 } from 'vexflow/core';
+import { Appearance } from './appearance';
 import { isCueSized } from './cue-note';
 import type { DurationTranslator } from './duration-translator';
 import { isDiamondHarmonic } from './harmonic-kind';
@@ -96,10 +97,18 @@ export class ChordTranslator {
 	// Each clef's middle-line key (see middleKey).
 	private readonly middleKeys = new Map<string, string>();
 
+	private appearance = Appearance.NONE;
+
 	constructor(
 		private readonly durations: DurationTranslator,
 		private readonly notations: NotationTranslator,
 	) {}
+
+	/* Draw the rests built from here on in the document's glyphs (Appearance.NONE for
+	 * vexflow's own). */
+	useAppearance(appearance: Appearance): void {
+		this.appearance = appearance;
+	}
 
 	/* The held tail of a tie: the note sounds on, but nothing about it is struck again. */
 	private isHeld(note: Chord['notes'][number]): boolean {
@@ -125,6 +134,7 @@ export class ChordTranslator {
 		const NoteClass = visible ? StaveNote : InvisibleStaveNote;
 		if (lead.isRest) {
 			const rest = new NoteClass(this.struct(chord, clef, opts));
+			this.dressRest(rest);
 			this.hideSpacing(rest, lead);
 			this.attachSign(rest, opts);
 			this.addDots(rest, lead);
@@ -178,6 +188,24 @@ export class ChordTranslator {
 	private attachSign(staveNote: StaveNote, opts: VexflowChordOptions): void {
 		if (staveNote instanceof InvisibleStaveNote && opts.styled?.sign) {
 			staveNote.sign = opts.styled.sign;
+		}
+	}
+
+	/*
+	 * A quarter rest in the document's quarter-rest glyph. Set as the key's own glyph code, the
+	 * one a notehead is rebuilt from, so it survives the formatter moving the rest (setKeyLine
+	 * rebuilds the heads).
+	 */
+	private dressRest(rest: StaveNote): void {
+		const glyph = this.appearance.glyph('quarter-rest');
+		const key = rest.keyProps[0];
+		if (
+			glyph !== null &&
+			key &&
+			rest.glyphProps.codeHead === VexFlow.Glyphs.restQuarter
+		) {
+			key.code = glyph;
+			rest.reset();
 		}
 	}
 

@@ -7,10 +7,10 @@ import {
 	type StaveNote,
 	type StaveTie,
 	type TabNote,
-	TextBracket,
 	type Tuplet,
 } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
+import type { Appearance, GlyphType } from './appearance';
 import { CollisionResolver } from './collision-resolver';
 import {
 	OTTAVA_TEXT_LINE,
@@ -22,6 +22,7 @@ import {
 import type { DirectionPlacer } from './direction-placer';
 import type { Hairpin } from './hairpin';
 import { Ink } from './ink';
+import { OttavaBracket } from './ottava-bracket';
 import type {
 	DirectionLineSpan,
 	OctaveShiftSpan,
@@ -78,6 +79,8 @@ export class SpannerResolver {
 	private readonly showTabSlideText: boolean;
 	// The drawable region of the scratch canvas, the bounds each scoped resolver probes in.
 	private readonly scratchViewport: Rect;
+	private readonly appearance: Appearance;
+	private readonly notationFont: string;
 
 	private readonly allChords: Chord[] = [];
 	// Pedal directions are spanners too (a start..stop pair), collected per measure
@@ -123,6 +126,8 @@ export class SpannerResolver {
 		this.showTabSlideText = opts.showTabSlideText;
 		this.scratchViewport = opts.scratchViewport;
 		this.systemOfMeasure = opts.systemOfMeasure;
+		this.appearance = opts.appearance;
+		this.notationFont = opts.notationFont;
 	}
 
 	/* How many chords and markers are recorded, for {@link rewind}. */
@@ -398,15 +403,22 @@ export class SpannerResolver {
 			if (!start || !stop || !scope.owns(start, stop)) {
 				continue;
 			}
-			const bracket = new TextBracket({
+			const bracket = new OttavaBracket({
 				start,
 				stop,
 				text: span.label,
 				superscript: span.suffix,
 				position: span.above
-					? TextBracket.Position.TOP
-					: TextBracket.Position.BOTTOM,
+					? OttavaBracket.Position.TOP
+					: OttavaBracket.Position.BOTTOM,
 			});
+			// The label is "8" for a size of 8, so this names the span's own glyph type.
+			const glyph = this.appearance.glyph(
+				`octave-shift-${span.above ? 'down' : 'up'}-${span.label}` as GlyphType,
+			);
+			if (glyph !== null) {
+				bracket.useGlyph(glyph, this.notationFont);
+			}
 			// vexflow paints a bracket in its own black, over the context's notation ink.
 			bracket.renderOptions.color = Ink.NOTATION;
 			this.clearOctaveBracket(
@@ -742,7 +754,7 @@ export class SpannerResolver {
 	 * visible to the probe at all (see SpannerReporter.noteObstacle).
 	 */
 	private clearOctaveBracket(
-		bracket: TextBracket,
+		bracket: OttavaBracket,
 		notes: StaveNote[],
 		above: boolean,
 	): void {
@@ -817,6 +829,10 @@ export interface SpannerResolverOptions {
 	/** The system a document measure is drawn on: where a spanner reaching that measure
 	 * lands, before anything there is drawn. */
 	systemOfMeasure(measureIndex: number): number;
+	/** The document's glyphs (an ottava's label among them), or Appearance.NONE. */
+	appearance: Appearance;
+	/** The font family the notation glyphs draw in. */
+	notationFont: string;
 }
 
 /* A hairpin below-stave words ran into: its stave row, and its box with y measured from the

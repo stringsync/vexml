@@ -55,7 +55,7 @@ are picked by hand.
 | `accordion-registration` | drawn | `direction_pictograms.musicxml` M5: the three-rank register circle |
 | `actual-notes` | drawn | `tuplet_triplet.musicxml`: tuplet ratio via timeModification |
 | `alter` | drawn | `accidentals.musicxml`: pitch alter read for note pitch; printed glyph comes from accidental |
-| `appearance` | drawn | `defaults_appearance.musicxml`, under documentLayout follow or strict: its line widths (see `line-width`); distances task #102, glyphs task #103, note sizes task #9 |
+| `appearance` | drawn | `defaults_appearance.musicxml`, under documentLayout follow or strict: its line widths (see `line-width`) and glyphs (see `glyph`, `defaults_appearance_glyphs.musicxml`); distances task #102, note sizes task #9 |
 | `arpeggiate` | drawn | `arpeggio.musicxml` |
 | `arpeggiate@direction` | drawn | `arpeggio.musicxml`: up and down arrowheads |
 | `arpeggiate@unbroken` | drawn | `arpeggio_unbroken.musicxml`: one line across both staves of a part |
@@ -198,7 +198,7 @@ are picked by hand.
 | `glass` | drawn | `direction_pictograms.musicxml` M2: SMuFL pictogram |
 | `glissando` | drawn | `glissando.musicxml`: a straight line between the noteheads, across a barline, or a tick into a lone stop |
 | `glissando@line-type` | drawn | `spanner_line_types.musicxml` M6 |
-| `glyph` | missing | task #103; appearance SMuFL glyph overrides not applied; mdom raw only |
+| `glyph` | drawn | `defaults_appearance_glyphs.musicxml`, under documentLayout follow or strict: quarter rest, C, F and percussion clefs, G clef ottava bassa, and the octave-shift up and down labels by SMuFL name; the continue types have no continuation label to apply to |
 | `golpe` | drawn | `technical_marks.musicxml` M23: the golpe glyph above the note |
 | `grace` | drawn | `grace_notes.musicxml` |
 | `grace@make-time` | drawn | `grace_notes.musicxml`: timed, grace adds its own time |

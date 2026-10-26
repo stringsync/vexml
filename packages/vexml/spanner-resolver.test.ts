@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'bun:test';
 import type { Chord, Note } from '@stringsync/mdom';
 import type { RenderContext, Stave, StaveNote, TabNote } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
+import { Appearance } from './appearance';
 import { WORDS_NOTE_CLEARANCE } from './constants';
 import type { DirectionLineTask, DirectionPlacer } from './direction-placer';
 import type { Hairpin } from './hairpin';
@@ -127,6 +128,8 @@ describe('SpannerResolver', () => {
 				showTabSlideText: true,
 				scratchViewport: new Rect(0, 0, 1000, 1000),
 				systemOfMeasure: () => 0,
+				appearance: Appearance.NONE,
+				notationFont: 'Bravura',
 				...opts,
 			},
 		);

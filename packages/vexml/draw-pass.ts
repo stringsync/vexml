@@ -570,6 +570,8 @@ export class DrawPass {
 				showTabSlideText,
 				scratchViewport: this.scratchViewport,
 				systemOfMeasure: (m) => this.systemOfMeasure(m),
+				appearance: layout.appearance,
+				notationFont,
 			},
 		);
 		// The context's default ink: every vexflow glyph with no explicit style inherits it, and it

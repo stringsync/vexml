@@ -539,6 +539,10 @@ export class LayoutPlanner {
 		const documentPage = document?.page() ?? null;
 		const appearance =
 			mode === 'ignore' ? Appearance.NONE : this.reader.appearanceOf(score);
+		// The glyphs the document swaps in change what the notes and clefs measure, so the
+		// translators the layout and draw passes share take them before anything is measured.
+		this.translator.useAppearance(appearance);
+		this.signatures.useAppearance(appearance);
 		const page = this.pageOf(config, documentPage);
 		const layout = this.flowOf(config, page, documentPage);
 		const layoutMode = layout.type;

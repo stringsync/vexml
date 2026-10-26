@@ -13,6 +13,7 @@ import {
 	Voice,
 } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
+import type { Appearance } from './appearance';
 import type { BarlineTranslator } from './barline-translator';
 import type { ChordTranslator } from './chord-translator';
 import {
@@ -22,7 +23,11 @@ import {
 } from './constants';
 import type { DurationTranslator } from './duration-translator';
 import type { ScoreReader } from './score-reader';
-import { type MidClefSpec, scaleClefGlyph } from './signature-translator';
+import {
+	type MidClefSpec,
+	scaleClefGlyph,
+	setClefGlyph,
+} from './signature-translator';
 
 /** What a vexflow voice holds: its notes/rests/ghosts, plus the zero-duration BarNotes and
  * ClefNotes a mid-measure `<barline>` or `<clef>` puts between them. */
@@ -53,6 +58,12 @@ export class VoiceTranslator {
 		private readonly barlines: BarlineTranslator,
 		private readonly reader: ScoreReader,
 	) {}
+
+	/* Draw the voices built from here on in the document's glyphs (Appearance.NONE for
+	 * vexflow's own). The layout sets it before it measures, so both passes draw alike. */
+	useAppearance(appearance: Appearance): void {
+		this.chords.useAppearance(appearance);
+	}
 
 	/*
 	 * One voice's chords as tickables, in onset order. A voice placed by <backup>/<forward>
@@ -105,6 +116,7 @@ export class VoiceTranslator {
 						change.size.size,
 						change.annotation,
 					);
+					setClefGlyph(note.getClef(), change.glyph);
 					scaleClefGlyph(note.getClef(), change.size.scale);
 					note.setWidth(note.getClef().getWidth());
 					tickables.push(note);

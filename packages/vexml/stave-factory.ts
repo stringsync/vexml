@@ -12,6 +12,7 @@ import {
 	type KeyCancel,
 	type SignatureTranslator,
 	scaleClefGlyph,
+	setClefGlyph,
 } from './signature-translator';
 import type { StavePlan } from './stave-plan';
 
@@ -196,12 +197,12 @@ export class StaveFactory {
 		// print-object="no" on the <clef> keeps it in force (the notes still sit by it) but draws no glyph.
 		if (clef?.getAttribute('print-object') !== 'no') {
 			const { size, scale } = this.signatures.clefSize(clef, false);
-			stave.addClef(
-				this.clefName(measure, staffNumber),
-				size,
-				this.signatures.vexflowClefAnnotation(clef?.octaveChange ?? null),
+			const name = this.clefName(measure, staffNumber);
+			const annotation = this.signatures.vexflowClefAnnotation(
+				clef?.octaveChange ?? null,
 			);
-			this.scaleClef(stave, scale);
+			stave.addClef(name, size, annotation);
+			this.dressClef(stave, scale, this.signatures.clefGlyph(name, annotation));
 		}
 		this.addKey(stave, measure, staffNumber, cancel);
 	}
@@ -213,12 +214,10 @@ export class StaveFactory {
 			return;
 		}
 		const { size, scale } = this.signatures.clefSize(clef, true);
-		stave.addClef(
-			this.signatures.clefName(clef),
-			size,
-			this.signatures.vexflowClefAnnotation(clef.octaveChange),
-		);
-		this.scaleClef(stave, scale);
+		const name = this.signatures.clefName(clef);
+		const annotation = this.signatures.vexflowClefAnnotation(clef.octaveChange);
+		stave.addClef(name, size, annotation);
+		this.dressClef(stave, scale, this.signatures.clefGlyph(name, annotation));
 	}
 
 	/*
@@ -295,12 +294,14 @@ export class StaveFactory {
 		return clef ? this.signatures.clefName(clef) : 'treble';
 	}
 
-	/* The clef just added, scaled by `scale` and by a staff-size staff's share of full size. */
-	private scaleClef(stave: Stave, scale: number): void {
+	/* The clef just added, drawn with the document's `glyph` (null keeps vexflow's), scaled by
+	 * `scale` and by a staff-size staff's share of full size. */
+	private dressClef(stave: Stave, scale: number, glyph: string | null): void {
 		const ratio = stave.getSpacingBetweenLines() / STAVE_LINE_DISTANCE;
 		const clefs = stave.getModifiers(undefined, 'Clef') as ClefGlyph[];
 		const clef = clefs[clefs.length - 1];
 		if (clef) {
+			setClefGlyph(clef, glyph);
 			scaleClefGlyph(clef, scale * ratio);
 		}
 	}

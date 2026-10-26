@@ -3706,6 +3706,18 @@ describe('render', () => {
 		).toMatchScreenshot('defaults_appearance.png');
 	});
 
+	// <defaults><appearance> glyphs: an old-style tenor G clef (P1), a square C clef opening and
+	// changing back (P2), a reversed F clef mid-measure (P2) and opening (P3), the second
+	// percussion clef (P4), Z-shaped quarter rests, and ottavas labelled by glyph: a plain 8
+	// (P1 M1), "8vb" (P3 M1) and "15ma" (P1 M2).
+	it.concurrent('renders defaults_appearance_glyphs.png', async () => {
+		expect(
+			await testing.render('defaults_appearance_glyphs.musicxml', {
+				layout: { type: 'standard', documentLayout: 'follow' },
+			}),
+		).toMatchScreenshot('defaults_appearance_glyphs.png');
+	});
+
 	// The same sixteen C5 whole-note measures, but with panoramic layout: all sixteen sit
 	// on a single uninterrupted system (no system break).
 	it.concurrent('renders layout_panoramic.png', async () => {

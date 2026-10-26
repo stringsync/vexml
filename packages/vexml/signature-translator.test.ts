@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Clef, Key, Time } from '@stringsync/mdom';
+import { Appearance } from './appearance';
 import { SignatureTranslator } from './signature-translator';
 
 describe('SignatureTranslator', () => {
@@ -336,5 +337,32 @@ describe('SignatureTranslator', () => {
 				scale: 1.2,
 			},
 		);
+	});
+
+	const glyphs = new SignatureTranslator();
+	glyphs.useAppearance(
+		new Appearance(
+			new Map(),
+			new Map(),
+			new Map([
+				['c-clef', 'cClefSquare'],
+				['f-clef', 'fClefReversed'],
+				['g-clef-ottava-bassa', 'gClef8vbOld'],
+			]),
+		),
+	);
+
+	it('swaps the glyph of every clef drawn with the one its type names', () => {
+		expect(glyphs.clefGlyph('alto', undefined)).toBe('\uE060');
+		expect(glyphs.clefGlyph('tenor', undefined)).toBe('\uE060');
+		expect(glyphs.clefGlyph('bass', undefined)).toBe('\uE076');
+		expect(glyphs.clefGlyph('treble', '8vb')).toBe('\uE055');
+	});
+
+	it('keeps the clefs no glyph type names', () => {
+		expect(glyphs.clefGlyph('treble', undefined)).toBeNull();
+		expect(glyphs.clefGlyph('bass', '8vb')).toBeNull();
+		expect(glyphs.clefGlyph('percussion', undefined)).toBeNull();
+		expect(translator.clefGlyph('alto', undefined)).toBeNull();
 	});
 });

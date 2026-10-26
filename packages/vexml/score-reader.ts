@@ -1778,8 +1778,8 @@ export class ScoreReader {
 	}
 
 	/*
-	 * The engraving sizes the document's `<defaults><appearance>` sets (see Appearance), tenths
-	 * read as px. A value that is no positive number is left out.
+	 * The engraving sizes and glyphs the document's `<defaults><appearance>` sets (see
+	 * Appearance), tenths read as px. A size that is no positive number is left out.
 	 */
 	appearanceOf(score: Score): Appearance {
 		const appearance = score.child('defaults')?.child('appearance');
@@ -1794,7 +1794,15 @@ export class ScoreReader {
 			}
 			return sizes;
 		};
-		return new Appearance(sizes('line-width'), sizes('distance'));
+		const glyphs = new Map<string, string>();
+		for (const element of appearance?.childrenNamed('glyph') ?? []) {
+			const type = element.getAttribute('type')?.trim();
+			const name = element.text?.trim();
+			if (type && name) {
+				glyphs.set(type, name);
+			}
+		}
+		return new Appearance(sizes('line-width'), sizes('distance'), glyphs);
 	}
 
 	// The layout children of a `<defaults>` or `<print>`, tenths read as px (see DocumentLayout).

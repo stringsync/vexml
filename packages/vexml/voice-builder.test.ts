@@ -251,6 +251,7 @@ describe('VoiceBuilder', () => {
 				clef: 'bass',
 				annotation: undefined,
 				size: { size: 'small' as const, scale: 1 },
+				glyph: null,
 			},
 		];
 		makeBuilder({ translator }).buildNotes(

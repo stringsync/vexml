@@ -1,5 +1,11 @@
 import type { Clef, Key, Time } from '@stringsync/mdom';
-import { type Clef as ClefGlyph, StaveNote } from 'vexflow/core';
+import {
+	type Clef as ClefGlyph,
+	StaveNote,
+	VexFlow,
+	Clef as VexflowClef,
+} from 'vexflow/core';
+import { Appearance, type GlyphType } from './appearance';
 import { ACCIDENTAL_CODES } from './chord-translator';
 import type {
 	ExtendedTimeSpec,
@@ -13,6 +19,14 @@ import type {
  * measures to tell a signature that actually changed from one merely restated.
  */
 export class SignatureTranslator {
+	private appearance = Appearance.NONE;
+
+	/* Draw the clefs translated from here on in the document's glyphs (Appearance.NONE for
+	 * vexflow's own). The layout sets it before it measures, so both passes draw alike. */
+	useAppearance(appearance: Appearance): void {
+		this.appearance = appearance;
+	}
+
 	// VexFlow keys the tonic note for major but wants an 'm' suffix for minor
 	// ('Am', 'G#m'); the bare minor tonic ('G#') is rejected as a bad key spec.
 	vexflowKeySpec(key: Key): string {
@@ -252,7 +266,32 @@ export class SignatureTranslator {
 			clef: this.clefName(clef),
 			annotation: this.vexflowClefAnnotation(clef.octaveChange),
 			size: this.clefSize(clef, true),
+			glyph: this.clefGlyph(
+				this.clefName(clef),
+				this.vexflowClefAnnotation(clef.octaveChange),
+			),
 		}));
+	}
+
+	/*
+	 * The glyph the document's `<appearance>` draws a vexflow clef with in place of vexflow's
+	 * own, or null to keep vexflow's. Keyed by the glyph vexflow would draw, so every C clef
+	 * line takes the c-clef glyph, and an F clef with an octave numeral keeps its own.
+	 */
+	clefGlyph(name: string, annotation: string | undefined): string | null {
+		const code = VexflowClef.types[name]?.code;
+		const { Glyphs } = VexFlow;
+		let type: GlyphType | null = null;
+		if (code === Glyphs.cClef) {
+			type = 'c-clef';
+		} else if (code === Glyphs.fClef && !annotation) {
+			type = 'f-clef';
+		} else if (code === Glyphs.gClef && annotation === '8vb') {
+			type = 'g-clef-ottava-bassa';
+		} else if (code === Glyphs.unpitchedPercussionClef1) {
+			type = 'percussion-clef';
+		}
+		return type ? this.appearance.glyph(type) : null;
 	}
 
 	/*
@@ -358,6 +397,14 @@ export type ClefSize = {
 	scale: number;
 };
 
+/* Draws a vexflow clef with `glyph` (see SignatureTranslator.clefGlyph); null keeps its own. */
+export function setClefGlyph(clef: ClefGlyph, glyph: string | null): void {
+	if (glyph !== null) {
+		clef.code = glyph;
+		clef.setText(glyph);
+	}
+}
+
 /* Scales a vexflow clef glyph past the two sizes vexflow knows (size="large", staff-size). */
 export function scaleClefGlyph(glyph: ClefGlyph, scale: number): void {
 	if (scale !== 1) {
@@ -372,4 +419,6 @@ export type MidClefSpec = {
 	clef: string;
 	annotation: string | undefined;
 	size: ClefSize;
+	/** The document's glyph for it, or null for vexflow's own (see clefGlyph). */
+	glyph: string | null;
 };

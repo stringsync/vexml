@@ -1025,6 +1025,15 @@ describe('ScoreReader', () => {
 			expect(appearance.distance('hyphen')).toBe(60);
 		});
 
+		it('reads glyphs by SMuFL name, null for one the font lacks', async () => {
+			const appearance = await appearanceOf(`
+				<glyph type="quarter-rest">restQuarterZ</glyph>
+				<glyph type="c-clef">noSuchGlyph</glyph>`);
+			expect(appearance.glyph('quarter-rest')).toBe('\uE4F6');
+			expect(appearance.glyph('c-clef')).toBeNull();
+			expect(appearance.glyph('f-clef')).toBeNull();
+		});
+
 		it('leaves out a width that is no positive number', async () => {
 			const appearance = await appearanceOf(`
 				<line-width type="stem">0</line-width>
