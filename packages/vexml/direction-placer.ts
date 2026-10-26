@@ -231,8 +231,8 @@ export class DirectionPlacer {
 				pending--;
 				const top =
 					stave.getYForLine(0) - CHORD_DIAGRAM_GAP - CHORD_DIAGRAM_HEIGHT;
-				// Size to the frame: one column per string, enough fret rows to hold the
-				// deepest dot/barre (min 4 so a sparse chord still looks like a fretboard).
+				// Size to the frame: one column per string, its <frame-frets> rows (4 when
+				// absent), grown to hold the deepest dot/barre if the frame undercounts.
 				const frets = [
 					...h.frame.chord.map(([, f]) => (typeof f === 'number' ? f : 0)),
 					...(h.frame.barres ?? []).map((b) => b.fret),
@@ -306,7 +306,7 @@ export class DirectionPlacer {
 					width: CHORD_DIAGRAM_WIDTH,
 					height: CHORD_DIAGRAM_HEIGHT,
 					stringCount: h.frame.chord.length,
-					fretCount: Math.max(4, ...frets),
+					fretCount: Math.max(h.frame.fretCount ?? 4, ...frets),
 					showTuning: false,
 					fontFamily: this.labelFont,
 					// ponytail: only the ink follows the engraving color; the open-string bgColor

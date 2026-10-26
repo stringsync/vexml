@@ -16,8 +16,8 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 236 drawn, 69 ignored, 137 missing; vexml draws 236 of the 373 that show on the page (63%).
-Attributes: 53 drawn, 5 ignored, 57 missing.
+Elements: 243 drawn, 69 ignored, 130 missing; vexml draws 243 of the 373 that show on the page (65%).
+Attributes: 55 drawn, 5 ignored, 55 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -78,7 +78,7 @@ Attributes: 53 drawn, 5 ignored, 57 missing.
 | `base-pitch` | missing | task #30; base-pitch note should keep a normal head, vexml draws every harmonic as a diamond; mdom raw only |
 | `bass` | drawn | `harmony.musicxml`: slash chord bass |
 | `bass-alter` | drawn | `harmony.musicxml` |
-| `bass-separator` | missing | task #26; custom separator text between chord and bass (vexml always prints /); mdom raw only |
+| `bass-separator` | drawn | `harmony.musicxml` M20: " over " between chord and bass |
 | `bass-step` | drawn | `harmony.musicxml` |
 | `beam` | drawn | `beam_variations.musicxml` |
 | `beam@fan` | missing | task #35; feathered beams not drawn; mdom raw only |
@@ -123,10 +123,10 @@ Attributes: 53 drawn, 5 ignored, 57 missing.
 | `damp-all` | missing | task #15; mdom raw only |
 | `dashes` | drawn | `direction_lines.musicxml` |
 | `defaults` | missing | task #20; mdom typed |
-| `degree` | missing | task #26; chord-symbol degree alterations (add9, b5) not appended; mdom raw only |
-| `degree-alter` | missing | task #26; chord-symbol degree alterations (add9, b5) not appended; mdom raw only |
-| `degree-type` | missing | task #26; chord-symbol degree alterations (add9, b5) not appended; mdom raw only |
-| `degree-value` | missing | task #26; chord-symbol degree alterations (add9, b5) not appended; mdom raw only |
+| `degree` | drawn | `harmony.musicxml` M15-M18: add, alter and subtract degrees |
+| `degree-alter` | drawn | `harmony.musicxml` M16 |
+| `degree-type` | drawn | `harmony.musicxml` M15-M17 |
+| `degree-value` | drawn | `harmony.musicxml` M15 |
 | `delayed-inverted-turn` | drawn | `ornaments.musicxml`: the turn glyph delayed, plain and slashed |
 | `delayed-turn` | drawn | `ornaments.musicxml` |
 | `detached-legato` | drawn | `articulations_extended.musicxml` |
@@ -190,8 +190,8 @@ Attributes: 53 drawn, 5 ignored, 57 missing.
 | `forward` | drawn | `two_voices.musicxml`: onsets via mdom timeline |
 | `fp` | drawn | `dynamics.musicxml` |
 | `frame` | drawn | `chord_diagram.musicxml` |
-| `frame@unplayed` | missing | task #26; unplayed string text not drawn; mdom raw only |
-| `frame-frets` | missing | task #26; fret-row count not read, box height derived from played frets; mdom typed |
+| `frame@unplayed` | drawn | `chord_diagram.musicxml` M14: empty text, no X |
+| `frame-frets` | drawn | `chord_diagram.musicxml` M15: six fret rows |
 | `frame-note` | drawn | `chord_diagram.musicxml` |
 | `frame-strings` | drawn | `chord_diagram.musicxml` |
 | `fret` | drawn | `tab_chord.musicxml`, `chord_diagram.musicxml` |
@@ -224,7 +224,7 @@ Attributes: 53 drawn, 5 ignored, 57 missing.
 | `harmon-mute` | drawn | `technical_marks.musicxml` |
 | `harmonic` | drawn | `harmonic.musicxml`, `tab_harmonic.musicxml`: diamond notehead, angle-bracketed fret |
 | `harmony` | drawn | `harmony.musicxml`: chord symbol text above the stave |
-| `harmony@print-frame` | missing | task #26; frame drawn even when print-frame is no; mdom raw only |
+| `harmony@print-frame` | drawn | `chord_diagram.musicxml` M13: no box, plain symbol |
 | `harp-pedals` | missing | task #14; mdom raw only |
 | `haydn` | missing | task #29; haydn ornament glyph above the note; mdom typed |
 | `heel` | drawn | `technical_marks.musicxml` |
@@ -243,7 +243,7 @@ Attributes: 53 drawn, 5 ignored, 57 missing.
 | `instrument-sound` | ignored | sound only |
 | `instruments` | ignored | metadata (instrument count) |
 | `interchangeable` | missing | task #18; mdom raw only |
-| `inversion` | missing | task #26; chord inversion in the harmony symbol; mdom raw only |
+| `inversion` | drawn | `harmony.musicxml` M19: bass chord tone spelled from the kind |
 | `inverted-mordent` | drawn | `ornaments.musicxml` |
 | `inverted-turn` | drawn | `ornaments.musicxml` |
 | `inverted-turn@slash` | drawn | `ornaments.musicxml` |

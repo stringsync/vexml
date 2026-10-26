@@ -1192,10 +1192,10 @@ export class ScoreReader {
 	 * A <harmony>'s printed chord symbol, e.g. "G7", "C", "F♯m": the <root-step> plus
 	 * any <root-alter> sign, then the <kind text="…"> suffix MusicXML carries for
 	 * exactly this (a major triad's text is empty, so it prints the bare root), falling
-	 * back to the kind's conventional suffix when the exporter omits the attribute. A
-	 * <bass> (slash chord) appends "/<bass-step><bass-alter>", e.g. "E♭/B♭".
-	 * ponytail: <degree> alterations (an added 9th, a flat 5) are ignored; they only
-	 * refine a suffix the kind already names. Fold them in if a fixture needs "C5(add9)".
+	 * back to the kind's conventional suffix when the exporter omits the attribute, then
+	 * the <degree>s ("add9", "♭5", "no3"). A <bass> (slash chord) appends its
+	 * <bass-separator> ("/" when absent) and "<bass-step><bass-alter>", e.g. "E♭/B♭"; with
+	 * no <bass>, an <inversion> names the chord tone in the bass instead, e.g. "C/E".
 	 */
 	private harmonyText(harmony: Harmony): string {
 		const root = harmony.root;
@@ -1205,11 +1205,92 @@ export class ScoreReader {
 		const kind = this.harmonyExtensionSigns(
 			kindEl?.text ?? (kindEl ? (HARMONY_KIND_SUFFIX[kindEl.value] ?? '') : ''),
 		);
+		return (
+			step + alter + kind + this.degreesText(harmony) + this.bassText(harmony)
+		);
+	}
+
+	/*
+	 * The <degree>s a harmony prints after its kind suffix, each as its type ("add", "no",
+	 * or nothing for an alteration, unless <degree-type text> says otherwise), its
+	 * <degree-alter> sign (+/- when plus-minus="yes") and its <degree-value> (or that
+	 * value's text). A degree with print-object="no" is already spelled by the kind text,
+	 * which is how most exporters write it, so it adds nothing. <kind
+	 * parentheses-degrees> or bracket-degrees wraps the lot, comma-separated.
+	 * ponytail: stack-degrees and degree-value@symbol print inline as text.
+	 */
+	private degreesText(harmony: Harmony): string {
+		const degrees = harmony
+			.childrenNamed('degree')
+			.filter((degree) => degree.getAttribute('print-object') !== 'no')
+			.map((degree) => {
+				const valueEl = degree.child('degree-value');
+				const alterEl = degree.child('degree-alter');
+				const typeEl = degree.child('degree-type');
+				const type = typeEl?.text?.trim() ?? 'alter';
+				const typeText =
+					typeEl?.getAttribute('text') ?? DEGREE_TYPE_TEXT[type] ?? '';
+				const semitones = Number(alterEl?.text ?? 0);
+				const plusMinus = alterEl?.getAttribute('plus-minus') === 'yes';
+				const signs = plusMinus ? DEGREE_PLUS_MINUS : DEGREE_SIGNS;
+				const sign = (semitones > 0 ? signs.up : signs.down).repeat(
+					Math.abs(semitones),
+				);
+				const value =
+					valueEl?.getAttribute('text') ?? valueEl?.text?.trim() ?? '';
+				return typeText + sign + value;
+			})
+			.filter((text) => text !== '');
+		if (degrees.length === 0) {
+			return '';
+		}
+		const kindEl = harmony.child('kind');
+		if (kindEl?.getAttribute('parentheses-degrees') === 'yes') {
+			return `(${degrees.join(',')})`;
+		}
+		if (kindEl?.getAttribute('bracket-degrees') === 'yes') {
+			return `[${degrees.join(',')}]`;
+		}
+		return degrees.join('');
+	}
+
+	/*
+	 * What a harmony prints after its chord for the bass note: a <bass> as its
+	 * <bass-separator> (an empty one prints nothing between them) then the bass note; else
+	 * an <inversion> as "/" and the chord tone it puts in the bass, spelled up from the root
+	 * by the kind's intervals (inversion 1 of C major is E, of Cm is E♭), or its
+	 * <inversion text> when the exporter spells it. Root position, or a kind with no
+	 * stacked intervals to count up (Neapolitan, pedal, other), prints nothing.
+	 */
+	private bassText(harmony: Harmony): string {
 		const bass = harmony.bass;
-		const bassText = bass?.step
-			? `/${bass.step}${HARMONY_ALTER[bass.alter ?? ''] ?? ''}`
-			: '';
-		return step + alter + kind + bassText;
+		if (bass?.step) {
+			const separatorEl = harmony.child('bass')?.child('bass-separator');
+			const separator = separatorEl ? (separatorEl.text ?? '') : '/';
+			return `${separator}${bass.step}${HARMONY_ALTER[bass.alter ?? ''] ?? ''}`;
+		}
+		const inversionEl = harmony.child('inversion');
+		const inversion = Number(inversionEl?.text ?? 0);
+		if (!inversionEl || !(inversion > 0)) {
+			return '';
+		}
+		const text = inversionEl.getAttribute('text');
+		if (text !== null) {
+			return `/${text}`;
+		}
+		const root = harmony.root;
+		const tone = HARMONY_KIND_TONES[harmony.kind?.value ?? '']?.[inversion - 1];
+		const rootIndex = STEPS.indexOf(root?.step ?? '');
+		if (!root || !tone || rootIndex < 0) {
+			return '';
+		}
+		const [degree, semitones] = tone;
+		const step = STEPS[(rootIndex + degree - 1) % 7] as string;
+		const target =
+			(STEP_SEMITONES[rootIndex] as number) + (root.alter ?? 0) + semitones;
+		const natural = STEP_SEMITONES[STEPS.indexOf(step)] as number;
+		const alter = ((((target - natural) % 12) + 18) % 12) - 6;
+		return `/${step}${alter === 0 ? '' : (HARMONY_ALTER[String(alter)] ?? '')}`;
 	}
 
 	/*
@@ -1218,13 +1299,15 @@ export class ScoreReader {
 	 * <first-fret> (the top displayed fret line, drawn as the position label). Strings
 	 * with no <frame-note> are muted ('x'); fret 0 is an open string. A <barre> spans
 	 * from its `start` frame-note's string to its `stop` frame-note's string, at the
-	 * shared (relative) fret. Returns null when the harmony carries no <frame>.
+	 * shared (relative) fret. `fretCount` is <frame-frets>, the box's rows, and `unplayed`
+	 * the <frame unplayed> text over a string with no frame-note, when the frame says.
+	 * Returns null when the harmony carries no <frame>, or hides it with print-frame="no".
 	 * MusicXML numbers strings high-to-low (1 = highest), matching the ChordDiagramGlyph's
 	 * left-to-right (string 1 rightmost) convention.
 	 */
 	private frameOf(harmony: Harmony): ChordFrame | null {
 		const frame = harmony.frame;
-		if (!frame) {
+		if (!frame || harmony.getAttribute('print-frame') === 'no') {
 			return null;
 		}
 		const numStrings = frame.strings;
@@ -1287,7 +1370,15 @@ export class ScoreReader {
 		for (let s = 1; s <= numStrings; s += 1) {
 			chord.push([s, played.has(s) ? (played.get(s) as number) : 'x']);
 		}
-		return { chord, position, positionText, barres };
+		const unplayed = frame.getAttribute('unplayed');
+		return {
+			chord,
+			position,
+			positionText,
+			barres,
+			fretCount: frame.frets,
+			...(unplayed === null ? {} : { unplayed }),
+		};
 	}
 
 	/*
@@ -1472,6 +1563,59 @@ export const LINE_TYPE_DASH: Record<string, number[] | null> = {
 // MusicXML carries it when the chart wants the sign drawn. An absent <root-alter> maps to
 // nothing (no sign), so plain roots stay bare.
 const HARMONY_ALTER: Record<string, string> = { '1': '♯', '-1': '♭', '0': '♮' };
+
+// <degree-type> value -> the word printed before the degree when <degree-type text> is
+// absent: "Cadd9", "C7no3", and an alteration prints just its sign ("C7♭5").
+const DEGREE_TYPE_TEXT: Record<string, string> = {
+	add: 'add',
+	subtract: 'no',
+	alter: '',
+};
+
+// A <degree-alter> sign per semitone, as accidentals or, with plus-minus="yes", as +/-.
+const DEGREE_SIGNS = { up: '♯', down: '♭' };
+const DEGREE_PLUS_MINUS = { up: '+', down: '-' };
+
+// The diatonic steps and their semitones above C, for spelling an <inversion>'s bass note.
+const STEPS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const STEP_SEMITONES = [0, 2, 4, 5, 7, 9, 11];
+
+// The chord tones above the root, bottom up, as [scale degree, semitones], per <kind>:
+// inversion n puts tone n in the bass. Kinds with no stacked tones to count (the augmented
+// sixths, Neapolitan, pedal, Tristan, other, none) are left out, so their inversions print
+// no bass note.
+const THIRD: [number, number] = [3, 4];
+const FLAT_THIRD: [number, number] = [3, 3];
+const FIFTH: [number, number] = [5, 7];
+const SEVENTH: [number, number] = [7, 10];
+const MAJOR_SEVENTH: [number, number] = [7, 11];
+const HARMONY_KIND_TONES: Record<string, [number, number][]> = {
+	major: [THIRD, FIFTH],
+	minor: [FLAT_THIRD, FIFTH],
+	augmented: [THIRD, [5, 8]],
+	diminished: [FLAT_THIRD, [5, 6]],
+	dominant: [THIRD, FIFTH, SEVENTH],
+	'major-seventh': [THIRD, FIFTH, MAJOR_SEVENTH],
+	'minor-seventh': [FLAT_THIRD, FIFTH, SEVENTH],
+	'diminished-seventh': [FLAT_THIRD, [5, 6], [7, 9]],
+	'augmented-seventh': [THIRD, [5, 8], SEVENTH],
+	'half-diminished': [FLAT_THIRD, [5, 6], SEVENTH],
+	'major-minor': [FLAT_THIRD, FIFTH, MAJOR_SEVENTH],
+	'major-sixth': [THIRD, FIFTH, [6, 9]],
+	'minor-sixth': [FLAT_THIRD, FIFTH, [6, 9]],
+	'dominant-ninth': [THIRD, FIFTH, SEVENTH, [9, 14]],
+	'major-ninth': [THIRD, FIFTH, MAJOR_SEVENTH, [9, 14]],
+	'minor-ninth': [FLAT_THIRD, FIFTH, SEVENTH, [9, 14]],
+	'dominant-11th': [THIRD, FIFTH, SEVENTH, [9, 14], [11, 17]],
+	'major-11th': [THIRD, FIFTH, MAJOR_SEVENTH, [9, 14], [11, 17]],
+	'minor-11th': [FLAT_THIRD, FIFTH, SEVENTH, [9, 14], [11, 17]],
+	'dominant-13th': [THIRD, FIFTH, SEVENTH, [9, 14], [11, 17], [13, 21]],
+	'major-13th': [THIRD, FIFTH, MAJOR_SEVENTH, [9, 14], [11, 17], [13, 21]],
+	'minor-13th': [FLAT_THIRD, FIFTH, SEVENTH, [9, 14], [11, 17], [13, 21]],
+	'suspended-second': [[2, 2], FIFTH],
+	'suspended-fourth': [[4, 5], FIFTH],
+	power: [FIFTH],
+};
 
 // Fallback suffix per <kind> value, for the exporters that omit the text attribute;
 // without it a D power chord prints as a bare "D", which reads as a major triad.

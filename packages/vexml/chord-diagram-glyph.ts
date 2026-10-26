@@ -15,6 +15,7 @@ export class ChordDiagramGlyph {
 	private readonly barres: Barre[];
 	private readonly tuning: string[];
 	private readonly title?: string;
+	private readonly unplayed: string;
 	private readonly stringCount: number;
 	private readonly fretCount: number;
 	private readonly width: number; // the board alone, not style.width, which spans the whole widget
@@ -50,6 +51,7 @@ export class ChordDiagramGlyph {
 		this.barres = opts.barres ?? [];
 		this.tuning = opts.tuning ?? DEFAULT_TUNING;
 		this.title = opts.title;
+		this.unplayed = opts.unplayed ?? 'X';
 
 		this.stringCount = this.style.stringCount;
 		this.fretCount = this.style.fretCount;
@@ -93,8 +95,10 @@ export class ChordDiagramGlyph {
 		const topOverhang = position > 1 ? overhang : 0;
 		// A marker (X muted / O open) is drawn for any muted or open string. With none, the
 		// top band is empty whitespace, so drop the title down next to the board instead of
-		// floating it above an empty row.
-		const hasMarkers = chord.some(([, fret]) => fret === 'x' || fret === 0);
+		// floating it above an empty row. An empty `unplayed` draws no mute marker.
+		const hasMarkers = chord.some(
+			([, fret]) => (fret === 'x' && this.unplayed !== '') || fret === 0,
+		);
 
 		if (this.title) {
 			const size = this.titleSize;
@@ -199,7 +203,15 @@ export class ChordDiagramGlyph {
 		}
 
 		if (mute) {
-			this.text(context, x, y - this.fretSpacing, 'X', this.fontSize);
+			if (this.unplayed !== '') {
+				this.text(
+					context,
+					x,
+					y - this.fretSpacing,
+					this.unplayed,
+					this.fontSize,
+				);
+			}
 			return;
 		}
 
@@ -335,6 +347,8 @@ export type ChordDiagramGlyphOptions = {
 	positionText?: number;
 	barres?: Barre[];
 	tuning?: string[];
+	/** What a muted ('x') string draws above the nut: "X" by default, nothing when empty. */
+	unplayed?: string;
 	/** Chord name drawn centered above the board (e.g. "G♯m7♭5"). */
 	title?: string;
 	/** Overall widget width in px (board is 75% of this, centered). */
@@ -364,7 +378,7 @@ export type ChordDiagramGlyphOptions = {
  */
 export type ChordFrame = Pick<
 	ChordDiagramGlyphOptions,
-	'chord' | 'position' | 'positionText' | 'barres'
+	'chord' | 'position' | 'positionText' | 'barres' | 'fretCount' | 'unplayed'
 >;
 
 /** The defaultable styling subset: every field gets a fallback in the constructor. */

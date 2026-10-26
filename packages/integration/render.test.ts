@@ -2618,6 +2618,13 @@ describe('render', () => {
 	//   LP-21-Jazz-I-G6-Day-1-04-Exercise-3 M3, where MuseScore draws it the same way.
 	//   ponytail: an above-stave tuplet bracket still isn't a collision obstacle, so a
 	//   stem-UP tuplet under a chord symbol would overprint. No fixture reaches that.
+	// - M15: an added degree (<degree> 9, alter 0, type add) on a C major prints "Cadd9".
+	// - M16: an altered degree (5, alter -1, type alter) on a C dominant prints "C7♭5".
+	// - M17: a subtracted degree (3, type subtract) on a C dominant prints "C7no3".
+	// - M18: two degrees under <kind parentheses-degrees="yes">, a ♭9 alteration and an
+	//   added ♯11, print "C7(♭9,add♯11)".
+	// - M19: <inversion>1</inversion> on a C major puts the third in the bass: "C/E".
+	// - M20: a <bass-separator> of " over " between the chord and a G bass: "C over G".
 	it.concurrent('renders harmony.png', async () => {
 		expect(await testing.render('harmony.musicxml')).toMatchScreenshot(
 			'harmony.png',
@@ -2712,6 +2719,10 @@ describe('render', () => {
 	// - M12: same Bm7 box over four C6 quarters (two ledger lines above the staff): the box
 	//   lifts until it clears the high noteheads/ledger lines, using the same padded
 	//   lift-clear treatment a chord symbol uses, instead of overlapping them.
+	// Each box has its <frame-frets> rows, so the one-fret Bm7 boxes above are one row tall.
+	// - M13: a C box under <harmony print-frame="no">: only the plain "C" symbol prints.
+	// - M14: the C box with <frame unplayed="">: the muted low-E string draws no X.
+	// - M15: the C box with <frame-frets>6</frame-frets>: six fret rows instead of four.
 	it.concurrent('renders chord_diagram.png', async () => {
 		expect(await testing.render('chord_diagram.musicxml')).toMatchScreenshot(
 			'chord_diagram.png',

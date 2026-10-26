@@ -348,6 +348,104 @@ describe('ScoreReader', () => {
 			{ location: 'right', shape: 'angled', inverted: true },
 		]);
 	});
+
+	/*
+	 * The chord symbol a <harmony> prints, past the root and kind the harmony.png screenshot
+	 * pins: degrees, inversions and bass separators each change only the string.
+	 */
+	const harmonyOf = async (inner: string, attrs = '') =>
+		reader.harmoniesOf(
+			await measureOf(
+				`<harmony ${attrs}><root><root-step>C</root-step></root>${inner}</harmony>`,
+			),
+		)[0];
+	const textOf = async (inner: string) => (await harmonyOf(inner))?.text;
+	const degree = (value: number, alter: number, type: string, attrs = '') =>
+		`<degree ${attrs}><degree-value>${value}</degree-value><degree-alter>${alter}</degree-alter><degree-type>${type}</degree-type></degree>`;
+
+	it('prints an added, altered and subtracted degree after the kind', async () => {
+		expect(await textOf(`<kind>major</kind>${degree(9, 0, 'add')}`)).toBe(
+			'Cadd9',
+		);
+		expect(await textOf(`<kind>dominant</kind>${degree(5, -1, 'alter')}`)).toBe(
+			'C7♭5',
+		);
+		expect(
+			await textOf(`<kind>dominant</kind>${degree(3, 0, 'subtract')}`),
+		).toBe('C7no3');
+	});
+
+	it('skips a degree the kind text already spells', async () => {
+		expect(
+			await textOf(
+				`<kind text="7(♭9)">dominant</kind>${degree(9, -1, 'add', 'print-object="no"')}`,
+			),
+		).toBe('C7(♭9)');
+	});
+
+	it('wraps the degrees in parentheses when the kind asks', async () => {
+		expect(
+			await textOf(
+				`<kind parentheses-degrees="yes">dominant</kind>${degree(9, -1, 'alter')}${degree(11, 1, 'add')}`,
+			),
+		).toBe('C7(♭9,add♯11)');
+	});
+
+	it('reads a degree-type text and plus-minus signs', async () => {
+		expect(
+			await textOf(
+				'<kind>dominant</kind><degree><degree-value>5</degree-value><degree-alter plus-minus="yes">1</degree-alter><degree-type text="">alter</degree-type></degree>',
+			),
+		).toBe('C7+5');
+	});
+
+	it('spells an inversion bass from the kind', async () => {
+		expect(await textOf('<kind>major</kind><inversion>1</inversion>')).toBe(
+			'C/E',
+		);
+		expect(await textOf('<kind>minor</kind><inversion>1</inversion>')).toBe(
+			'Cm/E♭',
+		);
+		expect(await textOf('<kind>dominant</kind><inversion>3</inversion>')).toBe(
+			'C7/B♭',
+		);
+		expect(await textOf('<kind>major</kind><inversion>0</inversion>')).toBe(
+			'C',
+		);
+	});
+
+	it('prints an inversion text as given', async () => {
+		expect(
+			await textOf('<kind>major</kind><inversion text="E">1</inversion>'),
+		).toBe('C/E');
+	});
+
+	it('puts the bass-separator between the chord and the bass', async () => {
+		const bass = (separator: string) =>
+			`<kind>major</kind><bass>${separator}<bass-step>G</bass-step></bass>`;
+		expect(await textOf(bass(''))).toBe('C/G');
+		expect(await textOf(bass('<bass-separator> over </bass-separator>'))).toBe(
+			'C over G',
+		);
+		expect(await textOf(bass('<bass-separator/>'))).toBe('CG');
+	});
+
+	const frame =
+		'<frame unplayed=""><frame-strings>6</frame-strings><frame-frets>5</frame-frets><frame-note><string>1</string><fret>0</fret></frame-note></frame>';
+
+	it('reads the frame-frets rows and unplayed text', async () => {
+		const harmony = await harmonyOf(`<kind>major</kind>${frame}`);
+		expect(harmony?.frame).toMatchObject({ fretCount: 5, unplayed: '' });
+	});
+
+	it('hides the frame when print-frame is no', async () => {
+		const harmony = await harmonyOf(
+			`<kind>major</kind>${frame}`,
+			'print-frame="no"',
+		);
+		expect(harmony?.frame).toBeNull();
+		expect(harmony?.text).toBe('C');
+	});
 });
 
 /* A one-part score whose measures carry exactly the given <barline>s (and a note, so the
