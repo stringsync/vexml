@@ -1767,13 +1767,16 @@ export class ScoreReader {
 			return Number.isFinite(value) ? value : null;
 		};
 		const page = element?.child('page-layout');
-		// Odd-page margins first (page one is odd), then margins for both, then untyped.
+		// Odd-page margins first (page one is odd), then margins for both, then untyped; even
+		// pages take their own when there are any.
 		const margins = page?.childrenNamed('page-margins') ?? [];
 		const pageMargins =
 			margins.find((m) => m.getAttribute('type') === 'odd') ??
 			margins.find((m) => m.getAttribute('type') === 'both') ??
 			margins.find((m) => m.getAttribute('type') === null) ??
 			null;
+		const evenMargins =
+			margins.find((m) => m.getAttribute('type') === 'even') ?? null;
 		const system = element?.child('system-layout');
 		const systemMargins = system?.child('system-margins');
 		const staffDistances = new Map<string, number>();
@@ -1787,6 +1790,7 @@ export class ScoreReader {
 			pageWidth: number(page, 'page-width'),
 			pageHeight: number(page, 'page-height'),
 			pageMargins: pageMargins ? this.pageMarginsOf(pageMargins) : null,
+			evenPageMargins: evenMargins ? this.pageMarginsOf(evenMargins) : null,
 			systemLeft: number(systemMargins, 'left-margin'),
 			systemRight: number(systemMargins, 'right-margin'),
 			systemDistance: number(system, 'system-distance'),

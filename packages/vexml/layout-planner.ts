@@ -420,6 +420,7 @@ export class LayoutPlanner {
 				marginBottom: documentPage.margins.bottom,
 				// The planner lays the page out at the document's own margins.
 				offsetX: 0,
+				evenShift: documentPage.evenShift,
 			};
 		}
 		return {
@@ -429,6 +430,7 @@ export class LayoutPlanner {
 			marginBottom: layout.margin,
 			// Laid out with PAGE_MARGIN_X at the sides, then shifted onto the page's margin.
 			offsetX: layout.margin - PAGE_MARGIN_X,
+			evenShift: 0,
 		};
 	}
 
@@ -557,7 +559,11 @@ export class LayoutPlanner {
 		// The document's page margins, when it sets a page, stand in for vexml's own. A paged
 		// layout without one keeps PAGE_MARGIN_X here and shifts the drawing onto its page.
 		const x = documentPage?.margins.left ?? PAGE_MARGIN_X;
-		const right = documentPage?.margins.right ?? PAGE_MARGIN_X;
+		// A paged layout lays every system out to fit the narrower of the odd and even pages.
+		const right =
+			documentPage && page
+				? documentPage.margins.right + documentPage.evenNarrowing
+				: (documentPage?.margins.right ?? PAGE_MARGIN_X);
 		// A metronome mark on the first measure sits above the top staff, so give the
 		// first system extra headroom when one is present (and room to lift the mark
 		// clear of a high first note). Without a tempo the top margin is unchanged.
@@ -1151,6 +1157,9 @@ export type PageFrame = {
 	marginBottom: number;
 	/** How far right the drawing shifts to sit on the page. */
 	offsetX: number;
+	/** How far right an even page's systems sit from an odd page's, when the document gives
+	 * even pages margins of their own. */
+	evenShift: number;
 };
 
 /** A measure's placed box within its system. */

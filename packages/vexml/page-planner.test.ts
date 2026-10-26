@@ -205,6 +205,14 @@ describe('PageWalk', () => {
 		});
 	});
 
+	it('reports the page each system starts on', () => {
+		const walk = new PageWalk(100, 10, 10);
+		walk.place({ top: 0, bottom: 30 });
+		expect(walk.placedPage()).toBe(0);
+		walk.place({ top: 40, bottom: 120 });
+		expect(walk.placedPage()).toBe(1);
+	});
+
 	it('leaves one empty page when nothing was placed', () => {
 		expect(new PageWalk(100, 10, 10).result()).toEqual({
 			cropTop: 0,

@@ -68,6 +68,8 @@ export class SystemDraw {
 	private readonly systemCount: number;
 	private readonly topSlack = LEDGER_HEADROOM;
 	private readonly walk: PageWalk | null;
+	// Per system, how far right its page's margins put it (see PageFrame.evenShift).
+	private readonly shifts = new Map<number, number>();
 	private readonly topOverflow = new Map<number, number>();
 	private readonly systemStaveOffsets: Map<number, number[]>;
 	// The document's own stave gaps per system, when the layout follows the document: each
@@ -231,8 +233,21 @@ export class SystemDraw {
 			this.drawing.extentOf(system, next === undefined),
 			lines && document ? { lines, system: document } : undefined,
 		);
-		if (push) {
-			this.topOverflow.set(system, (this.topOverflow.get(system) ?? 0) + push);
+		// An even page's systems sit where its own margins put them.
+		const shift =
+			this.walk && this.walk.placedPage() % 2 === 1
+				? (this.layout.page?.evenShift ?? 0)
+				: 0;
+		const shifted = shift !== (this.shifts.get(system) ?? 0);
+		if (shifted) {
+			this.shifts.set(system, shift);
+			this.drawing.shiftSystem(system, shift);
+		}
+		if (push || shifted) {
+			this.topOverflow.set(
+				system,
+				(this.topOverflow.get(system) ?? 0) + (push ?? 0),
+			);
 			this.redraw(
 				system,
 				this.drawnAhead && next !== undefined ? next : system,
@@ -463,24 +478,30 @@ export class SystemDraw {
 		dx: number,
 		cropTop: number,
 	): RawGeometry {
-		const toScore = (r: Rect) => r.translate(dx, -cropTop);
-		const toScoreGlyph = (g: RawNote['glyph']) =>
-			g ? { ...g, x: g.x + dx, y: g.y - cropTop } : null;
+		// A system a page's margins shifted sits that much further right.
+		const shiftOf = (system: number) => this.shifts.get(system) ?? 0;
+		const toScore = (r: Rect, system: number) =>
+			r.translate(dx + shiftOf(system), -cropTop);
+		const toScoreGlyph = (g: RawNote['glyph'], system: number) =>
+			g ? { ...g, x: g.x + dx + shiftOf(system), y: g.y - cropTop } : null;
 		return {
 			bounds,
-			notes: pass.rawNotes.map((n) => ({
-				...n,
-				rect: toScore(n.rect),
-				ink: toScore(n.ink),
-				glyph: toScoreGlyph(n.glyph),
-			})),
+			notes: pass.rawNotes.map((n) => {
+				const system = this.systemOfMeasure(n.measureIndex);
+				return {
+					...n,
+					rect: toScore(n.rect, system),
+					ink: toScore(n.ink, system),
+					glyph: toScoreGlyph(n.glyph, system),
+				};
+			}),
 			measures: pass.rawMeasures.map((mm) => ({
 				...mm,
-				rect: toScore(mm.rect),
+				rect: toScore(mm.rect, mm.systemIndex),
 			})),
 			chordDiagrams: pass.rawChordDiagrams.map((d) => ({
 				...d,
-				rect: toScore(d.rect),
+				rect: toScore(d.rect, this.systemOfMeasure(d.measureIndex)),
 			})),
 		};
 	}

@@ -1026,6 +1026,22 @@ describe('ScoreReader', () => {
 				width: 1200,
 				height: 1600,
 				margins: { left: 70, right: 50, top: 80, bottom: 90 },
+				evenShift: -69,
+				evenNarrowing: 0,
+			});
+		});
+
+		it('shifts even pages to their own margins and flows to the narrower page', async () => {
+			const layout = await documentLayoutOf(
+				DEFAULTS.replace(
+					'<left-margin>1</left-margin><right-margin>1</right-margin>',
+					'<left-margin>20</left-margin><right-margin>300</right-margin>',
+				),
+				['', ''],
+			);
+			expect(layout.page()).toMatchObject({
+				evenShift: -50,
+				evenNarrowing: 200,
 			});
 		});
 

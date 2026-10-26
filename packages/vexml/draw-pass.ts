@@ -244,6 +244,8 @@ export class DrawPass {
 	// of the opening barline instead of across it (see MeasureBox).
 	private measureLeadingPad = 0;
 	private systemIndex = 0;
+	// Per system, how far right it is drawn from where the layout put it (see shiftSystem).
+	private readonly shifts = new Map<number, number>();
 	private isSystemStart = false;
 	private isLastMeasure = false;
 	private opensScore = false;
@@ -685,11 +687,28 @@ export class DrawPass {
 	 * rewound.
 	 */
 	drawSystem(system: number): void {
+		// A system on a page whose margins differ draws shifted sideways. Only vexflow's canvas
+		// context wraps a 2D context to turn; any other draws where the layout put it.
+		const canvas = (this.context as { context2D?: CanvasRenderingContext2D })
+			.context2D;
+		const shift = canvas?.translate ? (this.shifts.get(system) ?? 0) : 0;
+		if (shift) {
+			canvas?.save();
+			canvas?.translate(shift, 0);
+		}
 		this.beginSystem(system);
 		for (const m of this.systemMeasures.get(system) ?? []) {
 			this.drawMeasureColumn(m);
 		}
 		this.endSystem(system);
+		if (shift) {
+			canvas?.restore();
+		}
+	}
+
+	/* Draw `system` `dx` px right of where the layout put it, from its next draw on. */
+	shiftSystem(system: number, dx: number): void {
+		this.shifts.set(system, dx);
 	}
 
 	/* What `system` measured while it was drawn (see SystemObservation). */

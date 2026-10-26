@@ -366,7 +366,7 @@ are picked by hand.
 | `p` | drawn | `dynamics.musicxml` |
 | `page-height` | drawn | `document_layout.musicxml`: the page height when documentLayout follows the document (paged) |
 | `page-layout` | drawn | `document_layout.musicxml`: `<defaults>` page when documentLayout follows the document; `document_layout_print_page.musicxml`: a `<print>` page-layout gives the page it starts its own height and top/bottom margins (paged only; width and side margins stay `<defaults>`) |
-| `page-margins` | drawn | `document_layout.musicxml`: odd (or both) margins when documentLayout follows the document; even-page margins not followed yet |
+| `page-margins` | drawn | `document_layout_even_margins.musicxml`: odd (or both) margins on odd pages and `type="even"` margins on even pages of a paged layout when documentLayout follows the document; systems flow to the narrower of the two |
 | `page-width` | drawn | `document_layout.musicxml`: the line width when documentLayout follows the document |
 | `pan` | ignored | sound only |
 | `part` | drawn | `structure_two_parts.musicxml` |

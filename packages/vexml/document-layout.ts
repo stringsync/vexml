@@ -34,7 +34,26 @@ export class DocumentLayout {
 		) {
 			return null;
 		}
-		return { width: pageWidth, height: pageHeight, margins };
+		const even = this.defaults.evenPageMargins;
+		const evenWidth = even ? pageWidth - even.left - even.right : null;
+		if (
+			even &&
+			evenWidth !== null &&
+			(evenWidth <= 0 ||
+				(pageHeight !== null && pageHeight <= even.top + even.bottom))
+		) {
+			return null;
+		}
+		return {
+			width: pageWidth,
+			height: pageHeight,
+			margins,
+			evenShift: even ? even.left - margins.left : 0,
+			evenNarrowing:
+				evenWidth !== null
+					? Math.max(0, pageWidth - margins.left - margins.right - evenWidth)
+					: 0,
+		};
 	}
 
 	/* The height and vertical margins the page opened by the system on measure `m` asks for in
@@ -140,8 +159,10 @@ export const ANY_STAFF = '';
 export type LayoutBlock = {
 	pageWidth: number | null;
 	pageHeight: number | null;
-	/* The odd-page (or both-page) margins: vexml lays every page out alike. */
+	/* The odd-page (or both-page) margins. */
 	pageMargins: PageMargins | null;
+	/* The even-page margins, when the document gives even pages their own. */
+	evenPageMargins: PageMargins | null;
 	systemLeft: number | null;
 	systemRight: number | null;
 	systemDistance: number | null;
@@ -172,5 +193,12 @@ export type PageSize = {
 export type DocumentPage = {
 	width: number;
 	height: number | null;
+	/* The odd-page margins (page one is odd). */
 	margins: PageMargins;
+	/* How far right an even page's content starts from an odd page's: its left margin less the
+	 * odd one. 0 without even margins. */
+	evenShift: number;
+	/* How much narrower the even page's content is than the odd page's, 0 if it is not. A paged
+	 * layout flows every system to the narrower. */
+	evenNarrowing: number;
 };

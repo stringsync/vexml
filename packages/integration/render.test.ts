@@ -3669,6 +3669,17 @@ describe('render', () => {
 		).toMatchScreenshot('document_layout_print_page.png');
 	});
 
+	// Mirrored page margins: odd pages leave 200 at the left and 40 at the right, even pages the
+	// reverse, so page 2's staves start 160 further left than pages 1 and 3.
+	it.concurrent('renders document_layout_even_margins.png', async () => {
+		expect(
+			await testing.render('document_layout_even_margins.musicxml', {
+				layout: { type: 'paged', documentLayout: 'follow' },
+				backgroundColor: '#ffffff',
+			}),
+		).toMatchScreenshot('document_layout_even_margins.png');
+	});
+
 	// The same sixteen C5 whole-note measures, but with panoramic layout: all sixteen sit
 	// on a single uninterrupted system (no system break).
 	it.concurrent('renders layout_panoramic.png', async () => {

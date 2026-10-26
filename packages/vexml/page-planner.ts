@@ -95,6 +95,7 @@ export class PageWalk {
 	private cropTop = 0;
 	private readonly pages: Page[] = [];
 	private bottom = 0;
+	private startPage = 0;
 
 	constructor(
 		private readonly height: number,
@@ -155,6 +156,7 @@ export class PageWalk {
 			);
 			this.bottom += pushed;
 		}
+		this.startPage = this.pages.length - 1;
 		// A system too tall for its page ends on a later one; the next system goes there too.
 		for (;;) {
 			const last = this.pages.at(-1) as Page;
@@ -165,6 +167,11 @@ export class PageWalk {
 		}
 		this.index += 1;
 		return pushed;
+	}
+
+	/* The page (from 0) the system placed last starts on. */
+	placedPage(): number {
+		return this.startPage;
 	}
 
 	/* Where the systems placed so far leave the drawing: its crop and pages. */
