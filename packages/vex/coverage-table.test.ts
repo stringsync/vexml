@@ -88,12 +88,14 @@ describe('CoverageTable', () => {
 	});
 
 	it('tallies the share drawn of the elements not ignored', () => {
-		const markdown = new CoverageTable([
+		const summary = new CoverageTable([
 			{ element: 'accent', status: 'drawn', note: '' },
 			{ element: 'fermata', status: 'missing', note: '' },
 			{ element: 'midi-instrument', status: 'ignored', note: '' },
-		]).render();
-		expect(markdown).toContain('vexml draws 1 of the 2 that show');
+		])
+			.summary()
+			.join('\n');
+		expect(summary).toContain('vexml draws 1 of the 2 that show');
 	});
 
 	it('passes a drawn row whose fixtures use it', () => {

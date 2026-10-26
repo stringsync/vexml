@@ -119,8 +119,9 @@ export class CoverageTable {
 		return problems;
 	}
 
-	/** The whole file: a preamble, the tally, and the rows. */
-	render(): string {
+	/** The element and attribute totals. Kept out of the file, where every
+	 * parallel change to a row would conflict on them. */
+	summary(): string[] {
 		const elements = this.rows.filter((r) => r.attribute === undefined);
 		const attributes = this.rows.filter((r) => r.attribute !== undefined);
 		const tally = (rows: CoverageRow[]) =>
@@ -132,11 +133,19 @@ export class CoverageTable {
 		const counted = elements.filter((r) => r.status !== 'ignored').length;
 		const share = counted === 0 ? 0 : Math.round((drawn / counted) * 100);
 		return [
+			`Elements: ${tally(elements)}; vexml draws ${drawn} of the ${counted} that show on the page (${share}%).`,
+			`Attributes: ${tally(attributes)}.`,
+		];
+	}
+
+	/** The whole file: a preamble and the rows. */
+	render(): string {
+		return [
 			'# MusicXML 4.0 coverage',
 			'',
 			'What vexml does with each element of the MusicXML 4.0 schema',
 			'(`packages/vex/xmllint/schema/musicxml.xsd`), and with the attributes that',
-			'change what is drawn. `vex coverage` writes this file: it adds a `missing`',
+			'change what is drawn. `vex coverage` writes this file and prints the totals: it adds a `missing`',
 			'row for each element the schema has and the table lacks, and keeps every',
 			'status and note already here, so edit those by hand. `vex test` fails while',
 			'the table is out of step with the schema, or a `drawn` row names a fixture',
@@ -149,9 +158,6 @@ export class CoverageTable {
 			'An attribute row reads `element@attribute`, or `*@attribute` for one shared',
 			'by many elements. Element rows are one per schema element; attribute rows',
 			'are picked by hand.',
-			'',
-			`Elements: ${tally(elements)}; vexml draws ${drawn} of the ${counted} that show on the page (${share}%).`,
-			`Attributes: ${tally(attributes)}.`,
 			'',
 			HEADER,
 			DIVIDER,

@@ -18,6 +18,9 @@ export async function coverage(opts: CoverageOptions) {
 	const table = await readCoverage(opts.fs, '.');
 	await opts.fs.write(TABLE_PATH, table.render());
 	opts.log.info(`wrote ${TABLE_PATH}`);
+	for (const line of table.summary()) {
+		opts.log.info(line);
+	}
 	const problems = table.problems(await readFixtures(opts.fs, '.'));
 	if (problems.length > 0) {
 		throw new Error(problems.join('\n'));

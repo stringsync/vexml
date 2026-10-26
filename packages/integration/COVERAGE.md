@@ -2,7 +2,7 @@
 
 What vexml does with each element of the MusicXML 4.0 schema
 (`packages/vex/xmllint/schema/musicxml.xsd`), and with the attributes that
-change what is drawn. `vex coverage` writes this file: it adds a `missing`
+change what is drawn. `vex coverage` writes this file and prints the totals: it adds a `missing`
 row for each element the schema has and the table lacks, and keeps every
 status and note already here, so edit those by hand. `vex test` fails while
 the table is out of step with the schema, or a `drawn` row names a fixture
@@ -15,9 +15,6 @@ in `__data__` that does not use what the row is about.
 An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
-
-Elements: 289 drawn, 69 ignored, 84 missing; vexml draws 289 of the 373 that show on the page (77%).
-Attributes: 83 drawn, 5 ignored, 30 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
