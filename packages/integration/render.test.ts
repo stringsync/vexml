@@ -2670,6 +2670,13 @@ describe('render', () => {
 	//   added ♯11, print "C7(♭9,add♯11)".
 	// - M19: <inversion>1</inversion> on a C major puts the third in the bass: "C/E".
 	// - M20: a <bass-separator> of " over " between the chord and a G bass: "C over G".
+	// - M21: <kind stack-degrees="yes"> on a C dominant stacks its ♭9 and ♭13 in a small
+	//   column after "C7", ♭9 on the baseline and ♭13 above it.
+	// - M22: stacked degrees in parentheses with a slash bass: "G7(", then ♯9 under add♯11,
+	//   then ")/B" after the column.
+	// - M23-M25: <kind use-symbols="yes"> draws the kind as its symbol, two per measure:
+	//   "C△7", "C-7"; "Bø7", "C♯°7"; "E♭+", and a major-minor "C-" whose <degree-value
+	//   symbol="major"> 7 adds "△7".
 	it.concurrent('renders harmony.png', async () => {
 		expect(await testing.render('harmony.musicxml')).toMatchScreenshot(
 			'harmony.png',
@@ -2700,9 +2707,8 @@ describe('render', () => {
 	// - M4: Cm6, C9, Cmaj9, Cm9; the system ends after four measures, so the row is short.
 	// ponytail: the 11ths/13ths, the sus/added rows and the function kinds (N, It, Fr, Ger,
 	// ped, Tr) have HARMONY_KIND_SUFFIX entries but no measure here: lilypond_71f stops at the
-	// ninths. So does <degree> (add9, ♭5), which harmonyText carries its own `ponytail:` note
-	// about ignoring: a "C(add9)" prints as a bare "C", a WRONG symbol rather than a missing
-	// one. Extend the fixture when a score needs them.
+	// ninths. <degree>s live in harmony.musicxml instead. Extend the fixture when a score needs
+	// them.
 	it.concurrent('renders harmony_kinds.png', async () => {
 		expect(await testing.render('harmony_kinds.musicxml')).toMatchScreenshot(
 			'harmony_kinds.png',

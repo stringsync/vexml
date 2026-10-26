@@ -642,14 +642,19 @@ export class DrawPass {
 			// Chord symbols from this measure's <harmony> elements, each bound to the
 			// lead note it sits above. Resolved via byLead (the notation staff's notes),
 			// falling back to the tab note so a tab-only part keeps its chord symbols.
-			for (const { lead, text, frame, source } of this.reader.harmoniesOf(
-				measure,
-			)) {
+			for (const {
+				lead,
+				text,
+				symbol,
+				frame,
+				source,
+			} of this.reader.harmoniesOf(measure)) {
 				const staveNote = this.byLead.get(lead) ?? this.byTabLead.get(lead);
 				if (staveNote) {
 					this.harmonyTasks.push({
 						staveNote,
 						text,
+						symbol,
 						frame,
 						source,
 					});

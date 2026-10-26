@@ -430,6 +430,54 @@ describe('ScoreReader', () => {
 		expect(await textOf(bass('<bass-separator/>'))).toBe('CG');
 	});
 
+	it('stacks the degrees between the kind and the bass', async () => {
+		const harmony = await harmonyOf(
+			`<kind stack-degrees="yes" parentheses-degrees="yes">dominant</kind>${degree(9, -1, 'alter')}${degree(13, -1, 'alter')}<bass><bass-step>E</bass-step></bass>`,
+		);
+		expect(harmony?.symbol).toEqual({
+			text: 'C7(♭9,♭13)/E',
+			head: 'C7(',
+			stack: ['♭9', '♭13'],
+			tail: ')/E',
+		});
+	});
+
+	it('keeps inline degrees in the head', async () => {
+		const harmony = await harmonyOf(
+			`<kind>dominant</kind>${degree(9, -1, 'alter')}<bass><bass-step>E</bass-step></bass>`,
+		);
+		expect(harmony?.symbol).toEqual({
+			text: 'C7♭9/E',
+			head: 'C7♭9/E',
+			stack: [],
+			tail: '',
+		});
+	});
+
+	it('draws the kind as its symbol under use-symbols', async () => {
+		const kind = (value: string) =>
+			`<kind use-symbols="yes" text="maj7">${value}</kind>`;
+		expect(await textOf(kind('major-seventh'))).toBe('C△7');
+		expect(await textOf(kind('minor-seventh'))).toBe('C-7');
+		expect(await textOf(kind('half-diminished'))).toBe('Cø7');
+		expect(await textOf(kind('diminished'))).toBe('C°');
+		expect(await textOf(kind('augmented'))).toBe('C+');
+		expect(await textOf('<kind use-symbols="yes">dominant</kind>')).toBe('C7');
+	});
+
+	it('puts a degree-value symbol before its value', async () => {
+		expect(
+			await textOf(
+				`<kind use-symbols="yes">major-minor</kind>${degree(7, 0, 'alter').replace('<degree-value>', '<degree-value symbol="major">')}`,
+			),
+		).toBe('C-△7');
+		expect(
+			await textOf(
+				'<kind>major</kind><degree><degree-value symbol="diminished" text="">5</degree-value><degree-alter>0</degree-alter><degree-type>alter</degree-type></degree>',
+			),
+		).toBe('C°');
+	});
+
 	const frame =
 		'<frame unplayed=""><frame-strings>6</frame-strings><frame-frets>5</frame-frets><frame-note><string>1</string><fret>0</fret></frame-note></frame>';
 

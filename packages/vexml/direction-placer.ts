@@ -26,6 +26,8 @@ import {
 	HARMONY_FONT_SIZE,
 	HARMONY_NOTE_CLEARANCE,
 	HARMONY_PADDING,
+	HARMONY_STACK_FONT_SIZE,
+	HARMONY_STACK_LINE,
 	HARMONY_Y_OFFSET,
 	NAVIGATION_FONT_SIZE,
 	NAVIGATION_TEXT_GAP,
@@ -47,6 +49,7 @@ import type { GeometryCollector } from './geometry-collector';
 import { MetronomeGlyph, type TempoModulation } from './metronome-glyph';
 import type {
 	DirectionLineSpan,
+	HarmonySymbol,
 	LineEnd,
 	Placement,
 	ScoreReader,
@@ -365,7 +368,7 @@ export class DirectionPlacer {
 					title: h.text || null,
 				});
 			} else {
-				const top = this.drawHarmony(h.staveNote, h.text);
+				const top = this.drawHarmony(h.staveNote, h.symbol);
 				this.reporter.growPageTop(top);
 				this.spill.growDecorationTop(column.systemIndex, top);
 			}
@@ -647,23 +650,75 @@ export class DirectionPlacer {
 	}
 
 	/*
-	 * The total kerned advance of a chord symbol as drawHarmony draws it: accidentals render a
-	 * touch smaller and pull in by HARMONY_ACCIDENTAL_KERN on each side. Measured so the symbol's
-	 * collision box matches the glyphs that get drawn.
+	 * Measure, and with `draw` also fill, one run of chord-symbol text left-aligned at x on
+	 * baseline y, returning its kerned advance. The ♯/♭/♮ glyphs carry wide side-bearings in
+	 * the text font, so a single fillText of "B♭" reads as "B ♭": go char by char, drawing
+	 * each accidental a touch smaller and pulling it in on both sides so it sits tight against
+	 * its root letter. A smaller run (the stacked degrees) scales the kern to match.
 	 */
-	private harmonyWidth(text: string): number {
-		let width = 0;
+	private harmonyRun(
+		text: string,
+		x: number,
+		y: number,
+		size: number,
+		draw: boolean,
+	): number {
+		const scale = size / HARMONY_FONT_SIZE;
+		const kern = HARMONY_ACCIDENTAL_KERN * scale;
+		const accidentalSize = HARMONY_ACCIDENTAL_FONT_SIZE * scale;
+		let cursor = x;
 		for (const ch of text) {
 			const accidental = HARMONY_ACCIDENTALS.has(ch);
-			this.context.setFont(
-				this.labelFont,
-				accidental ? HARMONY_ACCIDENTAL_FONT_SIZE : HARMONY_FONT_SIZE,
-			);
-			width +=
-				this.context.measureText(ch).width -
-				(accidental ? 2 * HARMONY_ACCIDENTAL_KERN : 0);
+			this.context.setFont(this.labelFont, accidental ? accidentalSize : size);
+			if (accidental) {
+				cursor -= kern;
+			}
+			if (draw) {
+				this.context.fillText(ch, cursor, y);
+			}
+			cursor += this.context.measureText(ch).width - (accidental ? kern : 0);
 		}
-		return width;
+		return cursor - x;
+	}
+
+	/*
+	 * Lay out a chord symbol from x on baseline y: the head, then the stacked degrees as one
+	 * column (bottom row on the baseline, each next row a HARMONY_STACK_LINE higher), then the
+	 * tail after the column's widest row. Returns its width and how far it rises above the
+	 * baseline, the extent the collision box needs; with `draw` it also fills the glyphs.
+	 */
+	private harmonyLayout(
+		symbol: HarmonySymbol,
+		x: number,
+		y: number,
+		draw: boolean,
+	): { width: number; height: number } {
+		let cursor =
+			x + this.harmonyRun(symbol.head, x, y, HARMONY_FONT_SIZE, draw);
+		let column = 0;
+		symbol.stack.forEach((row, i) => {
+			column = Math.max(
+				column,
+				this.harmonyRun(
+					row,
+					cursor,
+					y - i * HARMONY_STACK_LINE,
+					HARMONY_STACK_FONT_SIZE,
+					draw,
+				),
+			);
+		});
+		cursor += column;
+		cursor += this.harmonyRun(symbol.tail, cursor, y, HARMONY_FONT_SIZE, draw);
+		const stackHeight =
+			symbol.stack.length === 0
+				? 0
+				: (symbol.stack.length - 1) * HARMONY_STACK_LINE +
+					HARMONY_STACK_FONT_SIZE;
+		return {
+			width: cursor - x,
+			height: Math.max(HARMONY_FONT_SIZE, stackHeight),
+		};
 	}
 
 	/*
@@ -674,7 +729,10 @@ export class DirectionPlacer {
 	 * the way. Returns the y the text reaches up to so the caller can grow the page crop above it.
 	 * Drawn after the notes are formatted so getAbsoluteX is real.
 	 */
-	private drawHarmony(staveNote: StaveNote | TabNote, text: string): number {
+	private drawHarmony(
+		staveNote: StaveNote | TabNote,
+		symbol: HarmonySymbol,
+	): number {
 		const stave = staveNote.getStave();
 		if (!stave) {
 			return Infinity;
@@ -686,11 +744,17 @@ export class DirectionPlacer {
 		// sitting just under the baseline (a note in the top stave space) and nudges the symbol
 		// clear of it, leaving a little breathing room. The drawn baseline stays HARMONY_PADDING
 		// above the box bottom, so with nothing in the way the symbol keeps its default position.
+		const { width, height } = this.harmonyLayout(
+			symbol,
+			staveNote.getAbsoluteX(),
+			baseY,
+			false,
+		);
 		const natural = new Rect(
 			staveNote.getAbsoluteX(),
-			baseY - HARMONY_FONT_SIZE,
-			this.harmonyWidth(text),
-			HARMONY_FONT_SIZE + HARMONY_PADDING,
+			baseY - height,
+			width,
+			height + HARMONY_PADDING,
 		);
 		const band = this.reporter.rowOf(stave);
 		const placed = this.collisionResolver.liftClear(
@@ -699,25 +763,7 @@ export class DirectionPlacer {
 			{ kinds: TEXT_CLEAR_KINDS, band },
 		);
 		this.reporter.recordAnnotationSpill(stave, placed);
-		const y = placed.bottom - HARMONY_PADDING;
-		// The ♯/♭/♮ glyphs carry wide side-bearings in the text font, so a single fillText
-		// of "B♭" reads as "B ♭". Draw char by char and pull the accidental in on both sides
-		// so it sits tight against its root letter.
-		this.context.setFont(this.labelFont, HARMONY_FONT_SIZE);
-		let x = placed.x;
-		for (const ch of text) {
-			const accidental = HARMONY_ACCIDENTALS.has(ch);
-			if (accidental) {
-				x -= HARMONY_ACCIDENTAL_KERN;
-				this.context.setFont(this.labelFont, HARMONY_ACCIDENTAL_FONT_SIZE);
-			}
-			this.context.fillText(ch, x, y);
-			x += this.context.measureText(ch).width;
-			if (accidental) {
-				x -= HARMONY_ACCIDENTAL_KERN;
-				this.context.setFont(this.labelFont, HARMONY_FONT_SIZE);
-			}
-		}
+		this.harmonyLayout(symbol, placed.x, placed.bottom - HARMONY_PADDING, true);
 		this.context.restore();
 		// Register the placed symbol so a later annotation in this system stacks above it.
 		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
@@ -1006,6 +1052,7 @@ export type HarmonyTask = {
 	// tab-only part still prints its chord symbols.
 	staveNote: StaveNote | TabNote;
 	text: string;
+	symbol: HarmonySymbol;
 	frame: ChordFrame | null;
 	source: Harmony;
 };

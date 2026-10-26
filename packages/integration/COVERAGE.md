@@ -17,7 +17,7 @@ by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
 Elements: 260 drawn, 69 ignored, 113 missing; vexml draws 260 of the 373 that show on the page (70%).
-Attributes: 55 drawn, 5 ignored, 55 missing.
+Attributes: 58 drawn, 5 ignored, 55 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -127,6 +127,7 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `degree-alter` | drawn | `harmony.musicxml` M16 |
 | `degree-type` | drawn | `harmony.musicxml` M15-M17 |
 | `degree-value` | drawn | `harmony.musicxml` M15 |
+| `degree-value@symbol` | drawn | `harmony.musicxml` M25: a △ before the major-minor's 7 |
 | `delayed-inverted-turn` | drawn | `ornaments.musicxml`: the turn glyph delayed, plain and slashed |
 | `delayed-turn` | drawn | `ornaments.musicxml` |
 | `detached-legato` | drawn | `articulations_extended.musicxml` |
@@ -256,6 +257,8 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `key-octave` | drawn | `key_non_traditional.musicxml` |
 | `key-step` | drawn | `key_non_traditional.musicxml` |
 | `kind` | drawn | `harmony_kinds.musicxml`: chord symbol suffix |
+| `kind@stack-degrees` | drawn | `harmony.musicxml` M21-M22: degrees in a small column beside the kind |
+| `kind@use-symbols` | drawn | `harmony.musicxml` M23-M25: △ - + ° ø in place of letters |
 | `laughing` | drawn | `lyrics_sounds.musicxml`: text-less lyric draws "ha ha" |
 | `left-divider` | missing | task #20; mdom raw only |
 | `left-margin` | missing | task #20; mdom typed |

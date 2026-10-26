@@ -552,6 +552,13 @@ export const HARMONY_ACCIDENTAL_KERN = 2.5;
 /** Chord-symbol accidental font size, a touch smaller than the root letter. */
 export const HARMONY_ACCIDENTAL_FONT_SIZE = HARMONY_FONT_SIZE - 3;
 
+/** Font size of the degrees a chord symbol stacks (`<kind stack-degrees="yes">`), small
+ * enough that two rows stand about as tall as the root letter beside them. */
+export const HARMONY_STACK_FONT_SIZE = 9;
+
+/** Baseline-to-baseline step between a chord symbol's stacked degrees. */
+export const HARMONY_STACK_LINE = 10;
+
 /** How many px vexflow's GraceNoteGroup.format spaces a stave grace group off its note; tab
  * groups get 0. */
 export const GRACE_GROUP_SPACING_STAVE =

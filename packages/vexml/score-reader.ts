@@ -956,12 +956,14 @@ export class ScoreReader {
 	harmoniesOf(measure: Measure): {
 		lead: Note;
 		text: string;
+		symbol: HarmonySymbol;
 		frame: ChordFrame | null;
 		source: Harmony;
 	}[] {
 		const harmonies: {
 			lead: Note;
 			text: string;
+			symbol: HarmonySymbol;
 			frame: ChordFrame | null;
 			source: Harmony;
 		}[] = [];
@@ -971,7 +973,8 @@ export class ScoreReader {
 			if (!lead) {
 				continue;
 			}
-			const text = this.harmonyText(harmony);
+			const symbol = this.harmonySymbol(harmony);
+			const text = symbol.text;
 			const frame = this.frameOf(harmony);
 			if (!text && !frame) {
 				continue;
@@ -981,7 +984,7 @@ export class ScoreReader {
 				continue;
 			}
 			seen.add(key);
-			harmonies.push({ lead, text, frame, source: harmony });
+			harmonies.push({ lead, text, symbol, frame, source: harmony });
 		}
 		return harmonies;
 	}
@@ -1554,35 +1557,67 @@ export class ScoreReader {
 	 * A <harmony>'s printed chord symbol, e.g. "G7", "C", "F♯m": the <root-step> plus
 	 * any <root-alter> sign, then the <kind text="…"> suffix MusicXML carries for
 	 * exactly this (a major triad's text is empty, so it prints the bare root), falling
-	 * back to the kind's conventional suffix when the exporter omits the attribute, then
-	 * the <degree>s ("add9", "♭5", "no3"). A <bass> (slash chord) appends its
-	 * <bass-separator> ("/" when absent) and "<bass-step><bass-alter>", e.g. "E♭/B♭"; with
-	 * no <bass>, an <inversion> names the chord tone in the bass instead, e.g. "C/E".
+	 * back to the kind's conventional suffix when the exporter omits the attribute, or to
+	 * its symbol form ("CΔ7", "C-7", "Cø7") under <kind use-symbols="yes">, then the
+	 * <degree>s ("add9", "♭5", "no3"), stacked when <kind stack-degrees="yes">. A <bass>
+	 * (slash chord) appends its <bass-separator> ("/" when absent) and
+	 * "<bass-step><bass-alter>", e.g. "E♭/B♭"; with no <bass>, an <inversion> names the
+	 * chord tone in the bass instead, e.g. "C/E".
 	 */
-	private harmonyText(harmony: Harmony): string {
+	private harmonySymbol(harmony: Harmony): HarmonySymbol {
 		const root = harmony.root;
 		const step = root?.step ?? '';
 		const alter = root ? (HARMONY_ALTER[root.alter ?? ''] ?? '') : '';
-		const kindEl = harmony.kind;
+		const kindEl = harmony.child('kind');
+		const kindValue = harmony.kind?.value ?? '';
+		const symbols = kindEl?.getAttribute('use-symbols') === 'yes';
 		const kind = this.harmonyExtensionSigns(
-			kindEl?.text ?? (kindEl ? (HARMONY_KIND_SUFFIX[kindEl.value] ?? '') : ''),
+			(symbols ? HARMONY_KIND_SYMBOLS[kindValue] : undefined) ??
+				harmony.kind?.text ??
+				(kindEl ? (HARMONY_KIND_SUFFIX[kindValue] ?? '') : ''),
 		);
-		return (
-			step + alter + kind + this.degreesText(harmony) + this.bassText(harmony)
-		);
+		const degrees = this.degreeTexts(harmony);
+		const [open, close] = this.degreeBrackets(kindEl, degrees.length > 0);
+		const stacked =
+			degrees.length > 0 && kindEl?.getAttribute('stack-degrees') === 'yes';
+		const inline = degrees.join(open ? ',' : '');
+		const head = step + alter + kind + open;
+		const tail = close + this.bassText(harmony);
+		return {
+			text: head + inline + tail,
+			head: stacked ? head : head + inline + tail,
+			stack: stacked ? degrees : [],
+			tail: stacked ? tail : '',
+		};
 	}
 
 	/*
-	 * The <degree>s a harmony prints after its kind suffix, each as its type ("add", "no",
-	 * or nothing for an alteration, unless <degree-type text> says otherwise), its
-	 * <degree-alter> sign (+/- when plus-minus="yes") and its <degree-value> (or that
-	 * value's text). A degree with print-object="no" is already spelled by the kind text,
-	 * which is how most exporters write it, so it adds nothing. <kind
-	 * parentheses-degrees> or bracket-degrees wraps the lot, comma-separated.
-	 * ponytail: stack-degrees and degree-value@symbol print inline as text.
+	 * The brackets <kind parentheses-degrees> or bracket-degrees wraps a harmony's degrees
+	 * in, comma-separating them; none when there are no degrees to wrap.
 	 */
-	private degreesText(harmony: Harmony): string {
-		const degrees = harmony
+	private degreeBrackets(
+		kindEl: ReturnType<Harmony['child']>,
+		any: boolean,
+	): [string, string] {
+		if (any && kindEl?.getAttribute('parentheses-degrees') === 'yes') {
+			return ['(', ')'];
+		}
+		if (any && kindEl?.getAttribute('bracket-degrees') === 'yes') {
+			return ['[', ']'];
+		}
+		return ['', ''];
+	}
+
+	/*
+	 * The <degree>s a harmony prints after its kind suffix, in order, each as its type ("add",
+	 * "no", or nothing for an alteration, unless <degree-type text> says otherwise), its
+	 * <degree-alter> sign (+/- when plus-minus="yes") and its <degree-value> (or that
+	 * value's text), behind the <degree-value symbol> glyph when there is one ("Δ7"). A
+	 * degree with print-object="no" is already spelled by the kind text, which is how most
+	 * exporters write it, so it adds nothing.
+	 */
+	private degreeTexts(harmony: Harmony): string[] {
+		return harmony
 			.childrenNamed('degree')
 			.filter((degree) => degree.getAttribute('print-object') !== 'no')
 			.map((degree) => {
@@ -1598,22 +1633,13 @@ export class ScoreReader {
 				const sign = (semitones > 0 ? signs.up : signs.down).repeat(
 					Math.abs(semitones),
 				);
+				const symbol =
+					HARMONY_SYMBOLS[valueEl?.getAttribute('symbol') ?? ''] ?? '';
 				const value =
 					valueEl?.getAttribute('text') ?? valueEl?.text?.trim() ?? '';
-				return typeText + sign + value;
+				return typeText + sign + symbol + value;
 			})
 			.filter((text) => text !== '');
-		if (degrees.length === 0) {
-			return '';
-		}
-		const kindEl = harmony.child('kind');
-		if (kindEl?.getAttribute('parentheses-degrees') === 'yes') {
-			return `(${degrees.join(',')})`;
-		}
-		if (kindEl?.getAttribute('bracket-degrees') === 'yes') {
-			return `[${degrees.join(',')}]`;
-		}
-		return degrees.join('');
 	}
 
 	/*
@@ -1817,6 +1843,19 @@ export class ScoreReader {
 }
 
 /**
+ * A chord symbol laid out for drawing: `head` (root, kind, any opening bracket), a
+ * column of degrees stacked bottom-up beside it, then `tail` (closing bracket, bass).
+ * Inline degrees ride in `head`, leaving `stack` and `tail` empty. `text` is the whole
+ * symbol on one line, as a fret-box title prints it.
+ */
+export type HarmonySymbol = {
+	text: string;
+	head: string;
+	stack: string[];
+	tail: string;
+};
+
+/**
  * A metronome mark: the beat-unit's vexflow duration code plus its bpm. The optional
  * fields are the printed variants: augmentation dots on either unit, a second unit for
  * the note-equals-note metric modulation, and the parenthesized form. Only the drawing
@@ -1977,6 +2016,39 @@ const HARMONY_KIND_TONES: Record<string, [number, number][]> = {
 	'suspended-second': [[2, 2], FIFTH],
 	'suspended-fourth': [[4, 5], FIFTH],
 	power: [FIFTH],
+};
+
+// The harmony symbols <kind use-symbols> and <degree-value symbol> draw in place of
+// letters, as the spec spells them: a triangle for major, then - + ° ø.
+const HARMONY_SYMBOLS: Record<string, string> = {
+	major: '△',
+	minor: '-',
+	augmented: '+',
+	diminished: '°',
+	'half-diminished': 'ø',
+};
+
+// The suffix per <kind> value under use-symbols="yes". A kind with no symbol to draw
+// (dominant, sus, the function kinds) is left out and keeps its letters. major-minor
+// draws only the minor symbol: the spec has the major seventh come from a <degree-value
+// symbol="major">.
+const HARMONY_KIND_SYMBOLS: Record<string, string> = {
+	minor: '-',
+	augmented: '+',
+	diminished: '°',
+	'major-seventh': '△7',
+	'minor-seventh': '-7',
+	'diminished-seventh': '°7',
+	'augmented-seventh': '+7',
+	'half-diminished': 'ø7',
+	'major-minor': '-',
+	'minor-sixth': '-6',
+	'major-ninth': '△9',
+	'minor-ninth': '-9',
+	'major-11th': '△11',
+	'minor-11th': '-11',
+	'major-13th': '△13',
+	'minor-13th': '-13',
 };
 
 // Fallback suffix per <kind> value, for the exporters that omit the text attribute;
