@@ -706,6 +706,27 @@ describe('render', () => {
 		).toMatchScreenshot('rest_multi_measure.png');
 	});
 
+	// Treble stave, 4/4: <measure-style> signs drawn in place of written-out notes, which
+	// still play as written.
+	// - M1: four quarters, C5 D5 E5 F5.
+	// - M2-3: a one-bar measure repeat: the repeat1Bar sign (slash between two dots)
+	//         centered in each bar, no notes.
+	// - M4-5: written out again: the quarters, then G4 and B4 halves.
+	// - M6-7: a two-bar measure repeat: one repeat2Bars sign on the barline between M6 and
+	//         M7, a 2 above it, both bars otherwise empty.
+	// - M8: a beat repeat across the bar: a thick repeat slash on each of the four beats.
+	// - M9: slash notation without stems: a stemless slash notehead on each beat.
+	// - M10: rhythmic slashes (use-stems="yes"): quarter, two beamed eighths and a half, each
+	//        a slash head on the middle line, stems up, the half's head open.
+	// - M11: the slashes stop and the quarters draw again.
+	// - M12: 6/8, slashes typed as dotted quarters (<slash-type> plus <slash-dot>) with
+	//        use-dots: two stemless slashes, each followed by an augmentation dot.
+	it.concurrent('renders measure_style.png', async () => {
+		expect(await testing.render('measure_style.musicxml')).toMatchScreenshot(
+			'measure_style.png',
+		);
+	});
+
 	// Treble stave, 4/4: every measure is four quarter notes stacked on one staff position
 	// (C5, third space) so nothing but the accidental glyph left of the notehead varies.
 	// - M1: sharp, flat, natural, then no accidental at all.

@@ -33,6 +33,11 @@ export class ScoreReader {
 		Measure,
 		Map<string, StaffVoice[]>
 	>();
+	// One staff's <measure-style> regions, walked once per part and staff (see staffStylesOf).
+	private readonly staffStyleCache = new WeakMap<
+		Part,
+		Map<string, StaffStyle[]>
+	>();
 
 	// Only to answer whether a dynamic marking can be drawn as music (see dynamicsOf). The
 	// spelling itself belongs to the draw pass, not to a read.
@@ -289,6 +294,157 @@ export class ScoreReader {
 			}
 		}
 		return { leads, hidden };
+	}
+
+	/*
+	 * What one staff's <measure-style> draws in place of a measure's written-out notes, or
+	 * null when the notes draw. MusicXML has the repeated music written out in full either
+	 * way (so playback plays it as written); the style only says it is shown as a sign.
+	 *
+	 * A <measure-repeat> covers whole measures, from the measure its start sits in up to the
+	 * one its stop sits in. A <beat-repeat>, or a <slash> without stems, replaces the notes
+	 * only when its span covers the whole measure.
+	 * ponytail: a beat-level span starting or stopping mid-measure draws that measure's notes;
+	 * hiding only some of a voice's notes needs per-chord hiding, and no fixture asks for it.
+	 */
+	measureStyleOf(
+		measure: Measure,
+		staffNumber: string,
+	): MeasureStyleMark | null {
+		const style = this.staffStylesOf(measure.part, staffNumber)[measure.index];
+		if (!style) {
+			return null;
+		}
+		if (style.repeat) {
+			return { kind: 'measure-repeat', ...style.repeat };
+		}
+		const covers = (span: { from: number; to: number }) =>
+			span.from <= EPSILON && span.to >= style.length - EPSILON;
+		const beatRepeat = style.beatRepeats.find(covers);
+		if (beatRepeat) {
+			return {
+				kind: 'beat-repeat',
+				slashes: beatRepeat.slashes,
+				dots: beatRepeat.dots,
+				beats: beatsAcross(style.length, beatRepeat.unit),
+				length: style.length,
+			};
+		}
+		const slash = style.slashes.find((span) => !span.stems && covers(span));
+		if (slash) {
+			return {
+				kind: 'beat-slash',
+				unit: slash.unit,
+				dots: slash.dots,
+				beats: beatsAcross(style.length, slash.unit),
+				length: style.length,
+			};
+		}
+		return null;
+	}
+
+	/*
+	 * Whether a note sits under a <slash use-stems="yes">: rhythmic notation, its rhythm and
+	 * stem kept but its pitch shown as a slash notehead on the middle line.
+	 */
+	isRhythmSlashed(note: Note): boolean {
+		const measure = note.measure;
+		const style = this.staffStylesOf(measure.part, note.staff)[measure.index];
+		const onset = this.measureBeatOf(note) ?? 0;
+		return (
+			style?.slashes.some(
+				(span) =>
+					span.stems &&
+					onset >= span.from - EPSILON &&
+					onset < span.to - EPSILON,
+			) ?? false
+		);
+	}
+
+	/*
+	 * Walk one staff's measures in order, carrying each <measure-style> region from its start
+	 * to its stop. A <measure-repeat> starts and stops at measure granularity; a <beat-repeat>
+	 * or <slash> at the beat its <attributes> block falls on, so its span in each measure is
+	 * kept in beats. A region left open runs to the end of the part, as the spec allows.
+	 */
+	private staffStylesOf(part: Part, staffNumber: string): StaffStyle[] {
+		let byStaff = this.staffStyleCache.get(part);
+		if (!byStaff) {
+			byStaff = new Map();
+			this.staffStyleCache.set(part, byStaff);
+		}
+		const cached = byStaff.get(staffNumber);
+		if (cached) {
+			return cached;
+		}
+		const styles: StaffStyle[] = [];
+		let repeat: { count: number; slashes: number; start: number } | null = null;
+		let beatRepeat: (BeatRepeatStyle & { from: number }) | null = null;
+		let slash: (SlashStyle & { from: number }) | null = null;
+		for (const measure of part.measures) {
+			const m = styles.length;
+			const length = this.meterFloor(measure, staffNumber) || measure.endBeat;
+			const unitOf = (style: MElement) =>
+				slashUnit(style) ?? beatUnit(measure.getTime(staffNumber));
+			const style: StaffStyle = {
+				repeat: null,
+				beatRepeats: [],
+				slashes: [],
+				length,
+			};
+			for (const { beat, element } of measureStyleEvents(
+				measure,
+				staffNumber,
+			)) {
+				const starts = element.getAttribute('type') === 'start';
+				const slashes = Number(element.getAttribute('slashes') ?? 1) || 1;
+				const dots = element.getAttribute('use-dots') === 'yes';
+				if (element.tag === 'measure-repeat') {
+					repeat = starts
+						? { count: Number(element.text) || 1, slashes, start: m }
+						: null;
+				} else if (element.tag === 'beat-repeat') {
+					if (beatRepeat) {
+						style.beatRepeats.push({ ...beatRepeat, to: beat });
+					}
+					beatRepeat = starts
+						? { slashes, dots, unit: unitOf(element), from: beat }
+						: null;
+				} else if (element.tag === 'slash') {
+					if (slash) {
+						style.slashes.push({ ...slash, to: beat });
+					}
+					slash = starts
+						? {
+								stems: element.getAttribute('use-stems') === 'yes',
+								dots,
+								unit: unitOf(element),
+								from: beat,
+							}
+						: null;
+				}
+			}
+			if (repeat) {
+				style.repeat = {
+					count: repeat.count,
+					slashes: repeat.slashes,
+					bar: (m - repeat.start) % repeat.count,
+				};
+			}
+			// Still open at the barline: the span runs to the end of this measure and on from
+			// the start of the next.
+			if (beatRepeat) {
+				style.beatRepeats.push({ ...beatRepeat, to: length });
+				beatRepeat = { ...beatRepeat, from: 0 };
+			}
+			if (slash) {
+				style.slashes.push({ ...slash, to: length });
+				slash = { ...slash, from: 0 };
+			}
+			styles.push(style);
+		}
+		byStaff.set(staffNumber, styles);
+		return styles;
 	}
 
 	/*
@@ -1923,3 +2079,142 @@ type BarlineRead = {
 	startHidden: boolean;
 	closed: 'stop' | 'discontinue' | null;
 };
+
+/* What a staff's <measure-style> draws in place of one measure's notes (see measureStyleOf). */
+export type MeasureStyleMark =
+	| {
+			kind: 'measure-repeat';
+			/** How many measures the repeated pattern holds (the element's text). */
+			count: number;
+			/** How many slashes the sign carries; 1 unless the document says otherwise. */
+			slashes: number;
+			/** Which measure of the pattern this is, 0 the first. */
+			bar: number;
+	  }
+	| {
+			kind: 'beat-repeat';
+			slashes: number;
+			/** Dots either side of the slashes (`use-dots="yes"`). */
+			dots: boolean;
+			/** The quarter-note beat each sign starts on. */
+			beats: number[];
+			/** The measure's length in quarter-note beats. */
+			length: number;
+	  }
+	| {
+			kind: 'beat-slash';
+			/** How long each slash stands for, in quarter-note beats. */
+			unit: number;
+			/** An augmentation dot after each slash of a dotted unit (`use-dots="yes"`). */
+			dots: boolean;
+			beats: number[];
+			length: number;
+	  };
+
+type BeatRepeatStyle = { slashes: number; dots: boolean; unit: number };
+type SlashStyle = { stems: boolean; dots: boolean; unit: number };
+type Span = { from: number; to: number };
+
+/* One staff's <measure-style> regions within one measure (see ScoreReader.staffStylesOf). */
+type StaffStyle = {
+	repeat: { count: number; slashes: number; bar: number } | null;
+	beatRepeats: Array<BeatRepeatStyle & Span>;
+	slashes: Array<SlashStyle & Span>;
+	/** The measure's length in quarter-note beats: its meter, else its content. */
+	length: number;
+};
+
+/*
+ * A measure's <measure-style> children for one staff, in document order, each at the beat
+ * its <attributes> block falls on: the next note's onset, or the measure's end when no note
+ * follows (the same rule Measure.clefChanges uses).
+ */
+function measureStyleEvents(
+	measure: Measure,
+	staffNumber: string,
+): Array<{ beat: number; element: MElement }> {
+	const events: Array<{ beat: number; element: MElement }> = [];
+	const children = measure.children;
+	children.forEach((node, index) => {
+		if (!(node instanceof MElement) || node.tag !== 'attributes') {
+			return;
+		}
+		const styles = node.childrenNamed('measure-style').filter((style) => {
+			const number = style.getAttribute('number');
+			return number === null || number === staffNumber;
+		});
+		if (styles.length === 0) {
+			return;
+		}
+		const next = children
+			.slice(index + 1)
+			.find(
+				(child): child is Note =>
+					child instanceof MElement && child.tag === 'note',
+			);
+		const beat = next?.measureBeat ?? measure.endBeat;
+		for (const style of styles) {
+			for (const element of style.children) {
+				if (element instanceof MElement && STYLE_TAGS.has(element.tag)) {
+					events.push({ beat, element });
+				}
+			}
+		}
+	});
+	return events;
+}
+
+const STYLE_TAGS = new Set(['measure-repeat', 'beat-repeat', 'slash']);
+
+// A <slash-type> note type -> its length in quarter-note beats.
+const NOTE_TYPE_BEATS: Record<string, number> = {
+	breve: 8,
+	whole: 4,
+	half: 2,
+	quarter: 1,
+	eighth: 0.5,
+	'16th': 0.25,
+	'32nd': 0.125,
+};
+
+/*
+ * How long each sign of a <beat-repeat> or <slash> stands for, from its <slash-type> and
+ * <slash-dot>s, in quarter-note beats; null when it names no type, so the meter decides.
+ */
+function slashUnit(style: MElement): number | null {
+	const type = style.child('slash-type')?.text;
+	const beats = type ? NOTE_TYPE_BEATS[type] : undefined;
+	if (!beats) {
+		return null;
+	}
+	let unit = beats;
+	let dot = beats / 2;
+	for (const _ of style.childrenNamed('slash-dot')) {
+		unit += dot;
+		dot /= 2;
+	}
+	return unit;
+}
+
+/*
+ * The meter's beat in quarter-note beats: the beat-type's note, or a dotted one in a
+ * compound meter (6/8, 9/8, 12/8 count in dotted quarters). A quarter with no meter.
+ */
+function beatUnit(time: Time | null): number {
+	const beats = Number(time?.beats);
+	const beatType = Number(time?.beatType);
+	if (!beats || !beatType) {
+		return 1;
+	}
+	const unit = 4 / beatType;
+	return beatType >= 8 && beats > 3 && beats % 3 === 0 ? unit * 3 : unit;
+}
+
+/* The onset of each `unit`-long sign across a measure `length` beats long. */
+function beatsAcross(length: number, unit: number): number[] {
+	const beats: number[] = [];
+	for (let beat = 0; beat < length - EPSILON; beat += unit) {
+		beats.push(beat);
+	}
+	return beats;
+}

@@ -420,7 +420,15 @@ export class VoiceBuilder {
 					// That case is already decided by `defaultStem` (voices sharing a stave stem
 					// apart, first voice up), so honoring it here is the same rule read one level
 					// out.
-					let stem = defaultStem;
+					// Rhythm slashes all sit on the middle line, where the beam's own rule would
+					// stem them down; slash notation stems up.
+					let stem =
+						defaultStem ??
+						(group.notes.every(
+							(lead) => !lead.stem && this.reader.isRhythmSlashed(lead),
+						)
+							? 'up'
+							: undefined);
 					if (new Set(notes.map((note) => rowOf.get(note))).size > 1) {
 						const bottom = Math.max(
 							...notes.map((note) => rowOf.get(note) ?? 0),

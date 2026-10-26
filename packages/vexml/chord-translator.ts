@@ -91,6 +91,8 @@ export function smuflGlyph(name: string | null): string | undefined {
 export class ChordTranslator {
 	// Each note's vexflow key, spelled once: the layout and both draw passes build every note.
 	private readonly keys = new Map<Note, string>();
+	// Each clef's middle-line key (see middleKey).
+	private readonly middleKeys = new Map<string, string>();
 
 	constructor(
 		private readonly durations: DurationTranslator,
@@ -145,13 +147,20 @@ export class ChordTranslator {
 			lead.printObject && isCueSized(lead)
 				? new GraceNote(this.struct(chord, clef, opts))
 				: new NoteClass(this.struct(chord, clef, opts));
-		this.addAccidentals(staveNote, chord);
-		this.addParentheses(staveNote, chord);
-		this.addNoteheadText(staveNote, chord);
+		if (opts.slashed) {
+			// Rhythmic slash notation: one slash on the middle line, carrying no pitch to spell.
+			staveNote.noteHeads[0]?.setText(this.slashGlyph(chord));
+		} else {
+			this.addAccidentals(staveNote, chord);
+			this.addParentheses(staveNote, chord);
+			this.addNoteheadText(staveNote, chord);
+		}
 		this.addDots(staveNote, lead);
 		this.hideLedgerLines(staveNote, lead);
 		this.applyStemNone(staveNote, lead);
-		this.addSlashNoteheads(staveNote, chord);
+		if (!opts.slashed) {
+			this.addSlashNoteheads(staveNote, chord);
+		}
 		this.notations.attach(staveNote, chord);
 		return staveNote;
 	}
@@ -217,9 +226,15 @@ export class ChordTranslator {
 				stemDirection: stem ? STEM[stem] : undefined,
 			};
 		}
-		const direction = stem ?? this.stemOf(lead, defaultStem);
+		// A rhythm slash stems up unless written otherwise: its head always sits on the
+		// middle line, where vexflow's own rule would turn it down.
+		const direction = opts.slashed
+			? (this.stemOf(lead, defaultStem) ?? 'up')
+			: (stem ?? this.stemOf(lead, defaultStem));
 		return {
-			keys: chord.notes.map((note) => this.vexflowKey(note)),
+			keys: opts.slashed
+				? [this.middleKey(clef)]
+				: chord.notes.map((note) => this.vexflowKey(note)),
 			duration,
 			dots: lead.dots,
 			clef,
@@ -470,9 +485,27 @@ export class ChordTranslator {
 	 * setStemDirection would rebuild the noteheads from scratch and wipe the override, which is
 	 * why every stem direction, a beam group's included, is settled at construction.
 	 */
+	/* The slash notehead for the chord's duration: open for a half or whole, else filled. */
+	private slashGlyph(chord: Chord): string {
+		return SLASH_GLYPHS[this.durations.code(chord.lead)] ?? SLASH_GLYPH_FILLED;
+	}
+
+	/* The key on the middle line of `clef`, where a rhythm slash sits whatever the pitch. */
+	private middleKey(clef: string): string {
+		let key = this.middleKeys.get(clef);
+		if (key === undefined) {
+			key =
+				MIDDLE_KEY_CANDIDATES.find(
+					(candidate) =>
+						VexFlow.keyProperties(candidate, clef).line === MIDDLE_LINE,
+				) ?? 'b/4';
+			this.middleKeys.set(clef, key);
+		}
+		return key;
+	}
+
 	private addSlashNoteheads(staveNote: StaveNote, chord: Chord): void {
-		const byDuration =
-			SLASH_GLYPHS[this.durations.code(chord.lead)] ?? SLASH_GLYPH_FILLED;
+		const byDuration = this.slashGlyph(chord);
 		const noteHeads = staveNote.noteHeads;
 		chord.notes.forEach((note, i) => {
 			if (note.notehead?.value !== 'slash') {
@@ -504,9 +537,19 @@ interface VexflowChordOptions {
 	/* The direction the note's beam group settled on, which wins over both of the above: a
 	 * beam stems its notes one way (see VoiceTranslator.tickables, VoiceBuilder.planStems). */
 	stem?: 'up' | 'down';
+	/* Under a <slash use-stems="yes">: a slash notehead on the middle line in place of the
+	 * chord's pitches, its rhythm and stem kept (see ScoreReader.isRhythmSlashed). */
+	slashed?: boolean;
 }
 
 const STEM = { up: Stem.UP, down: Stem.DOWN } as const;
+
+// vexflow's staff line for the middle line of five (keyProperties counts C4 in treble as 0).
+const MIDDLE_LINE = 3;
+// Every natural from C2 to B5: one of them sits on the middle line of any clef vexflow has.
+const MIDDLE_KEY_CANDIDATES = [2, 3, 4, 5].flatMap((octave) =>
+	['c', 'd', 'e', 'f', 'g', 'a', 'b'].map((step) => `${step}/${octave}`),
+);
 
 // Raw SMuFL codepoints (accidentalBracketLeft, accidentalBracketRight) because vexflow has no
 // bracketed accidental of its own (see ChordTranslator.addAccidentals).
@@ -517,11 +560,11 @@ const ACCIDENTAL_BRACKET_RIGHT = '\uE26D';
 // half is hollow (noteheadSlashWhiteWhole, noteheadSlashWhiteHalf) and anything shorter solid
 // (noteheadSlashVerticalEnds). filled="no" borrows the hollow half head, since SMuFL has no
 // hollow slash for the shorter values.
-const SLASH_GLYPHS: Record<string, string> = {
+export const SLASH_GLYPHS: Record<string, string> = {
 	w: '\uE102',
 	h: '\uE103',
 };
-const SLASH_GLYPH_FILLED = '\uE100';
+export const SLASH_GLYPH_FILLED = '\uE100';
 const SLASH_GLYPH_OPEN = '\uE103';
 
 /*

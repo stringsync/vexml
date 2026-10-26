@@ -170,6 +170,7 @@ export class VoiceTranslator {
 				octaveShift: octaveShiftOf(chord.lead),
 				defaultStem,
 				stem: stemOf(chord.lead) ?? beamStems.get(chord.lead),
+				slashed: this.reader.isRhythmSlashed(chord.lead),
 			});
 			if (pendingGrace.length > 0) {
 				const group = new GraceNoteGroup(pendingGrace.map((g) => g.note));
@@ -260,6 +261,7 @@ export class VoiceTranslator {
 			const sum = this.chords
 				.keyLines(chord, activeClef, {
 					octaveShift: opts.octaveShiftOf(chord.lead),
+					slashed: this.reader.isRhythmSlashed(chord.lead),
 				})
 				.reduce((total, line) => total + line - MIDDLE_LINE, 0);
 			lines.set(chord.lead, sum);

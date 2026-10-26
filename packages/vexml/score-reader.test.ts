@@ -500,6 +500,66 @@ describe('ScoreReader', () => {
 	it('reads no header from a score that names nothing', async () => {
 		expect(await headerOf('')).toBeNull();
 	});
+
+	describe('measureStyleOf', () => {
+		it('counts each measure of a two-bar repeat pattern until the stop', async () => {
+			const measures = await styledMeasures([
+				STYLE('<measure-repeat type="start">2</measure-repeat>'),
+				'',
+				'',
+				'',
+				STYLE('<measure-repeat type="stop"/>'),
+			]);
+			const reader = new ScoreReader(new DynamicGlyphs());
+			expect(measures.map((m) => reader.measureStyleOf(m, '1'))).toEqual([
+				{ kind: 'measure-repeat', count: 2, slashes: 1, bar: 0 },
+				{ kind: 'measure-repeat', count: 2, slashes: 1, bar: 1 },
+				{ kind: 'measure-repeat', count: 2, slashes: 1, bar: 0 },
+				{ kind: 'measure-repeat', count: 2, slashes: 1, bar: 1 },
+				null,
+			]);
+		});
+
+		it('draws the notes of a measure a beat repeat only partly covers', async () => {
+			const measures = await styledMeasures([
+				`${QUARTER.repeat(2)}${STYLE('<beat-repeat type="start"/>')}`,
+				'',
+			]);
+			const reader = new ScoreReader(new DynamicGlyphs());
+			expect(reader.measureStyleOf(measures[0] as never, '1')).toBeNull();
+			expect(reader.measureStyleOf(measures[1] as never, '1')).toMatchObject({
+				kind: 'beat-repeat',
+				beats: [0, 1, 2, 3],
+			});
+		});
+
+		it('slashes a compound meter on its dotted-quarter beats', async () => {
+			const measures = await styledMeasures(
+				[STYLE('<slash type="start"/>')],
+				'<beats>6</beats><beat-type>8</beat-type>',
+				'<note><pitch><step>C</step><octave>4</octave></pitch><duration>6</duration><type>half</type><dot/></note>',
+			);
+			const reader = new ScoreReader(new DynamicGlyphs());
+			expect(reader.measureStyleOf(measures[0] as never, '1')).toMatchObject({
+				kind: 'beat-slash',
+				unit: 1.5,
+				beats: [0, 1.5],
+			});
+		});
+	});
+
+	it('rhythm-slashes the notes from where a <slash use-stems="yes"> starts', async () => {
+		const [measure] = await styledMeasures([
+			`${QUARTER.repeat(2)}${STYLE('<slash type="start" use-stems="yes"/>')}`,
+		]);
+		const reader = new ScoreReader(new DynamicGlyphs());
+		expect(measure?.notes.map((note) => reader.isRhythmSlashed(note))).toEqual([
+			false,
+			false,
+			true,
+			true,
+		]);
+	});
 });
 
 /* A one-part score whose measures carry exactly the given <barline>s (and a note, so the
@@ -568,3 +628,34 @@ const start = (n: string) =>
 	`<barline location="left"><ending number="${n}" type="start"/></barline>`;
 const stop = (n: string, type: string) =>
 	`<barline location="right"><ending number="${n}" type="${type}"/></barline>`;
+
+const QUARTER =
+	'<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>';
+const STYLE = (inner: string) =>
+	`<attributes><measure-style>${inner}</measure-style></attributes>`;
+
+/* One-part measures, each its own `<measure-style>` markup placed among quarter notes: the
+ * prefix's notes first, then whatever of the bar they leave filled with quarters. */
+async function styledMeasures(
+	prefixes: string[],
+	time = '<beats>4</beats><beat-type>4</beat-type>',
+	fill?: string,
+) {
+	const body = prefixes
+		.map((prefix, i) => {
+			const attrs =
+				i === 0
+					? `<attributes><divisions>${fill ? 2 : 1}</divisions><time>${time}</time></attributes>`
+					: '';
+			const written = (prefix.match(/<note>/g) ?? []).length;
+			const notes = fill ?? QUARTER.repeat(4 - written);
+			return `<measure number="${i + 1}">${attrs}${prefix}${notes}</measure>`;
+		})
+		.join('');
+	const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
+<score-partwise version="4.0">
+	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+	<part id="P1">${body}</part>
+</score-partwise>`);
+	return mdoc.score.parts[0]?.measures ?? [];
+}

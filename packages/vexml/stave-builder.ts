@@ -15,7 +15,7 @@ import {
 	VOLTA_STAVE_GAP,
 } from './constants';
 import type { Gaps } from './gaps';
-import type { PartGroup, ScoreReader } from './score-reader';
+import type { MeasureStyleMark, PartGroup, ScoreReader } from './score-reader';
 import type { SignatureTranslator } from './signature-translator';
 import type { SpillTracker } from './spill-tracker';
 import { StaveFactory } from './stave-factory';
@@ -414,6 +414,7 @@ export class StaveBuilder {
 						}
 					: null,
 			multiRestCount: this.multiRests.get(m) ?? null,
+			measureStyle: this.reader.measureStyleOf(measure, staffNumber),
 			numbered,
 		};
 	}
@@ -477,6 +478,9 @@ export interface BuiltStave {
 	/** How many measures the stave's <multiple-rest> consolidates, or null when the
 	 * measure draws its own notes. */
 	multiRestCount: number | null;
+	/** The sign the stave's <measure-style> draws in place of its notes (a measure repeat,
+	 * beat repeats, beat slashes), or null when the measure draws its own notes. */
+	measureStyle: MeasureStyleMark | null;
 	/** Whether this stave printed the measure number. */
 	numbered: boolean;
 }

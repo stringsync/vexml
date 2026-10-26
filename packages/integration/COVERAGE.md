@@ -16,7 +16,7 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 251 drawn, 69 ignored, 122 missing; vexml draws 251 of the 373 that show on the page (67%).
+Elements: 256 drawn, 69 ignored, 117 missing; vexml draws 256 of the 373 that show on the page (69%).
 Attributes: 55 drawn, 5 ignored, 55 missing.
 
 | Element | Status | Proof or reason |
@@ -83,7 +83,7 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `beam` | drawn | `beam_variations.musicxml` |
 | `beam@fan` | missing | task #35; feathered beams not drawn; mdom raw only |
 | `beam@repeater` | missing | task #35; repeater beams not drawn; mdom raw only |
-| `beat-repeat` | missing | task #10; mdom raw only |
+| `beat-repeat` | drawn | `measure_style.musicxml`: a repeat slash per beat; a span starting or stopping mid-measure draws its notes |
 | `beat-type` | drawn | `time.musicxml` |
 | `beat-unit` | drawn | `tempo.musicxml`: metronome mark note value |
 | `beat-unit-dot` | drawn | `tempo_beat_unit_dot.musicxml` |
@@ -163,7 +163,7 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `ending@text-x` | missing | task #38; volta label offset ignored; mdom raw only |
 | `ending@type` | drawn | `repeats.musicxml`: start and stop hooks; a discontinue close leaves the right end open |
 | `ensemble` | ignored | sound only (instrument definition) |
-| `except-voice` | missing | task #10; mdom raw only |
+| `except-voice` | missing | task #52; mdom raw only |
 | `extend` | drawn | `lyrics_melisma.musicxml`: lyric melisma line (figured-bass extend not drawn) |
 | `eyeglasses` | missing | task #15; mdom raw only |
 | `f` | drawn | `dynamics.musicxml` |
@@ -278,8 +278,8 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `measure-layout` | missing | task #20; mdom raw only |
 | `measure-numbering` | missing | task #38; honor the score's measure-numbering choice (config decides now); mdom raw only |
 | `measure-numbering@system` | missing | task #38; document numbering per system ignored, config decides; mdom raw only |
-| `measure-repeat` | missing | task #10; mdom raw only |
-| `measure-style` | drawn | `rest_multi_measure.musicxml`: multiple-rest child |
+| `measure-repeat` | drawn | `measure_style.musicxml`: one- and two-bar signs, the count above |
+| `measure-style` | drawn | `rest_multi_measure.musicxml`: multiple-rest child; `measure_style.musicxml`: repeats and slashes |
 | `membrane` | missing | task #16; mdom raw only |
 | `metal` | missing | task #16; mdom raw only |
 | `metronome` | drawn | `tempo.musicxml` |
@@ -450,9 +450,9 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `sfzp` | drawn | `dynamics.musicxml` |
 | `shake` | drawn | `ornaments.musicxml` |
 | `sign` | drawn | `clef_treble.musicxml`, `clef_c.musicxml` |
-| `slash` | missing | task #10; mdom raw only |
-| `slash-dot` | missing | task #10; mdom raw only |
-| `slash-type` | missing | task #10; mdom raw only |
+| `slash` | drawn | `measure_style.musicxml`: beat slashes, and rhythm slashes with `use-stems` |
+| `slash-dot` | drawn | `measure_style.musicxml`: M12's dotted beats |
+| `slash-type` | drawn | `measure_style.musicxml`: M12's quarter slashes |
 | `slide` | drawn | `slide_in.musicxml`, `tab_slide.musicxml` |
 | `slide@line-type` | missing | task #17; mdom typed |
 | `slur` | drawn | `slur_default.musicxml` |

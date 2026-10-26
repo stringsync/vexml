@@ -48,8 +48,10 @@ import { HeaderPlan } from './header-plan';
 import { Ink } from './ink';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
 import { LyricPlacer } from './lyric-placer';
+import { MeasureStyleDrawer } from './measure-style-drawer';
 import type {
 	DirectionLineSpan,
+	MeasureStyleMark,
 	OctaveShiftSpan,
 	PartGroup,
 	ScoreReader,
@@ -112,6 +114,9 @@ export class DrawPass {
 	private readonly gaps: ReadonlyMap<number, Gap>;
 	// The multirest bars to draw over this column's staves, once those staves are on the canvas.
 	private columnMultiRests: Array<{ stave: Stave; count: number }> = [];
+	// The <measure-style> signs to draw over this column's staves, in their notes' place.
+	private columnMeasureStyles: Array<{ stave: Stave; mark: MeasureStyleMark }> =
+		[];
 	// Ink roles (see Ink), resolved to config.fonts' colors when the ops are painted. notationColor
 	// is the context's default fill/stroke, so every vexflow-engraved glyph (noteheads, stems,
 	// staves, clefs) inherits it; textColor marks the words vexml types itself.
@@ -208,6 +213,7 @@ export class DrawPass {
 	// Builds each measure column's staves: clef/key/time, barlines, and the repeat, volta
 	// and measure-number furniture. Fed the measure loop's locals through staveColumn().
 	private readonly staveBuilder: StaveBuilder;
+	private readonly measureStyleDrawer: MeasureStyleDrawer;
 	// Translates each staff's mdom voices into the vexflow voices the formatter consumes,
 	// filling byLead/byTabLead as the notes are built; a part's cross-staff beams are built
 	// once all of its staves are pending.
@@ -368,6 +374,7 @@ export class DrawPass {
 			new Rect(0, 0, width, scratchHeight),
 			{},
 		);
+		this.measureStyleDrawer = new MeasureStyleDrawer(this.context);
 		this.staveBuilder = new StaveBuilder(
 			this.signatures,
 			reader,
@@ -575,6 +582,7 @@ export class DrawPass {
 		this.columnVoltaBox = null;
 		this.columnStaves = [];
 		this.columnMultiRests = [];
+		this.columnMeasureStyles = [];
 		this.tempoTasks = [];
 		this.harmonyTasks = [];
 		this.wordsTasks = [];
@@ -806,6 +814,9 @@ export class DrawPass {
 		for (const { stave, count } of this.columnMultiRests) {
 			this.staveBuilder.drawMultiRest(stave, count);
 		}
+		for (const { stave, mark } of this.columnMeasureStyles) {
+			this.measureStyleDrawer.draw(stave, mark);
+		}
 
 		// Format and draw every part's staves together so same-tick notes line up
 		// vertically across the whole system (notation over its own tab, and across
@@ -1004,8 +1015,15 @@ export class DrawPass {
 		// crash the formatter, so it's filtered.
 		// A <multiple-rest> lead draws the consolidated bar in place of its own contents: the
 		// whole rest it holds stands for the run and would otherwise print on top of the bar.
-		if (built.multiRestCount) {
-			this.columnMultiRests.push({ stave, count: built.multiRestCount });
+		// A measure repeat, or a beat repeat or slashes across the whole measure, likewise
+		// draws its sign instead: the written-out notes it stands for still play.
+		if (built.measureStyle) {
+			this.columnMeasureStyles.push({ stave, mark: built.measureStyle });
+		}
+		if (built.multiRestCount || built.measureStyle) {
+			if (built.multiRestCount) {
+				this.columnMultiRests.push({ stave, count: built.multiRestCount });
+			}
 			this.systemTop ??= stave;
 			this.systemBottom = stave;
 			this.spanLines(stave);

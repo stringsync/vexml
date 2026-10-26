@@ -148,6 +148,7 @@ describe('VoiceBuilder', () => {
 			{
 				endBeatOf: () => overrides.endBeat ?? 0,
 				measureBeatOf: (note: Note) => note.measureBeat,
+				isRhythmSlashed: () => false,
 				staffVoices: (_voices: unknown, staffNumber: string) =>
 					overrides.staffVoices?.(staffNumber) ?? [],
 			} as unknown as ScoreReader,
