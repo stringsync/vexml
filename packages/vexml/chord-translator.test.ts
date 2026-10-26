@@ -128,7 +128,7 @@ function makeBuilder() {
 	const byLead = new Map<Note, StaveNote>();
 	const builder = new VoiceBuilder(
 		translator,
-		new TabVoiceTranslator(durations, 'none'),
+		new TabVoiceTranslator(durations, reader, 'none'),
 		reader,
 		new SpannerBuilder(),
 		{

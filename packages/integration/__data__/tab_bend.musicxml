@@ -86,5 +86,97 @@
         </notations>
       </note>
     </measure>
+    <!-- Angled bends (shape="angled"): the same whole-step bend as M1 and the bend and
+         release of M2, drawn with straight legs instead of curves. -->
+    <measure number="4">
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical>
+            <string>3</string><fret>7</fret>
+            <bend shape="angled"><bend-alter>2</bend-alter></bend>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical>
+            <string>3</string><fret>7</fret>
+            <bend shape="angled"><bend-alter>2</bend-alter><release /></bend>
+          </technical>
+        </notations>
+      </note>
+    </measure>
+    <!-- A pre-bend: string 3 bent a whole step before it is struck, a vertical arrow
+         straight up off the fret, then the plain fret it lets down to. -->
+    <measure number="5">
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical>
+            <string>3</string><fret>7</fret>
+            <bend><bend-alter>2</bend-alter><pre-bend /></bend>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical>
+            <string>3</string><fret>5</fret>
+          </technical>
+        </notations>
+      </note>
+    </measure>
+    <!-- Whammy bar: a half-step dip, then a half-step scoop, each drawn with its SMuFL
+         vibrato-bar glyph (<with-bar> content "dip" / "scoop") under the "-½" label. -->
+    <measure number="6">
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical>
+            <string>3</string><fret>7</fret>
+            <bend><bend-alter>-1</bend-alter><with-bar>dip</with-bar></bend>
+          </technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>half</type>
+        <notations>
+          <technical>
+            <string>3</string><fret>7</fret>
+            <bend><bend-alter>-1</bend-alter><with-bar>scoop</with-bar></bend>
+          </technical>
+        </notations>
+      </note>
+    </measure>
+    <!-- Whammy bar with no glyph named: an empty <with-bar/> lowering a whole step, drawn
+         as a falling arrow labelled "w/bar -1". -->
+    <measure number="7">
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>whole</type>
+        <notations>
+          <technical>
+            <string>3</string><fret>7</fret>
+            <bend><bend-alter>-2</bend-alter><with-bar /></bend>
+          </technical>
+        </notations>
+      </note>
+    </measure>
   </part>
 </score-partwise>

@@ -41,6 +41,7 @@ import type { LyricPlacer } from './lyric-placer';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
 import { StaveArticulation } from './stave-articulation';
+import type { TabBend } from './tab-bend';
 import { isTechnicalMark } from './technical-mark';
 import { VoiceArticulationPlacer } from './voice-articulation-placer';
 import type { VoiceTranslator } from './voice-translator';
@@ -417,7 +418,7 @@ export class SystemFormatter {
 				if (rect) {
 					this.collisionResolver.add({ rect, kind: 'tie', band: p.row });
 				}
-				const bend = this.tabBendRect(p.stave, note);
+				const bend = this.tabBendRect(note);
 				if (bend) {
 					this.collisionResolver.add({ rect: bend, kind: 'note', band: p.row });
 				}
@@ -497,39 +498,14 @@ export class SystemFormatter {
 	}
 
 	/*
-	 * The collision obstacle for a tab <bend>: the band its arrow and label occupy above the
-	 * fret it springs from. Same problem tabArcApexRect solves: a Bend is a note modifier
-	 * that vexflow gives no bounding box, so above-stave words placed later see nothing there
-	 * and print straight through the arrow. Reconstructed from Bend.draw's own geometry: the
-	 * arrow tips out (textLine + 1) stave spaces above the fret, with the "full"/"1/2" label
-	 * centered a text height above that. `textLine` is protected, hence the cast, as in
-	 * stretchBends, which is also what sets the leg widths this reads.
+	 * The collision obstacle for a tab <bend>. Same problem tabArcApexRect solves: a Bend is a
+	 * note modifier that vexflow gives no bounding box, so above-stave words placed later see
+	 * nothing there and print straight through the arrow. TabBend.inkRect rebuilds it from
+	 * its own draw geometry, after stretchBends has set the leg widths.
 	 */
-	private tabBendRect(stave: Stave, note: TabNote): Rect | null {
-		const bend = this.translator.findModifier<Bend>(note, Bend.CATEGORY);
-		if (!bend) {
-			return null;
-		}
-		const { textLine, phrase } = bend as unknown as {
-			textLine: number;
-			phrase: { drawWidth?: number }[];
-		};
-		const fretY = Math.min(...note.getYs());
-		const top =
-			fretY -
-			(textLine + 1) * stave.getSpacingBetweenLines() -
-			1 -
-			bend.getTextHeight();
-		const left = note.getAbsoluteX();
-		// Mirrors stretchBends' start x, plus the drawn legs, plus the label's overhang past
-		// the arrow tip it's centered on.
-		const right =
-			note.getAbsoluteX() +
-			note.getWidth() +
-			5 +
-			phrase.reduce((sum, leg) => sum + (leg.drawWidth ?? 0), 0) +
-			bend.getWidth() / 2;
-		return new Rect(left, top, right - left, fretY - top);
+	private tabBendRect(note: TabNote): Rect | null {
+		const bend = this.translator.findModifier<TabBend>(note, Bend.CATEGORY);
+		return bend?.inkRect() ?? null;
 	}
 
 	/*
@@ -865,33 +841,19 @@ export class SystemFormatter {
 	 * mirrored here (the modifier's own x isn't positioned until draw). getAbsoluteX()
 	 * is in stave coordinates only because formatAndDraw setStave's the notes first; else
 	 * it's stave-relative and the last note's span to getNoteEndX overshoots off the page.
-	 * Bend.draw uses each phrase leg's drawWidth, which is protected, hence the cast. A
-	 * bend-and-release (UP+DOWN) peaks at the midpoint and returns, so split across legs.
+	 * TabBend.stretch decides how its legs share the span, and leaves a pre-bend alone.
 	 */
 	private stretchBends(stave: TabStave, voices: Voice[]): void {
 		for (const voice of voices) {
 			const tickables = voice.getTickables() as TabNote[];
 			tickables.forEach((note, i) => {
-				const bend = this.translator.findModifier<Bend>(note, Bend.CATEGORY);
+				const bend = this.translator.findModifier<TabBend>(note, Bend.CATEGORY);
 				if (!bend) {
 					return;
 				}
 				const startX = note.getAbsoluteX() + note.getWidth() + 5;
 				const endX = tickables[i + 1]?.getAbsoluteX() ?? stave.getNoteEndX();
-				const width = Math.max(0, endX - startX);
-				const { phrase } = bend as unknown as {
-					phrase: { drawWidth?: number }[];
-				};
-				const [up, down] = phrase;
-				if (!up) {
-					return;
-				}
-				if (down) {
-					up.drawWidth = width / 2;
-					down.drawWidth = 0;
-				} else {
-					up.drawWidth = width;
-				}
+				bend.stretch(Math.max(0, endX - startX));
 			});
 		}
 	}

@@ -1,7 +1,6 @@
 import type { Chord, Note } from '@stringsync/mdom';
 import {
 	Annotation,
-	Bend,
 	Element,
 	GhostNote,
 	GraceNoteGroup,
@@ -18,6 +17,8 @@ import {
 	TAB_GRACE_SPACING,
 } from './constants';
 import type { DurationTranslator } from './duration-translator';
+import type { ScoreReader } from './score-reader';
+import { TabBend } from './tab-bend';
 
 /*
  * Where a note sits on the fretboard when `<technical>` doesn't say. Some exporters give a
@@ -56,6 +57,7 @@ type FretElement = Element & { fontWeight: string };
 export class TabVoiceTranslator {
 	constructor(
 		private readonly durations: DurationTranslator,
+		private readonly reader: ScoreReader,
 		// Whether/where TabNotes are built with stems (and flags). See Config.tabStemPlacement.
 		private readonly tabStemPlacement: TabStemPlacement,
 	) {}
@@ -265,22 +267,18 @@ export class TabVoiceTranslator {
 
 	/*
 	 * Attach the lead note's tablature articulations to its TabNote, reading straight
-	 * from <notations>: a <bend> (with optional <release/> for a bend-and-release),
+	 * from <notations>: a <bend> (see TabBend for what it draws),
 	 * free-text <other-technical>, and <ornaments><wavy-line> vibrato. All are vexflow
 	 * modifiers, so attaching them here means the layout pass, which also calls this,
 	 * sizes measures with the extra width they take. (A <harmonic> is drawn as an
 	 * angle-bracketed fret in positions(), not a modifier.)
 	 */
 	private addTabModifiers(tabNote: TabNote, lead: Note): void {
-		const bend = lead.bend;
+		const bend = this.reader.bendOf(lead);
 		if (bend) {
-			const phrase = [{ type: Bend.UP, text: this.bendLabel(bend.semitones) }];
-			// ponytail: a <release/> child draws a bend-then-release (up-down arrow); a
-			// release to a non-zero target would need its own label; add when a fixture wants it.
-			if (bend.release) {
-				phrase.push({ type: Bend.DOWN, text: '' });
-			}
-			tabNote.addModifier(new Bend(phrase), 0);
+			// ponytail: a release to a non-zero target would need its own label; add when a
+			// fixture wants it.
+			tabNote.addModifier(new TabBend(this.bendLabel(bend.semitones), bend), 0);
 		}
 		const other = lead.otherTechnical[0];
 		if (other) {
@@ -311,12 +309,15 @@ export class TabVoiceTranslator {
 
 	/*
 	 * <bend-alter> in semitones -> the label drawn above the bend arrow. Guitar bends
-	 * are notated in whole steps: 2 semitones = "1", 1 = "½", 3 = "1½", 4 = "2".
+	 * are notated in whole steps: 2 semitones = "1", 1 = "½", 3 = "1½", 4 = "2". A bend
+	 * down (a whammy-bar dip) keeps its sign: -1 = "-½".
 	 */
 	private bendLabel(semitones: number): string {
-		const whole = Math.floor(semitones / 2);
-		const half = semitones % 2 === 1 ? '½' : '';
-		return whole > 0 ? `${whole}${half}` : half || '0';
+		const size = Math.abs(semitones);
+		const whole = Math.floor(size / 2);
+		const half = size % 2 === 1 ? '½' : '';
+		const amount = whole > 0 ? `${whole}${half}` : half || '0';
+		return semitones < 0 ? `-${amount}` : amount;
 	}
 
 	/*

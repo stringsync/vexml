@@ -410,6 +410,27 @@ export class ScoreReader {
 	 * Whether a note sits under a <slash use-stems="yes">: rhythmic notation, its rhythm and
 	 * stem kept but its pitch shown as a slash notehead on the middle line.
 	 */
+	/*
+	 * A note's tab <bend>, or null when it has none. mdom's Note.bend reads only <bend-alter>
+	 * and <release>; the rest (<pre-bend>, <with-bar>, the shape attribute) comes off the
+	 * element itself. <pre-bend> and <release> are a schema choice, so at most one is set.
+	 */
+	bendOf(note: Note): TabBendMark | null {
+		const bend = note.bend;
+		const element = note.technicals.find((t) => t.technicalType === 'bend');
+		if (!bend || !element) {
+			return null;
+		}
+		const bar = element.child('with-bar');
+		return {
+			semitones: bend.semitones,
+			release: bend.release,
+			preBend: element.child('pre-bend') !== null,
+			shape: element.getAttribute('shape') === 'angled' ? 'angled' : 'curved',
+			bar: bar ? (bar.text ?? '').trim() : null,
+		};
+	}
+
 	isRhythmSlashed(note: Note): boolean {
 		const measure = note.measure;
 		const style = this.staffStylesOf(measure.part, note.staff)[measure.index];
@@ -2598,6 +2619,19 @@ type BarlineRead = {
 export type StyleSign =
 	| { kind: 'beat-repeat'; slashes: number; dots: boolean }
 	| { kind: 'beat-slash'; unit: number; dots: boolean };
+
+/* A tab <bend> as the file spells it (see bendOf). */
+export type TabBendMark = {
+	/** <bend-alter>: 2 is a whole step; negative bends the pitch down. */
+	semitones: number;
+	release: boolean;
+	/** <pre-bend/>: bent before the string is struck. */
+	preBend: boolean;
+	/** The angled legs of standard notation, or the curved ones of tab (the default). */
+	shape: 'curved' | 'angled';
+	/** The trimmed <with-bar> text ("dip", "scoop", free text, often empty); null when absent. */
+	bar: string | null;
+};
 
 /* What a span does to one note: hide it, and maybe stand a sign where it was. */
 export type NoteStyle = { hidden: boolean; sign: StyleSign | null };

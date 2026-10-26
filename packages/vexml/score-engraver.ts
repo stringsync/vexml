@@ -74,7 +74,11 @@ export class ScoreEngraver {
 			showTabs: config.showTabs,
 			showNotation: config.showNotation,
 		});
-		const tab = new TabVoiceTranslator(durations, config.tabStemPlacement);
+		const tab = new TabVoiceTranslator(
+			durations,
+			reader,
+			config.tabStemPlacement,
+		);
 		const chords = new ChordTranslator(durations, new NotationTranslator());
 		// ONE translator instance shared by layout and draw: both must build identical vexflow
 		// voices for the measured widths to match the drawn ones.

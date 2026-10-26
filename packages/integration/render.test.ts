@@ -2080,6 +2080,14 @@ describe('render', () => {
 	// - M2: a bend-and-release on string 3 fret 7 (whole note), an up-then-down arrow.
 	// - M3: M1's first bend with a "Slowly" words direction over it: the text sits above
 	//   the arrow and its "1" label, clear of both.
+	// - M4: shape="angled": M1's whole-step bend and M2's bend-and-release on fret 7, their
+	//   legs straight lines instead of curves.
+	// - M5: a pre-bend on string 3 fret 7, a vertical arrow straight up off the fret labelled
+	//   "1", then a plain fret 5.
+	// - M6: whammy bar: a half-step dip then a half-step scoop on fret 7, each the SMuFL
+	//   vibrato-bar glyph (a V, then a check-mark scoop) above the stave under a "-½" label.
+	// - M7: an empty <with-bar/> lowering a whole step (whole note): a falling arrow from
+	//   above the stave down to the fret's line, labelled "w/bar -1".
 	it.concurrent('renders tab_bend.png', async () => {
 		expect(await testing.render('tab_bend.musicxml')).toMatchScreenshot(
 			'tab_bend.png',

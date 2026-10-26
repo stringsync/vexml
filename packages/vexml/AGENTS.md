@@ -171,7 +171,7 @@ vexflow's fixed text line, drawn in the finish pass, after the index clears.
 ## Tablature
 
 - **Tab staves, tunings, whether a part is tab**: `score-reader.ts`, `stave-builder.ts`
-- **Fret numbers, tab stems, bends**: `tab-voice-translator.ts`, `voice-builder.ts`, `stave-plan.ts` (which staves are tab)
+- **Fret numbers, tab stems, bends**: `tab-voice-translator.ts`, `tab-bend.ts` (the bend arrow: angled or curved legs, pre-bends, whammy-bar dips and scoops), `score-reader.ts` (`bendOf`), `voice-builder.ts`, `stave-plan.ts` (which staves are tab)
 - **Tab note geometry for the hit index**: `geometry-collector.ts`
 - **The `TabPosition` a caller gets back**: `tab-position.ts`
 

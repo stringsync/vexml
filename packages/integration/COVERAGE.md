@@ -16,8 +16,8 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 269 drawn, 69 ignored, 104 missing; vexml draws 269 of the 373 that show on the page (72%).
-Attributes: 66 drawn, 5 ignored, 47 missing.
+Elements: 271 drawn, 69 ignored, 102 missing; vexml draws 271 of the 373 that show on the page (73%).
+Attributes: 67 drawn, 5 ignored, 46 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -91,7 +91,7 @@ Attributes: 66 drawn, 5 ignored, 47 missing.
 | `beater` | missing | task #16; mdom raw only |
 | `beats` | drawn | `time.musicxml` |
 | `bend` | drawn | `tab_bend.musicxml` |
-| `bend@shape` | missing | task #34; angled vs curved bend ignored; mdom raw only |
+| `bend@shape` | drawn | `tab_bend.musicxml` M4: angled legs |
 | `bend-alter` | drawn | `tab_bend.musicxml`: bend amount label |
 | `bookmark` | ignored | metadata |
 | `bottom-margin` | missing | task #20; mdom raw only |
@@ -408,7 +408,7 @@ Attributes: 66 drawn, 5 ignored, 47 missing.
 | `pppp` | drawn | `dynamics.musicxml` |
 | `ppppp` | drawn | `dynamics.musicxml` |
 | `pppppp` | drawn | `dynamics.musicxml` |
-| `pre-bend` | missing | task #34; pre-bend arrow on a tab bend (bend getter reads only bend-alter and release); mdom raw only |
+| `pre-bend` | drawn | `tab_bend.musicxml` M5: vertical arrow off the fret |
 | `prefix` | drawn | `figured_bass.musicxml` |
 | `principal-voice` | missing | task #15; mdom raw only |
 | `print` | drawn | `print_new_system.musicxml`: new-system and new-page breaks honored |
@@ -574,7 +574,7 @@ Attributes: 66 drawn, 5 ignored, 47 missing.
 | `wedge@niente` | missing | task #17; mdom raw only |
 | `wedge@spread` | missing | task #38; hairpin opening fixed; mdom raw only |
 | `wedge@type` | drawn | `wedges.musicxml`: crescendo and diminuendo hairpins |
-| `with-bar` | missing | task #34; whammy bar indication on a tab bend; mdom raw only |
+| `with-bar` | drawn | `tab_bend.musicxml` M6-M7: dip and scoop glyphs, else "w/bar" text |
 | `wood` | missing | task #16; mdom raw only |
 | `word-font` | drawn | `text_formatting.musicxml`: its style and weight are the words default, its size the base text sizes scale against; its face task #48 |
 | `words` | drawn | `words.musicxml` |

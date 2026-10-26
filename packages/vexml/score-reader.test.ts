@@ -809,6 +809,49 @@ describe('ScoreReader', () => {
 		});
 	});
 
+	describe('bendOf', () => {
+		const bendOf = async (bend: string) => {
+			const measure = await measureOf(
+				`<note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type><notations><technical><string>3</string><fret>7</fret>${bend}</technical></notations></note>`,
+			);
+			const [note] = measure.notes;
+			return new ScoreReader(new DynamicGlyphs()).bendOf(note as never);
+		};
+
+		it('reads a plain bend as curved, with no pre-bend or bar', async () => {
+			expect(await bendOf('<bend><bend-alter>2</bend-alter></bend>')).toEqual({
+				semitones: 2,
+				release: false,
+				preBend: false,
+				shape: 'curved',
+				bar: null,
+			});
+		});
+
+		it('reads the pre-bend, the angled shape and the bar text', async () => {
+			expect(
+				await bendOf(
+					'<bend shape="angled"><bend-alter>-1</bend-alter><pre-bend/><with-bar> dip </with-bar></bend>',
+				),
+			).toMatchObject({
+				semitones: -1,
+				preBend: true,
+				shape: 'angled',
+				bar: 'dip',
+			});
+		});
+
+		it('reads an empty <with-bar/> as an empty bar, not a missing one', async () => {
+			expect(
+				await bendOf('<bend><bend-alter>-2</bend-alter><with-bar/></bend>'),
+			).toMatchObject({ bar: '' });
+		});
+
+		it('is null for a note with no bend', async () => {
+			expect(await bendOf('')).toBeNull();
+		});
+	});
+
 	it('rhythm-slashes the notes from where a <slash use-stems="yes"> starts', async () => {
 		const [measure] = await styledMeasures([
 			`${QUARTER.repeat(2)}${STYLE('<slash type="start" use-stems="yes"/>')}`,
