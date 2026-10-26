@@ -5,7 +5,10 @@
 # house style, and its spacing, fonts, and page layout will never match vexml's.
 # Use it for a second opinion on one ambiguous measure — not for layout parity.
 #
-# Usage: render.sh <input.musicxml> <output.png>
+# Usage: render.sh <input.musicxml> <output.png> [positions.mpos]
+#
+# With a third argument, also writes MuseScore's measure positions (.mpos) there, which
+# must sit in the output's directory. They are in pixels at the -r dpi, from the page corner.
 set -euo pipefail
 shopt -s nullglob
 
@@ -17,13 +20,14 @@ image="vexml-musescore"
 dpi=130
 margin=10
 
-if [ "$#" -ne 2 ]; then
-	echo "usage: render.sh <input.musicxml> <output.png>" >&2
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+	echo "usage: render.sh <input.musicxml> <output.png> [positions.mpos]" >&2
 	exit 1
 fi
 
 input="$1"
 output="$2"
+positions="${3:-}"
 
 if [ ! -f "$input" ]; then
 	echo "render.sh: no such file: $input" >&2
@@ -57,6 +61,17 @@ docker run --rm \
 	-v "$in_dir:/in:ro" \
 	-v "$out_dir:/out" \
 	"$image" -T "$margin" -r "$dpi" -o "/out/$out_file" "/in/$in_file"
+
+if [ -n "$positions" ]; then
+	if [ "$(cd "$(dirname "$positions")" && pwd)" != "$out_dir" ]; then
+		echo "render.sh: positions must sit beside the output" >&2
+		exit 1
+	fi
+	docker run --rm \
+		-v "$in_dir:/in:ro" \
+		-v "$out_dir:/out" \
+		"$image" -T "$margin" -r "$dpi" -o "/out/$(basename "$positions")" "/in/$in_file"
+fi
 
 # SVG export may write a single unsuffixed file.
 if [ -f "$output" ] && [ "$extension" = svg ]; then

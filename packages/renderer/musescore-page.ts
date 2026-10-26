@@ -3,7 +3,10 @@ import { SvgInkMasks } from './svg-ink-masks';
 
 /** Keeps MuseScore's SVG and its independent masks on one common capture grid. */
 class MusescorePage {
-	async mount(input: { svg: string }) {
+	async mount(input: {
+		svg: string;
+		boxes: Array<{ x: number; y: number; w: number; h: number }>;
+	}) {
 		const container = document.getElementById('screenshot');
 		if (!container) {
 			throw new Error('MuseScore capture container missing');
@@ -14,26 +17,37 @@ class MusescorePage {
 			throw new Error('MuseScore exported no SVG');
 		}
 		const rect = svg.getBoundingClientRect();
-		svg.setAttribute('width', String((rect.width * 130) / 96));
-		svg.setAttribute('height', String((rect.height * 130) / 96));
+		const scale = 130 / 96;
+		svg.setAttribute('width', String(rect.width * scale));
+		svg.setAttribute('height', String(rect.height * scale));
 		const masks = await new SvgInkMasks(container).capture();
 		const nonblank = masks.filter((mask) => mask.runs.length > 0);
 		const left = Math.min(...nonblank.map((mask) => mask.x));
 		const top = Math.min(...nonblank.map((mask) => mask.y));
 		const right = Math.max(...nonblank.map((mask) => mask.x + mask.width));
 		const bottom = Math.max(...nonblank.map((mask) => mask.y + mask.height));
+		let dx = 0;
+		let dy = 0;
 		if (nonblank.length) {
+			dx = 10 - left;
+			dy = 10 - top;
 			container.style.width = `${right - left + 20}px`;
 			container.style.height = `${bottom - top + 20}px`;
 			svg.style.position = 'relative';
-			svg.style.left = `${10 - left}px`;
-			svg.style.top = `${10 - top}px`;
+			svg.style.left = `${dx}px`;
+			svg.style.top = `${dy}px`;
 			for (const mask of masks) {
-				mask.x += 10 - left;
-				mask.y += 10 - top;
+				mask.x += dx;
+				mask.y += dy;
 			}
 		}
-		return { masks };
+		const measures = input.boxes.map((box) => ({
+			x: box.x * scale + dx,
+			y: box.y * scale + dy,
+			w: box.w * scale,
+			h: box.h * scale,
+		}));
+		return { masks, measures };
 	}
 }
 registerPage(new MusescorePage());

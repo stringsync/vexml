@@ -14,7 +14,7 @@ import type { PlacedMeasure } from './measure-map';
 export interface LocatedRender {
 	png: Image;
 	masks?: InkMask[];
-	/** In score order; empty when the engine can't say (MuseScore). */
+	/** In score order. */
 	measures: PlacedMeasure[];
 }
 
@@ -59,15 +59,16 @@ export async function locate(
 			};
 		}
 		case 'musescore': {
-			const { image, masks } = await renderers
+			const { image, masks, measures } = await renderers
 				.musescore({ musicXML })
 				.capture();
-			// No browser behind it, so nothing to ask. ponytail: MuseScore can write measure
-			// positions (.mpos) beside the PNG, if its findings ever need measures.
 			return {
 				png: image,
 				masks,
-				measures: [],
+				measures: numbered(
+					measures.map((box, index) => ({ ...box, index })),
+					musicXML,
+				),
 			};
 		}
 	}
