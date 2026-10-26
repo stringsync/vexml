@@ -4,6 +4,7 @@ import {
 	BarNote,
 	Bend,
 	ClefNote,
+	type Element,
 	Formatter,
 	GraceNoteGroup,
 	Modifier,
@@ -186,6 +187,23 @@ export class SystemFormatter {
 				this.shrunk.add(head);
 				head.setFontSize(head.fontSizeInPoints * ratio);
 			}
+		}
+		// Stems, flags and accidentals are sized off the same fixed scale as the heads: a stem
+		// drawn at full length beside shrunk heads reads as a different staff.
+		const sized = [
+			...note.getModifiers().filter((m) => m.getCategory() === 'Accidental'),
+			(note as unknown as { flag?: Element }).flag,
+		];
+		for (const el of sized) {
+			if (el && !this.shrunk.has(el)) {
+				this.shrunk.add(el);
+				el.setFontSize(el.fontSizeInPoints * ratio);
+			}
+		}
+		if (!this.shrunk.has(note)) {
+			this.shrunk.add(note);
+			note.setStemLength(Stem.HEIGHT * ratio);
+			note.getStem()?.setExtension(note.getStemExtension());
 		}
 	}
 

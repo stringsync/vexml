@@ -23,6 +23,7 @@ import { MeasureNumberPlan } from './measure-number-plan';
 import type { MeasureStyleMark, PartGroup, ScoreReader } from './score-reader';
 import type { SignatureTranslator } from './signature-translator';
 import type { SpillTracker } from './spill-tracker';
+import { scaleTimeSignature } from './staff-scaled-signatures';
 import { StaveFactory } from './stave-factory';
 import type { StavePlan } from './stave-plan';
 
@@ -337,7 +338,9 @@ export class StaveBuilder {
 			} else if (extended) {
 				stave.addModifier(make());
 			} else {
-				stave.addTimeSignature(timeSpec);
+				const plain = new TimeSignature(timeSpec);
+				scaleTimeSignature(plain, stave);
+				stave.addModifier(plain);
 			}
 		} else if (span >= 0 && !isTab) {
 			const group = column.groupTimes.get(span);

@@ -1,4 +1,5 @@
-import { KeySignature, Stave } from 'vexflow/core';
+import { Stave } from 'vexflow/core';
+import { StaffKeySignature } from './staff-scaled-signatures';
 
 /*
  * A key signature spelled out accidental by accidental, for a <key> written with
@@ -10,7 +11,7 @@ import { KeySignature, Stave } from 'vexflow/core';
  * and reuses everything else (the glyph laying, the spacing and the stave-modifier plumbing),
  * so a custom signature places, measures and draws exactly like a normal one.
  */
-export class CustomKeySignature extends KeySignature {
+export class CustomKeySignature extends StaffKeySignature {
 	constructor(
 		private readonly accidentals: ReadonlyArray<{ type: string; line: number }>,
 	) {

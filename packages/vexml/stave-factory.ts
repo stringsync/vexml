@@ -3,6 +3,7 @@ import { type Stave, StaveModifierPosition, TabStave } from 'vexflow/core';
 import { CustomKeySignature } from './custom-key-signature';
 import { DetailedStave, type LineStyle } from './detailed-stave';
 import type { SignatureTranslator } from './signature-translator';
+import { StaffKeySignature } from './staff-scaled-signatures';
 import type { StavePlan } from './stave-plan';
 
 /** vexflow's default space between staff lines, in px. */
@@ -216,7 +217,13 @@ export class StaveFactory {
 				StaveModifierPosition.BEGIN,
 			);
 		} else if (key?.rootNote) {
-			stave.addKeySignature(this.signatures.vexflowKeySpec(key), cancelKeySpec);
+			stave.addModifier(
+				new StaffKeySignature(
+					this.signatures.vexflowKeySpec(key),
+					cancelKeySpec,
+				).setPosition(StaveModifierPosition.BEGIN),
+				StaveModifierPosition.BEGIN,
+			);
 		}
 	}
 

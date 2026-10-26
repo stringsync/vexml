@@ -485,7 +485,7 @@ are picked by hand.
 | `staff-divide` | missing | task #15; mdom raw only |
 | `staff-layout` | drawn | `document_layout.musicxml`: `<defaults>` and each part's `<print>`, by staff number, when documentLayout follows the document |
 | `staff-lines` | drawn | `staff_details_lines.musicxml` |
-| `staff-size` | drawn | `staff_details_size.musicxml`: line spacing, noteheads and clef shrink; key/time signature glyphs and stem lengths stay full size |
+| `staff-size` | drawn | `staff_details_size.musicxml`: line spacing, noteheads, clef, key and time signature glyphs, accidentals, flags and stem lengths shrink with it (extended and group time signatures stay full size) |
 | `staff-tuning` | drawn | `clef_tab_staff_tuning.musicxml`: tuning derives frets and marks the staff as tab |
 | `staff-type` | drawn | `staff_type.musicxml`: ossia and cue staves draw at 75 percent unless staff-size says otherwise, and an ossia staff shows its lines only in measures that hold notes; editorial, regular and alternate draw as a normal staff |
 | `staves` | drawn | `structure_grand_staff.musicxml` |
