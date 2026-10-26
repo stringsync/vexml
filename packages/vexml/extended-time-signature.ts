@@ -16,55 +16,15 @@ export type TimeInterchange = {
 	face: TimeFace;
 };
 
+/** A `<time separator>` other than the default "none": how a face's two numbers are set. */
+export type TimeSeparator = 'horizontal' | 'diagonal' | 'vertical' | 'adjacent';
+
 export type ExtendedTimeSpec = {
+	/** How each digit face sets its numbers; null stacks them, as vexflow does. */
+	separator: TimeSeparator | null;
 	/** One face per beats/beat-type pair, joined by a plus sign. */
 	faces: TimeFace[];
 	interchange: TimeInterchange | null;
-};
-
-// SMuFL code points vexflow's Glyphs enum has but does not export.
-const GLYPH = {
-	noteWhole: '\uE1D2',
-	noteHalfUp: '\uE1D3',
-	noteQuarterUp: '\uE1D5',
-	noteEighthUp: '\uE1D7',
-	note16thUp: '\uE1D9',
-	note32ndUp: '\uE1DB',
-	augmentationDot: '\uE1E7',
-	timeSigParensLeft: '\uE094',
-	timeSigParensRight: '\uE095',
-	timeSigBracketLeft: '\uEC80',
-	timeSigBracketRight: '\uEC81',
-	timeSigEquals: '\uE08F',
-	timeSigFractionalSlash: '\uE08E',
-	timeSigMinus: '\uE090',
-	timeSigPlus: '\uE08C',
-};
-
-// The denominator note, built from a head, a drawn stem and a flag: the stemmed note glyphs
-// are not in the music font vexflow ships, only the heads and flags.
-const NOTE_HEADS: Record<string, { head: string; flag: string | null }> = {
-	'1': { head: '\uE0A2', flag: null },
-	'2': { head: '\uE0A3', flag: null },
-	'4': { head: '\uE0A4', flag: null },
-	'8': { head: '\uE0A4', flag: '\uE240' },
-	'16': { head: '\uE0A4', flag: '\uE242' },
-	'32': { head: '\uE0A4', flag: '\uE244' },
-};
-
-// The denominator note is drawn smaller than the digits so its stem fits under the numerator.
-const NOTE_SCALE = 0.85;
-const STEM_SPACES = 1.8;
-const GAP = 6;
-
-type Piece = {
-	element: Element;
-	x: number;
-	line: 'top' | 'bottom' | 'middle' | 'base';
-	/** A stem rising from the right edge of this element, in staff spaces. */
-	stem?: number;
-	/** Raised this many staff spaces above its line. */
-	lift?: number;
 };
 
 /*
@@ -75,9 +35,10 @@ type Piece = {
  */
 export class ExtendedTimeSignature extends TimeSignature {
 	private readonly pieces: Piece[] = [];
+	private readonly rules: Rule[] = [];
 	private readonly lineOffset: number;
 
-	constructor(spec: ExtendedTimeSpec) {
+	constructor(private readonly spec: ExtendedTimeSpec) {
 		// The base constructor lays out '4/4'; the pieces below replace that.
 		super('4/4');
 		let x = 0;
@@ -87,6 +48,9 @@ export class ExtendedTimeSignature extends TimeSignature {
 			for (const piece of column.pieces) {
 				piece.x += x;
 				this.pieces.push(piece);
+			}
+			for (const rule of column.rules) {
+				this.rules.push({ ...rule, x1: rule.x1 + x, x2: rule.x2 + x });
 			}
 			tallest = Math.max(tallest, column.height);
 			x += column.width;
@@ -138,6 +102,17 @@ export class ExtendedTimeSignature extends TimeSignature {
 				ctx.restore();
 			}
 		}
+		const space = stave.getSpacingBetweenLines();
+		for (const rule of this.rules) {
+			ctx.save();
+			ctx.setStrokeStyle(Ink.NOTATION);
+			ctx.setLineWidth((rule.width ?? RULE_WIDTH) * space);
+			ctx.beginPath();
+			ctx.moveTo(x + rule.x1, stave.getYForLine(rule.line1));
+			ctx.lineTo(x + rule.x2, stave.getYForLine(rule.line2));
+			ctx.stroke();
+			ctx.restore();
+		}
 	}
 
 	private lineOf(line: Piece['line']): number {
@@ -178,6 +153,7 @@ export class ExtendedTimeSignature extends TimeSignature {
 
 	private column(face: TimeFace): {
 		pieces: Piece[];
+		rules: Rule[];
 		width: number;
 		height: number;
 	} {
@@ -186,8 +162,12 @@ export class ExtendedTimeSignature extends TimeSignature {
 		const bottom = note ? this.noteOf(face, note) : null;
 		if (!bottom) {
 			const digits = this.textOf(face.beatType, true);
+			if (this.spec.separator) {
+				return this.separated(top, digits, this.spec.separator);
+			}
 			const width = Math.max(top.getWidth(), digits.getWidth());
 			return {
+				rules: [],
 				pieces: [
 					{ element: top, x: (width - top.getWidth()) / 2, line: 'top' },
 					{
@@ -203,12 +183,101 @@ export class ExtendedTimeSignature extends TimeSignature {
 		const width = Math.max(top.getWidth(), bottom.width);
 		const shift = (width - bottom.width) / 2;
 		return {
+			rules: [],
 			pieces: [
 				{ element: top, x: (width - top.getWidth()) / 2, line: 'top' },
 				...bottom.pieces.map((piece) => ({ ...piece, x: piece.x + shift })),
 			],
 			width,
 			height: top.getHeight(),
+		};
+	}
+
+	/*
+	 * Beats and beat-type set by a <time separator>. Horizontal parts the stacked numbers half a
+	 * space each way to make room for the rule between them; diagonal sets them as a fraction,
+	 * the slash rising from lower left to upper right; vertical and adjacent put them side by
+	 * side on the middle line, with or without a rule between.
+	 */
+	private separated(
+		top: Element,
+		bottom: Element,
+		separator: TimeSeparator,
+	): { pieces: Piece[]; rules: Rule[]; width: number; height: number } {
+		const height = Math.max(top.getHeight(), bottom.getHeight());
+		if (separator === 'horizontal') {
+			const width = Math.max(top.getWidth(), bottom.getWidth());
+			return {
+				pieces: [
+					{
+						element: top,
+						x: (width - top.getWidth()) / 2,
+						line: 'top',
+						lift: 0.5,
+					},
+					{
+						element: bottom,
+						x: (width - bottom.getWidth()) / 2,
+						line: 'bottom',
+						lift: -0.5,
+					},
+				],
+				rules: [
+					{
+						x1: -RULE_OVERHANG * SPACE,
+						line1: 2,
+						x2: width + RULE_OVERHANG * SPACE,
+						line2: 2,
+						// It lies on the middle staff line, so it is drawn heavy enough to read as more.
+						width: HORIZONTAL_RULE_WIDTH,
+					},
+				],
+				width,
+				height,
+			};
+		}
+		if (separator === 'diagonal') {
+			// The slash runs under the numerator's right edge and over the denominator's left.
+			const overlap = 0.4 * SPACE;
+			const slash = SPACE;
+			const right = top.getWidth() - overlap + slash;
+			return {
+				pieces: [
+					{ element: top, x: 0, line: 'top' },
+					{ element: bottom, x: right - overlap, line: 'bottom' },
+				],
+				rules: [
+					{
+						x1: top.getWidth() - overlap,
+						line1: 4,
+						x2: right,
+						line2: 0,
+					},
+				],
+				width: right - overlap + bottom.getWidth(),
+				height,
+			};
+		}
+		const gap = separator === 'vertical' ? 1.2 * SPACE : 0.4 * SPACE;
+		const second = top.getWidth() + gap;
+		return {
+			pieces: [
+				{ element: top, x: 0, line: 'middle' },
+				{ element: bottom, x: second, line: 'middle' },
+			],
+			rules:
+				separator === 'vertical'
+					? [
+							{
+								x1: top.getWidth() + gap / 2,
+								line1: 0.5,
+								x2: top.getWidth() + gap / 2,
+								line2: 3.5,
+							},
+						]
+					: [],
+			width: second + bottom.getWidth(),
+			height,
 		};
 	}
 
@@ -266,3 +335,64 @@ export class ExtendedTimeSignature extends TimeSignature {
 		return { pieces, width };
 	}
 }
+
+// SMuFL code points vexflow's Glyphs enum has but does not export.
+const GLYPH = {
+	noteWhole: '\uE1D2',
+	noteHalfUp: '\uE1D3',
+	noteQuarterUp: '\uE1D5',
+	noteEighthUp: '\uE1D7',
+	note16thUp: '\uE1D9',
+	note32ndUp: '\uE1DB',
+	augmentationDot: '\uE1E7',
+	timeSigParensLeft: '\uE094',
+	timeSigParensRight: '\uE095',
+	timeSigBracketLeft: '\uEC80',
+	timeSigBracketRight: '\uEC81',
+	timeSigEquals: '\uE08F',
+	timeSigFractionalSlash: '\uE08E',
+	timeSigMinus: '\uE090',
+	timeSigPlus: '\uE08C',
+};
+
+// The denominator note, built from a head, a drawn stem and a flag: the stemmed note glyphs
+// are not in the music font vexflow ships, only the heads and flags.
+const NOTE_HEADS: Record<string, { head: string; flag: string | null }> = {
+	'1': { head: '\uE0A2', flag: null },
+	'2': { head: '\uE0A3', flag: null },
+	'4': { head: '\uE0A4', flag: null },
+	'8': { head: '\uE0A4', flag: '\uE240' },
+	'16': { head: '\uE0A4', flag: '\uE242' },
+	'32': { head: '\uE0A4', flag: '\uE244' },
+};
+
+// The denominator note is drawn smaller than the digits so its stem fits under the numerator.
+const NOTE_SCALE = 0.85;
+const STEM_SPACES = 1.8;
+const GAP = 6;
+// vexflow's staff space at full size, in px, which the gaps here are laid out in.
+const SPACE = 10;
+// A separator rule's thickness and overhang, in staff spaces.
+const RULE_WIDTH = 0.16;
+const RULE_OVERHANG = 0.3;
+const HORIZONTAL_RULE_WIDTH = 0.4;
+
+/** A separator line, its ends in px from the signature's x and in stave lines. */
+type Rule = {
+	x1: number;
+	line1: number;
+	x2: number;
+	line2: number;
+	/** Thickness in staff spaces, RULE_WIDTH when unset. */
+	width?: number;
+};
+
+type Piece = {
+	element: Element;
+	x: number;
+	line: 'top' | 'bottom' | 'middle' | 'base';
+	/** A stem rising from the right edge of this element, in staff spaces. */
+	stem?: number;
+	/** Raised this many staff spaces above its line. */
+	lift?: number;
+};

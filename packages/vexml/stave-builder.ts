@@ -21,7 +21,7 @@ import type { Gaps } from './gaps';
 import { GroupTimeSignature } from './group-time-signature';
 import { MeasureNumberPlan } from './measure-number-plan';
 import type { MeasureStyleMark, PartGroup, ScoreReader } from './score-reader';
-import type { SignatureTranslator } from './signature-translator';
+import type { KeyCancel, SignatureTranslator } from './signature-translator';
 import type { SpillTracker } from './spill-tracker';
 import { scaleTimeSignature } from './staff-scaled-signatures';
 import { StaveFactory } from './stave-factory';
@@ -134,6 +134,29 @@ export class StaveBuilder {
 	}
 
 	/*
+	 * The cancel of a key change at `next` that prints before the barline, so at the end of
+	 * `measure`, the measure before it; null when `next` changes no key or cancels elsewhere.
+	 */
+	private endCancelOf(
+		next: Measure | undefined,
+		measure: Measure,
+		staffNumber: string,
+	): KeyCancel | null {
+		const key = next?.getKey(staffNumber) ?? null;
+		const prevKey = measure.getKey(staffNumber);
+		if (
+			!next ||
+			key?.getAttribute('print-object') === 'no' ||
+			this.reader.keyIdentity(key) === this.reader.keyIdentity(prevKey) ||
+			this.factory.customKey(next, staffNumber).length > 0
+		) {
+			return null;
+		}
+		const cancel = this.signatures.keyCancel(key, prevKey);
+		return cancel?.location === 'before-barline' ? cancel : null;
+	}
+
+	/*
 	 * Build the column's stave for the given part-staff: place it at its row, set its
 	 * clef/key/time and barlines, and dress it with the repeat, volta and measure-number
 	 * furniture. `visibleCount` is how many staves the part renders (tab/notation staves
@@ -240,17 +263,29 @@ export class StaveBuilder {
 		// A <key> spelled out accidental by accidental (<key-step>/<key-alter>), which vexflow's
 		// own KeySignature can't take a spec for; empty for an ordinary <fifths> key.
 		const customKey = isTab ? [] : this.factory.customKey(measure, staffNumber);
-		// The key being replaced, so vexflow can print the naturals that cancel it: the
-		// only thing a change TO C major has to draw, and without it M2 of
-		// transpose_change looked like no change happened at all. vexflow applies the
-		// modern rule itself (cancel only the accidentals dropped, or all of them when
-		// sharps flip to flats), so this hands it the old spec and lets it decide.
+		// The key being replaced, so its naturals print: the only thing a change TO C major has
+		// to draw, and without it M2 of transpose_change looked like no change happened at all.
+		// vexflow applies the modern rule itself (cancel only the accidentals dropped, or all of
+		// them when sharps flip to flats). A <cancel> names the key to cancel and where.
 		// Only at a change: restating an unchanged key at a system start cancels nothing.
-		// A non-traditional key has no spec to cancel with, either side of the change.
-		const cancelKeySpec =
-			keyChanged && prevKey?.rootNote && customKey.length === 0
-				? this.signatures.vexflowKeySpec(prevKey)
-				: undefined;
+		// A non-traditional key has no spec to cancel with.
+		const cancel =
+			keyChanged && customKey.length === 0
+				? this.signatures.keyCancel(key, prevKey)
+				: null;
+		// Naturals that print before the barline went at the previous measure's end instead.
+		const keyCancel =
+			cancel && cancel.location !== 'before-barline' ? cancel : undefined;
+		const nextCancel = isTab
+			? null
+			: this.endCancelOf(part.measures[m + 1], measure, staffNumber);
+		if (nextCancel) {
+			this.factory.addEndCancel(
+				stave,
+				nextCancel,
+				this.reader.clefAtEndOf(measure, staffNumber),
+			);
+		}
 		// Against the clef in effect at the END of the previous measure, not at its start: a
 		// change stated INSIDE that measure (or as its trailing courtesy clef) has already
 		// been announced, so restating it here would draw the same glyph twice.
@@ -267,7 +302,7 @@ export class StaveBuilder {
 		// small "change clef" size, which is how a mid-piece clef change is engraved:
 		// it reads as a correction to the stave, not a fresh system opening.
 		if (column.isSystemStart) {
-			this.factory.addOpening(placed, measure, staffNumber, cancelKeySpec);
+			this.factory.addOpening(placed, measure, staffNumber, keyCancel);
 		} else {
 			if (
 				clef &&
@@ -275,14 +310,10 @@ export class StaveBuilder {
 				!isTab &&
 				clef.getAttribute('print-object') !== 'no'
 			) {
-				stave.addClef(
-					this.signatures.vexflowClef(clef.sign, clef.line),
-					'small',
-					this.signatures.vexflowClefAnnotation(clef.octaveChange),
-				);
+				this.factory.addClefChange(stave, measure, staffNumber);
 			}
 			if (keyChanged && !isTab) {
-				this.factory.addKey(stave, measure, staffNumber, cancelKeySpec);
+				this.factory.addKey(stave, measure, staffNumber, keyCancel);
 			}
 		}
 

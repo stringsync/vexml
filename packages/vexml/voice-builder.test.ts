@@ -245,7 +245,14 @@ describe('VoiceBuilder', () => {
 	it('routes mid-measure dividers and clef glyphs through the first voice only', () => {
 		const translator = fakeTranslator();
 		const barlines = [{ beat: 1, style: 'dashed' }];
-		const midClefs = [{ beat: 1, clef: 'bass', annotation: undefined }];
+		const midClefs = [
+			{
+				beat: 1,
+				clef: 'bass',
+				annotation: undefined,
+				size: { size: 'small' as const, scale: 1 },
+			},
+		];
 		makeBuilder({ translator }).buildNotes(
 			stave,
 			0,

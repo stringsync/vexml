@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Piano</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1: E major (4 sharps) opens both staves. -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key>
+          <fifths>4</fifths>
+        </key>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <staves>2</staves>
+        <clef number="1">
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+        <clef number="2">
+          <sign>F</sign>
+          <line>4</line>
+        </clef>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>whole</type>
+        <staff>1</staff>
+      </note>
+      <backup><duration>4</duration></backup>
+      <note>
+        <pitch><step>C</step><octave>3</octave></pitch>
+        <duration>4</duration>
+        <type>whole</type>
+        <staff>2</staff>
+      </note>
+    </measure>
+    <!-- M2: to D major (2 sharps) with no cancel: the replaced key's dropped sharps (D#, G#) get
+         naturals, left of the new key. -->
+    <measure number="2">
+      <attributes>
+        <key>
+          <fifths>2</fifths>
+        </key>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>whole</type>
+        <staff>1</staff>
+      </note>
+      <backup><duration>4</duration></backup>
+      <note>
+        <pitch><step>C</step><octave>3</octave></pitch>
+        <duration>4</duration>
+        <type>whole</type>
+        <staff>2</staff>
+      </note>
+    </measure>
+    <!-- M3: to E flat major (3 flats), cancel 2 (D major): naturals on F and C, then the flats. -->
+    <measure number="3">
+      <attributes>
+        <key>
+          <cancel>2</cancel>
+          <fifths>-3</fifths>
+        </key>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>whole</type>
+        <staff>1</staff>
+      </note>
+      <backup><duration>4</duration></backup>
+      <note>
+        <pitch><step>C</step><octave>3</octave></pitch>
+        <duration>4</duration>
+        <type>whole</type>
+        <staff>2</staff>
+      </note>
+    </measure>
+    <!-- M4: to F major (1 flat), cancel -3 location right: the flat, then naturals on E and A. -->
+    <measure number="4">
+      <attributes>
+        <key>
+          <cancel location="right">-3</cancel>
+          <fifths>-1</fifths>
+        </key>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>whole</type>
+        <staff>1</staff>
+      </note>
+      <backup><duration>4</duration></backup>
+      <note>
+        <pitch><step>C</step><octave>3</octave></pitch>
+        <duration>4</duration>
+        <type>whole</type>
+        <staff>2</staff>
+      </note>
+    </measure>
+    <!-- M5: to D major (2 sharps), cancel -1 location before-barline: a natural on B at the end
+         of M4, before its barline, and only the two sharps here. -->
+    <measure number="5">
+      <attributes>
+        <key>
+          <cancel location="before-barline">-1</cancel>
+          <fifths>2</fifths>
+        </key>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>whole</type>
+        <staff>1</staff>
+      </note>
+      <backup><duration>4</duration></backup>
+      <note>
+        <pitch><step>C</step><octave>3</octave></pitch>
+        <duration>4</duration>
+        <type>whole</type>
+        <staff>2</staff>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

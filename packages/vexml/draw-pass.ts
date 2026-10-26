@@ -1385,9 +1385,7 @@ export class DrawPass {
 			}
 		} else if (voices.length > 0) {
 			const clef = measure.getClef(staffNumber);
-			const clefName = clef
-				? this.signatures.vexflowClef(clef.sign, clef.line)
-				: 'treble';
+			const clefName = clef ? this.signatures.clefName(clef) : 'treble';
 			this.pendingStaves.push(
 				this.voiceBuilder.buildNotes(stave, this.staveRow, voices, clefName, {
 					meterFloor: this.reader.meterFloor(measure, staffNumber),

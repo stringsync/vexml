@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import type { Key, Time } from '@stringsync/mdom';
+import type { Clef, Key, Time } from '@stringsync/mdom';
 import { SignatureTranslator } from './signature-translator';
 
 describe('SignatureTranslator', () => {
@@ -10,8 +10,21 @@ describe('SignatureTranslator', () => {
 			mode: null,
 			rootNote: null,
 			alterations: [],
+			child: () => null,
 			...overrides,
 		}) as unknown as Key;
+
+	const clef = (
+		sign: string,
+		line: number,
+		attributes: Record<string, string> = {},
+	) =>
+		({
+			sign,
+			line,
+			octaveChange: 0,
+			getAttribute: (name: string) => attributes[name] ?? null,
+		}) as unknown as Clef;
 
 	const time = (overrides: Partial<Time> = {}) =>
 		({
@@ -19,6 +32,7 @@ describe('SignatureTranslator', () => {
 			beats: null,
 			beatType: null,
 			child: () => null,
+			getAttribute: () => null,
 			...overrides,
 		}) as unknown as Time;
 
@@ -170,6 +184,7 @@ describe('SignatureTranslator', () => {
 				time({ symbol: 'note', beats: '3', beatType: '4' }),
 			),
 		).toEqual({
+			separator: null,
 			faces: [{ beats: '3', beatType: '4', note: 'note' }],
 			interchange: null,
 		});
@@ -230,11 +245,96 @@ describe('SignatureTranslator', () => {
 				} as Partial<Time>),
 			),
 		).toEqual({
+			separator: null,
 			faces: [{ beats: '3', beatType: '4', note: null }],
 			interchange: {
 				relation: 'equals',
 				face: { beats: '6', beatType: '8', note: null },
 			},
 		});
+	});
+
+	it('sets the numbers by a time separator', () => {
+		expect(
+			translator.extendedTimeSpec(
+				time({
+					beats: '3',
+					beatType: '4',
+					getAttribute: (name: string) =>
+						name === 'separator' ? 'diagonal' : null,
+				} as Partial<Time>),
+			),
+		).toEqual({
+			separator: 'diagonal',
+			faces: [{ beats: '3', beatType: '4', note: null }],
+			interchange: null,
+		});
+	});
+
+	it('leaves a none separator to the plain spec', () => {
+		expect(
+			translator.extendedTimeSpec(
+				time({
+					beats: '3',
+					beatType: '4',
+					getAttribute: (name: string) =>
+						name === 'separator' ? 'none' : null,
+				} as Partial<Time>),
+			),
+		).toBeNull();
+	});
+
+	it('cancels the key being replaced when the change names no cancel', () => {
+		expect(
+			translator.keyCancel(
+				key({ rootNote: 'F' }),
+				key({ mode: 'major', rootNote: 'D' }),
+			),
+		).toEqual({ spec: 'D', location: 'left' });
+	});
+
+	it('cancels the key a cancel names, where it says', () => {
+		const cancel = node('-3', { location: 'right' });
+		expect(
+			translator.keyCancel(
+				key({
+					rootNote: 'F',
+					child: (tag: string) => (tag === 'cancel' ? cancel : null),
+				} as Partial<Key>),
+				key({ rootNote: 'D' }),
+			),
+		).toEqual({ spec: 'Eb', location: 'right' });
+	});
+
+	it('ignores the line of an additional clef', () => {
+		expect(translator.clefName(clef('C', 4))).toBe('tenor');
+		expect(translator.clefName(clef('C', 4, { additional: 'yes' }))).toBe(
+			'alto',
+		);
+	});
+
+	it('sizes a clef by its size attribute, else by whether it is a change', () => {
+		expect(translator.clefSize(clef('G', 2), false)).toEqual({
+			size: 'default',
+			scale: 1,
+		});
+		expect(translator.clefSize(clef('G', 2), true)).toEqual({
+			size: 'small',
+			scale: 1,
+		});
+		expect(translator.clefSize(clef('G', 2, { size: 'cue' }), false)).toEqual({
+			size: 'small',
+			scale: 1,
+		});
+		expect(translator.clefSize(clef('G', 2, { size: 'full' }), true)).toEqual({
+			size: 'default',
+			scale: 1,
+		});
+		expect(translator.clefSize(clef('G', 2, { size: 'large' }), false)).toEqual(
+			{
+				size: 'default',
+				scale: 1.2,
+			},
+		);
 	});
 });

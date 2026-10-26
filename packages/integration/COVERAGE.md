@@ -97,15 +97,15 @@ are picked by hand.
 | `brass-bend` | drawn | `technical_marks.musicxml` |
 | `breath-mark` | drawn | `articulations_extended.musicxml` |
 | `caesura` | drawn | `articulations_extended.musicxml` |
-| `cancel` | missing | task #38; naturals drawn on every key change, but cancel fifths/location not read; mdom raw only |
+| `cancel` | drawn | `key_cancel.musicxml`: the fifths name the key cancelled; naturals left of the new key, after it (right) or at the previous measure's end (before-barline) |
 | `capo` | drawn | `staff_details_capo.musicxml` |
 | `chord` | drawn | `chord.musicxml` |
 | `chromatic` | ignored | sound only (transposition; written pitch is drawn) |
 | `circular-arrow` | missing | no SMuFL glyph to draw it with; mdom raw only |
 | `clef` | drawn | `clef_treble.musicxml`, `clef_c.musicxml` |
-| `clef@additional` | missing | task #38; additional (cautionary) clef form ignored; mdom raw only |
+| `clef@additional` | drawn | `clef_size.musicxml` M3: an additional clef ignores its line |
 | `clef@after-barline` | drawn | `clef_after_barline.musicxml`: an end-of-measure clef opens the next measure past the barline |
-| `clef@size` | missing | task #38; cue or large clef size ignored; mdom raw only |
+| `clef@size` | drawn | `clef_size.musicxml`: cue small, full at full size mid-system, large bigger |
 | `clef-octave-change` | drawn | `clef_treble_octave.musicxml`: the 8 above or below the clef |
 | `coda` | drawn | `navigation.musicxml` |
 | `concert-score` | ignored | metadata: marks written pitch as concert pitch, nothing to draw |
@@ -524,7 +524,7 @@ are picked by hand.
 | `tied` | drawn | `tie.musicxml` |
 | `tied@orientation` | drawn | `spanner_line_types.musicxml` M4 |
 | `time` | drawn | `time.musicxml` |
-| `time@separator` | missing | task #38; separator between numerals not drawn; mdom raw only |
+| `time@separator` | drawn | `time_separator.musicxml`: horizontal, diagonal, vertical and adjacent |
 | `time@symbol` | drawn | `barline_styles.musicxml`: common; cut and single-number also honored; `time_extended.musicxml`: note and dotted-note |
 | `time-modification` | drawn | `tuplet_triplet.musicxml` |
 | `time-relation` | drawn | `time_extended.musicxml`: parentheses, bracket, equals, slash, hyphen, space |

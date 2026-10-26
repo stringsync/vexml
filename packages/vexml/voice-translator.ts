@@ -22,7 +22,7 @@ import {
 } from './constants';
 import type { DurationTranslator } from './duration-translator';
 import type { ScoreReader } from './score-reader';
-import type { MidClefSpec } from './signature-translator';
+import { type MidClefSpec, scaleClefGlyph } from './signature-translator';
 
 /** What a vexflow voice holds: its notes/rests/ghosts, plus the zero-duration BarNotes and
  * ClefNotes a mid-measure `<barline>` or `<clef>` puts between them. */
@@ -100,7 +100,14 @@ export class VoiceTranslator {
 			) {
 				activeClef = change.clef;
 				if (drawMidClefs) {
-					tickables.push(new ClefNote(change.clef, 'small', change.annotation));
+					const note = new ClefNote(
+						change.clef,
+						change.size.size,
+						change.annotation,
+					);
+					scaleClefGlyph(note.getClef(), change.size.scale);
+					note.setWidth(note.getClef().getWidth());
+					tickables.push(note);
 				}
 				nextClef++;
 			}

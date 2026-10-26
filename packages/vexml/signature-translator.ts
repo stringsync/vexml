@@ -1,26 +1,11 @@
 import type { Clef, Key, Time } from '@stringsync/mdom';
-import { StaveNote } from 'vexflow/core';
+import { type Clef as ClefGlyph, StaveNote } from 'vexflow/core';
 import { ACCIDENTAL_CODES } from './chord-translator';
-import type { ExtendedTimeSpec, TimeFace } from './extended-time-signature';
-
-// MusicXML <key-alter> semitones -> the vexflow accidental code, for a signature written
-// without <fifths>. A <key-accidental> naming the glyph outright wins over this (see
-// customKeyAccidentals); this is the fallback every exporter can be counted on to imply.
-const KEY_ALTER_CODES: Record<string, string> = {
-	'-2': 'bb',
-	'-1': 'b',
-	'0': 'n',
-	'1': '#',
-	'2': '##',
-};
-
-/** One mid-measure `<clef>` change, resolved to what vexflow draws and positions notes
- * against. See ScoreReader.midClefsOf. */
-export type MidClefSpec = {
-	beat: number;
-	clef: string;
-	annotation: string | undefined;
-};
+import type {
+	ExtendedTimeSpec,
+	TimeFace,
+	TimeSeparator,
+} from './extended-time-signature';
 
 /*
  * Translates an mdom clef, key and time to the specs vexflow draws a stave's signature from.
@@ -80,10 +65,12 @@ export class SignatureTranslator {
 		const pairs = time.components?.length
 			? time.components
 			: [{ beats: time.beats, beatType: time.beatType }];
-		if (!noted && !hasOther && pairs.length < 2) {
+		const separator = this.timeSeparator(time);
+		if (!noted && !hasOther && pairs.length < 2 && !separator) {
 			return null;
 		}
 		return {
+			separator,
 			faces: pairs.map((pair) =>
 				this.timeFace(pair.beats, pair.beatType, noted ? symbol : null),
 			),
@@ -105,6 +92,39 @@ export class SignatureTranslator {
 						}
 					: null,
 		};
+	}
+
+	// <time separator>: null for "none", the default, which vexflow's stacked digits already are.
+	private timeSeparator(time: Time): TimeSeparator | null {
+		const separator = time.getAttribute('separator');
+		return separator && SEPARATORS.has(separator)
+			? (separator as TimeSeparator)
+			: null;
+	}
+
+	/*
+	 * The key a change from `prevKey` to `key` cancels with naturals, or null when it cancels
+	 * none. A <cancel> names the cancelled key by its fifths and may move the naturals after the
+	 * new key or before the barline. Without one, the key being replaced is cancelled, left of
+	 * the new key: the spec says that always happens on a change to C major or A minor, and it
+	 * is how vexml has drawn every other change too.
+	 */
+	keyCancel(key: Key | null, prevKey: Key | null): KeyCancel | null {
+		const cancel = key?.child('cancel');
+		const spec = FIFTHS_KEYS[Number(cancel?.text?.trim()) + 7];
+		if (cancel && spec) {
+			const location = cancel.getAttribute('location');
+			return {
+				spec,
+				location:
+					location === 'right' || location === 'before-barline'
+						? location
+						: 'left',
+			};
+		}
+		return prevKey?.rootNote
+			? { spec: this.vexflowKeySpec(prevKey), location: 'left' }
+			: null;
 	}
 
 	// A dotted-note denominator is the beat of a compound meter: 6/8 reads as 2 over a dotted
@@ -179,6 +199,36 @@ export class SignatureTranslator {
 	}
 
 	/*
+	 * The vexflow clef a <clef> draws as. An additional clef (a cue clef, or a second clef
+	 * sharing the staff) ignores its <line>, per the spec, and takes its sign's usual one.
+	 */
+	clefName(clef: Clef): string {
+		return this.vexflowClef(
+			clef.sign,
+			clef.getAttribute('additional') === 'yes' ? null : clef.line,
+		);
+	}
+
+	/*
+	 * How big a clef draws. `change` is the size a clef with no size attribute takes: small for a
+	 * change after the system opening, full for the opening itself. size="cue" and "grace-cue"
+	 * draw small, "full" at full size even mid-system, and "large" a fifth larger than full.
+	 */
+	clefSize(clef: Clef | null, change: boolean): ClefSize {
+		switch (clef?.getAttribute('size')) {
+			case 'cue':
+			case 'grace-cue':
+				return { size: 'small', scale: 1 };
+			case 'full':
+				return { size: 'default', scale: 1 };
+			case 'large':
+				return { size: 'default', scale: 1.2 };
+			default:
+				return { size: change ? 'small' : 'default', scale: 1 };
+		}
+	}
+
+	/*
 	 * A clef's DRAWN identity: the vexflow clef name plus any octave annotation, or null
 	 * when there is no clef. Two clefs that engrave to the same glyph share a signature
 	 * (C/3 and C/5 are both 'alto'), so comparing signatures across measures spots a clef
@@ -186,7 +236,7 @@ export class SignatureTranslator {
 	 */
 	vexflowClefSpec(clef: Clef | null): string | null {
 		return clef
-			? `${this.vexflowClef(clef.sign, clef.line)}|${this.vexflowClefAnnotation(clef.octaveChange) ?? ''}`
+			? `${this.clefName(clef)}|${this.vexflowClefAnnotation(clef.octaveChange) ?? ''}`
 			: null;
 	}
 
@@ -199,8 +249,9 @@ export class SignatureTranslator {
 	): MidClefSpec[] {
 		return changes.map(({ beat, clef }) => ({
 			beat,
-			clef: this.vexflowClef(clef.sign, clef.line),
+			clef: this.clefName(clef),
 			annotation: this.vexflowClefAnnotation(clef.octaveChange),
+			size: this.clefSize(clef, true),
 		}));
 	}
 
@@ -257,3 +308,68 @@ export class SignatureTranslator {
 		return onStave.length > 0 ? Math.min(...onStave) : 2;
 	}
 }
+
+// MusicXML <key-alter> semitones -> the vexflow accidental code, for a signature written
+// without <fifths>. A <key-accidental> naming the glyph outright wins over this (see
+// customKeyAccidentals); this is the fallback every exporter can be counted on to imply.
+const KEY_ALTER_CODES: Record<string, string> = {
+	'-2': 'bb',
+	'-1': 'b',
+	'0': 'n',
+	'1': '#',
+	'2': '##',
+};
+
+// A <cancel>'s fifths -> the major key it names, for vexflow's key spec.
+const FIFTHS_KEYS = [
+	'Cb',
+	'Gb',
+	'Db',
+	'Ab',
+	'Eb',
+	'Bb',
+	'F',
+	'C',
+	'G',
+	'D',
+	'A',
+	'E',
+	'B',
+	'F#',
+	'C#',
+];
+
+const SEPARATORS: ReadonlySet<string> = new Set([
+	'horizontal',
+	'diagonal',
+	'vertical',
+	'adjacent',
+]);
+
+/** The key a key change cancels, as a vexflow key spec, and where its naturals print. */
+export type KeyCancel = {
+	spec: string;
+	location: 'left' | 'right' | 'before-barline';
+};
+
+/** How a clef glyph is sized: vexflow's size name, then a scale on top of it. */
+export type ClefSize = {
+	size: 'default' | 'small';
+	scale: number;
+};
+
+/* Scales a vexflow clef glyph past the two sizes vexflow knows (size="large", staff-size). */
+export function scaleClefGlyph(glyph: ClefGlyph, scale: number): void {
+	if (scale !== 1) {
+		glyph.setFontSize(Number.parseFloat(String(glyph.fontInfo.size)) * scale);
+	}
+}
+
+/** One mid-measure `<clef>` change, resolved to what vexflow draws and positions notes
+ * against. See ScoreReader.midClefsOf. */
+export type MidClefSpec = {
+	beat: number;
+	clef: string;
+	annotation: string | undefined;
+	size: ClefSize;
+};

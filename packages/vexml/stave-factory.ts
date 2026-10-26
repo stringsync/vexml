@@ -1,9 +1,18 @@
-import type { LineDetail, Measure, Part } from '@stringsync/mdom';
-import { type Stave, StaveModifierPosition, TabStave } from 'vexflow/core';
+import type { Clef, LineDetail, Measure, Part } from '@stringsync/mdom';
+import {
+	type Clef as ClefGlyph,
+	type Stave,
+	StaveModifierPosition,
+	TabStave,
+} from 'vexflow/core';
+import { CancellingKeySignature } from './cancelling-key-signature';
 import { CustomKeySignature } from './custom-key-signature';
 import { DetailedStave, type LineStyle } from './detailed-stave';
-import type { SignatureTranslator } from './signature-translator';
-import { StaffKeySignature } from './staff-scaled-signatures';
+import {
+	type KeyCancel,
+	type SignatureTranslator,
+	scaleClefGlyph,
+} from './signature-translator';
 import type { StavePlan } from './stave-plan';
 
 /** vexflow's default space between staff lines, in px. */
@@ -162,14 +171,14 @@ export class StaveFactory {
 	}
 
 	/*
-	 * The clef and key a system opens with, as in effect at `measure`'s start. `cancelKeySpec`
-	 * is the key being replaced when the opening is also a key change, so its naturals print.
+	 * The clef and key a system opens with, as in effect at `measure`'s start. `cancel` is the
+	 * key being replaced when the opening is also a key change, so its naturals print.
 	 */
 	addOpening(
 		placed: PlacedStave,
 		measure: Measure,
 		staffNumber: string,
-		cancelKeySpec?: string,
+		cancel?: KeyCancel,
 	): void {
 		const { stave, isTab, tabLines } = placed;
 		if (isTab) {
@@ -186,14 +195,46 @@ export class StaveFactory {
 		// width reserves the room either way).
 		// print-object="no" on the <clef> keeps it in force (the notes still sit by it) but draws no glyph.
 		if (clef?.getAttribute('print-object') !== 'no') {
+			const { size, scale } = this.signatures.clefSize(clef, false);
 			stave.addClef(
 				this.clefName(measure, staffNumber),
-				undefined,
+				size,
 				this.signatures.vexflowClefAnnotation(clef?.octaveChange ?? null),
 			);
+			this.scaleClef(stave, scale);
 		}
-		this.shrinkClef(stave);
-		this.addKey(stave, measure, staffNumber, cancelKeySpec);
+		this.addKey(stave, measure, staffNumber, cancel);
+	}
+
+	/* A clef change partway along a system, small unless its size attribute says otherwise. */
+	addClefChange(stave: Stave, measure: Measure, staffNumber: string): void {
+		const clef = measure.getClef(staffNumber);
+		if (!clef) {
+			return;
+		}
+		const { size, scale } = this.signatures.clefSize(clef, true);
+		stave.addClef(
+			this.signatures.clefName(clef),
+			size,
+			this.signatures.vexflowClefAnnotation(clef.octaveChange),
+		);
+		this.scaleClef(stave, scale);
+	}
+
+	/*
+	 * The naturals a <cancel location="before-barline"> hangs at the end of the measure before
+	 * the key change, ahead of its barline, at the clef that measure ends in.
+	 */
+	addEndCancel(stave: Stave, cancel: KeyCancel, clef: Clef | null): void {
+		stave.addModifier(
+			new CancellingKeySignature(
+				'C',
+				cancel.spec,
+				clef ? this.signatures.clefName(clef) : 'treble',
+				false,
+			).setPosition(StaveModifierPosition.END),
+			StaveModifierPosition.END,
+		);
 	}
 
 	/* The key in effect at `measure`'s start, spelled out accidental by accidental when the
@@ -202,7 +243,7 @@ export class StaveFactory {
 		stave: Stave,
 		measure: Measure,
 		staffNumber: string,
-		cancelKeySpec?: string,
+		cancel?: KeyCancel,
 	): void {
 		const key = measure.getKey(staffNumber);
 		if (key?.getAttribute('print-object') === 'no') {
@@ -218,9 +259,11 @@ export class StaveFactory {
 			);
 		} else if (key?.rootNote) {
 			stave.addModifier(
-				new StaffKeySignature(
+				new CancellingKeySignature(
 					this.signatures.vexflowKeySpec(key),
-					cancelKeySpec,
+					cancel?.spec,
+					this.clefName(measure, staffNumber),
+					cancel?.location === 'right',
 				).setPosition(StaveModifierPosition.BEGIN),
 				StaveModifierPosition.BEGIN,
 			);
@@ -249,17 +292,16 @@ export class StaveFactory {
 
 	private clefName(measure: Measure, staffNumber: string): string {
 		const clef = measure.getClef(staffNumber);
-		return clef ? this.signatures.vexflowClef(clef.sign, clef.line) : 'treble';
+		return clef ? this.signatures.clefName(clef) : 'treble';
 	}
 
-	/* A staff at staff-size percent draws its clef at that share of the glyph's size. */
-	private shrinkClef(stave: Stave): void {
+	/* The clef just added, scaled by `scale` and by a staff-size staff's share of full size. */
+	private scaleClef(stave: Stave, scale: number): void {
 		const ratio = stave.getSpacingBetweenLines() / STAVE_LINE_DISTANCE;
-		const [clef] = stave.getModifiers(undefined, 'Clef') as unknown as Array<{
-			fontInfo: { size: number };
-		}>;
-		if (ratio !== 1 && clef) {
-			clef.fontInfo.size *= ratio;
+		const clefs = stave.getModifiers(undefined, 'Clef') as ClefGlyph[];
+		const clef = clefs[clefs.length - 1];
+		if (clef) {
+			scaleClefGlyph(clef, scale * ratio);
 		}
 	}
 

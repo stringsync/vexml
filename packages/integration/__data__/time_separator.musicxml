@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1: 3/4, separator none: the usual stacked numbers. -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <time separator="none">
+          <beats>3</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <note>
+        <rest measure="yes"/>
+        <duration>3</duration>
+      </note>
+    </measure>
+    <!-- M2: 2/4, separator horizontal: the numbers stacked with a line between them. -->
+    <measure number="2">
+      <attributes>
+        <time separator="horizontal">
+          <beats>2</beats>
+          <beat-type>4</beat-type>
+        </time>
+      </attributes>
+      <note>
+        <rest measure="yes"/>
+        <duration>2</duration>
+      </note>
+    </measure>
+    <!-- M3: 3/4, separator diagonal: 3 upper left, 4 lower right, a slash between. -->
+    <measure number="3">
+      <attributes>
+        <time separator="diagonal">
+          <beats>3</beats>
+          <beat-type>4</beat-type>
+        </time>
+      </attributes>
+      <note>
+        <rest measure="yes"/>
+        <duration>3</duration>
+      </note>
+    </measure>
+    <!-- M4: 2/4, separator vertical: 2 and 4 side by side on the middle line, a line between. -->
+    <measure number="4">
+      <attributes>
+        <time separator="vertical">
+          <beats>2</beats>
+          <beat-type>4</beat-type>
+        </time>
+      </attributes>
+      <note>
+        <rest measure="yes"/>
+        <duration>2</duration>
+      </note>
+    </measure>
+    <!-- M5: 3/4, separator adjacent: 3 and 4 side by side on the middle line, nothing between. -->
+    <measure number="5">
+      <attributes>
+        <time separator="adjacent">
+          <beats>3</beats>
+          <beat-type>4</beat-type>
+        </time>
+      </attributes>
+      <note>
+        <rest measure="yes"/>
+        <duration>3</duration>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

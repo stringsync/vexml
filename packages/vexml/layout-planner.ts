@@ -759,9 +759,7 @@ export class LayoutPlanner {
 					if (voices.length > 0) {
 						staves.push({
 							voices,
-							clef: clef
-								? this.signatures.vexflowClef(clef.sign, clef.line)
-								: 'treble',
+							clef: clef ? this.signatures.clefName(clef) : 'treble',
 							meterFloor: this.reader.meterFloor(measure, staffNumber),
 							isTab: this.staves.isTab(part, staffNumber),
 							tuning: this.staves.tuningOf(part, staffNumber),

@@ -516,6 +516,19 @@ describe('render', () => {
 		).toMatchScreenshot('clef_after_barline.png');
 	});
 
+	// One system, treble 4/4, a whole note per measure: clef sizes.
+	// - M1: a full-size treble clef opens the stave; B4.
+	// - M2: a bass clef change with size="full", drawn full size rather than as the small
+	//   change clef; D3.
+	// - M3: an additional treble clef, size="cue": drawn small, its <line>1</line> ignored as
+	//   the spec says, so it curls round line 2 like any treble clef; B4.
+	// - M4: an alto clef change with size="large", a fifth bigger than a full clef; C4.
+	it.concurrent('renders clef_size.png', async () => {
+		expect(await testing.render('clef_size.musicxml')).toMatchScreenshot(
+			'clef_size.png',
+		);
+	});
+
 	it.concurrent('renders staff_details_lines.png', async () => {
 		expect(
 			await testing.render('staff_details_lines.musicxml'),
@@ -594,6 +607,21 @@ describe('render', () => {
 		).toMatchScreenshot('key_non_traditional.png');
 	});
 
+	// One system, a piano grand staff, 4/4, whole notes C5 and C3: key changes and their
+	// <cancel>. Every key prints on both staves at the clef's own positions.
+	// - M1: E major, four sharps.
+	// - M2: to D major with no <cancel>: naturals on the dropped D# and G#, then F# and C#.
+	// - M3: to E flat major, <cancel>2</cancel>: naturals on F and C, then three flats.
+	// - M4: to F major, <cancel location="right">-3</cancel>: the B flat, then naturals on E
+	//   and A after it.
+	// - M5: to D major, <cancel location="before-barline">-1</cancel>: a natural on B at the
+	//   end of M4, ahead of its barline, and only the two sharps here.
+	it.concurrent('renders key_cancel.png', async () => {
+		expect(await testing.render('key_cancel.musicxml')).toMatchScreenshot(
+			'key_cancel.png',
+		);
+	});
+
 	// One system, treble: time signatures and mid-system meter changes.
 	// - M1: opens the system with a treble clef and common time (the "C" symbol = 4/4);
 	//   four C5 quarters.
@@ -627,6 +655,21 @@ describe('render', () => {
 	it.concurrent('renders time_extended.png', async () => {
 		expect(await testing.render('time_extended.musicxml')).toMatchScreenshot(
 			'time_extended.png',
+		);
+	});
+
+	// One system, treble, a whole-measure rest per measure: <time separator>, each measure a
+	// new meter so it prints.
+	// - M1: 3/4, separator="none": the usual stacked numbers.
+	// - M2: 2/4, separator="horizontal": the numbers pushed apart round a heavy rule on the
+	//   middle line.
+	// - M3: 3/4, separator="diagonal": 3 upper left, 4 lower right, a slash rising between.
+	// - M4: 2/4, separator="vertical": 2 and 4 side by side on the middle line, a vertical
+	//   line between them.
+	// - M5: 3/4, separator="adjacent": 3 and 4 side by side on the middle line.
+	it.concurrent('renders time_separator.png', async () => {
+		expect(await testing.render('time_separator.musicxml')).toMatchScreenshot(
+			'time_separator.png',
 		);
 	});
 
