@@ -1,3 +1,5 @@
 [test]
+# The renders here are CPU-bound; CI runners are several times slower than a dev machine.
+timeout = 30000
 # Preloaded so matcher's afterAll cleanup scopes to the whole run, not one file.
 preload = ["./packages/integration/setup.ts"]
