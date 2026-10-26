@@ -1248,6 +1248,18 @@ describe('render', () => {
 		);
 	});
 
+	// Treble stave, 4/4, one whole note C5 per measure, each under one symbol-style direction.
+	// - M1: damp. M2: damp-all. M3: eyeglasses.
+	// - M4: string-mute on. M5: string-mute off.
+	// - M6: staff-divide up-down arrows.
+	// - M7: principal-voice start (Hauptstimme letter and opening hook). M8: its stop hook.
+	// - M9: generic <symbol> naming the SMuFL glyph pluckedDamp.
+	it.concurrent('renders direction_symbols.png', async () => {
+		expect(
+			await testing.render('direction_symbols.musicxml'),
+		).toMatchScreenshot('direction_symbols.png');
+	});
+
 	// Navigation marks, <segno> and <coda>, on a real (braced) piano score in 4/4, five
 	// measures wrapping onto two systems: four quarters per measure on the treble staff over a
 	// whole rest on the bass staff, so only the marks above the top staff vary. Both signs draw

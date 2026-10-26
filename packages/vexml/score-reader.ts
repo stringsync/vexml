@@ -1045,6 +1045,87 @@ export class ScoreReader {
 	}
 
 	/*
+	 * A measure's symbol-style direction types, in document order, each already resolved to
+	 * the SMuFL string it engraves: <damp>, <damp-all>, <eyeglasses>, <string-mute>,
+	 * <staff-divide>, <principal-voice> and the generic <symbol> (a SMuFL glyph name).
+	 * `staffNumber`, `lead` and `placement` bind it like {@link wordsOf}; they engrave above
+	 * the staff unless the direction says otherwise.
+	 * ponytail: <principal-voice> draws its start sign (the Hauptstimme/Nebenstimme letter
+	 * and the opening hook) and its stop hook, with no line between them; <image> is not
+	 * drawn, the canvas context loads no images.
+	 */
+	symbolsOf(measure: Measure): {
+		glyph: string;
+		staffNumber: string;
+		lead: Note | null;
+		placement: Placement;
+	}[] {
+		return measure.directions.flatMap((d) => {
+			const bind = {
+				staffNumber: d.staff,
+				lead: d.nextNote,
+				placement: this.placementOf(d, 'above'),
+			};
+			return d.childrenNamed('direction-type').flatMap((type) =>
+				type.children
+					.filter((child): child is MElement => child instanceof MElement)
+					.flatMap((child) => {
+						const glyph = this.directionSymbolOf(child);
+						return glyph ? [{ glyph, ...bind }] : [];
+					}),
+			);
+		});
+	}
+
+	// The SMuFL string a symbol-style direction-type child engraves, or '' when it is not one.
+	private directionSymbolOf(child: MElement): string {
+		const name = child.getAttribute('type') ?? '';
+		const glyph = (glyphName: string | undefined) =>
+			smuflGlyph(glyphName) ?? '';
+		switch (child.tag) {
+			case 'damp':
+				return glyph('pluckedDamp');
+			case 'damp-all':
+				return glyph('pluckedDampAll');
+			case 'eyeglasses':
+				return glyph('miscEyeglasses');
+			case 'string-mute':
+				return (
+					{
+						on: glyph('stringsMuteOn'),
+						off: glyph('stringsMuteOff'),
+					}[name] ?? ''
+				);
+			case 'staff-divide':
+				return (
+					{
+						down: glyph('staffDivideArrowDown'),
+						up: glyph('staffDivideArrowUp'),
+						'up-down': glyph('staffDivideArrowUpDown'),
+					}[name] ?? ''
+				);
+			case 'principal-voice': {
+				if (name === 'stop') {
+					return glyph('analyticsEndStimme');
+				}
+				if (name !== 'start') {
+					return '';
+				}
+				const letter =
+					{
+						Hauptstimme: glyph('analyticsHauptstimme'),
+						Nebenstimme: glyph('analyticsNebenstimme'),
+					}[child.getAttribute('symbol') ?? ''] ?? '';
+				return letter + glyph('analyticsStartStimme');
+			}
+			case 'symbol':
+				return glyph(child.text?.trim());
+			default:
+				return '';
+		}
+	}
+
+	/*
 	 * A measure's <direction-type><harp-pedals> diagrams, in document order: the pedal
 	 * settings written as SMuFL glyphs in the order a harpist reads them, D C B | E F G A.
 	 * A pedal raised is a flat, centered a natural, lowered a sharp; a string the diagram
@@ -1738,7 +1819,7 @@ export class ScoreReader {
 				const first = words[0];
 				const symbols = credit
 					.childrenNamed('credit-symbol')
-					.map((symbol) => CREDIT_SYMBOLS.get(symbol.text?.trim() ?? ''))
+					.map((symbol) => smuflGlyph(symbol.text?.trim() ?? '') || undefined)
 					.filter((glyph): glyph is string => glyph !== undefined);
 				const y = Number(first?.getAttribute('default-y'));
 				return {
@@ -3056,20 +3137,6 @@ const CREDIT_ROLES = new Map<string, 'title' | 'subtitle' | 'left' | 'right'>([
 	['lyricist', 'left'],
 	['poet', 'left'],
 	['translator', 'left'],
-]);
-
-/* The SMuFL glyphs a `<credit-symbol>` can name, by their SMuFL names. */
-const CREDIT_SYMBOLS = new Map<string, string>([
-	['segno', '\uE047'],
-	['coda', '\uE048'],
-	['gClef', '\uE050'],
-	['cClef', '\uE05C'],
-	['fClef', '\uE062'],
-	['fermataAbove', '\uE4C0'],
-	['fermataBelow', '\uE4C1'],
-	['accidentalFlat', '\uE260'],
-	['accidentalNatural', '\uE261'],
-	['accidentalSharp', '\uE262'],
 ]);
 
 /** A `<barline><fermata>`: the edge it sits on, its shape, and whether it hangs below. */

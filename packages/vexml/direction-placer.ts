@@ -210,6 +210,27 @@ export class DirectionPlacer {
 		// <other-dynamics> keeps its literal text in the words face, italic unless the
 		// document says otherwise. A dynamic stays centered on its note whatever its halign:
 		// exporters pair that with a default-x offset, which alone it would misplace.
+		// Symbol-style direction types (damp, eyeglasses, string mute...) are SMuFL glyphs on
+		// the same path, centered on their note like a dynamic.
+		for (const sym of column.symbols) {
+			const placed = this.drawWords(
+				sym.stave,
+				sym.glyph,
+				sym.anchor,
+				sym.placement,
+				{
+					font: this.notationFont,
+					size: DYNAMICS_FONT_SIZE,
+					italic: false,
+					color: this.notationColor,
+					align: 'center',
+				},
+			);
+			if (sym.placement !== 'below') {
+				this.reporter.growPageTop(placed.y);
+				this.spill.growDecorationTop(column.systemIndex, placed.y);
+			}
+		}
 		for (const d of column.dynamics) {
 			const placed = this.drawWords(
 				d.stave,
@@ -1279,6 +1300,14 @@ export type DynamicsTask = {
 	format?: TextFormat;
 };
 
+/** A queued symbol-style direction: the SMuFL string it engraves, centered on its note. */
+export type SymbolTask = {
+	stave: Stave;
+	glyph: string;
+	anchor: StaveNote | TabNote | undefined;
+	placement: Placement;
+};
+
 /** A queued <harp-pedals> diagram: the glyph string, divider included. */
 export type HarpPedalTask = {
 	stave: Stave;
@@ -1323,6 +1352,7 @@ export interface DirectionColumn {
 	fermatas: readonly BarlineFermataTask[];
 	words: readonly WordsTask[];
 	dynamics: readonly DynamicsTask[];
+	symbols: readonly SymbolTask[];
 	figuredBasses: readonly FiguredBassTask[];
 	harpPedals: readonly HarpPedalTask[];
 	harmonies: readonly HarmonyTask[];

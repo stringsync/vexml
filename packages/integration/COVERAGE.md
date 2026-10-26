@@ -116,8 +116,8 @@ are picked by hand.
 | `credit-type` | drawn | `header.musicxml`: title, subtitle, composer, arranger, lyricist, poet, translator; page number dropped, rights credit printed as the footer |
 | `credit-words` | drawn | `header.musicxml`: at fixed header sizes in the text font; position task #21, font attributes task #28 |
 | `cue` | drawn | `cue_notes.musicxml`: cue-size note, silent in playback |
-| `damp` | missing | task #15; mdom raw only |
-| `damp-all` | missing | task #15; mdom raw only |
+| `damp` | drawn | `direction_symbols.musicxml`: pluckedDamp glyph |
+| `damp-all` | drawn | `direction_symbols.musicxml`: pluckedDampAll glyph |
 | `dashes` | drawn | `direction_lines.musicxml` |
 | `defaults` | missing | task #20; mdom typed |
 | `degree` | drawn | `harmony.musicxml` M15-M18: add, alter and subtract degrees |
@@ -163,7 +163,7 @@ are picked by hand.
 | `ensemble` | ignored | sound only (instrument definition) |
 | `except-voice` | drawn | `measure_style.musicxml` M15; the named voices keep their notes under a beat repeat or slash (`measure-repeat` has no such child) |
 | `extend` | drawn | `lyrics_melisma.musicxml`: lyric melisma line (figured-bass extend not drawn) |
-| `eyeglasses` | missing | task #15; mdom raw only |
+| `eyeglasses` | drawn | `direction_symbols.musicxml`: miscEyeglasses glyph |
 | `f` | drawn | `dynamics.musicxml` |
 | `falloff` | drawn | `articulations_extended.musicxml` |
 | `feature` | ignored | analysis metadata |
@@ -232,7 +232,7 @@ are picked by hand.
 | `hole-type` | missing | the hole label ("thumb") is not printed; mdom raw only |
 | `humming` | drawn | `lyrics_sounds.musicxml`: text-less lyric draws "mm" |
 | `identification` | drawn | `header_catalog.musicxml`: its creators; rights task #47 |
-| `image` | missing | task #15; mdom raw only |
+| `image` | missing | the canvas context loads no images; mdom raw only |
 | `instrument` | ignored | playback instrument link |
 | `instrument-abbreviation` | ignored | playback instrument metadata, part-abbreviation is the printed label |
 | `instrument-change` | ignored | sound only |
@@ -407,7 +407,7 @@ are picked by hand.
 | `pppppp` | drawn | `dynamics.musicxml` |
 | `pre-bend` | drawn | `tab_bend.musicxml` M5: vertical arrow off the fret |
 | `prefix` | drawn | `figured_bass.musicxml` |
-| `principal-voice` | missing | task #15; mdom raw only |
+| `principal-voice` | drawn | `direction_symbols.musicxml`: Hauptstimme/Nebenstimme sign and start hook, stop hook; no line between |
 | `print` | drawn | `print_new_system.musicxml`: new-system and new-page breaks honored |
 | `print@blank-page` | drawn | `blank_page.musicxml`: blank pages left before a new-page print in paged layout; mdom raw only |
 | `print@new-page` | missing | task #20; only a system break, no page break in paged layout; mdom typed |
@@ -482,7 +482,7 @@ are picked by hand.
 | `staff-details@print-object` | drawn | `print_object.musicxml` M7; hides the staff lines only, clef and key stay |
 | `staff-details@show-frets` | missing | tab frets as letters; mdom showFrets reads a child element, not this attribute, so mdom needs a fix first |
 | `staff-distance` | drawn | `document_layout.musicxml`: from the stave above's bottom line, when documentLayout follows the document; music that reaches further still opens it |
-| `staff-divide` | missing | task #15; mdom raw only |
+| `staff-divide` | drawn | `direction_symbols.musicxml`: up, down and up-down arrows |
 | `staff-layout` | drawn | `document_layout.musicxml`: `<defaults>` and each part's `<print>`, by staff number, when documentLayout follows the document |
 | `staff-lines` | drawn | `staff_details_lines.musicxml` |
 | `staff-size` | drawn | `staff_details_size.musicxml`: line spacing, noteheads, clef, key and time signature glyphs, accidentals, flags and stem lengths shrink with it (extended and group time signatures stay full size) |
@@ -500,7 +500,7 @@ are picked by hand.
 | `straight` | drawn | `swing.musicxml`: cancels a carried swing in playback timing |
 | `stress` | drawn | `articulations_extended.musicxml` |
 | `string` | drawn | `string_numbers.musicxml` |
-| `string-mute` | missing | task #15; mdom raw only |
+| `string-mute` | drawn | `direction_symbols.musicxml`: mute on/off glyphs |
 | `strong-accent` | drawn | `articulations_extended.musicxml` |
 | `suffix` | drawn | `figured_bass.musicxml` |
 | `supports` | ignored | metadata |
@@ -508,7 +508,7 @@ are picked by hand.
 | `swing-style` | ignored | sound only (descriptive style name, unread) |
 | `swing-type` | drawn | `swing.musicxml`: sets the swung unit (16th) in playback timing |
 | `syllabic` | drawn | `lyrics.musicxml` |
-| `symbol` | missing | task #15; mdom raw only |
+| `symbol` | drawn | `direction_symbols.musicxml`: a SMuFL glyph by name |
 | `sync` | ignored | sound only (listening) |
 | `system-distance` | drawn | `document_layout.musicxml`: from the system above's bottom line, when documentLayout follows the document; music that reaches further still opens it |
 | `system-dividers` | missing | task #20; mdom raw only |

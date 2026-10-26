@@ -36,6 +36,7 @@ import {
 	type FiguredBassTask,
 	type HarmonyTask,
 	type HarpPedalTask,
+	type SymbolTask,
 	type TempoTask,
 	type WordsTask,
 } from './direction-placer';
@@ -309,6 +310,7 @@ export class DrawPass {
 	// Dynamics markings (p, mf, sfz, …), queued like wordsTasks but drawn in the notation
 	// font when `glyph` says the marking spells out of SMuFL's dynamic letters.
 	private dynamicsTasks: DynamicsTask[] = [];
+	private symbolTasks: SymbolTask[] = [];
 	// <figured-bass> stacks, queued like the other note-anchored annotations.
 	private figuredBassTasks: FiguredBassTask[] = [];
 	private harpPedalTasks: HarpPedalTask[] = [];
@@ -767,6 +769,7 @@ export class DrawPass {
 		this.wordsTasks = [];
 		this.fermataTasks = [];
 		this.dynamicsTasks = [];
+		this.symbolTasks = [];
 		this.figuredBassTasks = [];
 		this.harpPedalTasks = [];
 		this.partStaves = [];
@@ -941,6 +944,28 @@ export class DrawPass {
 						anchor: anchor ?? target.staveNotes[0],
 						placement,
 						format,
+					});
+				}
+			}
+
+			// Symbol-style directions (damp, eyeglasses, string mute...) bind like words.
+			for (const {
+				glyph,
+				staffNumber,
+				lead,
+				placement,
+			} of this.reader.symbolsOf(measure)) {
+				const target =
+					this.pendingStaves[staves.indexOf(staffNumber)] ?? topStave;
+				if (target) {
+					const anchor = lead
+						? (this.byLead.get(lead) ?? this.byTabLead.get(lead))
+						: undefined;
+					this.symbolTasks.push({
+						stave: target.stave,
+						glyph,
+						anchor: anchor ?? target.staveNotes[0],
+						placement,
 					});
 				}
 			}
@@ -1151,6 +1176,7 @@ export class DrawPass {
 			fermatas: this.fermataTasks,
 			words: this.wordsTasks,
 			dynamics: this.dynamicsTasks,
+			symbols: this.symbolTasks,
 			figuredBasses: this.figuredBassTasks,
 			harpPedals: this.harpPedalTasks,
 			harmonies: this.harmonyTasks,
