@@ -19,6 +19,7 @@ import { CollisionResolver } from './collision-resolver';
 import type { Config, Gap } from './config';
 import { type ConnectorColumn, ConnectorDrawer } from './connector-drawer';
 import {
+	FOOTER_GAP,
 	GAP_LABEL_FONT_SIZE,
 	HEADER_GAP,
 	LABEL_FONT_SIZE,
@@ -1253,6 +1254,7 @@ export class DrawPass {
 
 		this.geometry.applyDecorationTops(this.spill);
 		this.drawHeader();
+		this.drawFooter();
 
 		// A verse hangs below its stave, in the gap to the stave under it, so it's spill like
 		// any other ink there: a beam or slur the lower stave raises into the gap has to clear
@@ -1393,7 +1395,7 @@ export class DrawPass {
 	 */
 	private drawHeader(): void {
 		const inkTop = this.spill.systemTops().get(0);
-		if (!this.header || inkTop === undefined) {
+		if (!this.header || this.header.height === 0 || inkTop === undefined) {
 			return;
 		}
 		const top =
@@ -1401,7 +1403,11 @@ export class DrawPass {
 		this.context.save();
 		this.context.setFillStyle(this.textColor);
 		for (const line of this.header.lines(this.headerWidth)) {
-			this.context.setFont(this.labelFont, line.size, line.weight);
+			this.context.setFont(
+				line.glyph ? this.notationFont : this.labelFont,
+				line.size,
+				line.weight,
+			);
 			const width = this.context.measureText(line.text).width;
 			// The share of the line's width that sits left of its x.
 			const lead = { left: 0, center: 0.5, right: 1 }[line.align];
@@ -1414,6 +1420,25 @@ export class DrawPass {
 		this.context.restore();
 		this.headerTop = top;
 		this.pageTop = Math.min(this.pageTop, top);
+	}
+
+	/* The copyright, centered FOOTER_GAP under the last system's content. */
+	private drawFooter(): void {
+		const footer = this.header?.footer(this.headerWidth);
+		if (!footer || footer.lines.length === 0 || this.currentSystem < 0) {
+			return;
+		}
+		const top = this.pageBottom + FOOTER_GAP;
+		this.context.save();
+		this.context.setFillStyle(this.textColor);
+		for (const line of footer.lines) {
+			this.context.setFont(this.labelFont, line.size, line.weight);
+			const width = this.context.measureText(line.text).width;
+			this.context.fillText(line.text, line.x - width / 2, top + line.baseline);
+		}
+		this.context.restore();
+		this.pageBottom = top + footer.height;
+		this.systemBottoms.set(this.currentSystem, this.pageBottom);
 	}
 
 	// Each system's ink top (its stave top and anything that rose above it, the header over

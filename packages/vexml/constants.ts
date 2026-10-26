@@ -147,6 +147,11 @@ export const LABEL_CHAR_WIDTH =
 export const HEADER_TITLE_SIZE = 24;
 export const HEADER_SUBTITLE_SIZE = 15;
 export const HEADER_CREDIT_SIZE = 13;
+export const HEADER_SYMBOL_SIZE = 30;
+export const HEADER_FOOTER_SIZE = 10;
+
+/** Gap between the last system's content and the copyright footer under it. */
+export const FOOTER_GAP = 16;
 
 /** Gap between the score header's last line and the first system's highest ink. */
 export const HEADER_GAP = 20;

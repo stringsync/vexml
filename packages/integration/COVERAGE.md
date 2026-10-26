@@ -16,7 +16,7 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 256 drawn, 69 ignored, 117 missing; vexml draws 256 of the 373 that show on the page (69%).
+Elements: 260 drawn, 69 ignored, 113 missing; vexml draws 260 of the 373 that show on the page (70%).
 Attributes: 55 drawn, 5 ignored, 55 missing.
 
 | Element | Status | Proof or reason |
@@ -114,9 +114,9 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `concert-score` | ignored | metadata: marks written pitch as concert pitch, nothing to draw |
 | `creator` | drawn | `header_catalog.musicxml`: with showHeader and no credits, composer and arranger at the right, lyricist, poet and translator at the left |
 | `credit` | drawn | `header.musicxml`: page one's, with showHeader; page numbers and footers in the page's lower half dropped |
-| `credit-image` | missing | task #47; mdom raw only |
-| `credit-symbol` | missing | task #47; mdom raw only |
-| `credit-type` | drawn | `header.musicxml`: title, subtitle, composer, arranger, lyricist, poet, translator; rights and page number dropped |
+| `credit-image` | missing | the canvas context loads no images; mdom raw only |
+| `credit-symbol` | drawn | `header_extras.musicxml`: a SMuFL glyph (segno, coda, clefs, fermatas, accidentals by name) centered under the subtitles |
+| `credit-type` | drawn | `header.musicxml`: title, subtitle, composer, arranger, lyricist, poet, translator; page number dropped, rights credit printed as the footer |
 | `credit-words` | drawn | `header.musicxml`: at fixed header sizes in the text font; position task #21, font attributes task #28 |
 | `cue` | drawn | `cue_notes.musicxml`: cue-size note, silent in playback |
 | `damp` | missing | task #15; mdom raw only |
@@ -309,7 +309,7 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `mordent@approach` | missing | task #29; mordent approach hook not drawn; mdom raw only |
 | `mordent@departure` | missing | task #29; mordent departure hook not drawn; mdom raw only |
 | `mordent@long` | missing | task #29; long mordent glyph not drawn; mdom raw only |
-| `movement-number` | missing | task #47; mdom raw only |
+| `movement-number` | drawn | `header_catalog.musicxml`: "2. Air" in the catalog fallback |
 | `movement-title` | drawn | `header_catalog.musicxml`: the title, or the subtitle under a work-title, with showHeader and no credits |
 | `mp` | drawn | `dynamics.musicxml` |
 | `multiple-rest` | drawn | `rest_multi_measure.musicxml` |
@@ -426,7 +426,7 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `rfz` | drawn | `dynamics.musicxml` |
 | `right-divider` | missing | task #20; mdom raw only |
 | `right-margin` | missing | task #20; mdom typed |
-| `rights` | missing | task #47: the copyright footer |
+| `rights` | drawn | `header_catalog.musicxml` (identification) and `header_extras.musicxml` (credit-type rights): centered under the last system |
 | `root` | drawn | `harmony.musicxml` |
 | `root-alter` | drawn | `harmony.musicxml` |
 | `root-step` | drawn | `harmony.musicxml` |
@@ -576,5 +576,5 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `word-font` | missing | task #28; default typeface for words directions not applied; mdom raw only |
 | `words` | drawn | `words.musicxml` |
 | `work` | drawn | `header_catalog.musicxml`: its work-title |
-| `work-number` | missing | task #47; mdom raw only |
+| `work-number` | drawn | `header_catalog.musicxml`: a subtitle under the work title in the catalog fallback |
 | `work-title` | drawn | `header_catalog.musicxml`: the title, with showHeader and no credits |

@@ -464,6 +464,8 @@ describe('ScoreReader', () => {
 			subtitles: ['from Suite No. 3'],
 			left: ['Anon.'],
 			right: ['J. S. Bach'],
+			symbols: [],
+			footer: [],
 		});
 	});
 
@@ -479,6 +481,8 @@ describe('ScoreReader', () => {
 			subtitles: ['Op. 77'],
 			left: [],
 			right: ['Brahms'],
+			symbols: [],
+			footer: ['Public domain'],
 		});
 	});
 
@@ -494,7 +498,30 @@ describe('ScoreReader', () => {
 			subtitles: ['Air'],
 			left: ['Anon.'],
 			right: ['J. S. Bach'],
+			symbols: [],
+			footer: [],
 		});
+	});
+
+	it('numbers the catalog fallback and reads identification rights and credit symbols', async () => {
+		const catalog = await headerOf(
+			'<work><work-number>BWV 1068</work-number><work-title>Suite No. 3</work-title></work>' +
+				'<movement-number>2</movement-number><movement-title>Air</movement-title>' +
+				'<identification><rights>(c) 2026\nAll rights reserved</rights></identification>',
+		);
+		expect(catalog).toEqual({
+			title: 'Suite No. 3',
+			subtitles: ['BWV 1068', '2. Air'],
+			left: [],
+			right: [],
+			symbols: [],
+			footer: ['(c) 2026', 'All rights reserved'],
+		});
+		const credit = await headerOf(
+			'<credit><credit-type>title</credit-type><credit-words>Song</credit-words></credit>' +
+				'<credit><credit-symbol>segno</credit-symbol></credit>',
+		);
+		expect(credit?.symbols).toEqual(['\uE047']);
 	});
 
 	it('reads no header from a score that names nothing', async () => {

@@ -451,7 +451,7 @@ export class LayoutPlanner {
 		const header = HeaderPlan.of(config, this.reader.headerOf(score));
 		const y =
 			(hasTopTempo ? PAGE_MARGIN_TOP_WITH_TEMPO : PAGE_MARGIN_TOP) +
-			(header ? header.height + HEADER_GAP : 0);
+			(header && header.height > 0 ? header.height + HEADER_GAP : 0);
 		const measureCount = Math.max(
 			1,
 			...parts.map((part) => part.measures.length),

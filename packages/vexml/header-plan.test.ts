@@ -14,6 +14,8 @@ describe('HeaderPlan', () => {
 		subtitles: ['BWV 1068'],
 		left: ['Anon.'],
 		right: ['J. S. Bach', 'arr. A. Arranger'],
+		symbols: [],
+		footer: [],
 	};
 	const on: Config = { ...DEFAULT_CONFIG, showHeader: true };
 

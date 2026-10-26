@@ -1131,21 +1131,27 @@ export class ScoreReader {
 	 * opus numbers and arranger lines included, while `<work>` and `<identification>` are
 	 * catalog data. A credit lands by its `<credit-type>` when it has one, else by the side
 	 * its text hangs from (halign, then justify, then default-x against the page width).
-	 * Footers are dropped: rights and page numbers by type, a bare number by its text, and
-	 * anything in the page's lower half by its default-y. The topmost centered line is the
+	 * A `rights` credit becomes the footer; other footers are dropped: page numbers by type, a
+	 * bare number by its text, and anything in the page's lower half by its default-y. The topmost centered line is the
 	 * title, the rest of the centered lines its subtitles. mdom has no getters for credits,
 	 * so they are read off the elements.
 	 *
 	 * ponytail: credits print at fixed sizes in the text font, not at their default-x/
-	 * default-y or font-size, and `<credit-image>`/`<credit-symbol>` are dropped.
+	 * default-y or font-size, and `<credit-image>` is dropped (the canvas context loads no
+	 * images).
 	 */
 	headerOf(score: Score): ScoreHeader | null {
 		const header = this.creditHeader(score) ?? this.catalogHeader(score);
+		if (header.footer.length === 0) {
+			header.footer = this.identificationRights(score);
+		}
 		const empty =
 			!header.title &&
 			header.subtitles.length === 0 &&
 			header.left.length === 0 &&
-			header.right.length === 0;
+			header.right.length === 0 &&
+			header.symbols.length === 0 &&
+			header.footer.length === 0;
 		return empty ? null : header;
 	}
 
@@ -1161,6 +1167,10 @@ export class ScoreReader {
 			.map((credit) => {
 				const words = credit.childrenNamed('credit-words');
 				const first = words[0];
+				const symbols = credit
+					.childrenNamed('credit-symbol')
+					.map((symbol) => CREDIT_SYMBOLS.get(symbol.text?.trim() ?? ''))
+					.filter((glyph): glyph is string => glyph !== undefined);
 				const y = Number(first?.getAttribute('default-y'));
 				return {
 					type: credit.childrenNamed('credit-type')[0]?.text?.trim() ?? null,
@@ -1172,13 +1182,23 @@ export class ScoreReader {
 						.split('\n')
 						.map((line) => line.trim())
 						.filter((line) => line && !/^\d+$/.test(line)),
+					symbols,
 					side: this.creditSide(first, pageWidth),
 					y: Number.isFinite(y) ? y : null,
 				};
-			})
+			});
+		const footer = credits
+			.filter((credit) => credit.type === 'rights')
+			.flatMap((credit) => credit.lines);
+		const placed = credits
 			.filter(
 				(credit) =>
-					credit.lines.length > 0 &&
+					credit.type !== 'rights' &&
+					(credit.lines.length > 0 || credit.symbols.length > 0),
+			)
+			.filter(
+				(credit) =>
+					(credit.lines.length > 0 || credit.symbols.length > 0) &&
 					!(
 						credit.y !== null &&
 						Number.isFinite(pageHeight) &&
@@ -1187,17 +1207,20 @@ export class ScoreReader {
 			);
 		// MusicXML's y runs up the page, so the highest default-y prints first. Sorted only when
 		// every credit is placed; otherwise document order is the only order there is.
-		if (credits.every((credit) => credit.y !== null)) {
-			credits.sort((a, b) => (b.y ?? 0) - (a.y ?? 0));
+		if (placed.every((credit) => credit.y !== null)) {
+			placed.sort((a, b) => (b.y ?? 0) - (a.y ?? 0));
 		}
 		const header: ScoreHeader = {
 			title: null,
 			subtitles: [],
 			left: [],
 			right: [],
+			symbols: [],
+			footer,
 		};
 		const centered: string[] = [];
-		for (const credit of credits) {
+		for (const credit of placed) {
+			header.symbols.push(...credit.symbols);
 			const role = CREDIT_ROLES.get(credit.type ?? '') ?? null;
 			if (credit.type !== null && !role) {
 				continue;
@@ -1225,7 +1248,7 @@ export class ScoreReader {
 			header.title = centered.shift() ?? null;
 		}
 		header.subtitles.unshift(...centered);
-		return credits.length > 0 ? header : null;
+		return placed.length > 0 || footer.length > 0 ? header : null;
 	}
 
 	private creditSide(
@@ -1265,14 +1288,44 @@ export class ScoreReader {
 				.childrenNamed('work')[0]
 				?.childrenNamed('work-title')[0]
 				?.text?.trim() || null;
-		const movement =
+		const movementTitle =
 			score.childrenNamed('movement-title')[0]?.text?.trim() || null;
+		const movementNumber =
+			score.childrenNamed('movement-number')[0]?.text?.trim() || null;
+		// A numeral or digits read as an ordinal ("2. Andante"); anything else ("No. 3") as a prefix.
+		let movement = movementTitle ?? movementNumber;
+		if (movementTitle && movementNumber) {
+			const dot = /^[\dIVXLC]+$/i.test(movementNumber) ? '.' : '';
+			movement = `${movementNumber}${dot} ${movementTitle}`;
+		}
+		const workNumber =
+			score
+				.childrenNamed('work')[0]
+				?.childrenNamed('work-number')[0]
+				?.text?.trim() || null;
+		const title = work ?? movement;
+		const subtitles = [
+			...(work && workNumber ? [workNumber] : []),
+			...(work && movement && movementTitle !== work ? [movement] : []),
+		];
 		return {
-			title: work ?? movement,
-			subtitles: work && movement && movement !== work ? [movement] : [],
+			title,
+			subtitles,
 			left: creators.filter((c) => c.role === 'left').map((c) => c.text),
 			right: creators.filter((c) => c.role === 'right').map((c) => c.text),
+			symbols: [],
+			footer: [],
 		};
+	}
+
+	/* The <identification><rights> lines, the copyright a score without a rights credit prints. */
+	private identificationRights(score: Score): string[] {
+		return score
+			.childrenNamed('identification')
+			.flatMap((identification) => identification.childrenNamed('rights'))
+			.flatMap((rights) => (rights.text ?? '').split('\n'))
+			.map((line) => line.trim())
+			.filter(Boolean);
 	}
 
 	/*
@@ -2025,6 +2078,10 @@ export type ScoreHeader = {
 	left: string[];
 	/** Composer and arranger lines, printed at the right. */
 	right: string[];
+	/** SMuFL glyphs from `<credit-symbol>`, centered in a row under the subtitles. */
+	symbols: string[];
+	/** The copyright lines, centered at the foot of the score. */
+	footer: string[];
 };
 
 /* Where a `<credit-type>` or `<creator type>` prints in the header; a type missing here
@@ -2037,6 +2094,20 @@ const CREDIT_ROLES = new Map<string, 'title' | 'subtitle' | 'left' | 'right'>([
 	['lyricist', 'left'],
 	['poet', 'left'],
 	['translator', 'left'],
+]);
+
+/* The SMuFL glyphs a `<credit-symbol>` can name, by their SMuFL names. */
+const CREDIT_SYMBOLS = new Map<string, string>([
+	['segno', '\uE047'],
+	['coda', '\uE048'],
+	['gClef', '\uE050'],
+	['cClef', '\uE05C'],
+	['fClef', '\uE062'],
+	['fermataAbove', '\uE4C0'],
+	['fermataBelow', '\uE4C1'],
+	['accidentalFlat', '\uE260'],
+	['accidentalNatural', '\uE261'],
+	['accidentalSharp', '\uE262'],
 ]);
 
 /** A `<barline><fermata>`: the edge it sits on, its shape, and whether it hangs below. */

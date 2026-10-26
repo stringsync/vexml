@@ -157,6 +157,14 @@ describe('render', () => {
 		).toMatchScreenshot('header_catalog.png');
 	});
 
+	// A "rights" credit prints as the footer under the last system, and a <credit-symbol>
+	// "segno" draws as a SMuFL glyph centered under the title.
+	it.concurrent('renders header_extras.png', async () => {
+		expect(
+			await testing.render('header_extras.musicxml', { showHeader: true }),
+		).toMatchScreenshot('header_extras.png');
+	});
+
 	// A guitar split across two single-stave parts: a treble notation stave (P1)
 	// above a 6-line TAB stave (P2), joined by a bracket plus the system's left line.
 	// The notation+tab pairing is bracketed by convention even when the two staves

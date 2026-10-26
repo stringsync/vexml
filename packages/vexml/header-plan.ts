@@ -1,7 +1,9 @@
 import type { Config } from './config';
 import {
 	HEADER_CREDIT_SIZE,
+	HEADER_FOOTER_SIZE,
 	HEADER_SUBTITLE_SIZE,
+	HEADER_SYMBOL_SIZE,
 	HEADER_TITLE_SIZE,
 	PAGE_MARGIN_X,
 } from './constants';
@@ -16,6 +18,8 @@ export type HeaderLine = {
 	align: 'left' | 'center' | 'right';
 	x: number;
 	baseline: number;
+	/* Set in the notation font, for a SMuFL glyph. */
+	glyph?: boolean;
 };
 
 /*
@@ -35,9 +39,28 @@ export class HeaderPlan {
 			: null;
 	}
 
-	/* From the header's top to the lowest descender, in px. */
+	/* From the header's top to the lowest descender, in px; 0 when only a footer prints. */
 	get height(): number {
 		return this.stack(0).height;
+	}
+
+	/* The copyright lines, centered at the page width, and their height. */
+	footer(width: number): { lines: HeaderLine[]; height: number } {
+		const lines: HeaderLine[] = [];
+		let y = 0;
+		for (const text of this.header.footer) {
+			y += HEADER_FOOTER_SIZE;
+			lines.push({
+				text,
+				size: HEADER_FOOTER_SIZE,
+				weight: 'normal',
+				align: 'center',
+				x: width / 2,
+				baseline: y,
+			});
+			y += HEADER_FOOTER_SIZE * DESCENT;
+		}
+		return { lines, height: y };
 	}
 
 	lines(width: number): HeaderLine[] {
@@ -69,6 +92,19 @@ export class HeaderPlan {
 				baseline: y,
 			});
 			y += size * DESCENT;
+		}
+		if (this.header.symbols.length > 0) {
+			y += HEADER_SYMBOL_SIZE;
+			lines.push({
+				text: this.header.symbols.join(' '),
+				size: HEADER_SYMBOL_SIZE,
+				weight: 'normal',
+				align: 'center',
+				x: width / 2,
+				baseline: y,
+				glyph: true,
+			});
+			y += HEADER_SYMBOL_SIZE * DESCENT;
 		}
 		const rows = Math.max(this.header.left.length, this.header.right.length);
 		if (rows > 0 && centered.length > 0) {

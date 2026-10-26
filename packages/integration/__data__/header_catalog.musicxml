@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <score-partwise version="4.0">
   <work>
+    <work-number>BWV 1068</work-number>
     <work-title>Suite No. 3</work-title>
   </work>
+  <movement-number>2</movement-number>
   <movement-title>Air</movement-title>
   <identification>
     <creator type="composer">Johann Sebastian Bach</creator>
     <creator type="lyricist">Anon.</creator>
+    <rights>Copyright 2026 Public Domain&#10;All rights reserved</rights>
   </identification>
   <part-list>
     <score-part id="P1">
