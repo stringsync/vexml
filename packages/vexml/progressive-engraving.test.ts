@@ -40,6 +40,9 @@ const DATA_DIR = path.resolve(import.meta.dir, '../integration/__data__');
 const LONG = 'score_schubert_gute_nacht.musicxml';
 // A tie whose two halves sit on either side of a system break.
 const TIE_ACROSS_BREAK = 'tie_system_break.musicxml';
+// A rights credit, which prints as the footer under the last system.
+const FOOTER = 'header_extras.musicxml';
+const FOOTER_TEXT = 'Copyright 2026 Public Domain';
 // Narrow enough to break the tie fixture's two measures onto two systems.
 const NARROW = { ...DEFAULT_STANDARD_LAYOUT, referenceWidth: 360 };
 
@@ -64,18 +67,21 @@ describe('ProgressiveEngraving', () => {
 		let completes = 0;
 		score.events.on('draw', (e) => drawn.push([...e.systems]));
 		score.events.on('complete', () => completes++);
-		const first = drawn.length;
 		const settled = Promise.race([
 			score.whenComplete().then(() => 'complete'),
 			Promise.resolve('pending'),
 		]);
 
-		// A zero budget draws one system per slice, so each event names exactly one.
+		// A zero budget runs one piece of a system per slice: the first settles none, and each
+		// event names exactly one.
 		scheduler.run(0);
-		expect(drawn).toHaveLength(first + 1);
+		expect(drawn).toEqual([]);
 		expect(score.isComplete()).toBe(false);
 		await expect(settled).resolves.toBe('pending');
-		scheduler.runAll();
+		scheduler.runAll(0);
+		expect(new Set(drawn.map((systems) => systems.length))).toEqual(
+			new Set([1]),
+		);
 
 		const systems = drawn.flat();
 		expect(systems).toEqual([...systems].sort((a, b) => a - b));
@@ -141,12 +147,36 @@ describe('ProgressiveEngraving', () => {
 		expect(scheduler.pending).toBe(0);
 	});
 
+	it('pauses a system part way through, showing none of it until a cursor moved past finishes it', async () => {
+		const whole = await render(LONG);
+		const { score, stage, scheduler } = await render(LONG, {
+			progressive: true,
+		});
+		const shown = stage.extensions.length;
+		const lastMs = score.getDurationMs() - 1;
+
+		// The plan's piece, then the next system's draw.
+		scheduler.run(0);
+		scheduler.run(0);
+		const paused = stage.extensions.length;
+		const rect = cursorRectAt(score, lastMs);
+		scheduler.runAll();
+
+		expect(paused).toBe(shown);
+		expect(rect).toEqual(cursorRectAt(whole.score, lastMs));
+		expect(stage.engravings.at(-1)?.ops).toEqual(
+			whole.stage.engravings[0]?.ops ?? [],
+		);
+		expect(boxesOf(score)).toEqual(boxesOf(whole.score));
+		expect(stepsOf(score)).toEqual(stepsOf(whole.score));
+	});
+
 	it('forecasts the undrawn systems, keeping every column on a system until the count settles', async () => {
 		const whole = await render(LONG);
 		const { score, scheduler } = await render(LONG, { progressive: true });
 		const counts = [score.getSystems().length];
 		const strays = straySystemsOf(score);
-		// A zero budget draws one system per slice: the systems are checked after each.
+		// A zero budget settles one system per event: the systems are checked after each.
 		score.events.on('draw', () => {
 			counts.push(score.getSystems().length);
 			strays.push(...straySystemsOf(score));
@@ -179,6 +209,20 @@ describe('ProgressiveEngraving', () => {
 		expect(final?.width).toBe(whole.stage.engravings[0]?.width ?? -1);
 		expect(textOpsOf(final, 'Gute Nacht')).toEqual(
 			textOpsOf(whole.stage.engravings[0], 'Gute Nacht'),
+		);
+	});
+
+	it('draws the footer under the last system, whole and progressively', async () => {
+		const whole = await render(FOOTER, { showHeader: true });
+		const { stage, scheduler } = await render(FOOTER, {
+			showHeader: true,
+			progressive: true,
+		});
+		scheduler.runAll();
+
+		expect(textOpsOf(whole.stage.engravings[0], FOOTER_TEXT)).toHaveLength(1);
+		expect(stage.engravings.at(-1)?.ops).toEqual(
+			whole.stage.engravings[0]?.ops ?? [],
 		);
 	});
 

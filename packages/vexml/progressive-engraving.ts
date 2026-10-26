@@ -19,6 +19,13 @@ import type { SequencePlacer } from './sequence-placer';
 import { snapshotConfig } from './snapshot-config';
 import type { SystemDraw } from './system-draw';
 
+// How many of the last pieces a slice ran judge whether the next fits: a system's half dozen
+// vary (the plan, a draw, a redraw, the forecast), so a few systems' worth cover the dearest.
+const RECENT_PIECES = 16;
+// What a slice keeps back of its budget besides: the draw event's listeners run in it, and a
+// piece can run over the dearest of the last few.
+const SLICE_RESERVE_MS = 5;
+
 /* Where the engraving is shown as it grows: the stage. `from` is how many of its ops were
  * shown already, so only the rest need painting unless its size changed. */
 export interface ProgressiveSink {
@@ -79,7 +86,12 @@ export class ProgressiveEngraving implements Drawing {
 	private pending: number[] = [];
 	// How many of the engraving's ops the sink has been shown.
 	private shownOps = 0;
-	private lastStepMs = 0;
+	// How many systems the model and the stage are brought up to, in order.
+	private stepped = 0;
+	// The pieces of the step part way through, if any (see stepInPieces).
+	private pieces: Generator<void, number | null, void> | null = null;
+	// What the last few pieces a slice ran cost, to judge whether the next fits its budget.
+	private readonly pieceMs: number[] = [];
 	private slice: Resource | null = null;
 	private disposed = false;
 	private final: DrawResult | null = null;
@@ -113,7 +125,7 @@ export class ProgressiveEngraving implements Drawing {
 		let system = this.step();
 		while (
 			system !== null &&
-			!this.deps.draw.done() &&
+			!this.finished() &&
 			this.deps.draw.bottomOf(system) < view.visibleBottom()
 		) {
 			system = this.step();
@@ -123,7 +135,7 @@ export class ProgressiveEngraving implements Drawing {
 
 	/* Draw the rest in idle slices, from now on. */
 	start(): void {
-		if (!this.deps.draw.done() && !this.disposed) {
+		if (!this.finished() && !this.disposed) {
 			this.schedule();
 		} else {
 			this.complete();
@@ -131,7 +143,7 @@ export class ProgressiveEngraving implements Drawing {
 	}
 
 	isComplete(): boolean {
-		return this.deps.draw.done();
+		return this.finished();
 	}
 
 	whenComplete(): Promise<void> {
@@ -142,8 +154,8 @@ export class ProgressiveEngraving implements Drawing {
 		// A forecast system is never settled, so this reads the plan again after each step until
 		// the measure's system is placed and drawn.
 		while (
-			!this.deps.draw.done() &&
-			!this.isSettled(this.deps.plan.systemOfMeasure(m))
+			!this.finished() &&
+			this.stepped <= this.deps.plan.systemOfMeasure(m)
 		) {
 			this.step();
 		}
@@ -151,7 +163,7 @@ export class ProgressiveEngraving implements Drawing {
 	}
 
 	drawAll(): void {
-		while (!this.deps.draw.done()) {
+		while (!this.finished()) {
 			this.step();
 		}
 		this.flush();
@@ -219,17 +231,48 @@ export class ProgressiveEngraving implements Drawing {
 		placer.forecast(geometry, forecast.systemCount);
 	}
 
-	private isSettled(system: number): boolean {
-		return this.deps.draw.settledSystems().includes(system);
+	// Whether every system is drawn and the model and the stage are brought up to it.
+	private finished(): boolean {
+		return this.deps.draw.done() && this.pieces === null;
 	}
 
-	// Settle the next system and bring the model and the stage up to it.
+	// Finish the step part way through, or take the next whole; returns its system.
 	private step(): number | null {
-		const { draw, placer, sink } = this.deps;
+		let piece = this.advance();
+		while (!piece.done) {
+			piece = this.advance();
+		}
+		return piece.value;
+	}
+
+	// Run the next piece of a step, the next step's first when none is part way through, and
+	// note what it cost.
+	private advance(): IteratorResult<void, number | null> {
+		this.pieces ??= this.stepInPieces();
 		const started = performance.now();
-		const system = draw.drawNext();
-		if (system === null) {
-			return null;
+		const piece = this.pieces.next();
+		this.pieceMs.push(performance.now() - started);
+		if (this.pieceMs.length > RECENT_PIECES) {
+			this.pieceMs.shift();
+		}
+		if (piece.done) {
+			this.pieces = null;
+		}
+		return piece;
+	}
+
+	// Settle the next system and bring the model and the stage up to it, a piece at a time: each
+	// of the draw's pieces (see SystemDraw.advance), the forecast taken with the settling, then
+	// the elements, timeline and stage. Returns the system, or null once every system is.
+	private *stepInPieces(): Generator<void, number | null, void> {
+		const { draw, placer, sink } = this.deps;
+		let system = draw.advance();
+		while (system === null) {
+			if (draw.done()) {
+				return null;
+			}
+			yield;
+			system = draw.advance();
 		}
 		const result = this.result();
 		const { geometry } = result;
@@ -238,6 +281,7 @@ export class ProgressiveEngraving implements Drawing {
 			this.forecastByMeasure.delete(m.index);
 		}
 		this.refreshForecast();
+		yield;
 		const ofSystem = (m: number) => draw.systemOfMeasure(m) === system;
 		placer.place(system, {
 			measures,
@@ -252,7 +296,7 @@ export class ProgressiveEngraving implements Drawing {
 		sink.extendEngraving(result.engraving, this.shownOps);
 		this.shownOps = result.engraving.ops.length;
 		this.pending.push(system);
-		this.lastStepMs = performance.now() - started;
+		this.stepped++;
 		return system;
 	}
 
@@ -287,7 +331,7 @@ export class ProgressiveEngraving implements Drawing {
 			this.pending = [];
 			this.dispatcher.dispatch('draw', { systems });
 		}
-		if (this.deps.draw.done()) {
+		if (this.finished()) {
 			this.complete();
 		}
 	}
@@ -303,21 +347,22 @@ export class ProgressiveEngraving implements Drawing {
 		this.slice = this.deps.scheduler.request((budget) => this.run(budget));
 	}
 
-	// One idle slice: at least one system, then as many more as the budget has room for,
-	// judged by the last system's cost.
+	// One idle slice: at least one piece of a step, then as many more as the budget has room
+	// for, judged by the dearest of the last few. A piece is a fraction of a system's work, so
+	// a slice on a slow device ends well within its budget, a system part way through.
 	private run(budget: IdleSlice): void {
 		this.slice = null;
 		if (this.disposed) {
 			return;
 		}
 		do {
-			this.step();
+			this.advance();
 		} while (
-			!this.deps.draw.done() &&
-			budget.timeRemaining() > this.lastStepMs
+			!this.finished() &&
+			budget.timeRemaining() > Math.max(...this.pieceMs) + SLICE_RESERVE_MS
 		);
 		this.flush();
-		if (!this.deps.draw.done()) {
+		if (!this.finished()) {
 			this.schedule();
 		}
 	}

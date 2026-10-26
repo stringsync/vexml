@@ -95,6 +95,10 @@ export class SystemDraw {
 	// The page width the header was drawn at; a lazy plan may widen the page after it.
 	private pageWidth: number;
 	private finished: ReturnType<DrawPass['finish']> | null = null;
+	// How many of the list's ops are the settled systems' (see settledOps).
+	private settledOpCount = 0;
+	// The pieces of the system advance() is part way through, if any.
+	private pieces: Generator<void, number, void> | null = null;
 
 	constructor(
 		private readonly deps: SystemDrawDeps,
@@ -193,11 +197,6 @@ export class SystemDraw {
 		return this.plan.isComplete() && this.settled >= this.plan.placedSystems();
 	}
 
-	/* The systems settled so far, in order. */
-	settledSystems(): number[] {
-		return Array.from({ length: this.settled }, (_, i) => i);
-	}
-
 	/* The system measure `m` is drawn on. */
 	systemOfMeasure(m: number): number {
 		return this.drawing.systemOfMeasure(m);
@@ -207,72 +206,36 @@ export class SystemDraw {
 	 * Draw and settle the next system; returns it, or null once every system is. A slur or
 	 * hairpin wrapping off the end of a system is drawn and measured with the next one, so the
 	 * next is drawn ahead before this one is weighed. A system that needs room is drawn again,
-	 * and the one drawn ahead with it, once this one is placed.
+	 * and the one drawn ahead with it, once this one is placed. Finishes a system advance()
+	 * began.
 	 */
 	drawNext(): number | null {
+		while (!this.done()) {
+			const system = this.advance();
+			if (system !== null) {
+				return system;
+			}
+		}
+		return null;
+	}
+
+	/*
+	 * Do the next piece of drawNext's work: the plan placing the system's pair, one system's
+	 * draw, a redraw, or the settling. Returns the system once the piece settles it, else null.
+	 * A caller with a budget stops between pieces, each a fraction of a system's draw, so the
+	 * pause is mid-system; what is settled (result, bottomOf) holds still until it settles.
+	 */
+	advance(): number | null {
 		if (this.done()) {
 			return null;
 		}
-		// The plan places this system and the next, which the pass reads the barline between
-		// them from and this draw draws ahead; a plan already complete has nothing to do.
-		const system = this.settled;
-		this.plan.placeThrough(system + 1);
-		const next =
-			system + 1 < this.plan.placedSystems() ? system + 1 : undefined;
-		if (!this.drawnAhead) {
-			this.draw(system);
+		this.pieces ??= this.settleNext();
+		const piece = this.pieces.next();
+		if (!piece.done) {
+			return null;
 		}
-		this.drawnAhead = next !== undefined;
-		if (next !== undefined) {
-			this.draw(next);
-		}
-		const seen = this.weigh(system);
-		if (seen.revision.needed) {
-			this.reserve(system, seen);
-			this.redraw(system, next ?? system);
-			this.drawnAhead = false;
-		}
-		// Fit onto its page: one that would cross a page's bottom margin is pushed to the next
-		// page by widening the gap above it. The push changes no system's own drawing, only
-		// where it sits. Following the document, it fits by its staff lines and opens a page
-		// where it says.
-		const lines = this.drawing.linesOf(system);
-		const document = this.layout.documentSystems?.[system];
-		const push = this.walk?.place(
-			this.drawing.extentOf(system, next === undefined),
-			lines && document ? { lines, system: document } : undefined,
-		);
-		// An even page's systems sit where its own margins put them.
-		const shift =
-			this.walk && this.walk.placedPage() % 2 === 1
-				? (this.layout.page?.evenShift ?? 0)
-				: 0;
-		const shifted = shift !== (this.shifts.get(system) ?? 0);
-		if (shifted) {
-			this.shifts.set(system, shift);
-			this.drawing.shiftSystem(system, shift);
-		}
-		if (push || shifted) {
-			this.topOverflow.set(
-				system,
-				(this.topOverflow.get(system) ?? 0) + (push ?? 0),
-			);
-			this.redraw(
-				system,
-				this.drawnAhead && next !== undefined ? next : system,
-			);
-			this.drawnAhead = false;
-		}
-		this.settled++;
-		if (this.settled === 1) {
-			this.drawHeader();
-		} else if (this.layout.width !== this.pageWidth) {
-			// A later system was wider than the page: the header is drawn again across the
-			// widened page. Earlier systems keep their draw (see SKILL.md, Progressive rendering).
-			this.drawing.widenPage(this.layout.width);
-			this.drawHeader();
-		}
-		return system;
+		this.pieces = null;
+		return piece.value;
 	}
 
 	/* The bottom of `system`'s content in final score space, once it is settled. */
@@ -369,6 +332,77 @@ export class SystemDraw {
 		return { geometry, engraving, fold, pages: [] };
 	}
 
+	// drawNext's work for the next system, a piece per step (see advance).
+	private *settleNext(): Generator<void, number, void> {
+		// The plan places this system and the next, which the pass reads the barline between
+		// them from and this draw draws ahead.
+		const system = this.settled;
+		this.plan.placeThrough(system + 1);
+		yield;
+		const next =
+			system + 1 < this.plan.placedSystems() ? system + 1 : undefined;
+		if (!this.drawnAhead) {
+			this.draw(system);
+			yield;
+		}
+		this.drawnAhead = next !== undefined;
+		if (next !== undefined) {
+			this.draw(next);
+			yield;
+		}
+		const seen = this.weigh(system);
+		if (seen.revision.needed) {
+			this.reserve(system, seen);
+			this.redraw(system, next ?? system);
+			this.drawnAhead = false;
+			yield;
+		}
+		// Fit onto its page: one that would cross a page's bottom margin is pushed to the next
+		// page by widening the gap above it. The push changes no system's own drawing, only
+		// where it sits. Following the document, it fits by its staff lines and opens a page
+		// where it says.
+		const lines = this.drawing.linesOf(system);
+		const document = this.layout.documentSystems?.[system];
+		const push = this.walk?.place(
+			this.drawing.extentOf(system, next === undefined),
+			lines && document ? { lines, system: document } : undefined,
+		);
+		// An even page's systems sit where its own margins put them.
+		const shift =
+			this.walk && this.walk.placedPage() % 2 === 1
+				? (this.layout.page?.evenShift ?? 0)
+				: 0;
+		const shifted = shift !== (this.shifts.get(system) ?? 0);
+		if (shifted) {
+			this.shifts.set(system, shift);
+			this.drawing.shiftSystem(system, shift);
+		}
+		if (push || shifted) {
+			this.topOverflow.set(
+				system,
+				(this.topOverflow.get(system) ?? 0) + (push ?? 0),
+			);
+			this.redraw(
+				system,
+				this.drawnAhead && next !== undefined ? next : system,
+			);
+			this.drawnAhead = false;
+			yield;
+		}
+		this.settled++;
+		if (this.settled === 1) {
+			this.drawHeader();
+		} else if (this.layout.width !== this.pageWidth) {
+			// A later system was wider than the page: the header is drawn again across the
+			// widened page. Earlier systems keep their draw (see SKILL.md, Progressive rendering).
+			this.drawing.widenPage(this.layout.width);
+			this.drawHeader();
+		}
+		const ahead = this.drawnAhead ? this.marks.get(this.settled) : undefined;
+		this.settledOpCount = ahead ? ahead.ops : this.list.ops.length;
+		return system;
+	}
+
 	private draw(system: number): void {
 		this.marks.set(system, this.drawing.mark(system));
 		this.drawing.drawSystem(system);
@@ -443,11 +477,13 @@ export class SystemDraw {
 		}
 	}
 
-	// The ops of the settled systems: everything before the system drawn ahead, whose draw may
-	// yet be rewound.
+	// The ops of the settled systems: everything before the system drawn ahead or part way
+	// drawn, whose draw may yet be rewound. Once done, every op, the footer finish() drew
+	// after the last system among them.
 	private settledOps(): PaintOp[] {
-		const ahead = this.drawnAhead ? this.marks.get(this.settled) : undefined;
-		return ahead ? this.list.ops.slice(0, ahead.ops) : this.list.ops;
+		return this.done()
+			? this.list.ops
+			: this.list.ops.slice(0, this.settledOpCount);
 	}
 
 	private finish(): ReturnType<DrawPass['finish']> {
@@ -455,21 +491,21 @@ export class SystemDraw {
 		return this.finished;
 	}
 
-	// The collected geometry, less the system drawn ahead.
+	// The collected geometry, less the systems drawn ahead or part way drawn.
 	private collected(): DrawPassResult {
 		const pass = this.drawing.collected();
-		if (!this.drawnAhead) {
+		if (!this.drawnAhead && !this.pieces) {
 			return pass;
 		}
-		const ahead = this.settled;
+		const settled = (system: number) => system < this.settled;
 		return {
 			...pass,
-			rawNotes: pass.rawNotes.filter(
-				(n) => this.systemOfMeasure(n.measureIndex) !== ahead,
+			rawNotes: pass.rawNotes.filter((n) =>
+				settled(this.systemOfMeasure(n.measureIndex)),
 			),
-			rawMeasures: pass.rawMeasures.filter((m) => m.systemIndex !== ahead),
-			rawChordDiagrams: pass.rawChordDiagrams.filter(
-				(d) => this.systemOfMeasure(d.measureIndex) !== ahead,
+			rawMeasures: pass.rawMeasures.filter((m) => settled(m.systemIndex)),
+			rawChordDiagrams: pass.rawChordDiagrams.filter((d) =>
+				settled(this.systemOfMeasure(d.measureIndex)),
 			),
 		};
 	}
