@@ -61,6 +61,18 @@ describe('HeaderPlan', () => {
 	it('reaches below its lowest baseline, by the line descent', () => {
 		const plan = HeaderPlan.of(on, header);
 		const last = plan?.lines(800).at(-1)?.baseline ?? 0;
-		expect(plan?.height).toBeGreaterThan(last);
+		expect(plan?.height(800)).toBeGreaterThan(last);
+	});
+
+	it('drops the right credit under the left when the page is too narrow for both', () => {
+		const plan = HeaderPlan.of(on, {
+			...header,
+			left: ['Words by Anonymous Poet'],
+			right: ['Johann Sebastian Bach'],
+		});
+		const wide = plan?.lines(800) ?? [];
+		const narrow = plan?.lines(300) ?? [];
+		expect(wide[2]?.baseline).toBe(wide[3]?.baseline);
+		expect(narrow[3]?.baseline).toBeGreaterThan(narrow[2]?.baseline ?? 0);
 	});
 });

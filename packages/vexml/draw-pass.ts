@@ -1404,11 +1404,17 @@ export class DrawPass {
 	 */
 	private drawHeader(): void {
 		const inkTop = this.spill.systemTops().get(0);
-		if (!this.header || this.header.height === 0 || inkTop === undefined) {
+		if (
+			!this.header ||
+			this.header.height(this.headerWidth) === 0 ||
+			inkTop === undefined
+		) {
 			return;
 		}
 		const top =
-			Math.min(inkTop, this.pageTop) - HEADER_GAP - this.header.height;
+			Math.min(inkTop, this.pageTop) -
+			HEADER_GAP -
+			this.header.height(this.headerWidth);
 		this.context.save();
 		this.context.setFillStyle(this.textColor);
 		for (const line of this.header.lines(this.headerWidth)) {

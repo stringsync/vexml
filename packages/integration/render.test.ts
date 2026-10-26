@@ -165,6 +165,17 @@ describe('render', () => {
 		).toMatchScreenshot('header_extras.png');
 	});
 
+	// header.musicxml at a 330px reference width: the lyricist and composer credits would run into each
+	// other, so each right-hand line drops to its own row under the left one.
+	it.concurrent('renders header_narrow.png', async () => {
+		expect(
+			await testing.render('header_narrow.musicxml', {
+				showHeader: true,
+				layout: { type: 'standard', referenceWidth: 330 },
+			}),
+		).toMatchScreenshot('header_narrow.png');
+	});
+
 	// A guitar split across two single-stave parts: a treble notation stave (P1)
 	// above a 6-line TAB stave (P2), joined by a bracket plus the system's left line.
 	// The notation+tab pairing is bracketed by convention even when the two staves

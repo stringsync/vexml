@@ -40,8 +40,8 @@ export class HeaderPlan {
 	}
 
 	/* From the header's top to the lowest descender, in px; 0 when only a footer prints. */
-	get height(): number {
-		return this.stack(0).height;
+	height(width: number): number {
+		return this.stack(width).height;
 	}
 
 	/* The copyright lines, centered at the page width, and their height. */
@@ -65,6 +65,12 @@ export class HeaderPlan {
 
 	lines(width: number): HeaderLine[] {
 		return this.stack(width).lines;
+	}
+
+	/* A credit line's width, estimated at 0.6 of its font size per character: the planner has
+	 * no canvas to measure with. */
+	private creditWidth(text: string): number {
+		return text.length * HEADER_CREDIT_SIZE * 0.6;
 	}
 
 	private stack(width: number): { lines: HeaderLine[]; height: number } {
@@ -111,25 +117,37 @@ export class HeaderPlan {
 			y += SIDE_GAP;
 		}
 		for (let row = 0; row < rows; row++) {
+			const left = this.header.left[row];
+			const right = this.header.right[row];
+			// Side by side unless their estimated widths would run into each other, then the
+			// right column's line drops to a row of its own under the left's.
+			const stacked =
+				!!left &&
+				!!right &&
+				this.creditWidth(left) + this.creditWidth(right) + SIDE_GAP >
+					width - 2 * PAGE_MARGIN_X;
 			y += HEADER_CREDIT_SIZE;
 			const sides = [
-				{ text: this.header.left[row], align: 'left', x: PAGE_MARGIN_X },
-				{
-					text: this.header.right[row],
-					align: 'right',
-					x: width - PAGE_MARGIN_X,
-				},
+				{ text: left, align: 'left', x: PAGE_MARGIN_X },
+				{ text: right, align: 'right', x: width - PAGE_MARGIN_X },
 			] as const;
 			for (const { text, align, x } of sides) {
-				if (text) {
-					lines.push({
-						text,
-						size: HEADER_CREDIT_SIZE,
-						weight: 'normal',
-						align,
-						x,
-						baseline: y,
-					});
+				if (!text) {
+					continue;
+				}
+				if (stacked && align === 'right') {
+					y += HEADER_CREDIT_SIZE;
+				}
+				lines.push({
+					text,
+					size: HEADER_CREDIT_SIZE,
+					weight: 'normal',
+					align,
+					x,
+					baseline: y,
+				});
+				if (stacked && align === 'left') {
+					y += HEADER_CREDIT_SIZE * DESCENT;
 				}
 			}
 			y += HEADER_CREDIT_SIZE * DESCENT;
