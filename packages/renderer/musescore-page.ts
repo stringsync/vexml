@@ -16,10 +16,20 @@ class MusescorePage {
 		if (!svg) {
 			throw new Error('MuseScore exported no SVG');
 		}
-		const rect = svg.getBoundingClientRect();
+		await document.fonts.ready;
 		const scale = 130 / 96;
-		svg.setAttribute('width', String(rect.width * scale));
-		svg.setAttribute('height', String(rect.height * scale));
+		// MuseScore's cropped export can leave staves and clefs outside its viewBox.
+		// Expand the viewport itself: overflow alone still clips SVG image masks.
+		const bounds = svg.getBBox();
+		// getBBox excludes strokes; leave the capture's margin around the geometry.
+		const margin = 10 / scale;
+		const originX = bounds.x - margin;
+		const originY = bounds.y - margin;
+		const width = bounds.width + 2 * margin;
+		const height = bounds.height + 2 * margin;
+		svg.setAttribute('viewBox', `${originX} ${originY} ${width} ${height}`);
+		svg.setAttribute('width', String(width * scale));
+		svg.setAttribute('height', String(height * scale));
 		const masks = await new SvgInkMasks(container).capture();
 		const nonblank = masks.filter((mask) => mask.runs.length > 0);
 		const left = Math.min(...nonblank.map((mask) => mask.x));
@@ -42,8 +52,8 @@ class MusescorePage {
 			}
 		}
 		const measures = input.boxes.map((box) => ({
-			x: box.x * scale + dx,
-			y: box.y * scale + dy,
+			x: (box.x - originX) * scale + dx,
+			y: (box.y - originY) * scale + dy,
 			w: box.w * scale,
 			h: box.h * scale,
 		}));
