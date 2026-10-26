@@ -1,4 +1,11 @@
-import { type Config, DEFAULT_FONT_CONFIG, type Layout } from './config';
+import {
+	type Config,
+	DEFAULT_FONT_CONFIG,
+	type Layout,
+	type PagedLayout,
+	type PanoramicLayout,
+	type StandardLayout,
+} from './config';
 
 /* The part of a resolved Config that shapes what a snapshot holds: everything the engraving,
  * the element geometry or the timeline depends on, in a fixed key order so two compare as JSON.
@@ -6,7 +13,7 @@ import { type Config, DEFAULT_FONT_CONFIG, type Layout } from './config';
  * pixel ratio and the colors are left out: a snapshot engraves at its reference width and
  * replays at any, and its ink takes the colors it is painted with (see Ink). */
 export type SnapshotConfig = {
-	layout: Layout;
+	layout: SnapshotLayout;
 	noteSpacing: number;
 	softmaxFactor: number;
 	systemSpacing: number;
@@ -24,6 +31,17 @@ export type SnapshotConfig = {
 	documentFonts: boolean;
 	gaps: SnapshotGap[];
 };
+
+/* A Layout as recorded: documentLayout only when it follows the document (see documentLayoutOf). */
+type SnapshotLayout =
+	| DocumentLayoutKnob<StandardLayout>
+	| PanoramicLayout
+	| DocumentLayoutKnob<PagedLayout>;
+
+type DocumentLayoutKnob<T extends StandardLayout | PagedLayout> = Omit<
+	T,
+	'documentLayout'
+> & { documentLayout?: 'follow' | 'strict' };
 
 type SnapshotFont = {
 	family: string;
@@ -99,13 +117,14 @@ export function snapshotConfig(config: Config): SnapshotConfig {
 }
 
 /* The layout's own knobs in a fixed order, whatever order the caller wrote them in. */
-function layoutOf(layout: Layout): Layout {
+function layoutOf(layout: Layout): SnapshotLayout {
 	switch (layout.type) {
 		case 'standard':
 			return {
 				type: layout.type,
 				referenceWidth: layout.referenceWidth,
 				honorSystemBreaks: layout.honorSystemBreaks,
+				...documentLayoutOf(layout),
 				overflow: layout.overflow,
 			};
 		case 'panoramic':
@@ -122,7 +141,19 @@ function layoutOf(layout: Layout): Layout {
 				pageHeight: layout.pageHeight,
 				margin: layout.margin,
 				honorSystemBreaks: layout.honorSystemBreaks,
+				...documentLayoutOf(layout),
 				overflow: layout.overflow,
 			};
 	}
+}
+
+/* documentLayout, recorded only when it follows the document: it came after snapshots did, and a
+ * snapshot made without it laid the score out exactly as one that ignores the document, so it
+ * still matches. */
+function documentLayoutOf(layout: StandardLayout | PagedLayout): {
+	documentLayout?: 'follow' | 'strict';
+} {
+	return layout.documentLayout === 'ignore'
+		? {}
+		: { documentLayout: layout.documentLayout };
 }

@@ -947,7 +947,106 @@ describe('ScoreReader', () => {
 			true,
 		]);
 	});
+
+	describe('documentLayoutOf', () => {
+		const DEFAULTS = `<defaults>
+			<scaling><millimeters>7</millimeters><tenths>40</tenths></scaling>
+			<page-layout>
+				<page-height>1600</page-height><page-width>1200</page-width>
+				<page-margins type="even"><left-margin>1</left-margin><right-margin>1</right-margin><top-margin>1</top-margin><bottom-margin>1</bottom-margin></page-margins>
+				<page-margins type="odd"><left-margin>70</left-margin><right-margin>50</right-margin><top-margin>80</top-margin><bottom-margin>90</bottom-margin></page-margins>
+			</page-layout>
+			<system-layout>
+				<system-margins><left-margin>10</left-margin><right-margin>20</right-margin></system-margins>
+				<system-distance>120</system-distance>
+				<top-system-distance>60</top-system-distance>
+			</system-layout>
+			<staff-layout><staff-distance>65</staff-distance></staff-layout>
+			<staff-layout number="2"><staff-distance>75</staff-distance></staff-layout>
+		</defaults>`;
+
+		it('reads the page in tenths, as px, with the odd-page margins', async () => {
+			const layout = await documentLayoutOf(DEFAULTS, ['', '']);
+			expect(layout.page()).toEqual({
+				width: 1200,
+				height: 1600,
+				margins: { left: 70, right: 50, top: 80, bottom: 90 },
+			});
+		});
+
+		it('has no page without a page width, or with margins wider than it', async () => {
+			expect((await documentLayoutOf('', ['', ''])).page()).toBeNull();
+			const cramped = DEFAULTS.replace(
+				'<page-width>1200</page-width>',
+				'<page-width>100</page-width>',
+			);
+			expect((await documentLayoutOf(cramped, ['', ''])).page()).toBeNull();
+		});
+
+		it('lets a print override the defaults for its own system only', async () => {
+			const layout = await documentLayoutOf(DEFAULTS, [
+				'',
+				`<print new-system="yes"><system-layout>
+					<system-margins><left-margin>0</left-margin><right-margin>5</right-margin></system-margins>
+					<system-distance>200</system-distance>
+				</system-layout></print>`,
+				'',
+			]);
+			expect(layout.systemMargins(0)).toEqual({ left: 10, right: 20 });
+			expect(layout.systemDistance(0)).toBe(120);
+			expect(layout.systemMargins(1)).toEqual({ left: 0, right: 5 });
+			expect(layout.systemDistance(1)).toBe(200);
+			expect(layout.topSystemDistance(1)).toBe(60);
+			expect(layout.systemDistance(2)).toBe(120);
+		});
+
+		it("picks a staff distance by staff number, then the part's print over the defaults", async () => {
+			const layout = await documentLayoutOf(DEFAULTS, [
+				'',
+				'<print><staff-layout number="1"><staff-distance>90</staff-distance></staff-layout></print>',
+			]);
+			expect(layout.staffDistance(0, 0, '1')).toBe(65);
+			expect(layout.staffDistance(0, 0, '2')).toBe(75);
+			expect(layout.staffDistance(1, 0, '1')).toBe(90);
+			expect(layout.staffDistance(1, 0, '2')).toBe(75);
+		});
+
+		it('leaves what the document never sets to vexml', async () => {
+			const layout = await documentLayoutOf('', ['']);
+			expect(layout.systemMargins(0)).toEqual({ left: 0, right: 0 });
+			expect(layout.systemDistance(0)).toBeNull();
+			expect(layout.topSystemDistance(0)).toBeNull();
+			expect(layout.staffDistance(0, 0, '1')).toBeNull();
+		});
+
+		it('notes where the document starts a page', async () => {
+			const layout = await documentLayoutOf('', [
+				'',
+				'<print new-page="yes"/>',
+			]);
+			expect(layout.startsPage(0)).toBe(false);
+			expect(layout.startsPage(1)).toBe(true);
+		});
+	});
 });
+
+/* The DocumentLayout of a one-part score: `defaults` is its <defaults>, and each entry of
+ * `prints` the <print> (or nothing) leading one measure. */
+async function documentLayoutOf(defaults: string, prints: string[]) {
+	const measures = prints
+		.map(
+			(print, i) => `<measure number="${i + 1}">${print}
+				<note><rest measure="yes"/><duration>4</duration></note></measure>`,
+		)
+		.join('');
+	const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
+<score-partwise version="4.0">
+	${defaults}
+	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+	<part id="P1">${measures}</part>
+</score-partwise>`);
+	return new ScoreReader(new DynamicGlyphs()).documentLayoutOf(mdoc.score);
+}
 
 /* A one-part score whose measures carry exactly the given <barline>s (and a note, so the
  * measure is well-formed). Each entry is the raw inner XML of that measure's barlines. */

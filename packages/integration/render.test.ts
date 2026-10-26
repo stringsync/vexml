@@ -3536,6 +3536,41 @@ describe('render', () => {
 		).toMatchScreenshot('ignore_new_system.png');
 	});
 
+	// documentLayout 'follow': the document's 1000-tenth page and 50-tenth margins set the line,
+	// the first system indents by its <system-margins>, the grand staff opens to the 100 its
+	// part's <print> asks for on system 1 only (70 after), and system 2 sits the 200 its
+	// <print> overrides the default 90 with below system 1.
+	it.concurrent('renders document_layout.png', async () => {
+		expect(
+			await testing.render('document_layout.musicxml', {
+				layout: { type: 'standard', documentLayout: 'follow' },
+			}),
+		).toMatchScreenshot('document_layout.png');
+	});
+
+	// documentLayout 'strict' on a score whose document spaces its grand staff tighter than
+	// vexml's engraving needs: the piano's staves keep the document's distance and M3-M4's left
+	// hand runs into the right hand's lines, where 'follow' would open the gap.
+	it.concurrent('renders document_layout_strict.png', async () => {
+		expect(
+			await testing.render('score_mozart_das_veilchen.musicxml', {
+				layout: { type: 'standard', documentLayout: 'strict' },
+			}),
+		).toMatchScreenshot('document_layout_strict.png');
+	});
+
+	// The same document paged: its 1000x1500 page, the first system's top line 100 below the
+	// top margin, and M9's <print new-page="yes"> starting page 2 though system 3 would fit
+	// on page 1, its top line at the default top-system-distance of 60.
+	it.concurrent('renders document_layout_paged.png', async () => {
+		expect(
+			await testing.render('document_layout.musicxml', {
+				layout: { type: 'paged', documentLayout: 'follow' },
+				backgroundColor: '#ffffff',
+			}),
+		).toMatchScreenshot('document_layout_paged.png');
+	});
+
 	// The same sixteen C5 whole-note measures, but with panoramic layout: all sixteen sit
 	// on a single uninterrupted system (no system break).
 	it.concurrent('renders layout_panoramic.png', async () => {

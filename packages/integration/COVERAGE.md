@@ -91,7 +91,7 @@ are picked by hand.
 | `bend@shape` | drawn | `tab_bend.musicxml` M4: angled legs |
 | `bend-alter` | drawn | `tab_bend.musicxml`: bend amount label |
 | `bookmark` | ignored | metadata |
-| `bottom-margin` | missing | task #20; mdom raw only |
+| `bottom-margin` | drawn | `document_layout.musicxml`: the page bottom margin pages fit to, when documentLayout follows the document (paged) |
 | `bracket` | drawn | `direction_lines.musicxml` |
 | `bracket@line-end` | drawn | `direction_lines.musicxml`: hooked bracket ends |
 | `brass-bend` | drawn | `technical_marks.musicxml` |
@@ -258,7 +258,7 @@ are picked by hand.
 | `kind@use-symbols` | drawn | `harmony.musicxml` M23-M25: △ - + ° ø in place of letters |
 | `laughing` | drawn | `lyrics_sounds.musicxml`: text-less lyric draws "ha ha" |
 | `left-divider` | missing | task #20; mdom raw only |
-| `left-margin` | missing | task #20; mdom typed |
+| `left-margin` | drawn | `document_layout.musicxml`: page and system left margins when documentLayout follows the document; the first system indents |
 | `level` | drawn | `editorial_marks.musicxml` M1; parentheses and bracket wrap a note heads; size and non-note parents not drawn |
 | `line` | drawn | `clef_c.musicxml`: clef staff line |
 | `line-detail` | drawn | `line_detail.musicxml`: per-line width, color, dashed or dotted line-type, print-object |
@@ -301,7 +301,7 @@ are picked by hand.
 | `midi-name` | ignored | sound only |
 | `midi-program` | ignored | sound only |
 | `midi-unpitched` | ignored | sound only |
-| `millimeters` | missing | task #20; mdom typed |
+| `millimeters` | ignored | see scaling |
 | `miscellaneous` | ignored | metadata |
 | `miscellaneous-field` | ignored | metadata |
 | `mode` | drawn | `key_modes.musicxml`: read for the key, signature from fifths |
@@ -364,10 +364,10 @@ are picked by hand.
 | `other-play` | ignored | sound only |
 | `other-technical` | drawn | `tab_annotation.musicxml`: text annotation on tab |
 | `p` | drawn | `dynamics.musicxml` |
-| `page-height` | missing | task #20; mdom raw only |
-| `page-layout` | missing | task #20; mdom raw only |
-| `page-margins` | missing | task #20; mdom raw only |
-| `page-width` | missing | task #20; mdom raw only |
+| `page-height` | drawn | `document_layout.musicxml`: the page height when documentLayout follows the document (paged) |
+| `page-layout` | drawn | `document_layout.musicxml`: `<defaults>` page when documentLayout follows the document; a `<print>` page-layout is not followed yet |
+| `page-margins` | drawn | `document_layout.musicxml`: odd (or both) margins when documentLayout follows the document; even-page margins not followed yet |
+| `page-width` | drawn | `document_layout.musicxml`: the line width when documentLayout follows the document |
 | `pan` | ignored | sound only |
 | `part` | drawn | `structure_two_parts.musicxml` |
 | `part-abbreviation` | drawn | `structure_part_abbreviations.musicxml`: short part label on systems after the first |
@@ -425,12 +425,12 @@ are picked by hand.
 | `rf` | drawn | `dynamics.musicxml` |
 | `rfz` | drawn | `dynamics.musicxml` |
 | `right-divider` | missing | task #20; mdom raw only |
-| `right-margin` | missing | task #20; mdom typed |
+| `right-margin` | drawn | `document_layout.musicxml`: page and system right margins when documentLayout follows the document |
 | `rights` | drawn | `header_catalog.musicxml` (identification) and `header_extras.musicxml` (credit-type rights): centered under the last system |
 | `root` | drawn | `harmony.musicxml` |
 | `root-alter` | drawn | `harmony.musicxml` |
 | `root-step` | drawn | `harmony.musicxml` |
-| `scaling` | missing | task #20; mdom typed |
+| `scaling` | ignored | tenths are tenths of a staff space and vexml engraves at its own staff size, so no physical scale applies |
 | `schleifer` | drawn | `ornaments.musicxml` |
 | `scoop` | drawn | `articulations_extended.musicxml` |
 | `scordatura` | missing | task #16; mdom raw only |
@@ -481,9 +481,9 @@ are picked by hand.
 | `staff-details` | drawn | `staff_details_lines.musicxml` |
 | `staff-details@print-object` | drawn | `print_object.musicxml` M7; hides the staff lines only, clef and key stay |
 | `staff-details@show-frets` | missing | tab frets as letters; mdom showFrets reads a child element, not this attribute, so mdom needs a fix first |
-| `staff-distance` | missing | task #20; mdom raw only |
+| `staff-distance` | drawn | `document_layout.musicxml`: from the stave above's bottom line, when documentLayout follows the document; music that reaches further still opens it |
 | `staff-divide` | missing | task #15; mdom raw only |
-| `staff-layout` | missing | task #20; mdom raw only |
+| `staff-layout` | drawn | `document_layout.musicxml`: `<defaults>` and each part's `<print>`, by staff number, when documentLayout follows the document |
 | `staff-lines` | drawn | `staff_details_lines.musicxml` |
 | `staff-size` | drawn | `staff_details_size.musicxml`: line spacing, noteheads and clef shrink; key/time signature glyphs and stem lengths stay full size |
 | `staff-tuning` | drawn | `clef_tab_staff_tuning.musicxml`: tuning derives frets and marks the staff as tab |
@@ -510,13 +510,13 @@ are picked by hand.
 | `syllabic` | drawn | `lyrics.musicxml` |
 | `symbol` | missing | task #15; mdom raw only |
 | `sync` | ignored | sound only (listening) |
-| `system-distance` | missing | task #20; mdom typed |
+| `system-distance` | drawn | `document_layout.musicxml`: from the system above's bottom line, when documentLayout follows the document; music that reaches further still opens it |
 | `system-dividers` | missing | task #20; mdom raw only |
-| `system-layout` | missing | task #20; mdom typed |
-| `system-margins` | missing | task #20; mdom typed |
+| `system-layout` | drawn | `document_layout.musicxml`: `<defaults>` and per-system `<print>` overrides, when documentLayout follows the document |
+| `system-margins` | drawn | `document_layout.musicxml`: each system's indent when documentLayout follows the document |
 | `tap` | drawn | `technical_marks.musicxml` M23-M24: its text like a fingering, else the hand's tapping glyph (right when none) |
 | `technical` | drawn | `technical_marks.musicxml` |
-| `tenths` | missing | task #20; mdom typed |
+| `tenths` | ignored | see scaling |
 | `tenuto` | drawn | `articulations.musicxml` |
 | `text` | drawn | `lyrics.musicxml`: lyric syllable text |
 | `thumb-position` | drawn | `technical_marks.musicxml` |
@@ -530,8 +530,8 @@ are picked by hand.
 | `time-relation` | drawn | `time_extended.musicxml`: parentheses, bracket, equals, slash, hyphen, space |
 | `timpani` | missing | task #16; mdom raw only |
 | `toe` | drawn | `technical_marks.musicxml` |
-| `top-margin` | missing | task #20; mdom raw only |
-| `top-system-distance` | missing | task #20; mdom typed |
+| `top-margin` | drawn | `document_layout.musicxml`: the page top margin when documentLayout follows the document (paged) |
+| `top-system-distance` | drawn | `document_layout.musicxml`: the first system on each page, when documentLayout follows the document (paged) |
 | `touching-pitch` | drawn | `technical_marks.musicxml`: every harmonic draws the diamond, the touching-pitch form |
 | `transpose` | ignored | sound only (written pitch is drawn as-is) |
 | `tremolo` | drawn | `tremolo.musicxml` |

@@ -25,6 +25,7 @@ import {
 	LABEL_FONT_SIZE,
 	LABEL_GAP,
 	LYRIC_LINE_HEIGHT,
+	STAVE_CLEARANCE,
 	VOLTA_NOTE_CLEARANCE,
 } from './constants';
 import {
@@ -49,7 +50,7 @@ import {
 import type { GroupTimeSignature } from './group-time-signature';
 import { HeaderPlan } from './header-plan';
 import { Ink } from './ink';
-import type { MeasureBox, ScoreLayout } from './layout-planner';
+import type { DocumentSystem, MeasureBox, ScoreLayout } from './layout-planner';
 import { LyricPlacer } from './lyric-placer';
 import { MeasureStyleDrawer } from './measure-style-drawer';
 import type { PaintList } from './paint-list';
@@ -150,6 +151,7 @@ export class DrawPass {
 	private readonly totalStaves: number;
 	private readonly softmaxFactor: number;
 	private readonly systemGap: number;
+	private readonly documentSystems: DocumentSystem[] | undefined;
 	private readonly labelIndent: number;
 	private readonly laterLabelIndent: number;
 	// When false, tab staves are dropped: iterate visibleStaffNumbers, not staveCount.
@@ -388,6 +390,7 @@ export class DrawPass {
 		this.totalStaves = totalStaves;
 		this.softmaxFactor = softmaxFactor;
 		this.systemGap = systemGap;
+		this.documentSystems = layout.documentSystems;
 		this.labelIndent = labelIndent;
 		this.laterLabelIndent = laterLabelIndent;
 		const { measureNumbering, showTabSlideText } = config;
@@ -1208,10 +1211,27 @@ export class DrawPass {
 		if (this.currentSystem >= 0) {
 			// Gap below the previous system, plus room reserved for this system's own
 			// upward overflow (high notes/ledger lines) so they clear it, not collide.
-			this.systemTopY =
-				this.systemContentBottom +
-				this.systemGap +
-				(this.topOverflow.get(system) ?? 0);
+			const overflow = this.topOverflow.get(system) ?? 0;
+			this.systemTopY = this.systemContentBottom + this.systemGap + overflow;
+			// The document's system-distance runs from the staff lines above to this
+			// system's top line. Music that reaches further into the gap still opens it,
+			// by the same clearance kept between the staves of a system, unless 'strict'.
+			const document = this.documentSystems?.[system];
+			const above = this.staveLines.get(this.currentSystem);
+			if (
+				document?.systemDistance !== null &&
+				document?.systemDistance !== undefined &&
+				above
+			) {
+				const placed =
+					above.bottom + document.systemDistance - document.lineTop;
+				this.systemTopY = document.strict
+					? placed
+					: Math.max(
+							placed,
+							this.systemContentBottom + STAVE_CLEARANCE + overflow,
+						);
+			}
 		}
 		this.currentSystem = system;
 		this.spannerResolver.beginSystem(system);
@@ -1560,6 +1580,11 @@ export class DrawPass {
 			bottom = this.pageBottom + FOOTER_GAP + footer.height;
 		}
 		return { top, bottom };
+	}
+
+	/* `system`'s staff-line span as drawn, which following the document paginates by. */
+	linesOf(system: number): SystemExtent | undefined {
+		return this.staveLines.get(system);
 	}
 
 	/* Draw the spanners `system` completes, on top of its notes, now that they are placed. */

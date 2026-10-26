@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { type Config, DEFAULT_CONFIG } from './config';
+import { type Config, DEFAULT_CONFIG, DEFAULT_STANDARD_LAYOUT } from './config';
 import {
 	type ScoreSnapshot,
 	SNAPSHOT_FORMAT,
@@ -34,6 +34,7 @@ describe('SnapshotReader', () => {
 			...DEFAULT_CONFIG,
 			layout: {
 				overflow: 'wrap',
+				documentLayout: 'ignore',
 				honorSystemBreaks: true,
 				referenceWidth: 720,
 				type: 'standard',
@@ -48,11 +49,23 @@ describe('SnapshotReader', () => {
 						type: 'standard',
 						referenceWidth: 720,
 						honorSystemBreaks: true,
+						documentLayout: 'ignore',
 						overflow: 'wrap',
 					},
 				}),
 			),
 		).not.toThrow();
+	});
+
+	it('records documentLayout only when it follows the document, so older snapshots still match', () => {
+		const snapshot = snapshotOf(DEFAULT_CONFIG);
+		expect(Object.keys(snapshot.config.layout)).not.toContain('documentLayout');
+		const followed: Config = {
+			...DEFAULT_CONFIG,
+			layout: { ...DEFAULT_STANDARD_LAYOUT, documentLayout: 'follow' },
+		};
+
+		expect(() => new SnapshotReader(followed).check(snapshot)).toThrow();
 	});
 
 	it('ignores gaps, which the snapshot brings', () => {

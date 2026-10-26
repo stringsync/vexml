@@ -6,7 +6,7 @@ import {
 	Metrics,
 	type Voice,
 } from 'vexflow/core';
-import type { Config, Gap } from './config';
+import type { Config, Gap, PanoramicLayout, StandardLayout } from './config';
 import {
 	BASE_VOICE_WIDTH,
 	DEFAULT_WIDTH,
@@ -35,10 +35,12 @@ import {
 	TAB_MIN_NOTE_SPACING,
 	WORDS_CHAR_WIDTH,
 } from './constants';
+import type { DocumentLayout, DocumentPage } from './document-layout';
 import type { Gaps } from './gaps';
 import { HeaderPlan } from './header-plan';
 import type { ScoreReader, StaffVoice } from './score-reader';
 import type { MidClefSpec, SignatureTranslator } from './signature-translator';
+import { StaveFactory } from './stave-factory';
 import type { StavePlan } from './stave-plan';
 import type { TabVoiceTranslator } from './tab-voice-translator';
 import type { VoiceTranslator } from './voice-translator';
@@ -398,25 +400,140 @@ export class LayoutPlanner {
 		return pad;
 	}
 
+	/*
+	 * The page a paged layout fits its systems onto: the document's when documentLayout
+	 * found one, else the config's. Null for any other layout.
+	 */
+	private pageOf(
+		config: Config,
+		documentPage: DocumentPage | null,
+	): PageFrame | null {
+		const layout = config.layout;
+		if (layout.type !== 'paged') {
+			return null;
+		}
+		if (documentPage) {
+			return {
+				width: documentPage.width,
+				height: documentPage.height ?? layout.pageHeight,
+				marginTop: documentPage.margins.top,
+				marginBottom: documentPage.margins.bottom,
+				// The planner lays the page out at the document's own margins.
+				offsetX: 0,
+			};
+		}
+		return {
+			width: layout.pageWidth,
+			height: layout.pageHeight,
+			marginTop: layout.margin,
+			marginBottom: layout.margin,
+			// Laid out with PAGE_MARGIN_X at the sides, then shifted onto the page's margin.
+			offsetX: layout.margin - PAGE_MARGIN_X,
+		};
+	}
+
+	/*
+	 * The layout systems flow in. A paged layout flows like a standard one whose reference width
+	 * puts the staves exactly between the page's side margins; the drawer fits its systems onto
+	 * pages afterwards. The document's page does the same for a standard layout.
+	 */
+	private flowOf(
+		config: Config,
+		page: PageFrame | null,
+		documentPage: DocumentPage | null,
+	): StandardLayout | PanoramicLayout {
+		const layout = config.layout;
+		if (layout.type === 'paged') {
+			return {
+				type: 'standard',
+				referenceWidth: page ? page.width - 2 * page.offsetX : 0,
+				honorSystemBreaks: layout.honorSystemBreaks,
+				documentLayout: layout.documentLayout,
+				overflow: layout.overflow,
+			};
+		}
+		if (documentPage && layout.type === 'standard') {
+			return { ...layout, referenceWidth: documentPage.width };
+		}
+		return layout;
+	}
+
+	/*
+	 * What the document says of each system's height: stave offsets with each gap the
+	 * document sets measured from the upper stave's bottom line to the lower one's top line
+	 * (a gap it leaves out keeps the planned one), and the distances above the system. Read off
+	 * the system's first measure, which the document's `<print>` would lead.
+	 */
+	private documentSystems(
+		parts: Part[],
+		systems: number[][],
+		planned: number[],
+		document: DocumentLayout,
+		strict: boolean,
+	): (DocumentSystem & { staveOffsets: number[] })[] {
+		const factory = new StaveFactory(this.signatures, this.staves);
+		const rows = parts.flatMap((part, partIndex) =>
+			this.staves
+				.visibleNumbers(part)
+				.map((staffNumber) => ({ part, partIndex, staffNumber })),
+		);
+		return systems.map((measures) => {
+			const first = measures[0] ?? 0;
+			// Each row's staff lines relative to its stave's y, as the draw pass will build it.
+			const lines = rows.map(({ part, staffNumber }) => {
+				const measure = part.measures[first];
+				if (!measure) {
+					return null;
+				}
+				const { stave } = factory.create(part, measure, staffNumber, 0, 0, 0);
+				return { top: stave.getYForLine(0), bottom: stave.getBottomLineY() };
+			});
+			const staveOffsets = [planned[0] ?? 0];
+			const fixedGaps = [false];
+			for (let r = 1; r < rows.length; r++) {
+				const row = rows[r];
+				const above = lines[r - 1];
+				const below = lines[r];
+				const distance = row
+					? document.staffDistance(first, row.partIndex, row.staffNumber)
+					: null;
+				const set = distance !== null && above !== null && below !== null;
+				const gap =
+					set && above && below
+						? above.bottom + (distance ?? 0) - below.top
+						: (planned[r] ?? 0) - (planned[r - 1] ?? 0);
+				staveOffsets.push((staveOffsets.at(-1) ?? 0) + gap);
+				fixedGaps.push(strict && set);
+			}
+			return {
+				staveOffsets,
+				systemDistance: document.systemDistance(first),
+				topSystemDistance: document.topSystemDistance(first),
+				lineTop: lines[0]?.top ?? 0,
+				startsPage: document.startsPage(first),
+				strict,
+				fixedGaps,
+			};
+		});
+	}
+
 	/** Lay the parts out at the reference width: where every measure box sits, how
 	 * staves stack within a system, and how tall/wide the page starts. Depends only on
 	 * the music and the options, never on the live container: the finished result is
 	 * scaled to fit its container. */
 	plan(score: Score, config: Config): ScoreLayout {
 		const parts = score.parts;
-		// A paged layout flows like a standard one whose reference width puts the staves exactly
-		// between the page's side margins; the drawer fits its systems onto pages afterwards.
-		const layout =
-			config.layout.type === 'paged'
-				? {
-						...config.layout,
-						type: 'standard' as const,
-						referenceWidth:
-							config.layout.pageWidth -
-							2 * config.layout.margin +
-							2 * PAGE_MARGIN_X,
-					}
-				: config.layout;
+		// documentLayout: the page, system and staff layout the document asks for. Null when
+		// ignored, which leaves every number below exactly as vexml's own.
+		const mode =
+			config.layout.type === 'panoramic'
+				? 'ignore'
+				: config.layout.documentLayout;
+		const document =
+			mode === 'ignore' ? null : this.reader.documentLayoutOf(score);
+		const documentPage = document?.page() ?? null;
+		const page = this.pageOf(config, documentPage);
+		const layout = this.flowOf(config, page, documentPage);
 		const layoutMode = layout.type;
 		// Standard lays out at its reference width; panoramic starts there and grows the page
 		// to fit its single system. Not const: an overflow: 'widen' layout raises it below,
@@ -435,7 +552,10 @@ export class LayoutPlanner {
 		// Staves within a part sit further apart than the gap between parts, so a
 		// brace-joined group reads as one instrument. The left margin leaves room for the
 		// brace/bracket, which draw left of the stave's x.
-		const x = PAGE_MARGIN_X;
+		// The document's page margins, when it sets a page, stand in for vexml's own. A paged
+		// layout without one keeps PAGE_MARGIN_X here and shifts the drawing onto its page.
+		const x = documentPage?.margins.left ?? PAGE_MARGIN_X;
+		const right = documentPage?.margins.right ?? PAGE_MARGIN_X;
 		// A metronome mark on the first measure sits above the top staff, so give the
 		// first system extra headroom when one is present (and room to lift the mark
 		// clear of a high first note). Without a tempo the top margin is unchanged.
@@ -543,12 +663,19 @@ export class LayoutPlanner {
 			(groupAbbreviationChars > 0
 				? groupAbbreviationChars * LABEL_CHAR_WIDTH + LABEL_GAP
 				: 0);
-		const indentOf = (systemIndex: number) =>
-			systemIndex === 0 ? labelIndent : laterLabelIndent;
+		// A system the document indents by its <system-margins> gives its labels that room,
+		// widened only when the labels need more. `first` is the system's first measure.
+		const indentOf = (systemIndex: number, first: number) =>
+			Math.max(
+				systemIndex === 0 ? labelIndent : laterLabelIndent,
+				document?.systemMargins(first).left ?? 0,
+			);
+		const rightIndentOf = (first: number) =>
+			document?.systemMargins(first).right ?? 0;
 		// Reads `width` at call time, so re-running the breaker after 'widen' raises it sees
 		// the wider page.
-		const usableOf = (systemIndex: number) =>
-			width - 2 * x - indentOf(systemIndex);
+		const usableOf = (systemIndex: number, first: number) =>
+			width - x - right - indentOf(systemIndex, first) - rightIndentOf(first);
 
 		// --- Edge gaps -----------------------------------------------------------------
 		// A gap before the first measure of music or after the last is an edge gap: a fixed box
@@ -784,7 +911,7 @@ export class LayoutPlanner {
 				// the line here, 'allow' and 'widen' keep it and pay for it in page width.
 				const keepsLine =
 					honorSystemBreaks && print.some((p) => p?.systemBreak === 'no');
-				const usable = usableOf(systems.length);
+				const usable = usableOf(systems.length, row[0] ?? m);
 				const overruns = keepsLine
 					? overflow === 'wrap' &&
 						rowMinWidth + LEAD_BARLINE + area.min > usable
@@ -822,7 +949,7 @@ export class LayoutPlanner {
 				(measures, systemIndex) => ({
 					intrinsic: spanOf(measures, 'ideal'),
 					minimum: spanOf(measures, 'min'),
-					usable: usableOf(systemIndex),
+					usable: usableOf(systemIndex, measures[0] ?? 0),
 				}),
 			);
 			return systems;
@@ -842,7 +969,11 @@ export class LayoutPlanner {
 					width,
 					...systems.map(
 						(measures, systemIndex) =>
-							spanOf(measures, 'ideal') + 2 * x + indentOf(systemIndex),
+							spanOf(measures, 'ideal') +
+							x +
+							right +
+							indentOf(systemIndex, measures[0] ?? 0) +
+							rightIndentOf(measures[0] ?? 0),
 					),
 				);
 				if (needed <= width) {
@@ -870,7 +1001,9 @@ export class LayoutPlanner {
 			const areas = measures.map((m) => areaOf(m));
 			const areaSum = areas.reduce((sum, a) => sum + a.ideal, 0);
 			const intrinsic = leads.reduce((sum, l) => sum + l, 0) + areaSum;
-			const cap = layoutMode === 'standard' ? usableOf(systemIndex) : Infinity;
+			const first = measures[0] ?? 0;
+			const cap =
+				layoutMode === 'standard' ? usableOf(systemIndex, first) : Infinity;
 			// The last system of a multi-system score stays ragged unless its measures already
 			// fill most of the line: once their intrinsic width reaches minLastSystemFill
 			// of the reference width, justify it so a nearly-full trailing line snaps to the page
@@ -911,7 +1044,7 @@ export class LayoutPlanner {
 					? a.ideal * stretch
 					: a.ideal - (a.ideal - a.min) * squeeze;
 			// Leading boxes start at the margin, ahead of the label indent they stand in for.
-			const indent = start === 0 ? indentOf(systemIndex) : 0;
+			const indent = start === 0 ? indentOf(systemIndex, first) : 0;
 			let cx = x + indent;
 			measures.forEach((m, i) => {
 				const area = areas[i];
@@ -936,18 +1069,46 @@ export class LayoutPlanner {
 			// margin and never widen it; panoramic grows it to fit its single long system,
 			// and a standard system that bottomed out on its minimum grows it by however far
 			// it spilled, so the score scales down into its container rather than clipping.
-			naturalWidth = Math.max(naturalWidth, cx + x);
+			naturalWidth = Math.max(naturalWidth, cx + right + rightIndentOf(first));
 		});
 
-		const floorHeight = y + offset + PAGE_MARGIN_BOTTOM;
+		// The document's vertical layout, per system: its stave gaps and the distance above it.
+		const documentSystems = document
+			? this.documentSystems(
+					parts,
+					systems,
+					staveOffsets,
+					document,
+					mode === 'strict',
+				)
+			: null;
+		const systemStaveOffsets = documentSystems
+			? new Map(documentSystems.map((system, s) => [s, system.staveOffsets]))
+			: undefined;
+		// The deepest system sets the floor: the trailing gap the planned offsets end on, past
+		// the last stave of whichever system reaches furthest down.
+		const lastPlanned = staveOffsets.at(-1) ?? 0;
+		const deepest = Math.max(
+			lastPlanned,
+			...(documentSystems ?? []).map(
+				(system) => system.staveOffsets.at(-1) ?? 0,
+			),
+		);
+		const floorHeight =
+			y + offset + (deepest - lastPlanned) + PAGE_MARGIN_BOTTOM;
 
 		return {
 			measureCount,
 			totalStaves,
 			boxes,
 			staveOffsets,
+			systemStaveOffsets,
 			top: y,
 			systemGap: config.systemSpacing,
+			documentSystems: documentSystems?.map(
+				({ staveOffsets: _, ...system }) => system,
+			),
+			page,
 			width: naturalWidth,
 			floorHeight,
 			softmaxFactor,
@@ -958,6 +1119,34 @@ export class LayoutPlanner {
 		};
 	}
 }
+
+/** What the document says sits above one system, in px (see LayoutPlanner.documentSystems). */
+export type DocumentSystem = {
+	/** From the bottom line of the system above to this one's top line; null when unset. */
+	systemDistance: number | null;
+	/** From the page's top margin to this system's top line, when it opens a page. */
+	topSystemDistance: number | null;
+	/** The top stave's top line, relative to the stave's y. */
+	lineTop: number;
+	/** Whether the document starts a page with this system (`<print new-page="yes">`). */
+	startsPage: boolean;
+	/** documentLayout 'strict': the system distance is kept even where the music runs into
+	 * the system above. */
+	strict: boolean;
+	/** Per stave row, whether the gap above it is the document's, kept as set ('strict'); the
+	 * music opens every other gap it would print through. */
+	fixedGaps: boolean[];
+};
+
+/** A paged layout's page, in score px. */
+export type PageFrame = {
+	width: number;
+	height: number;
+	marginTop: number;
+	marginBottom: number;
+	/** How far right the drawing shifts to sit on the page. */
+	offsetX: number;
+};
 
 /** A measure's placed box within its system. */
 export type MeasureBox = {
@@ -991,9 +1180,15 @@ export type ScoreLayout = {
 	 * spacing (from the fixed constants) and the floor no system goes below. */
 	staveOffsets: number[];
 	/** What pass one measured each system actually needs, indexed by system (see
-	 * SpillResolver.spacedOffsets). Absent on pass one, where every system uses the planned
+	 * SpillResolver.spacedOffsets). On pass one, the document's own stave gaps when
+	 * documentLayout follows the document, and absent otherwise, where every system uses the planned
 	 * offsets; a system missing from it falls back to them too. */
 	systemStaveOffsets?: ReadonlyMap<number, number[]>;
+	/** The document's vertical layout per system, indexed by system; absent unless
+	 * documentLayout follows the document. */
+	documentSystems?: DocumentSystem[];
+	/** The page a paged layout fits its systems onto; null for any other layout. */
+	page: PageFrame | null;
 	/** Top margin: the first system's y. */
 	top: number;
 	/** Vertical gap between stacked systems. */

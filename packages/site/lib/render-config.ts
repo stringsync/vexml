@@ -233,5 +233,6 @@ export const SCALAR_KEYS = [
 export const LAYOUT_KEYS = [
 	'referenceWidth',
 	'honorSystemBreaks',
+	'documentLayout',
 	'overflow',
 ] as const;

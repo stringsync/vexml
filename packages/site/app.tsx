@@ -1,4 +1,4 @@
-import type { SystemOverflow } from '@stringsync/vexml';
+import type { DocumentLayoutMode, SystemOverflow } from '@stringsync/vexml';
 import { useDisposerEffect, useReactive, useResource } from '@webappwiz/react';
 import {
 	ChevronRightIcon,
@@ -78,6 +78,12 @@ const fixtures = {
 };
 
 // The overflow modes, in the order they sit in the segmented control.
+const DOCUMENT_LAYOUTS: ReadonlyArray<SegmentedOption<DocumentLayoutMode>> = [
+	{ value: 'ignore', label: 'ignore' },
+	{ value: 'follow', label: 'follow' },
+	{ value: 'strict', label: 'strict' },
+];
+
 const OVERFLOWS: ReadonlyArray<SegmentedOption<SystemOverflow>> = [
 	{ value: 'wrap', label: 'wrap' },
 	{ value: 'allow', label: 'allow' },
@@ -702,6 +708,32 @@ export default function App() {
 									})
 								}
 							/>
+						</Field>
+
+						<Field>
+							<FieldLabel
+								className="font-normal text-muted-foreground"
+								title="Whether the document's own page width, margins, system and staff distances are followed. follow opens a gap the music would print through; strict keeps the document's distances exactly."
+							>
+								Document layout
+							</FieldLabel>
+							<Segmented
+								value={
+									(layout?.documentLayout ?? 'ignore') as DocumentLayoutMode
+								}
+								onChange={(documentLayout) =>
+									model.config.patchLayout({ documentLayout })
+								}
+								options={DOCUMENT_LAYOUTS}
+								label="Document layout"
+								size="sm"
+								mono
+								stretch
+								className="bg-muted"
+							/>
+							<FieldDescription className="text-2xs text-faint">
+								Follow the document's page, system and staff spacing.
+							</FieldDescription>
 						</Field>
 					</>
 				)}

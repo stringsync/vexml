@@ -17,6 +17,12 @@ import {
 } from '@stringsync/mdom';
 import type { ChordFrame } from './chord-diagram-glyph';
 import { DEFAULT_TEMPO_BPM, EPSILON } from './constants';
+import {
+	ANY_STAFF,
+	DocumentLayout,
+	type LayoutBlock,
+	type PageMargins,
+} from './document-layout';
 import type { DynamicGlyphs } from './dynamic-glyphs';
 import { fontScaleOf } from './font-scale';
 import type { ModulationNote, TempoModulation } from './metronome-glyph';
@@ -1595,6 +1601,81 @@ export class ScoreReader {
 				entry?.child('part-abbreviation-display') ?? null,
 				null,
 			),
+		};
+	}
+
+	/*
+	 * The page, system and staff layout the document asks for (see DocumentLayout): its
+	 * `<defaults>`, and the `<print>` layout each part leads a measure with.
+	 */
+	documentLayoutOf(score: Score): DocumentLayout {
+		const prints = new Map<number, (LayoutBlock | null)[]>();
+		score.parts.forEach((part, partIndex) => {
+			part.measures.forEach((measure, m) => {
+				const print = measure.print;
+				if (!print) {
+					return;
+				}
+				const row =
+					prints.get(m) ??
+					Array.from({ length: score.parts.length }, () => null);
+				row[partIndex] = this.layoutBlockOf(print, print.newPage);
+				prints.set(m, row);
+			});
+		});
+		return new DocumentLayout(
+			this.layoutBlockOf(score.child('defaults'), false),
+			prints,
+		);
+	}
+
+	// The layout children of a `<defaults>` or `<print>`, tenths read as px (see DocumentLayout).
+	private layoutBlockOf(
+		element: MElement | null,
+		newPage: boolean,
+	): LayoutBlock {
+		const number = (parent: MElement | null | undefined, tag: string) => {
+			const text = parent?.child(tag)?.text?.trim();
+			const value = text ? Number(text) : Number.NaN;
+			return Number.isFinite(value) ? value : null;
+		};
+		const page = element?.child('page-layout');
+		// Odd-page margins first (page one is odd), then margins for both, then untyped.
+		const margins = page?.childrenNamed('page-margins') ?? [];
+		const pageMargins =
+			margins.find((m) => m.getAttribute('type') === 'odd') ??
+			margins.find((m) => m.getAttribute('type') === 'both') ??
+			margins.find((m) => m.getAttribute('type') === null) ??
+			null;
+		const system = element?.child('system-layout');
+		const systemMargins = system?.child('system-margins');
+		const staffDistances = new Map<string, number>();
+		for (const staff of element?.childrenNamed('staff-layout') ?? []) {
+			const distance = number(staff, 'staff-distance');
+			if (distance !== null) {
+				staffDistances.set(staff.getAttribute('number') ?? ANY_STAFF, distance);
+			}
+		}
+		return {
+			pageWidth: number(page, 'page-width'),
+			pageHeight: number(page, 'page-height'),
+			pageMargins: pageMargins ? this.pageMarginsOf(pageMargins) : null,
+			systemLeft: number(systemMargins, 'left-margin'),
+			systemRight: number(systemMargins, 'right-margin'),
+			systemDistance: number(system, 'system-distance'),
+			topSystemDistance: number(system, 'top-system-distance'),
+			staffDistances,
+			newPage,
+		};
+	}
+
+	private pageMarginsOf(margins: MElement): PageMargins {
+		const side = (tag: string) => Number(margins.child(tag)?.text) || 0;
+		return {
+			left: side('left-margin'),
+			right: side('right-margin'),
+			top: side('top-margin'),
+			bottom: side('bottom-margin'),
 		};
 	}
 

@@ -8,14 +8,13 @@ import {
 	LEDGER_HEADROOM,
 	PAGE_MARGIN_BOTTOM,
 	PAGE_MARGIN_TOP,
-	PAGE_MARGIN_X,
 } from './constants';
 import { DrawPass, type DrawPassResult, type SystemMark } from './draw-pass';
 import { FontFamilies } from './font-families';
 import type { Gaps } from './gaps';
 import type { RawNote } from './geometry-collector';
 import { Ink } from './ink';
-import type { ScoreLayout } from './layout-planner';
+import type { PageFrame, ScoreLayout } from './layout-planner';
 import { PagePlanner, type PageWalk } from './page-planner';
 import { PaintContext } from './paint-context';
 import { PaintList } from './paint-list';
@@ -70,7 +69,14 @@ export class SystemDraw {
 	private readonly topSlack = LEDGER_HEADROOM;
 	private readonly walk: PageWalk | null;
 	private readonly topOverflow = new Map<number, number>();
-	private readonly systemStaveOffsets = new Map<number, number[]>();
+	private readonly systemStaveOffsets: Map<number, number[]>;
+	// The document's own stave gaps per system, when the layout follows the document: each
+	// system's planned floor (see SpillResolver.revise).
+	private readonly plannedStaveOffsets:
+		| ReadonlyMap<number, number[]>
+		| undefined;
+	// The document's gaps a 'strict' layout keeps however far the music reaches.
+	private readonly fixedGaps: Map<number, boolean[]> | undefined;
 	private readonly lyricDrops = new Map<string, number>();
 	private readonly voltaLifts = new Map<number, number>();
 	private readonly hairpinBands = new Map<number, HairpinBand[]>();
@@ -101,7 +107,6 @@ export class SystemDraw {
 		this.systemCount =
 			boxes.reduce((n, b) => (b ? Math.max(n, b.systemIndex + 1) : n), 0) || 1;
 		const perSystem = floorHeight - layout.top + systemGap + LEDGER_HEADROOM;
-		const { layout: layoutConfig } = config;
 		// A system can still grow when its staves are re-spaced or a paged layout pushes it onto
 		// the next page, neither known before it is drawn, so the scratch page is sized for systems
 		// twice as tall and, when paged, a page of push apiece. The final crop trims it back.
@@ -109,10 +114,16 @@ export class SystemDraw {
 			layout.top +
 			this.topSlack +
 			this.systemCount * 2 * perSystem +
-			(layoutConfig.type === 'paged'
-				? this.systemCount * layoutConfig.pageHeight
-				: 0);
+			(layout.page ? this.systemCount * layout.page.height : 0);
 		this.activeFloorHeight = floorHeight;
+		this.plannedStaveOffsets = layout.systemStaveOffsets;
+		// Seeded with the document's own stave gaps, when the layout follows the document.
+		this.systemStaveOffsets = new Map(layout.systemStaveOffsets ?? []);
+		this.fixedGaps = layout.documentSystems
+			? new Map(
+					layout.documentSystems.map((system, s) => [s, system.fixedGaps]),
+				)
+			: undefined;
 
 		// Recorded, not drawn: a canvas the size of a long score goes blank past the browser's
 		// per-side cap (and vexflow crops one at 32767px), so the ops are kept and the stage replays
@@ -159,10 +170,10 @@ export class SystemDraw {
 				hairpinBands: this.hairpinBands,
 			},
 		);
-		this.walk =
-			layoutConfig.type === 'paged'
-				? new PagePlanner(layoutConfig.pageHeight, layoutConfig.margin).walk()
-				: null;
+		const { page } = layout;
+		this.walk = page
+			? new PagePlanner(page.height, page.marginTop, page.marginBottom).walk()
+			: null;
 		this.systems = this.drawing.systems();
 	}
 
@@ -208,9 +219,13 @@ export class SystemDraw {
 		}
 		// Fit onto its page: one that would cross a page's bottom margin is pushed to the next
 		// page by widening the gap above it. The push changes no system's own drawing, only
-		// where it sits.
+		// where it sits. Following the document, it fits by its staff lines and opens a page
+		// where it says.
+		const lines = this.drawing.linesOf(system);
+		const document = this.layout.documentSystems?.[system];
 		const push = this.walk?.place(
 			this.drawing.extentOf(system, next === undefined),
+			lines && document ? { lines, system: document } : undefined,
 		);
 		if (push) {
 			this.topOverflow.set(system, (this.topOverflow.get(system) ?? 0) + push);
@@ -244,9 +259,10 @@ export class SystemDraw {
 		const { layout: layoutConfig } = this.deps.config;
 		const pass = this.done() ? this.finish() : this.collected();
 		const ops = [...this.headerOps, ...this.settledOps()];
-		if (this.walk && this.done()) {
+		const { page } = this.layout;
+		if (this.walk && page && this.done()) {
 			const { cropTop, pageCount } = this.walk.result();
-			return this.paged(ops, pass, cropTop, pageCount);
+			return this.paged(ops, pass, page, cropTop, pageCount);
 		}
 		const { pageTop, pageBottom } = pass;
 		const { width } = this.layout;
@@ -347,6 +363,8 @@ export class SystemDraw {
 				hairpinsStacked: seen.hairpinsStacked,
 			},
 			this.systemCount,
+			this.plannedStaveOffsets,
+			this.fixedGaps,
 		);
 		return { seen, revision };
 	}
@@ -464,22 +482,18 @@ export class SystemDraw {
 	}
 
 	/*
-	 * The paged result: score space is the pages stacked edge to edge, each pageWidth wide. The
-	 * drawing shifts right so its staves sit between the side margins (it was laid out with its own
-	 * PAGE_MARGIN_X), and up by the plan's crop so the first system starts at the top margin.
+	 * The paged result: score space is the pages stacked edge to edge, each page wide. The
+	 * drawing shifts right so its staves sit between the side margins (see PageFrame.offsetX),
+	 * and up by the plan's crop so the first system starts at the top margin.
 	 */
 	private paged(
 		ops: readonly PaintOp[],
 		pass: DrawPassResult,
+		page: PageFrame,
 		cropTop: number,
 		pageCount: number,
 	): DrawResult {
-		const { layout } = this.deps.config;
-		if (layout.type !== 'paged') {
-			throw new Error('vexml: not a paged layout');
-		}
-		const { pageWidth, pageHeight, margin } = layout;
-		const dx = margin - PAGE_MARGIN_X;
+		const { width: pageWidth, height: pageHeight, offsetX: dx } = page;
 		const height = pageCount * pageHeight;
 		return {
 			geometry: this.toScore(

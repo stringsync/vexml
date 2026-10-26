@@ -47,19 +47,28 @@ export class SpillResolver {
 	 * Weigh a first pass: re-spaced offsets plus whether any of the four redraw triggers
 	 * fired: a gap that had to widen, a system that rose above its own top (only
 	 * meaningful with a system above it to collide with, hence systemCount), a stepped
-	 * lyric verse, or a volta bracket the notes climbed through.
+	 * lyric verse, or a volta bracket the notes climbed through. `plannedBySystem` is the
+	 * planned offsets of each system that has its own (the document's stave gaps), floors
+	 * as `planned` is for the rest; `fixedBySystem` marks the gaps (by the row below them)
+	 * kept as planned however far the music reaches (documentLayout 'strict').
 	 */
 	revise(
 		planned: number[],
 		report: SpillReport,
 		systemCount: number,
+		plannedBySystem?: ReadonlyMap<number, number[]>,
+		fixedBySystem?: ReadonlyMap<number, readonly boolean[]>,
 	): PassRevision {
+		const plannedOf = (system: number) =>
+			plannedBySystem?.get(system) ?? planned;
 		const systemStaveOffsets = this.spacedOffsets(
 			planned,
 			report.observedStaveSpill,
+			plannedBySystem,
+			fixedBySystem,
 		);
-		const respace = [...systemStaveOffsets.values()].some((offsets) =>
-			offsets.some((o, i) => o !== planned[i]),
+		const respace = [...systemStaveOffsets].some(([system, offsets]) =>
+			offsets.some((o, i) => o !== plannedOf(system)[i]),
 		);
 		const needsOverflow =
 			systemCount > 1 &&
@@ -81,8 +90,9 @@ export class SpillResolver {
 		// costs nothing: the final crop trims back to the content actually drawn.
 		const grewBy = Math.max(
 			0,
-			...[...systemStaveOffsets.values()].map(
-				(offsets) => (offsets.at(-1) ?? 0) - (planned.at(-1) ?? 0),
+			...[...systemStaveOffsets].map(
+				([system, offsets]) =>
+					(offsets.at(-1) ?? 0) - (plannedOf(system).at(-1) ?? 0),
 			),
 		);
 		return {
@@ -101,10 +111,19 @@ export class SpillResolver {
 	spacedOffsets(
 		planned: number[],
 		spillBySystem: ReadonlyMap<number, ReadonlyMap<number, StaveSpill>>,
+		plannedBySystem?: ReadonlyMap<number, number[]>,
+		fixedBySystem?: ReadonlyMap<number, readonly boolean[]>,
 	): Map<number, number[]> {
 		const bySystem = new Map<number, number[]>();
 		for (const [system, spill] of spillBySystem) {
-			bySystem.set(system, this.systemOffsets(planned, spill));
+			bySystem.set(
+				system,
+				this.systemOffsets(
+					plannedBySystem?.get(system) ?? planned,
+					spill,
+					fixedBySystem?.get(system),
+				),
+			);
 		}
 		return bySystem;
 	}
@@ -113,14 +132,20 @@ export class SpillResolver {
 	private systemOffsets(
 		planned: number[],
 		spill: ReadonlyMap<number, StaveSpill>,
+		fixed?: readonly boolean[],
 	): number[] {
 		// planned gap size -> the widest any gap of that size turned out to need.
 		const resolved = new Map<number, number>();
-		const plannedGaps: number[] = [];
+		const plannedGaps: (number | null)[] = [];
 		for (let i = 1; i < planned.length; i++) {
 			const above = spill.get(i - 1);
 			const below = spill.get(i);
 			const plannedGap = (planned[i] ?? 0) - (planned[i - 1] ?? 0);
+			// A fixed gap stays as planned, and takes no part in the size groups below.
+			if (fixed?.[i]) {
+				plannedGaps.push(null);
+				continue;
+			}
 			// Content bottom of the upper stave, and content top of the lower one, both
 			// relative to their own stave y, so their difference is the gap they need.
 			const needed =
@@ -138,11 +163,13 @@ export class SpillResolver {
 		}
 
 		const offsets = [planned[0] ?? 0];
-		for (const plannedGap of plannedGaps) {
-			offsets.push(
-				(offsets.at(-1) ?? 0) + (resolved.get(plannedGap) ?? plannedGap),
-			);
-		}
+		plannedGaps.forEach((plannedGap, g) => {
+			const gap =
+				plannedGap === null
+					? (planned[g + 1] ?? 0) - (planned[g] ?? 0)
+					: (resolved.get(plannedGap) ?? plannedGap);
+			offsets.push((offsets.at(-1) ?? 0) + gap);
+		});
 		return offsets;
 	}
 

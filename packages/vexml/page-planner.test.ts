@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'bun:test';
+import type { DocumentSystem } from './layout-planner';
 import { PagePlanner, PageWalk } from './page-planner';
 
 // 100px pages with 10px margins leave 80px for systems, from y 10 to 90 on the first page.
-const planner = new PagePlanner(100, 10);
+const planner = new PagePlanner(100, 10, 10);
 
 describe('PagePlanner', () => {
 	it('crops the drawing so the first system starts at the top margin', () => {
@@ -62,11 +63,87 @@ describe('PagePlanner', () => {
 	it('plans one empty page when there are no systems', () => {
 		expect(planner.plan([]).pageCount).toBe(1);
 	});
+
+	describe('following the document', () => {
+		const system = (
+			overrides: Partial<DocumentSystem> = {},
+		): DocumentSystem => ({
+			systemDistance: null,
+			topSystemDistance: 5,
+			lineTop: 0,
+			startsPage: false,
+			strict: false,
+			fixedGaps: [],
+			...overrides,
+		});
+
+		it('puts the first top line its top-system-distance below the top margin', () => {
+			const plan = planner.plan([{ top: 250, bottom: 280 }], {
+				lines: [{ top: 260, bottom: 270 }],
+				systems: [system()],
+			});
+			// The top line lands at 10 + 5: 245 is cropped.
+			expect(plan.cropTop).toBe(245);
+		});
+
+		it('fits a system by its staff lines, letting its ink hang into the bottom margin', () => {
+			const plan = planner.plan(
+				[
+					{ top: 0, bottom: 30 },
+					{ top: 40, bottom: 98 },
+				],
+				{
+					lines: [
+						{ top: 15, bottom: 25 },
+						{ top: 55, bottom: 85 },
+					],
+					systems: [system(), system()],
+				},
+			);
+			expect(plan.pushes.size).toBe(0);
+		});
+
+		it('pushes a system opening a page to its top-system-distance', () => {
+			const plan = planner.plan(
+				[
+					{ top: 0, bottom: 30 },
+					{ top: 40, bottom: 100 },
+				],
+				{
+					lines: [
+						{ top: 15, bottom: 25 },
+						{ top: 50, bottom: 95 },
+					],
+					systems: [system(), system({ topSystemDistance: 20 })],
+				},
+			);
+			// The second top line, at 50, moves to 100 + 10 + 20.
+			expect([...plan.pushes]).toEqual([[1, 80]]);
+			expect(plan.pageCount).toBe(2);
+		});
+
+		it('starts a page where the document does, though the system fits', () => {
+			const plan = planner.plan(
+				[
+					{ top: 0, bottom: 30 },
+					{ top: 40, bottom: 50 },
+				],
+				{
+					lines: [
+						{ top: 15, bottom: 25 },
+						{ top: 42, bottom: 48 },
+					],
+					systems: [system(), system({ startsPage: true })],
+				},
+			);
+			expect([...plan.pushes]).toEqual([[1, 73]]);
+		});
+	});
 });
 
 describe('PageWalk', () => {
 	it('answers each system with its push as the earlier pushes have placed it', () => {
-		const walk = new PageWalk(100, 10);
+		const walk = new PageWalk(100, 10, 10);
 		expect(walk.place({ top: 0, bottom: 30 })).toBe(0);
 		expect(walk.place({ top: 40, bottom: 120 })).toBe(60);
 		// The next system is drawn below the pushed one, so it needs no push of its own.
@@ -75,7 +152,7 @@ describe('PageWalk', () => {
 	});
 
 	it('leaves one empty page when nothing was placed', () => {
-		expect(new PageWalk(100, 10).result()).toEqual({
+		expect(new PageWalk(100, 10, 10).result()).toEqual({
 			cropTop: 0,
 			pageCount: 1,
 		});

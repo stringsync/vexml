@@ -235,6 +235,23 @@ export type GapPosition =
  *   given container. */
 export type SystemOverflow = 'wrap' | 'allow' | 'widen';
 
+/** Whether a standard or paged layout follows the document's own page, system and staff
+ * layout.
+ *
+ * - `'ignore'`: vexml lays the score out itself.
+ * - `'follow'`: a `<defaults><page-layout>` page width and side margins replace the reference
+ *   width, `<system-margins>` indent each system, and `<system-distance>` and
+ *   `<staff-distance>` set the gaps between systems and staves, each `<print>` overriding the
+ *   defaults for the system it starts. Distances are read in tenths, a tenth of a staff space,
+ *   so the score keeps the document's proportions at vexml's own staff size. Where the music
+ *   needs more room than a distance gives, the gap opens so nothing prints through anything.
+ *   What the document leaves out keeps vexml's own spacing. Pair it with `honorSystemBreaks`
+ *   to reproduce the document's lines.
+ * - `'strict'`: as `'follow'`, but every distance the document sets is kept exactly, even
+ *   where the music then prints through the stave or system next to it. For lining vexml up
+ *   with the document's own engraving. */
+export type DocumentLayoutMode = 'ignore' | 'follow' | 'strict';
+
 /** Wrap measures onto stacked systems (print-like). */
 export type StandardLayout = {
 	type: 'standard';
@@ -253,6 +270,9 @@ export type StandardLayout = {
 	 * the source's engraved line breaks were made for a different page size than the one being
 	 * rendered. */
 	honorSystemBreaks: boolean;
+	/** Whether the document's own page, system and staff layout is followed (default:
+	 * 'ignore'). See DocumentLayoutMode. */
+	documentLayout: DocumentLayoutMode;
 	/** What gives when a system's music cannot fit the page at its collision-free minimum
 	 * (default: 'wrap'). See SystemOverflow.
 	 *
@@ -310,8 +330,13 @@ export type PagedLayout = {
 	 * bottom margins runs into the bottom one. */
 	margin: number;
 	/** As StandardLayout.honorSystemBreaks (default: true). A `new-page="yes"` only starts a
-	 * new system, not a new page. */
+	 * new system, not a new page, unless documentLayout follows the document. */
 	honorSystemBreaks: boolean;
+	/** As StandardLayout.documentLayout (default: 'ignore'), and the page too: following the
+	 * document, a `<page-layout>` page size and its four margins replace `pageWidth`,
+	 * `pageHeight` and `margin`, the first system on each page sits `<top-system-distance>`
+	 * below the top margin, and a `<print new-page="yes">` starts a page. */
+	documentLayout: DocumentLayoutMode;
 	/** As StandardLayout.overflow (default: 'wrap'). Anything wider than the page is cut off
 	 * at the page's edge. */
 	overflow: SystemOverflow;
@@ -360,6 +385,7 @@ export const DEFAULT_STANDARD_LAYOUT: StandardLayout = {
 	type: 'standard',
 	referenceWidth: DEFAULT_WIDTH,
 	honorSystemBreaks: true,
+	documentLayout: 'ignore',
 	overflow: 'wrap',
 };
 
@@ -379,6 +405,7 @@ export const DEFAULT_PAGED_LAYOUT: PagedLayout = {
 	pageHeight: 1056,
 	margin: 48,
 	honorSystemBreaks: true,
+	documentLayout: 'ignore',
 	overflow: 'wrap',
 };
 

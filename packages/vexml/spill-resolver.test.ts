@@ -156,6 +156,72 @@ describe('SpillResolver', () => {
 		hairpinsStacked: false,
 	};
 
+	it('floors each system at its own planned offsets, and lets a quiet one stand', () => {
+		// The document planned system 0's gap at 140, wider than the score-wide 120.
+		const planned = new Map([[0, [0, 140]]]);
+		const revision = new SpillResolver().revise(
+			[0, 120],
+			quietReport,
+			2,
+			planned,
+		);
+		expect(revision.systemStaveOffsets.get(0)).toEqual([0, 140]);
+		expect(revision.needed).toBe(false);
+	});
+
+	it('still widens a system planned by the document when its music needs more', () => {
+		const revision = new SpillResolver().revise(
+			[0, 120],
+			{
+				...quietReport,
+				observedStaveSpill: new Map([
+					[
+						0,
+						new Map([
+							[0, spill(0, 50, 0)],
+							[1, spill(60, 0, 0)],
+						]),
+					],
+				]),
+			},
+			1,
+			new Map([[0, [0, 100]]]),
+		);
+		expect(revision.systemStaveOffsets.get(0)?.[1]).toBe(
+			80 + 50 + STAVE_CLEARANCE + 60 - 40,
+		);
+		expect(revision.grewBy).toBe(162 - 100);
+		expect(revision.needed).toBe(true);
+	});
+
+	it('keeps a fixed gap as planned however far the music reaches', () => {
+		const revision = new SpillResolver().revise(
+			[0, 120, 240],
+			{
+				...quietReport,
+				observedStaveSpill: new Map([
+					[
+						0,
+						new Map([
+							[0, spill(0, 50, 0)],
+							[1, spill(60, 50, 0)],
+							[2, spill(60, 0, 0)],
+						]),
+					],
+				]),
+			},
+			1,
+			new Map([[0, [0, 100, 200]]]),
+			new Map([[0, [false, true, false]]]),
+		);
+		// The fixed gap stays at 100; the other, planned at the same size, still widens.
+		expect(revision.systemStaveOffsets.get(0)).toEqual([
+			0,
+			100,
+			100 + 80 + 50 + STAVE_CLEARANCE + 60 - 40,
+		]);
+	});
+
 	it('lets a quiet first pass stand', () => {
 		const revision = new SpillResolver().revise([0, 120], quietReport, 2);
 		expect(revision.needed).toBe(false);

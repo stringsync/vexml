@@ -7,6 +7,7 @@ export { ChordNoteOrder } from './chord-note-order';
 export type {
 	Config,
 	ConfigInput,
+	DocumentLayoutMode,
 	FontConfig,
 	FontOverride,
 	Gap,
