@@ -1,7 +1,7 @@
 import type { RenderContext, Stave, StaveNote } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import type { CollisionResolver } from './collision-resolver';
-import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT } from './constants';
+import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT, LYRIC_PADDING } from './constants';
 import { isLyricMark, type LyricMark } from './lyric-mark';
 import type { VoiceTranslator } from './voice-translator';
 
@@ -99,14 +99,12 @@ export class LyricPlacer {
 				// inside its notehead's own style, so an uncolored lyric under a note the
 				// score colored would otherwise come out in the notehead's color.
 				lyric.setStyle({ fillStyle: this.notationColor });
-				// LyricAnnotation.draw centers the syllable on the notehead and draws up from
-				// the baseline, so its box is one text height tall ending at that baseline.
-				// getAbsoluteX is the notehead's left edge, half a notehead short of its center.
+				// LyricAnnotation.draw lines the syllable up with the notehead per its justify
+				// and draws up from the baseline, so its box is one text height tall ending at
+				// that baseline.
 				const w = lyric.getWidth();
-				const center =
-					note.getAbsoluteX() + this.translator.noteheadHalfWidth();
 				const rect = new Rect(
-					center - w / 2,
+					lyric.boxLeft(note.getNoteHeadBeginX(), note.getNoteHeadEndX()),
 					y - LYRIC_FONT_SIZE,
 					w,
 					LYRIC_FONT_SIZE,
@@ -174,7 +172,10 @@ export class LyricPlacer {
 					continue;
 				}
 				const y = baseline + lyric.verseIndex * LYRIC_LINE_HEIGHT;
-				const x1 = note.getAbsoluteX() + lyric.getWidth() / 2;
+				const x1 =
+					lyric.boxLeft(note.getNoteHeadBeginX(), note.getNoteHeadEndX()) +
+					lyric.getWidth() -
+					LYRIC_PADDING;
 				const x2 = last.getAbsoluteX() + this.translator.noteheadHalfWidth();
 				if (x2 <= x1) {
 					continue;

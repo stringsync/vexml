@@ -18,6 +18,7 @@ import { FERMATA_GLYPHS } from './fermata-glyphs';
 import { FingeringAnnotation } from './fingering-annotation';
 import { FontFamilies } from './font-families';
 import { LyricAnnotation } from './lyric-annotation';
+import type { LyricJustify } from './lyric-mark';
 import { NonArpeggioBracket } from './non-arpeggio-bracket';
 import { NoteheadArticulation } from './notehead-articulation';
 import { StaveArticulation } from './stave-articulation';
@@ -348,10 +349,17 @@ export class NotationTranslator {
 						index,
 						verse.extend,
 						this.lyricFaceOf(verse),
+						this.justifyOf(verse),
 					),
 				);
 			}
 		});
+	}
+
+	/* `<lyric justify>`: which edge of the note the syllable lines up with; anything else is centered. */
+	private justifyOf(verse: Lyric): LyricJustify {
+		const justify = verse.getAttribute('justify');
+		return justify === 'left' || justify === 'right' ? justify : 'center';
 	}
 
 	/*

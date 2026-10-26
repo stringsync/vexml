@@ -1,10 +1,12 @@
-import type { LyricMark } from './lyric-mark';
+import type { LyricJustify, LyricMark } from './lyric-mark';
 
 export interface FakeLyricMarkOptions {
 	/** Whether a melisma line trails the syllable. Default false. */
 	extend?: boolean;
 	/** The width the syllable reports. Default 20. */
 	width?: number;
+	/** Which edge of its note the syllable lines up with. Default 'center'. */
+	justify?: LyricJustify;
 }
 
 /*
@@ -18,6 +20,7 @@ export class FakeLyricMark implements LyricMark {
 	/** The fill the placer inked this syllable with, or undefined until it does. */
 	fillStyle: string | undefined;
 	readonly extend: boolean;
+	readonly justify: LyricJustify;
 	private readonly width: number;
 
 	constructor(
@@ -26,6 +29,17 @@ export class FakeLyricMark implements LyricMark {
 	) {
 		this.extend = opts.extend ?? false;
 		this.width = opts.width ?? 20;
+		this.justify = opts.justify ?? 'center';
+	}
+
+	boxLeft(noteheadBeginX: number, noteheadEndX: number): number {
+		if (this.justify === 'left') {
+			return noteheadBeginX;
+		}
+		if (this.justify === 'right') {
+			return noteheadEndX - this.width;
+		}
+		return (noteheadBeginX + noteheadEndX) / 2 - this.width / 2;
 	}
 
 	getWidth(): number {

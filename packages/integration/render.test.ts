@@ -1246,6 +1246,15 @@ describe('render', () => {
 		);
 	});
 
+	// Treble stave, common time: <lyric justify>. Four quarters, each with a wide syllable.
+	// - "Left" starts at its notehead's left edge, "Mid" is centered, "Right" ends at its
+	//   notehead's right edge, and "Default" (no justify) is centered like "Mid".
+	it.concurrent('renders lyrics_justify.png', async () => {
+		expect(await testing.render('lyrics_justify.musicxml')).toMatchScreenshot(
+			'lyrics_justify.png',
+		);
+	});
+
 	// Treble stave, common time: <elision>, several syllables sung on one note, which is how
 	// Italian and French vocal writing sets a vowel run. Four C5 quarters, so only the text
 	// under each notehead varies, and all four sit centered on their note as one unit.

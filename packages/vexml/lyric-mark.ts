@@ -7,11 +7,18 @@
  * is only the part the draw pass touches, so a test can place lyrics without vexflow's
  * text machinery.
  */
+/** Which edge of its note a syllable lines up with: `<lyric justify>`. */
+export type LyricJustify = 'left' | 'center' | 'right';
+
 export interface LyricMark {
 	/** Tells a lyric apart from the other modifiers a note carries. */
 	readonly kind: 'lyric';
 	/** 0-based verse index: which row under the stave this syllable sits on. */
 	readonly verseIndex: number;
+	/** Which edge of its note the syllable lines up with. */
+	readonly justify: LyricJustify;
+	/** Where the syllable's box starts, given its note's notehead span. */
+	boxLeft(noteheadBeginX: number, noteheadEndX: number): number;
 	/** Whether a melisma `<extend/>` line trails this syllable. */
 	readonly extend: boolean;
 	/** The syllable's drawn width, including the gap it keeps from its neighbors. */

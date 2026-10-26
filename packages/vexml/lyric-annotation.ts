@@ -1,6 +1,6 @@
-import { Annotation, Modifier } from 'vexflow/core';
+import { Annotation, type StaveNote } from 'vexflow/core';
 import { LYRIC_FONT_SIZE, LYRIC_PADDING } from './constants';
-import type { LyricMark } from './lyric-mark';
+import type { LyricJustify, LyricMark } from './lyric-mark';
 
 /*
  * A lyric syllable under the stave. vexflow's own BOTTOM-justified Annotation hangs its
@@ -29,6 +29,8 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 		readonly extend: boolean,
 		/** A CSS font-family list to type the syllable in. Absent means vexflow's text face. */
 		family?: string,
+		/** Which edge of the note the syllable lines up with (`<lyric justify>`). */
+		readonly justify: LyricJustify = 'center',
 	) {
 		super(text);
 		this.setVerticalJustification(Annotation.VerticalJustify.BOTTOM);
@@ -59,14 +61,31 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 		return super.getWidth() + 2 * LYRIC_PADDING;
 	}
 
+	/*
+	 * Where the syllable's box starts, given its note's notehead span. Center straddles the
+	 * notehead, left starts the text at the notehead's left edge and right ends it at the
+	 * notehead's right edge; the box keeps its padding either side, so the ink lines up.
+	 */
+	boxLeft(noteheadBeginX: number, noteheadEndX: number): number {
+		const w = this.getWidth();
+		switch (this.justify) {
+			case 'left':
+				return noteheadBeginX - LYRIC_PADDING;
+			case 'right':
+				return noteheadEndX + LYRIC_PADDING - w;
+			default:
+				return (noteheadBeginX + noteheadEndX) / 2 - w / 2;
+		}
+	}
+
 	override draw(): void {
 		const ctx = this.checkContext();
-		const note = this.checkAttachedNote();
+		// Lyrics are only attached to StaveNotes (see NotationTranslator.addLyrics).
+		const note = this.checkAttachedNote() as StaveNote;
 		this.setRendered();
-		// Center the syllable on the notehead, the same horizontal treatment a CENTER-
-		// justified Annotation gets; only the vertical placement is ours.
-		const start = note.getModifierStartXY(Modifier.Position.ABOVE, this.index);
-		this.x = start.x - this.getWidth() / 2;
+		// Line the syllable up with the notehead per its justify; only the vertical
+		// placement is ours.
+		this.x = this.boxLeft(note.getNoteHeadBeginX(), note.getNoteHeadEndX());
 		this.y = this.baselineY;
 		this.renderText(ctx, 0, 0);
 	}

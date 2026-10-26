@@ -13,6 +13,8 @@ describe('LyricPlacer', () => {
 	const note = (x: number, modifiers: unknown[]) =>
 		({
 			getAbsoluteX: () => x,
+			getNoteHeadBeginX: () => x,
+			getNoteHeadEndX: () => x + 12,
 			getModifiers: () => modifiers,
 			checkStave: () => stave,
 		}) as unknown as StaveNote;
@@ -60,6 +62,23 @@ describe('LyricPlacer', () => {
 		expect(placer.stepped(0)).toBe(true);
 		expect(placer.observedDrops().get('0:0')).toBe(20);
 		expect(placer.observedDrops().get('1:0')).toBe(5);
+	});
+
+	it('lines a syllable up with its notehead per justify', () => {
+		const { placer, obstacles } = makePlacer();
+		placer.pin(
+			[
+				note(100, [new FakeLyricMark(0, { width: 20, justify: 'left' })]),
+				note(200, [new FakeLyricMark(0, { width: 20, justify: 'right' })]),
+				note(300, [new FakeLyricMark(0, { width: 20 })]),
+			],
+			0,
+			50,
+		);
+		expect(placer.pinnedSyllables().map((p) => p.left)).toEqual([
+			100, 192, 296,
+		]);
+		expect(obstacles()).toHaveLength(3);
 	});
 
 	it('reads the previous pass drop for a system row, 0 when it reserved none', () => {
@@ -135,9 +154,9 @@ describe('LyricPlacer', () => {
 			note(180, [new FakeLyricMark(0, {})]),
 		];
 		placer.pin(notes, 0, 50);
-		// From half the syllable's width past its note to half a notehead past the held
+		// From the end of the syllable's ink to half a notehead past the held
 		// note (the one before the next syllable), on the verse's own crisped row.
-		expect(lines).toEqual([{ x1: 115, x2: 146, y: 50.5 }]);
+		expect(lines).toEqual([{ x1: 118, x2: 146, y: 50.5 }]);
 	});
 
 	it('runs a melisma with no following syllable to the last note of the stave', () => {
@@ -147,7 +166,7 @@ describe('LyricPlacer', () => {
 			note(180, []),
 		];
 		placer.pin(notes, 0, 50);
-		expect(lines).toEqual([{ x1: 115, x2: 186, y: 50.5 }]);
+		expect(lines).toEqual([{ x1: 118, x2: 186, y: 50.5 }]);
 	});
 
 	it('skips a melisma whose syllable already sits on the held note', () => {

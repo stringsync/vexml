@@ -17,7 +17,7 @@ by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
 Elements: 288 drawn, 69 ignored, 85 missing; vexml draws 288 of the 373 that show on the page (77%).
-Attributes: 82 drawn, 5 ignored, 31 missing.
+Attributes: 83 drawn, 5 ignored, 30 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -270,7 +270,7 @@ Attributes: 82 drawn, 5 ignored, 31 missing.
 | `listen` | ignored | interactive performance only |
 | `listening` | ignored | interactive performance only |
 | `lyric` | drawn | `lyrics.musicxml` |
-| `lyric@justify` | missing | task #38; syllable justification ignored; mdom raw only |
+| `lyric@justify` | drawn | `lyrics_justify.musicxml`: left and right align the syllable to the notehead edge, center and absent center it |
 | `lyric@number` | drawn | `lyrics.musicxml`, `lyrics_two_voices.musicxml`: verse order sets the row |
 | `lyric-font` | drawn | `text_font_family.musicxml` M6: its face for lyrics under the documentFonts setting, by verse number or name; its size task #51 |
 | `lyric-language` | ignored | metadata |
