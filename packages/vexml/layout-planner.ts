@@ -6,6 +6,7 @@ import {
 	Metrics,
 	type Voice,
 } from 'vexflow/core';
+import { Appearance } from './appearance';
 import type { Config, Gap, PanoramicLayout, StandardLayout } from './config';
 import {
 	BASE_VOICE_WIDTH,
@@ -536,6 +537,8 @@ export class LayoutPlanner {
 		const document =
 			mode === 'ignore' ? null : this.reader.documentLayoutOf(score);
 		const documentPage = document?.page() ?? null;
+		const appearance =
+			mode === 'ignore' ? Appearance.NONE : this.reader.appearanceOf(score);
 		const page = this.pageOf(config, documentPage);
 		const layout = this.flowOf(config, page, documentPage);
 		const layoutMode = layout.type;
@@ -1111,6 +1114,7 @@ export class LayoutPlanner {
 			systemStaveOffsets,
 			top: y,
 			systemGap: config.systemSpacing,
+			appearance,
 			documentSystems: documentSystems?.map(
 				({ staveOffsets: _, ...system }) => system,
 			),
@@ -1201,6 +1205,9 @@ export type ScoreLayout = {
 	/** The document's vertical layout per system, indexed by system; absent unless
 	 * documentLayout follows the document. */
 	documentSystems?: DocumentSystem[];
+	/** The document's engraving sizes when documentLayout follows the document, else
+	 * Appearance.NONE. */
+	appearance: Appearance;
 	/** The page a paged layout fits its systems onto; null for any other layout. */
 	page: PageFrame | null;
 	/** Top margin: the first system's y. */

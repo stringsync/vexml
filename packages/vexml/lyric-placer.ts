@@ -10,6 +10,8 @@ export interface LyricPlacerOptions {
 	 * notes above it, measured on the previous pass and reserved on this one; empty on the
 	 * first pass. */
 	lyricDrops?: Map<string, number>;
+	/** The melisma line's width (`<line-width type="extend">`); 1px when absent. */
+	extendWidth?: number | null;
 }
 
 /* One pinned lyric syllable, as the spill report needs it (see LyricPlacer.rowDrop). */
@@ -30,6 +32,7 @@ export interface PinnedSyllable {
 export class LyricPlacer {
 	// Measured on the previous pass and reserved on this one; empty on the first pass.
 	private readonly lyricDrops: Map<string, number>;
+	private readonly extendWidth: number;
 	// Verse baseline feedback, keyed by `<systemIndex>:<staveRow>`: how far below the bottom
 	// staff line this pass hung the row's lyrics, and whether the row's measure columns
 	// disagreed (see recordDrop).
@@ -45,6 +48,7 @@ export class LyricPlacer {
 		opts: LyricPlacerOptions,
 	) {
 		this.lyricDrops = opts.lyricDrops ?? new Map();
+		this.extendWidth = opts.extendWidth ?? 1;
 	}
 
 	/** Key for one stave row of one system, the scope a verse's baseline is shared over. */
@@ -184,7 +188,7 @@ export class LyricPlacer {
 				}
 				this.context.save();
 				this.context.setStrokeStyle(this.notationColor);
-				this.context.setLineWidth(1);
+				this.context.setLineWidth(this.extendWidth);
 				// Half-pixel offset so a 1px line lands on one device row instead of straddling
 				// two and coming out gray next to the black staff lines.
 				const crisp = Math.round(y) + 0.5;
@@ -194,7 +198,12 @@ export class LyricPlacer {
 				this.context.stroke();
 				this.context.restore();
 				this.collisionResolver.add({
-					rect: new Rect(x1, y - 1, x2 - x1, 2),
+					rect: new Rect(
+						x1,
+						y - Math.max(1, this.extendWidth / 2),
+						x2 - x1,
+						Math.max(2, this.extendWidth),
+					),
 					kind: 'annotation',
 					band: row,
 				});

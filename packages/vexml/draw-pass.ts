@@ -70,6 +70,7 @@ import { type HairpinBand, SpannerResolver } from './spanner-resolver';
 import { SpillTracker, type StaveSpill } from './spill-tracker';
 import { StaveBuilder, type StaveColumn } from './stave-builder';
 import type { StavePlan } from './stave-plan';
+import { StemWidth } from './stem-width';
 import {
 	type FormatColumn,
 	type PendingStave,
@@ -475,6 +476,7 @@ export class DrawPass {
 				staveOffsets,
 				systemStaveOffsets,
 				voltaLifts: this.voltaLifts,
+				appearance: layout.appearance,
 			},
 		);
 		this.lyricPlacer = new LyricPlacer(
@@ -482,7 +484,10 @@ export class DrawPass {
 			context,
 			this.collisionResolver,
 			this.notationColor,
-			{ lyricDrops: opts.lyricDrops },
+			{
+				lyricDrops: opts.lyricDrops,
+				extendWidth: layout.appearance.lineWidth('extend'),
+			},
 		);
 		this.voiceBuilder = new VoiceBuilder(translator, tab, reader, spanners, {
 			softmaxFactor: this.softmaxFactor,
@@ -577,6 +582,10 @@ export class DrawPass {
 		// global VexFlow state like setFonts, set afresh by every pass.
 		MetricsDefaults.Stem.strokeStyle = this.notationColor;
 		Metrics.clear('Stem');
+		// The document's line widths, when the layout follows it. The stem width is vexflow's
+		// global too, set afresh like the stroke above so one score's never leaks into the next.
+		new StemWidth().set(layout.appearance.lineWidth('stem'));
+		spanners.useAppearance(layout.appearance);
 	}
 
 	/* The systems to draw, in order. */

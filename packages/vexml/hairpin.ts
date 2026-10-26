@@ -30,6 +30,8 @@ export class Hairpin {
 	 * direction the hairpin sits: positive is further from the staff.
 	 */
 	private offset = 0;
+	/* The wedge's stroke width (`<line-width type="wedge">`); null strokes at the context's. */
+	private lineWidth: number | null = null;
 	setContext(context: RenderContext): this {
 		this.context = context;
 		return this;
@@ -40,6 +42,10 @@ export class Hairpin {
 	}
 	getOffset(): number {
 		return this.offset;
+	}
+	setLineWidth(lineWidth: number | null): this {
+		this.lineWidth = lineWidth;
+		return this;
 	}
 	get stave(): Stave {
 		return this.from.checkStave();
@@ -84,6 +90,9 @@ export class Hairpin {
 		const circleX = pointX + (mouthX > pointX ? radius : -radius);
 		const armY = (y: number) => mid + (y - mid) * (run ? radius / run : 0);
 		ctx.save();
+		if (this.lineWidth !== null) {
+			ctx.setLineWidth(this.lineWidth);
+		}
 		if (this.dash) {
 			ctx.setLineDash(this.dash);
 		}
@@ -97,9 +106,14 @@ export class Hairpin {
 		ctx.stroke();
 		ctx.restore();
 		if (radius) {
+			ctx.save();
+			if (this.lineWidth !== null) {
+				ctx.setLineWidth(this.lineWidth);
+			}
 			ctx.beginPath();
 			ctx.arc(circleX, mid, radius, 0, Math.PI * 2, false);
 			ctx.stroke();
+			ctx.restore();
 		}
 	}
 }

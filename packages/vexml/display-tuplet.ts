@@ -12,6 +12,9 @@ export type DisplayTupletOptions = TupletOptions & {
 	normalValue?: TupletNoteValue | null;
 	/* <tuplet line-shape="curved">: arcs in place of the square bracket. */
 	curved?: boolean;
+	/* The square bracket's line width (`<line-width type="tuplet bracket">`); vexflow's 1px
+	 * when absent. */
+	bracketWidth?: number | null;
 };
 
 /* SMuFL metNote*Up glyphs, as metronome-glyph.ts draws them, and metAugmentationDot. */
@@ -42,15 +45,24 @@ const TEXT_GAP = 5;
  */
 export class DisplayTuplet extends Tuplet {
 	private readonly curved: boolean;
+	private readonly bracketWidth: number | null;
 
 	constructor(
 		notes: ConstructorParameters<typeof Tuplet>[0],
 		options: DisplayTupletOptions = {},
 	) {
-		const { showNumber, showType, actualValue, normalValue, curved, ...rest } =
-			options;
+		const {
+			showNumber,
+			showType,
+			actualValue,
+			normalValue,
+			curved,
+			bracketWidth,
+			...rest
+		} = options;
 		super(notes, rest);
 		this.curved = curved ?? false;
+		this.bracketWidth = bracketWidth ?? null;
 		const ratioed = this.options.ratioed;
 		const side = (
 			number: number,
@@ -81,7 +93,11 @@ export class DisplayTuplet extends Tuplet {
 	}
 
 	override draw(): void {
-		if (!this.curved && this.textElement.getText() !== '') {
+		if (
+			!this.curved &&
+			this.bracketWidth === null &&
+			this.textElement.getText() !== ''
+		) {
 			super.draw();
 			return;
 		}
@@ -112,20 +128,17 @@ export class DisplayTuplet extends Tuplet {
 					this.arc(xPos, center - half, yPos, location);
 					this.arc(xPos + this.width, center + half, yPos, location);
 				} else {
-					// No numeral to split around: one unbroken line.
-					ctx.fillRect(xPos, yPos, this.width, 1);
-					ctx.fillRect(
-						xPos,
-						yPos + (location === Tuplet.LOCATION_BOTTOM ? 1 : 0),
-						1,
-						location * LEG,
-					);
-					ctx.fillRect(
-						xPos + this.width,
-						yPos + (location === Tuplet.LOCATION_BOTTOM ? 1 : 0),
-						1,
-						location * LEG,
-					);
+					const width = this.bracketWidth ?? 1;
+					if (half === 0) {
+						// No numeral to split around: one unbroken line.
+						ctx.fillRect(xPos, yPos, this.width, width);
+					} else {
+						ctx.fillRect(xPos, yPos, run, width);
+						ctx.fillRect(center + half, yPos, run, width);
+					}
+					const legY = yPos + (location === Tuplet.LOCATION_BOTTOM ? width : 0);
+					ctx.fillRect(xPos, legY, width, location * LEG);
+					ctx.fillRect(xPos + this.width, legY, width, location * LEG);
 				}
 			}
 		}

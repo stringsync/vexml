@@ -15,6 +15,7 @@ import {
 	type Score,
 	type Time,
 } from '@stringsync/mdom';
+import { Appearance } from './appearance';
 import type { ChordFrame } from './chord-diagram-glyph';
 import { DEFAULT_TEMPO_BPM, EPSILON } from './constants';
 import {
@@ -1753,6 +1754,26 @@ export class ScoreReader {
 			this.layoutBlockOf(score.child('defaults'), false, 0),
 			prints,
 		);
+	}
+
+	/*
+	 * The engraving sizes the document's `<defaults><appearance>` sets (see Appearance), tenths
+	 * read as px. A value that is no positive number is left out.
+	 */
+	appearanceOf(score: Score): Appearance {
+		const appearance = score.child('defaults')?.child('appearance');
+		const sizes = (tag: string) => {
+			const sizes = new Map<string, number>();
+			for (const element of appearance?.childrenNamed(tag) ?? []) {
+				const type = element.getAttribute('type')?.trim();
+				const value = Number(element.text?.trim() || Number.NaN);
+				if (type && Number.isFinite(value) && value > 0) {
+					sizes.set(type, value);
+				}
+			}
+			return sizes;
+		};
+		return new Appearance(sizes('line-width'), sizes('distance'));
 	}
 
 	// The layout children of a `<defaults>` or `<print>`, tenths read as px (see DocumentLayout).

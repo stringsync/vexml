@@ -7,6 +7,7 @@ import {
 	TimeSignature,
 } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
+import type { Appearance } from './appearance';
 import { BAR_STYLE_TYPES, type BarlineDecoration } from './barline-translator';
 import type { CollisionResolver } from './collision-resolver';
 import type { Gap, MeasureNumbering } from './config';
@@ -90,6 +91,7 @@ export class StaveBuilder {
 		| ReadonlyMap<number, number[]>
 		| undefined;
 	private readonly voltaLifts: ReadonlyMap<number, number>;
+	private readonly appearance: Appearance;
 	// Document measure index -> the gap spec rendered there (empty when config has none).
 	private readonly gaps: ReadonlyMap<number, Gap>;
 	// Lead measure index -> the number of measures its <multiple-rest> consolidates.
@@ -123,6 +125,7 @@ export class StaveBuilder {
 		this.staveOffsets = opts.staveOffsets;
 		this.systemStaveOffsets = opts.systemStaveOffsets;
 		this.voltaLifts = opts.voltaLifts;
+		this.appearance = opts.appearance;
 		this.gaps = gaps.byMeasureIndex();
 		// <multiple-rest> runs: the lead measure draws the consolidated bar instead of its own
 		// notes, and the measures it swallows have no box (the layout planner dropped them), so
@@ -186,6 +189,18 @@ export class StaveBuilder {
 			column.measureWidth,
 		);
 		const { stave, isTab } = placed;
+		const staffWidth = this.appearance.lineWidth('staff');
+		// Tab staves keep their own lines: only a DetailedStave strokes a styled width.
+		if (staffWidth !== null && !isTab) {
+			stave.setStyle({ ...stave.getStyle(), lineWidth: staffWidth });
+		}
+		const legerWidth = this.appearance.lineWidth('leger');
+		if (legerWidth !== null) {
+			stave.setDefaultLedgerLineStyle({
+				...stave.getDefaultLedgerLineStyle(),
+				lineWidth: legerWidth,
+			});
+		}
 		// Only draw the end barline. Each measure's end barline is the same line
 		// as the next measure's left edge, so internal measures still get a divider;
 		// only the first measure of a system loses its left barline (intended). The
@@ -247,6 +262,7 @@ export class StaveBuilder {
 					volta,
 					stave.getX(),
 					voltaTop - stave.getYForTopText(stave.getNumLines()),
+					this.appearance.lineWidth('ending'),
 				),
 			);
 		}
@@ -588,4 +604,6 @@ export interface StaveBuilderOptions {
 	/** How far each system's volta brackets rise to clear the notes under them, measured
 	 * on the previous pass and reserved on this one; empty on the first pass. */
 	voltaLifts: ReadonlyMap<number, number>;
+	/** The document's line widths (staff, leger, ending), or Appearance.NONE. */
+	appearance: Appearance;
 }

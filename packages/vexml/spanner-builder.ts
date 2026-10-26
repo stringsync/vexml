@@ -17,6 +17,7 @@ import {
 	Tuplet,
 	VibratoBracket,
 } from 'vexflow/core';
+import { Appearance } from './appearance';
 import { BowedTremolo } from './bowed-tremolo';
 import {
 	SINGLE_SLIDE_GAP,
@@ -36,7 +37,7 @@ import {
 	SLUR_Y_SHIFT,
 	TUPLET_NESTING_EXTRA_GAP,
 } from './constants';
-import { CrispCurve, CURVE_THICKNESS } from './crisp-curve';
+import { CrispCurve, CURVE_THICKNESS, curveThickness } from './crisp-curve';
 import { CrispTabSlide } from './crisp-tab-slide';
 import { DashedTie } from './dashed-tie';
 import { DisplayTuplet, type TupletNoteValue } from './display-tuplet';
@@ -91,6 +92,14 @@ export class SpannerBuilder {
 	// re-pairs every tie in the part.
 	private readonly ties = new Map<Note, TieEnd[]>();
 	private readonly reaches = new Map<Note, number>();
+	// The document's line widths the spanners draw with: set afresh by every draw pass.
+	private appearance = Appearance.NONE;
+
+	/* Draw the spanners built from here on to the document's line widths (Appearance.NONE
+	 * keeps vexml's own). */
+	useAppearance(appearance: Appearance): void {
+		this.appearance = appearance;
+	}
 
 	/*
 	 * Two-note tremolos: each <tremolo type="start"> pairs with the next "stop" in the voice's
@@ -153,6 +162,8 @@ export class SpannerBuilder {
 				const beam = fan
 					? new FeatheredBeam(notes, autoStem, fan)
 					: new Beam(notes, autoStem);
+				beam.renderOptions.beamWidth =
+					this.appearance.lineWidth('beam') ?? beam.renderOptions.beamWidth;
 				// The beam just settled stem directions; re-pin articulations placed
 				// against each note's pre-beam direction onto the notehead side.
 				if (autoStem) {
@@ -329,6 +340,7 @@ export class SpannerBuilder {
 							actualValue: display?.actualValue ?? tupletNoteValue(lead),
 							normalValue: display?.normalValue ?? rawNormalValue(lead),
 							curved: display?.curved ?? false,
+							bracketWidth: this.appearance.lineWidth('tuplet bracket'),
 							// Signed the way vexflow's own nesting offset is: away from the stave.
 							yOffset:
 								(maxDepth - depth) * TUPLET_NESTING_EXTRA_GAP * -location,
@@ -419,6 +431,14 @@ export class SpannerBuilder {
 					);
 					for (const spec of specs) {
 						const staveTie = new DashedTie(spec, tie.dash);
+						// A solid tie is the lens between two quadratic bows, cp1 and cp2 off
+						// the ends, so it is (cp2 - cp1) / 2 deep at its middle.
+						const middle = this.appearance.lineWidth('tie middle');
+						if (middle !== null) {
+							const options = staveTie.renderOptions;
+							options.cp1 = options.cp2 - 2 * middle;
+							options.cp1Short = options.cp2Short - 2 * middle;
+						}
 						if (direction !== null) {
 							staveTie.setDirection(direction);
 						}
@@ -703,7 +723,7 @@ export class SpannerBuilder {
 					from.placement,
 					from.dash ?? marker.dash,
 					from.niente || marker.niente,
-				),
+				).setLineWidth(this.appearance.lineWidth('wedge')),
 			);
 		}
 		return wedges;
@@ -1261,7 +1281,11 @@ export class SpannerBuilder {
 					// Leaning each point back by the chord's slope lifts it square off the chord
 					// instead, and the bow sits centred on it. Level ends have no slope and no lean.
 					const lean = width ? (-dir * (y1 - y0) * cpY) / width : 0;
+					const middle = this.appearance.lineWidth('slur middle');
+					const thickness =
+						middle === null ? CURVE_THICKNESS : curveThickness(middle);
 					const options: CurveOptions = {
+						thickness,
 						position,
 						positionEnd,
 						openingDirection: bulgeUp ? 'down' : 'up',
@@ -1289,8 +1313,7 @@ export class SpannerBuilder {
 					// above's lyrics.
 					const endTop = Math.min(y0, y1) + dir * yShift;
 					const endBottom = Math.max(y0, y1) + dir * yShift;
-					const apex =
-						(y0 + y1) / 2 + dir * (yShift + 0.75 * cpY + CURVE_THICKNESS);
+					const apex = (y0 + y1) / 2 + dir * (yShift + 0.75 * cpY + thickness);
 					// A dashed/dotted slur is a single stroked bezier, not the filled lens a
 					// solid one is: vexflow's renderCurve already skips the fill and the
 					// second (thickness) pass when the element carries a lineDash. The

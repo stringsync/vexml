@@ -55,7 +55,7 @@ are picked by hand.
 | `accordion-registration` | drawn | `direction_pictograms.musicxml` M5: the three-rank register circle |
 | `actual-notes` | drawn | `tuplet_triplet.musicxml`: tuplet ratio via timeModification |
 | `alter` | drawn | `accidentals.musicxml`: pitch alter read for note pitch; printed glyph comes from accidental |
-| `appearance` | missing | task #36; line widths, note sizes and distances from defaults not applied; mdom raw only |
+| `appearance` | drawn | `defaults_appearance.musicxml`, under documentLayout follow or strict: its line widths (see `line-width`); distances task #102, glyphs task #103, note sizes task #9 |
 | `arpeggiate` | drawn | `arpeggio.musicxml` |
 | `arpeggiate@direction` | drawn | `arpeggio.musicxml`: up and down arrowheads |
 | `arpeggiate@unbroken` | drawn | `arpeggio_unbroken.musicxml`: one line across both staves of a part |
@@ -136,7 +136,7 @@ are picked by hand.
 | `display-octave` | drawn | `rest_pitched.musicxml`, `percussion_display_step.musicxml` |
 | `display-step` | drawn | `rest_pitched.musicxml`, `percussion_display_step.musicxml` |
 | `display-text` | drawn | `notehead_text.musicxml`: inside notehead-text; other parents task #25 |
-| `distance` | missing | task #36; appearance distances (beam, hyphen spacing) not applied; mdom raw only |
+| `distance` | missing | task #102; read into Appearance but beam spacing and hyphen distance not applied |
 | `divisions` | drawn | `divisions_change.musicxml` |
 | `doit` | drawn | `articulations_extended.musicxml` |
 | `dot` | drawn | `dotted_notes.musicxml` |
@@ -198,7 +198,7 @@ are picked by hand.
 | `glass` | drawn | `direction_pictograms.musicxml` M2: SMuFL pictogram |
 | `glissando` | drawn | `glissando.musicxml`: a straight line between the noteheads, across a barline, or a tick into a lone stop |
 | `glissando@line-type` | drawn | `spanner_line_types.musicxml` M6 |
-| `glyph` | missing | task #36; appearance SMuFL glyph overrides not applied; mdom raw only |
+| `glyph` | missing | task #103; appearance SMuFL glyph overrides not applied; mdom raw only |
 | `golpe` | drawn | `technical_marks.musicxml` M23: the golpe glyph above the note |
 | `grace` | drawn | `grace_notes.musicxml` |
 | `grace@make-time` | drawn | `grace_notes.musicxml`: timed, grace adds its own time |
@@ -262,7 +262,7 @@ are picked by hand.
 | `level` | drawn | `editorial_marks.musicxml` M1; parentheses and bracket wrap a note heads; size and non-note parents not drawn |
 | `line` | drawn | `clef_c.musicxml`: clef staff line |
 | `line-detail` | drawn | `line_detail.musicxml`: per-line width, color, dashed or dotted line-type, print-object |
-| `line-width` | missing | task #36; engraving line thicknesses from defaults appearance; mdom raw only |
+| `line-width` | drawn | `defaults_appearance.musicxml`, under documentLayout follow or strict: stem, beam, staff, leger, slur middle, tie middle, wedge, ending, tuplet bracket, extend (lyric melisma); barlines, octave shift, pedal, bracket, dashes, enclosure and tips task #102 |
 | `link` | ignored | file links |
 | `listen` | ignored | interactive performance only |
 | `listening` | ignored | interactive performance only |
@@ -352,7 +352,7 @@ are picked by hand.
 | `open-string` | drawn | `technical_marks.musicxml` |
 | `opus` | ignored | a link to an opus document, nothing printed |
 | `ornaments` | drawn | `ornaments.musicxml` |
-| `other-appearance` | missing | task #36; custom engraving appearance from defaults; mdom raw only |
+| `other-appearance` | ignored | application-specific settings with no standard meaning to draw |
 | `other-articulation` | drawn | `articulations_extended.musicxml` M7: the smufl glyph on the notehead side, flipping to its Below twin; text when there is no glyph |
 | `other-direction` | drawn | `words.musicxml` M11: the smufl glyph in the notation font, else its text set like words |
 | `other-dynamics` | drawn | `dynamics.musicxml`: italic text |

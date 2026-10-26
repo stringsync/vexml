@@ -3680,6 +3680,17 @@ describe('render', () => {
 		).toMatchScreenshot('document_layout_even_margins.png');
 	});
 
+	// <defaults><appearance> line widths, set wide so each shows: 3px stems, an 8px beam, 2px
+	// staff lines, 3px legers (M1, M4), a 4px tie (M1-M2), a 5px slur (M2), a 3px wedge (M1),
+	// ending brackets (M3-M4), tuplet bracket (M3) and lyric extend (M2).
+	it.concurrent('renders defaults_appearance.png', async () => {
+		expect(
+			await testing.render('defaults_appearance.musicxml', {
+				layout: { type: 'standard', documentLayout: 'follow' },
+			}),
+		).toMatchScreenshot('defaults_appearance.png');
+	});
+
 	// The same sixteen C5 whole-note measures, but with panoramic layout: all sixteen sit
 	// on a single uninterrupted system (no system break).
 	it.concurrent('renders layout_panoramic.png', async () => {

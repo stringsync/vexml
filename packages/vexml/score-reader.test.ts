@@ -1003,6 +1003,37 @@ describe('ScoreReader', () => {
 		]);
 	});
 
+	describe('appearanceOf', () => {
+		const appearanceOf = async (appearance: string) => {
+			const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
+<score-partwise version="4.0">
+	<defaults><appearance>${appearance}</appearance></defaults>
+	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+	<part id="P1"><measure number="1"><note><rest measure="yes"/><duration>4</duration></note></measure></part>
+</score-partwise>`);
+			return reader.appearanceOf(mdoc.score);
+		};
+
+		it('reads line widths and distances in tenths, as px', async () => {
+			const appearance = await appearanceOf(`
+				<line-width type="stem">0.8333</line-width>
+				<line-width type="slur middle">2.1</line-width>
+				<distance type="hyphen">60</distance>`);
+			expect(appearance.lineWidth('stem')).toBe(0.8333);
+			expect(appearance.lineWidth('slur middle')).toBe(2.1);
+			expect(appearance.lineWidth('beam')).toBeNull();
+			expect(appearance.distance('hyphen')).toBe(60);
+		});
+
+		it('leaves out a width that is no positive number', async () => {
+			const appearance = await appearanceOf(`
+				<line-width type="stem">0</line-width>
+				<line-width type="beam">wide</line-width>`);
+			expect(appearance.lineWidth('stem')).toBeNull();
+			expect(appearance.lineWidth('beam')).toBeNull();
+		});
+	});
+
 	describe('documentLayoutOf', () => {
 		const DEFAULTS = `<defaults>
 			<scaling><millimeters>7</millimeters><tenths>40</tenths></scaling>

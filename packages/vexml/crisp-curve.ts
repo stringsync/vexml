@@ -5,6 +5,14 @@ import { Curve, type CurveOptions, type Note as VexNote } from 'vexflow/core';
  * drops the stroke that used to widen the shape: the lens alone is only 0.75 of this deep. */
 export const CURVE_THICKNESS = 4;
 
+/* The thickness that makes a solid curve's lens `middle` px deep at its midpoint. */
+export function curveThickness(middle: number): number {
+	return middle / LENS_DEPTH;
+}
+
+/* How deep the filled lens is at its midpoint, as a fraction of the thickness. */
+const LENS_DEPTH = 0.75;
+
 /*
  * A curve painted once instead of twice. vexflow strokes the outline of the lens shape AND
  * then fills it (curve.ts renderCurve). Canvas composites the two passes independently, so
@@ -12,7 +20,8 @@ export const CURVE_THICKNESS = 4;
  * coverage that never adds up to solid: the arc reads soft, with a lighter seam running
  * inside it. Filling alone gives a crisp edge, at CURVE_THICKNESS, which is raised to make
  * up for the stroke that no longer widens the shape. Every curve vexml draws goes through
- * this, so slurs and tab arcs stay the same weight.
+ * this, so slurs and tab arcs stay the same weight, unless the caller passes a thickness of its
+ * own (a document's `<line-width type="slur middle">`, see curveThickness).
  */
 export class CrispCurve extends Curve {
 	constructor(
@@ -20,7 +29,7 @@ export class CrispCurve extends Curve {
 		to: VexNote | undefined,
 		opts: CurveOptions,
 	) {
-		super(from, to, { ...opts, thickness: CURVE_THICKNESS });
+		super(from, to, { ...opts, thickness: opts.thickness ?? CURVE_THICKNESS });
 	}
 
 	override renderCurve(params: {
