@@ -2506,9 +2506,17 @@ export class ScoreReader {
 		const enclosure = element.getAttribute('enclosure');
 		const align =
 			element.getAttribute('halign') ?? element.getAttribute('justify');
+		const valign = element.getAttribute('valign');
 		const underline = Number(element.getAttribute('underline') ?? 0);
 		const rotation = Number(element.getAttribute('rotation') ?? 0);
 		return {
+			valign:
+				valign === 'top' ||
+				valign === 'middle' ||
+				valign === 'bottom' ||
+				valign === 'baseline'
+					? valign
+					: null,
 			family: attr('font-family'),
 			italic: style === null ? null : style === 'italic',
 			bold: weight === null ? null : weight === 'bold',
@@ -3058,6 +3066,8 @@ const STAFF_LINES_SPAN = 40;
  * unless told otherwise, a words direction upright and bare.
  */
 export type TextFormat = {
+	/** The text's vertical alignment on default-y under documentLayout. */
+	valign: 'top' | 'middle' | 'bottom' | 'baseline' | null;
 	/** The MusicXML font-family the document names, a comma-separated list of faces; null for
 	 * none. Drawn only under Config.documentFonts. */
 	family: string | null;

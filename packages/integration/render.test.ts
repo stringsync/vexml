@@ -3774,6 +3774,7 @@ describe('render', () => {
 	// - M5: 340px wide, four unevenly spaced E4 quarters; words at x=120, G at x=245.
 	// - M6: 260px wide, two E4 halves; a C frame offset 25px right of its first note,
 	//   its top 130px above the staff.
+	// - M7: top, middle, bottom and baseline aligned words at y=60 and boxed gy at y=110.
 	it.concurrent('renders document_positions.png', async () => {
 		expect(
 			await testing.render('document_positions.musicxml', {

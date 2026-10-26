@@ -660,7 +660,11 @@ export class DirectionPlacer {
 				? stave.getYForLine(0) - REHEARSAL_Y_OFFSET - (doc?.dy ?? 0)
 				: this.baselineOf(stave, 0, doc) +
 					(enclosure === 'none' ? 0 : REHEARSAL_PADDING);
-		const natural = new Rect(x, bottom - formatted.h, formatted.w, formatted.h);
+		const top =
+			doc?.y != null && format?.valign
+				? formatted.topAt(this.baselineOf(stave, 0, doc), format.valign)
+				: bottom - formatted.h;
+		const natural = new Rect(x, top, formatted.w, formatted.h);
 		const band = this.reporter.rowOf(stave);
 		const placed = this.collisionResolver.nudgeInsideX(
 			this.pins(doc)
@@ -1041,10 +1045,11 @@ export class DirectionPlacer {
 	/* The underlines and enclosure a document's `format` draws with a string, for a style. */
 	private decorationOf(
 		format: TextFormat | undefined,
-	): Pick<SideTextStyle, 'underline' | 'enclosure' | 'rotation'> {
+	): Pick<SideTextStyle, 'underline' | 'enclosure' | 'rotation' | 'valign'> {
 		const enclosure = format?.enclosure;
 		return {
 			underline: format?.underline,
+			valign: format?.valign,
 			rotation: format?.rotation,
 			enclosure: enclosure && enclosure !== 'none' ? enclosure : undefined,
 		};
@@ -1111,9 +1116,13 @@ export class DirectionPlacer {
 		const doc = this.followed(style.position);
 		const top = below ? baseY : baseY - h;
 		const baseline = this.baselineOf(stave, style.hangs ? top : top + h, doc);
+		let textTop = style.hangs ? baseline : baseline - h;
+		if (doc?.y != null && style.valign) {
+			textTop = formatted.topAt(baseline, style.valign);
+		}
 		const natural = new Rect(
 			this.xOf(stave, anchorX, doc) - alignOffsetOf(style.align, w),
-			style.hangs ? baseline : baseline - h,
+			textTop,
 			w,
 			h,
 		);
@@ -1490,6 +1499,8 @@ type SideTextStyle = {
 	 * phrase reading rightward from its note; a dynamic centers on its notehead, and a
 	 * repeat-times label ends at the barline it labels. */
 	align?: 'left' | 'center' | 'right';
+	/** Text alignment on a followed default-y, before collision clearance. */
+	valign?: TextFormat['valign'];
 	/** Side clearance the string keeps from other marks it would otherwise abut (see
 	 * ClearOptions.xMargin). 0 when absent. */
 	sideGap?: number;

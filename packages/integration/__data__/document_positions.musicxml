@@ -58,5 +58,21 @@
       <note default-x="180"><pitch><step>E</step><octave>4</octave></pitch><duration>2</duration><type>half</type></note>
       <barline location="right"><bar-style>light-heavy</bar-style></barline>
     </measure>
+    <!-- M7: the same text aligns its ink top, middle, bottom and baseline on y=60; boxed rehearsals do the same on y=110. -->
+    <measure number="7" width="620">
+      <print new-system="yes"><system-layout><system-distance>200</system-distance></system-layout></print>
+      <direction placement="above"><direction-type><words default-x="70" default-y="60" valign="top">top gy</words></direction-type></direction>
+      <direction placement="above"><direction-type><rehearsal default-x="70" default-y="110" valign="top">gy</rehearsal></direction-type></direction>
+      <note default-x="70"><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <direction placement="above"><direction-type><words default-x="215" default-y="60" valign="middle">middle gy</words></direction-type></direction>
+      <direction placement="above"><direction-type><rehearsal default-x="215" default-y="110" valign="middle">gy</rehearsal></direction-type></direction>
+      <note default-x="215"><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <direction placement="above"><direction-type><words default-x="360" default-y="60" valign="bottom">bottom gy</words></direction-type></direction>
+      <direction placement="above"><direction-type><rehearsal default-x="360" default-y="110" valign="bottom">gy</rehearsal></direction-type></direction>
+      <note default-x="360"><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <direction placement="above"><direction-type><words default-x="505" default-y="60" valign="baseline">baseline gy</words></direction-type></direction>
+      <direction placement="above"><direction-type><rehearsal default-x="505" default-y="110" valign="baseline">gy</rehearsal></direction-type></direction>
+      <note default-x="505"><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+    </measure>
   </part>
 </score-partwise>

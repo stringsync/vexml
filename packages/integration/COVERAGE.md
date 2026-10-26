@@ -37,7 +37,7 @@ are picked by hand.
 | `*@rotation` | drawn | `text_formatting.musicxml` M20: words |
 | `*@space-length` | drawn | `spanner_line_types.musicxml` M3: dashed and dotted lines, as dash-length |
 | `*@underline` | drawn | `text_formatting.musicxml` M5: words, rehearsal marks and dynamics |
-| `*@valign` | missing | task #50, after default-y (task #21); mdom raw only |
+| `*@valign` | drawn | `document_positions.musicxml` M7: words, other-direction, dynamics and rehearsal text align ink top/middle/bottom or baseline on default-y under documentLayout; follow still clears collisions |
 | `accent` | drawn | `articulations.musicxml` |
 | `accidental` | drawn | `accidentals.musicxml`: every value, arrow, triple, Turkish and Persian forms included, and `other` by its `@smufl` name; cautionary and editorial forms too |
 | `accidental@bracket` | drawn | `accidentals.musicxml`: bracketed sharp and flat |

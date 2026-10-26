@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import type { Measure } from '@stringsync/mdom';
 import {
+	Element,
 	type RenderContext,
 	type Stave,
 	type StaveNote,
@@ -44,6 +45,7 @@ describe('DirectionPlacer', () => {
 		underline: 0,
 		rotation: 0,
 		align: null,
+		valign: null,
 	};
 
 	// The staff-line and note-area geometry every side-text placement reads. One shape
@@ -394,6 +396,7 @@ describe('DirectionPlacer', () => {
 	const placedWords = (
 		position: { x?: number | null; y: number | null; dx: number; dy: number },
 		side: 'above' | 'below' | null = null,
+		format?: TextFormat,
 	) =>
 		column({
 			words: [
@@ -403,6 +406,7 @@ describe('DirectionPlacer', () => {
 					anchor: note(200, stave()),
 					placement: 'above',
 					position: { ...position, side },
+					format,
 				},
 			],
 		});
@@ -419,6 +423,55 @@ describe('DirectionPlacer', () => {
 		placer.placeColumn(placedWords({ y: 30, dx: 0, dy: 0 }));
 		expect(texts[0]?.y).toBe(70);
 		expect(texts[0]?.x).toBe(200);
+	});
+
+	it.each([
+		['follow', 'top', 43],
+		['strict', 'top', 43],
+		['follow', 'middle', 38],
+		['strict', 'middle', 38],
+		['follow', 'bottom', 33],
+		['strict', 'bottom', 33],
+		['follow', 'baseline', 35],
+		['strict', 'baseline', 35],
+	] as const)('aligns text ink in %s on its %s', (mode, valign, expected) => {
+		const { placer, texts } = makePlacer({}, { documentPositions: mode });
+		const task = placedWords({ y: 60, dx: 0, dy: 5 }, null, {
+			...PLAIN,
+			valign,
+		});
+		const canvas = {
+			getContext: () => ({
+				font: '',
+				measureText: () => ({
+					width: 20,
+					actualBoundingBoxAscent: 8,
+					actualBoundingBoxDescent: 2,
+				}),
+			}),
+		};
+		Element.setTextMeasurementCanvas(canvas as unknown as HTMLCanvasElement);
+		try {
+			placer.placeColumn(task);
+		} finally {
+			Element.setTextMeasurementCanvas(
+				undefined as unknown as HTMLCanvasElement,
+			);
+		}
+		expect(texts.map(({ y }) => y)).toEqual([expected]);
+	});
+
+	it.each([
+		undefined,
+		'follow',
+	] as const)('keeps automatic valign under %s without default-y', (mode) => {
+		const { placer, texts } = makePlacer({}, { documentPositions: mode });
+		const task = placedWords({ y: mode ? null : 60, dx: 0, dy: 0 }, null, {
+			...PLAIN,
+			valign: 'top',
+		});
+		placer.placeColumn(task);
+		expect(texts.map(({ y }) => y)).toEqual([100 - WORDS_Y_OFFSET]);
 	});
 
 	it.each([

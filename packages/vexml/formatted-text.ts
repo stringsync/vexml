@@ -65,6 +65,45 @@ export class FormattedText {
 		this.h = size.w * sin + size.h * cos;
 	}
 
+	/** Top of the placed box that aligns the text's ink (or baseline) on anchorY.
+	 * Decorations travel with the text; they do not change its alignment point. */
+	topAt(
+		anchorY: number,
+		align: 'top' | 'middle' | 'bottom' | 'baseline',
+	): number {
+		const origin = new Rect(0, 0, this.boxW, this.boxH);
+		const inner = this.enclosure
+			? this.enclosure.textBox(origin, this.textW, this.innerH)
+			: origin;
+		const baseline = this.baselineIn(inner);
+		if (align === 'baseline') {
+			return anchorY - baseline;
+		}
+		const { family, size, weight, fontStyle } = this.style.font;
+		const ink = new Element()
+			.setFont(family, size, weight, fontStyle)
+			.setText(this.text)
+			.getTextMetrics();
+		const top = baseline - ink.actualBoundingBoxAscent;
+		const bottom = baseline + ink.actualBoundingBoxDescent;
+		if (align === 'top') {
+			return anchorY - top;
+		}
+		if (align === 'bottom') {
+			return anchorY - bottom;
+		}
+		return anchorY - (top + bottom) / 2;
+	}
+
+	private baselineIn(inner: Rect): number {
+		if (this.style.hangs) {
+			return inner.y;
+		}
+		return (
+			inner.y + this.style.textHeight * (this.enclosure ? ENCLOSED_BASELINE : 1)
+		);
+	}
+
 	private radians(): number {
 		return ((this.style.rotation ?? 0) * Math.PI) / 180;
 	}
@@ -98,12 +137,7 @@ export class FormattedText {
 			: new Rect(placed.x, placed.y, this.textW, this.innerH);
 		const { textHeight } = this.style;
 		const textBottom = inner.y + textHeight;
-		// Text standing on the bottom of a font-size box leaves the top of the box empty, which
-		// reads as sitting low inside a shape, so enclosed text stands a little higher.
-		let baseline = this.style.hangs ? inner.y : textBottom;
-		if (this.enclosure && !this.style.hangs) {
-			baseline = inner.y + textHeight * ENCLOSED_BASELINE;
-		}
+		const baseline = this.baselineIn(inner);
 		this.context.fillText(this.text, inner.x + this.inkLeft, baseline);
 		const underline = this.style.underline ?? 0;
 		if (underline > 0 || this.enclosure) {
