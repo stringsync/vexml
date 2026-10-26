@@ -175,10 +175,13 @@ export class SpannerBuilder {
 					// vexflow parks a flat beam at the group's *average* stem tip, so a group
 					// spanning a wide range leaves the note closest to the beam with a stub of
 					// a stem. Raise vexflow's floor (default 15) so that shortest stem is a
-					// full standard stem. Each extra beam adds another beamWidth * 1.5, which
+					// full standard stem. Each extra beam adds another level distance, which
 					// keeps the innermost beam exactly one standard stem from the notehead.
 					beam.renderOptions.minFlatBeamOffset =
-						Stem.HEIGHT - beam.renderOptions.beamWidth * 1.5;
+						Stem.HEIGHT -
+						(beam instanceof SpacedBeam
+							? beam.levelDistance()
+							: beam.renderOptions.beamWidth * 1.5);
 				}
 				if (group.breaksAfter.length > 0) {
 					beam.breakSecondaryAt(group.breaksAfter);

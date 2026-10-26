@@ -136,7 +136,7 @@ are picked by hand.
 | `display-octave` | drawn | `rest_pitched.musicxml`, `percussion_display_step.musicxml` |
 | `display-step` | drawn | `rest_pitched.musicxml`, `percussion_display_step.musicxml` |
 | `display-text` | drawn | `notehead_text.musicxml`: inside notehead-text; other parents task #25 |
-| `distance` | drawn | `defaults_appearance.musicxml`, under documentLayout follow or strict: beam (the drawn levels' spacing; vexflow's stem reach still assumes its own), hyphen (more hyphens across a wide gap between syllables on one stave) |
+| `distance` | drawn | `defaults_appearance.musicxml`, under documentLayout follow or strict: beam (level spacing, stem reach and flat-beam clearance; `beam_distance_stems.musicxml` covers wide cross-staff and flat groups), hyphen (more hyphens across a wide gap between syllables on one stave) |
 | `divisions` | drawn | `divisions_change.musicxml` |
 | `doit` | drawn | `articulations_extended.musicxml` |
 | `dot` | drawn | `dotted_notes.musicxml` |

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <defaults><appearance><distance type="beam">15</distance></appearance></defaults>
+  <part-list><score-part id="P1"><part-name>Piano</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>8</divisions><time><beats>1</beats><beat-type>4</beat-type></time><staves>2</staves><clef number="1"><sign>G</sign><line>2</line></clef><clef number="2"><sign>F</sign><line>4</line></clef></attributes>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><staff>2</staff><beam number="1">begin</beam><beam number="2">begin</beam><beam number="3">begin</beam></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><staff>1</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><staff>2</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><staff>1</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><staff>2</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><staff>1</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><staff>2</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><staff>1</staff><beam number="1">end</beam><beam number="2">end</beam><beam number="3">end</beam></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>up</stem><staff>1</staff><beam number="1">begin</beam><beam number="2">begin</beam><beam number="3">begin</beam></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>up</stem><staff>1</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>up</stem><staff>1</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>up</stem><staff>1</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>up</stem><staff>1</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>up</stem><staff>1</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>up</stem><staff>1</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>up</stem><staff>1</staff><beam number="1">end</beam><beam number="2">end</beam><beam number="3">end</beam></note>
+    </measure>
+    <measure number="3">
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>down</stem><staff>2</staff><beam number="1">begin</beam><beam number="2">begin</beam><beam number="3">begin</beam></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>down</stem><staff>2</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>down</stem><staff>2</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>down</stem><staff>2</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>down</stem><staff>2</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>down</stem><staff>2</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>down</stem><staff>2</staff><beam number="1">continue</beam><beam number="2">continue</beam><beam number="3">continue</beam></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>1</duration><voice>1</voice><type>32nd</type><stem>down</stem><staff>2</staff><beam number="1">end</beam><beam number="2">end</beam><beam number="3">end</beam></note>
+    </measure>
+  </part>
+</score-partwise>

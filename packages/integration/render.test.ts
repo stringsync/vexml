@@ -3710,6 +3710,18 @@ describe('render', () => {
 		).toMatchScreenshot('defaults_appearance.png');
 	});
 
+	// Piano grand staff, 1/4, with beam levels 15px apart under documentLayout follow.
+	// - M1: eight cross-staff 32nds; opposing stems reach the innermost beam.
+	// - M2: eight repeated treble E4 32nds, flat and stemmed up, with full stem clearance.
+	// - M3: eight repeated bass A3 32nds, flat and stemmed down, with full stem clearance.
+	it.concurrent('renders beam_distance_stems.png', async () => {
+		expect(
+			await testing.render('beam_distance_stems.musicxml', {
+				layout: { type: 'standard', documentLayout: 'follow' },
+			}),
+		).toMatchScreenshot('beam_distance_stems.png');
+	});
+
 	// <defaults><appearance> glyphs: an old-style tenor G clef (P1), a square C clef opening and
 	// changing back (P2), a reversed F clef mid-measure (P2) and opening (P3), the second
 	// percussion clef (P4), Z-shaped quarter rests, and ottavas labelled by glyph: a plain 8

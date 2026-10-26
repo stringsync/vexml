@@ -6,8 +6,7 @@ import { Beam, type RenderContext } from 'vexflow/core';
  * lines itself off the same slope and stem math, with `levelOffset` the one place a level's
  * offset from the primary beam is decided (FeatheredBeam fans it). A null distance keeps
  * vexflow's 1.5 widths.
- * ponytail: vexflow's stemlets, cross-stem extensions and flat-beam stem floor still reckon
- * the inner beams at 1.5 widths; only the drawn lines move.
+ * Stem reach and the flat-beam floor use that same distance.
  */
 export class SpacedBeam extends Beam {
 	private distance: number | null = null;
@@ -28,6 +27,44 @@ export class SpacedBeam extends Beam {
 		return (
 			level * this.levelDistance() * (this.notes[0]?.getStemDirection() ?? 1)
 		);
+	}
+
+	override calculateFlatSlope(): void {
+		// VexFlow uses beamWidth only as a level spacing in this calculation. Supply
+		// our distance in its units, restoring the actual ink thickness before drawing.
+		const width = this.renderOptions.beamWidth;
+		this.renderOptions.beamWidth = this.levelDistance() / 1.5;
+		try {
+			super.calculateFlatSlope();
+		} finally {
+			this.renderOptions.beamWidth = width;
+		}
+	}
+
+	override applyStemExtensions(): void {
+		super.applyStemExtensions();
+		if (this.distance === null) {
+			return;
+		}
+		const { beamWidth, showStemlets, stemletExtension } = this.renderOptions;
+		for (const note of this.notes) {
+			const stem = note.getStem();
+			if (!stem) {
+				continue;
+			}
+			const x = note.getStemX();
+			if (note.getStemDirection() !== this.getStemDirection()) {
+				const level = note.getGlyphProps().beamCount - 1;
+				const reach = Math.abs(this.levelOffset(level, x));
+				stem.setExtension(
+					stem.getExtension() + reach - level * beamWidth * 1.5,
+				);
+			}
+			if (note.isRest() && showStemlets) {
+				const reach = Math.abs(this.levelOffset(this.getBeamCount() - 1, x));
+				stem.setStemlet(true, reach + beamWidth + stemletExtension);
+			}
+		}
 	}
 
 	protected override drawBeamLines(ctx: RenderContext): void {
