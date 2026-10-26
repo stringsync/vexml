@@ -110,11 +110,15 @@ export class SystemDraw {
 		// A system can still grow when its staves are re-spaced or a paged layout pushes it onto
 		// the next page, neither known before it is drawn, so the scratch page is sized for systems
 		// twice as tall and, when paged, a page of push apiece. The final crop trims it back.
+		const tallestPage = Math.max(
+			layout.page?.height ?? 0,
+			...(layout.documentSystems ?? []).map((s) => s.page?.height ?? 0),
+		);
 		const pageHeight =
 			layout.top +
 			this.topSlack +
 			this.systemCount * 2 * perSystem +
-			(layout.page ? this.systemCount * layout.page.height : 0);
+			(layout.page ? this.systemCount * tallestPage : 0);
 		this.activeFloorHeight = floorHeight;
 		this.plannedStaveOffsets = layout.systemStaveOffsets;
 		// Seeded with the document's own stave gaps, when the layout follows the document.
@@ -261,8 +265,8 @@ export class SystemDraw {
 		const ops = [...this.headerOps, ...this.settledOps()];
 		const { page } = this.layout;
 		if (this.walk && page && this.done()) {
-			const { cropTop, pageCount } = this.walk.result();
-			return this.paged(ops, pass, page, cropTop, pageCount);
+			const { cropTop, pageHeights } = this.walk.result();
+			return this.paged(ops, pass, page, cropTop, pageHeights);
 		}
 		const { pageTop, pageBottom } = pass;
 		const { width } = this.layout;
@@ -491,10 +495,10 @@ export class SystemDraw {
 		pass: DrawPassResult,
 		page: PageFrame,
 		cropTop: number,
-		pageCount: number,
+		pageHeights: readonly number[],
 	): DrawResult {
-		const { width: pageWidth, height: pageHeight, offsetX: dx } = page;
-		const height = pageCount * pageHeight;
+		const { width: pageWidth, offsetX: dx } = page;
+		const height = pageHeights.reduce((sum, h) => sum + h, 0);
 		return {
 			geometry: this.toScore(
 				pass,
@@ -510,10 +514,10 @@ export class SystemDraw {
 				scale: 1,
 			},
 			fold: null,
-			pages: Array.from(
-				{ length: pageCount },
-				(_, index) => new Rect(0, index * pageHeight, pageWidth, pageHeight),
-			),
+			pages: pageHeights.map((pageHeight, index) => {
+				const top = pageHeights.slice(0, index).reduce((sum, h) => sum + h, 0);
+				return new Rect(0, top, pageWidth, pageHeight);
+			}),
 		};
 	}
 }

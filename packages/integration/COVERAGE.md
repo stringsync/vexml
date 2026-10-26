@@ -365,7 +365,7 @@ are picked by hand.
 | `other-technical` | drawn | `tab_annotation.musicxml`: text annotation on tab |
 | `p` | drawn | `dynamics.musicxml` |
 | `page-height` | drawn | `document_layout.musicxml`: the page height when documentLayout follows the document (paged) |
-| `page-layout` | drawn | `document_layout.musicxml`: `<defaults>` page when documentLayout follows the document; a `<print>` page-layout is not followed yet |
+| `page-layout` | drawn | `document_layout.musicxml`: `<defaults>` page when documentLayout follows the document; `document_layout_print_page.musicxml`: a `<print>` page-layout gives the page it starts its own height and top/bottom margins (paged only; width and side margins stay `<defaults>`) |
 | `page-margins` | drawn | `document_layout.musicxml`: odd (or both) margins when documentLayout follows the document; even-page margins not followed yet |
 | `page-width` | drawn | `document_layout.musicxml`: the line width when documentLayout follows the document |
 | `pan` | ignored | sound only |

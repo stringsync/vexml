@@ -35,7 +35,7 @@ import {
 	TAB_MIN_NOTE_SPACING,
 	WORDS_CHAR_WIDTH,
 } from './constants';
-import type { DocumentLayout, DocumentPage } from './document-layout';
+import type { DocumentLayout, DocumentPage, PageSize } from './document-layout';
 import type { Gaps } from './gaps';
 import { HeaderPlan } from './header-plan';
 import type { ScoreReader, StaffVoice } from './score-reader';
@@ -512,6 +512,7 @@ export class LayoutPlanner {
 				lineTop: lines[0]?.top ?? 0,
 				startsPage: document.startsPage(first),
 				blankPages: document.blankPages(first),
+				page: document.pageSize(first),
 				strict,
 				fixedGaps,
 			};
@@ -1131,6 +1132,9 @@ export type DocumentSystem = {
 	startsPage: boolean;
 	/** Blank pages the document leaves before the page this system starts. */
 	blankPages: number;
+	/** The page this system opens, where its `<print>` page-layout sets the page's own height or
+	 * vertical margins (paged layouts only); null otherwise. */
+	page: PageSize | null;
 	/** documentLayout 'strict': the system distance is kept even where the music runs into
 	 * the system above. */
 	strict: boolean;

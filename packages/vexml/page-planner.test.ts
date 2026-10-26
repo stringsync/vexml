@@ -73,9 +73,39 @@ describe('PagePlanner', () => {
 			lineTop: 0,
 			startsPage: false,
 			blankPages: 0,
+			page: null,
 			strict: false,
 			fixedGaps: [],
 			...overrides,
+		});
+
+		it('opens a page at the height and margins its system asks for', () => {
+			const plan = planner.plan(
+				[
+					{ top: 20, bottom: 40 },
+					{ top: 60, bottom: 80 },
+					{ top: 100, bottom: 120 },
+				],
+				{
+					lines: [
+						{ top: 20, bottom: 40 },
+						{ top: 60, bottom: 80 },
+						{ top: 100, bottom: 120 },
+					],
+					systems: [
+						system({ topSystemDistance: null }),
+						system({
+							topSystemDistance: null,
+							startsPage: true,
+							page: { height: 50, marginTop: 5, marginBottom: 5 },
+						}),
+						system({ topSystemDistance: null, startsPage: true }),
+					],
+				},
+			);
+			// Page 2 is 50 tall and starts at 100 with a 5 margin; page 3 starts at 150, default 10.
+			expect(plan.pageHeights).toEqual([100, 50, 100]);
+			expect(plan.pushes.get(1)).toBe(100 + 5 - 60 + 10);
 		});
 
 		it('puts the first top line its top-system-distance below the top margin', () => {
@@ -168,13 +198,18 @@ describe('PageWalk', () => {
 		expect(walk.place({ top: 40, bottom: 120 })).toBe(60);
 		// The next system is drawn below the pushed one, so it needs no push of its own.
 		expect(walk.place({ top: 130, bottom: 140 })).toBe(0);
-		expect(walk.result()).toEqual({ cropTop: -10, pageCount: 2 });
+		expect(walk.result()).toEqual({
+			cropTop: -10,
+			pageCount: 2,
+			pageHeights: [100, 100],
+		});
 	});
 
 	it('leaves one empty page when nothing was placed', () => {
 		expect(new PageWalk(100, 10, 10).result()).toEqual({
 			cropTop: 0,
 			pageCount: 1,
+			pageHeights: [100],
 		});
 	});
 });

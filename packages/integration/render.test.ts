@@ -3638,6 +3638,18 @@ describe('render', () => {
 		).toMatchScreenshot('blank_page.png');
 	});
 
+	// The same paged document, but M9's <print new-page="yes"> carries its own <page-layout>: page 2
+	// is 900 tall with a 200 top margin, so its first top line sits 260 below the page's top
+	// while page 1 keeps the <defaults>' 1500 and 50. Standard layouts ignore a print page-layout.
+	it.concurrent('renders document_layout_print_page.png', async () => {
+		expect(
+			await testing.render('document_layout_print_page.musicxml', {
+				layout: { type: 'paged', documentLayout: 'follow' },
+				backgroundColor: '#ffffff',
+			}),
+		).toMatchScreenshot('document_layout_print_page.png');
+	});
+
 	// The same sixteen C5 whole-note measures, but with panoramic layout: all sixteen sit
 	// on a single uninterrupted system (no system break).
 	it.concurrent('renders layout_panoramic.png', async () => {

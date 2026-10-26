@@ -37,6 +37,33 @@ export class DocumentLayout {
 		return { width: pageWidth, height: pageHeight, margins };
 	}
 
+	/* The height and vertical margins the page opened by the system on measure `m` asks for in
+	 * a `<print>` page-layout, each null where it sets none or the result would leave the page
+	 * no room. The first part that sets one wins, as for a system value. Paged layouts only:
+	 * the page's width and side margins stay `<defaults>`', since the systems flow at one
+	 * width. */
+	pageSize(m: number): PageSize | null {
+		for (const print of this.prints.get(m) ?? []) {
+			const height = print?.pageHeight ?? null;
+			const margins = print?.pageMargins ?? null;
+			if (height === null && margins === null) {
+				continue;
+			}
+			const own = {
+				height,
+				marginTop: margins?.top ?? null,
+				marginBottom: margins?.bottom ?? null,
+			};
+			const defaults = this.page();
+			const total =
+				(own.height ?? defaults?.height ?? Number.POSITIVE_INFINITY) -
+				(own.marginTop ?? defaults?.margins.top ?? 0) -
+				(own.marginBottom ?? defaults?.margins.bottom ?? 0);
+			return total > 0 ? own : null;
+		}
+		return null;
+	}
+
 	/* The indent from the page margins of the system opening on measure `m`. */
 	systemMargins(m: number): { left: number; right: number } {
 		return {
@@ -133,6 +160,13 @@ export type PageMargins = {
 	right: number;
 	top: number;
 	bottom: number;
+};
+
+/* What a `<print>` page-layout sets of one page; null where it leaves the default. */
+export type PageSize = {
+	height: number | null;
+	marginTop: number | null;
+	marginBottom: number | null;
 };
 
 export type DocumentPage = {
