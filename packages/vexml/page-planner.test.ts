@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { PagePlanner } from './page-planner';
+import { PagePlanner, PageWalk } from './page-planner';
 
 // 100px pages with 10px margins leave 80px for systems, from y 10 to 90 on the first page.
 const planner = new PagePlanner(100, 10);
@@ -61,5 +61,23 @@ describe('PagePlanner', () => {
 
 	it('plans one empty page when there are no systems', () => {
 		expect(planner.plan([]).pageCount).toBe(1);
+	});
+});
+
+describe('PageWalk', () => {
+	it('answers each system with its push as the earlier pushes have placed it', () => {
+		const walk = new PageWalk(100, 10);
+		expect(walk.place({ top: 0, bottom: 30 })).toBe(0);
+		expect(walk.place({ top: 40, bottom: 120 })).toBe(60);
+		// The next system is drawn below the pushed one, so it needs no push of its own.
+		expect(walk.place({ top: 130, bottom: 140 })).toBe(0);
+		expect(walk.result()).toEqual({ cropTop: -10, pageCount: 2 });
+	});
+
+	it('leaves one empty page when nothing was placed', () => {
+		expect(new PageWalk(100, 10).result()).toEqual({
+			cropTop: 0,
+			pageCount: 1,
+		});
 	});
 });

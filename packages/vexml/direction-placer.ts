@@ -107,6 +107,19 @@ export class DirectionPlacer {
 		this.scratchViewport = opts.scratchViewport;
 	}
 
+	/* The sounding dynamics as they stand, for {@link rewind}. */
+	mark(): Map<string, { text: string; measure: number }> {
+		return new Map(this.soundingDynamic);
+	}
+
+	/* Put the sounding dynamics back as `mark` found them, for a system's redraw. */
+	rewind(mark: ReadonlyMap<string, { text: string; measure: number }>): void {
+		this.soundingDynamic.clear();
+		for (const [key, value] of mark) {
+			this.soundingDynamic.set(key, value);
+		}
+	}
+
 	/*
 	 * Whether a dynamics marking merely restates the dynamic already sounding on its staff,
 	 * and so prints nothing. Some exporters (GuitarPro) repeat the level on every measure.

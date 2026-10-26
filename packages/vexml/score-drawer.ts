@@ -10,7 +10,7 @@ import {
 	PAGE_MARGIN_TOP,
 	PAGE_MARGIN_X,
 } from './constants';
-import { DrawPass, type DrawPassOptions } from './draw-pass';
+import { DrawPass, type SystemMark } from './draw-pass';
 import type { Fold } from './fold';
 import { FontFamilies } from './font-families';
 import type { Gaps } from './gaps';
@@ -30,6 +30,7 @@ import type { ScoreReader } from './score-reader';
 import { SignatureFold } from './signature-fold';
 import type { SignatureTranslator } from './signature-translator';
 import type { SpannerBuilder } from './spanner-builder';
+import type { HairpinBand } from './spanner-resolver';
 import type { SpillResolver } from './spill-resolver';
 import type { StavePlan } from './stave-plan';
 import type { TabVoiceTranslator } from './tab-voice-translator';
@@ -69,8 +70,8 @@ export interface DrawResult {
 }
 
 /*
- * Draws the laid-out score into a recording: the two-pass driver (each pass is a fresh DrawPass)
- * and the crop into final score space. The stage replays the recording into tiles.
+ * Draws the laid-out score into a recording: the driver that draws each system and settles it
+ * (see draw) and the crop into final score space. The stage replays the recording into tiles.
  */
 export class ScoreDrawer {
 	constructor(
@@ -109,8 +110,18 @@ export class ScoreDrawer {
 		// staff have room instead of being clipped off the canvas top. The unused slack is
 		// cropped back out afterwards (mirrors how LEDGER_HEADROOM gives the bottom slack).
 		const topSlack = LEDGER_HEADROOM;
-		let pageHeight = layout.top + topSlack + systemCount * perSystem;
-		// Grows if pass two re-spaces the staves (see below); the crop below reads it.
+		const { layout: layoutConfig } = this.config;
+		// A system can still grow when its staves are re-spaced or a paged layout pushes it onto
+		// the next page, neither known before it is drawn, so the scratch page is sized for systems
+		// twice as tall and, when paged, a page of push apiece. The final crop trims it back.
+		const pageHeight =
+			layout.top +
+			topSlack +
+			systemCount * 2 * perSystem +
+			(layoutConfig.type === 'paged'
+				? systemCount * layoutConfig.pageHeight
+				: 0);
+		// Grows as systems are re-spaced (see below); the crop below reads it.
 		let activeFloorHeight = floorHeight;
 
 		// Recorded, not drawn: a canvas the size of a long score goes blank past the browser's
@@ -136,89 +147,133 @@ export class ScoreDrawer {
 		// Two clashes only show up once the music is drawn: a system's notes rising above its
 		// top stave into the system before it, and a stave's notes spilling into the stave
 		// below it (the layout planner's stave gaps are fixed, so dense/extreme parts collide).
-		// Pass one measures both; if either needs more room, pass two redraws (into the
-		// emptied recording) with the space reserved.
-		const runPass = (
-			activeLayout: ScoreLayout,
-			topOverflow: Map<number, number>,
-			height: number,
-			opts: DrawPassOptions,
-		) =>
-			new DrawPass(
-				this.translator,
-				this.chords,
-				this.tab,
-				this.signatures,
-				this.staves,
-				this.barlines,
-				this.reader,
-				this.spanners,
-				this.config,
-				this.gaps,
-				context,
-				score,
-				activeLayout,
-				labelFont,
-				notationFont,
-				topSlack,
-				height,
-				topOverflow,
-				opts,
-			).run();
-
-		// The layout the final pass drew with: pass two re-spaces the staves.
-		let drawnLayout = layout;
-		// What the final pass was given, so a paged layout can redraw it with systems pushed down.
-		let drawnOverflow = new Map<number, number>();
-		let drawnOpts: DrawPassOptions = {};
-		let pass = runPass(layout, drawnOverflow, pageHeight, drawnOpts);
-		const revision = this.spillResolver.revise(
-			layout.staveOffsets,
-			pass,
-			systemCount,
+		// Each system is drawn once and weighed on its own; one that needs more room is
+		// rewound and drawn again with the space reserved, then placed for good. The systems
+		// above it never move, the ones below start where it ends. A paged layout is settled
+		// the same way: a system that would cross its page's bottom margin is drawn again
+		// pushed onto the next page.
+		const topOverflow = new Map<number, number>();
+		const systemStaveOffsets = new Map<number, number[]>();
+		const lyricDrops = new Map<string, number>();
+		const voltaLifts = new Map<number, number>();
+		const hairpinBands = new Map<number, HairpinBand[]>();
+		// The layout the systems draw with: the staves re-spaced where a system needed it.
+		const drawnLayout: ScoreLayout = { ...layout, systemStaveOffsets };
+		const drawing = new DrawPass(
+			this.translator,
+			this.chords,
+			this.tab,
+			this.signatures,
+			this.staves,
+			this.barlines,
+			this.reader,
+			this.spanners,
+			this.config,
+			this.gaps,
+			context,
+			score,
+			drawnLayout,
+			labelFont,
+			notationFont,
+			topSlack,
+			pageHeight,
+			topOverflow,
+			list,
+			{ lyricDrops, voltaLifts, hairpinBands },
 		);
-		if (revision.needed) {
-			const { systemStaveOffsets, grewBy } = revision;
-			activeFloorHeight = floorHeight + grewBy;
-			pageHeight = layout.top + topSlack + systemCount * (perSystem + grewBy);
-			list.reset();
-			drawnLayout = {
-				...layout,
-				systemStaveOffsets,
-				floorHeight: activeFloorHeight,
-			};
-			drawnOverflow = pass.observedOverflow;
-			drawnOpts = {
-				lyricDrops: pass.observedLyricDrops,
-				voltaLifts: pass.observedVoltaLifts,
-				hairpinBands: pass.observedHairpinBands,
-			};
-			pass = runPass(drawnLayout, drawnOverflow, pageHeight, drawnOpts);
-		}
-		const { layout: layoutConfig } = this.config;
-		if (layoutConfig.type === 'paged') {
-			// Fit the systems onto pages: one that would cross a page's bottom margin is pushed to
-			// the next page by widening the gap above it, and a third pass draws them there. The
-			// push changes no system's own drawing, only where it sits.
-			const plan = new PagePlanner(
-				layoutConfig.pageHeight,
-				layoutConfig.margin,
-			).plan(
-				[...pass.systemExtents]
-					.sort(([a], [b]) => a - b)
-					.map(([, extent]) => extent),
+		const walk =
+			layoutConfig.type === 'paged'
+				? new PagePlanner(layoutConfig.pageHeight, layoutConfig.margin).walk()
+				: null;
+		const systems = drawing.systems();
+		// Weigh `system` as drawn: what its redraw would be given, and whether it needs one.
+		const weigh = (system: number) => {
+			const seen = drawing.observe(system);
+			const revision = this.spillResolver.revise(
+				layout.staveOffsets,
+				{
+					observedStaveSpill: new Map(
+						seen.staveSpill ? [[system, seen.staveSpill]] : [],
+					),
+					observedOverflow: new Map([[system, seen.overflow]]),
+					lyricsStepped: seen.lyricsStepped,
+					voltasLifted: seen.voltasLifted,
+					hairpinsStacked: seen.hairpinsStacked,
+				},
+				systemCount,
 			);
-			if (plan.pushes.size > 0) {
-				const overflow = new Map(drawnOverflow);
-				let pushed = 0;
-				for (const [system, push] of plan.pushes) {
-					overflow.set(system, (overflow.get(system) ?? 0) + push);
-					pushed += push;
-				}
-				list.reset();
-				pass = runPass(drawnLayout, overflow, pageHeight + pushed, drawnOpts);
+			return { seen, revision };
+		};
+		// Reserve what `system` was seen to need, for its redraw.
+		const reserve = (
+			system: number,
+			{ seen, revision }: ReturnType<typeof weigh>,
+		) => {
+			const offsets = revision.systemStaveOffsets.get(system);
+			if (offsets) {
+				systemStaveOffsets.set(system, offsets);
 			}
-			return this.paged(list.ops, pass, plan.cropTop, plan.pageCount);
+			activeFloorHeight = Math.max(
+				activeFloorHeight,
+				floorHeight + revision.grewBy,
+			);
+			topOverflow.set(system, seen.overflow);
+			for (const [key, drop] of seen.lyricDrops) {
+				lyricDrops.set(key, drop);
+			}
+			if (seen.voltaLift !== undefined) {
+				voltaLifts.set(system, seen.voltaLift);
+			}
+			if (seen.hairpinBands) {
+				hairpinBands.set(system, seen.hairpinBands);
+			}
+		};
+		const marks = new Map<number, SystemMark>();
+		const draw = (system: number) => {
+			marks.set(system, drawing.mark(system));
+			drawing.drawSystem(system);
+		};
+		const redraw = (system: number, through: number) => {
+			const mark = marks.get(system);
+			if (mark) {
+				drawing.rewind(mark, through);
+			}
+			drawing.drawSystem(system);
+		};
+		// Whether the system after the one being settled is already drawn.
+		let drawnAhead = false;
+		for (const [index, system] of systems.entries()) {
+			if (!drawnAhead) {
+				draw(system);
+			}
+			const next = systems[index + 1];
+			// A slur or hairpin wrapping off the end of a system is drawn and measured with the
+			// next one, so the next is drawn ahead before this one is weighed. A system that needs
+			// room is drawn again, and the one drawn ahead with it, once this one is placed.
+			drawnAhead = next !== undefined;
+			if (next !== undefined) {
+				draw(next);
+			}
+			const seen = weigh(system);
+			if (seen.revision.needed) {
+				reserve(system, seen);
+				redraw(system, next ?? system);
+				drawnAhead = false;
+			}
+			// Fit onto its page: one that would cross a page's bottom margin is pushed to the next
+			// page by widening the gap above it. The push changes no system's own drawing, only
+			// where it sits.
+			const push = walk?.place(drawing.extentOf(system, next === undefined));
+			if (push) {
+				topOverflow.set(system, (topOverflow.get(system) ?? 0) + push);
+				redraw(system, drawnAhead && next !== undefined ? next : system);
+				drawnAhead = false;
+			}
+		}
+		const pass = drawing.finish();
+		if (walk) {
+			const { cropTop, pageCount } = walk.result();
+			return this.paged(list.ops, pass, cropTop, pageCount);
 		}
 		const { pageTop, pageBottom } = pass;
 
@@ -319,7 +374,7 @@ export class ScoreDrawer {
 	 */
 	private paged(
 		ops: readonly PaintOp[],
-		pass: ReturnType<DrawPass['run']>,
+		pass: ReturnType<DrawPass['finish']>,
 		cropTop: number,
 		pageCount: number,
 	): DrawResult {

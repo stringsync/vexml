@@ -50,10 +50,33 @@ export interface RawNote {
  * vexflow objects as each measure column completes; the pass driver shifts the rects into
  * final score space once the crop is known. One instance lives and dies with its DrawPass.
  */
+/* Where a {@link GeometryCollector} stood, for a system's redraw to rewind to. */
+export interface GeometryMark {
+	notes: number;
+	measures: number;
+	chordDiagrams: number;
+}
+
 export class GeometryCollector {
 	private readonly rawNotes: RawNote[] = [];
 	private readonly rawMeasures: RawMeasure[] = [];
 	private readonly rawChordDiagrams: RawChordDiagram[] = [];
+
+	/* How much has been collected, for {@link rewind}. */
+	mark(): GeometryMark {
+		return {
+			notes: this.rawNotes.length,
+			measures: this.rawMeasures.length,
+			chordDiagrams: this.rawChordDiagrams.length,
+		};
+	}
+
+	/* Drop everything collected since `mark`, as a system's redraw collects it afresh. */
+	rewind(mark: GeometryMark): void {
+		this.rawNotes.length = mark.notes;
+		this.rawMeasures.length = mark.measures;
+		this.rawChordDiagrams.length = mark.chordDiagrams;
+	}
 
 	/*
 	 * Capture a tab stave's drawn fret glyphs for the hit index. Graces ride along with the

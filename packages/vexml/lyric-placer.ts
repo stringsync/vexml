@@ -33,7 +33,7 @@ export class LyricPlacer {
 	// staff line this pass hung the row's lyrics, and whether the row's measure columns
 	// disagreed (see recordDrop).
 	private observedLyricDrops = new Map<string, number>();
-	private lyricsStepped = false;
+	private readonly steppedSystems = new Set<number>();
 	private readonly pinned: PinnedSyllable[] = [];
 
 	constructor(
@@ -61,7 +61,7 @@ export class LyricPlacer {
 		const key = this.rowKey(system, row);
 		const seen = this.observedLyricDrops.get(key);
 		if (seen !== undefined && seen !== drop) {
-			this.lyricsStepped = true;
+			this.steppedSystems.add(system);
 		}
 		this.observedLyricDrops.set(key, Math.max(seen ?? 0, drop));
 	}
@@ -209,9 +209,38 @@ export class LyricPlacer {
 		return this.observedLyricDrops;
 	}
 
-	/* Whether any row's measure columns disagreed on their drop: the signal that a redraw
-	 * with the observed drops would land the verses on different pixels. */
-	stepped(): boolean {
-		return this.lyricsStepped;
+	/* Whether any of `system`'s rows had measure columns that disagreed on their drop: the
+	 * signal that a redraw with the observed drops would land the verses on different pixels. */
+	stepped(system: number): boolean {
+		return this.steppedSystems.has(system);
+	}
+
+	/* The drops `system`'s rows observed, keyed like {@link observedDrops}. */
+	observedDropsOf(system: number): Map<string, number> {
+		const drops = new Map<string, number>();
+		for (const [key, drop] of this.observedLyricDrops) {
+			if (key.startsWith(`${system}:`)) {
+				drops.set(key, drop);
+			}
+		}
+		return drops;
+	}
+
+	/* How many syllables are pinned, for {@link rewind}. */
+	mark(): number {
+		return this.pinned.length;
+	}
+
+	/* Forget what was pinned since `mark`, as the redraw pins it afresh. */
+	rewind(mark: number): void {
+		this.pinned.length = mark;
+	}
+
+	/* Forget what `system` observed, as its redraw observes it afresh. */
+	forgetSystem(system: number): void {
+		this.steppedSystems.delete(system);
+		for (const key of this.observedDropsOf(system).keys()) {
+			this.observedLyricDrops.delete(key);
+		}
 	}
 }

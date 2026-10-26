@@ -125,6 +125,31 @@ export class SpannerResolver {
 		this.systemOfMeasure = opts.systemOfMeasure;
 	}
 
+	/* How many chords and markers are recorded, for {@link rewind}. */
+	mark(): SystemStart {
+		return {
+			chords: this.allChords.length,
+			tabChords: this.allTabChords.length,
+			pedals: this.allPedals.length,
+			wedges: this.allWedges.length,
+		};
+	}
+
+	/* Forget what was recorded since `mark`, as the redraw records it afresh. */
+	rewind(mark: SystemStart): void {
+		this.allChords.length = mark.chords;
+		this.allTabChords.length = mark.tabChords;
+		this.allPedals.length = mark.pedals;
+		this.allWedges.length = mark.wedges;
+	}
+
+	/* Forget what `system` started, reached and stacked, as its redraw settles it afresh. */
+	forgetSystem(system: number): void {
+		this.systemStarts.delete(system);
+		this.systemReach.delete(system);
+		this.stackedHairpins.delete(system);
+	}
+
 	/* Mark where `system`'s chords and markers start, before any of them is recorded. */
 	beginSystem(system: number): void {
 		this.systemStarts.set(system, {

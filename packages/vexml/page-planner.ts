@@ -24,37 +24,81 @@ export class PagePlanner {
 
 	/* `extents` are each system's ink, top to bottom, in the drawing's space. */
 	plan(extents: readonly SystemExtent[]): PagePlan {
+		const walk = this.walk();
 		const pushes = new Map<number, number>();
-		const first = extents[0];
-		if (!first) {
-			return { pushes, cropTop: 0, pageCount: 1 };
-		}
-		const height = this.pageHeight;
-		const margin = this.margin;
-		const cropTop = first.top - margin;
-		// How far the systems from here on have been pushed down so far, and the page in use.
+		// How far the systems from here on have been pushed down so far.
 		let shift = 0;
-		let page = 0;
-		let bottom = 0;
 		extents.forEach((extent, index) => {
-			const top = extent.top + shift - cropTop;
-			bottom = extent.bottom + shift - cropTop;
-			const pageTop = page * height + margin;
-			const pageBottom = (page + 1) * height - margin;
-			if (index > 0 && bottom > pageBottom && top > pageTop) {
-				page += 1;
-				const push = Math.max(0, page * height + margin - top);
-				shift += push;
-				bottom += push;
+			const push = walk.place({
+				top: extent.top + shift,
+				bottom: extent.bottom + shift,
+			});
+			if (push > 0) {
 				pushes.set(index, push);
+				shift += push;
 			}
-			// A system too tall for its page ends on a later one; the next system goes there too.
-			page = Math.max(page, Math.floor((bottom - margin) / height));
 		});
+		return { pushes, ...walk.result() };
+	}
+
+	/* A plan taken one system at a time, as each is drawn where the earlier pushes put it. */
+	walk(): PageWalk {
+		return new PageWalk(this.pageHeight, this.margin);
+	}
+}
+
+/* One walk down the systems of a {@link PagePlanner}. */
+export class PageWalk {
+	private index = 0;
+	private cropTop = 0;
+	private page = 0;
+	private bottom = 0;
+
+	constructor(
+		private readonly height: number,
+		private readonly margin: number,
+	) {}
+
+	/*
+	 * Place the next system, whose ink `extent` spans in the drawing's space as it stands with
+	 * every earlier push applied. Returns how far to push it down to start its page (0 to leave
+	 * it); the extent it then occupies is the one given, moved down by that much.
+	 */
+	place(extent: SystemExtent): number {
+		const { height, margin } = this;
+		if (this.index === 0) {
+			this.cropTop = extent.top - margin;
+		}
+		const top = extent.top - this.cropTop;
+		this.bottom = extent.bottom - this.cropTop;
+		const pageTop = this.page * height + margin;
+		const pageBottom = (this.page + 1) * height - margin;
+		let pushed = 0;
+		if (this.index > 0 && this.bottom > pageBottom && top > pageTop) {
+			this.page += 1;
+			pushed = Math.max(0, this.page * height + margin - top);
+			this.bottom += pushed;
+		}
+		// A system too tall for its page ends on a later one; the next system goes there too.
+		this.page = Math.max(
+			this.page,
+			Math.floor((this.bottom - margin) / height),
+		);
+		this.index += 1;
+		return pushed;
+	}
+
+	/* Where the systems placed so far leave the drawing: its crop and page count. */
+	result(): Pick<PagePlan, 'cropTop' | 'pageCount'> {
+		if (this.index === 0) {
+			return { cropTop: 0, pageCount: 1 };
+		}
 		return {
-			pushes,
-			cropTop,
-			pageCount: Math.max(page + 1, Math.ceil((bottom + margin) / height)),
+			cropTop: this.cropTop,
+			pageCount: Math.max(
+				this.page + 1,
+				Math.ceil((this.bottom + this.margin) / this.height),
+			),
 		};
 	}
 }

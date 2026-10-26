@@ -41,6 +41,7 @@ import {
 import type { Gaps } from './gaps';
 import {
 	GeometryCollector,
+	type GeometryMark,
 	type RawChordDiagram,
 	type RawMeasure,
 	type RawNote,
@@ -50,6 +51,7 @@ import { Ink } from './ink';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
 import { LyricPlacer } from './lyric-placer';
 import { MeasureStyleDrawer } from './measure-style-drawer';
+import type { PaintList } from './paint-list';
 import type {
 	DirectionLineSpan,
 	MeasureStyleMark,
@@ -90,16 +92,48 @@ export interface SystemExtent {
 	bottom: number;
 }
 
+/* What one system's pass measured, as the settle loop weighs it (see ScoreDrawer.draw). */
+export interface SystemObservation {
+	/* Px the system's content rose above its own top: the headroom a redraw reserves. */
+	overflow: number;
+	/* This system's stave rows' spill, keyed by row, or undefined when it drew none. */
+	staveSpill: Map<number, StaveSpill> | undefined;
+	/* The drops its lyric rows hung at, keyed `<systemIndex>:<staveRow>`. */
+	lyricDrops: Map<string, number>;
+	lyricsStepped: boolean;
+	/* How far its volta brackets had to rise, undefined when none did. */
+	voltaLift: number | undefined;
+	voltasLifted: boolean;
+	/* The below-stave hairpins its words ran into, undefined when none. */
+	hairpinBands: HairpinBand[] | undefined;
+	hairpinsStacked: boolean;
+}
+
+/* Where a system's draw began, for {@link DrawPass.rewind} to put the pass back to. */
+export interface SystemMark {
+	system: number;
+	pageTop: number;
+	pageBottom: number;
+	systemTopY: number;
+	systemContentBottom: number;
+	currentSystem: number;
+	geometry: GeometryMark;
+	lyrics: number;
+	dynamics: ReturnType<DirectionPlacer['mark']>;
+	spanners: ReturnType<SpannerResolver['mark']>;
+	ops: number;
+}
+
 /*
- * Draw every measure once. `topOverflow` maps a systemIndex to extra space to reserve
+ * Draw the score one system at a time. `topOverflow` maps a systemIndex to extra space to reserve
  * above that system so its notes (which rise above its own top stave) clear the system
  * before it: measured on a first pass and applied on a second (see the driver in
- * ScoreDrawer.draw). run() returns the page extents drawn plus the overflow this pass
- * observed per system. One instance draws one pass; a redraw constructs a fresh
- * DrawPass, so every field below starts clean.
+ * ScoreDrawer.draw). drawSystem() draws one system and settles its spanners; observe() reports
+ * what it measured; a system that needs room is rewound to its mark() and drawn again with the
+ * maps the pass was given updated. finish() draws the header and footer and returns the page
+ * extents. One instance draws a whole score, in system order.
  */
 export class DrawPass {
-	private readonly measureCount: number;
 	private readonly boxes: MeasureBox[];
 	private readonly totalStaves: number;
 	private readonly softmaxFactor: number;
@@ -156,6 +190,11 @@ export class DrawPass {
 	// Each system's staff lines: the top line of its top stave to the bottom line of its bottom one.
 	private readonly staveLines = new Map<number, SystemExtent>();
 	private currentSystem = -1;
+	// The measures each system draws, in order; a measure with no box (inside a multirest run)
+	// draws nothing and belongs to none.
+	private readonly systemMeasures = new Map<number, number[]>();
+	// Where the system being drawn began pinning lyrics, for its spill report.
+	private systemLyricStart = 0;
 	// Per-system collision index of everything already drawn (notes, high ties, placed
 	// chord symbols/words/diagrams). The above-stave annotations query it to nudge clear of
 	// obstacles, and chord diagrams use it to space apart across a barline (replacing an old
@@ -297,6 +336,7 @@ export class DrawPass {
 		topSlack: number,
 		scratchHeight: number,
 		private readonly topOverflow: Map<number, number>,
+		private readonly list: PaintList,
 		opts: DrawPassOptions,
 	) {
 		this.voltaLifts = opts.voltaLifts ?? new Map();
@@ -315,8 +355,15 @@ export class DrawPass {
 			laterLabelIndent,
 			abbreviationIndent,
 		} = layout;
-		this.measureCount = measureCount;
 		this.boxes = boxes;
+		for (let m = 0; m < measureCount; m++) {
+			const box = boxes[m];
+			if (box) {
+				const measures = this.systemMeasures.get(box.systemIndex) ?? [];
+				measures.push(m);
+				this.systemMeasures.set(box.systemIndex, measures);
+			}
+		}
 		this.totalStaves = totalStaves;
 		this.softmaxFactor = softmaxFactor;
 		this.systemGap = systemGap;
@@ -485,6 +532,21 @@ export class DrawPass {
 				systemOfMeasure: (m) => this.systemOfMeasure(m),
 			},
 		);
+		// The context's default ink: every vexflow glyph with no explicit style inherits it, and it
+		// survives the save()/restore() pairs below since it's set before any of them. Text vexml
+		// types itself overrides to textColor inline.
+		this.context.setFillStyle(this.notationColor);
+		this.context.setStrokeStyle(this.notationColor);
+		// Stems ignore the context stroke above: Stem.drawWithStyle paints them with
+		// Metrics.Stem.strokeStyle (hardcoded 'black') on top of it. Override that metric too:
+		// global VexFlow state like setFonts, set afresh by every pass.
+		MetricsDefaults.Stem.strokeStyle = this.notationColor;
+		Metrics.clear('Stem');
+	}
+
+	/* The systems to draw, in order. */
+	systems(): number[] {
+		return [...this.systemMeasures.keys()].sort((a, b) => a - b);
 	}
 
 	/*
@@ -537,37 +599,86 @@ export class DrawPass {
 		return 0;
 	}
 
-	run(): {
-		pageTop: number;
-		pageBottom: number;
-		observedOverflow: Map<number, number>;
-		observedStaveSpill: Map<number, Map<number, StaveSpill>>;
-		observedLyricDrops: Map<string, number>;
-		lyricsStepped: boolean;
-		observedVoltaLifts: Map<number, number>;
-		voltasLifted: boolean;
-		observedHairpinBands: Map<number, HairpinBand[]>;
-		hairpinsStacked: boolean;
-		systemExtents: Map<number, SystemExtent>;
-		staveLines: Map<number, SystemExtent>;
-		rawNotes: RawNote[];
-		rawMeasures: RawMeasure[];
-		rawChordDiagrams: RawChordDiagram[];
-	} {
-		// The context's default ink: every vexflow glyph with no explicit style inherits it, and it
-		// survives the save()/restore() pairs below since it's set before any of them. Text vexml
-		// types itself overrides to textColor inline.
-		this.context.setFillStyle(this.notationColor);
-		this.context.setStrokeStyle(this.notationColor);
-		// Stems ignore the context stroke above: Stem.drawWithStyle paints them with
-		// Metrics.Stem.strokeStyle (hardcoded 'black') on top of it. Override that metric too:
-		// global VexFlow state like setFonts, set afresh by every pass.
-		MetricsDefaults.Stem.strokeStyle = this.notationColor;
-		Metrics.clear('Stem');
-		for (let m = 0; m < this.measureCount; m++) {
+	/* Where `system`'s draw begins, taken before drawSystem so a redraw can come back to it. */
+	mark(system: number): SystemMark {
+		return {
+			system,
+			pageTop: this.pageTop,
+			pageBottom: this.pageBottom,
+			systemTopY: this.systemTopY,
+			systemContentBottom: this.systemContentBottom,
+			currentSystem: this.currentSystem,
+			geometry: this.geometry.mark(),
+			lyrics: this.lyricPlacer.mark(),
+			dynamics: this.directionPlacer.mark(),
+			spanners: this.spannerResolver.mark(),
+			ops: this.list.ops.length,
+		};
+	}
+
+	/*
+	 * Undo drawSystem back to `mark`: its ops leave the recording and everything it measured or
+	 * queued is forgotten, so the system can be drawn again under the maps this pass was given.
+	 * Nothing earlier is touched: those systems are placed and never move. `through` is the last
+	 * system drawn since, which goes too when the one after was drawn ahead.
+	 */
+	rewind(mark: SystemMark, through: number): void {
+		this.list.ops.length = mark.ops;
+		this.pageTop = mark.pageTop;
+		this.pageBottom = mark.pageBottom;
+		this.systemTopY = mark.systemTopY;
+		this.systemContentBottom = mark.systemContentBottom;
+		this.currentSystem = mark.currentSystem;
+		this.geometry.rewind(mark.geometry);
+		this.directionPlacer.rewind(mark.dynamics);
+		this.lyricPlacer.rewind(mark.lyrics);
+		this.spannerResolver.rewind(mark.spanners);
+		for (const system of this.systems()) {
+			if (system < mark.system || system > through) {
+				continue;
+			}
+			this.lyricPlacer.forgetSystem(system);
+			this.spannerResolver.forgetSystem(system);
+			this.spill.forgetSystem(system);
+			this.systemBottoms.delete(system);
+			this.staveLines.delete(system);
+			this.observedVoltaLifts.delete(system);
+		}
+	}
+
+	/*
+	 * Draw `system`: place it below the one before, draw each of its measure columns, then
+	 * resolve the spanners it completes. Systems are drawn in order, each once unless it is
+	 * rewound.
+	 */
+	drawSystem(system: number): void {
+		this.beginSystem(system);
+		for (const m of this.systemMeasures.get(system) ?? []) {
 			this.drawMeasureColumn(m);
 		}
-		return this.finishPass();
+		this.endSystem(system);
+	}
+
+	/* What `system` measured while it was drawn (see SystemObservation). */
+	observe(system: number): SystemObservation {
+		const voltaLift = this.observedVoltaLifts.get(system);
+		const hairpinBands = this.spannerResolver
+			.observedHairpinBands()
+			.get(system);
+		return {
+			overflow: this.spill.observedOverflow().get(system) ?? 0,
+			staveSpill: this.spill.observedStaveSpill().get(system),
+			lyricDrops: this.lyricPlacer.observedDropsOf(system),
+			lyricsStepped: this.lyricPlacer.stepped(system),
+			voltaLift,
+			voltasLifted:
+				voltaLift !== undefined &&
+				voltaLift !== (this.voltaLifts.get(system) ?? 0),
+			hairpinBands,
+			// Words this pass drew through a hairpin it had no band for yet.
+			hairpinsStacked:
+				hairpinBands !== undefined && !this.hairpinBands.has(system),
+		};
 	}
 
 	/*
@@ -613,7 +724,6 @@ export class DrawPass {
 		this.suppressBegRepeat =
 			!this.isSystemStart && this.decorations[m - 1]?.repeatEnd === true;
 		this.measureNumbered = false;
-		this.beginSystem();
 		this.systemY = this.systemTopY;
 		this.staveRow = 0;
 		this.systemTop = undefined;
@@ -1002,26 +1112,58 @@ export class DrawPass {
 		};
 	}
 
-	private beginSystem(): void {
-		if (this.systemIndex !== this.currentSystem) {
-			if (this.currentSystem >= 0) {
-				this.resolveSpanners(this.currentSystem);
-				this.systemBottoms.set(this.currentSystem, this.systemContentBottom);
-				// Gap below the previous system, plus room reserved for this system's own
-				// upward overflow (high notes/ledger lines) so they clear it, not collide.
-				this.systemTopY =
-					this.systemContentBottom +
-					this.systemGap +
-					(this.topOverflow.get(this.systemIndex) ?? 0);
-			}
-			this.currentSystem = this.systemIndex;
-			this.spannerResolver.beginSystem(this.systemIndex);
-			this.systemContentBottom = this.systemTopY;
-			this.spill.recordSystemTop(this.systemIndex, this.systemTopY);
-			// Leaving the previous system: flag anything that escaped the canvas, then reset
-			// the collision index so the new system (coordinates restart) starts clean.
-			this.warnEscapes();
-			this.collisionResolver.clear();
+	private beginSystem(system: number): void {
+		this.systemIndex = system;
+		if (this.currentSystem >= 0) {
+			// Gap below the previous system, plus room reserved for this system's own
+			// upward overflow (high notes/ledger lines) so they clear it, not collide.
+			this.systemTopY =
+				this.systemContentBottom +
+				this.systemGap +
+				(this.topOverflow.get(system) ?? 0);
+		}
+		this.currentSystem = system;
+		this.spannerResolver.beginSystem(system);
+		this.systemContentBottom = this.systemTopY;
+		this.spill.recordSystemTop(system, this.systemTopY);
+		this.systemLyricStart = this.lyricPlacer.mark();
+		// The previous system is drawn and settled: reset the collision index so this one
+		// (coordinates restart) starts clean.
+		this.collisionResolver.clear();
+	}
+
+	/*
+	 * `system`'s measures are drawn: resolve the spanners it completes, now that its notes are
+	 * placed, flag anything that escaped the canvas, and report its verses as spill.
+	 */
+	private endSystem(system: number): void {
+		this.resolveSpanners(system);
+		this.systemBottoms.set(system, this.systemContentBottom);
+		this.warnEscapes();
+		// A verse hangs below its stave, in the gap to the stave under it, so it's spill like
+		// any other ink there: a beam or slur the lower stave raises into the gap has to clear
+		// the words, not just the notes over them. Reported now, at the drop the whole row
+		// hangs at, rather than as each column pinned it: on the first draw a column's
+		// syllables can sit higher than the line they join, and the gap sized to that would
+		// come up short once the line drops.
+		for (const syllable of this.lyricPlacer
+			.pinnedSyllables()
+			.slice(this.systemLyricStart)) {
+			const baseline =
+				syllable.stave.getBottomLineY() +
+				this.lyricPlacer.rowDrop(system, syllable.row) +
+				syllable.verseIndex * LYRIC_LINE_HEIGHT;
+			this.spill.recordDrop(
+				system,
+				syllable.row,
+				syllable.stave,
+				new Rect(
+					syllable.left,
+					baseline - LYRIC_FONT_SIZE,
+					syllable.width,
+					LYRIC_FONT_SIZE,
+				),
+			);
 		}
 	}
 
@@ -1275,85 +1417,58 @@ export class DrawPass {
 	}
 
 	/*
-	 * After the measure loop: resolve the whole-score spanners, grow the measure boxes,
-	 * and compute the per-system overflow this pass observed.
+	 * After the last system: draw the header and footer, and hand back the page extents and
+	 * the hit-index geometry.
 	 */
-	private finishPass(): {
+	finish(): {
 		pageTop: number;
 		pageBottom: number;
-		observedOverflow: Map<number, number>;
-		observedStaveSpill: Map<number, Map<number, StaveSpill>>;
-		observedLyricDrops: Map<string, number>;
-		lyricsStepped: boolean;
-		observedVoltaLifts: Map<number, number>;
-		voltasLifted: boolean;
-		observedHairpinBands: Map<number, HairpinBand[]>;
-		hairpinsStacked: boolean;
 		systemExtents: Map<number, SystemExtent>;
 		staveLines: Map<number, SystemExtent>;
 		rawNotes: RawNote[];
 		rawMeasures: RawMeasure[];
 		rawChordDiagrams: RawChordDiagram[];
 	} {
-		// The last system's content is never followed by a system-change reset, so check it
-		// for clipped content here.
-		this.warnEscapes();
-		if (this.currentSystem >= 0) {
-			this.resolveSpanners(this.currentSystem);
-			this.systemBottoms.set(this.currentSystem, this.systemContentBottom);
-		}
-
 		this.geometry.applyDecorationTops(this.spill);
 		this.drawHeader();
 		this.drawFooter();
-
-		// A verse hangs below its stave, in the gap to the stave under it, so it's spill like
-		// any other ink there: a beam or slur the lower stave raises into the gap has to clear
-		// the words, not just the notes over them. Reported now, at the drop the whole row
-		// hangs at, rather than as each column pinned it: on the first pass a column's
-		// syllables can sit higher than the line they join, and the gap sized to that would
-		// come up short once the line drops.
-		for (const syllable of this.lyricPlacer.pinnedSyllables()) {
-			const system = this.systemOf(syllable.stave);
-			const baseline =
-				syllable.stave.getBottomLineY() +
-				this.lyricPlacer.rowDrop(system, syllable.row) +
-				syllable.verseIndex * LYRIC_LINE_HEIGHT;
-			this.spill.recordDrop(
-				system,
-				syllable.row,
-				syllable.stave,
-				new Rect(
-					syllable.left,
-					baseline - LYRIC_FONT_SIZE,
-					syllable.width,
-					LYRIC_FONT_SIZE,
-				),
-			);
-		}
-
 		return {
 			pageTop: this.pageTop,
 			pageBottom: this.pageBottom,
-			observedOverflow: this.spill.observedOverflow(),
-			observedStaveSpill: this.spill.observedStaveSpill(),
-			observedLyricDrops: this.lyricPlacer.observedDrops(),
-			lyricsStepped: this.lyricPlacer.stepped(),
-			observedVoltaLifts: this.observedVoltaLifts,
 			systemExtents: this.systemExtents(),
 			staveLines: this.staveLines,
-			voltasLifted: [...this.observedVoltaLifts].some(
-				([system, lift]) => lift !== (this.voltaLifts.get(system) ?? 0),
-			),
-			observedHairpinBands: this.spannerResolver.observedHairpinBands(),
-			// Words this pass drew through a hairpin it had no band for yet.
-			hairpinsStacked: [
-				...this.spannerResolver.observedHairpinBands().keys(),
-			].some((system) => !this.hairpinBands.has(system)),
 			rawNotes: this.geometry.notes(),
 			rawMeasures: this.geometry.measures(),
 			rawChordDiagrams: this.geometry.chordDiagrams(),
 		};
+	}
+
+	/*
+	 * Where `system`'s ink reaches as it stands, for pagination to place it before the next is
+	 * drawn: the header counted over the first system and the footer under the last, as
+	 * finish() will draw them.
+	 */
+	extentOf(system: number, isLast: boolean): SystemExtent {
+		const inkTop = this.spill.systemTops().get(system) ?? this.systemTopY;
+		let top = inkTop;
+		if (
+			system === 0 &&
+			this.header &&
+			this.header.height(this.headerWidth) > 0
+		) {
+			top = Math.min(
+				inkTop,
+				Math.min(inkTop, this.pageTop) -
+					HEADER_GAP -
+					this.header.height(this.headerWidth),
+			);
+		}
+		let bottom = this.systemBottoms.get(system) ?? top;
+		const footer = isLast ? this.header?.footer(this.headerWidth) : undefined;
+		if (footer && footer.lines.length > 0) {
+			bottom = this.pageBottom + FOOTER_GAP + footer.height;
+		}
+		return { top, bottom };
 	}
 
 	/* Draw the spanners `system` completes, on top of its notes, now that they are placed. */

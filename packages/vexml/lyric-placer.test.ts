@@ -55,9 +55,9 @@ describe('LyricPlacer', () => {
 		placer.recordDrop(0, 0, 20);
 		placer.recordDrop(0, 0, 20);
 		placer.recordDrop(1, 0, 5);
-		expect(placer.stepped()).toBe(false);
+		expect(placer.stepped(0)).toBe(false);
 		placer.recordDrop(0, 0, 12);
-		expect(placer.stepped()).toBe(true);
+		expect(placer.stepped(0)).toBe(true);
 		expect(placer.observedDrops().get('0:0')).toBe(20);
 		expect(placer.observedDrops().get('1:0')).toBe(5);
 	});

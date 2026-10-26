@@ -49,6 +49,14 @@ export class SpillTracker {
 	// harmony draw block in DrawPass for why the cursor stops at the stave.
 	private readonly systemDecorationTop = new Map<number, number>();
 
+	/* Forget what `system` measured, as its redraw measures it afresh. */
+	forgetSystem(system: number): void {
+		this.staveSpill.delete(system);
+		this.systemTopByIndex.delete(system);
+		this.systemHighestTop.delete(system);
+		this.systemDecorationTop.delete(system);
+	}
+
 	/* Content drawn on a stave row: band its rise over the top line AND its drop under the
 	 * bottom line (a tall rect can do both, e.g. a chord spanning the staff). */
 	recordStave(
