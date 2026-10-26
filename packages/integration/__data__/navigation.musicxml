@@ -96,6 +96,7 @@
         <direction-type>
           <segno/>
         </direction-type>
+        <sound segno="s"/>
       </direction>
       <note>
         <pitch>
@@ -160,6 +161,7 @@
         <direction-type>
           <words>to coda</words>
         </direction-type>
+        <sound tocoda="c"/>
       </direction>
       <note>
         <pitch>
@@ -259,6 +261,7 @@
         <direction-type>
           <words>D.S. al Coda</words>
         </direction-type>
+        <sound dalsegno="s"/>
       </direction>
       <backup>
         <duration>256</duration>
@@ -278,6 +281,7 @@
         <direction-type>
           <coda/>
         </direction-type>
+        <sound coda="c"/>
       </direction>
       <note>
         <pitch>

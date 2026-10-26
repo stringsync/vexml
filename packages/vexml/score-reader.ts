@@ -967,8 +967,12 @@ export class ScoreReader {
 	 * repeat: the iterator drives the back-jump off the ending instead. */
 	measureJumps(measures: readonly Measure[]): Jump[][] {
 		return this.measureRepeats(measures).map(
-			({ repeatBegin, repeatEnd, repeatTimes, ending }) => {
+			({ repeatBegin, repeatEnd, repeatTimes, ending }, i) => {
 				const jumps: Jump[] = [];
+				const measure = measures[i];
+				if (measure) {
+					jumps.push(...this.navigationJumps(measure));
+				}
 				if (repeatBegin) {
 					jumps.push({ type: 'repeatstart' });
 				}
@@ -988,6 +992,39 @@ export class ScoreReader {
 				return jumps;
 			},
 		);
+	}
+
+	/* The `<sound>` navigation attributes of a measure: landmarks (`segno`, `coda`), the jumps
+	 * (`dacapo`, `dalsegno`, `tocoda`) and `fine`. Words like "D.C. al Fine" are not read: the
+	 * attributes are what drive playback, and exporters that write the words write these too. */
+	private navigationJumps(measure: Measure): Jump[] {
+		const jumps: Jump[] = [];
+		for (const sound of measure.sounds) {
+			const segno = sound.getAttribute('segno');
+			if (segno !== null) {
+				jumps.push({ type: 'segno', id: segno });
+			}
+			const coda = sound.getAttribute('coda');
+			if (coda !== null) {
+				jumps.push({ type: 'coda', id: coda });
+			}
+			const fine = sound.getAttribute('fine');
+			if (fine !== null && fine !== 'no') {
+				jumps.push({ type: 'fine' });
+			}
+			const tocoda = sound.getAttribute('tocoda');
+			if (tocoda !== null) {
+				jumps.push({ type: 'tocoda', id: tocoda });
+			}
+			if (sound.getAttribute('dacapo') === 'yes') {
+				jumps.push({ type: 'dacapo' });
+			}
+			const dalsegno = sound.getAttribute('dalsegno');
+			if (dalsegno !== null) {
+				jumps.push({ type: 'dalsegno', id: dalsegno });
+			}
+		}
+		return jumps;
 	}
 
 	/** How many passes an ending covers, from its `<ending number>` ("1", "1,2", "1-3"). */

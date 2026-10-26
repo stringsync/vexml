@@ -46,6 +46,15 @@ describe('readTimeline', () => {
 		]);
 	});
 
+	it.concurrent('follows D.S. al Coda: back to the segno, then on to the coda', async () => {
+		const file = 'navigation.musicxml';
+		const xml = await testing.fixture(file);
+		const { result } = await testing.eval(file, {}, compare, xml);
+		expect(result.plain.bars.map((bar) => bar.measureIndex)).toEqual([
+			0, 1, 2, 0, 1, 3, 4,
+		]);
+	});
+
 	it.concurrent('times an MDocument with insertGaps gaps, leaving it unedited', async () => {
 		const xml = await testing.fixture('repeats.musicxml');
 		const { result } = await testing.eval(

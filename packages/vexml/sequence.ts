@@ -336,7 +336,16 @@ export interface NoteNearMsOptions {
 export type Jump =
 	| { type: 'repeatstart' }
 	| { type: 'repeatend'; times: number }
-	| { type: 'repeatending'; times: number; last: boolean; number: number };
+	| { type: 'repeatending'; times: number; last: boolean; number: number }
+	/* Navigation from `<sound>`: a landmark (`segno`, `coda`, id null when unnamed), or a jump
+	 * (`dacapo`, `dalsegno`, `tocoda`) taken at the measure's end, or the `fine` stop. They only fire
+	 * after a D.C./D.S. has been taken, except the jump itself. */
+	| { type: 'segno'; id: string | null }
+	| { type: 'coda'; id: string | null }
+	| { type: 'dacapo' }
+	| { type: 'dalsegno'; id: string | null }
+	| { type: 'tocoda'; id: string | null }
+	| { type: 'fine' };
 
 /* One measure in document (visual) order. `beats` is its played length in quarter-note beats (the
  * max note end, or the meter); `tempoBpm` is the quarter-note BPM in effect at its start, or null to

@@ -27,6 +27,10 @@ type Structure = {
  * Iterates measure indices in playback order, expanding repeats and voltas: iterate it to get the
  * order a player would visit the measures in, with repeated stretches appearing as often as they
  * are played.
+ *
+ * A D.C. or D.S. is taken once, at the end of its measure: playback returns to the start or the
+ * segno and plays straight through (no repeat back-jumps; a volta plays its last ending), a
+ * `tocoda` then skips to the coda and a `fine` stops. Neither applies before the jump.
  */
 export class MeasureSequenceIterator implements Iterable<number> {
 	constructor(
@@ -166,8 +170,26 @@ export class MeasureSequenceIterator implements Iterable<number> {
 		const remainingBackJumps = new Map<number, number>();
 		const voltaPass = new Map<Volta, number>();
 
+		let jumped = false;
+		// The measure just played, until the step after it has been checked for a navigation jump:
+		// one only fires when playback runs on from the measure, not when a repeat sends it back.
+		let played: number | null = null;
 		let i = 0;
-		while (i < this.measures.length) {
+		while (i <= this.measures.length) {
+			if (played !== null && i === played + 1) {
+				const jumps = this.measures[played]?.jumps ?? [];
+				const target = this.navigate(jumps, jumped);
+				played = null;
+				if (target === 'end') {
+					break;
+				}
+				if (target !== null) {
+					jumped = true;
+					i = target;
+					continue;
+				}
+			}
+			played = null;
 			const measure = this.measures[i];
 			if (!measure) {
 				break;
@@ -175,7 +197,9 @@ export class MeasureSequenceIterator implements Iterable<number> {
 
 			const endingHit = structure.endingByMeasure.get(i);
 			if (endingHit) {
-				const pass = voltaPass.get(endingHit.volta) ?? 1;
+				const pass = jumped
+					? endingHit.volta.totalPasses
+					: (voltaPass.get(endingHit.volta) ?? 1);
 				if (
 					pass < endingHit.ending.startPass ||
 					pass > endingHit.ending.endPass
@@ -186,6 +210,7 @@ export class MeasureSequenceIterator implements Iterable<number> {
 			}
 
 			result.push(measure.index);
+			played = i;
 
 			if (endingHit) {
 				const { volta, ending } = endingHit;
@@ -195,7 +220,7 @@ export class MeasureSequenceIterator implements Iterable<number> {
 					continue;
 				}
 				const nextPass = (voltaPass.get(volta) ?? 1) + 1;
-				if (nextPass > volta.totalPasses) {
+				if (jumped || nextPass > volta.totalPasses) {
 					voltaPass.delete(volta);
 					i++;
 				} else {
@@ -214,7 +239,7 @@ export class MeasureSequenceIterator implements Iterable<number> {
 
 			const repeatEnd = structure.repeatEndsByMeasure.get(i);
 			if (repeatEnd) {
-				if (repeatEnd.times === 0) {
+				if (repeatEnd.times === 0 || jumped) {
 					i++;
 					continue;
 				}
@@ -240,6 +265,47 @@ export class MeasureSequenceIterator implements Iterable<number> {
 		}
 
 		return result;
+	}
+
+	/* Where the end of a measure sends playback: a measure index, 'end' to stop, or null to carry
+	 * on. Before a jump only D.C./D.S. act; after one, `fine` stops and `tocoda` goes to the coda.
+	 * A jump whose landmark is missing is ignored. */
+	private navigate(jumps: Jump[], jumped: boolean): number | 'end' | null {
+		if (jumped) {
+			if (jumps.some((jump) => jump.type === 'fine')) {
+				return 'end';
+			}
+			const tocoda = this.findJump(jumps, 'tocoda');
+			return tocoda ? this.landmark('coda', tocoda.id, true) : null;
+		}
+		if (this.findJump(jumps, 'dacapo')) {
+			return 0;
+		}
+		const dalsegno = this.findJump(jumps, 'dalsegno');
+		return dalsegno ? this.landmark('segno', dalsegno.id, false) : null;
+	}
+
+	/* The measure carrying the named landmark, else the first unnamed-match one; a coda is the last
+	 * such measure, since a coda closes the score. */
+	private landmark(
+		type: 'segno' | 'coda',
+		id: string | null,
+		last: boolean,
+	): number | null {
+		const found: number[] = [];
+		let named: number | null = null;
+		for (const [i, measure] of this.measures.entries()) {
+			for (const jump of measure.jumps) {
+				if (jump.type !== type) {
+					continue;
+				}
+				found.push(i);
+				if (named === null && id !== null && jump.id === id) {
+					named = i;
+				}
+			}
+		}
+		return named ?? (last ? (found.at(-1) ?? null) : (found[0] ?? null));
 	}
 
 	/* Reset repeat-ends and voltas nested strictly inside a range being jumped back over, so their

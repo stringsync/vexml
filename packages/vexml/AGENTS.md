@@ -173,7 +173,7 @@ vexflow's fixed text line, drawn in the finish pass, after the index clears.
 ## Reading the document
 
 - **Divisions, ticks, beats, pickup measures, `<senza-misura>`**: `score-reader.ts` (`meterBeats`)
-- **Repeat structure, endings, how many passes**: `score-reader.ts` (`measureRepeats`, `measureJumps`, `endingPasses`)
+- **Repeat structure, endings, how many passes**: `score-reader.ts` (`measureRepeats`, `measureJumps`, `navigationJumps`, `endingPasses`)
 - **Directions routed to the right staff**: `score-reader.ts`
 - **Silent gap measures the caller asked for**: `gaps.ts` (which measures are gaps, and which the input can hold), `gap-inserter.ts` (inserting them; `beforeBarIndex` in playback order, refused inside a repeat), `insert-gaps.ts` (the public `insertGaps` for a caller's own document)
 - **Gaps before the first measure or after the last, drawn as boxes outside the staves**: `layout-planner.ts` (`MeasureBox.edge`, fixed box widths, flush against the bracket or final barline), `stave-plan.ts` (`systemOverhang`), `draw-pass.ts` (`drawEdgeGap`; the time signature and end barline move to the music via `opensScore`/`isLastMeasure`)
@@ -193,7 +193,7 @@ vexflow's fixed text line, drawn in the finish pass, after the index clears.
 - **A note's boxes: `Note.rect` (the head alone) and `getInkRect` (head plus accidentals, arpeggio, dots, flag, graces)**: `geometry-collector.ts` (`inkOf`), `note.ts`
 - **Pointer position to element**: `hit-tester.ts`, `default-hit-tester.ts`, `element-index.ts`
 - **Coloring, highlighting, halos**: `decoration.ts`, `default-decoration.ts`, `default-decorations.ts`, `decoration-style.ts`, `color-style.ts`, `halo-style.ts`
-- **Playback timeline, repeats unrolled, swing**: `sequence-factory.ts`, `sequence.ts`, `measure-sequence-iterator.ts` (repeat/volta expansion), `tempo-map.ts`, `swing-warp.ts`
+- **Playback timeline, repeats unrolled, swing**: `sequence-factory.ts`, `sequence.ts`, `measure-sequence-iterator.ts` (repeat/volta expansion, D.C./D.S./Fine/To Coda from `<sound>` attributes), `tempo-map.ts`, `swing-warp.ts`
 - **Playback timing without rendering (`readTimeline`: bars per pass, duration, gaps)**: `read-timeline.ts`, `timeline.ts`, `sequence-factory.ts` (`timeline`, and `unroll`, the pass walk it shares with the rendered sequence)
 - **The moving cursor and playhead visibility**: `cursor-controller.ts`, `cursor-position.ts` (the box a cursor event reports), `cursor-view.ts`, `playhead.ts` (a DOM `marker.ts`/`managed-marker.ts`, not a canvas), `cursor-host.ts`, `cursor-host-adapter.ts`
 - **Scrolling and the visible window**: `scroller.ts`, `scroll-controller.ts`, `viewport.ts`

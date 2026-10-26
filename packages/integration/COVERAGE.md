@@ -17,7 +17,7 @@ by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
 Elements: 217 drawn, 69 ignored, 156 missing; vexml draws 217 of the 373 that show on the page (58%).
-Attributes: 40 drawn, 3 ignored, 72 missing.
+Attributes: 44 drawn, 5 ignored, 66 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -464,14 +464,14 @@ Attributes: 40 drawn, 3 ignored, 72 missing.
 | `software` | ignored | metadata |
 | `solo` | ignored | metadata (score-instrument role) |
 | `sound` | drawn | `tempo.musicxml`, `swing.musicxml`: tempo and swing read for playback timing |
-| `sound@coda` | missing | task #13; mdom raw only |
-| `sound@dacapo` | missing | task #13; mdom raw only |
-| `sound@dalsegno` | missing | task #13; mdom raw only |
+| `sound@coda` | drawn | `navigation.musicxml`: playback follows it (D.S. al Coda) |
+| `sound@dacapo` | ignored | playback follows it (measure-sequence-iterator.ts); no fixture plays it yet |
+| `sound@dalsegno` | drawn | `navigation.musicxml`: playback follows it (D.S. al Coda) |
 | `sound@dynamics` | ignored | playback velocity only |
-| `sound@fine` | missing | task #13; mdom raw only |
-| `sound@segno` | missing | task #13; mdom raw only |
+| `sound@fine` | ignored | playback follows it (measure-sequence-iterator.ts); no fixture plays it yet |
+| `sound@segno` | drawn | `navigation.musicxml`: playback follows it (D.S. al Coda) |
 | `sound@tempo` | drawn | `tempo.musicxml`: timed, playback tempo and the tempo mark fallback |
-| `sound@tocoda` | missing | task #13; mdom raw only |
+| `sound@tocoda` | drawn | `navigation.musicxml`: playback follows it (D.S. al Coda) |
 | `sounding-pitch` | missing | task #30; harmonic drawn as sounding pitch (no diamond); vexml diamonds every harmonic; mdom raw only |
 | `source` | ignored | metadata |
 | `spiccato` | drawn | `articulations_extended.musicxml` |
