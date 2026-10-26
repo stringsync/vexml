@@ -35,7 +35,7 @@
       "version": "1.12.1",
       "dependencies": {
         "@coderline/alphatab": "^1.8.4",
-        "@stringsync/mdom": "0.7.0",
+        "@stringsync/mdom": "0.8.0",
         "@stringsync/vexml": "workspace:*",
         "opensheetmusicdisplay": "^2.1.1",
         "playwright": "^1.61.1",
@@ -49,7 +49,7 @@
         "@fontsource-variable/anybody": "^5.3.0",
         "@fontsource/ibm-plex-mono": "^5.3.0",
         "@fontsource/ibm-plex-sans": "^5.3.0",
-        "@stringsync/mdom": "0.7.0",
+        "@stringsync/mdom": "0.8.0",
         "@stringsync/vexml": "workspace:*",
         "@webappwiz/react": "0.0.39",
         "class-variance-authority": "^0.7.1",
@@ -80,7 +80,7 @@
         "vex": "./index.ts",
       },
       "dependencies": {
-        "@stringsync/mdom": "0.7.0",
+        "@stringsync/mdom": "0.8.0",
         "@vexml/renderer": "workspace:*",
         "pngjs": "^7.0.0",
         "vite": "^8.1.0",
@@ -95,7 +95,7 @@
       "name": "@stringsync/vexml",
       "version": "1.14.0",
       "dependencies": {
-        "@stringsync/mdom": "0.7.0",
+        "@stringsync/mdom": "0.8.0",
         "@types/fontkit": "2.0.9",
         "fontkit": "2.0.4",
         "vexflow": "5.0.0",
@@ -441,7 +441,7 @@
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 
-    "@stringsync/mdom": ["@stringsync/mdom@0.7.0", "", { "dependencies": { "jszip": "^3.10.1", "webappwiz": "0.0.36", "xml-js": "^1.6.11" } }, "sha512-EAFxb35epxGyVO1wvVpTA/BKPOnFTJsAEbEUkcqAr7hK5+9snZT0kTE54ZqlwoI3rVWWyn5U2md4Uag1pgHytw=="],
+    "@stringsync/mdom": ["@stringsync/mdom@0.8.0", "", { "dependencies": { "jszip": "^3.10.1", "webappwiz": "0.0.36", "xml-js": "^1.6.11" } }, "sha512-0EP9Q0fBnLbGFT58QF8oqjO8MXMx3I0f8uz1tWzlh80XTYhdsRX3qTOyt4ia1yy5blG7IuRRoZKJggZfrNheGQ=="],
 
     "@stringsync/vexml": ["@stringsync/vexml@workspace:packages/vexml"],
 
