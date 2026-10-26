@@ -2711,13 +2711,17 @@ describe('render', () => {
 	//   stroke between two curls).
 	// - M14: long mordents (the stroked sign): long (a long wiggle crossed by the stroke),
 	//   approach="above" (the same with a hook leading in from above on the left), then
-	//   approach="below" and departure="below", which SMuFL has no glyph for, so both draw
-	//   the plain long form.
+	//   approach="below" (a hook curling up from below on the left) and departure="below" (a
+	//   hook curling down on the right). SMuFL has no glyph for those two, so they are joined
+	//   from its ornament strokes.
 	// - M15: long inverted-mordents (no stroke): long (the long trill wiggle, as a shake),
-	//   approach="above" (a hook leading in from above), approach="below" (no glyph: the
-	//   plain long form), departure="below" (a hook trailing off downward on the right).
+	//   approach="above" (a hook leading in from above), approach="below" (composed: a hook
+	//   curling up from below), departure="below" (a hook trailing off downward on the right).
 	// - M16: an <other-ornament> with only text prints the text "pinc." over the note, and
 	//   one whose smufl names no glyph prints its text "Bebung"; then a half rest.
+	// - M17-M18: the rest of the compound forms, stroked (M17) then not (M18), all composed:
+	//   departure="above" (a hook curling up on the right), then approach and departure
+	//   together: above and below, below and above, below and below, a hook at each end.
 	// ponytail: an ornament's <accidental-mark> placement attribute is ignored: the first mark
 	// goes over the glyph and the second under it, which is how the pair conventionally reads.
 	// See also ornaments.xml and lilypond_33f-Trill-EndingOnGraceNote.xml.

@@ -306,8 +306,8 @@ are picked by hand.
 | `miscellaneous-field` | ignored | metadata |
 | `mode` | drawn | `key_modes.musicxml`: read for the key, signature from fifths |
 | `mordent` | drawn | `ornaments.musicxml` |
-| `mordent@approach` | drawn | `ornaments.musicxml` M14-M15: approach="above" as SMuFL's precomposed upper-prefix mordents; approach="below", which SMuFL has no glyph for, draws the plain long form |
-| `mordent@departure` | drawn | `ornaments.musicxml` M14-M15: departure="below" on an inverted-mordent as the lower-suffix trill; the forms SMuFL has no glyph for draw the plain long form |
+| `mordent@approach` | drawn | `ornaments.musicxml` M14-M15, M17-M18: approach="above" as SMuFL's precomposed upper-prefix mordents; approach="below", alone or with a departure, joined from SMuFL's ornament strokes |
+| `mordent@departure` | drawn | `ornaments.musicxml` M14-M15, M17-M18: departure="below" on an inverted-mordent as the lower-suffix trill; the forms SMuFL has no glyph for (departure="above", a stroked mordent's departure, approach and departure together) joined from its ornament strokes |
 | `mordent@long` | drawn | `ornaments.musicxml` M14-M15: the long mordent and the long inverted-mordent (the shake wiggle) |
 | `movement-number` | drawn | `header_catalog.musicxml`: "2. Air" in the catalog fallback |
 | `movement-title` | drawn | `header_catalog.musicxml`: the title, or the subtitle under a work-title, with showHeader and no credits |

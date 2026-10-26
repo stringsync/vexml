@@ -619,10 +619,10 @@ const ORNAMENT_TYPES: Record<string, string> = {
 /*
  * A long mordent (long="yes"), keyed by its tag, approach and departure: SMuFL's precomposed
  * glyph for each compound form it has one for. approach/departure say which side the hook
- * that leads in or trails off comes from; a compound form SMuFL has no glyph for draws the
- * plain long mordent, dropping the hook. MuseScore reads the attributes the same way.
- * SMuFL's precomposed names flip the stroke: its "inverted mordent with upper prefix" is
- * the one drawn WITH it, so that is the stroked <mordent>'s.
+ * that leads in or trails off comes from; MuseScore reads the attributes the same way. A
+ * compound form SMuFL has no glyph for is composed from its ornament strokes (see
+ * composedMordent). SMuFL's precomposed names flip the stroke: its "inverted mordent with
+ * upper prefix" is the one drawn WITH it, so that is the stroked <mordent>'s.
  */
 const LONG_MORDENTS: Record<string, string> = {
 	'mordent  ': '\uE5BD', // ornamentPrecompTrillWithMordent
@@ -631,6 +631,39 @@ const LONG_MORDENTS: Record<string, string> = {
 	'inverted-mordent above ': '\uE5C6', // ornamentPrecompMordentUpperPrefix
 	'inverted-mordent  below': '\uE5C8', // ornamentPrecompTrillLowerSuffix
 };
+
+/*
+ * The SMuFL ornament strokes a long mordent is built from, each set beside the last at its
+ * advance: the hook leading in from above or below, the zigzag, the vertical stroke that
+ * marks <mordent>, and the zigzag's end, plain or hooked up or down. Every precomposed glyph
+ * in LONG_MORDENTS is these strokes joined, so a composed form matches them.
+ */
+const MORDENT_APPROACHES: Record<string, string> = {
+	'': '',
+	above: '\uE591', // ornamentTopLeftConvexStroke
+	below: '\uE59A', // ornamentBottomLeftConcaveStroke
+};
+const MORDENT_ZIGZAG = '\uE59D\uE59D'; // ornamentZigZagLineNoRightEnd, twice
+const MORDENT_STROKE = '\uE59F'; // ornamentMiddleVerticalStroke
+const MORDENT_DEPARTURES: Record<string, string> = {
+	'': '\uE59E', // ornamentZigZagLineWithRightEnd
+	above: '\uE5A1', // ornamentTopRightConvexStroke
+	below: '\uE5A7', // ornamentBottomRightConcaveStroke
+};
+
+/* A long mordent SMuFL has no precomposed glyph for, joined from its strokes. */
+function composedMordent(
+	type: 'mordent' | 'inverted-mordent',
+	approach: string,
+	departure: string,
+): string {
+	return (
+		(MORDENT_APPROACHES[approach] ?? '') +
+		MORDENT_ZIGZAG +
+		(type === 'mordent' ? MORDENT_STROKE : '') +
+		(MORDENT_DEPARTURES[departure] ?? MORDENT_DEPARTURES[''])
+	);
+}
 
 /*
  * slash="yes" on a turn adds the vertical stroke. SMuFL has one stroked turn
@@ -798,7 +831,7 @@ function arrowCode(mark: Technical): string | undefined {
 
 /*
  * The vexflow Ornament type an <ornaments> child draws, or undefined when it draws none: a
- * slashed turn's stroked glyph, a long or compound mordent's precomposed one, an
+ * slashed turn's stroked glyph, a long or compound mordent's precomposed or composed one, an
  * <other-ornament>'s smufl glyph, else the tag's entry in ORNAMENT_TYPES.
  */
 function ornamentGlyph(ornament: MOrnament): string | undefined {
@@ -816,7 +849,7 @@ function ornamentGlyph(ornament: MOrnament): string | undefined {
 		if (ornament.getAttribute('long') === 'yes' || approach || departure) {
 			return (
 				LONG_MORDENTS[`${type} ${approach} ${departure}`] ??
-				LONG_MORDENTS[`${type}  `]
+				composedMordent(type, approach, departure)
 			);
 		}
 	}

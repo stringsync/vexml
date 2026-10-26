@@ -642,5 +642,145 @@
         <type>half</type>
       </note>
     </measure>
+    <measure number="17">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <ornaments>
+            <mordent long="yes" departure="above"/>
+          </ornaments>
+        </notations>
+        <lyric number="1">
+          <text>dep.above</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <ornaments>
+            <mordent long="yes" approach="above" departure="below"/>
+          </ornaments>
+        </notations>
+        <lyric number="1">
+          <text>ab.be</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <ornaments>
+            <mordent long="yes" approach="below" departure="above"/>
+          </ornaments>
+        </notations>
+        <lyric number="1">
+          <text>be.ab</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <ornaments>
+            <mordent long="yes" approach="below" departure="below"/>
+          </ornaments>
+        </notations>
+        <lyric number="1">
+          <text>be.be</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="18">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <ornaments>
+            <inverted-mordent long="yes" departure="above"/>
+          </ornaments>
+        </notations>
+        <lyric number="1">
+          <text>dep.above</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <ornaments>
+            <inverted-mordent long="yes" approach="above" departure="below"/>
+          </ornaments>
+        </notations>
+        <lyric number="1">
+          <text>ab.be</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <ornaments>
+            <inverted-mordent long="yes" approach="below" departure="above"/>
+          </ornaments>
+        </notations>
+        <lyric number="1">
+          <text>be.ab</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <ornaments>
+            <inverted-mordent long="yes" approach="below" departure="below"/>
+          </ornaments>
+        </notations>
+        <lyric number="1">
+          <text>be.be</text>
+        </lyric>
+      </note>
+    </measure>
   </part>
 </score-partwise>
