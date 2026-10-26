@@ -2641,6 +2641,14 @@ describe('render', () => {
 		);
 	});
 
+	// Grand staff: <arpeggiate unbroken="yes"> rolls the chords of both hands as one line (M1
+	// plain, M2 up), while M3's plain arpeggiates stay one line per stave.
+	it.concurrent('renders arpeggio_unbroken.png', async () => {
+		expect(
+			await testing.render('arpeggio_unbroken.musicxml'),
+		).toMatchScreenshot('arpeggio_unbroken.png');
+	});
+
 	// Treble stave, 4/4: arpeggios from <notations><arpeggiate>, drawn as a wavy vertical
 	// line down the left side of a C5/E5/G5 whole-note chord (one chord per measure). The
 	// stroke spans all three noteheads; direction sets the arrowhead.

@@ -14,6 +14,7 @@ import { NonArpeggioBracket } from './non-arpeggio-bracket';
 import { NoteheadArticulation } from './notehead-articulation';
 import { StaveArticulation } from './stave-articulation';
 import { StringNumberAnnotation } from './string-number-annotation';
+import { UnbrokenArpeggio } from './unbroken-arpeggio';
 
 /*
  * Translates an mdom chord's marks to the vexflow modifiers that hang off the StaveNote built
@@ -275,7 +276,14 @@ export class NotationTranslator {
 		} else if (direction === 'down') {
 			type = Stroke.Type.ROLL_UP;
 		}
-		staveNote.addModifier(new Stroke(type), 0);
+		// unbroken="yes" is raw-only in mdom; DrawPass joins the staves' strokes once built.
+		const unbroken =
+			note.child('notations')?.child('arpeggiate')?.getAttribute('unbroken') ===
+			'yes';
+		staveNote.addModifier(
+			unbroken ? new UnbrokenArpeggio(type) : new Stroke(type),
+			0,
+		);
 	}
 
 	/*

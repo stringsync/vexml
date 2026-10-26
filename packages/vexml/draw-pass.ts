@@ -69,6 +69,7 @@ import {
 	SystemFormatter,
 } from './system-formatter';
 import type { TabVoiceTranslator } from './tab-voice-translator';
+import { UnbrokenArpeggio } from './unbroken-arpeggio';
 import { VoiceBuilder } from './voice-builder';
 import type { VoiceTranslator } from './voice-translator';
 
@@ -486,6 +487,44 @@ export class DrawPass {
 		);
 	}
 
+	/*
+	 * Chain the unbroken arpeggios of a measure's chords that start on the same beat of
+	 * different staves into one line: the topmost staff's chord draws it, the rest go quiet.
+	 */
+	private joinUnbrokenArpeggios(measure: Measure): void {
+		const byBeat = new Map<
+			number,
+			Array<{ staff: number; stroke: UnbrokenArpeggio; staveNote: StaveNote }>
+		>();
+		for (const chord of measure.chords) {
+			const staveNote = this.byLead.get(chord.lead);
+			const stroke = staveNote
+				?.getModifiers()
+				.find((mod) => mod instanceof UnbrokenArpeggio);
+			const beat = chord.lead.measureBeat;
+			if (!staveNote || !stroke || beat === null) {
+				continue;
+			}
+			const group = byBeat.get(beat) ?? [];
+			group.push({
+				staff: Number(chord.lead.staff),
+				stroke: stroke as UnbrokenArpeggio,
+				staveNote,
+			});
+			byBeat.set(beat, group);
+		}
+		for (const group of byBeat.values()) {
+			group.sort((a, b) => a.staff - b.staff);
+			const [top, ...rest] = group;
+			if (!top) {
+				continue;
+			}
+			for (const lower of rest) {
+				top.stroke.join(lower.stroke, lower.staveNote);
+			}
+		}
+	}
+
 	/* The system measure `m` is drawn on; a measure inside a multirest run is drawn on its
 	 * lead's. */
 	private systemOfMeasure(m: number): number {
@@ -628,6 +667,7 @@ export class DrawPass {
 			// Every stave of the part has registered its notes in byLead by now, so a beamed
 			// run that changes staff mid-group can finally resolve all of them.
 			this.voiceBuilder.buildPartBeams(this.pendingStaves);
+			this.joinUnbrokenArpeggios(measure);
 
 			// Defer formatting to one pass over the whole system (below) so notes align
 			// across parts, not just within this part.

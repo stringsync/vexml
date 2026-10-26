@@ -17,7 +17,7 @@ by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
 Elements: 271 drawn, 69 ignored, 102 missing; vexml draws 271 of the 373 that show on the page (73%).
-Attributes: 67 drawn, 5 ignored, 46 missing.
+Attributes: 68 drawn, 5 ignored, 45 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -61,7 +61,7 @@ Attributes: 67 drawn, 5 ignored, 46 missing.
 | `appearance` | missing | task #36; line widths, note sizes and distances from defaults not applied; mdom raw only |
 | `arpeggiate` | drawn | `arpeggio.musicxml` |
 | `arpeggiate@direction` | drawn | `arpeggio.musicxml`: up and down arrowheads |
-| `arpeggiate@unbroken` | missing | task #38; unbroken arpeggio across staves not drawn; mdom raw only |
+| `arpeggiate@unbroken` | drawn | `arpeggio_unbroken.musicxml`: one line across both staves of a part |
 | `arrow` | drawn | `technical_marks.musicxml`: single, filled and hollow arrows in the eight compass directions |
 | `arrow-direction` | drawn | `technical_marks.musicxml`: the two-headed directions draw nothing, no SMuFL glyph |
 | `arrow-style` | drawn | `technical_marks.musicxml`: double, paired and combined draw as single |
