@@ -1855,6 +1855,7 @@ export class ScoreReader {
 		const align =
 			element.getAttribute('halign') ?? element.getAttribute('justify');
 		const underline = Number(element.getAttribute('underline') ?? 0);
+		const rotation = Number(element.getAttribute('rotation') ?? 0);
 		return {
 			family: attr('font-family'),
 			italic: style === null ? null : style === 'italic',
@@ -1867,6 +1868,9 @@ export class ScoreReader {
 				enclosure === 'none' || isEnclosureShape(enclosure) ? enclosure : null,
 			underline: Number.isInteger(underline)
 				? Math.min(Math.max(underline, 0), MAX_UNDERLINES)
+				: 0,
+			rotation: Number.isFinite(rotation)
+				? Math.min(Math.max(rotation, -180), 180)
 				: 0,
 			align:
 				align === 'left' || align === 'center' || align === 'right'
@@ -2394,6 +2398,8 @@ export type TextFormat = {
 	enclosure: EnclosureShape | 'none' | null;
 	/** How many lines run under the text; 0 for none. */
 	underline: number;
+	/** Degrees clockwise the text turns, -180 to 180; 0 for upright. */
+	rotation: number;
 	/** Where the text sits on its anchor x, from halign, else justify. */
 	align: 'left' | 'center' | 'right' | null;
 };

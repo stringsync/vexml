@@ -17,7 +17,7 @@ by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
 Elements: 282 drawn, 69 ignored, 91 missing; vexml draws 282 of the 373 that show on the page (76%).
-Attributes: 81 drawn, 5 ignored, 32 missing.
+Attributes: 82 drawn, 5 ignored, 31 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -37,7 +37,7 @@ Attributes: 81 drawn, 5 ignored, 32 missing.
 | `*@print-object` | drawn | `invisible_notes.musicxml`: notes; `print_object.musicxml`: notations, ending, staff-details; accidental and direction elements have none in the schema; clef, key, time, lyric and part-name ignore it |
 | `*@relative-x` | missing | task #20 (later task in that lane); mdom raw only |
 | `*@relative-y` | missing | task #20 (later task in that lane); mdom raw only |
-| `*@rotation` | missing | task #49; rotated text not drawn; mdom raw only |
+| `*@rotation` | drawn | `text_formatting.musicxml` M20: words |
 | `*@space-length` | drawn | `spanner_line_types.musicxml` M3: dashed and dotted lines, as dash-length |
 | `*@underline` | drawn | `text_formatting.musicxml` M5: words, rehearsal marks and dynamics |
 | `*@valign` | missing | task #50, after default-y (task #20); mdom raw only |

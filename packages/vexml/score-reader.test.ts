@@ -370,7 +370,7 @@ describe('ScoreReader', () => {
 				'<words>plain</words>' +
 				'<words font-family="Times New Roman,serif" font-style="italic" font-weight="bold" font-size="15" underline="2" ' +
 				'enclosure="hexagon" justify="right">formatted</words>' +
-				'<words font-size="x-large" enclosure="star" halign="center" justify="right">named</words>' +
+				'<words font-size="x-large" enclosure="star" halign="center" justify="right" rotation="-45">named</words>' +
 				'</direction-type></direction>',
 		);
 		expect(reader.wordsOf(measure).map((w) => w.format)).toEqual([
@@ -381,6 +381,7 @@ describe('ScoreReader', () => {
 				scale: 1,
 				enclosure: null,
 				underline: 0,
+				rotation: 0,
 				align: null,
 			},
 			// 15pt against the 10pt default text size.
@@ -391,6 +392,7 @@ describe('ScoreReader', () => {
 				scale: 1.5,
 				enclosure: 'hexagon',
 				underline: 2,
+				rotation: 0,
 				align: 'right',
 			},
 			// An unknown shape draws none, and halign wins over justify.
@@ -401,6 +403,7 @@ describe('ScoreReader', () => {
 				scale: 1.5,
 				enclosure: null,
 				underline: 0,
+				rotation: -45,
 				align: 'center',
 			},
 		]);

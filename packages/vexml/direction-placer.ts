@@ -548,6 +548,7 @@ export class DirectionPlacer {
 			font,
 			textHeight: size,
 			underline: format?.underline,
+			rotation: format?.rotation,
 			enclosure: enclosure === 'none' ? undefined : enclosure,
 			padding: REHEARSAL_PADDING,
 		});
@@ -904,10 +905,11 @@ export class DirectionPlacer {
 	/* The underlines and enclosure a document's `format` draws with a string, for a style. */
 	private decorationOf(
 		format: TextFormat | undefined,
-	): Pick<SideTextStyle, 'underline' | 'enclosure'> {
+	): Pick<SideTextStyle, 'underline' | 'enclosure' | 'rotation'> {
 		const enclosure = format?.enclosure;
 		return {
 			underline: format?.underline,
+			rotation: format?.rotation,
 			enclosure: enclosure && enclosure !== 'none' ? enclosure : undefined,
 		};
 	}
@@ -962,6 +964,7 @@ export class DirectionPlacer {
 			textHeight: style.inkHeight ?? style.size,
 			hangs: style.hangs,
 			underline: style.underline,
+			rotation: style.rotation,
 			enclosure: style.enclosure,
 			padding: ENCLOSURE_PADDING,
 		});
@@ -1148,6 +1151,8 @@ type SideTextStyle = {
 	underline?: number;
 	/** The shape drawn around the string. Absent means none. */
 	enclosure?: EnclosureShape;
+	/** Degrees clockwise the string turns. Absent means upright. */
+	rotation?: number;
 	color?: string;
 	/** Where the string sits relative to its anchor x. Default 'left': a directive is a
 	 * phrase reading rightward from its note; a dynamic centers on its notehead, and a

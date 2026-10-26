@@ -14,8 +14,12 @@ import { type EnclosureShape, TextEnclosure } from './text-enclosure';
  * into the placed box.
  */
 export class FormattedText {
+	/** The box's size once rotated: what the collision resolver places. */
 	readonly w: number;
 	readonly h: number;
+	// The box before it turns, which is the one the text, lines and shape are laid in.
+	private readonly boxW: number;
+	private readonly boxH: number;
 	private readonly textW: number;
 	// How far the text's ink reaches left of where it is drawn from: a SMuFL dynamic's tail
 	// hangs back past its origin, out of the advance width measureText reports.
@@ -52,13 +56,43 @@ export class FormattedText {
 		const size = this.enclosure
 			? this.enclosure.size(this.textW, this.innerH)
 			: { w: this.textW, h: this.innerH };
-		this.w = size.w;
-		this.h = size.h;
+		this.boxW = size.w;
+		this.boxH = size.h;
+		const radians = this.radians();
+		const cos = Math.abs(Math.cos(radians));
+		const sin = Math.abs(Math.sin(radians));
+		this.w = size.w * cos + size.h * sin;
+		this.h = size.w * sin + size.h * cos;
+	}
+
+	private radians(): number {
+		return ((this.style.rotation ?? 0) * Math.PI) / 180;
 	}
 
 	/** Draw the text, its underlines and its enclosure into `placed`, a `w` × `h` box, in the
 	 * context's current font, fill and stroke. */
 	draw(placed: Rect): void {
+		// Only vexflow's canvas context wraps a 2D context to turn; any other draws upright.
+		const canvas = (this.context as { context2D?: CanvasRenderingContext2D })
+			.context2D;
+		if (!this.style.rotation || !canvas?.rotate) {
+			this.drawUpright(placed);
+			return;
+		}
+		// The text turns about the middle of its box, which stays the middle of `placed`.
+		const cx = placed.x + placed.w / 2;
+		const cy = placed.y + placed.h / 2;
+		canvas.save();
+		canvas.translate(cx, cy);
+		canvas.rotate(this.radians());
+		canvas.translate(-cx, -cy);
+		this.drawUpright(
+			new Rect(cx - this.boxW / 2, cy - this.boxH / 2, this.boxW, this.boxH),
+		);
+		canvas.restore();
+	}
+
+	private drawUpright(placed: Rect): void {
 		const inner = this.enclosure
 			? this.enclosure.textBox(placed, this.textW, this.innerH)
 			: new Rect(placed.x, placed.y, this.textW, this.innerH);
@@ -99,4 +133,6 @@ export type FormattedTextStyle = {
 	enclosure?: EnclosureShape;
 	/** Air between the text and its enclosure. */
 	padding?: number;
+	/** Degrees clockwise the whole box turns, about its middle. Absent means upright. */
+	rotation?: number;
 };

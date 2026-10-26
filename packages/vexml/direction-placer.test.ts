@@ -41,6 +41,7 @@ describe('DirectionPlacer', () => {
 		scale: 1,
 		enclosure: null,
 		underline: 0,
+		rotation: 0,
 		align: null,
 	};
 
