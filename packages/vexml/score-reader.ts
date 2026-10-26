@@ -414,17 +414,22 @@ export class ScoreReader {
 	 * A note's tab <bend>, or null when it has none. mdom's Note.bend reads only <bend-alter>
 	 * and <release>; the rest (<pre-bend>, <with-bar>, the shape attribute) comes off the
 	 * element itself. <pre-bend> and <release> are a schema choice, so at most one is set.
+	 * A bend and release may also be two <bend> elements, the second carrying <release/>.
 	 */
 	bendOf(note: Note): TabBendMark | null {
 		const bend = note.bend;
-		const element = note.technicals.find((t) => t.technicalType === 'bend');
+		const elements = note.technicals.filter((t) => t.technicalType === 'bend');
+		const element = elements[0];
 		if (!bend || !element) {
 			return null;
 		}
+		const released =
+			bend.release ||
+			elements.slice(1).some((e) => e.child('release') !== null);
 		const bar = element.child('with-bar');
 		return {
 			semitones: bend.semitones,
-			release: bend.release,
+			release: released,
 			preBend: element.child('pre-bend') !== null,
 			shape: element.getAttribute('shape') === 'angled' ? 'angled' : 'curved',
 			bar: bar ? (bar.text ?? '').trim() : null,
