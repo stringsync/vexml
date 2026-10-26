@@ -24,7 +24,6 @@ import {
 	HEADER_GAP,
 	LABEL_FONT_SIZE,
 	LABEL_GAP,
-	LYRIC_FONT_SIZE,
 	LYRIC_LINE_HEIGHT,
 	VOLTA_NOTE_CLEARANCE,
 } from './constants';
@@ -1249,9 +1248,9 @@ export class DrawPass {
 				syllable.stave,
 				new Rect(
 					syllable.left,
-					baseline - LYRIC_FONT_SIZE,
+					baseline - syllable.textSize,
 					syllable.width,
-					LYRIC_FONT_SIZE,
+					syllable.textSize,
 				),
 			);
 		}

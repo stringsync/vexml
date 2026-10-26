@@ -21,6 +21,8 @@ export interface LyricMark {
 	boxLeft(noteheadBeginX: number, noteheadEndX: number): number;
 	/** Whether a melisma `<extend/>` line trails this syllable. */
 	readonly extend: boolean;
+	/** The syllable's font size in px. */
+	readonly textSize: number;
 	/** The syllable's drawn width, including the gap it keeps from its neighbors. */
 	getWidth(): number;
 	/** Draw the syllable's text with its baseline at `y`, rather than under its own note. */

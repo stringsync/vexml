@@ -269,7 +269,7 @@ are picked by hand.
 | `lyric` | drawn | `lyrics.musicxml` |
 | `lyric@justify` | drawn | `lyrics_justify.musicxml`: left and right align the syllable to the notehead edge, center and absent center it |
 | `lyric@number` | drawn | `lyrics.musicxml`, `lyrics_two_voices.musicxml`: verse order sets the row |
-| `lyric-font` | drawn | `text_font_family.musicxml` M6: its face for lyrics under the documentFonts setting, by verse number or name; its size task #51 |
+| `lyric-font` | drawn | `text_font_family.musicxml` M6: its face for lyrics under the documentFonts setting, by verse number or name; `text_lyric_music_font.musicxml` M1-M3: a lyric `<text font-size>` scales against its size |
 | `lyric-language` | ignored | metadata |
 | `measure` | drawn | `measures_two.musicxml` |
 | `measure@implicit` | drawn | `pickup_measure.musicxml`: pickup sized to its content |
@@ -314,7 +314,7 @@ are picked by hand.
 | `mp` | drawn | `dynamics.musicxml` |
 | `multiple-rest` | drawn | `rest_multi_measure.musicxml` |
 | `multiple-rest@use-symbols` | drawn | `rest_multi_measure_symbols.musicxml`: breve and whole rest symbols for 2, 3 and 4 bars, plus use-symbols=no |
-| `music-font` | missing | task #51 for its size; its face stays unused on purpose, since vexml engraves in SMuFL Bravura and exporters name non-SMuFL faces (Maestro, Opus); mdom raw only |
+| `music-font` | drawn | `text_lyric_music_font.musicxml` M4-M6: a SMuFL dynamic's `font-size` scales against its size; its face stays unused on purpose, since vexml engraves in SMuFL Bravura and exporters name non-SMuFL faces (Maestro, Opus) |
 | `mute` | ignored | sound only |
 | `n` | drawn | `dynamics.musicxml` |
 | `natural` | drawn | `harmonic.musicxml`: drawn as the default harmonic, artificial not told apart |

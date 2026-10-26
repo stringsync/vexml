@@ -1,7 +1,7 @@
 import type { RenderContext, Stave, StaveNote } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import type { CollisionResolver } from './collision-resolver';
-import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT, LYRIC_PADDING } from './constants';
+import { LYRIC_LINE_HEIGHT, LYRIC_PADDING } from './constants';
 import { isLyricMark, type LyricMark } from './lyric-mark';
 import type { VoiceTranslator } from './voice-translator';
 
@@ -19,6 +19,7 @@ export interface PinnedSyllable {
 	readonly left: number;
 	readonly width: number;
 	readonly verseIndex: number;
+	readonly textSize: number;
 }
 
 /*
@@ -105,9 +106,9 @@ export class LyricPlacer {
 				const w = lyric.getWidth();
 				const rect = new Rect(
 					lyric.boxLeft(note.getNoteHeadBeginX(), note.getNoteHeadEndX()),
-					y - LYRIC_FONT_SIZE,
+					y - lyric.textSize,
 					w,
-					LYRIC_FONT_SIZE,
+					lyric.textSize,
 				);
 				this.collisionResolver.add({ rect, kind: 'annotation', band: row });
 				this.pinned.push({
@@ -116,6 +117,7 @@ export class LyricPlacer {
 					left: rect.x,
 					width: w,
 					verseIndex: lyric.verseIndex,
+					textSize: lyric.textSize,
 				});
 			}
 		}

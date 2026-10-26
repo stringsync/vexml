@@ -18,6 +18,7 @@ import { ACCIDENTAL_CODES } from './chord-translator';
 import { FERMATA_GLYPHS } from './fermata-glyphs';
 import { FingeringAnnotation } from './fingering-annotation';
 import { FontFamilies } from './font-families';
+import { fontScaleOf } from './font-scale';
 import { FootnoteAnnotation } from './footnote-annotation';
 import { LyricAnnotation } from './lyric-annotation';
 import type { LyricJustify } from './lyric-mark';
@@ -426,7 +427,14 @@ export class NotationTranslator {
 		const verses = [...lead.lyrics].sort(
 			(a, b) => Number(a.verse) - Number(b.verse),
 		);
+		const lyricFont = lead.measure.part.score
+			.child('defaults')
+			?.child('lyric-font');
 		verses.forEach((verse, index) => {
+			const scale = fontScaleOf(
+				verse.child('text')?.getAttribute('font-size') ?? null,
+				lyricFont?.getAttribute('font-size') ?? null,
+			);
 			const syllabic = verse.syllabic;
 			const hyphen = syllabic === 'begin' || syllabic === 'middle' ? '-' : '';
 			const text = (this.syllableOf(verse) || this.soundOf(verse)) + hyphen;
@@ -438,6 +446,7 @@ export class NotationTranslator {
 						verse.extend,
 						this.lyricFaceOf(verse),
 						this.justifyOf(verse),
+						scale,
 					),
 				);
 			}

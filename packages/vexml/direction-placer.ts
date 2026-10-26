@@ -218,7 +218,7 @@ export class DirectionPlacer {
 				d.glyph
 					? {
 							font: this.notationFont,
-							size: DYNAMICS_FONT_SIZE,
+							size: DYNAMICS_FONT_SIZE * (d.format?.scale ?? 1),
 							italic: false,
 							color: this.notationColor,
 							align: 'center',

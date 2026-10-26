@@ -125,8 +125,22 @@ describe('LyricPlacer', () => {
 			200,
 		);
 		expect(placer.pinnedSyllables()).toEqual([
-			{ stave, row: 3, left: 96, width: 20, verseIndex: 0 },
-			{ stave, row: 3, left: 91, width: 30, verseIndex: 1 },
+			{
+				stave,
+				row: 3,
+				left: 96,
+				width: 20,
+				verseIndex: 0,
+				textSize: LYRIC_FONT_SIZE,
+			},
+			{
+				stave,
+				row: 3,
+				left: 91,
+				width: 30,
+				verseIndex: 1,
+				textSize: LYRIC_FONT_SIZE,
+			},
 		]);
 	});
 
@@ -142,7 +156,14 @@ describe('LyricPlacer', () => {
 
 	it('ignores notes whose modifiers carry no lyrics', () => {
 		const { placer, obstacles } = makePlacer();
-		placer.pin([note(100, [{ verseIndex: 0 }]), note(140, [])], 0, 200);
+		placer.pin(
+			[
+				note(100, [{ verseIndex: 0, textSize: LYRIC_FONT_SIZE }]),
+				note(140, []),
+			],
+			0,
+			200,
+		);
 		expect(obstacles()).toHaveLength(0);
 	});
 

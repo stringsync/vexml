@@ -17,6 +17,8 @@ import type { LyricJustify, LyricMark } from './lyric-mark';
 export class LyricAnnotation extends Annotation implements LyricMark {
 	readonly kind = 'lyric' as const;
 
+	readonly textSize: number;
+
 	private baselineY = 0;
 
 	constructor(
@@ -31,13 +33,16 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 		family?: string,
 		/** Which edge of the note the syllable lines up with (`<lyric justify>`). */
 		readonly justify: LyricJustify = 'center',
+		/** Ratio of the syllable's font-size to the score's lyric-font. */
+		scale = 1,
 	) {
 		super(text);
 		this.setVerticalJustification(Annotation.VerticalJustify.BOTTOM);
+		this.textSize = LYRIC_FONT_SIZE * scale;
 		if (family) {
-			this.setFont(family, LYRIC_FONT_SIZE);
+			this.setFont(family, this.textSize);
 		} else {
-			this.setFontSize(LYRIC_FONT_SIZE);
+			this.setFontSize(this.textSize);
 		}
 	}
 

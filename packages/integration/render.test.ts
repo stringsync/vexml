@@ -1087,6 +1087,16 @@ describe('render', () => {
 		);
 	});
 
+	// Treble stave, 4/4, four B4 quarters a bar, with <defaults> music-font 20pt and lyric-font
+	// 10pt: sizes read against those defaults.
+	// - M1-M3: a lyric on the first note at font-size 10 (usual size), 20 (twice) and 5 (half).
+	// - M4-M6: dynamics f, p and mf at font-size 20 (usual size), 40 (twice) and 10 (half).
+	it.concurrent('renders text_lyric_music_font.png', async () => {
+		expect(
+			await testing.render('text_lyric_music_font.musicxml'),
+		).toMatchScreenshot('text_lyric_music_font.png');
+	});
+
 	// Treble stave, common time: the full <dynamics> vocabulary, one marking per C4 quarter,
 	// drawn as SMuFL glyphs (the bold-italic p/m/f/r/s/z forms, not ordinary text) BELOW the
 	// staff, the engraving default these directions carry no explicit placement for. Every

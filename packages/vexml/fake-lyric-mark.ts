@@ -1,3 +1,4 @@
+import { LYRIC_FONT_SIZE } from './constants';
 import type { LyricJustify, LyricMark } from './lyric-mark';
 
 export interface FakeLyricMarkOptions {
@@ -21,6 +22,7 @@ export class FakeLyricMark implements LyricMark {
 	fillStyle: string | undefined;
 	readonly extend: boolean;
 	readonly justify: LyricJustify;
+	readonly textSize = LYRIC_FONT_SIZE;
 	private readonly width: number;
 
 	constructor(

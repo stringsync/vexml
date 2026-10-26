@@ -18,6 +18,7 @@ import {
 import type { ChordFrame } from './chord-diagram-glyph';
 import { DEFAULT_TEMPO_BPM, EPSILON } from './constants';
 import type { DynamicGlyphs } from './dynamic-glyphs';
+import { fontScaleOf } from './font-scale';
 import type { ModulationNote, TempoModulation } from './metronome-glyph';
 import type { Jump } from './sequence';
 import { smuflGlyph } from './smufl';
@@ -932,19 +933,22 @@ export class ScoreReader {
 		format: TextFormat;
 	}[] {
 		const wordFont = this.wordFontOf(measure);
+		const musicFont =
+			measure.part.score.child('defaults')?.child('music-font') ?? null;
 		return measure.directions.flatMap((d) => {
 			const staffNumber = d.staff;
 			const lead = d.nextNote;
 			const placement = this.placementOf(d, 'below');
 			return d.dynamics.flatMap((dynamics) => {
-				const format = this.formatOf(dynamics, null, wordFont);
+				const base = (text: string) =>
+					this.dynamics.canSpell(text) ? musicFont : wordFont;
 				return dynamics.marks.filter(Boolean).map((text) => ({
 					text,
 					glyph: this.dynamics.canSpell(text),
+					format: this.formatOf(dynamics, null, base(text)),
 					staffNumber,
 					lead,
 					placement,
-					format,
 				}));
 			});
 		});
@@ -1959,7 +1963,7 @@ export class ScoreReader {
 			family: attr('font-family'),
 			italic: style === null ? null : style === 'italic',
 			bold: weight === null ? null : weight === 'bold',
-			scale: this.fontScaleOf(
+			scale: fontScaleOf(
 				element.getAttribute('font-size'),
 				sizeBase?.getAttribute('font-size') ?? null,
 			),
@@ -1976,28 +1980,6 @@ export class ScoreReader {
 					? align
 					: null,
 		};
-	}
-
-	/* A font-size, in points or a CSS size name, as a ratio to the document's default text
-	 * size (`base`, in points; DEFAULT_TEXT_POINTS when absent). 1 for an absent or
-	 * unreadable size. */
-	private fontScaleOf(size: string | null, base: string | null): number {
-		if (size === null) {
-			return 1;
-		}
-		const named = CSS_FONT_SCALES[size];
-		if (named !== undefined) {
-			return named;
-		}
-		const points = Number(size);
-		const basePoints = Number(base ?? DEFAULT_TEXT_POINTS);
-		if (!(points > 0) || !(basePoints > 0)) {
-			return 1;
-		}
-		return Math.min(
-			Math.max(points / basePoints, MIN_FONT_SCALE),
-			MAX_FONT_SCALE,
-		);
 	}
 
 	/*
@@ -2523,31 +2505,11 @@ export type TextFormat = {
 	align: 'left' | 'center' | 'right' | null;
 };
 
-// The text size MusicXML applications write when they set no word-font: 10pt, the size
-// MuseScore and Finale both default words to.
 // SMuFL harpPedalRaised, harpPedalCentered, harpPedalLowered, indexed by the sign of the
 // pedal-alter plus one (a flat is raised, a sharp lowered), and harpPedalDivider.
 const HARP_PEDAL_GLYPHS = ['\uE680', '\uE681', '\uE682'];
 const HARP_PEDAL_CENTERED = '\uE681';
 const HARP_PEDAL_DIVIDER = '\uE683';
-
-const DEFAULT_TEXT_POINTS = 10;
-
-// The CSS font-size names, as ratios to `medium`, the document's default size.
-const CSS_FONT_SCALES: Record<string, number> = {
-	'xx-small': 0.6,
-	'x-small': 0.75,
-	small: 0.89,
-	medium: 1,
-	large: 1.2,
-	'x-large': 1.5,
-	'xx-large': 2,
-};
-
-// A size far off the default is more likely a misread unit than a request; keep text legible
-// and inside its system.
-const MIN_FONT_SCALE = 0.5;
-const MAX_FONT_SCALE = 3;
 
 // More underlines than this is no longer a line under the text but a block.
 const MAX_UNDERLINES = 3;
