@@ -143,6 +143,14 @@ export const LABEL_CHAR_WIDTH =
 	// longest label never clips.
 	7.5;
 
+/** Score header font sizes: the title, each subtitle, and the lyricist/composer lines. */
+export const HEADER_TITLE_SIZE = 24;
+export const HEADER_SUBTITLE_SIZE = 15;
+export const HEADER_CREDIT_SIZE = 13;
+
+/** Gap between the score header's last line and the first system's highest ink. */
+export const HEADER_GAP = 20;
+
 /** Part label font size. */
 export const LABEL_FONT_SIZE = 13;
 

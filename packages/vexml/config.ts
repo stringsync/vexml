@@ -46,6 +46,12 @@ export type Config = {
 	systemSpacing: number;
 	/** Print each part's instrument name to the left of the first system (default: false). */
 	showPartLabels: boolean;
+	/** Print the score's heading above the first system (default: false): its title and
+	 * subtitles centered, lyricist lines at the left and composer lines at the right, read
+	 * from the page-one `<credit>`s or, when there are none, `<work-title>`/`<movement-title>`
+	 * and `<identification><creator>`. Off by default since a host page usually titles the
+	 * score itself. Not drawn in a panoramic layout. */
+	showHeader: boolean;
 	/** When to print measure numbers above the staff (default: 'system'). 'none' prints
 	 * none; 'system' numbers the first measure of each system; 'every' numbers every
 	 * measure; 'every-2'/'every-3' number every 2nd/3rd measure plus every system start. */
@@ -368,6 +374,7 @@ export const DEFAULT_CONFIG: Config = {
 	softmaxFactor: 10,
 	systemSpacing: SYSTEM_GAP,
 	showPartLabels: false,
+	showHeader: false,
 	measureNumbering: 'system',
 	showTabSlideText: false,
 	tabStemPlacement: 'none',

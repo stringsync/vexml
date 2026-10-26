@@ -12,8 +12,7 @@ import { testing } from './setup';
  * end-of-measure clef change, <multiple-rest>, the <bracket>/<dashes> spanners, per-voice
  * lyric rows, nested repeat blocks, the flat <part-group> symbols, per-staff <direction>
  * routing, <figured-bass>, cross-staff notes, the reduced percussion stave) all have cases of
- * their own now, score-level header text is won't-fix (see below), and whole real-world
- * scores are the score_*.musicxml block at the end.
+ * their own now, and whole real-world scores are the score_*.musicxml block at the end.
  *
  * Names like `lilypond_42b-MultiVoice-MidMeasureClefChange.xml` in the comments below refer
  * to files in the upstream corpora these fixtures were cut from: the Unofficial MusicXML
@@ -135,11 +134,28 @@ describe('render', () => {
 		).toMatchScreenshot('structure_part_group_bracket_top.png');
 	});
 
-	// Score-level header text (<work-title>, <movement-title>,
-	// <identification><creator>, <credit-words>) is deliberately NOT drawn, and has no
-	// reader in vexml. vexml engraves staff notation; the page heading belongs to the host
-	// app, which already owns the surrounding page and its typography. Closed as won't-fix,
-	// not deferred. Don't add a fixture for it.
+	// The score header (showHeader) above one treble stave of four C5 quarters, read from the
+	// page-one <credit>s: "Air" in bold, centered, with "from Suite No. 3" (the credit's
+	// second line) and "BWV 1068" (a subtitle credit-type) centered under it; "Words by Anon."
+	// at the left margin and "Johann Sebastian Bach" over "arr. A. Arranger" right-aligned at
+	// the right, the composer credit placed by its halign. Not printed: the <work-title>
+	// (the credits win), the page-number credit "2" and the copyright footer in the page's
+	// lower half.
+	it.concurrent('renders header.png', async () => {
+		expect(
+			await testing.render('header.musicxml', { showHeader: true }),
+		).toMatchScreenshot('header.png');
+	});
+
+	// The same stave with no credits, so the header falls back to the catalog fields: the
+	// <work-title> "Suite No. 3" centered in bold over the <movement-title> "Air", the
+	// lyricist <creator> "Anon." at the left and the composer <creator> "Johann Sebastian
+	// Bach" at the right.
+	it.concurrent('renders header_catalog.png', async () => {
+		expect(
+			await testing.render('header_catalog.musicxml', { showHeader: true }),
+		).toMatchScreenshot('header_catalog.png');
+	});
 
 	// A guitar split across two single-stave parts: a treble notation stave (P1)
 	// above a 6-line TAB stave (P2), joined by a bracket plus the system's left line.

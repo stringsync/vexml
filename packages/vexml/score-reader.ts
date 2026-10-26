@@ -967,6 +967,159 @@ export class ScoreReader {
 	}
 
 	/*
+	 * The heading printed above the first system: a centered title and subtitles, the
+	 * lyricist's lines at the left and the composer's at the right. Null when the score names
+	 * none of them.
+	 *
+	 * The page-one `<credit>`s win when there are any: they are what the editor printed,
+	 * opus numbers and arranger lines included, while `<work>` and `<identification>` are
+	 * catalog data. A credit lands by its `<credit-type>` when it has one, else by the side
+	 * its text hangs from (halign, then justify, then default-x against the page width).
+	 * Footers are dropped: rights and page numbers by type, a bare number by its text, and
+	 * anything in the page's lower half by its default-y. The topmost centered line is the
+	 * title, the rest of the centered lines its subtitles. mdom has no getters for credits,
+	 * so they are read off the elements.
+	 *
+	 * ponytail: credits print at fixed sizes in the text font, not at their default-x/
+	 * default-y or font-size, and `<credit-image>`/`<credit-symbol>` are dropped.
+	 */
+	headerOf(score: Score): ScoreHeader | null {
+		const header = this.creditHeader(score) ?? this.catalogHeader(score);
+		const empty =
+			!header.title &&
+			header.subtitles.length === 0 &&
+			header.left.length === 0 &&
+			header.right.length === 0;
+		return empty ? null : header;
+	}
+
+	private creditHeader(score: Score): ScoreHeader | null {
+		const layout = score
+			.childrenNamed('defaults')[0]
+			?.childrenNamed('page-layout')[0];
+		const pageWidth = Number(layout?.childrenNamed('page-width')[0]?.text);
+		const pageHeight = Number(layout?.childrenNamed('page-height')[0]?.text);
+		const credits = score
+			.childrenNamed('credit')
+			.filter((credit) => (credit.getAttribute('page') ?? '1') === '1')
+			.map((credit) => {
+				const words = credit.childrenNamed('credit-words');
+				const first = words[0];
+				const y = Number(first?.getAttribute('default-y'));
+				return {
+					type: credit.childrenNamed('credit-type')[0]?.text?.trim() ?? null,
+					lines: words
+						// A run of bare whitespace can only be a line break: the parser keeps
+						// no whitespace-only text, so its newline reads back empty.
+						.map((run) => (run.text?.trim() ? run.text : '\n'))
+						.join('')
+						.split('\n')
+						.map((line) => line.trim())
+						.filter((line) => line && !/^\d+$/.test(line)),
+					side: this.creditSide(first, pageWidth),
+					y: Number.isFinite(y) ? y : null,
+				};
+			})
+			.filter(
+				(credit) =>
+					credit.lines.length > 0 &&
+					!(
+						credit.y !== null &&
+						Number.isFinite(pageHeight) &&
+						credit.y < pageHeight / 2
+					),
+			);
+		// MusicXML's y runs up the page, so the highest default-y prints first. Sorted only when
+		// every credit is placed; otherwise document order is the only order there is.
+		if (credits.every((credit) => credit.y !== null)) {
+			credits.sort((a, b) => (b.y ?? 0) - (a.y ?? 0));
+		}
+		const header: ScoreHeader = {
+			title: null,
+			subtitles: [],
+			left: [],
+			right: [],
+		};
+		const centered: string[] = [];
+		for (const credit of credits) {
+			const role = CREDIT_ROLES.get(credit.type ?? '') ?? null;
+			if (credit.type !== null && !role) {
+				continue;
+			}
+			switch (role ?? credit.side) {
+				case 'title':
+					header.title ??= credit.lines[0] ?? null;
+					header.subtitles.push(...credit.lines.slice(1));
+					break;
+				case 'subtitle':
+					header.subtitles.push(...credit.lines);
+					break;
+				case 'center':
+					centered.push(...credit.lines);
+					break;
+				case 'left':
+					header.left.push(...credit.lines);
+					break;
+				case 'right':
+					header.right.push(...credit.lines);
+					break;
+			}
+		}
+		if (header.title === null) {
+			header.title = centered.shift() ?? null;
+		}
+		header.subtitles.unshift(...centered);
+		return credits.length > 0 ? header : null;
+	}
+
+	private creditSide(
+		words: MElement | undefined,
+		pageWidth: number,
+	): 'left' | 'center' | 'right' {
+		const align =
+			words?.getAttribute('halign') ?? words?.getAttribute('justify') ?? null;
+		if (align === 'left' || align === 'center' || align === 'right') {
+			return align;
+		}
+		const x = Number(words?.getAttribute('default-x'));
+		if (!Number.isFinite(x) || !Number.isFinite(pageWidth)) {
+			return 'left';
+		}
+		if (x < pageWidth / 3) {
+			return 'left';
+		}
+		return x > (2 * pageWidth) / 3 ? 'right' : 'center';
+	}
+
+	/* The header the catalog fields give, for a score with no credits. */
+	private catalogHeader(score: Score): ScoreHeader {
+		const creators = score
+			.childrenNamed('identification')
+			.flatMap((identification) => identification.childrenNamed('creator'))
+			.flatMap((creator) => {
+				const text = creator.text?.trim();
+				const role = CREDIT_ROLES.get(creator.getAttribute('type') ?? '');
+				return text && (role === 'left' || role === 'right')
+					? [{ text, role }]
+					: [];
+			});
+		// A movement of a larger work prints under the work's title; either alone is the title.
+		const work =
+			score
+				.childrenNamed('work')[0]
+				?.childrenNamed('work-title')[0]
+				?.text?.trim() || null;
+		const movement =
+			score.childrenNamed('movement-title')[0]?.text?.trim() || null;
+		return {
+			title: work ?? movement,
+			subtitles: work && movement && movement !== work ? [movement] : [],
+			left: creators.filter((c) => c.role === 'left').map((c) => c.text),
+			right: creators.filter((c) => c.role === 'right').map((c) => c.text),
+		};
+	}
+
+	/*
 	 * One printed name: the <*-display> element's text runs when there is one (it overrides the
 	 * plain name, so it carries the formatting a score wants), else the plain element's text,
 	 * else `fallback`. Null when the winning element says print-object="no" or has no text.
@@ -1706,6 +1859,29 @@ export type PartGroup = {
 	/** The group's `<group-abbreviation>`, printed in its place on systems after the first. */
 	abbreviation: string | null;
 };
+
+/** The heading above the first system (see ScoreReader.headerOf). */
+export type ScoreHeader = {
+	title: string | null;
+	/** Centered under the title, top to bottom. */
+	subtitles: string[];
+	/** Lyricist, poet and translator lines, printed at the left. */
+	left: string[];
+	/** Composer and arranger lines, printed at the right. */
+	right: string[];
+};
+
+/* Where a `<credit-type>` or `<creator type>` prints in the header; a type missing here
+ * (rights, page number, part name) prints nothing. */
+const CREDIT_ROLES = new Map<string, 'title' | 'subtitle' | 'left' | 'right'>([
+	['title', 'title'],
+	['subtitle', 'subtitle'],
+	['composer', 'right'],
+	['arranger', 'right'],
+	['lyricist', 'left'],
+	['poet', 'left'],
+	['translator', 'left'],
+]);
 
 /** A `<barline><fermata>`: the edge it sits on, its shape, and whether it hangs below. */
 export type BarlineFermata = {

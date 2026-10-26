@@ -20,6 +20,7 @@ import type { Config, Gap } from './config';
 import { type ConnectorColumn, ConnectorDrawer } from './connector-drawer';
 import {
 	GAP_LABEL_FONT_SIZE,
+	HEADER_GAP,
 	LABEL_FONT_SIZE,
 	LABEL_GAP,
 	LYRIC_FONT_SIZE,
@@ -43,6 +44,7 @@ import {
 	type RawMeasure,
 	type RawNote,
 } from './geometry-collector';
+import { HeaderPlan } from './header-plan';
 import { Ink } from './ink';
 import type { MeasureBox, ScoreLayout } from './layout-planner';
 import { LyricPlacer } from './lyric-placer';
@@ -139,6 +141,11 @@ export class DrawPass {
 	private systemContentBottom: number;
 	// Each finished system's content bottom, for pagination (see run's systemExtents).
 	private readonly systemBottoms = new Map<number, number>();
+	// The score header (showHeader), drawn above the first system once its ink is known, and
+	// the page width it centers on. headerTop is where it was drawn, for the crop and pages.
+	private readonly header: HeaderPlan | null;
+	private readonly headerWidth: number;
+	private headerTop: number | null = null;
 	// Each system's staff lines: the top line of its top stave to the bottom line of its bottom one.
 	private readonly staveLines = new Map<number, SystemExtent>();
 	private currentSystem = -1;
@@ -315,6 +322,8 @@ export class DrawPass {
 		this.parts = this.score.parts;
 		this.gaps = configuredGaps.byMeasureIndex();
 		this.partGroups = this.reader.partGroups(this.score);
+		this.header = HeaderPlan.of(config, this.reader.headerOf(this.score));
+		this.headerWidth = width;
 		// A notation+TAB pair split across parts is ONE instrument that just happens to be
 		// written as two parts, and it's bracketed as one (see partsPairTabWithNotation), so
 		// its barline runs through the pair too: the barline run has to agree with what the
@@ -1225,6 +1234,7 @@ export class DrawPass {
 		}
 
 		this.geometry.applyDecorationTops(this.spill);
+		this.drawHeader();
 
 		// A verse hangs below its stave, in the gap to the stave under it, so it's spill like
 		// any other ink there: a beam or slur the lower stave raises into the gap has to clear
@@ -1357,10 +1367,46 @@ export class DrawPass {
 		});
 	}
 
-	// Each system's ink top (its stave top and anything that rose above it) and content bottom.
+	/*
+	 * The score header, hung HEADER_GAP above the first system's highest ink: the layout
+	 * planner moved the system down to make room, and a tempo mark or high note that rises
+	 * further lifts the header with it rather than running into it. After the spanners are
+	 * resolved, so the bows over the first system count.
+	 */
+	private drawHeader(): void {
+		const inkTop = this.spill.systemTops().get(0);
+		if (!this.header || inkTop === undefined) {
+			return;
+		}
+		const top =
+			Math.min(inkTop, this.pageTop) - HEADER_GAP - this.header.height;
+		this.context.save();
+		this.context.setFillStyle(this.textColor);
+		for (const line of this.header.lines(this.headerWidth)) {
+			this.context.setFont(this.labelFont, line.size, line.weight);
+			const width = this.context.measureText(line.text).width;
+			// The share of the line's width that sits left of its x.
+			const lead = { left: 0, center: 0.5, right: 1 }[line.align];
+			this.context.fillText(
+				line.text,
+				line.x - lead * width,
+				top + line.baseline,
+			);
+		}
+		this.context.restore();
+		this.headerTop = top;
+		this.pageTop = Math.min(this.pageTop, top);
+	}
+
+	// Each system's ink top (its stave top and anything that rose above it, the header over
+	// the first) and content bottom.
 	private systemExtents(): Map<number, SystemExtent> {
 		const extents = new Map<number, SystemExtent>();
-		for (const [system, top] of this.spill.systemTops()) {
+		for (const [system, inkTop] of this.spill.systemTops()) {
+			const top =
+				system === 0 && this.headerTop !== null
+					? Math.min(inkTop, this.headerTop)
+					: inkTop;
 			extents.set(system, {
 				top,
 				bottom: this.systemBottoms.get(system) ?? top,

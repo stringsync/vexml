@@ -16,7 +16,7 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 243 drawn, 69 ignored, 130 missing; vexml draws 243 of the 373 that show on the page (65%).
+Elements: 251 drawn, 69 ignored, 122 missing; vexml draws 251 of the 373 that show on the page (67%).
 Attributes: 55 drawn, 5 ignored, 55 missing.
 
 | Element | Status | Proof or reason |
@@ -112,12 +112,12 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `clef-octave-change` | drawn | `clef_treble_octave.musicxml`: the 8 above or below the clef |
 | `coda` | drawn | `navigation.musicxml` |
 | `concert-score` | ignored | metadata: marks written pitch as concert pitch, nothing to draw |
-| `creator` | missing | task #8; mdom raw only |
-| `credit` | missing | task #8; mdom raw only |
-| `credit-image` | missing | task #8; mdom raw only |
-| `credit-symbol` | missing | task #8; mdom raw only |
-| `credit-type` | missing | task #8; mdom raw only |
-| `credit-words` | missing | task #8; mdom raw only |
+| `creator` | drawn | `header_catalog.musicxml`: with showHeader and no credits, composer and arranger at the right, lyricist, poet and translator at the left |
+| `credit` | drawn | `header.musicxml`: page one's, with showHeader; page numbers and footers in the page's lower half dropped |
+| `credit-image` | missing | task #47; mdom raw only |
+| `credit-symbol` | missing | task #47; mdom raw only |
+| `credit-type` | drawn | `header.musicxml`: title, subtitle, composer, arranger, lyricist, poet, translator; rights and page number dropped |
+| `credit-words` | drawn | `header.musicxml`: at fixed header sizes in the text font; position task #21, font attributes task #28 |
 | `cue` | drawn | `cue_notes.musicxml`: cue-size note, silent in playback |
 | `damp` | missing | task #15; mdom raw only |
 | `damp-all` | missing | task #15; mdom raw only |
@@ -233,7 +233,7 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `hole-shape` | missing | every hole draws as a circle; mdom raw only |
 | `hole-type` | missing | the hole label ("thumb") is not printed; mdom raw only |
 | `humming` | drawn | `lyrics_sounds.musicxml`: text-less lyric draws "mm" |
-| `identification` | missing | task #8 (creator, rights); mdom raw only |
+| `identification` | drawn | `header_catalog.musicxml`: its creators; rights task #47 |
 | `image` | missing | task #15; mdom raw only |
 | `instrument` | ignored | playback instrument link |
 | `instrument-abbreviation` | ignored | playback instrument metadata, part-abbreviation is the printed label |
@@ -309,8 +309,8 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `mordent@approach` | missing | task #29; mordent approach hook not drawn; mdom raw only |
 | `mordent@departure` | missing | task #29; mordent departure hook not drawn; mdom raw only |
 | `mordent@long` | missing | task #29; long mordent glyph not drawn; mdom raw only |
-| `movement-number` | missing | task #8; mdom raw only |
-| `movement-title` | missing | task #8; mdom typed |
+| `movement-number` | missing | task #47; mdom raw only |
+| `movement-title` | drawn | `header_catalog.musicxml`: the title, or the subtitle under a work-title, with showHeader and no credits |
 | `mp` | drawn | `dynamics.musicxml` |
 | `multiple-rest` | drawn | `rest_multi_measure.musicxml` |
 | `multiple-rest@use-symbols` | missing | task #38; old-style rest symbols not drawn; mdom raw only |
@@ -350,7 +350,7 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `offset` | missing | task #38; shift a direction or harmony off its note by divisions; mdom raw only |
 | `open` | missing | task #29; open technical mark (circle) for brass and harp; mdom raw only |
 | `open-string` | drawn | `technical_marks.musicxml` |
-| `opus` | missing | task #8; mdom raw only |
+| `opus` | ignored | a link to an opus document, nothing printed |
 | `ornaments` | drawn | `ornaments.musicxml` |
 | `other-appearance` | missing | task #36; custom engraving appearance from defaults; mdom raw only |
 | `other-articulation` | missing | task #29; free-form SMuFL or text articulation; mdom raw only |
@@ -426,7 +426,7 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `rfz` | drawn | `dynamics.musicxml` |
 | `right-divider` | missing | task #20; mdom raw only |
 | `right-margin` | missing | task #20; mdom typed |
-| `rights` | ignored | metadata (a printed copyright comes through credit) |
+| `rights` | missing | task #47: the copyright footer |
 | `root` | drawn | `harmony.musicxml` |
 | `root-alter` | drawn | `harmony.musicxml` |
 | `root-step` | drawn | `harmony.musicxml` |
@@ -575,6 +575,6 @@ Attributes: 55 drawn, 5 ignored, 55 missing.
 | `wood` | missing | task #16; mdom raw only |
 | `word-font` | missing | task #28; default typeface for words directions not applied; mdom raw only |
 | `words` | drawn | `words.musicxml` |
-| `work` | missing | task #8; mdom typed |
-| `work-number` | missing | task #8; mdom raw only |
-| `work-title` | missing | task #8; mdom typed |
+| `work` | drawn | `header_catalog.musicxml`: its work-title |
+| `work-number` | missing | task #47; mdom raw only |
+| `work-title` | drawn | `header_catalog.musicxml`: the title, with showHeader and no credits |

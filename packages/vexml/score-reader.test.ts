@@ -446,6 +446,60 @@ describe('ScoreReader', () => {
 		expect(harmony?.frame).toBeNull();
 		expect(harmony?.text).toBe('C');
 	});
+
+	it('reads the header from the page-one credits, dropping the footers', async () => {
+		const header = await headerOf(
+			'<defaults><page-layout><page-height>1000</page-height><page-width>900</page-width></page-layout></defaults>' +
+				'<credit page="1"><credit-words default-x="450" default-y="900" justify="center">Air</credit-words>' +
+				'<credit-words> \n</credit-words><credit-words>from Suite No. 3</credit-words></credit>' +
+				'<credit page="1"><credit-words default-x="850" default-y="850" halign="right" justify="center">J. S. Bach</credit-words></credit>' +
+				'<credit page="1"><credit-words default-x="50" default-y="850">Anon.</credit-words></credit>' +
+				'<credit page="1"><credit-words default-x="50" default-y="950">2</credit-words></credit>' +
+				'<credit page="1"><credit-words default-x="450" default-y="40" justify="center">Copyright</credit-words></credit>' +
+				'<credit page="2"><credit-words default-x="450" default-y="900" justify="center">Page two</credit-words></credit>',
+			'<work><work-title>Catalog title</work-title></work>',
+		);
+		expect(header).toEqual({
+			title: 'Air',
+			subtitles: ['from Suite No. 3'],
+			left: ['Anon.'],
+			right: ['J. S. Bach'],
+		});
+	});
+
+	it('places a credit by its credit-type over its alignment', async () => {
+		const header = await headerOf(
+			'<credit><credit-type>composer</credit-type><credit-words justify="left">Brahms</credit-words></credit>' +
+				'<credit><credit-type>rights</credit-type><credit-words>Public domain</credit-words></credit>' +
+				'<credit><credit-type>subtitle</credit-type><credit-words>Op. 77</credit-words></credit>' +
+				'<credit><credit-type>title</credit-type><credit-words>Concerto</credit-words></credit>',
+		);
+		expect(header).toEqual({
+			title: 'Concerto',
+			subtitles: ['Op. 77'],
+			left: [],
+			right: ['Brahms'],
+		});
+	});
+
+	it('falls back to the work and movement titles and the creators when there are no credits', async () => {
+		const header = await headerOf(
+			'<work><work-title>Suite No. 3</work-title></work>' +
+				'<movement-title>Air</movement-title>' +
+				'<identification><creator type="composer">J. S. Bach</creator>' +
+				'<creator type="lyricist"/><creator type="poet">Anon.</creator></identification>',
+		);
+		expect(header).toEqual({
+			title: 'Suite No. 3',
+			subtitles: ['Air'],
+			left: ['Anon.'],
+			right: ['J. S. Bach'],
+		});
+	});
+
+	it('reads no header from a score that names nothing', async () => {
+		expect(await headerOf('')).toBeNull();
+	});
 });
 
 /* A one-part score whose measures carry exactly the given <barline>s (and a note, so the
@@ -484,6 +538,19 @@ async function measureOf(prefix: string, suffix = '') {
 		throw new Error('fixture parsed no measures');
 	}
 	return measure;
+}
+
+/* The header of a one-part score: `work` holds its <work> and <identification>, and `credits`
+ * its <defaults> and <credit>s, in the schema order ahead of the part-list. */
+async function headerOf(credits: string, work = '') {
+	const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
+<score-partwise version="4.0">
+	${work}
+	${credits}
+	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+	<part id="P1"><measure number="1"/></part>
+</score-partwise>`);
+	return new ScoreReader(new DynamicGlyphs()).headerOf(mdoc.score);
 }
 
 async function repeatsOf(xml: string) {

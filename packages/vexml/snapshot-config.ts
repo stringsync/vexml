@@ -11,6 +11,7 @@ export type SnapshotConfig = {
 	softmaxFactor: number;
 	systemSpacing: number;
 	showPartLabels: boolean;
+	showHeader: boolean;
 	measureNumbering: Config['measureNumbering'];
 	showTabSlideText: boolean;
 	tabStemPlacement: Config['tabStemPlacement'];
@@ -59,6 +60,7 @@ export function snapshotConfig(config: Config): SnapshotConfig {
 		softmaxFactor: config.softmaxFactor,
 		systemSpacing: config.systemSpacing,
 		showPartLabels: config.showPartLabels,
+		showHeader: config.showHeader,
 		measureNumbering: config.measureNumbering,
 		showTabSlideText: config.showTabSlideText,
 		tabStemPlacement: config.tabStemPlacement,

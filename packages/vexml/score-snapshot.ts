@@ -7,7 +7,7 @@ import type { TempoSegment } from './tempo-map';
 
 /** Bumped whenever a snapshot's shape or meaning changes: a snapshot from another version
  * throws SnapshotMismatchError rather than render wrong. */
-export const SNAPSHOT_VERSION = 3;
+export const SNAPSHOT_VERSION = 4;
 
 /** Marks a ScoreSnapshot among render's other inputs. */
 export const SNAPSHOT_FORMAT = 'vexml-score-snapshot';

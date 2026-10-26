@@ -13,6 +13,7 @@ import {
 	EPSILON,
 	GAP_LABEL_FONT_SIZE,
 	GRACE_SPACING,
+	HEADER_GAP,
 	INTER_PART_SPACING,
 	INTRA_PART_SPACING,
 	LABEL_CHAR_WIDTH,
@@ -35,6 +36,7 @@ import {
 	WORDS_CHAR_WIDTH,
 } from './constants';
 import type { Gaps } from './gaps';
+import { HeaderPlan } from './header-plan';
 import type { ScoreReader, StaffVoice } from './score-reader';
 import type { MidClefSpec, SignatureTranslator } from './signature-translator';
 import type { StavePlan } from './stave-plan';
@@ -444,7 +446,12 @@ export class LayoutPlanner {
 				(this.reader.tempoOf(measure) || this.reader.modulationOf(measure))
 			);
 		});
-		const y = hasTopTempo ? PAGE_MARGIN_TOP_WITH_TEMPO : PAGE_MARGIN_TOP;
+		// The score header (showHeader) stacks above the first system, so it moves down by the
+		// header's height and the gap under it; the draw pass hangs the header off its ink.
+		const header = HeaderPlan.of(config, this.reader.headerOf(score));
+		const y =
+			(hasTopTempo ? PAGE_MARGIN_TOP_WITH_TEMPO : PAGE_MARGIN_TOP) +
+			(header ? header.height + HEADER_GAP : 0);
 		const measureCount = Math.max(
 			1,
 			...parts.map((part) => part.measures.length),
