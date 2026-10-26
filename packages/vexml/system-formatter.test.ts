@@ -13,9 +13,21 @@ import {
 import { Rect } from 'webappwiz/geometry';
 import type { ChordTranslator } from './chord-translator';
 import { CollisionResolver } from './collision-resolver';
+import { DEFAULT_CONFIG, DEFAULT_STANDARD_LAYOUT } from './config';
 import type { ConnectorDrawer } from './connector-drawer';
+import { DefaultScoreParser } from './default-score-parser';
+import { DetachedViewport } from './detached-viewport';
+import { DynamicGlyphs } from './dynamic-glyphs';
+import { ElementFactory } from './element-factory';
+import { FakePaintProbe } from './fake-paint-probe';
 import { FakeTechnicalMark } from './fake-technical-mark';
+import { GapInserter } from './gap-inserter';
+import { Gaps } from './gaps';
+import { InertDecoration } from './inert-decoration';
 import type { LyricPlacer } from './lyric-placer';
+import { ScoreEngraver } from './score-engraver';
+import { ScoreReader } from './score-reader';
+import { SequenceFactory } from './sequence-factory';
 import type { SpannerBuilder } from './spanner-builder';
 import { SpillTracker } from './spill-tracker';
 import { SystemFormatter } from './system-formatter';
@@ -34,6 +46,8 @@ describe('SystemFormatter', () => {
 			new SpillTracker(),
 			{ systemOf: () => 0 },
 			{
+				reader: new ScoreReader(new DynamicGlyphs()),
+				documentPositions: false,
 				softmaxFactor: 100,
 				notationColor: '#000000',
 				byLead: new Map(),
@@ -216,3 +230,110 @@ describe('SystemFormatter', () => {
 		expect(sig.moved).toBe(false);
 	});
 });
+
+// Exercise the real parse/layout/draw pipeline: these positions must reach the hit
+// geometry too.
+describe('document horizontal geometry', () => {
+	it.each([
+		'follow',
+		'strict',
+	] as const)('keeps supplied measure widths and note x in %s', async (mode) => {
+		const geometry = await horizontalGeometry(mode, 320);
+		const box = geometry.measures[0]?.rect;
+		expect(box?.w).toBe(320);
+		expect(geometry.notes.map((n) => n.rect.x)).toEqual([
+			expect.closeTo((box?.x ?? 0) + 110),
+			expect.closeTo((box?.x ?? 0) + 240),
+		]);
+	});
+
+	it('ignores supplied measure widths and note x by default', async () => {
+		const geometry = await horizontalGeometry('ignore', 320);
+		const box = geometry.measures[0]?.rect;
+		expect(box?.w).not.toBe(320);
+		expect(geometry.notes[0]?.rect.x).not.toBeCloseTo((box?.x ?? 0) + 110);
+	});
+
+	it('does not move an unpositioned note sharing a tick with a positioned note', async () => {
+		const body = `<note default-x="160"><pitch><step>E</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type></note>
+		<backup><duration>4</duration></backup>
+		<note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>2</voice><type>whole</type></note>`;
+		const followed = await horizontalGeometry('follow', 320, body);
+		const ignored = await horizontalGeometry('ignore', 320, body);
+		expect(followed.notes[0]?.rect.x).toBeCloseTo(
+			(followed.measures[0]?.rect.x ?? 0) + 160,
+		);
+		expect(followed.notes[1]?.rect.x).toBeCloseTo(
+			ignored.notes[1]?.rect.x ?? 0,
+		);
+	});
+
+	it('keeps a strict document line unbroken when its exact widths overrun the page', async () => {
+		const following = `<measure number="2" width="400"><print new-system="no"/>
+		<note default-x="100"><pitch><step>E</step><octave>4</octave></pitch><duration>4</duration><type>whole</type></note></measure>`;
+		const strict = await horizontalGeometry(
+			'strict',
+			600,
+			undefined,
+			following,
+		);
+		const follow = await horizontalGeometry(
+			'follow',
+			600,
+			undefined,
+			following,
+		);
+		expect(
+			strict.measures.map((m) => ({ width: m.rect.w, system: m.systemIndex })),
+		).toEqual([
+			{ width: 600, system: 0 },
+			{ width: 400, system: 0 },
+		]);
+		expect(follow.measures.map((m) => m.systemIndex)).toEqual([0, 1]);
+	});
+
+	it('floors a followed width at the music minimum but keeps a strict width exact', async () => {
+		const follow = await horizontalGeometry('follow', 90);
+		const strict = await horizontalGeometry('strict', 90);
+		expect(follow.measures[0]?.rect.w).toBeGreaterThan(90);
+		expect(strict.measures[0]?.rect.w).toBe(90);
+	});
+});
+
+async function horizontalGeometry(
+	mode: 'ignore' | 'follow' | 'strict',
+	width: number,
+	body?: string,
+	following = '',
+) {
+	const config = {
+		...DEFAULT_CONFIG,
+		layout: { ...DEFAULT_STANDARD_LAYOUT, documentLayout: mode },
+	};
+	const reader = new ScoreReader(new DynamicGlyphs());
+	const gaps = new Gaps([], new GapInserter(reader));
+	const engraver = ScoreEngraver.create(
+		config,
+		reader,
+		gaps,
+		new ElementFactory(),
+		new SequenceFactory(reader, gaps),
+	);
+	const document =
+		await new DefaultScoreParser().parse(`<score-partwise version="4.0">
+	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+	<part id="P1"><measure number="1" width="${width}">
+	<attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+	${
+		body ??
+		`<note default-x="110"><pitch><step>E</step><octave>4</octave></pitch><duration>2</duration><type>half</type></note>
+	<note default-x="240"><pitch><step>G</step><octave>4</octave></pitch><duration>2</duration><type>half</type></note>`
+	}
+	</measure>${following}</part></score-partwise>`);
+	return engraver.engrave(
+		document,
+		new FakePaintProbe(),
+		new DetachedViewport(),
+		{ color: new InertDecoration(), halo: new InertDecoration() },
+	).drawn.geometry;
+}

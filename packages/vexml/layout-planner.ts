@@ -795,8 +795,29 @@ export class LayoutPlanner {
 			);
 		});
 		// Measures past the end of a short part have no entry; they fall back to an empty bar.
-		const areaOf = (m: number): NoteArea =>
-			noteAreas[m] ?? { min: BASE_VOICE_WIDTH, ideal: BASE_VOICE_WIDTH };
+		const areaOf = (m: number, systemStart = false): NoteArea => {
+			const area = noteAreas[m] ?? {
+				min: BASE_VOICE_WIDTH,
+				ideal: BASE_VOICE_WIDTH,
+			};
+			const widths =
+				mode === 'ignore' || gaps.has(m)
+					? []
+					: parts.flatMap((part) => {
+							const measure = part.measures[m];
+							const width = measure
+								? this.reader.measureWidthOf(measure)
+								: null;
+							return width === null ? [] : [width];
+						});
+			if (widths.length === 0) {
+				return area;
+			}
+			const requested = Math.max(...widths) - leadOf(m, systemStart);
+			const width =
+				mode === 'strict' ? requested : Math.max(area.min, requested);
+			return { min: width, ideal: width, fixed: true };
+		};
 
 		// Room held open before the right barline for a directive on the measure's last note
 		// (see trailingWordsPad). Budgeted alongside the leads: fixed either way, never
@@ -882,7 +903,9 @@ export class LayoutPlanner {
 		const spanOf = (measures: number[], key: 'min' | 'ideal') =>
 			measures.reduce(
 				(sum, m, i) =>
-					sum + leadOf(m, i === musicStartOf(measures)) + areaOf(m)[key],
+					sum +
+					leadOf(m, i === musicStartOf(measures)) +
+					areaOf(m, i === musicStartOf(measures))[key],
 				0,
 			);
 
@@ -909,7 +932,7 @@ export class LayoutPlanner {
 				if (multiRestHidden.has(m)) {
 					continue;
 				}
-				const area = areaOf(m);
+				let area = areaOf(m, !row.some(isMusic));
 				const print = parts.map((part) => part.measures[m]?.print);
 				// A <print new-system="yes"/> forces a break before this measure regardless of
 				// width, unless honorSystemBreaks is off. So does a new page: its first measure
@@ -922,11 +945,14 @@ export class LayoutPlanner {
 				// collision-free minimum. Past that the document's line and the reference width
 				// genuinely can't both hold, and `overflow` says which one gives: 'wrap' breaks
 				// the line here, 'allow' and 'widen' keep it and pay for it in page width.
+				// Strict keeps an explicitly unbroken document line even when rounded
+				// measure widths overrun it: those exact boxes cannot squeeze to fit.
 				const keepsLine =
 					honorSystemBreaks && print.some((p) => p?.systemBreak === 'no');
 				const usable = usableOf(systems.length, row[0] ?? m);
 				const overruns = keepsLine
-					? overflow === 'wrap' &&
+					? mode !== 'strict' &&
+						overflow === 'wrap' &&
 						rowMinWidth + LEAD_BARLINE + area.min > usable
 					: rowWidth + LEAD_BARLINE + area.ideal >
 						usable * config.maxSystemFill;
@@ -947,6 +973,7 @@ export class LayoutPlanner {
 					rowWidth = 0;
 					rowMinWidth = 0;
 				}
+				area = areaOf(m, !row.some(isMusic));
 				const lead = leadOf(m, !row.some(isMusic));
 				rowWidth += lead + area.ideal;
 				rowMinWidth += lead + area.min;
@@ -1011,7 +1038,7 @@ export class LayoutPlanner {
 			const start = musicStartOf(measures);
 			const end = musicEndOf(measures);
 			const leads = measures.map((m, i) => leadOf(m, i === start));
-			const areas = measures.map((m) => areaOf(m));
+			const areas = measures.map((m, i) => areaOf(m, i === start));
 			const areaSum = areas.reduce((sum, a) => sum + a.ideal, 0);
 			const intrinsic = leads.reduce((sum, l) => sum + l, 0) + areaSum;
 			const first = measures[0] ?? 0;
@@ -1048,14 +1075,20 @@ export class LayoutPlanner {
 			// the page. That floor is what makes cut-off notes unreachable: every width decision
 			// above may push against it, none may pass it, and naturalWidth below grows to cover
 			// whatever spilled so the score scales down instead of clipping.
+			const fixed = areas.reduce((sum, a) => sum + (a.fixed ? a.ideal : 0), 0);
+			const flexibleSum = areaSum - fixed;
 			const areaTarget = target - leads.reduce((sum, l) => sum + l, 0);
 			const give = areaSum - areas.reduce((sum, a) => sum + a.min, 0);
 			const squeeze = give > 0 ? Math.min(1, (areaSum - areaTarget) / give) : 1;
-			const stretch = areaSum > 0 ? areaTarget / areaSum : 1;
-			const areaWidth = (a: NoteArea) =>
-				areaTarget >= areaSum
+			const stretch = flexibleSum > 0 ? (areaTarget - fixed) / flexibleSum : 1;
+			const areaWidth = (a: NoteArea) => {
+				if (a.fixed) {
+					return a.ideal;
+				}
+				return areaTarget >= areaSum
 					? a.ideal * stretch
 					: a.ideal - (a.ideal - a.min) * squeeze;
+			};
 			// Leading boxes start at the margin, ahead of the label indent they stand in for.
 			const indent = start === 0 ? indentOf(systemIndex, first) : 0;
 			let cx = x + indent;
@@ -1244,6 +1277,7 @@ export type ScoreLayout = {
 type NoteArea = {
 	min: number;
 	ideal: number;
+	fixed?: boolean;
 };
 
 /** One stave's inputs to the note-area measurement: the voices to size plus the

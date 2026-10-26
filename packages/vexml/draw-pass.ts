@@ -514,6 +514,10 @@ export class DrawPass {
 			// measurement records is banded under the system its stave was registered on.
 			{ systemOf: (stave) => this.systemOf(stave) },
 			{
+				reader,
+				documentPositions:
+					config.layout.type !== 'panoramic' &&
+					config.layout.documentLayout !== 'ignore',
 				softmaxFactor: this.softmaxFactor,
 				notationColor: this.notationColor,
 				byLead: this.byLead,
@@ -885,6 +889,7 @@ export class DrawPass {
 				text,
 				symbol,
 				frame,
+				framePosition,
 				placement,
 				source,
 				position,
@@ -896,6 +901,7 @@ export class DrawPass {
 						text,
 						symbol,
 						frame,
+						framePosition,
 						placement,
 						source,
 						position,

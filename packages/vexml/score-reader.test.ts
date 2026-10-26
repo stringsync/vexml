@@ -4,6 +4,18 @@ import { DynamicGlyphs } from './dynamic-glyphs';
 import { ScoreReader } from './score-reader';
 
 describe('ScoreReader', () => {
+	it('reads harmony and frame positions separately, preserving zero default-x', async () => {
+		const measure = await measureOf(
+			'<harmony default-x="90"><root><root-step>C</root-step></root><kind>major</kind><frame default-x="0" default-y="130"><frame-strings>6</frame-strings><frame-frets>4</frame-frets><frame-note><string>2</string><fret>1</fret></frame-note></frame></harmony>',
+		);
+		expect(reader.harmoniesOf(measure)).toMatchObject([
+			{
+				position: { x: 90, y: null },
+				framePosition: { x: 0, y: 130 },
+			},
+		]);
+	});
+
 	/*
 	 * A <metronome>'s printed shape, which the barline_styles/tempo_beat_unit_dot screenshots
 	 * pin visually but cannot pull apart: an augmentation dot is a SIBLING of the <beat-unit>

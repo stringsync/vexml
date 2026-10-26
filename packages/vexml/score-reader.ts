@@ -1591,6 +1591,7 @@ export class ScoreReader {
 		text: string;
 		symbol: HarmonySymbol;
 		frame: ChordFrame | null;
+		framePosition: DocumentPosition | null;
 		placement: Placement;
 		source: Harmony;
 		position: DocumentPosition | null;
@@ -1600,6 +1601,7 @@ export class ScoreReader {
 			text: string;
 			symbol: HarmonySymbol;
 			frame: ChordFrame | null;
+			framePosition: DocumentPosition | null;
 			placement: Placement;
 			source: Harmony;
 			position: DocumentPosition | null;
@@ -1620,6 +1622,7 @@ export class ScoreReader {
 			const symbol = analysis ?? this.harmonySymbol(harmony);
 			const text = symbol.text;
 			const frame = this.frameOf(harmony);
+			const frameElement = harmony.child('frame');
 			if (!text && !frame) {
 				continue;
 			}
@@ -1634,6 +1637,7 @@ export class ScoreReader {
 				text,
 				symbol,
 				frame,
+				framePosition: frameElement ? this.positionOf(frameElement) : null,
 				placement,
 				source: harmony,
 				position: this.positionOf(harmony, harmony),
@@ -2427,17 +2431,24 @@ export class ScoreReader {
 		return value ? { kind: 'text', text: value } : null;
 	}
 
+	/* A supplied measure box, in tenths read as px, when finite and positive. */
+	measureWidthOf(measure: Measure): number | null {
+		const raw = measure.getAttribute('width');
+		const width = Number(raw);
+		return raw !== null && Number.isFinite(width) && width > 0 ? width : null;
+	}
+
 	/*
 	 * Where the document puts a mark, from MusicXML's position attributes: `y` its default-y,
 	 * the text baseline in px above the staff's top line (null when unset), `dx` and `dy` its
 	 * relative-x and relative-y, px right and up of wherever it lands (0 when unset). Tenths
 	 * are read as px, as {@link documentLayoutOf} does. Null for an element setting none of
-	 * the three. `side` is the side a default-y puts the mark on when its direction (`host`)
+	 * the four. `side` is the side a default-y puts the mark on when its direction (`host`)
 	 * names no placement: at or above the top line is above, under the bottom line below,
 	 * and null in between or with a placement given, which then stands.
-	 * default-x is not read: the document's horizontal positions go with its measure widths
-	 * and note positions, which vexml spaces itself.
+	 * `x` is default-x, in px from the measure start.
 	 */
+
 	positionOf(
 		element: MElement,
 		host: { placement: Placement | null } | null = null,
@@ -2447,10 +2458,11 @@ export class ScoreReader {
 			const number = Number(value);
 			return value !== null && Number.isFinite(number) ? number : null;
 		};
+		const x = read('default-x');
 		const y = read('default-y');
 		const dx = read('relative-x');
 		const dy = read('relative-y');
-		if (y === null && dx === null && dy === null) {
+		if (x === null && y === null && dx === null && dy === null) {
 			return null;
 		}
 		let side: Placement | null = null;
@@ -2461,7 +2473,7 @@ export class ScoreReader {
 				side = 'below';
 			}
 		}
-		return { y, dx: dx ?? 0, dy: dy ?? 0, side };
+		return { x, y, dx: dx ?? 0, dy: dy ?? 0, side };
 	}
 
 	/* The score's `<defaults><word-font>`, read once per score. */
@@ -3029,6 +3041,8 @@ export type Placement = 'above' | 'below';
  * the side the default-y implies when the direction names no placement, else null.
  */
 export type DocumentPosition = {
+	/** Default-x from the measure start (frame offsets use the musical anchor). */
+	x?: number | null;
 	y: number | null;
 	dx: number;
 	dy: number;

@@ -3671,7 +3671,8 @@ describe('render', () => {
 	// and dynamics stand on their own default-y too (see document_positions.png). Lyrics
 	// and extenders keep their documented baseline 80 tenths below the top line, with
 	// individual relative-x offsets preserved. Grace slurs also follow their authored
-	// bezier-x/y offsets, giving shallow, asymmetric bends.
+	// bezier-x/y offsets, giving shallow, asymmetric bends. Measure widths and note default-x
+	// reproduce the four document systems (M0-5, M6-11, M12-17, M18-22) without justification.
 	it.concurrent('renders document_layout_strict.png', async () => {
 		expect(
 			await testing.render('score_mozart_das_veilchen.musicxml', {
@@ -3770,6 +3771,9 @@ describe('render', () => {
 	// metronome mark and chord symbol stand on theirs, and "cresc.", placed where the
 	// ledger-line notes stand, lifts clear of them; M4's segno and the figured bass's top figure
 	// stand on theirs, the 4 stacking under the 6.
+	// - M5: 340px wide, four unevenly spaced E4 quarters; words at x=120, G at x=245.
+	// - M6: 260px wide, two E4 halves; a C frame offset 25px right of its first note,
+	//   its top 130px above the staff.
 	it.concurrent('renders document_positions.png', async () => {
 		expect(
 			await testing.render('document_positions.musicxml', {

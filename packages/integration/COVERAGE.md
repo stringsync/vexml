@@ -20,8 +20,8 @@ are picked by hand.
 | --- | --- | --- |
 | `*@color` | drawn | `note_color.musicxml`: note, notehead and stem colors; other elements' color ignored |
 | `*@dash-length` | drawn | `spanner_line_types.musicxml` M3: dashed ties, glissandos, slides, wedges; slurs and brackets too |
-| `*@default-x` | missing | task #104 (with measure widths and note positions); mdom raw only |
-| `*@default-y` | drawn | `document_positions.musicxml`, under the documentLayout setting (off by default): words, other-direction, dynamics, rehearsal, metronome, harmony text, harp-pedals, figured-bass, segno/coda, the baseline in tenths over the top line; lyrics (`document_lyric_positions.musicxml`), frames task #104, notes and stems stay vexml's |
+| `*@default-x` | drawn | `document_positions.musicxml` M5-6, under documentLayout: notes, directions and harmony from the measure start; frame offsets from its musical anchor; individual chord heads and grace positions stay automatic |
+| `*@default-y` | drawn | `document_positions.musicxml`, under the documentLayout setting (off by default): words, other-direction, dynamics, rehearsal, metronome, harmony text, harp-pedals, figured-bass, segno/coda, the baseline in tenths over the top line; frames in M6; lyrics (`document_lyric_positions.musicxml`), notes and stems stay automatic |
 | `*@enclosure` | drawn | `text_formatting.musicxml` M6-M13, M16-M18: every shape around words, rehearsal marks and dynamics; rehearsal still boxed by default |
 | `*@font-family` | drawn | `text_font_family.musicxml` M2-M6, under the documentFonts setting (off by default, when vexml's text face is used): words, rehearsal marks, other-dynamics text and lyrics in the face named, falling back to the text face for one the browser lacks; SMuFL dynamics keep the notation font |
 | `*@font-size` | drawn | `text_formatting.musicxml` M4: words, rehearsal and other-dynamics text, scaled against the word-font size; SMuFL dynamics and lyrics task #51 |
@@ -273,7 +273,7 @@ are picked by hand.
 | `lyric-language` | ignored | metadata |
 | `measure` | drawn | `measures_two.musicxml` |
 | `measure@implicit` | drawn | `pickup_measure.musicxml`: pickup sized to its content |
-| `measure@width` | missing | task #20; mdom raw only |
+| `measure@width` | drawn | `document_positions.musicxml` M5-6, under documentLayout: follow floors at the collision-free minimum, strict keeps the exact width |
 | `measure-distance` | missing | task #20; mdom raw only |
 | `measure-layout` | missing | task #20; mdom raw only |
 | `measure-numbering` | drawn | `measure_numbering.musicxml`: followed under the `measureNumbering: 'document'` default, any other config value overrides it |
@@ -490,7 +490,7 @@ are picked by hand.
 | `staff-type` | drawn | `staff_type.musicxml`: ossia and cue staves draw at 75 percent unless staff-size says otherwise, and an ossia staff shows its lines only in measures that hold notes; editorial, regular and alternate draw as a normal staff |
 | `staves` | drawn | `structure_grand_staff.musicxml` |
 | `stem` | drawn | `note.musicxml` |
-| `stem@default-y` | missing | stem length from stem end y; task #104 (document horizontal and note positions); mdom raw only |
+| `stem@default-y` | ignored | stems keep the engraving and beam geometry; documentLayout does not override stem endpoints |
 | `step` | drawn | `note.musicxml` |
 | `stick` | drawn | `direction_pictograms.musicxml` M3: SMuFL stick pictograms by type and material; M8: parentheses and dashed-circle enclose the round head |
 | `stick-location` | drawn | `direction_pictograms.musicxml` M2: SMuFL pictogram |

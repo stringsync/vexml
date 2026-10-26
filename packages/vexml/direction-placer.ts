@@ -339,8 +339,15 @@ export class DirectionPlacer {
 			const stave = h.frame ? h.staveNote.getStave() : null;
 			if (h.frame && stave) {
 				pending--;
-				const top =
-					stave.getYForLine(0) - CHORD_DIAGRAM_GAP - CHORD_DIAGRAM_HEIGHT;
+				const doc = this.followed(h.framePosition);
+				const harmonyDoc = this.followed(h.position);
+				const pinned = this.pins(doc ?? harmonyDoc);
+				const top = this.baselineOf(
+					stave,
+					stave.getYForLine(0) - CHORD_DIAGRAM_GAP - CHORD_DIAGRAM_HEIGHT,
+					doc,
+				);
+				const anchor = this.xOf(stave, h.staveNote.getAbsoluteX(), harmonyDoc);
 				// Size to the frame: one column per string, its <frame-frets> rows (4 when
 				// absent), grown to hold the deepest dot/barre if the frame undercounts.
 				const frets = [
@@ -348,7 +355,7 @@ export class DirectionPlacer {
 					...(h.frame.barres ?? []).map((b) => b.fret),
 				];
 				const natural = new Rect(
-					h.staveNote.getAbsoluteX(),
+					anchor + (doc?.x ?? 0) + (doc?.dx ?? 0),
 					top,
 					CHORD_DIAGRAM_WIDTH,
 					CHORD_DIAGRAM_HEIGHT,
@@ -409,7 +416,10 @@ export class DirectionPlacer {
 				);
 				// Spacing moved it into a different column, which may hold taller notes than
 				// the one it was lifted out of, so lift again where it actually landed.
-				const placed = spaced.x === lifted.x ? lifted : unpad(lift(spaced));
+				let placed = spaced.x === lifted.x ? lifted : unpad(lift(spaced));
+				if (pinned) {
+					placed = natural;
+				}
 				const diagram = new ChordDiagramGlyph(placed.x, placed.y, {
 					...h.frame,
 					title: h.text || undefined,
@@ -643,7 +653,8 @@ export class DirectionPlacer {
 		// The document's default-y is the text's baseline; the box reaches its padding under it.
 		const doc = this.followed(position);
 		const x =
-			stave.getX() - alignOffsetOf(format?.align, formatted.w) + (doc?.dx ?? 0);
+			this.xOf(stave, stave.getX(), doc) -
+			alignOffsetOf(format?.align, formatted.w);
 		const bottom =
 			doc?.y === null || doc?.y === undefined
 				? stave.getYForLine(0) - REHEARSAL_Y_OFFSET - (doc?.dy ?? 0)
@@ -765,8 +776,11 @@ export class DirectionPlacer {
 			10 -
 			anchorX -
 			this.tempoLayout(task, anchorX, baseY).rect.w;
-		const targetX =
-			anchorX + Math.max(0, alignOffsetOf(task.justify, free)) + (doc?.dx ?? 0);
+		const targetX = this.xOf(
+			stave,
+			anchorX + Math.max(0, alignOffsetOf(task.justify, free)),
+			doc,
+		);
 		const band = this.reporter.rowOf(stave);
 		const { rect: natural, markWidth } = this.tempoLayout(task, targetX, baseY);
 		const placed = this.pins(doc)
@@ -915,7 +929,7 @@ export class DirectionPlacer {
 		const below = placement === 'below';
 		// The document's position, when followed: its default-y is the symbol's baseline.
 		const doc = this.followed(position);
-		const x = staveNote.getAbsoluteX() + (doc?.dx ?? 0);
+		const x = this.xOf(stave, staveNote.getAbsoluteX(), doc);
 		this.context.save();
 		this.context.setFillStyle(this.textColor);
 		const { width, height, depth } = this.harmonyLayout(symbol, x, 0, false);
@@ -1098,7 +1112,7 @@ export class DirectionPlacer {
 		const top = below ? baseY : baseY - h;
 		const baseline = this.baselineOf(stave, style.hangs ? top : top + h, doc);
 		const natural = new Rect(
-			anchorX - alignOffsetOf(style.align, w) + (doc?.dx ?? 0),
+			this.xOf(stave, anchorX, doc) - alignOffsetOf(style.align, w),
 			style.hangs ? baseline : baseline - h,
 			w,
 			h,
@@ -1106,17 +1120,26 @@ export class DirectionPlacer {
 		const placed = this.placeBeside(
 			stave,
 			natural,
-			typeof anchor !== 'number',
+			typeof anchor !== 'number' && doc?.x == null,
 			{
 				below,
 				kinds: style.clearsHairpins ? WORDS_CLEAR_KINDS : TEXT_CLEAR_KINDS,
 				sideGap: style.sideGap,
 				pinned: this.pins(doc),
+				pinnedX: this.pins(doc) && doc?.x != null,
 			},
 		);
 		formatted.draw(placed);
 		this.context.restore();
 		return placed;
+	}
+
+	private xOf(
+		stave: Stave,
+		natural: number,
+		doc: DocumentPosition | null,
+	): number {
+		return (doc?.x == null ? natural : stave.getX() + doc.x) + (doc?.dx ?? 0);
 	}
 
 	/* A mark's document position, under a layout that follows it; null otherwise. */
@@ -1278,6 +1301,7 @@ export class DirectionPlacer {
 			kinds: CollisionKind[];
 			sideGap?: number;
 			pinned?: boolean;
+			pinnedX?: boolean;
 		},
 	): Rect {
 		const { below, kinds } = opts;
@@ -1306,26 +1330,29 @@ export class DirectionPlacer {
 		// overrun it, so the right bound is the page, which the viewport nudge below owns.
 		// Only note-anchored text: a caller passing an explicit x (the segno/coda at the
 		// stave's left edge, the "Nx" on the closing barline) is stating where it wants to be.
-		const bounded = noteAnchored
-			? this.collisionResolver.nudgeInsideX(
-					cleared,
-					new Rect(
-						stave.getNoteStartX(),
-						cleared.y,
-						this.scratchViewport.right - stave.getNoteStartX(),
-						cleared.h,
-					),
-					0,
-				)
-			: cleared;
+		const bounded =
+			noteAnchored && !opts.pinnedX
+				? this.collisionResolver.nudgeInsideX(
+						cleared,
+						new Rect(
+							stave.getNoteStartX(),
+							cleared.y,
+							this.scratchViewport.right - stave.getNoteStartX(),
+							cleared.h,
+						),
+						0,
+					)
+				: cleared;
 		// A mark anchored near the right edge would run off the canvas and be clipped (there's
 		// no horizontal crop-growth knob), so pull it back inside: the same treatment a chord
 		// diagram at the edge gets.
-		const placed = this.collisionResolver.nudgeInsideX(
-			bounded,
-			this.scratchViewport,
-			PAGE_MARGIN_X,
-		);
+		const placed = opts.pinnedX
+			? bounded
+			: this.collisionResolver.nudgeInsideX(
+					bounded,
+					this.scratchViewport,
+					PAGE_MARGIN_X,
+				);
 		if (below) {
 			this.reporter.recordAnnotationDrop(stave, placed);
 		} else {
@@ -1509,6 +1536,7 @@ export type HarmonyTask = {
 	/** The <harmony>'s document position (see ScoreReader.positionOf), followed for the
 	 * plain-text symbol. Absent or null means it sets none. */
 	position?: DocumentPosition | null;
+	framePosition?: DocumentPosition | null;
 };
 
 /** A queued words direction, drawn on its stave's `placement` side at the laid-out x of

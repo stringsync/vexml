@@ -392,7 +392,7 @@ describe('DirectionPlacer', () => {
 
 	// A words direction the document puts 30 tenths over the top line: its baseline.
 	const placedWords = (
-		position: { y: number | null; dx: number; dy: number },
+		position: { x?: number | null; y: number | null; dx: number; dy: number },
 		side: 'above' | 'below' | null = null,
 	) =>
 		column({
@@ -409,8 +409,9 @@ describe('DirectionPlacer', () => {
 
 	it('ignores a document position unless the layout follows the document', () => {
 		const { placer, texts } = makePlacer();
-		placer.placeColumn(placedWords({ y: 30, dx: 0, dy: 0 }));
+		placer.placeColumn(placedWords({ x: 85, y: 30, dx: 5, dy: 0 }));
 		expect(texts[0]?.y).toBe(100 - WORDS_Y_OFFSET);
+		expect(texts[0]?.x).toBe(200);
 	});
 
 	it("stands words on the document's default-y when following it", () => {
@@ -418,6 +419,24 @@ describe('DirectionPlacer', () => {
 		placer.placeColumn(placedWords({ y: 30, dx: 0, dy: 0 }));
 		expect(texts[0]?.y).toBe(70);
 		expect(texts[0]?.x).toBe(200);
+	});
+
+	it.each([
+		'follow',
+		'strict',
+	] as const)('places default-x from the measure start in %s', (mode) => {
+		const { placer, texts } = makePlacer({}, { documentPositions: mode });
+		placer.placeColumn(placedWords({ x: 85, y: 30, dx: 5, dy: 0 }));
+		expect(texts[0]?.x).toBe(130);
+	});
+
+	it.each([
+		'follow',
+		'strict',
+	] as const)('keeps a zero default-x at the barline in %s', (mode) => {
+		const { placer, texts } = makePlacer({}, { documentPositions: mode });
+		placer.placeColumn(placedWords({ x: 0, y: 30, dx: 0, dy: 0 }));
+		expect(texts[0]?.x).toBe(40);
 	});
 
 	it('lifts a followed position clear of a note, but keeps a strict one', () => {

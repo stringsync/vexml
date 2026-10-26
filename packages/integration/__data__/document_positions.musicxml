@@ -38,6 +38,24 @@
       <direction placement="above"><direction-type><segno default-y="45"/></direction-type></direction>
       <figured-bass default-y="-80"><figure><figure-number>6</figure-number></figure><figure><figure-number>4</figure-number></figure></figured-bass>
       <note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type></note>
+    </measure>
+    <!-- M5: a 340-tenths measure, uneven note x, and words/harmony measured from its left barline. -->
+    <measure number="5" width="340">
+      <print new-system="yes"/>
+      <direction placement="above"><direction-type><words default-x="120" default-y="40">placed</words></direction-type></direction>
+      <harmony default-x="245" default-y="25"><root><root-step>G</root-step></root><kind>major</kind></harmony>
+      <note default-x="100"><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note default-x="145"><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note default-x="235"><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <note default-x="295"><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+    </measure>
+    <!-- M6: frame offset 25 right of the note, its top 130 tenths above the staff. -->
+    <measure number="6" width="260">
+      <harmony><root><root-step>C</root-step></root><kind>major</kind>
+        <frame default-x="25" default-y="130"><frame-strings>6</frame-strings><frame-frets>4</frame-frets><frame-note><string>2</string><fret>1</fret></frame-note></frame>
+      </harmony>
+      <note default-x="40"><pitch><step>E</step><octave>4</octave></pitch><duration>2</duration><type>half</type></note>
+      <note default-x="180"><pitch><step>E</step><octave>4</octave></pitch><duration>2</duration><type>half</type></note>
       <barline location="right"><bar-style>light-heavy</bar-style></barline>
     </measure>
   </part>

@@ -262,11 +262,15 @@ export type SystemOverflow = 'wrap' | 'allow' | 'widen';
  *   defaults for the system it starts. Distances are read in tenths, a tenth of a staff space,
  *   so the score keeps the document's proportions at vexml's own staff size. Where the music
  *   needs more room than a distance gives, the gap opens so nothing prints through anything.
+ *   Measure widths keep their supplied size, floored at the music's collision-free minimum.
+ *   Note default-x and the positions of directions, harmony and chord frames are followed too.
  *   What the document leaves out keeps vexml's own spacing. Pair it with `honorSystemBreaks`
  *   to reproduce the document's lines.
- * - `'strict'`: as `'follow'`, but every distance the document sets is kept exactly, even
+ * - `'strict'`: as `'follow'`, but supplied measure widths and mark positions, as well as
+ *   every distance the document sets, are kept exactly, even
  *   where the music then prints through the stave or system next to it. For lining vexml up
- *   with the document's own engraving. */
+ *   with the document's own engraving. Explicit `new-system="no"` also keeps an over-wide
+ *   document line together, letting its exact measure boxes overrun the page. */
 export type DocumentLayoutMode = 'ignore' | 'follow' | 'strict';
 
 /** Wrap measures onto stacked systems (print-like). */

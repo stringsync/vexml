@@ -18,7 +18,7 @@ import {
 	type TabNote,
 	type TabStave,
 	type Tickable,
-	type TickContext,
+	TickContext,
 	TimeSignature,
 	type Note as VexNote,
 	Vibrato,
@@ -40,6 +40,7 @@ import {
 import { Ink } from './ink';
 import { InvisibleStaveNote } from './invisible-stave-note';
 import type { LyricPlacer } from './lyric-placer';
+import type { ScoreReader } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
 import { StaveArticulation } from './stave-articulation';
@@ -116,7 +117,7 @@ export class SystemFormatter {
 		private readonly collisionResolver: CollisionResolver,
 		private readonly spill: SpillTracker,
 		private readonly reporter: SystemReporter,
-		opts: SystemFormatterOptions,
+		private readonly opts: SystemFormatterOptions,
 	) {
 		this.softmaxFactor = opts.softmaxFactor;
 		this.notationColor = opts.notationColor;
@@ -256,9 +257,31 @@ export class SystemFormatter {
 		// note stops short of the barline and its words directive prints in the gap.
 		const justifyWidth =
 			noteEndX - startX - Stave.defaultPadding - column.measureTrailingPad;
-		formatter.format(allVoices, justifyWidth, { context: this.context });
+		formatter.format(allVoices, Math.max(1, justifyWidth), {
+			context: this.context,
+		});
 		this.closeGraceGaps(allVoices);
 		this.closeHiddenGaps(allVoices);
+		if (this.opts.documentPositions) {
+			for (const p of pending) {
+				for (const { note, chord } of [...p.noteChords, ...p.tabChords]) {
+					const position = this.opts.reader.positionOf(chord.lead);
+					if (position?.x !== null && position?.x !== undefined) {
+						// Give this note its own context: changing the shared one would move
+						// unpositioned notes at the same tick on other staves too.
+						const x =
+							note.getTickContext().getX() +
+							p.stave.getX() +
+							position.x +
+							position.dx -
+							note.getAbsoluteX() -
+							note.getXShift();
+						const context = new TickContext().addTickable(note).preFormat();
+						context.setX(x);
+					}
+				}
+			}
+		}
 		this.pushAfterGraces(allVoices, noteEndX);
 
 		let bottom = 0;
@@ -1064,6 +1087,8 @@ export interface SystemReporter {
 }
 
 export interface SystemFormatterOptions {
+	reader: ScoreReader;
+	documentPositions: boolean;
 	/** The formatter's proportional-spacing exponent, shared with the layout's width
 	 * planning so measures format at the width they were planned for. */
 	softmaxFactor: number;
