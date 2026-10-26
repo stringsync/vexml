@@ -1,5 +1,7 @@
 import { Curve, type CurveOptions, type Note as VexNote } from 'vexflow/core';
 
+import type { DocumentBezier } from './score-reader';
+
 /* The offset of the second bezier pass that gives a solid slur its lens shape, so the ink
  * reaches this far past the arc's midpoint. Larger than vexflow's default 2 because CrispCurve
  * drops the stroke that used to widen the shape: the lens alone is only 0.75 of this deep. */
@@ -28,12 +30,14 @@ export class CrispCurve extends Curve {
 	 * point the way vexflow does. */
 	private tip: number | null = null;
 
+	private readonly bezier: DocumentBezier | null;
 	constructor(
 		from: VexNote | undefined,
 		to: VexNote | undefined,
-		opts: CurveOptions,
+		opts: CurveOptions & { bezier?: DocumentBezier | null },
 	) {
 		super(from, to, { ...opts, thickness: opts.thickness ?? CURVE_THICKNESS });
+		this.bezier = opts.bezier ?? null;
 	}
 
 	setTip(tip: number | null): this {
@@ -42,6 +46,36 @@ export class CrispCurve extends Curve {
 	}
 
 	override renderCurve(params: {
+		firstX: number;
+		lastX: number;
+		firstY: number;
+		lastY: number;
+		direction: number;
+	}): void {
+		const original = this.renderOptions.cps;
+		const bezier = this.bezier;
+		if (bezier) {
+			const spacing =
+				(params.lastX - params.firstX - 2 * this.renderOptions.xShift) / 4;
+			this.renderOptions.cps = original.map((point, i) => {
+				const offset = i === 0 ? bezier.start : bezier.end;
+				return {
+					x:
+						offset.x === null
+							? point.x
+							: offset.x + (i === 0 ? -spacing : spacing),
+					y: offset.y === null ? point.y : -offset.y / params.direction,
+				};
+			});
+		}
+		try {
+			this.paintCurve(params);
+		} finally {
+			this.renderOptions.cps = original;
+		}
+	}
+
+	private paintCurve(params: {
 		firstX: number;
 		lastX: number;
 		firstY: number;

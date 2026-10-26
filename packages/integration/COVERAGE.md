@@ -456,7 +456,7 @@ are picked by hand.
 | `slide` | drawn | `slide_in.musicxml`, `tab_slide.musicxml` |
 | `slide@line-type` | drawn | `spanner_line_types.musicxml` M7: notation slides; tab slides stay solid |
 | `slur` | drawn | `slur_default.musicxml` |
-| `slur@bezier-x` | missing | task #66; document curve control points ignored; mdom raw only |
+| `slur@bezier-x` | drawn | `document_curves.musicxml`: slur and tied endpoint bezier-x/y, and slur continuation bezier-x2/y2, under documentLayout follow/strict |
 | `slur@orientation` | drawn | `spanner_line_types.musicxml` M5: over/under when placement is absent |
 | `smear` | drawn | `technical_marks.musicxml` M23 |
 | `snap-pizzicato` | drawn | `technical_marks.musicxml` |

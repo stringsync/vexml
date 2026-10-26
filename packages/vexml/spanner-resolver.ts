@@ -19,6 +19,7 @@ import {
 	PEDAL_INK_RISE,
 	WORDS_NOTE_CLEARANCE,
 } from './constants';
+import { DashedTie } from './dashed-tie';
 import type { DirectionPlacer } from './direction-placer';
 import type { Hairpin } from './hairpin';
 import { Ink } from './ink';
@@ -722,6 +723,9 @@ export class SpannerResolver {
 	 * a tie too short to bow fully).
 	 */
 	private tieRect(tie: StaveTie): Rect {
+		if (tie instanceof DashedTie && tie.inkBounds) {
+			return tie.inkBounds;
+		}
 		const firstX = tie.getFirstX();
 		const lastX = tie.getLastX();
 		const options = tie.renderOptions;

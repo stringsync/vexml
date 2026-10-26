@@ -2079,8 +2079,6 @@ describe('render', () => {
 	// - M3: "dotted", the same arc as a run of dots.
 	// - M4: "wavy", falls back to solid, so M4 is drawn identically to M1 rather than
 	//   the slur being dropped (see LINE_TYPE_DASH in packages/vexml/score-reader.ts).
-	// ponytail: the <slur> bezier attributes (bezier-x/y) are still ignored: vexml computes its own control points to clear the spanned notes,
-	// which an exporter's absolute offsets would fight rather than improve.
 	it.concurrent('renders slur_line_types.png', async () => {
 		expect(await testing.render('slur_line_types.musicxml')).toMatchScreenshot(
 			'slur_line_types.png',
@@ -3628,6 +3626,33 @@ describe('render', () => {
 		).toMatchScreenshot('ignore_new_system.png');
 	});
 
+	// Treble stave, 4/4, document Bézier controls in tenths from each endpoint.
+	// - M1: a symmetric above slur with both control points 35 tenths up.
+	// - M2: an asymmetric below slur, deepest near its start.
+	// - M3: dashed above slur, zero start-y and automatic horizontal controls.
+	// - M4: solid above tie with independent start/stop control points.
+	// - M5: dashed below tie with independent start/stop control points.
+	// - M6: two connected slur segments; the continuation's incoming point is
+	//   30 tenths up, its outgoing point (x2/y2) 45 tenths up.
+	// - M7-8: a slur split at a forced system break; each authored point stays
+	//   with its endpoint, and the open edge retains automatic shaping. M8 starts
+	//   with a half rest so the incoming curve has room before its half note.
+	it.concurrent('renders document_curves.png', async () => {
+		expect(
+			await testing.render('document_curves.musicxml', {
+				layout: { type: 'standard', documentLayout: 'follow' },
+			}),
+		).toMatchScreenshot('document_curves.png');
+	});
+
+	// The same curves with document layout ignored use automatic engraving;
+	// continuation control data and explicit offsets must have no effect.
+	it.concurrent('renders document_curves_ignore.png', async () => {
+		expect(await testing.render('document_curves.musicxml')).toMatchScreenshot(
+			'document_curves_ignore.png',
+		);
+	});
+
 	// documentLayout 'follow': the document's 1000-tenth page and 50-tenth margins set the line,
 	// the first system indents by its <system-margins>, the grand staff opens to the 100 its
 	// part's <print> asks for on system 1 only (70 after), and system 2 sits the 200 its
@@ -3645,7 +3670,8 @@ describe('render', () => {
 	// hand runs into the right hand's lines, where 'follow' would open the gap. Its "Allegretto"
 	// and dynamics stand on their own default-y too (see document_positions.png). Lyrics
 	// and extenders keep their documented baseline 80 tenths below the top line, with
-	// individual relative-x offsets preserved.
+	// individual relative-x offsets preserved. Grace slurs also follow their authored
+	// bezier-x/y offsets, giving shallow, asymmetric bends.
 	it.concurrent('renders document_layout_strict.png', async () => {
 		expect(
 			await testing.render('score_mozart_das_veilchen.musicxml', {

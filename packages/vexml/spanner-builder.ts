@@ -48,7 +48,13 @@ import { Ink } from './ink';
 import { NotationSlide } from './notation-slide';
 import { NoteheadArticulation } from './notehead-articulation';
 import { PedalLine } from './pedal-line';
-import { lineDashOf, type PedalMark, type WedgeMark } from './score-reader';
+import {
+	curveSegmentOf,
+	type DocumentBezier,
+	lineDashOf,
+	type PedalMark,
+	type WedgeMark,
+} from './score-reader';
 import { SingleSlide } from './single-slide';
 import { SpacedBeam } from './spaced-beam';
 import { TabCurve } from './tab-curve';
@@ -96,6 +102,16 @@ export class SpannerBuilder {
 	private readonly reaches = new Map<Note, number>();
 	// The document's line widths the spanners draw with: set afresh by every draw pass.
 	private appearance = Appearance.NONE;
+	private documentCurves = false;
+
+	useDocumentCurves(enabled: boolean): void {
+		if (enabled !== this.documentCurves) {
+			this.connectors.clear();
+			this.ties.clear();
+			this.reaches.clear();
+		}
+		this.documentCurves = enabled;
+	}
 
 	/* Draw the spanners built from here on to the document's line widths (Appearance.NONE
 	 * keeps vexml's own). */
@@ -453,6 +469,10 @@ export class SpannerBuilder {
 							spec,
 							tie.dash,
 							this.appearance.lineWidth('tie tip'),
+							tie.bezier && {
+								start: spec.firstNote ? tie.bezier.start : { x: null, y: null },
+								end: spec.lastNote ? tie.bezier.end : { x: null, y: null },
+							},
 						);
 						// A solid tie is the lens between two quadratic bows, cp1 and cp2 off
 						// the ends, so it is (cp2 - cp1) / 2 deep at its middle.
@@ -1341,6 +1361,10 @@ export class SpannerBuilder {
 							{ x: -pull + lean, y: cpY - dir * slant },
 						],
 					};
+					const bezier = slur.bezier && {
+						start: curveFrom ? slur.bezier.start : { x: null, y: null },
+						end: curveTo ? slur.bezier.end : { x: null, y: null },
+					};
 					// An end lifted off its marks is pinned at its own Y, which vexflow's Curve
 					// can't take (it reads the end off the note), so it draws as a HeadCurve
 					// too.
@@ -1349,8 +1373,11 @@ export class SpannerBuilder {
 					);
 					const curve =
 						isGrace || lifted
-							? new HeadCurve(curveFrom, curveTo, y0, y1, options)
-							: new CrispCurve(curveFrom, curveTo, options);
+							? new HeadCurve(curveFrom, curveTo, y0, y1, {
+									...options,
+									bezier,
+								})
+							: new CrispCurve(curveFrom, curveTo, { ...options, bezier });
 					curve.setTip(this.appearance.lineWidth('slur tip'));
 					// Where the bow will actually reach. vexflow shifts both endpoints by
 					// `yShift` and lands both control points at `depth`, so the cubic's midpoint
@@ -1361,6 +1388,32 @@ export class SpannerBuilder {
 					const endTop = Math.min(y0, y1) + dir * yShift;
 					const endBottom = Math.max(y0, y1) + dir * yShift;
 					const apex = (y0 + y1) / 2 + dir * (yShift + 0.75 * cpY + thickness);
+					const stave = only.checkStave();
+					const firstX =
+						(curveFrom?.getTieRightX() ?? stave.getTieStartX()) +
+						curve.renderOptions.xShift;
+					const lastX =
+						(curveTo?.getTieLeftX() ?? stave.getTieEndX()) -
+						curve.renderOptions.xShift;
+					const spacing = (lastX - firstX) / 4;
+					const controlXs = bezier
+						? [
+								firstX + (bezier.start.x ?? spacing + pull + lean),
+								lastX + (bezier.end.x ?? -spacing - pull + lean),
+							]
+						: [];
+					const controlYs = bezier
+						? [
+								y0 +
+									dir * yShift +
+									(bezier.start.y === null
+										? dir * cpY + slant
+										: -bezier.start.y),
+								y1 +
+									dir * yShift +
+									(bezier.end.y === null ? dir * cpY - slant : -bezier.end.y),
+							]
+						: [];
 					// A dashed/dotted slur is a single stroked bezier, not the filled lens a
 					// solid one is: vexflow's renderCurve already skips the fill and the
 					// second (thickness) pass when the element carries a lineDash. The
@@ -1375,10 +1428,20 @@ export class SpannerBuilder {
 					slurs.push({
 						curve,
 						stave: curveStave,
-						top: Math.min(endTop, apex),
-						bottom: Math.max(endBottom, apex),
-						left: curveFrom?.getAbsoluteX() ?? curveStave?.getTieStartX() ?? 0,
-						right: curveTo?.getAbsoluteX() ?? curveStave?.getTieEndX() ?? 0,
+						top: Math.min(endTop, apex, ...controlYs.map((y) => y - thickness)),
+						bottom: Math.max(
+							endBottom,
+							apex,
+							...controlYs.map((y) => y + thickness),
+						),
+						left: Math.min(
+							curveFrom?.getAbsoluteX() ?? curveStave?.getTieStartX() ?? 0,
+							...controlXs,
+						),
+						right: Math.max(
+							curveTo?.getAbsoluteX() ?? curveStave?.getTieEndX() ?? 0,
+							...controlXs,
+						),
 						crossStave,
 					});
 				};
@@ -1566,12 +1629,20 @@ export class SpannerBuilder {
 		let ties = this.ties.get(note);
 		if (!ties) {
 			ties = note.ties
-				.filter((tie) => tie.tieType === 'start')
-				.map((tie) => ({
-					partner: tie.partner?.note ?? null,
-					dash: lineDashOf(tie),
-					orientation: tie.getAttribute('orientation'),
-				}));
+				.filter(
+					(tie) =>
+						tie.tieType === 'start' ||
+						(this.documentCurves && tie.tieType === 'continue'),
+				)
+				.map((tie) => {
+					const segment = this.documentCurves ? curveSegmentOf(tie) : null;
+					return {
+						partner: segment?.end.note ?? tie.partner?.note ?? null,
+						bezier: segment?.bezier ?? null,
+						dash: lineDashOf(tie),
+						orientation: tie.getAttribute('orientation'),
+					};
+				});
 			this.ties.set(note, ties);
 		}
 		return ties;
@@ -1628,11 +1699,17 @@ export class SpannerBuilder {
 		}
 		const resolved = {
 			slurs: note.slurs
-				.filter((s) => s.slurType === 'start')
+				.filter(
+					(s) =>
+						s.slurType === 'start' ||
+						(this.documentCurves && s.slurType === 'continue'),
+				)
 				.map((s) => {
-					const partner = s.partner?.note ?? null;
+					const segment = this.documentCurves ? curveSegmentOf(s) : null;
+					const partner = segment?.end.note ?? s.partner?.note ?? null;
 					return {
-						slurType: s.slurType,
+						slurType: 'start',
+						bezier: segment?.bezier ?? null,
 						partner: partner && { note: partner },
 						placement: s.placement ?? placementOfOrientation(s),
 						dash: lineDashOf(s),
@@ -1643,6 +1720,7 @@ export class SpannerBuilder {
 					.filter((h) => h.hammerOnType === 'start')
 					.map((h) => ({
 						slurType: h.hammerOnType,
+						bezier: null,
 						partner: h.partner,
 						placement: null,
 						dash: null,
@@ -1651,6 +1729,7 @@ export class SpannerBuilder {
 					.filter((p) => p.pullOffType === 'start')
 					.map((p) => ({
 						slurType: p.pullOffType,
+						bezier: null,
 						partner: p.partner,
 						placement: null,
 						dash: null,
@@ -1793,6 +1872,7 @@ type TupletDisplay = {
  * per adjacent pair: the run gets its one arc, not that arc plus a bump over every pair.
  */
 type TieEnd = {
+	bezier: DocumentBezier | null;
 	partner: Note | null;
 	dash: number[] | null;
 	/* <tied orientation>: "over" bows the tie up, "under" down. */
@@ -1811,6 +1891,7 @@ function placementOfOrientation(slur: {
 }
 
 type SlurConnector = {
+	bezier: DocumentBezier | null;
 	slurType: string;
 	partner: { note: Note } | null;
 	placement: string | null;

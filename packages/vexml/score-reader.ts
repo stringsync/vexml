@@ -3716,3 +3716,65 @@ function beatsAcross(length: number, unit: number): number[] {
 	}
 	return beats;
 }
+
+/* Offsets from each endpoint, right and up in tenths (px at the document's staff
+ * scale). Only a continuation's outgoing point uses x2/y2. */
+export type BezierPoint = { x: number | null; y: number | null };
+export type DocumentBezier = { start: BezierPoint; end: BezierPoint };
+
+export function bezierPointOf(
+	element: MElement,
+	outgoing = false,
+): BezierPoint {
+	const suffix =
+		outgoing &&
+		element.tag === 'slur' &&
+		element.getAttribute('type') === 'continue'
+			? '2'
+			: '';
+	const read = (axis: string): number | null => {
+		const value = element.getAttribute(`bezier-${axis}${suffix}`);
+		return value !== null &&
+			value.trim() !== '' &&
+			Number.isFinite(Number(value))
+			? Number(value)
+			: null;
+	};
+	return { x: read('x'), y: read('y') };
+}
+
+/* mdom owns pairing and onset order, including across backup and system breaks. */
+export function curveSegmentOf<
+	T extends MElement & { members: T[]; partner: T | null },
+>(
+	marker: T,
+): {
+	end: T;
+	bezier: DocumentBezier | null;
+} | null {
+	const span = marker.members;
+	const opener = span[0];
+	const closer =
+		marker.getAttribute('type') === 'start' ? marker.partner : span.at(-1);
+	// members includes every same-number marker between the paired ends, including
+	// overlapping slurs in another voice. Only split at this span's continuations.
+	const members = span.filter(
+		(candidate) =>
+			candidate === marker ||
+			candidate === closer ||
+			(candidate.getAttribute('type') === 'continue' &&
+				candidate.members[0] === opener),
+	);
+	const end = members[members.indexOf(marker) + 1];
+	if (!end) {
+		return null;
+	}
+	const startPoint = bezierPointOf(marker, true);
+	const endPoint = bezierPointOf(end);
+	const bezier = [startPoint.x, startPoint.y, endPoint.x, endPoint.y].some(
+		(v) => v !== null,
+	)
+		? { start: startPoint, end: endPoint }
+		: null;
+	return { end, bezier };
+}

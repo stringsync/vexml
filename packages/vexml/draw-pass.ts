@@ -605,6 +605,10 @@ export class DrawPass {
 			layout.appearance.lineWidth('heavy barline'),
 		);
 		spanners.useAppearance(layout.appearance);
+		spanners.useDocumentCurves(
+			config.layout.type !== 'panoramic' &&
+				config.layout.documentLayout !== 'ignore',
+		);
 	}
 
 	/* The systems to draw, in order. */

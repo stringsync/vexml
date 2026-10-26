@@ -6,6 +6,7 @@ import {
 } from 'vexflow/core';
 import { GRACE_START } from './constants';
 import { CrispCurve } from './crisp-curve';
+import type { DocumentBezier } from './score-reader';
 
 /*
  * A slur whose endpoints are pinned to explicit Ys. vexflow's Curve can only anchor an
@@ -22,7 +23,7 @@ export class HeadCurve extends CrispCurve {
 		to: StaveNote | undefined,
 		private readonly fromY: number,
 		private readonly toY: number,
-		opts: CurveOptions,
+		opts: CurveOptions & { bezier?: DocumentBezier | null },
 	) {
 		super(from, to, opts);
 	}
