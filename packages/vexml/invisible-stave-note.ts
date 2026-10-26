@@ -12,6 +12,12 @@ import { Annotation, StaveNote } from 'vexflow/core';
  * vexflow's own GhostNote.
  */
 export class InvisibleStaveNote extends StaveNote {
+	/*
+	 * print-spacing="no": the note takes no horizontal room. The formatter spaces by tick so it
+	 * still gets a slot; SystemFormatter closes that slot after formatting.
+	 */
+	spacingHidden = false;
+
 	constructor(...args: ConstructorParameters<typeof StaveNote>) {
 		super(...args);
 		// vexflow's own "this note isn't on the page" flag. Setting it matters beyond its

@@ -64,5 +64,13 @@
       <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
       <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
     </measure>
+    <!-- M8: a hidden note with print-spacing="no" that takes no room. -->
+    <measure number="8">
+      <attributes><staff-details print-object="yes" /></attributes>
+      <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note print-object="no" print-spacing="no"><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
   </part>
 </score-partwise>

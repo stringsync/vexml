@@ -121,6 +121,7 @@ export class ChordTranslator {
 		const NoteClass = lead.printObject ? StaveNote : InvisibleStaveNote;
 		if (lead.isRest) {
 			const rest = new NoteClass(this.struct(chord, clef, opts));
+			this.hideSpacing(rest, lead);
 			this.addDots(rest, lead);
 			return rest;
 		}
@@ -147,6 +148,7 @@ export class ChordTranslator {
 			lead.printObject && isCueSized(lead)
 				? new GraceNote(this.struct(chord, clef, opts))
 				: new NoteClass(this.struct(chord, clef, opts));
+		this.hideSpacing(staveNote, lead);
 		if (opts.slashed) {
 			// Rhythmic slash notation: one slash on the middle line, carrying no pitch to spell.
 			staveNote.noteHeads[0]?.setText(this.slashGlyph(chord));
@@ -163,6 +165,16 @@ export class ChordTranslator {
 		}
 		this.notations.attach(staveNote, chord);
 		return staveNote;
+	}
+
+	/* print-spacing="no" on a hidden note: it draws nothing and the measure closes up around it. */
+	private hideSpacing(staveNote: StaveNote, note: Note): void {
+		if (
+			staveNote instanceof InvisibleStaveNote &&
+			note.getAttribute('print-spacing') === 'no'
+		) {
+			staveNote.spacingHidden = true;
+		}
 	}
 
 	/*

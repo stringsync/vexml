@@ -17,7 +17,7 @@ by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
 Elements: 261 drawn, 69 ignored, 112 missing; vexml draws 261 of the 373 that show on the page (70%).
-Attributes: 65 drawn, 5 ignored, 48 missing.
+Attributes: 66 drawn, 5 ignored, 47 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ Attributes: 65 drawn, 5 ignored, 48 missing.
 | `*@justify` | drawn | `text_formatting.musicxml` M14: words and rehearsal marks, as halign when that is absent |
 | `*@line-type` | drawn | `slur_line_types.musicxml`, `direction_lines.musicxml`: slurs and brackets; ties, wedges, slides task #17 |
 | `*@placement` | drawn | `direction_lines.musicxml`, `note_color.musicxml`: directions, slurs, tuplets, technical; ornaments ignore it |
-| `*@print-object` | drawn | `invisible_notes.musicxml`: notes; `print_object.musicxml`: notations, ending and staff-details; clef, key, time, lyric and part-name ignore it |
+| `*@print-object` | drawn | `invisible_notes.musicxml`: notes; `print_object.musicxml`: notations, ending, staff-details; accidental and direction elements have none in the schema; clef, key, time, lyric and part-name ignore it |
 | `*@relative-x` | missing | task #20 (later task in that lane); mdom raw only |
 | `*@relative-y` | missing | task #20 (later task in that lane); mdom raw only |
 | `*@rotation` | missing | task #49; rotated text not drawn; mdom raw only |
@@ -334,7 +334,7 @@ Attributes: 65 drawn, 5 ignored, 48 missing.
 | `note@print-dot` | drawn | `print_object.musicxml` M1 |
 | `note@print-leger` | drawn | `print_object.musicxml` M2 |
 | `note@print-lyric` | drawn | `print_object.musicxml` M3 |
-| `note@print-spacing` | missing | hidden notes always keep their space: vexflow spaces by tick, so zeroing a note's width changes nothing; mdom raw only |
+| `note@print-spacing` | drawn | `print_object.musicxml` M8: a hidden note with print-spacing="no" has its slot closed |
 | `note-size` | missing | task #9; mdom raw only |
 | `notehead` | drawn | `notehead_shapes.musicxml` |
 | `notehead@filled` | drawn | `notehead_shapes_extended.musicxml`: filled and open shape variants |

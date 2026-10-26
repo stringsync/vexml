@@ -16,6 +16,7 @@ import {
 	type StemmableNote,
 	type TabNote,
 	type TabStave,
+	type TickContext,
 	TimeSignature,
 	type Note as VexNote,
 	Vibrato,
@@ -35,6 +36,7 @@ import {
 	TIE_APEX_RISE,
 } from './constants';
 import { Ink } from './ink';
+import { InvisibleStaveNote } from './invisible-stave-note';
 import type { LyricPlacer } from './lyric-placer';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
@@ -216,6 +218,7 @@ export class SystemFormatter {
 			noteEndX - startX - Stave.defaultPadding - column.measureTrailingPad;
 		formatter.format(allVoices, justifyWidth, { context: this.context });
 		this.closeGraceGaps(allVoices);
+		this.closeHiddenGaps(allVoices);
 		this.pushAfterGraces(allVoices, noteEndX);
 
 		let bottom = 0;
@@ -562,6 +565,48 @@ export class SystemFormatter {
 						note.checkTickContext().getMetrics().modRightPx,
 				);
 			}
+		}
+	}
+
+	/*
+	 * Close the slot of every tick context that only holds print-spacing="no" notes. The
+	 * formatter spaces by tick, so such a note keeps its gap however narrow it is; here the
+	 * context's slot is cut out and the rest are stretched back over the justified width, so
+	 * the last note still lands where it did.
+	 */
+	private closeHiddenGaps(voices: Voice[]): void {
+		const contexts = new Map<TickContext, boolean>();
+		for (const voice of voices) {
+			for (const note of voice.getTickables()) {
+				const context = note.checkTickContext();
+				const hidden = note instanceof InvisibleStaveNote && note.spacingHidden;
+				contexts.set(context, (contexts.get(context) ?? true) && hidden);
+			}
+		}
+		const sorted = [...contexts.keys()].sort((a, b) => a.getX() - b.getX());
+		if (![...contexts.values()].some(Boolean) || sorted.length < 2) {
+			return;
+		}
+		const xs = sorted.map((c) => c.getX());
+		const first = xs[0] ?? 0;
+		const last = xs[xs.length - 1] ?? 0;
+		// removed[i]: the width cut out before context i.
+		const removed: number[] = [];
+		let cut = 0;
+		for (const [i, context] of sorted.entries()) {
+			removed.push(cut);
+			const next = sorted[i + 1];
+			if (contexts.get(context) && next) {
+				cut += (xs[i + 1] ?? 0) - (xs[i] ?? 0);
+			}
+		}
+		const span = last - first;
+		if (span <= 0 || cut >= span) {
+			return;
+		}
+		const scale = span / (span - cut);
+		for (const [i, context] of sorted.entries()) {
+			context.setX(first + ((xs[i] ?? 0) - first - (removed[i] ?? 0)) * scale);
 		}
 	}
 
