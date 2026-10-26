@@ -4,6 +4,9 @@ import { CustomKeySignature } from './custom-key-signature';
 import type { SignatureTranslator } from './signature-translator';
 import type { StavePlan } from './stave-plan';
 
+/** vexflow's default space between staff lines, in px. */
+const STAVE_LINE_DISTANCE = 10;
+
 /* A freshly placed stave, before any clef, key or barline is set on it. */
 export interface PlacedStave {
 	stave: Stave;
@@ -44,6 +47,13 @@ export class StaveFactory {
 		// half space, which is how an even-line stave centers.
 		const hiddenAbove = Math.max(0, Math.floor((5 - staveLines) / 2));
 		const halfNudge = Math.max(0, (5 - staveLines) / 2 - hiddenAbove);
+		// staff-size is a percentage of normal: the line spacing shrinks with it, and every row
+		// vexflow measures off the stave (notes, ledger lines, clef, key) follows.
+		const size = measure.getStaffDetails(staffNumber)?.staffSize ?? 100;
+		const spacing = (STAVE_LINE_DISTANCE * size) / 100;
+		// The shrunk five lines center on where the full-size ones would sit, so the staff
+		// stays in its row and only the ink shrinks.
+		const centering = 2 * (STAVE_LINE_DISTANCE - spacing);
 		const stave = isTab
 			? new TabStave(x, y, width, { numLines: tabLines })
 			: new Stave(x, y, width, {
@@ -56,7 +66,9 @@ export class StaveFactory {
 					// single line lands on the middle line, with the percussion clef straddling
 					// it) and leaves everything measured off the stave (note rows, connectors,
 					// part spacing) exactly as it was.
-					spaceAboveStaffLn: 4 + halfNudge,
+					spaceAboveStaffLn:
+						((4 + halfNudge) * STAVE_LINE_DISTANCE + centering) / spacing,
+					spacingBetweenLinesPx: spacing,
 				});
 		// Tab is exempt: its line count IS its string count, so a 4-string stave draws four
 		// lines and means it.
@@ -105,6 +117,7 @@ export class StaveFactory {
 				this.signatures.vexflowClefAnnotation(clef?.octaveChange ?? null),
 			);
 		}
+		this.shrinkClef(stave);
 		this.addKey(stave, measure, staffNumber, cancelKeySpec);
 	}
 
@@ -156,6 +169,17 @@ export class StaveFactory {
 	private clefName(measure: Measure, staffNumber: string): string {
 		const clef = measure.getClef(staffNumber);
 		return clef ? this.signatures.vexflowClef(clef.sign, clef.line) : 'treble';
+	}
+
+	/* A staff at staff-size percent draws its clef at that share of the glyph's size. */
+	private shrinkClef(stave: Stave): void {
+		const ratio = stave.getSpacingBetweenLines() / STAVE_LINE_DISTANCE;
+		const [clef] = stave.getModifiers(undefined, 'Clef') as unknown as Array<{
+			fontInfo: { size: number };
+		}>;
+		if (ratio !== 1 && clef) {
+			clef.fontInfo.size *= ratio;
+		}
 	}
 
 	/*

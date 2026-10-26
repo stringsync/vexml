@@ -503,6 +503,13 @@ describe('render', () => {
 		).toMatchScreenshot('staff_details_lines.png');
 	});
 
+	// staff-size: the first part shrinks to 60 percent from M2 (an ossia or cue staff).
+	it.concurrent('renders staff_details_size.png', async () => {
+		expect(
+			await testing.render('staff_details_size.musicxml'),
+		).toMatchScreenshot('staff_details_size.png');
+	});
+
 	// One system, treble 4/4: key signatures and a mid-system key change. Each measure
 	// holds one C5 whole note.
 	// - M1: opens the system with a treble clef, a 3-sharp key signature (F#, C#, G#),

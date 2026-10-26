@@ -16,7 +16,7 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 273 drawn, 69 ignored, 100 missing; vexml draws 273 of the 373 that show on the page (73%).
+Elements: 274 drawn, 69 ignored, 99 missing; vexml draws 274 of the 373 that show on the page (73%).
 Attributes: 77 drawn, 5 ignored, 36 missing.
 
 | Element | Status | Proof or reason |
@@ -488,7 +488,7 @@ Attributes: 77 drawn, 5 ignored, 36 missing.
 | `staff-divide` | missing | task #15; mdom raw only |
 | `staff-layout` | missing | task #20; mdom raw only |
 | `staff-lines` | drawn | `staff_details_lines.musicxml` |
-| `staff-size` | missing | task #19; mdom typed |
+| `staff-size` | drawn | `staff_details_size.musicxml`: line spacing, noteheads and clef shrink; key/time signature glyphs and stem lengths stay full size |
 | `staff-tuning` | drawn | `clef_tab_staff_tuning.musicxml`: tuning derives frets and marks the staff as tab |
 | `staff-type` | missing | task #38; ossia/cue/editorial/alternate staff styling; mdom raw only |
 | `staves` | drawn | `structure_grand_staff.musicxml` |

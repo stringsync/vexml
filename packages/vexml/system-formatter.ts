@@ -16,6 +16,7 @@ import {
 	type StemmableNote,
 	type TabNote,
 	type TabStave,
+	type Tickable,
 	type TickContext,
 	TimeSignature,
 	type Note as VexNote,
@@ -100,6 +101,7 @@ export class SystemFormatter {
 	private readonly notationColor: string;
 	private readonly byLead: ReadonlyMap<Note, StaveNote>;
 	private readonly crossStaveNotes: ReadonlySet<StaveNote>;
+	private readonly shrunk = new WeakSet<object>();
 	private readonly articulationPlacer = new VoiceArticulationPlacer();
 
 	constructor(
@@ -169,6 +171,23 @@ export class SystemFormatter {
 	 * the columns shear apart even when the ticks match. Returns the topmost/lowest y any
 	 * content reaches so the page can grow to fit high notes and deep ledger lines.
 	 */
+	/*
+	 * A staff drawn at staff-size percent keeps its glyphs in proportion: its noteheads shrink
+	 * with the line spacing (vexflow sizes them off a fixed font scale, not the stave).
+	 */
+	private shrinkNoteheads(note: Tickable, stave: Stave): void {
+		const ratio = stave.getSpacingBetweenLines() / 10;
+		if (ratio === 1 || !(note instanceof StaveNote)) {
+			return;
+		}
+		for (const head of note.noteHeads) {
+			if (!this.shrunk.has(head)) {
+				this.shrunk.add(head);
+				head.setFontSize(head.fontSizeInPoints * ratio);
+			}
+		}
+	}
+
 	formatAndDraw(
 		pending: PendingStave[],
 		column: FormatColumn,
@@ -200,6 +219,7 @@ export class SystemFormatter {
 				// every beam to read real y's.
 				for (const note of vexVoice.getTickables()) {
 					note.setStave(p.stave);
+					this.shrinkNoteheads(note, p.stave);
 				}
 			}
 		}
