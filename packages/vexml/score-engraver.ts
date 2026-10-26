@@ -7,6 +7,7 @@ import type { Decorations } from './decoration';
 import { DurationTranslator } from './duration-translator';
 import type { ElementFactory } from './element-factory';
 import type { ElementIndex } from './element-index';
+import { FontFamilies } from './font-families';
 import { FontShorthandPatch } from './font-shorthand-patch';
 import type { Gaps } from './gaps';
 import { LayoutPlanner } from './layout-planner';
@@ -79,7 +80,14 @@ export class ScoreEngraver {
 			reader,
 			config.tabStemPlacement,
 		);
-		const chords = new ChordTranslator(durations, new NotationTranslator());
+		const chords = new ChordTranslator(
+			durations,
+			new NotationTranslator({
+				documentFonts: config.documentFonts
+					? { textFont: new FontFamilies(config.fonts).textStack }
+					: undefined,
+			}),
+		);
 		// ONE translator instance shared by layout and draw: both must build identical vexflow
 		// voices for the measured widths to match the drawn ones.
 		const translator = new VoiceTranslator(chords, durations, barlines, reader);

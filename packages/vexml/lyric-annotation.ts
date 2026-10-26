@@ -27,10 +27,16 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 		public verseIndex: number,
 		/** Whether a melisma `<extend/>` line trails this syllable (drawn by LyricPlacer). */
 		readonly extend: boolean,
+		/** A CSS font-family list to type the syllable in. Absent means vexflow's text face. */
+		family?: string,
 	) {
 		super(text);
 		this.setVerticalJustification(Annotation.VerticalJustify.BOTTOM);
-		this.setFontSize(LYRIC_FONT_SIZE);
+		if (family) {
+			this.setFont(family, LYRIC_FONT_SIZE);
+		} else {
+			this.setFontSize(LYRIC_FONT_SIZE);
+		}
 	}
 
 	setBaselineY(y: number): void {

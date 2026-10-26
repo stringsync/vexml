@@ -498,6 +498,7 @@ export class DrawPass {
 			},
 			{
 				labelFont,
+				documentFonts: config.documentFonts,
 				notationFont,
 				notationColor: this.notationColor,
 				textColor: this.textColor,

@@ -46,6 +46,7 @@ import {
 } from './constants';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { FERMATA_GLYPHS, NORMAL_FERMATA_GLYPHS } from './fermata-glyphs';
+import { FontFamilies } from './font-families';
 import { FormattedText } from './formatted-text';
 import type { GeometryCollector } from './geometry-collector';
 import { MetronomeGlyph, type TempoModulation } from './metronome-glyph';
@@ -69,6 +70,7 @@ import type { EnclosureShape } from './text-enclosure';
  */
 export class DirectionPlacer {
 	private readonly labelFont: string;
+	private readonly documentFonts: boolean;
 	private readonly notationFont: string;
 	private readonly notationColor: string;
 	private readonly textColor: string;
@@ -101,6 +103,7 @@ export class DirectionPlacer {
 		opts: DirectionPlacerOptions,
 	) {
 		this.labelFont = opts.labelFont;
+		this.documentFonts = opts.documentFonts ?? false;
 		this.notationFont = opts.notationFont;
 		this.notationColor = opts.notationColor;
 		this.textColor = opts.textColor;
@@ -169,7 +172,7 @@ export class DirectionPlacer {
 				this.wordsAnchor(w),
 				w.placement,
 				{
-					font: this.labelFont,
+					font: this.faceOf(w.format),
 					size: WORDS_FONT_SIZE * (w.format?.scale ?? 1),
 					italic: w.format?.italic ?? false,
 					bold: w.format?.bold ?? false,
@@ -213,7 +216,7 @@ export class DirectionPlacer {
 							...this.decorationOf(d.format),
 						}
 					: {
-							font: this.labelFont,
+							font: this.faceOf(d.format),
 							size: WORDS_FONT_SIZE * (d.format?.scale ?? 1),
 							italic: d.format?.italic ?? true,
 							bold: d.format?.bold ?? false,
@@ -521,7 +524,7 @@ export class DirectionPlacer {
 		const size = REHEARSAL_FONT_SIZE * (format?.scale ?? 1);
 		this.context.save();
 		const font = {
-			family: this.labelFont,
+			family: this.faceOf(format),
 			size,
 			weight: (format?.bold ?? true) ? 'bold' : 'normal',
 			fontStyle: format?.italic ? 'italic' : 'normal',
@@ -870,6 +873,14 @@ export class DirectionPlacer {
 			return 'right';
 		}
 		return task.anchor instanceof TabNote ? 'center' : 'left';
+	}
+
+	/* The face text in the document's `format` is typed in: the face it names over the text
+	 * font under Config.documentFonts, else the text font. */
+	private faceOf(format: TextFormat | undefined): string {
+		return this.documentFonts
+			? FontFamilies.documentStack(format?.family ?? null, this.labelFont)
+			: this.labelFont;
 	}
 
 	/* The underlines and enclosure a document's `format` draws with a string, for a style. */
@@ -1262,6 +1273,9 @@ export interface DirectionReporter {
 export interface DirectionPlacerOptions {
 	/** The face beside-stave text is typed in. */
 	labelFont: string;
+	/** Type text in the face its document names, over labelFont (Config.documentFonts).
+	 * Absent means labelFont alone. */
+	documentFonts?: boolean;
 	/** The SMuFL face for markings that engrave as music (dynamics, segno/coda). */
 	notationFont: string;
 	notationColor: string;

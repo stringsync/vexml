@@ -1700,8 +1700,8 @@ export class ScoreReader {
 	}
 
 	/*
-	 * A text element's formatting attributes. `fallback` supplies the style and weight the
-	 * element leaves out (the word-font, for words). A size is read against `sizeBase`'s
+	 * A text element's formatting attributes. `fallback` supplies the face, style and weight
+	 * the element leaves out (the word-font, for words). A size is read against `sizeBase`'s
 	 * font-size, the document's default text size, so vexml keeps its own text sizes and a
 	 * size the document raises or lowers scales them by the same ratio.
 	 */
@@ -1719,6 +1719,7 @@ export class ScoreReader {
 			element.getAttribute('halign') ?? element.getAttribute('justify');
 		const underline = Number(element.getAttribute('underline') ?? 0);
 		return {
+			family: attr('font-family'),
 			italic: style === null ? null : style === 'italic',
 			bold: weight === null ? null : weight === 'bold',
 			scale: this.fontScaleOf(
@@ -2239,6 +2240,9 @@ export type Placement = 'above' | 'below';
  * unless told otherwise, a words direction upright and bare.
  */
 export type TextFormat = {
+	/** The MusicXML font-family the document names, a comma-separated list of faces; null for
+	 * none. Drawn only under Config.documentFonts. */
+	family: string | null;
 	italic: boolean | null;
 	bold: boolean | null;
 	/** The size as a ratio to the element's usual size; 1 when the document sets none. */

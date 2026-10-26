@@ -10,6 +10,14 @@ export type Config = {
 	 * drawn in it: `notation.color` the engraved glyphs (noteheads, stems, staves, clefs),
 	 * `text.color` the words vexml types (part labels, measure numbers, chord symbols). */
 	fonts: FontConfig;
+	/** Type words, dynamics, rehearsal marks and lyrics in the faces the MusicXML names
+	 * (default: false): each element's font-family, else the `<defaults>` word-font for words
+	 * and lyric-font for lyrics. A face the browser lacks falls back to the text font, and
+	 * exporters mostly name faces few machines have (Times New Roman being the common
+	 * exception), so this is off unless you want the document's look over a consistent one.
+	 * The notation font stays the one vexml engraves in: a document's music-font names a
+	 * non-SMuFL face it cannot draw with. */
+	documentFonts: boolean;
 	/** Device pixels per CSS pixel the score is painted at, or null for the screen's
 	 * `window.devicePixelRatio` (default: null). Set it to print sharper than the screen, e.g. 2–3
 	 * for pages exported with `Page.toBlob`; it costs canvas memory on screen too. */
@@ -369,6 +377,7 @@ export const DEFAULT_CONFIG: Config = {
 	// default from Google Fonts" and a named family as "already present", so filling it in
 	// here would stop the default text face from ever loading.
 	fonts: {},
+	documentFonts: false,
 	pixelRatio: null,
 	backgroundColor: null,
 	gaps: [],

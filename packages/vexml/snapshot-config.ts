@@ -21,6 +21,7 @@ export type SnapshotConfig = {
 	stretchSingleSystem: boolean;
 	maxSystemFill: number;
 	fonts: { notation: SnapshotFont; text: SnapshotFont };
+	documentFonts: boolean;
 	gaps: SnapshotGap[];
 };
 
@@ -76,6 +77,7 @@ export function snapshotConfig(config: Config): SnapshotConfig {
 			),
 			text: font(config.fonts.text, DEFAULT_FONT_CONFIG.text.family),
 		},
+		documentFonts: config.documentFonts,
 		gaps: config.gaps.map((gap) => ({
 			beforeMeasureIndex: gap.beforeMeasureIndex ?? null,
 			beforeBarIndex: gap.beforeBarIndex ?? null,

@@ -332,13 +332,14 @@ describe('ScoreReader', () => {
 		const measure = await measureOf(
 			'<direction><direction-type>' +
 				'<words>plain</words>' +
-				'<words font-style="italic" font-weight="bold" font-size="15" underline="2" ' +
+				'<words font-family="Times New Roman,serif" font-style="italic" font-weight="bold" font-size="15" underline="2" ' +
 				'enclosure="hexagon" justify="right">formatted</words>' +
 				'<words font-size="x-large" enclosure="star" halign="center" justify="right">named</words>' +
 				'</direction-type></direction>',
 		);
 		expect(reader.wordsOf(measure).map((w) => w.format)).toEqual([
 			{
+				family: null,
 				italic: null,
 				bold: null,
 				scale: 1,
@@ -348,6 +349,7 @@ describe('ScoreReader', () => {
 			},
 			// 15pt against the 10pt default text size.
 			{
+				family: 'Times New Roman,serif',
 				italic: true,
 				bold: true,
 				scale: 1.5,
@@ -357,6 +359,7 @@ describe('ScoreReader', () => {
 			},
 			// An unknown shape draws none, and halign wins over justify.
 			{
+				family: null,
 				italic: null,
 				bold: null,
 				scale: 1.5,

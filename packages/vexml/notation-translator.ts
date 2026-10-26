@@ -1,4 +1,11 @@
-import type { Chord, Lyric, Note, Technical } from '@stringsync/mdom';
+import {
+	type Chord,
+	type Lyric,
+	type MElement,
+	type Note,
+	Score,
+	type Technical,
+} from '@stringsync/mdom';
 import {
 	Modifier,
 	Ornament,
@@ -9,6 +16,7 @@ import {
 import { ACCIDENTAL_CODES } from './chord-translator';
 import { FERMATA_GLYPHS } from './fermata-glyphs';
 import { FingeringAnnotation } from './fingering-annotation';
+import { FontFamilies } from './font-families';
 import { LyricAnnotation } from './lyric-annotation';
 import { NonArpeggioBracket } from './non-arpeggio-bracket';
 import { NoteheadArticulation } from './notehead-articulation';
@@ -26,6 +34,11 @@ import { UnbrokenArpeggio } from './unbroken-arpeggio';
  * touches the notehead: the note is finished before any of this lands on it.
  */
 export class NotationTranslator {
+	// Each score's `<defaults><lyric-font>`s, read once per score.
+	private readonly lyricFonts = new WeakMap<Score, MElement[]>();
+
+	constructor(private readonly opts: NotationTranslatorOptions = {}) {}
+
 	/* Attach everything `chord` asks for to the StaveNote built from it. */
 	attach(staveNote: StaveNote, chord: Chord): void {
 		const lead = chord.lead;
@@ -329,9 +342,59 @@ export class NotationTranslator {
 			const hyphen = syllabic === 'begin' || syllabic === 'middle' ? '-' : '';
 			const text = (this.syllableOf(verse) || this.soundOf(verse)) + hyphen;
 			if (text) {
-				staveNote.addModifier(new LyricAnnotation(text, index, verse.extend));
+				staveNote.addModifier(
+					new LyricAnnotation(
+						text,
+						index,
+						verse.extend,
+						this.lyricFaceOf(verse),
+					),
+				);
 			}
 		});
+	}
+
+	/*
+	 * The face a verse is typed in under NotationTranslatorOptions.documentFonts: its first
+	 * <text>'s font-family, else the score's lyric-font for its number or name, else the one
+	 * that names neither; over the text font. Undefined leaves the annotation's own face.
+	 */
+	private lyricFaceOf(verse: Lyric): string | undefined {
+		const { documentFonts } = this.opts;
+		if (!documentFonts) {
+			return undefined;
+		}
+		const fonts = this.lyricFontsOf(verse);
+		const number = verse.getAttribute('number');
+		const name = verse.getAttribute('name');
+		const font =
+			fonts.find(
+				(f) =>
+					(number !== null && f.getAttribute('number') === number) ||
+					(name !== null && f.getAttribute('name') === name),
+			) ??
+			fonts.find(
+				(f) =>
+					f.getAttribute('number') === null && f.getAttribute('name') === null,
+			);
+		const family =
+			verse.child('text')?.getAttribute('font-family') ??
+			font?.getAttribute('font-family') ??
+			null;
+		return FontFamilies.documentStack(family, documentFonts.textFont);
+	}
+
+	private lyricFontsOf(verse: Lyric): MElement[] {
+		const score = verse.closest(Score);
+		if (!score) {
+			return [];
+		}
+		let fonts = this.lyricFonts.get(score);
+		if (!fonts) {
+			fonts = score.child('defaults')?.childrenNamed('lyric-font') ?? [];
+			this.lyricFonts.set(score, fonts);
+		}
+		return fonts;
 	}
 
 	/*
@@ -595,4 +658,10 @@ function arrowCode(mark: Technical): string | undefined {
 		base = head ? 0xeb88 : 0xeb70; // arrowheadOpenUp / arrowOpenUp
 	}
 	return String.fromCharCode(base + direction);
+}
+
+export interface NotationTranslatorOptions {
+	/** Type lyrics in the faces their document names (Config.documentFonts), over `textFont`,
+	 * the configured text stack. Absent means vexml's own face. */
+	documentFonts?: { textFont: string };
 }

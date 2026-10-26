@@ -35,6 +35,7 @@ import { SpillTracker } from './spill-tracker';
 describe('DirectionPlacer', () => {
 	// A text element that asks for no formatting of its own.
 	const PLAIN: TextFormat = {
+		family: null,
 		italic: null,
 		bold: null,
 		scale: 1,

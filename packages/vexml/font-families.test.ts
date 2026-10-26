@@ -30,4 +30,24 @@ describe('FontFamilies', () => {
 			text: 'Inter',
 		});
 	});
+
+	it('stacks a document face over the configured one, keeping CSS generics bare', () => {
+		const fallback = "'Source Sans 3', sans-serif";
+		expect(FontFamilies.documentStack('Times New Roman,serif', fallback)).toBe(
+			"'Times New Roman', serif, 'Source Sans 3', sans-serif",
+		);
+		expect(FontFamilies.documentStack("Plan'tin; x", fallback)).toBe(
+			"'Plantin; x', 'Source Sans 3', sans-serif",
+		);
+	});
+
+	it('drops MusicXML generic names, leaving the configured face when nothing is left', () => {
+		const fallback = "'Source Sans 3', sans-serif";
+		expect(FontFamilies.documentStack('Maestro,music', fallback)).toBe(
+			"'Maestro', 'Source Sans 3', sans-serif",
+		);
+		expect(FontFamilies.documentStack('engraved', fallback)).toBe(fallback);
+		expect(FontFamilies.documentStack(null, fallback)).toBe(fallback);
+		expect(FontFamilies.documentStack(' , ', fallback)).toBe(fallback);
+	});
 });

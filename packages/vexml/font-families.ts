@@ -34,6 +34,22 @@ export class FontFamilies {
 	}
 
 	/**
+	 * A MusicXML font-family (a comma-separated list of faces) as a CSS font-family list that
+	 * falls back to `fallback`, the configured face, for a face the browser lacks: "Times New
+	 * Roman,serif" over the text stack is `'Times New Roman', serif, 'Source Sans 3',
+	 * sans-serif`. MusicXML's own generic names (music, engraved, handwritten) name no CSS
+	 * face, so they drop out; `fallback` alone when nothing is left.
+	 */
+	static documentStack(family: string | null, fallback: string): string {
+		const faces = (family ?? '')
+			.split(',')
+			.map((face) => FontFamilies.sanitize(face).trim())
+			.filter((face) => face && !MUSICXML_GENERIC_FACES.has(face))
+			.map((face) => (CSS_GENERIC_FACES.has(face) ? face : `'${face}'`));
+		return faces.length === 0 ? fallback : `${faces.join(', ')}, ${fallback}`;
+	}
+
+	/**
 	 * Make a font family or url safe to interpolate into a quoted CSS string, so it can't
 	 * break out of its quotes and inject rules. Spaces stay, so names like "Source Sans 3"
 	 * survive.
@@ -45,3 +61,16 @@ export class FontFamilies {
 		return value.replace(/['"\\<>\r\n\f\t\0]/g, '');
 	}
 }
+
+// The generic families MusicXML's font-family adds to CSS's, which no browser knows.
+const MUSICXML_GENERIC_FACES = new Set(['music', 'engraved', 'handwritten']);
+
+// CSS's generic families, which go unquoted: a quoted 'serif' names a face called "serif".
+const CSS_GENERIC_FACES = new Set([
+	'serif',
+	'sans-serif',
+	'cursive',
+	'fantasy',
+	'monospace',
+	'system-ui',
+]);

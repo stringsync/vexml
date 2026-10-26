@@ -16,8 +16,8 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 272 drawn, 69 ignored, 101 missing; vexml draws 272 of the 373 that show on the page (73%).
-Attributes: 76 drawn, 5 ignored, 37 missing.
+Elements: 273 drawn, 69 ignored, 100 missing; vexml draws 273 of the 373 that show on the page (73%).
+Attributes: 77 drawn, 5 ignored, 36 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -26,7 +26,7 @@ Attributes: 76 drawn, 5 ignored, 37 missing.
 | `*@default-x` | missing | task #20 (later task in that lane); mdom raw only |
 | `*@default-y` | missing | task #20 (later task in that lane); mdom raw only |
 | `*@enclosure` | drawn | `text_formatting.musicxml` M6-M13, M16-M18: every shape around words, rehearsal marks and dynamics; rehearsal still boxed by default |
-| `*@font-family` | missing | task #48; vexml types text in its configured face; mdom raw only |
+| `*@font-family` | drawn | `text_font_family.musicxml` M2-M6, under the documentFonts setting (off by default, when vexml's text face is used): words, rehearsal marks, other-dynamics text and lyrics in the face named, falling back to the text face for one the browser lacks; SMuFL dynamics keep the notation font |
 | `*@font-size` | drawn | `text_formatting.musicxml` M4: words, rehearsal and other-dynamics text, scaled against the word-font size; SMuFL dynamics and lyrics task #51 |
 | `*@font-style` | drawn | `text_formatting.musicxml` M1-M2, M19: words upright unless italic, other-dynamics italic unless normal |
 | `*@font-weight` | drawn | `text_formatting.musicxml` M3, M17: words, rehearsal marks and other-dynamics text |
@@ -272,7 +272,7 @@ Attributes: 76 drawn, 5 ignored, 37 missing.
 | `lyric` | drawn | `lyrics.musicxml` |
 | `lyric@justify` | missing | task #38; syllable justification ignored; mdom raw only |
 | `lyric@number` | drawn | `lyrics.musicxml`, `lyrics_two_voices.musicxml`: verse order sets the row |
-| `lyric-font` | missing | task #51; lyric typeface and size from defaults; mdom raw only |
+| `lyric-font` | drawn | `text_font_family.musicxml` M6: its face for lyrics under the documentFonts setting, by verse number or name; its size task #51 |
 | `lyric-language` | ignored | metadata |
 | `measure` | drawn | `measures_two.musicxml` |
 | `measure@implicit` | drawn | `pickup_measure.musicxml`: pickup sized to its content |
@@ -317,7 +317,7 @@ Attributes: 76 drawn, 5 ignored, 37 missing.
 | `mp` | drawn | `dynamics.musicxml` |
 | `multiple-rest` | drawn | `rest_multi_measure.musicxml` |
 | `multiple-rest@use-symbols` | missing | task #38; old-style rest symbols not drawn; mdom raw only |
-| `music-font` | missing | task #51; notation typeface and size from defaults; mdom raw only |
+| `music-font` | missing | task #51 for its size; its face stays unused on purpose, since vexml engraves in SMuFL Bravura and exporters name non-SMuFL faces (Maestro, Opus); mdom raw only |
 | `mute` | ignored | sound only |
 | `n` | drawn | `dynamics.musicxml` |
 | `natural` | drawn | `harmonic.musicxml`: drawn as the default harmonic, artificial not told apart |
@@ -576,7 +576,7 @@ Attributes: 76 drawn, 5 ignored, 37 missing.
 | `wedge@type` | drawn | `wedges.musicxml`: crescendo and diminuendo hairpins |
 | `with-bar` | drawn | `tab_bend.musicxml` M6-M7: dip and scoop glyphs, else "w/bar" text |
 | `wood` | missing | task #16; mdom raw only |
-| `word-font` | drawn | `text_formatting.musicxml`: its style and weight are the words default, its size the base text sizes scale against; its face task #48 |
+| `word-font` | drawn | `text_formatting.musicxml`: its style and weight are the words default, its size the base text sizes scale against; `text_font_family.musicxml` M1: its face, under the documentFonts setting |
 | `words` | drawn | `words.musicxml` |
 | `work` | drawn | `header_catalog.musicxml`: its work-title |
 | `work-number` | drawn | `header_catalog.musicxml`: a subtitle under the work title in the catalog fallback |
