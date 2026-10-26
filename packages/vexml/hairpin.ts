@@ -6,6 +6,9 @@ import {
 	HAIRPIN_STAVE_GAP,
 } from './constants';
 
+// MusicXML's default <wedge spread>, in tenths.
+const DEFAULT_SPREAD = 15;
+
 /*
  * A crescendo/diminuendo hairpin between two notes, drawn at a fixed gap from the staff on
  * the side its <wedge> placement names. vexflow's own StaveHairpin derives its y from the
@@ -13,6 +16,9 @@ import {
  * wedge inside the staff: the offset needed to correct it is more code (and more coupling
  * to those constants) than the three lines the shape actually is. Drawn via
  * setContext().draw() like the other spanners.
+ *
+ * A <wedge spread> sets the mouth's height; the band keeps its center where the
+ * default height puts it, so a wider or narrower wedge still lines up with its neighbours.
  */
 export class Hairpin {
 	private context?: RenderContext;
@@ -23,6 +29,7 @@ export class Hairpin {
 		private readonly placement: 'above' | 'below',
 		private readonly dash: number[] | null = null,
 		private readonly niente = false,
+		private readonly spread: number | null = null,
 	) {}
 	/*
 	 * Extra distance from the staff, set by the caller when the fixed gap would put the wedge
@@ -56,14 +63,23 @@ export class Hairpin {
 	/** The band the wedge occupies, for the caller's page crop and clearance check. */
 	get bounds(): { top: number; bottom: number } {
 		const stave = this.stave;
-		const top =
+		const center =
 			this.placement === 'above'
 				? stave.getYForLine(0) -
 					HAIRPIN_STAVE_GAP -
-					HAIRPIN_HEIGHT -
+					HAIRPIN_HEIGHT / 2 -
 					this.offset
-				: stave.getBottomLineY() + HAIRPIN_STAVE_GAP + this.offset;
-		return { top, bottom: top + HAIRPIN_HEIGHT };
+				: stave.getBottomLineY() +
+					HAIRPIN_STAVE_GAP +
+					HAIRPIN_HEIGHT / 2 +
+					this.offset;
+		// vexml's default mouth stands for MusicXML's default spread, so a score that writes
+		// 15 tenths everywhere keeps it and other spreads scale from there.
+		const height =
+			this.spread === null
+				? HAIRPIN_HEIGHT
+				: (this.spread / DEFAULT_SPREAD) * HAIRPIN_HEIGHT;
+		return { top: center - height / 2, bottom: center + height / 2 };
 	}
 	/** The box the wedge is drawn in: the band above, over the notes it spans. */
 	get rect(): Rect {

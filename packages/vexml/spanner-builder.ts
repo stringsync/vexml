@@ -5,7 +5,7 @@ import {
 	Curve,
 	type CurveOptions,
 	Modifier,
-	PedalMarking,
+	type PedalMarking,
 	type Stave,
 	type StaveNote,
 	type StaveTie,
@@ -47,6 +47,7 @@ import { HeadCurve } from './head-curve';
 import { Ink } from './ink';
 import { NotationSlide } from './notation-slide';
 import { NoteheadArticulation } from './notehead-articulation';
+import { PedalLine } from './pedal-line';
 import { lineDashOf, type PedalMark, type WedgeMark } from './score-reader';
 import { SingleSlide } from './single-slide';
 import { TabCurve } from './tab-curve';
@@ -715,6 +716,11 @@ export class SpannerBuilder {
 			) {
 				continue;
 			}
+			// The mouth is the wider end; an exporter that writes the spread on the wrong end
+			// still sizes it.
+			const spreads = [from.spread, marker.spread].filter(
+				(spread): spread is number => spread !== null,
+			);
 			wedges.push(
 				new Hairpin(
 					firstNote,
@@ -723,6 +729,7 @@ export class SpannerBuilder {
 					from.placement,
 					from.dash ?? marker.dash,
 					from.niente || marker.niente,
+					spreads.length > 0 ? Math.max(...spreads) : null,
 				).setLineWidth(this.appearance.lineWidth('wedge')),
 			);
 		}
@@ -770,16 +777,16 @@ export class SpannerBuilder {
 	}
 
 	/*
-	 * Sustain pedals (<direction><pedal>): a start..stop pair drawn as a vexflow
-	 * PedalMarking under the stave: the "Ped…*" text by default, or a bracket line
-	 * when the MusicXML carries line="yes". Paired by `number` and resolved over the
-	 * whole score (a pedal can span barlines) like the other spanners; the markers
-	 * arrive in document order, so each stop closes the matching open start.
-	 * ponytail: a pedal whose stop wraps onto a later system isn't split; vexflow
-	 * throws on descending x, so a wrapping pedal would need the partial-span handling
-	 * buildTies uses; add it if a fixture needs one.
+	 * Pedals (<direction><pedal>): a start..stop pair, with any changes between, drawn as a
+	 * PedalLine under the stave: the "Ped…*" signs by default, a bracket line when the
+	 * MusicXML carries line="yes", or both under sign="yes". Paired by `number` and resolved
+	 * over the whole score (a pedal can span barlines) like the other spanners; the markers
+	 * arrive in document order, so each stop closes the matching open start, and a change
+	 * re-pedals the one open under its number.
+	 * ponytail: a pedal whose stop wraps onto a later system isn't split; it would need the
+	 * partial-span handling buildTies uses; add it if a fixture needs one.
 	 *
-	 * Each marking comes back with the notes it covers so the caller can drop it clear
+	 * Each line comes back with the notes it covers so the caller can drop it clear
 	 * of any that reach down into its band (see DrawPass.finishPass).
 	 */
 	buildPedals(
@@ -789,31 +796,45 @@ export class SpannerBuilder {
 		scope: SpanScope = WHOLE_SCORE,
 	): { marking: PedalMarking; notes: StaveNote[] }[] {
 		const pedals: { marking: PedalMarking; notes: StaveNote[] }[] = [];
-		const open = new Map<string, { note: StaveNote; line: boolean }>();
+		const open = new Map<
+			string,
+			{ note: StaveNote; mark: PedalMark; changes: StaveNote[] }
+		>();
 		for (const marker of markers) {
 			const staveNote = byLead.get(marker.lead);
 			if (!staveNote) {
 				continue;
 			}
 			if (marker.type === 'start') {
-				open.set(marker.number, { note: staveNote, line: marker.line });
-			} else {
-				const from = open.get(marker.number);
-				open.delete(marker.number);
-				if (!from || !scope.owns(from.note, staveNote)) {
-					continue;
-				}
-				const marking = PedalMarking.createSustain([from.note, staveNote]);
-				// vexflow paints a pedal in its own black, over the context's notation ink.
-				marking.renderOptions.color = Ink.NOTATION;
-				if (from.line) {
-					marking.setType(PedalMarking.type.BRACKET);
-				}
-				pedals.push({
-					marking,
-					notes: this.pedalSpan(chords, byLead, from.note, staveNote),
-				});
+				open.set(marker.number, { note: staveNote, mark: marker, changes: [] });
+				continue;
 			}
+			const from = open.get(marker.number);
+			if (marker.type === 'change') {
+				// A change on the note the pedal went down on has nothing to lift.
+				if (from && from.note !== staveNote) {
+					from.changes.push(staveNote);
+				}
+				continue;
+			}
+			open.delete(marker.number);
+			if (!from || !scope.owns(from.note, staveNote)) {
+				continue;
+			}
+			const marking = new PedalLine(from.note, from.changes, staveNote, {
+				line: from.mark.line,
+				sign: from.mark.sign,
+				abbreviated: from.mark.abbreviated,
+				sostenuto: from.mark.sostenuto,
+				resumed: from.mark.unmarked,
+				discontinued: marker.unmarked,
+			});
+			// vexflow paints a pedal in its own black, over the context's notation ink.
+			marking.renderOptions.color = Ink.NOTATION;
+			pedals.push({
+				marking,
+				notes: this.pedalSpan(chords, byLead, from.note, staveNote),
+			});
 		}
 		return pedals;
 	}

@@ -124,7 +124,7 @@ Two rules cut across the draw stage:
 - **Ties, slurs**: `spanner-builder.ts`, `spanner-resolver.ts`, `crisp-curve.ts`, `head-curve.ts`, `tab-curve.ts` (the arcs), `dashed-tie.ts` (a dashed or dotted tie), `score-reader.ts` (`lineDashOf`: `line-type`, `dash-length` and `space-length` to a dash array, shared by every spanner)
 - **Spanners across a system break**: `spanner-resolver.ts` (`resolveSystem`: each system draws the spanners whose later end it holds, from a window of chords back to the oldest open start; hairpins wait for the bows on their stave), `spanner-builder.ts` (`SpanScope`, `reach`)
 - **Hammer-ons, pull-offs, slides, glissandos**: `spanner-builder.ts`, `spanner-resolver.ts`, `notation-slide.ts`, `single-slide.ts`, `crisp-tab-slide.ts`, `tab-slide-line.ts` (the lines)
-- **Ottava (8va) brackets, pedal lines, hairpins/wedges, bracket-and-dashes lines**: `spanner-resolver.ts`, `score-reader.ts`, `hairpin.ts` (the wedge glyph, its dash and niente circle)
+- **Ottava (8va) brackets, pedal lines, hairpins/wedges, bracket-and-dashes lines**: `spanner-resolver.ts`, `score-reader.ts`, `hairpin.ts` (the wedge glyph, its dash, niente circle and spread), `pedal-line.ts` (pedal signs and lines: changes, sostenuto, abbreviated, resume and discontinue)
 
 ## Text and marks around the stave
 

@@ -1214,6 +1214,10 @@ describe('render', () => {
 	// - M9: a below diminuendo over three B4s with a below "espressivo" on the first note
 	//   (Beethoven, An die ferne Geliebte m. 9). The hairpin keeps its place at the staff and
 	//   the words sit under it, clear of the wedge, rather than printed through it.
+	// - M10: a below crescendo whose stop carries spread="30", twice MusicXML's default 15
+	//   (the default draws vexml's usual mouth): its mouth opens twice as wide as M4's.
+	// - M11: a below diminuendo opening at spread="7", about half the default: a narrow
+	//   mouth closing to its point. Both keep the center line of the default band.
 	// ponytail: a hairpin that wraps across a system break isn't split into two partials the
 	// way a tie or slur is; no fixture reaches that yet.
 	it.concurrent('renders wedges.png', async () => {
@@ -2144,6 +2148,17 @@ describe('render', () => {
 	//   and ledger lines hang down into the pedal's default band. The "Ped."/"*" glyphs are
 	//   dropped clear below them instead of printing through the notes; M1's pedal, over
 	//   mid-staff notes, stays at the default height as the control.
+	// - M4: a bracket pedal with a type="change" before the third note: the line runs on
+	//   and rises into a "^" notch there (the pedal lifts and goes straight back down).
+	// - M5: the same change on a text pedal: "Ped." under the first note, "*" just before
+	//   the third and "Ped." again under it, "*" at the end.
+	// - M6: line="yes" sign="yes": "Ped." under the first note, then the line running on
+	//   from after it to the closing hook.
+	// - M7: abbreviated="yes": "P." in place of "Ped.", the usual "*" release.
+	// - M8: type="sostenuto": "Sost. Ped." under the first note, "*" at the end.
+	// - M9-M10: a bracket pedal ended with type="discontinue", its line stopping with no
+	//   closing hook, then picked up with type="resume", its line starting with no opening
+	//   hook and closed by a stop's hook. Wraps to its own system.
 	it.concurrent('renders pedal.png', async () => {
 		expect(await testing.render('pedal.musicxml')).toMatchScreenshot(
 			'pedal.png',

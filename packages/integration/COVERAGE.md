@@ -347,7 +347,7 @@ are picked by hand.
 | `octave-change` | ignored | sound only: transposition, written pitch is drawn |
 | `octave-shift` | drawn | `octave_shift.musicxml` |
 | `octave-shift@size` | drawn | `octave_shift.musicxml`: 8va and 15ma |
-| `offset` | missing | task #38; shift a direction or harmony off its note by divisions; mdom raw only |
+| `offset` | missing | shift a direction or harmony off its note by divisions; mdom raw only |
 | `open` | drawn | `technical_marks.musicxml` M24: brassMuteOpen, or the glyph its smufl names |
 | `open-string` | drawn | `technical_marks.musicxml` |
 | `opus` | ignored | a link to an opus document, nothing printed |
@@ -383,10 +383,10 @@ are picked by hand.
 | `part-symbol` | drawn | `clef_notation_and_tab_bracket.musicxml` |
 | `part-transpose` | ignored | for-part: applies to extracted transposed parts only |
 | `pedal` | drawn | `pedal.musicxml` |
-| `pedal@abbreviated` | missing | task #38; abbreviated pedal sign not drawn; mdom raw only |
+| `pedal@abbreviated` | drawn | `pedal.musicxml` M7: "P." for "Ped." |
 | `pedal@line` | drawn | `pedal.musicxml`: bracket line vs Ped. text |
-| `pedal@sign` | missing | task #38; line plus sign (mixed) form not drawn; mdom raw only |
-| `pedal@type` | drawn | `pedal.musicxml`: start/stop only; change, continue, sostenuto, discontinue ignored |
+| `pedal@sign` | drawn | `pedal.musicxml` M6: "Ped." opening a bracket line |
+| `pedal@type` | drawn | `pedal.musicxml`: start/stop, change M4-M5, sostenuto M8, discontinue and resume M9-M10; continue restates a pedal at a system break and draws nothing |
 | `pedal-alter` | drawn | `harp_pedals.musicxml`: sets each string of the harp pedal diagram |
 | `pedal-step` | drawn | `harp_pedals.musicxml`: sets each string of the harp pedal diagram |
 | `pedal-tuning` | drawn | `harp_pedals.musicxml`: sets each string of the harp pedal diagram |
@@ -456,7 +456,7 @@ are picked by hand.
 | `slide` | drawn | `slide_in.musicxml`, `tab_slide.musicxml` |
 | `slide@line-type` | drawn | `spanner_line_types.musicxml` M7: notation slides; tab slides stay solid |
 | `slur` | drawn | `slur_default.musicxml` |
-| `slur@bezier-x` | missing | task #38; document curve control points ignored; mdom raw only |
+| `slur@bezier-x` | missing | task #66; document curve control points ignored; mdom raw only |
 | `slur@orientation` | drawn | `spanner_line_types.musicxml` M5: over/under when placement is absent |
 | `smear` | drawn | `technical_marks.musicxml` M23 |
 | `snap-pizzicato` | drawn | `technical_marks.musicxml` |
@@ -569,7 +569,7 @@ are picked by hand.
 | `wavy-line` | drawn | `tab_vibrato.musicxml`: vibrato on tab and trill extension line |
 | `wedge` | drawn | `wedges.musicxml` |
 | `wedge@niente` | drawn | `spanner_line_types.musicxml` M9-M10: a circle at the point |
-| `wedge@spread` | missing | task #38; hairpin opening fixed; mdom raw only |
+| `wedge@spread` | drawn | `wedges.musicxml` M10-M11: the mouth's opening, scaled from the default 15 |
 | `wedge@type` | drawn | `wedges.musicxml`: crescendo and diminuendo hairpins |
 | `with-bar` | drawn | `tab_bend.musicxml` M6-M7: dip and scoop glyphs, else "w/bar" text |
 | `wood` | drawn | `direction_pictograms.musicxml` M1: SMuFL pictogram |

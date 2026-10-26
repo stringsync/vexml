@@ -1280,26 +1280,46 @@ export class ScoreReader {
 	}
 
 	/*
-	 * A measure's pedal markers, in document order: a "start" binds to the next note
-	 * (the pedal goes down there), a "stop" to the previous note (the last note still
-	 * held). Directions sit between notes, so walk the children tracking the last lead
-	 * and any starts pending a note.
-	 * ponytail: only start/stop handled; change/continue/sostenuto/discontinue
-	 * pedal directions are ignored; add them if a fixture needs a re-pedal or sostenuto.
+	 * A measure's pedal markers, in document order: a start (or a sostenuto or resume)
+	 * binds to the next note (the pedal goes down there), a stop (or a discontinue) to the
+	 * previous note (the last note still held), and a change to the note it re-pedals on.
+	 * Directions sit between notes, so each marker reads the notes either side of it.
+	 *
+	 * The type is read raw because mdom types neither discontinue nor resume. A resume
+	 * picks a line up without a new down mark and a discontinue drops it without a release
+	 * mark, so both carry `unmarked`. A continue only restates a pedal across a system
+	 * break, and is skipped like a wedge's.
 	 */
 	pedalsOf(measure: Measure): PedalMark[] {
 		const out: PedalMark[] = [];
 		for (const direction of measure.directions) {
 			for (const pedal of direction.pedals) {
-				const type = pedal.pedalType;
-				if (type !== 'start' && type !== 'stop') {
+				const raw = pedal.getAttribute('type');
+				const type = PEDAL_TYPES[raw ?? ''];
+				if (!type) {
 					continue;
 				}
 				const lead =
-					type === 'start' ? direction.nextNote : direction.previousNote;
-				if (lead) {
-					out.push({ lead, type, number: pedal.number, line: pedal.line });
+					type === 'stop'
+						? direction.previousNote
+						: (direction.nextNote ??
+							(type === 'change' ? direction.previousNote : null));
+				if (!lead) {
+					continue;
 				}
+				const line = pedal.line;
+				const sign = pedal.getAttribute('sign');
+				out.push({
+					lead,
+					type,
+					number: pedal.number,
+					line,
+					// MusicXML: the signs show by default only when there is no line.
+					sign: sign === null ? !line : sign === 'yes',
+					abbreviated: pedal.getAttribute('abbreviated') === 'yes',
+					sostenuto: raw === 'sostenuto',
+					unmarked: raw === 'resume' || raw === 'discontinue',
+				});
 			}
 		}
 		return out;
@@ -1348,6 +1368,7 @@ export class ScoreReader {
 					placement: this.placementOf(direction, 'below'),
 					dash: lineDashOf(wedge),
 					niente: wedge.getAttribute('niente') === 'yes',
+					spread: Number.parseFloat(wedge.getAttribute('spread') ?? '') || null,
 				});
 			}
 		}
@@ -2925,13 +2946,29 @@ export type Pictogram =
 	| { kind: 'accordion'; high: boolean; middle: number; low: boolean };
 
 // A <direction><direction-type><pedal> spanner marker, bound to the lead note it
-// anchors. `line` carries the MusicXML line="yes" flag (bracket pedal vs. the
-// default "Ped…*" text); it rides on every marker so the stop knows the style.
+// anchors. `line` is line="yes" (a bracket line rather than the "Ped…*" signs) and `sign`
+// whether the signs print, with the line or instead of it; `abbreviated` prints "P." for
+// "Ped.". `sostenuto` marks a start that downs the sostenuto pedal ("Sost. Ped."), and
+// `unmarked` an end drawn with no sign or hook: a resume's start or a discontinue's stop.
 export type PedalMark = {
 	lead: Note;
-	type: 'start' | 'stop';
+	type: 'start' | 'change' | 'stop';
 	number: string;
 	line: boolean;
+	sign: boolean;
+	abbreviated: boolean;
+	sostenuto: boolean;
+	unmarked: boolean;
+};
+
+// Each MusicXML <pedal type> as the end of a span it marks.
+const PEDAL_TYPES: Record<string, PedalMark['type'] | undefined> = {
+	start: 'start',
+	sostenuto: 'start',
+	resume: 'start',
+	change: 'change',
+	stop: 'stop',
+	discontinue: 'stop',
 };
 
 // A <direction><direction-type><wedge> (hairpin) marker, bound to the lead note it anchors
@@ -2947,6 +2984,9 @@ export type WedgeMark = {
 	dash: number[] | null;
 	/* The hairpin's point is a circle, not a vertex (<wedge niente="yes"> on its point end). */
 	niente: boolean;
+	// <wedge spread> in tenths, or null when this end doesn't say. MusicXML puts the mouth's
+	// spread on the crescendo's stop or the diminuendo's start and 0 on the point's end.
+	spread: number | null;
 };
 
 /*
