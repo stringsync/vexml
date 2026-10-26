@@ -38,6 +38,7 @@ import {
 import { CrispCurve, CURVE_THICKNESS } from './crisp-curve';
 import { CrispTabSlide } from './crisp-tab-slide';
 import { DashedTie } from './dashed-tie';
+import { DisplayTuplet, type TupletNoteValue } from './display-tuplet';
 import { Hairpin } from './hairpin';
 import { HeadCurve } from './head-curve';
 import { Ink } from './ink';
@@ -247,6 +248,7 @@ export class SpannerBuilder {
 				maxDepth: number;
 				placement: string | null;
 				display: TupletDisplay | null;
+				lead: Note;
 			}
 		>();
 		chords.forEach((chord, i) => {
@@ -263,6 +265,7 @@ export class SpannerBuilder {
 						maxDepth: depth,
 						placement: tuplet.placement,
 						display: this.tupletDisplay(tuplet),
+						lead: chord.lead,
 					});
 					continue;
 				}
@@ -271,7 +274,7 @@ export class SpannerBuilder {
 					continue;
 				}
 				open.delete(number);
-				const { start, depth, maxDepth, placement, display } = opened;
+				const { start, depth, maxDepth, placement, display, lead } = opened;
 				const group = chords
 					.slice(start, i + 1)
 					.map((c) => byLead.get(c.lead))
@@ -291,8 +294,13 @@ export class SpannerBuilder {
 						? Tuplet.LOCATION_BOTTOM
 						: Tuplet.LOCATION_TOP;
 					tuplets.push(
-						new Tuplet(group, {
+						new DisplayTuplet(group, {
 							location,
+							showNumber: display?.showNumber ?? null,
+							showType: display?.showType ?? null,
+							actualValue: display?.actualValue ?? tupletNoteValue(lead),
+							normalValue: display?.normalValue ?? rawNormalValue(lead),
+							curved: display?.curved ?? false,
 							// Signed the way vexflow's own nesting offset is: away from the stave.
 							yOffset:
 								(maxDepth - depth) * TUPLET_NESTING_EXTRA_GAP * -location,
@@ -1623,6 +1631,11 @@ export class SpannerBuilder {
 			notesOccupied: marker.normal?.number ?? null,
 			ratioed: marker.showNumber === 'both',
 			bracketed: marker.bracket,
+			showNumber: marker.showNumber,
+			showType: marker.showType,
+			actualValue: displayValue(marker.actual),
+			normalValue: displayValue(marker.normal),
+			curved: marker.getAttribute('line-shape') === 'curved',
 		};
 	}
 }
@@ -1656,12 +1669,15 @@ export type SlurCurve = {
  * vexflow to infer it from whether the group is beamed. Nulls mean "not stated": the caller
  * falls back to the <time-modification> ratio and vexflow's own bracket rule.
  *
- * ponytail: show-number="none" (a bracket with no numeral) and show-type (the note-value
- * glyphs some publishers print beside the number) are ignored. vexflow's Tuplet always draws
- * its text and splits the bracket around it, so either would need a draw() override; no
- * fixture asks for them yet.
+ * show-number="none", show-type (note-value glyphs beside the number) and line-shape="curved"
+ * are drawn by DisplayTuplet.
  */
 type TupletDisplay = {
+	showNumber: 'actual' | 'both' | 'none' | null;
+	showType: 'actual' | 'both' | 'none' | null;
+	actualValue: TupletNoteValue | null;
+	normalValue: TupletNoteValue | null;
+	curved: boolean;
 	numNotes: number | null;
 	notesOccupied: number | null;
 	ratioed: boolean;
@@ -1718,4 +1734,29 @@ function beamStem(notes: readonly StaveNote[]): number {
 		}
 	}
 	return sum >= 0 ? Stem.DOWN : Stem.UP;
+}
+
+/* A <tuplet-actual>/<tuplet-normal> block's note value, or null when it names no type. */
+function displayValue(
+	side: { type: string | null; dots: number } | null,
+): TupletNoteValue | null {
+	return side?.type ? { type: side.type, dots: side.dots } : null;
+}
+
+/* The note's own written value, which <tuplet-actual> falls back to. */
+function tupletNoteValue(note: Note): TupletNoteValue | null {
+	return note.type ? { type: note.type, dots: note.dots } : null;
+}
+
+/*
+ * The <time-modification> <normal-type>/<normal-dot> value, which mdom keeps raw; without it
+ * the normal side prints the note's own value.
+ */
+function rawNormalValue(note: Note): TupletNoteValue | null {
+	const modification = note.child('time-modification');
+	const type = modification?.child('normal-type')?.text?.trim();
+	if (!type) {
+		return tupletNoteValue(note);
+	}
+	return { type, dots: modification?.childrenNamed('normal-dot').length ?? 0 };
 }

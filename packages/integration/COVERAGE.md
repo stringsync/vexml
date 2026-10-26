@@ -16,8 +16,8 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 278 drawn, 69 ignored, 95 missing; vexml draws 278 of the 373 that show on the page (75%).
-Attributes: 79 drawn, 5 ignored, 34 missing.
+Elements: 282 drawn, 69 ignored, 91 missing; vexml draws 282 of the 373 that show on the page (76%).
+Attributes: 81 drawn, 5 ignored, 32 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -323,9 +323,9 @@ Attributes: 79 drawn, 5 ignored, 34 missing.
 | `natural` | drawn | `harmonic.musicxml`: drawn as the default harmonic, artificial not told apart |
 | `non-arpeggiate` | drawn | `non_arpeggiate.musicxml` |
 | `non-arpeggiate@type` | drawn | `non_arpeggiate.musicxml`: bracket from bottom to top member |
-| `normal-dot` | missing | task #31; tuplet show-type note-value glyphs; mdom raw only |
+| `normal-dot` | drawn | `tuplet_display.musicxml`: dots on the normal-side glyph (show-type="both") |
 | `normal-notes` | drawn | `tuplet_triplet.musicxml`: tuplet ratio from time-modification |
-| `normal-type` | missing | task #31; tuplet show-type note-value glyphs; mdom raw only |
+| `normal-type` | drawn | `tuplet_display.musicxml`: normal-side note glyph (show-type="both") |
 | `notations` | drawn | `articulations.musicxml` |
 | `notations@print-object` | drawn | `print_object.musicxml` M4; hides every mark in the group, slurs and tuplets excepted |
 | `note` | drawn | `note.musicxml` |
@@ -546,15 +546,15 @@ Attributes: 79 drawn, 5 ignored, 34 missing.
 | `tuning-step` | drawn | `clef_tab_staff_tuning.musicxml` |
 | `tuplet` | drawn | `tuplet_triplet.musicxml` |
 | `tuplet@bracket` | drawn | `tuplet_display.musicxml`, `wedges.musicxml`: bracket yes and no |
-| `tuplet@line-shape` | missing | task #31; curved tuplet bracket not drawn; mdom raw only |
+| `tuplet@line-shape` | drawn | `tuplet_display.musicxml` M5-M6: curved draws arcs in place of the square bracket |
 | `tuplet@placement` | drawn | `words.musicxml`, `aloof_measure_7.musicxml`: bracket above or below |
-| `tuplet@show-number` | drawn | `tuplet_display.musicxml`: both draws the ratio; none still prints a number |
-| `tuplet@show-type` | missing | task #31; note-type glyph after tuplet number not drawn; mdom typed |
+| `tuplet@show-number` | drawn | `tuplet_display.musicxml`: both draws the ratio, none leaves the numeral off |
+| `tuplet@show-type` | drawn | `tuplet_display.musicxml`: actual and both draw note-value glyphs beside the numeral |
 | `tuplet-actual` | drawn | `tuplet_display.musicxml` |
-| `tuplet-dot` | missing | task #31; dotted note-value glyph beside the tuplet number; mdom typed |
+| `tuplet-dot` | drawn | `tuplet_display.musicxml`: dots on the actual-side glyph |
 | `tuplet-normal` | drawn | `tuplet_display.musicxml` |
 | `tuplet-number` | drawn | `tuplet_display.musicxml` |
-| `tuplet-type` | missing | task #31; note-value glyph beside the tuplet number (3 eighths); mdom typed |
+| `tuplet-type` | drawn | `tuplet_display.musicxml`: actual-side note glyph |
 | `turn` | drawn | `ornaments.musicxml` |
 | `turn@slash` | drawn | `ornaments.musicxml` |
 | `type` | drawn | `note.musicxml` |
