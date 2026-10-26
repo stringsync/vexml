@@ -1,3 +1,4 @@
+import type { RenderContext } from 'vexflow/core';
 import { LYRIC_FONT_SIZE } from './constants';
 import type { LyricJustify, LyricMark } from './lyric-mark';
 
@@ -8,6 +9,8 @@ export interface FakeLyricMarkOptions {
 	width?: number;
 	/** Which edge of its note the syllable lines up with. Default 'center'. */
 	justify?: LyricJustify;
+	/** Whether the syllable ends in a hyphen. Default false. */
+	hyphenated?: boolean;
 }
 
 /*
@@ -21,6 +24,9 @@ export class FakeLyricMark implements LyricMark {
 	/** The fill the placer inked this syllable with, or undefined until it does. */
 	fillStyle: string | undefined;
 	readonly extend: boolean;
+	readonly hyphenated: boolean;
+	/** The x of each extra hyphen the placer drew, in order. */
+	readonly hyphens: number[] = [];
 	readonly justify: LyricJustify;
 	readonly textSize = LYRIC_FONT_SIZE;
 	private readonly width: number;
@@ -30,6 +36,7 @@ export class FakeLyricMark implements LyricMark {
 		opts: FakeLyricMarkOptions,
 	) {
 		this.extend = opts.extend ?? false;
+		this.hyphenated = opts.hyphenated ?? false;
 		this.width = opts.width ?? 20;
 		this.justify = opts.justify ?? 'center';
 	}
@@ -46,6 +53,10 @@ export class FakeLyricMark implements LyricMark {
 
 	getWidth(): number {
 		return this.width;
+	}
+
+	drawHyphen(_ctx: RenderContext, x: number): void {
+		this.hyphens.push(x);
 	}
 
 	setBaselineY(y: number): void {

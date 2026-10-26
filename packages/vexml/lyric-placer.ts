@@ -12,6 +12,9 @@ export interface LyricPlacerOptions {
 	lyricDrops?: Map<string, number>;
 	/** The melisma line's width (`<line-width type="extend">`); 1px when absent. */
 	extendWidth?: number | null;
+	/** The most room between a word's hyphens (`<distance type="hyphen">`): a wider gap to
+	 * the next syllable gets more. Absent means one hyphen whatever the gap. */
+	hyphenDistance?: number | null;
 }
 
 /* One pinned lyric syllable, as the spill report needs it (see LyricPlacer.rowDrop). */
@@ -33,6 +36,7 @@ export class LyricPlacer {
 	// Measured on the previous pass and reserved on this one; empty on the first pass.
 	private readonly lyricDrops: Map<string, number>;
 	private readonly extendWidth: number;
+	private readonly hyphenDistance: number | null;
 	// Verse baseline feedback, keyed by `<systemIndex>:<staveRow>`: how far below the bottom
 	// staff line this pass hung the row's lyrics, and whether the row's measure columns
 	// disagreed (see recordDrop).
@@ -49,6 +53,7 @@ export class LyricPlacer {
 	) {
 		this.lyricDrops = opts.lyricDrops ?? new Map();
 		this.extendWidth = opts.extendWidth ?? 1;
+		this.hyphenDistance = opts.hyphenDistance ?? null;
 	}
 
 	/** Key for one stave row of one system, the scope a verse's baseline is shared over. */
@@ -126,6 +131,7 @@ export class LyricPlacer {
 			}
 		}
 		this.drawMelismas(notes, row, baseline);
+		this.drawHyphens(notes);
 	}
 
 	/* Every syllable this pass pinned: its stave and row, its x span, and its verse. */
@@ -207,6 +213,61 @@ export class LyricPlacer {
 					kind: 'annotation',
 					band: row,
 				});
+			}
+		}
+	}
+
+	/*
+	 * The hyphens a document's hyphen distance asks for between a word's syllables: a syllable
+	 * already ends in one, and a gap to the next syllable of its verse wider than the distance
+	 * gets as many more as keep every stretch between them within it, spread evenly from the
+	 * syllable's hyphen to the next syllable's ink.
+	 *
+	 * ponytail: like the melisma line, only a next syllable on the same stave counts; a word
+	 * broken across a barline or a system keeps its one hyphen.
+	 */
+	private drawHyphens(notes: StaveNote[]): void {
+		const distance = this.hyphenDistance;
+		if (distance === null) {
+			return;
+		}
+		for (const [i, note] of notes.entries()) {
+			for (const lyric of this.lyricsOf(note)) {
+				if (!lyric.hyphenated) {
+					continue;
+				}
+				const nextNote = notes.find(
+					(n, j) =>
+						j > i &&
+						this.lyricsOf(n).some((l) => l.verseIndex === lyric.verseIndex),
+				);
+				const next = nextNote
+					? this.lyricsOf(nextNote).find(
+							(l) => l.verseIndex === lyric.verseIndex,
+						)
+					: undefined;
+				if (!nextNote || !next) {
+					continue;
+				}
+				const from =
+					lyric.boxLeft(note.getNoteHeadBeginX(), note.getNoteHeadEndX()) +
+					lyric.getWidth() -
+					LYRIC_PADDING;
+				const to =
+					next.boxLeft(
+						nextNote.getNoteHeadBeginX(),
+						nextNote.getNoteHeadEndX(),
+					) + LYRIC_PADDING;
+				const extra = Math.floor((to - from) / distance);
+				this.context.save();
+				this.context.setFillStyle(this.notationColor);
+				for (let k = 1; k <= extra; k++) {
+					lyric.drawHyphen(
+						this.context,
+						from + ((to - from) * k) / (extra + 1),
+					);
+				}
+				this.context.restore();
 			}
 		}
 	}

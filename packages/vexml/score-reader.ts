@@ -1514,7 +1514,13 @@ export class ScoreReader {
 		const spans: DirectionLineSpan[] = [];
 		const open = new Map<
 			string,
-			{ from: Note; above: boolean; dash: number[] | null; startEnd: LineEnd }
+			{
+				kind: 'bracket' | 'dashes';
+				from: Note;
+				above: boolean;
+				dash: number[] | null;
+				startEnd: LineEnd;
+			}
 		>();
 		for (const measure of part.measures) {
 			for (const direction of measure.directions) {
@@ -1524,13 +1530,13 @@ export class ScoreReader {
 					const spec =
 						mark instanceof Dashes
 							? {
-									kind: 'dashes',
+									kind: 'dashes' as const,
 									type: mark.dashesType,
 									lineEnd: 'none' as LineEnd,
 									dash: [5, 5] as number[] | null,
 								}
 							: {
-									kind: 'bracket',
+									kind: 'bracket' as const,
 									type: mark.bracketType,
 									lineEnd: mark.lineEnd,
 									dash: lineDashOf(mark),
@@ -1554,6 +1560,7 @@ export class ScoreReader {
 						continue;
 					}
 					open.set(key, {
+						kind: spec.kind,
 						from,
 						above: this.placementOf(direction, 'above') === 'above',
 						dash: spec.dash,
@@ -3124,6 +3131,8 @@ export type LineEnd = 'up' | 'down' | 'arrow' | 'none';
  * why the two share a span type. See ScoreReader.directionLinesOf.
  */
 export type DirectionLineSpan = {
+	/** Which element drew it, the `<line-width>` type it is drawn at. */
+	kind: 'bracket' | 'dashes';
 	from: Note;
 	to: Note;
 	above: boolean;

@@ -21,6 +21,7 @@ describe('LyricPlacer', () => {
 
 	interface PlacerOptions {
 		lyricDrops?: Map<string, number>;
+		hyphenDistance?: number;
 	}
 
 	const makePlacer = (opts: PlacerOptions = {}) => {
@@ -31,6 +32,7 @@ describe('LyricPlacer', () => {
 			save() {},
 			restore() {},
 			setStrokeStyle() {},
+			setFillStyle() {},
 			setLineWidth() {},
 			beginPath() {},
 			stroke() {},
@@ -47,6 +49,7 @@ describe('LyricPlacer', () => {
 		} as unknown as VoiceTranslator;
 		const placer = new LyricPlacer(translator, context, resolver, '#123456', {
 			lyricDrops: opts.lyricDrops,
+			hyphenDistance: opts.hyphenDistance,
 		});
 		const obstacles = () => resolver.query(new Rect(0, 0, 2000, 2000));
 		return { placer, lines, obstacles };
@@ -165,6 +168,32 @@ describe('LyricPlacer', () => {
 			200,
 		);
 		expect(obstacles()).toHaveLength(0);
+	});
+
+	it('spreads extra hyphens across a gap wider than the hyphen distance', () => {
+		const { placer } = makePlacer({ hyphenDistance: 30 });
+		const al = new FakeLyricMark(0, { hyphenated: true });
+		const near = new FakeLyricMark(0, { hyphenated: true });
+		placer.pin(
+			[
+				note(100, [al]),
+				note(200, [near]),
+				note(220, [new FakeLyricMark(0, {})]),
+			],
+			0,
+			50,
+		);
+		// From al's hyphen (116 - 3) to the next syllable's ink (196 + 3): 86px holds two
+		// more, a third of the way apart. The next pair sits closer than the distance.
+		expect(al.hyphens.map(Math.round)).toEqual([142, 170]);
+		expect(near.hyphens).toEqual([]);
+	});
+
+	it('draws no extra hyphens without a hyphen distance', () => {
+		const { placer } = makePlacer();
+		const al = new FakeLyricMark(0, { hyphenated: true });
+		placer.pin([note(100, [al]), note(400, [new FakeLyricMark(0, {})])], 0, 50);
+		expect(al.hyphens).toEqual([]);
 	});
 
 	it('draws a melisma line up to the note before the next syllable in its verse', () => {

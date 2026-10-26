@@ -14,6 +14,7 @@ import {
 	type BarlineTranslator,
 	NO_DECORATION,
 } from './barline-translator';
+import { BarlineWidths } from './barline-width';
 import type { ChordTranslator } from './chord-translator';
 import { CollisionResolver } from './collision-resolver';
 import type { Config, Gap } from './config';
@@ -487,6 +488,7 @@ export class DrawPass {
 			{
 				lyricDrops: opts.lyricDrops,
 				extendWidth: layout.appearance.lineWidth('extend'),
+				hyphenDistance: layout.appearance.distance('hyphen'),
 			},
 		);
 		this.voiceBuilder = new VoiceBuilder(translator, tab, reader, spanners, {
@@ -550,6 +552,7 @@ export class DrawPass {
 				notationColor: this.notationColor,
 				textColor: this.textColor,
 				scratchViewport: this.scratchViewport,
+				appearance: layout.appearance,
 			},
 		);
 		this.spannerResolver = new SpannerResolver(
@@ -593,6 +596,10 @@ export class DrawPass {
 		// The document's line widths, when the layout follows it. The stem width is vexflow's
 		// global too, set afresh like the stroke above so one score's never leaks into the next.
 		new StemWidth().set(layout.appearance.lineWidth('stem'));
+		new BarlineWidths().set(
+			layout.appearance.lineWidth('light barline'),
+			layout.appearance.lineWidth('heavy barline'),
+		);
 		spanners.useAppearance(layout.appearance);
 	}
 

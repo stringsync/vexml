@@ -50,6 +50,7 @@ import { NoteheadArticulation } from './notehead-articulation';
 import { PedalLine } from './pedal-line';
 import { lineDashOf, type PedalMark, type WedgeMark } from './score-reader';
 import { SingleSlide } from './single-slide';
+import { SpacedBeam } from './spaced-beam';
 import { TabCurve } from './tab-curve';
 import { TabSlideLine } from './tab-slide-line';
 
@@ -159,10 +160,7 @@ export class SpannerBuilder {
 					!defaultStem &&
 					group.notes.every((note) => !note.stem) &&
 					!notes.every((note) => note.getStemDirection() === beamStem(notes));
-				const fan = fanOf(group);
-				const beam = fan
-					? new FeatheredBeam(notes, autoStem, fan)
-					: new Beam(notes, autoStem);
+				const beam = this.beamOf(notes, autoStem, fanOf(group));
 				beam.renderOptions.beamWidth =
 					this.appearance.lineWidth('beam') ?? beam.renderOptions.beamWidth;
 				// The beam just settled stem directions; re-pin articulations placed
@@ -189,6 +187,23 @@ export class SpannerBuilder {
 			}
 		}
 		return beams;
+	}
+
+	/* The beam for one group: feathered when it fans, spaced when the document sets its levels'
+	 * distance, and vexflow's own otherwise. */
+	private beamOf(
+		notes: StaveNote[],
+		autoStem: boolean,
+		fan: BeamFan | null,
+	): Beam {
+		const distance = this.appearance.distance('beam');
+		if (fan) {
+			return new FeatheredBeam(notes, autoStem, fan).setDistance(distance);
+		}
+		if (distance !== null) {
+			return new SpacedBeam(notes, autoStem).setDistance(distance);
+		}
+		return new Beam(notes, autoStem);
 	}
 
 	/*
@@ -431,7 +446,11 @@ export class SpannerBuilder {
 						[to.index],
 					);
 					for (const spec of specs) {
-						const staveTie = new DashedTie(spec, tie.dash);
+						const staveTie = new DashedTie(
+							spec,
+							tie.dash,
+							this.appearance.lineWidth('tie tip'),
+						);
 						// A solid tie is the lens between two quadratic bows, cp1 and cp2 off
 						// the ends, so it is (cp2 - cp1) / 2 deep at its middle.
 						const middle = this.appearance.lineWidth('tie middle');
@@ -831,6 +850,9 @@ export class SpannerBuilder {
 			});
 			// vexflow paints a pedal in its own black, over the context's notation ink.
 			marking.renderOptions.color = Ink.NOTATION;
+			marking.renderOptions.bracketLineWidth =
+				this.appearance.lineWidth('pedal') ??
+				marking.renderOptions.bracketLineWidth;
 			pedals.push({
 				marking,
 				notes: this.pedalSpan(chords, byLead, from.note, staveNote),
@@ -1326,6 +1348,7 @@ export class SpannerBuilder {
 						isGrace || lifted
 							? new HeadCurve(curveFrom, curveTo, y0, y1, options)
 							: new CrispCurve(curveFrom, curveTo, options);
+					curve.setTip(this.appearance.lineWidth('slur tip'));
 					// Where the bow will actually reach. vexflow shifts both endpoints by
 					// `yShift` and lands both control points at `depth`, so the cubic's midpoint
 					// sits at mid(y0,y1) + dir*(yShift + 0.75*cpY): the arc's far side, plus the

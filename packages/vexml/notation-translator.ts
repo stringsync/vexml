@@ -425,7 +425,8 @@ export class NotationTranslator {
 	 * A syllable that opens or continues a word ('begin'/'middle') carries a trailing hyphen
 	 * joining it to the next one: "Al-" "le-" "lu-" "ia".
 	 * ponytail: the hyphen rides on the syllable instead of being drawn centered in the gap
-	 * between the two: a centered hyphen needs a spanner across notes (and systems). The
+	 * between the two: a centered hyphen needs a spanner across notes (and systems). A
+	 * document's hyphen distance adds more across a wide gap (LyricPlacer). The
 	 * melisma <extend/> flag is passed through for LyricPlacer.pin to draw.
 	 */
 	private addLyrics(staveNote: StaveNote, lead: Note): void {
@@ -441,8 +442,10 @@ export class NotationTranslator {
 				lyricFont?.getAttribute('font-size') ?? null,
 			);
 			const syllabic = verse.syllabic;
-			const hyphen = syllabic === 'begin' || syllabic === 'middle' ? '-' : '';
-			const text = (this.syllableOf(verse) || this.soundOf(verse)) + hyphen;
+			const hyphenated = syllabic === 'begin' || syllabic === 'middle';
+			const text =
+				(this.syllableOf(verse) || this.soundOf(verse)) +
+				(hyphenated ? '-' : '');
 			if (text) {
 				staveNote.addModifier(
 					new LyricAnnotation(
@@ -452,6 +455,7 @@ export class NotationTranslator {
 						this.lyricFaceOf(verse),
 						this.justifyOf(verse),
 						scale,
+						hyphenated,
 					),
 				);
 			}

@@ -116,6 +116,9 @@ export class FormattedText {
 			this.context.lineTo(inner.right, y);
 			this.context.stroke();
 		}
+		if (this.enclosure && this.style.enclosureWidth) {
+			this.context.setLineWidth(this.style.enclosureWidth);
+		}
 		this.enclosure?.draw(this.context, placed);
 	}
 }
@@ -133,6 +136,8 @@ export type FormattedTextStyle = {
 	enclosure?: EnclosureShape;
 	/** Air between the text and its enclosure. */
 	padding?: number;
+	/** The enclosure's stroke width (`<line-width type="enclosure">`). Absent means 1px. */
+	enclosureWidth?: number;
 	/** Degrees clockwise the whole box turns, about its middle. Absent means upright. */
 	rotation?: number;
 };

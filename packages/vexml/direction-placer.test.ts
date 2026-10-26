@@ -567,6 +567,7 @@ describe('DirectionPlacer', () => {
 	it('skips direction lines missing an endpoint or running backwards', () => {
 		const { placer, segments, pageTops } = makePlacer();
 		const span = {
+			kind: 'bracket',
 			above: true,
 			dash: null,
 			startEnd: 'none',
@@ -585,6 +586,7 @@ describe('DirectionPlacer', () => {
 	it('hooks an above-stave bracket down toward the staff at both ends', () => {
 		const { placer, segments, pageTops, pageBottoms } = makePlacer();
 		const span = {
+			kind: 'bracket',
 			above: true,
 			dash: null,
 			startEnd: 'down',

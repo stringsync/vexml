@@ -55,7 +55,7 @@ are picked by hand.
 | `accordion-registration` | drawn | `direction_pictograms.musicxml` M5: the three-rank register circle |
 | `actual-notes` | drawn | `tuplet_triplet.musicxml`: tuplet ratio via timeModification |
 | `alter` | drawn | `accidentals.musicxml`: pitch alter read for note pitch; printed glyph comes from accidental |
-| `appearance` | drawn | `defaults_appearance.musicxml`, under documentLayout follow or strict: its line widths (see `line-width`) and glyphs (see `glyph`, `defaults_appearance_glyphs.musicxml`); distances task #102, note sizes task #9 |
+| `appearance` | drawn | `defaults_appearance.musicxml`, under documentLayout follow or strict: its line widths and distances (see `line-width`, `distance`) and glyphs (see `glyph`, `defaults_appearance_glyphs.musicxml`); note sizes task #9 |
 | `arpeggiate` | drawn | `arpeggio.musicxml` |
 | `arpeggiate@direction` | drawn | `arpeggio.musicxml`: up and down arrowheads |
 | `arpeggiate@unbroken` | drawn | `arpeggio_unbroken.musicxml`: one line across both staves of a part |
@@ -136,7 +136,7 @@ are picked by hand.
 | `display-octave` | drawn | `rest_pitched.musicxml`, `percussion_display_step.musicxml` |
 | `display-step` | drawn | `rest_pitched.musicxml`, `percussion_display_step.musicxml` |
 | `display-text` | drawn | `notehead_text.musicxml`: inside notehead-text; other parents task #25 |
-| `distance` | missing | task #102; read into Appearance but beam spacing and hyphen distance not applied |
+| `distance` | drawn | `defaults_appearance.musicxml`, under documentLayout follow or strict: beam (the drawn levels' spacing; vexflow's stem reach still assumes its own), hyphen (more hyphens across a wide gap between syllables on one stave) |
 | `divisions` | drawn | `divisions_change.musicxml` |
 | `doit` | drawn | `articulations_extended.musicxml` |
 | `dot` | drawn | `dotted_notes.musicxml` |
@@ -262,7 +262,7 @@ are picked by hand.
 | `level` | drawn | `editorial_marks.musicxml` M1; parentheses and bracket wrap a note heads; size and non-note parents not drawn |
 | `line` | drawn | `clef_c.musicxml`: clef staff line |
 | `line-detail` | drawn | `line_detail.musicxml`: per-line width, color, dashed or dotted line-type, print-object |
-| `line-width` | drawn | `defaults_appearance.musicxml`, under documentLayout follow or strict: stem, beam, staff, leger, slur middle, tie middle, wedge, ending, tuplet bracket, extend (lyric melisma); barlines, octave shift, pedal, bracket, dashes, enclosure and tips task #102 |
+| `line-width` | drawn | `defaults_appearance.musicxml`, under documentLayout follow or strict: stem, beam, staff, leger, slur middle, tie middle, wedge, ending, tuplet bracket, extend (lyric melisma), light and heavy barline (barlines, repeat signs, connectors and custom bar styles), octave shift, pedal, bracket, dashes, enclosure, slur tip, tie tip |
 | `link` | ignored | file links |
 | `listen` | ignored | interactive performance only |
 | `listening` | ignored | interactive performance only |

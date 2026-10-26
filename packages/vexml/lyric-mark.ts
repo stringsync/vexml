@@ -1,3 +1,5 @@
+import type { RenderContext } from 'vexflow/core';
+
 /*
  * One lyric syllable hanging under a note. The draw pass reads these off a note's
  * modifiers to lay a verse out as a line of text (LyricPlacer), and to renumber the
@@ -21,6 +23,11 @@ export interface LyricMark {
 	boxLeft(noteheadBeginX: number, noteheadEndX: number): number;
 	/** Whether a melisma `<extend/>` line trails this syllable. */
 	readonly extend: boolean;
+	/** Whether the syllable ends in the hyphen joining it to the next ('begin'/'middle'). */
+	readonly hyphenated: boolean;
+	/** Draw one more of the syllable's hyphens centered at `x` on its baseline, where a wide
+	 * gap to the next syllable wants several (`<distance type="hyphen">`). */
+	drawHyphen(ctx: RenderContext, x: number): void;
 	/** The syllable's font size in px. */
 	readonly textSize: number;
 	/** The syllable's drawn width, including the gap it keeps from its neighbors. */

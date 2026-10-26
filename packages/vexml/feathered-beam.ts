@@ -1,4 +1,5 @@
-import { Beam, type RenderContext } from 'vexflow/core';
+import type { Beam } from 'vexflow/core';
+import { SpacedBeam } from './spaced-beam';
 
 export type BeamFan = 'accel' | 'rit';
 
@@ -9,7 +10,7 @@ export type BeamFan = 'accel' | 'rit';
  * primary beam where vexflow puts it and slides every other level's offset along the run
  * instead, off the same slope and stem math the plain Beam uses.
  */
-export class FeatheredBeam extends Beam {
+export class FeatheredBeam extends SpacedBeam {
 	constructor(
 		notes: ConstructorParameters<typeof Beam>[0],
 		autoStem: boolean,
@@ -18,37 +19,13 @@ export class FeatheredBeam extends Beam {
 		super(notes, autoStem);
 	}
 
-	protected override drawBeamLines(ctx: RenderContext): void {
+	/* A level's full offset where the beams are a level apart, none where they meet. */
+	protected override levelOffset(level: number, x: number): number {
 		const first = this.notes[0];
 		const last = this.notes[this.notes.length - 1];
-		if (!first || !last) {
-			return;
-		}
-		const firstX = first.getStemX();
-		const span = last.getStemX() - firstX;
-		const baseY = this.getBeamYToDraw();
-		const stem = first.getStemDirection();
-		const thickness = this.renderOptions.beamWidth * stem;
-		// 0 where the beams meet, 1 where they are a full level apart.
-		const spread = (x: number) => {
-			const t = span > 0 ? Math.min(Math.max((x - firstX) / span, 0), 1) : 1;
-			return this.fan === 'accel' ? t : 1 - t;
-		};
-		const levels = ['4', '8', '16', '32', '64'];
-		levels.forEach((duration, level) => {
-			for (const line of this.getBeamLines(duration)) {
-				const end = line.end ?? line.start;
-				const topAt = (x: number) =>
-					this.getSlopeY(x, firstX, baseY, this.slope) +
-					level * thickness * 1.5 * spread(x);
-				ctx.beginPath();
-				ctx.moveTo(line.start, topAt(line.start));
-				ctx.lineTo(line.start, topAt(line.start) + thickness);
-				ctx.lineTo(end + 1, topAt(end) + thickness);
-				ctx.lineTo(end + 1, topAt(end));
-				ctx.closePath();
-				ctx.fill();
-			}
-		});
+		const firstX = first?.getStemX() ?? x;
+		const span = (last?.getStemX() ?? x) - firstX;
+		const t = span > 0 ? Math.min(Math.max((x - firstX) / span, 0), 1) : 1;
+		return super.levelOffset(level, x) * (this.fan === 'accel' ? t : 1 - t);
 	}
 }

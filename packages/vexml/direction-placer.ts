@@ -10,6 +10,7 @@ import {
 } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import { AccordionRegistrationGlyph } from './accordion-registration-glyph';
+import { Appearance } from './appearance';
 import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
 import type { CollisionKind, CollisionResolver } from './collision-resolver';
 import {
@@ -84,6 +85,8 @@ export class DirectionPlacer {
 	private readonly notationColor: string;
 	private readonly textColor: string;
 	private readonly scratchViewport: Rect;
+	private readonly appearance: Appearance;
+	private readonly enclosureWidth: number | undefined;
 
 	// The sustained dynamic level currently sounding on each staff (keyed by the caller's
 	// `<partIndex>:<staffNumber>`), and the measure it was last STATED in (printed or
@@ -118,6 +121,8 @@ export class DirectionPlacer {
 		this.notationColor = opts.notationColor;
 		this.textColor = opts.textColor;
 		this.scratchViewport = opts.scratchViewport;
+		this.appearance = opts.appearance ?? Appearance.NONE;
+		this.enclosureWidth = this.appearance.lineWidth('enclosure') ?? undefined;
 	}
 
 	/* The sounding dynamics as they stand, for {@link rewind}. */
@@ -633,6 +638,7 @@ export class DirectionPlacer {
 			rotation: format?.rotation,
 			enclosure: enclosure === 'none' ? undefined : enclosure,
 			padding: REHEARSAL_PADDING,
+			enclosureWidth: this.enclosureWidth,
 		});
 		// The document's default-y is the text's baseline; the box reaches its padding under it.
 		const doc = this.followed(position);
@@ -1083,6 +1089,7 @@ export class DirectionPlacer {
 			rotation: style.rotation,
 			enclosure: style.enclosure,
 			padding: ENCLOSURE_PADDING,
+			enclosureWidth: this.enclosureWidth,
 		});
 		const { w, h } = formatted;
 		// vexml's own box stands on (or hangs from) baseY; the document's default-y, when
@@ -1326,7 +1333,7 @@ export class DirectionPlacer {
 					: (end === 'up' ? -1 : 1) * toward * DIRECTION_LINE_HOOK;
 			this.context.save();
 			this.context.setStrokeStyle(this.notationColor);
-			this.context.setLineWidth(1);
+			this.context.setLineWidth(this.appearance.lineWidth(span.kind) ?? 1);
 			if (span.dash) {
 				this.context.setLineDash(span.dash);
 			}
@@ -1626,4 +1633,7 @@ export interface DirectionPlacerOptions {
 	/** The drawable region of the scratch canvas; a mark anchored near its right edge is
 	 * nudged back inside rather than clipped. */
 	scratchViewport: Rect;
+	/** The document's line widths for brackets, dashes and enclosures. Absent means vexml's
+	 * own. */
+	appearance?: Appearance;
 }

@@ -5,6 +5,7 @@ import {
 	StaveConnector,
 	type StaveConnectorType,
 } from 'vexflow/core';
+import { type BarKind, barRects, drawBarConnector } from './barline-width';
 import {
 	BRACKET_X_SHIFT,
 	CONNECTOR_VERTICAL_OVERHANG,
@@ -144,10 +145,7 @@ export class ConnectorDrawer {
 				type = 'boldDoubleRight';
 			}
 			for (const run of this.barlineRuns(column)) {
-				new StaveConnector(run.top, run.bottom)
-					.setType(type)
-					.setContext(this.context)
-					.draw();
+				drawBarConnector(this.context, run.top, run.bottom, type);
 			}
 		}
 	}
@@ -180,10 +178,7 @@ export class ConnectorDrawer {
 		// Every multi-stave system gets a plain left line closing the staves' left
 		// edge. A notation+tab pair split across separate parts also gets a bracket
 		// (the cross-part analog of the single-part bracket), drawn just outside it.
-		new StaveConnector(systemTop, systemBottom)
-			.setType('singleLeft')
-			.setContext(this.context)
-			.draw();
+		drawBarConnector(this.context, systemTop, systemBottom, 'singleLeft');
 		if (this.staves.partsPairTabWithNotation(this.parts)) {
 			// The bracket's x comes entirely from its top stave; nudge that 4px left
 			// so the bracket sits just outside the system line with a small gap, then
@@ -298,7 +293,7 @@ export class ConnectorDrawer {
 			: stave.getBottomLineBottomY() - topY;
 		this.context.save();
 		this.context.setFillStyle(this.notationColor);
-		for (const [offset, width] of style.bars) {
+		for (const [offset, width] of barRects(style.bars, style.gap)) {
 			if (style.dash) {
 				// fillRect can't dash, so walk the stroke in [on, off] runs. The last run is
 				// clipped to the bar's height rather than overshooting past the bottom line.
@@ -432,19 +427,22 @@ export class ConnectorDrawer {
 		if (!column.systemTop || !column.systemBottom) {
 			return;
 		}
-		new StaveConnector(column.systemTop, column.systemBottom)
-			.setType(type)
-			.setXShift(xShift)
-			.setContext(this.context)
-			.draw();
+		drawBarConnector(
+			this.context,
+			column.systemTop,
+			column.systemBottom,
+			type,
+			xShift,
+		);
 	}
 }
 
 /*
- * The stroke pattern of each <bar-style> vexflow has no type for, as [offset, width] pairs
- * measured from the barline's x: the same geometry vexflow's own Barline uses, where a thin
- * bar is 1px at x and a thick one is 3px at x-2, so a custom style sits flush with the plain
- * dividers around it. `dash` turns the stroke into a broken line ([on, off] lengths).
+ * The bars of each <bar-style> vexflow has no type for, left to right, laid out by barRects
+ * at the document's barline widths (vexflow's 1px thin and 3px thick by default), so a custom
+ * style sits flush with the plain dividers around it. `gap` is the space between its bars
+ * where it is not barRects' 2px. `dash` turns the stroke into a broken line ([on, off]
+ * lengths).
  *
  * 'tick' and 'short' are the abbreviated dividers: both are single thin strokes that cover
  * only part of the stave height, so they carry a `span` in staff-space units measured down
@@ -453,28 +451,19 @@ export class ConnectorDrawer {
 const CUSTOM_BAR_STYLES: Record<
 	string,
 	{
-		bars: Array<[offset: number, width: number]>;
+		bars: BarKind[];
+		gap?: number;
 		dash?: [number, number];
 		span?: [from: number, to: number];
 	}
 > = {
-	dotted: { bars: [[0, 1]], dash: [1, 3] },
-	dashed: { bars: [[0, 1]], dash: [4, 4] },
-	heavy: { bars: [[-2, 3]] },
-	'heavy-light': {
-		bars: [
-			[-5, 3],
-			[0, 1],
-		],
-	},
-	'heavy-heavy': {
-		bars: [
-			[-6, 3],
-			[-2, 3],
-		],
-	},
-	tick: { bars: [[0, 1]], span: [-0.5, 0.5] },
-	short: { bars: [[0, 1]], span: [1, 3] },
+	dotted: { bars: ['light'], dash: [1, 3] },
+	dashed: { bars: ['light'], dash: [4, 4] },
+	heavy: { bars: ['heavy'] },
+	'heavy-light': { bars: ['heavy', 'light'] },
+	'heavy-heavy': { bars: ['heavy', 'heavy'], gap: 1 },
+	tick: { bars: ['light'], span: [-0.5, 0.5] },
+	short: { bars: ['light'], span: [1, 3] },
 };
 
 export interface ConnectorDrawerOptions {

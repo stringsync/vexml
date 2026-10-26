@@ -3698,7 +3698,10 @@ describe('render', () => {
 
 	// <defaults><appearance> line widths, set wide so each shows: 3px stems, an 8px beam, 2px
 	// staff lines, 3px legers (M1, M4), a 4px tie (M1-M2), a 5px slur (M2), a 3px wedge (M1),
-	// ending brackets (M3-M4), tuplet bracket (M3) and lyric extend (M2).
+	// ending brackets (M3-M4), tuplet bracket (M3) and lyric extend (M2); 2px light and 6px
+	// heavy barlines (repeats M3, M5; heavy M6, heavy-heavy M7), an enclosure, bracket and pedal
+	// (M5), octave shift (M6) and dashes (M7) at 3px, blunt 2px slur and tie tips (M5-M6, M7-M8),
+	// beam levels 13px apart (M5) and hyphens no more than 15px apart (M6-M7).
 	it.concurrent('renders defaults_appearance.png', async () => {
 		expect(
 			await testing.render('defaults_appearance.musicxml', {

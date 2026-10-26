@@ -1,4 +1,4 @@
-import { Annotation, type StaveNote } from 'vexflow/core';
+import { Annotation, type RenderContext, type StaveNote } from 'vexflow/core';
 import { LYRIC_FONT_SIZE, LYRIC_PADDING } from './constants';
 import type { LyricJustify, LyricMark } from './lyric-mark';
 
@@ -35,6 +35,8 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 		readonly justify: LyricJustify = 'center',
 		/** Ratio of the syllable's font-size to the score's lyric-font. */
 		scale = 1,
+		/** Whether the text ends in the hyphen joining it to the next syllable. */
+		readonly hyphenated = false,
 	) {
 		super(text);
 		this.setVerticalJustification(Annotation.VerticalJustify.BOTTOM);
@@ -81,6 +83,13 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 			default:
 				return (noteheadBeginX + noteheadEndX) / 2 - w / 2;
 		}
+	}
+
+	drawHyphen(ctx: RenderContext, x: number): void {
+		ctx.save();
+		ctx.setFont(this.fontInfo);
+		ctx.fillText('-', x - ctx.measureText('-').width / 2, this.baselineY);
+		ctx.restore();
 	}
 
 	override draw(): void {

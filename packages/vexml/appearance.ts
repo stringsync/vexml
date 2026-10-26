@@ -41,13 +41,22 @@ export class Appearance {
 /* The `<line-width>` types vexml draws to. */
 export type LineWidthType =
 	| 'beam'
+	| 'bracket'
+	| 'dashes'
 	| 'ending'
+	| 'enclosure'
 	| 'extend'
+	| 'heavy barline'
 	| 'leger'
+	| 'light barline'
+	| 'octave shift'
+	| 'pedal'
 	| 'slur middle'
+	| 'slur tip'
 	| 'staff'
 	| 'stem'
 	| 'tie middle'
+	| 'tie tip'
 	| 'tuplet bracket'
 	| 'wedge';
 

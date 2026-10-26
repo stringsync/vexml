@@ -13,6 +13,17 @@
       <line-width type="ending">3</line-width>
       <line-width type="tuplet bracket">3</line-width>
       <line-width type="extend">3</line-width>
+      <line-width type="light barline">2</line-width>
+      <line-width type="heavy barline">6</line-width>
+      <line-width type="octave shift">3</line-width>
+      <line-width type="pedal">3</line-width>
+      <line-width type="bracket">3</line-width>
+      <line-width type="dashes">3</line-width>
+      <line-width type="enclosure">3</line-width>
+      <line-width type="slur tip">2</line-width>
+      <line-width type="tie tip">2</line-width>
+      <distance type="beam">13</distance>
+      <distance type="hyphen">15</distance>
     </appearance>
   </defaults>
   <part-list>
@@ -112,7 +123,101 @@
         <duration>24</duration>
         <type>whole</type>
       </note>
-      <barline location="right"><bar-style>light-heavy</bar-style><ending number="2" type="discontinue"/></barline>
+      <barline location="right"><bar-style>light-light</bar-style><ending number="2" type="discontinue"/></barline>
+    </measure>
+    <measure number="5">
+      <barline location="left"><repeat direction="forward"/></barline>
+      <attributes><divisions>12</divisions></attributes>
+      <direction placement="above"><direction-type><words enclosure="rectangle">dolce</words></direction-type></direction>
+      <direction placement="below"><direction-type><pedal type="start" line="yes"/></direction-type></direction>
+      <direction placement="above"><direction-type><bracket type="start" number="1" line-end="down"/></direction-type></direction>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>3</duration>
+        <type>16th</type><stem>down</stem><beam number="1">begin</beam><beam number="2">begin</beam>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>3</duration>
+        <type>16th</type><stem>down</stem><beam number="1">continue</beam><beam number="2">continue</beam>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>3</duration>
+        <type>16th</type><stem>down</stem><beam number="1">continue</beam><beam number="2">continue</beam>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <duration>3</duration>
+        <type>16th</type><stem>down</stem><beam number="1">end</beam><beam number="2">end</beam>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>3</duration>
+        <type>16th</type><stem>up</stem><beam number="1">begin</beam><beam number="2">begin</beam>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>3</duration>
+        <type>16th</type><stem>up</stem><beam number="1">continue</beam><beam number="2">continue</beam>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>3</duration>
+        <type>16th</type><stem>up</stem><beam number="1">continue</beam><beam number="2">continue</beam>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>3</duration>
+        <type>16th</type><stem>up</stem><beam number="1">end</beam><beam number="2">end</beam>
+      </note>
+      <direction placement="above"><direction-type><bracket type="stop" number="1" line-end="down"/></direction-type></direction>
+      <direction placement="below"><direction-type><pedal type="stop" line="yes"/></direction-type></direction>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>half</type><stem>up</stem><notations><slur type="start" number="1"/></notations>
+      </note>
+      <barline location="right"><bar-style>light-heavy</bar-style><repeat direction="backward"/></barline>
+    </measure>
+    <measure number="6">
+      <direction placement="above"><direction-type><octave-shift type="down" size="8" number="1"/></direction-type></direction>
+      <note>
+        <pitch><step>A</step><octave>5</octave></pitch>
+        <duration>24</duration>
+        <type>half</type><stem>down</stem><notations><slur type="stop" number="1"/></notations><lyric number="1"><syllabic>begin</syllabic><text>Hal</text></lyric>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>5</octave></pitch>
+        <duration>24</duration>
+        <type>half</type><stem>down</stem><lyric number="1"><syllabic>middle</syllabic><text>le</text></lyric>
+      </note>
+      <direction placement="above"><direction-type><octave-shift type="stop" size="8" number="1"/></direction-type></direction>
+      <barline location="right"><bar-style>heavy</bar-style></barline>
+    </measure>
+    <measure number="7">
+      <direction placement="above"><direction-type><words>rit.</words></direction-type></direction>
+      <direction placement="above"><direction-type><dashes type="start" number="1"/></direction-type></direction>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>24</duration>
+        <type>half</type><stem>down</stem><lyric number="1"><syllabic>middle</syllabic><text>lu</text></lyric>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>24</duration><tie type="start"/>
+        <type>half</type><stem>up</stem><notations><tied type="start"/></notations><lyric number="1"><syllabic>end</syllabic><text>jah</text></lyric>
+      </note>
+      <direction placement="above"><direction-type><dashes type="stop" number="1"/></direction-type></direction>
+      <barline location="right"><bar-style>heavy-heavy</bar-style></barline>
+    </measure>
+    <measure number="8">
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>48</duration><tie type="stop"/>
+        <type>whole</type><notations><tied type="stop"/></notations>
+      </note>
+      <barline location="right"><bar-style>light-heavy</bar-style></barline>
     </measure>
   </part>
 </score-partwise>

@@ -421,6 +421,9 @@ export class SpannerResolver {
 			}
 			// vexflow paints a bracket in its own black, over the context's notation ink.
 			bracket.renderOptions.color = Ink.NOTATION;
+			bracket.renderOptions.lineWidth =
+				this.appearance.lineWidth('octave shift') ??
+				bracket.renderOptions.lineWidth;
 			this.clearOctaveBracket(
 				bracket,
 				span.notes
