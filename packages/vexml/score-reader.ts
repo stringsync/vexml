@@ -1299,8 +1299,8 @@ export class ScoreReader {
 	 * A pictogram engraves as its SMuFL glyph (see percussion-glyphs.ts); an
 	 * <other-percussion>, or a value the schema does not list, prints as its words. A
 	 * scordatura prints as one line naming each retuned string's pitch.
-	 * ponytail: the `smufl` attribute naming a glyph of the document's choosing, and a
-	 * stick's `parentheses`/`dashed-circle`, are ignored; they need SMuFL's name table.
+	 * Explicit SMuFL names override the usual pictogram; stick enclosures combine around
+	 * the beater head when requested.
 	 */
 	pictogramsOf(measure: Measure): {
 		symbol: Pictogram;
@@ -2385,6 +2385,10 @@ export class ScoreReader {
 		const value = element.text?.trim() ?? '';
 		const tip = TIP_INDEX[element.getAttribute('tip') ?? ''] ?? 0;
 		let glyph: string | undefined;
+		const named = smuflGlyph(element.getAttribute('smufl'));
+		if (named) {
+			return { kind: 'glyph', glyph: named };
+		}
 		if (element.tag === 'timpani') {
 			glyph = TIMPANI_GLYPH;
 		} else if (element.tag === 'beater') {
@@ -2398,6 +2402,21 @@ export class ScoreReader {
 			if (!glyph) {
 				const text = `${material} ${type}`.trim();
 				return text ? { kind: 'text', text } : null;
+			}
+			const enclosures = [
+				element.getAttribute('parentheses') === 'yes' ? '\uE7E9' : '',
+				element.getAttribute('dashed-circle') === 'yes' ? '\uE7EA' : '',
+			].filter(Boolean);
+			if (enclosures.length && sticks?.[0]) {
+				return {
+					kind: 'glyph',
+					glyph,
+					enclosure: {
+						glyphs: enclosures,
+						head: sticks[0],
+						tip: sticks[tip] ? tip : 0,
+					},
+				};
 			}
 		} else {
 			glyph = PERCUSSION_GLYPHS[element.tag]?.[value];
@@ -3060,7 +3079,11 @@ function isEnclosureShape(value: string | null): value is EnclosureShape {
  * (`middle` counts its 0 to 3 dots). See ScoreReader.pictogramsOf.
  */
 export type Pictogram =
-	| { kind: 'glyph'; glyph: string }
+	| {
+			kind: 'glyph';
+			glyph: string;
+			enclosure?: { glyphs: string[]; head: string; tip: number };
+	  }
 	| { kind: 'text'; text: string }
 	| { kind: 'accordion'; high: boolean; middle: number; low: boolean };
 

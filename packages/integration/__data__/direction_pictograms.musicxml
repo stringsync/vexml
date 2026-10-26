@@ -264,6 +264,26 @@
         <voice>1</voice>
         <type>quarter</type>
       </note>
+    </measure>
+    <measure number="7">
+      <direction placement="above"><direction-type><percussion><metal smufl="pictCowBell">bell</metal></percussion></direction-type></direction>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <direction placement="above"><direction-type><percussion><pitched smufl="pictMar">xylophone</pitched></percussion></direction-type></direction>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <direction placement="above"><direction-type><percussion><other-percussion smufl="pictAnvil">anvil</other-percussion></percussion></direction-type></direction>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <direction placement="above"><direction-type><percussion><metal smufl="pictUnknown">bell</metal></percussion></direction-type></direction>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+    </measure>
+    <measure number="8">
+      <direction placement="above"><direction-type><percussion><stick tip="up" parentheses="yes"><stick-type>yarn</stick-type><stick-material>soft</stick-material></stick></percussion></direction-type></direction>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <direction placement="above"><direction-type><percussion><stick tip="down" dashed-circle="yes"><stick-type>yarn</stick-type><stick-material>soft</stick-material></stick></percussion></direction-type></direction>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <direction placement="above"><direction-type><percussion><stick tip="left" parentheses="yes" dashed-circle="yes"><stick-type>yarn</stick-type><stick-material>soft</stick-material></stick></percussion></direction-type></direction>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <direction placement="above"><direction-type><percussion><stick tip="right" parentheses="yes" dashed-circle="yes"><stick-type>yarn</stick-type><stick-material>soft</stick-material></stick></percussion></direction-type></direction>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
       <barline location="right">
         <bar-style>light-heavy</bar-style>
       </barline>

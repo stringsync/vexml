@@ -1320,6 +1320,8 @@ describe('render', () => {
 	// - M5: <accordion-registration>: the ring cut into three ranks with a dot in the top rank,
 	//   two in the middle, one in the bottom, then high + three middle + low.
 	// - M6: <scordatura>: "Scordatura: 4 = A, 1 = D" over the first note, then the final barline.
+	// - M7: explicit SMuFL cowbell, marimba and anvil; unknown name falls back to bell.
+	// - M8: yarn sticks up/down/left/right with parentheses, dashed circle, or both around the head.
 	it.concurrent('renders direction_pictograms.png', async () => {
 		expect(
 			await testing.render('direction_pictograms.musicxml'),

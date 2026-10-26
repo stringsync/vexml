@@ -1174,18 +1174,60 @@ export class DirectionPlacer {
 		}
 		const below = placement === 'below';
 		const x = anchor?.getAbsoluteX() ?? stave.getNoteStartX();
-		const ink =
-			symbol.kind === 'glyph'
-				? new Element()
-						.setFont(this.notationFont, PICTOGRAM_FONT_SIZE)
-						.setText(symbol.glyph)
-						.getTextMetrics()
-				: null;
+		const metrics = (glyph: string) =>
+			new Element()
+				.setFont(this.notationFont, PICTOGRAM_FONT_SIZE)
+				.setText(glyph)
+				.getTextMetrics();
+		const ink = symbol.kind === 'glyph' ? metrics(symbol.glyph) : null;
+		const layers =
+			ink && symbol.kind === 'glyph'
+				? [{ glyph: symbol.glyph, ink, x: 0, y: 0 }]
+				: [];
+		if (ink && symbol.kind === 'glyph' && symbol.enclosure) {
+			const { head, tip, glyphs } = symbol.enclosure;
+			const upright = metrics(head);
+			// SMuFL's round head has the upright beater's width. Even the left/right
+			// variants lean diagonally: the head stays at the upper outer corner.
+			const diameter =
+				upright.actualBoundingBoxLeft + upright.actualBoundingBoxRight;
+			const left = -ink.actualBoundingBoxLeft;
+			const right = ink.actualBoundingBoxRight;
+			const top = -ink.actualBoundingBoxAscent;
+			const bottom = ink.actualBoundingBoxDescent;
+			let cx = (left + right) / 2;
+			if (tip === 2) {
+				cx = left + diameter / 2;
+			} else if (tip === 3) {
+				cx = right - diameter / 2;
+			}
+			const cy = tip === 1 ? bottom - diameter / 2 : top + diameter / 2;
+			for (const glyph of glyphs) {
+				const mark = metrics(glyph);
+				layers.push({
+					glyph,
+					ink: mark,
+					x:
+						cx - (mark.actualBoundingBoxRight - mark.actualBoundingBoxLeft) / 2,
+					y:
+						cy +
+						(mark.actualBoundingBoxAscent - mark.actualBoundingBoxDescent) / 2,
+				});
+			}
+		}
+		const left = Math.min(
+			...layers.map((l) => l.x - l.ink.actualBoundingBoxLeft),
+		);
+		const top = Math.min(
+			...layers.map((l) => l.y - l.ink.actualBoundingBoxAscent),
+		);
 		const w = ink
-			? ink.actualBoundingBoxLeft + ink.actualBoundingBoxRight
+			? Math.max(...layers.map((l) => l.x + l.ink.actualBoundingBoxRight)) -
+				left
 			: ACCORDION_REGISTRATION_SIZE;
 		const h = ink
-			? ink.actualBoundingBoxAscent + ink.actualBoundingBoxDescent
+			? Math.max(...layers.map((l) => l.y + l.ink.actualBoundingBoxDescent)) -
+				top
 			: ACCORDION_REGISTRATION_SIZE;
 		const y = below
 			? stave.getBottomLineY() + WORDS_Y_OFFSET
@@ -1199,11 +1241,13 @@ export class DirectionPlacer {
 		this.context.setStrokeStyle(this.notationColor);
 		if (ink && symbol.kind === 'glyph') {
 			this.context.setFont(this.notationFont, PICTOGRAM_FONT_SIZE);
-			this.context.fillText(
-				symbol.glyph,
-				placed.x + ink.actualBoundingBoxLeft,
-				placed.y + ink.actualBoundingBoxAscent,
-			);
+			for (const layer of layers) {
+				this.context.fillText(
+					layer.glyph,
+					placed.x - left + layer.x,
+					placed.y - top + layer.y,
+				);
+			}
 		} else if (symbol.kind === 'accordion') {
 			new AccordionRegistrationGlyph(symbol, ACCORDION_REGISTRATION_SIZE).draw(
 				this.context,

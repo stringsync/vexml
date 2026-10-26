@@ -360,7 +360,7 @@ are picked by hand.
 | `other-listening` | ignored | interactive performance only |
 | `other-notation` | drawn | `articulations_extended.musicxml` M8: the smufl glyph above (below for placement="below"), else its text; a start/stop pair draws at its start |
 | `other-ornament` | drawn | `ornaments.musicxml` M13, M16: the smufl glyph, else its text |
-| `other-percussion` | drawn | `direction_pictograms.musicxml` M4: its text, upright |
+| `other-percussion` | drawn | `direction_pictograms.musicxml` M4: its text, upright; M7: explicit SMuFL glyph |
 | `other-play` | ignored | sound only |
 | `other-technical` | drawn | `tab_annotation.musicxml`: text annotation on tab |
 | `p` | drawn | `dynamics.musicxml` |
@@ -391,7 +391,7 @@ are picked by hand.
 | `pedal-step` | drawn | `harp_pedals.musicxml`: sets each string of the harp pedal diagram |
 | `pedal-tuning` | drawn | `harp_pedals.musicxml`: sets each string of the harp pedal diagram |
 | `per-minute` | drawn | `tempo.musicxml` |
-| `percussion` | drawn | `direction_pictograms.musicxml` M1-M4: each pictogram as its SMuFL glyph; the `smufl` attribute ignored |
+| `percussion` | drawn | `direction_pictograms.musicxml` M1-M4: each pictogram as its SMuFL glyph; M7: explicit `smufl` names override the default glyph |
 | `pf` | drawn | `dynamics.musicxml` |
 | `pitch` | drawn | `note.musicxml` |
 | `pitched` | drawn | `direction_pictograms.musicxml` M1: SMuFL pictogram |
@@ -492,7 +492,7 @@ are picked by hand.
 | `stem` | drawn | `note.musicxml` |
 | `stem@default-y` | missing | stem length from stem end y; task #104 (document horizontal and note positions); mdom raw only |
 | `step` | drawn | `note.musicxml` |
-| `stick` | drawn | `direction_pictograms.musicxml` M3: SMuFL stick pictograms by type and material; parentheses and dashed-circle ignored |
+| `stick` | drawn | `direction_pictograms.musicxml` M3: SMuFL stick pictograms by type and material; M8: parentheses and dashed-circle enclose the round head |
 | `stick-location` | drawn | `direction_pictograms.musicxml` M2: SMuFL pictogram |
 | `stick-material` | drawn | `direction_pictograms.musicxml` M3: picks the stick head |
 | `stick-type` | drawn | `direction_pictograms.musicxml` M3: picks the stick |

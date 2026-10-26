@@ -491,6 +491,53 @@ describe('ScoreReader', () => {
 		expect(read.every((s) => s.placement === 'below')).toBe(true);
 	});
 
+	it('honors percussion SMuFL names and falls back for unknown names', async () => {
+		const children = [
+			'<glass smufl="pictGlassHarp">wind chimes</glass>',
+			'<metal smufl="pictCowBell">bell</metal>',
+			'<wood smufl="pictClaves">wood block</wood>',
+			'<pitched smufl="pictMar">xylophone</pitched>',
+			'<membrane smufl="pictTabla">snare drum</membrane>',
+			'<effect smufl="pictPistolShot">siren</effect>',
+			'<timpani smufl="pictTimpani"/>',
+			'<other-percussion smufl="pictAnvil">anvil</other-percussion>',
+			'<metal smufl="pictUnknown">bell</metal>',
+			'<other-percussion smufl="pictUnknown">washboard</other-percussion>',
+		];
+		const measure = await measureOf(
+			`<direction><direction-type>${children.map((child) => `<percussion>${child}</percussion>`).join('')}</direction-type></direction>`,
+		);
+		expect(reader.pictogramsOf(measure).map((s) => s.symbol)).toEqual([
+			{ kind: 'glyph', glyph: '\uE764' },
+			{ kind: 'glyph', glyph: '\uE711' },
+			{ kind: 'glyph', glyph: '\uE6F2' },
+			{ kind: 'glyph', glyph: '\uE6A6' },
+			{ kind: 'glyph', glyph: '\uE6E3' },
+			{ kind: 'glyph', glyph: '\uE760' },
+			{ kind: 'glyph', glyph: '\uE6D0' },
+			{ kind: 'glyph', glyph: '\uE701' },
+			{ kind: 'glyph', glyph: '\uE714' },
+			{ kind: 'text', text: 'washboard' },
+		]);
+	});
+
+	it('reads both stick enclosures and leaves explicit no undecorated', async () => {
+		const measure = await measureOf(
+			'<direction><direction-type>' +
+				'<percussion><stick tip="down" parentheses="yes" dashed-circle="yes"><stick-type>yarn</stick-type><stick-material>soft</stick-material></stick></percussion>' +
+				'<percussion><stick parentheses="no" dashed-circle="no"><stick-type>yarn</stick-type><stick-material>soft</stick-material></stick></percussion>' +
+				'</direction-type></direction>',
+		);
+		expect(reader.pictogramsOf(measure).map((s) => s.symbol)).toEqual([
+			{
+				kind: 'glyph',
+				glyph: '\uE7A3',
+				enclosure: { glyphs: ['\uE7E9', '\uE7EA'], head: '\uE7A2', tip: 1 },
+			},
+			{ kind: 'glyph', glyph: '\uE7A2' },
+		]);
+	});
+
 	it('reads an accordion registration as the dots in each rank', async () => {
 		const measure = await measureOf(
 			'<direction><direction-type><accordion-registration>' +

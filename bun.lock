@@ -93,7 +93,7 @@
     },
     "packages/vexml": {
       "name": "@stringsync/vexml",
-      "version": "1.13.0",
+      "version": "1.14.0",
       "dependencies": {
         "@stringsync/mdom": "0.7.0",
         "@types/fontkit": "2.0.9",
