@@ -493,6 +493,7 @@ describe('ScoreReader', () => {
 			head: 'C7(',
 			stack: ['♭9', '♭13'],
 			tail: ')/E',
+			hang: false,
 		});
 	});
 
@@ -505,7 +506,107 @@ describe('ScoreReader', () => {
 			head: 'C7♭9/E',
 			stack: [],
 			tail: '',
+			hang: false,
 		});
+	});
+
+	/*
+	 * The Roman numeral analysis a <harmony> with a <numeral> or <function> prints, below the
+	 * stave unless its placement says otherwise. harmony_analysis.png pins the layout.
+	 */
+	const analysisOf = async (inner: string, attrs = '') =>
+		reader.harmoniesOf(
+			await measureOf(`<harmony ${attrs}>${inner}</harmony>`),
+		)[0];
+	const numeral = (root: number, kind: string, extra = '') =>
+		`<numeral><numeral-root>${root}</numeral-root>${extra}</numeral>${kind}`;
+
+	it('cases a numeral by its kind and adds the quality sign', async () => {
+		const textOf = async (root: number, kind: string) =>
+			(await analysisOf(numeral(root, `<kind>${kind}</kind>`)))?.text;
+		expect(await textOf(1, 'major')).toBe('I');
+		expect(await textOf(2, 'minor')).toBe('ii');
+		expect(await textOf(7, 'diminished')).toBe('vii°');
+		expect(await textOf(3, 'augmented')).toBe('III+');
+		expect(await textOf(7, 'half-diminished')).toBe('viiø7');
+		expect(await textOf(4, 'major-seventh')).toBe('IVM7');
+	});
+
+	it('stacks the inversion figures after the numeral, hung from its top', async () => {
+		const symbolOf = async (kind: string, inversion: number) =>
+			(
+				await analysisOf(
+					numeral(5, `<kind>${kind}</kind><inversion>${inversion}</inversion>`),
+				)
+			)?.symbol;
+		expect(await symbolOf('major', 1)).toEqual({
+			text: 'V6',
+			head: 'V',
+			stack: ['6'],
+			tail: '',
+			hang: true,
+		});
+		expect((await symbolOf('major', 2))?.stack).toEqual(['4', '6']);
+		expect((await symbolOf('dominant', 0))?.stack).toEqual(['7']);
+		expect((await symbolOf('dominant', 1))?.stack).toEqual(['5', '6']);
+		expect((await symbolOf('dominant', 2))?.stack).toEqual(['3', '4']);
+		expect((await symbolOf('dominant', 3))?.stack).toEqual(['2', '4']);
+	});
+
+	it('prints the numeral-root and inversion text as given', async () => {
+		const harmony = await analysisOf(
+			'<numeral><numeral-root text="IV">4</numeral-root></numeral><kind text="">major</kind><inversion text="6">1</inversion>',
+		);
+		expect(harmony?.text).toBe('IV6');
+	});
+
+	it('lets a kind text spell a root-position seventh', async () => {
+		const harmony = await analysisOf(
+			numeral(5, '<kind text="7">dominant</kind>'),
+		);
+		expect(harmony?.text).toBe('V7');
+		expect(harmony?.symbol.stack).toEqual([]);
+	});
+
+	it('puts the numeral-alter on the side its location names', async () => {
+		const textOf = async (alter: string) =>
+			(await analysisOf(numeral(6, '<kind>major</kind>', alter)))?.text;
+		expect(await textOf('<numeral-alter>-1</numeral-alter>')).toBe('♭VI');
+		expect(
+			await textOf('<numeral-alter location="right">1</numeral-alter>'),
+		).toBe('VI♯');
+		expect(
+			await textOf('<numeral-alter print-object="no">1</numeral-alter>'),
+		).toBe('VI');
+	});
+
+	it('names the numeral-key ahead of the numeral', async () => {
+		const key = (fifths: number, mode: string, attrs = '') =>
+			`<numeral-key ${attrs}><numeral-fifths>${fifths}</numeral-fifths><numeral-mode>${mode}</numeral-mode></numeral-key>`;
+		const textOf = async (extra: string) =>
+			(await analysisOf(numeral(1, '<kind>major</kind>', extra)))?.text;
+		expect(await textOf(key(1, 'major'))).toBe('G: I');
+		expect(await textOf(key(-3, 'harmonic minor'))).toBe('c: I');
+		expect(await textOf(key(2, 'major', 'print-object="no"'))).toBe('I');
+	});
+
+	it('prints a function as written', async () => {
+		const harmony = await analysisOf(
+			'<function>D</function><kind>dominant</kind>',
+		);
+		expect(harmony?.text).toBe('D7');
+	});
+
+	it('places analysis below and chord symbols above, unless placement says', async () => {
+		const below = numeral(1, '<kind>major</kind>');
+		expect((await analysisOf(below))?.placement).toBe('below');
+		expect((await analysisOf(below, 'placement="above"'))?.placement).toBe(
+			'above',
+		);
+		expect((await harmonyOf('<kind>major</kind>'))?.placement).toBe('above');
+		expect(
+			(await harmonyOf('<kind>major</kind>', 'placement="below"'))?.placement,
+		).toBe('below');
 	});
 
 	it('draws the kind as its symbol under use-symbols', async () => {

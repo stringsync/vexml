@@ -124,6 +124,7 @@ Two rules cut across the draw stage:
 - **Their formatting: style, weight, size, underline, enclosure, alignment**: `score-reader.ts` (`formatOf`, `TextFormat`; sizes scale against `<defaults><word-font>`), `formatted-text.ts` (text, underlines and enclosure measured and drawn as one box), `text-enclosure.ts` (each enclosure shape)
 - **Tempo and metronome marks**: `direction-placer.ts`, `metronome-glyph.ts` (the note-group form)
 - **Chord symbols (`<harmony>`)**: `direction-placer.ts`
+- **Roman numeral analysis (`<harmony><numeral>`, `<function>`), hung under the stave**: `score-reader.ts` (`analysisSymbol`: case, quality, figures, key), `direction-placer.ts` (`drawHarmony`'s below side)
 - **Chord diagrams (fret boxes)**: `chord-diagram-glyph.ts` (drawing), `direction-placer.ts` (placement), `chord-diagram.ts` (the element)
 - **Lyrics, verses, melisma lines**: `lyric-placer.ts`, `lyric-mark.ts`, `lyric-annotation.ts` (the verse drops under below-stave articulations and technical marks: `system-formatter.ts` `belowMarksBottom`, `stave-articulation.ts` `belowBottomY`)
 - **Fingerings, string numbers, other technical marks**: `technical-mark.ts`, `technical-annotation.ts`, `fingering-annotation.ts`, `string-number-annotation.ts` (the ringed digit), `notation-translator.ts`, `system-formatter.ts` (stacking)
@@ -143,7 +144,7 @@ there, then `add` the placed rect. `kinds` narrows which obstacles count;
 
 | Moves | To clear | Where |
 | --- | --- | --- |
-| Chord symbols, words, rehearsal marks, tempo marks | notes, ties, slur bows, tuplet numbers, lyrics, technical marks, volta brackets, other placed text (`placement="below"` words drop instead of lifting, and below words also drop under the hairpins the previous pass drew there, `SpannerResolver.observeStackedWords`; dynamics stay on the hairpin's line) | `direction-placer.ts` |
+| Chord symbols, Roman numeral analysis, words, rehearsal marks, tempo marks | notes, ties, slur bows, tuplet numbers, lyrics, technical marks, volta brackets, other placed text (`placement="below"` words drop instead of lifting, and below words also drop under the hairpins the previous pass drew there, `SpannerResolver.observeStackedWords`; dynamics stay on the hairpin's line) | `direction-placer.ts` |
 | Chord diagrams | lift off notes, pull inside the page edge (leaving room for the column's later boxes, so a crowded row packs leftward in chord order), push right of the previous diagrams (iterated until clear), lift again | `direction-placer.ts` |
 | Hairpins, pedal lines, ottava brackets | slur bows and beam-extended stem tips (hairpins also the notes they span, their tuplet numbers and tie arcs, and a crescendo running into a diminuendo shares one line), via a resolver scoped to their own stave (they resolve after the per-system index, a hairpin once every system its stave's bows reach is drawn) | `spanner-resolver.ts` |
 | Volta (ending) brackets | noteheads, stem tips and slur bows on the top stave (resolved a pass late, see below) | `draw-pass.ts` (`observeVoltaLift`) |

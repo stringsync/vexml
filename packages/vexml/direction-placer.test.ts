@@ -430,8 +430,15 @@ describe('DirectionPlacer', () => {
 					{
 						staveNote: note(200, stave()),
 						text: 'B♭',
-						symbol: { text: 'B♭', head: 'B♭', stack: [], tail: '' },
+						symbol: {
+							text: 'B♭',
+							head: 'B♭',
+							stack: [],
+							tail: '',
+							hang: false,
+						},
 						frame: null,
+						placement: 'above',
 						source: {} as never,
 					},
 				],

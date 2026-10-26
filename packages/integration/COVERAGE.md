@@ -16,7 +16,7 @@ An attribute row reads `element@attribute`, or `*@attribute` for one shared
 by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
-Elements: 262 drawn, 69 ignored, 111 missing; vexml draws 262 of the 373 that show on the page (70%).
+Elements: 269 drawn, 69 ignored, 104 missing; vexml draws 269 of the 373 that show on the page (72%).
 Attributes: 66 drawn, 5 ignored, 47 missing.
 
 | Element | Status | Proof or reason |
@@ -196,7 +196,7 @@ Attributes: 66 drawn, 5 ignored, 47 missing.
 | `frame-note` | drawn | `chord_diagram.musicxml` |
 | `frame-strings` | drawn | `chord_diagram.musicxml` |
 | `fret` | drawn | `tab_chord.musicxml`, `chord_diagram.musicxml` |
-| `function` | missing | task #32; Roman-numeral harmony function text; mdom raw only |
+| `function` | drawn | `harmony_analysis.musicxml` M6: T, S, D7 under the stave |
 | `fz` | drawn | `dynamics.musicxml` |
 | `glass` | missing | task #16; mdom raw only |
 | `glissando` | drawn | `glissando.musicxml`: a straight line between the noteheads, across a barline, or a tick into a lone stop |
@@ -244,7 +244,7 @@ Attributes: 66 drawn, 5 ignored, 47 missing.
 | `instrument-sound` | ignored | sound only |
 | `instruments` | ignored | metadata (instrument count) |
 | `interchangeable` | missing | task #18; mdom raw only |
-| `inversion` | drawn | `harmony.musicxml` M19: bass chord tone spelled from the kind |
+| `inversion` | drawn | `harmony.musicxml` M19: bass chord tone spelled from the kind; `harmony_analysis.musicxml` M2: a numeral's figures |
 | `inverted-mordent` | drawn | `ornaments.musicxml` |
 | `inverted-turn` | drawn | `ornaments.musicxml` |
 | `inverted-turn@slash` | drawn | `ornaments.musicxml` |
@@ -340,12 +340,12 @@ Attributes: 66 drawn, 5 ignored, 47 missing.
 | `notehead@filled` | drawn | `notehead_shapes_extended.musicxml`: filled and open shape variants |
 | `notehead@parentheses` | drawn | `notehead_parentheses.musicxml`: per-member parenthesized noteheads |
 | `notehead-text` | drawn | `notehead_text.musicxml`: display-text and accidental-text runs joined and centered in the head |
-| `numeral` | missing | task #32; roman numeral harmony analysis; mdom raw only |
-| `numeral-alter` | missing | task #32; roman numeral harmony analysis; mdom raw only |
-| `numeral-fifths` | missing | task #32; roman numeral harmony analysis key context; mdom raw only |
-| `numeral-key` | missing | task #32; roman numeral harmony analysis key context; mdom raw only |
-| `numeral-mode` | missing | task #32; roman numeral harmony analysis key context; mdom raw only |
-| `numeral-root` | missing | task #32; roman numeral harmony analysis; mdom raw only |
+| `numeral` | drawn | `harmony_analysis.musicxml` M1-M4: Roman numerals under the stave, cased by the kind |
+| `numeral-alter` | drawn | `harmony_analysis.musicxml` M4: ♭VI, and IV♯ with location="right" |
+| `numeral-fifths` | drawn | `harmony_analysis.musicxml` M4-M5: the key named ahead of the numeral |
+| `numeral-key` | drawn | `harmony_analysis.musicxml` M4-M5: "G: V", "e: i" |
+| `numeral-mode` | drawn | `harmony_analysis.musicxml` M5: minor keys print lowercase |
+| `numeral-root` | drawn | `harmony_analysis.musicxml` M1-M5: the degree as a numeral, or its text (M5) |
 | `octave` | drawn | `note.musicxml` |
 | `octave-change` | ignored | sound only: transposition, written pitch is drawn |
 | `octave-shift` | drawn | `octave_shift.musicxml` |

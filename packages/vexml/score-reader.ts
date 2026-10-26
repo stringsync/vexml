@@ -1027,6 +1027,9 @@ export class ScoreReader {
 	 * applies to the note that follows it, resolved by Harmony.nextNote (the next
 	 * non-<chord/> note). `frame` is the chord-diagram spec when the harmony carries a
 	 * <frame>, else null. `source` is the Harmony element itself, kept for provenance.
+	 * `placement` is the side the text prints on: the harmony's own placement, else below
+	 * for a Roman numeral analysis (a <numeral> or <function>), which is where analysis
+	 * sits, and above for a chord symbol.
 	 *
 	 * Deduplicated on (beat, text, frame): a <harmony> belongs to the part, but Guitar Pro
 	 * repeats an identical one after every <backup> (once per voice), and drawing each
@@ -1038,6 +1041,7 @@ export class ScoreReader {
 		text: string;
 		symbol: HarmonySymbol;
 		frame: ChordFrame | null;
+		placement: Placement;
 		source: Harmony;
 	}[] {
 		const harmonies: {
@@ -1045,6 +1049,7 @@ export class ScoreReader {
 			text: string;
 			symbol: HarmonySymbol;
 			frame: ChordFrame | null;
+			placement: Placement;
 			source: Harmony;
 		}[] = [];
 		const seen = new Set<string>();
@@ -1053,7 +1058,8 @@ export class ScoreReader {
 			if (!lead) {
 				continue;
 			}
-			const symbol = this.harmonySymbol(harmony);
+			const analysis = this.analysisSymbol(harmony);
+			const symbol = analysis ?? this.harmonySymbol(harmony);
 			const text = symbol.text;
 			const frame = this.frameOf(harmony);
 			if (!text && !frame) {
@@ -1064,7 +1070,15 @@ export class ScoreReader {
 				continue;
 			}
 			seen.add(key);
-			harmonies.push({ lead, text, symbol, frame, source: harmony });
+			const placement = harmony.placement ?? (analysis ? 'below' : 'above');
+			harmonies.push({
+				lead,
+				text,
+				symbol,
+				frame,
+				placement,
+				source: harmony,
+			});
 		}
 		return harmonies;
 	}
@@ -1740,7 +1754,104 @@ export class ScoreReader {
 			head: stacked ? head : head + inline + tail,
 			stack: stacked ? degrees : [],
 			tail: stacked ? tail : '',
+			hang: false,
 		};
+	}
+
+	/*
+	 * A <harmony>'s Roman numeral analysis, or null for a chord symbol: a <numeral>, or the
+	 * deprecated <function> that holds the numeral as written ("V", "ii", or a T/S/D
+	 * function letter). A <numeral-root> prints its text attribute when there is one, else
+	 * its degree as a Roman numeral, lowercase for a minor or diminished kind; its
+	 * <numeral-alter> sign goes on the side its location names. The kind adds its quality
+	 * (° + ø, M for a major seventh), or its text attribute when the exporter spells it,
+	 * then the figures for the inversion stack after it: 6 or 6/4 for a triad, 7, 6/5, 4/3
+	 * or 4/2 for a seventh, or the <inversion text>. A <numeral-key> names the key the
+	 * numeral reads in ahead of it, "G: IV", uppercase for major and lowercase for minor.
+	 * <degree>s follow inline, as on a chord symbol.
+	 */
+	private analysisSymbol(harmony: Harmony): HarmonySymbol | null {
+		const numeral = harmony.child('numeral');
+		const fn = harmony.child('function');
+		if (!numeral && !fn) {
+			return null;
+		}
+		const kindEl = harmony.child('kind');
+		const kindValue = harmony.kind?.value ?? '';
+		const quality = NUMERAL_QUALITY[kindValue];
+		const tones = HARMONY_KIND_TONES[kindValue] ?? [];
+		const seventh = tones.length === 3 && tones[2]?.[0] === 7;
+		const kindText = kindEl?.getAttribute('text');
+		const suffix =
+			kindText ?? quality?.suffix ?? HARMONY_KIND_SUFFIX[kindValue] ?? '';
+		const inversionEl = harmony.child('inversion');
+		const inversion = Number(inversionEl?.text ?? 0);
+		const figures =
+			inversionEl?.getAttribute('text')?.split('') ??
+			(seventh
+				? (SEVENTH_FIGURES[inversion] ?? [])
+				: (TRIAD_FIGURES[inversion] ?? []));
+		// The kind's text already spells a root-position seventh ("V7"); only an inversion's
+		// figures replace it.
+		const stack = kindText && inversion === 0 ? [] : figures;
+		const degrees = this.degreeTexts(harmony).join('');
+		const head = `${this.numeralKeyText(numeral)}${this.numeralText(numeral, fn, quality?.lower ?? false)}${suffix}`;
+		return {
+			text: head + stack.join('') + degrees,
+			head: stack.length > 0 ? head : head + degrees,
+			stack: [...stack].reverse(),
+			tail: stack.length > 0 ? degrees : '',
+			hang: true,
+		};
+	}
+
+	/*
+	 * The numeral itself: a <function>'s text as written, else the <numeral-root> (its text
+	 * attribute, or its degree in Roman numerals, lowercased for a minor quality) with its
+	 * <numeral-alter> sign, left of it unless location="right", and none when the alteration
+	 * has print-object="no" (the raised 6 or 7 a minor key's numeral implies).
+	 */
+	private numeralText(
+		numeral: ReturnType<Harmony['child']>,
+		fn: ReturnType<Harmony['child']>,
+		lower: boolean,
+	): string {
+		const rootEl = numeral?.child('numeral-root');
+		if (!rootEl) {
+			return fn?.text?.trim() ?? '';
+		}
+		const degree = Number(rootEl.text ?? 0);
+		const roman = ROMAN_NUMERALS[degree - 1] ?? '';
+		const root =
+			rootEl.getAttribute('text') ?? (lower ? roman.toLowerCase() : roman);
+		const alterEl = numeral?.child('numeral-alter');
+		if (!alterEl || alterEl.getAttribute('print-object') === 'no') {
+			return root;
+		}
+		const semitones = Number(alterEl.text ?? 0);
+		const sign = (semitones > 0 ? '♯' : '♭').repeat(Math.abs(semitones));
+		return alterEl.getAttribute('location') === 'right'
+			? root + sign
+			: sign + root;
+	}
+
+	/*
+	 * A <numeral-key>'s key name and colon ahead of the numeral, "G: " or "e: ", spelled
+	 * from its <numeral-fifths> like a key signature's tonic, and lowercase for any minor
+	 * <numeral-mode>. Nothing without one, or when it has print-object="no".
+	 */
+	private numeralKeyText(numeral: ReturnType<Harmony['child']>): string {
+		const keyEl = numeral?.child('numeral-key');
+		if (!keyEl || keyEl.getAttribute('print-object') === 'no') {
+			return '';
+		}
+		const fifths = Number(keyEl.child('numeral-fifths')?.text ?? 0);
+		const minor =
+			keyEl.child('numeral-mode')?.text?.trim().endsWith('minor') ?? false;
+		const tonic = minor
+			? MINOR_TONICS[fifths + 7]?.toLowerCase()
+			: MAJOR_TONICS[fifths + 7];
+		return tonic ? `${tonic}: ` : '';
 	}
 
 	/*
@@ -1998,13 +2109,17 @@ export class ScoreReader {
  * A chord symbol laid out for drawing: `head` (root, kind, any opening bracket), a
  * column of degrees stacked bottom-up beside it, then `tail` (closing bracket, bass).
  * Inline degrees ride in `head`, leaving `stack` and `tail` empty. `text` is the whole
- * symbol on one line, as a fret-box title prints it.
+ * symbol on one line, as a fret-box title prints it. A Roman numeral's inversion figures
+ * ride in `stack` too, with `hang` set: the column hangs from the numeral's top, so a lone
+ * 7 reads as a superscript and a 6/5 straddles the baseline, where a chord symbol's
+ * degrees stand on it.
  */
 export type HarmonySymbol = {
 	text: string;
 	head: string;
 	stack: string[];
 	tail: string;
+	hang: boolean;
 };
 
 /**
@@ -2213,6 +2328,66 @@ const HARMONY_KIND_TONES: Record<string, [number, number][]> = {
 	'suspended-fourth': [[4, 5], FIFTH],
 	power: [FIFTH],
 };
+
+// The Roman numerals for scale degrees 1 to 7.
+const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+
+// How a <kind> reads on a Roman numeral: lowercase for a minor third, and the quality sign
+// after it. A kind left out falls back to its chord-symbol suffix in HARMONY_KIND_SUFFIX.
+const NUMERAL_QUALITY: Record<string, { lower: boolean; suffix: string }> = {
+	major: { lower: false, suffix: '' },
+	minor: { lower: true, suffix: '' },
+	augmented: { lower: false, suffix: '+' },
+	diminished: { lower: true, suffix: '°' },
+	dominant: { lower: false, suffix: '' },
+	'major-seventh': { lower: false, suffix: 'M' },
+	'minor-seventh': { lower: true, suffix: '' },
+	'diminished-seventh': { lower: true, suffix: '°' },
+	'augmented-seventh': { lower: false, suffix: '+' },
+	'half-diminished': { lower: true, suffix: 'ø' },
+	'major-minor': { lower: true, suffix: 'M' },
+};
+
+// The figures an <inversion> stacks after a Roman numeral, top first: a triad's root
+// position prints none, a seventh chord's prints its 7.
+const TRIAD_FIGURES: string[][] = [[], ['6'], ['6', '4']];
+const SEVENTH_FIGURES: string[][] = [['7'], ['6', '5'], ['4', '3'], ['4', '2']];
+
+// The major and minor tonic per <numeral-fifths>, from 7 flats (index 0) to 7 sharps.
+const MAJOR_TONICS = [
+	'C♭',
+	'G♭',
+	'D♭',
+	'A♭',
+	'E♭',
+	'B♭',
+	'F',
+	'C',
+	'G',
+	'D',
+	'A',
+	'E',
+	'B',
+	'F♯',
+	'C♯',
+];
+const MINOR_TONICS = [
+	'A♭',
+	'E♭',
+	'B♭',
+	'F',
+	'C',
+	'G',
+	'D',
+	'A',
+	'E',
+	'B',
+	'F♯',
+	'C♯',
+	'G♯',
+	'D♯',
+	'A♯',
+];
 
 // The harmony symbols <kind use-symbols> and <degree-value symbol> draw in place of
 // letters, as the spec spells them: a triangle for major, then - + ° ø.

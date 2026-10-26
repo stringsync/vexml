@@ -647,6 +647,7 @@ export class DrawPass {
 				text,
 				symbol,
 				frame,
+				placement,
 				source,
 			} of this.reader.harmoniesOf(measure)) {
 				const staveNote = this.byLead.get(lead) ?? this.byTabLead.get(lead);
@@ -656,6 +657,7 @@ export class DrawPass {
 						text,
 						symbol,
 						frame,
+						placement,
 						source,
 					});
 				}

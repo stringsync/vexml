@@ -2759,6 +2759,30 @@ describe('render', () => {
 		);
 	});
 
+	// Treble stave, 4/4, C major: Roman numeral analysis from <harmony><numeral> (and the
+	// deprecated <function>), one per C4 quarter, hung under the stave rather than over it,
+	// left-anchored at its note and all on one baseline. A numeral is lowercase for a minor
+	// or diminished kind, and its inversion figures sit after it in a small column hung from
+	// its top: a lone figure reads as a superscript, a pair straddles the baseline.
+	// - M1: I, ii, V7 (dominant: the 7 superscript), I.
+	// - M2: the inversions: I6, I6/4, V6/5, V4/2.
+	// - M3: the qualities: vii°, viiø7, vii°7, III+.
+	// - M4: IVM7 (major seventh), ♭VI (<numeral-alter>-1), IV♯ (alter location="right"),
+	//   then "a: ♯VI": a <numeral-key> of 0 fifths, minor, names the key ahead of it.
+	// - M5 (second system): "G: V" and "e: i" from <numeral-key>s; the spec's own example,
+	//   <numeral-root text="IV"> with <kind text=""> and <inversion text="6">, prints
+	//   "G: IV6"; a dominant whose <kind text="7"> spells the seventh prints "V7" inline.
+	// - M6: <function> letters T, S, D7 (dominant), T, upright and below like the numerals.
+	// - M7: a "V" under two A3 quarters drops clear of their ledger lines, while a
+	//   placement="above" "I" over beat 3 stands over the stave like a chord symbol.
+	// - M8: "I" and "V7" under two half notes carrying the lyric "la": the analysis hangs
+	//   under the verse instead of through it. Final barline.
+	it.concurrent('renders harmony_analysis.png', async () => {
+		expect(await testing.render('harmony_analysis.musicxml')).toMatchScreenshot(
+			'harmony_analysis.png',
+		);
+	});
+
 	// <figured-bass>, the stacked numerals a continuo player reads under the bass line. One
 	// treble stave in common time holding six identical G4s, so only the figures vary; each
 	// stack sits under the note that FOLLOWS its <figured-bass> element, centered on the

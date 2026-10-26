@@ -382,9 +382,13 @@ export class DirectionPlacer {
 					title: h.text || null,
 				});
 			} else {
-				const top = this.drawHarmony(h.staveNote, h.symbol);
-				this.reporter.growPageTop(top);
-				this.spill.growDecorationTop(column.systemIndex, top);
+				const top = this.drawHarmony(h.staveNote, h.symbol, h.placement);
+				// A below-stave analysis grows the crop downward instead (drawHarmony
+				// reports the drop), like below words.
+				if (h.placement !== 'below') {
+					this.reporter.growPageTop(top);
+					this.spill.growDecorationTop(column.systemIndex, top);
+				}
 			}
 		}
 		// The tempo mark goes last so it stacks on top of anything else above the stave. A
@@ -707,16 +711,24 @@ export class DirectionPlacer {
 
 	/*
 	 * Lay out a chord symbol from x on baseline y: the head, then the stacked degrees as one
-	 * column (bottom row on the baseline, each next row a HARMONY_STACK_LINE higher), then the
-	 * tail after the column's widest row. Returns its width and how far it rises above the
-	 * baseline, the extent the collision box needs; with `draw` it also fills the glyphs.
+	 * column (bottom row on the baseline, each next row a HARMONY_STACK_LINE higher, or with
+	 * `hang` the whole column hung from the head's top), then the tail after the column's
+	 * widest row. Returns its width, how far it rises above the baseline and how far a hung
+	 * column reaches below it, the extent the collision box needs; with `draw` it also fills
+	 * the glyphs.
 	 */
 	private harmonyLayout(
 		symbol: HarmonySymbol,
 		x: number,
 		y: number,
 		draw: boolean,
-	): { width: number; height: number } {
+	): { width: number; height: number; depth: number } {
+		const stackHeight =
+			symbol.stack.length === 0
+				? 0
+				: (symbol.stack.length - 1) * HARMONY_STACK_LINE +
+					HARMONY_STACK_FONT_SIZE;
+		const stackBase = symbol.hang ? y - HARMONY_FONT_SIZE + stackHeight : y;
 		let cursor =
 			x + this.harmonyRun(symbol.head, x, y, HARMONY_FONT_SIZE, draw);
 		let column = 0;
@@ -726,7 +738,7 @@ export class DirectionPlacer {
 				this.harmonyRun(
 					row,
 					cursor,
-					y - i * HARMONY_STACK_LINE,
+					stackBase - i * HARMONY_STACK_LINE,
 					HARMONY_STACK_FONT_SIZE,
 					draw,
 				),
@@ -734,14 +746,10 @@ export class DirectionPlacer {
 		});
 		cursor += column;
 		cursor += this.harmonyRun(symbol.tail, cursor, y, HARMONY_FONT_SIZE, draw);
-		const stackHeight =
-			symbol.stack.length === 0
-				? 0
-				: (symbol.stack.length - 1) * HARMONY_STACK_LINE +
-					HARMONY_STACK_FONT_SIZE;
 		return {
 			width: cursor - x,
-			height: Math.max(HARMONY_FONT_SIZE, stackHeight),
+			height: Math.max(HARMONY_FONT_SIZE, y - stackBase + stackHeight),
+			depth: Math.max(0, stackBase - y),
 		};
 	}
 
@@ -752,44 +760,72 @@ export class DirectionPlacer {
 	 * registered as obstacles); it sits at a fixed gap above the top staff line when nothing is in
 	 * the way. Returns the y the text reaches up to so the caller can grow the page crop above it.
 	 * Drawn after the notes are formatted so getAbsoluteX is real.
+	 *
+	 * placement="below" (a Roman numeral analysis by default) is the mirror image: it hangs
+	 * at the words gap under the bottom staff line and drops clear of the low notes, lyrics
+	 * and below-stave marks in its column, reporting the drop for the crop.
 	 */
 	private drawHarmony(
 		staveNote: StaveNote | TabNote,
 		symbol: HarmonySymbol,
+		placement: Placement,
 	): number {
 		const stave = staveNote.getStave();
 		if (!stave) {
 			return Infinity;
 		}
-		const baseY = stave.getYForLine(0) - HARMONY_Y_OFFSET;
+		const below = placement === 'below';
 		this.context.save();
 		this.context.setFillStyle(this.textColor);
-		// Pad the box below the text baseline so liftClear's downward probe reaches a notehead
-		// sitting just under the baseline (a note in the top stave space) and nudges the symbol
-		// clear of it, leaving a little breathing room. The drawn baseline stays HARMONY_PADDING
-		// above the box bottom, so with nothing in the way the symbol keeps its default position.
-		const { width, height } = this.harmonyLayout(
+		const { width, height, depth } = this.harmonyLayout(
 			symbol,
 			staveNote.getAbsoluteX(),
-			baseY,
+			0,
 			false,
 		);
-		const natural = new Rect(
-			staveNote.getAbsoluteX(),
-			baseY - height,
-			width,
-			height + HARMONY_PADDING,
-		);
 		const band = this.reporter.rowOf(stave);
-		const placed = this.collisionResolver.liftClear(
-			natural,
-			HARMONY_NOTE_CLEARANCE,
-			{ kinds: TEXT_CLEAR_KINDS, band },
-		);
-		this.reporter.recordAnnotationSpill(stave, placed);
-		this.harmonyLayout(symbol, placed.x, placed.bottom - HARMONY_PADDING, true);
+		let placed: Rect;
+		if (below) {
+			const natural = new Rect(
+				staveNote.getAbsoluteX(),
+				stave.getBottomLineY() + WORDS_Y_OFFSET,
+				width,
+				height + depth,
+			);
+			placed = this.collisionResolver.dropClear(natural, WORDS_NOTE_CLEARANCE, {
+				kinds: TEXT_CLEAR_KINDS,
+				band,
+			});
+			this.reporter.recordAnnotationDrop(stave, placed);
+			this.harmonyLayout(symbol, placed.x, placed.y + height, true);
+		} else {
+			// Pad the box below the text baseline so liftClear's downward probe reaches a
+			// notehead sitting just under the baseline (a note in the top stave space) and
+			// nudges the symbol clear of it, leaving a little breathing room. The drawn
+			// baseline stays HARMONY_PADDING above the box bottom, so with nothing in the way
+			// the symbol keeps its default position.
+			const baseY = stave.getYForLine(0) - HARMONY_Y_OFFSET;
+			const natural = new Rect(
+				staveNote.getAbsoluteX(),
+				baseY - height,
+				width,
+				height + depth + HARMONY_PADDING,
+			);
+			placed = this.collisionResolver.liftClear(
+				natural,
+				HARMONY_NOTE_CLEARANCE,
+				{ kinds: TEXT_CLEAR_KINDS, band },
+			);
+			this.reporter.recordAnnotationSpill(stave, placed);
+			this.harmonyLayout(
+				symbol,
+				placed.x,
+				placed.bottom - HARMONY_PADDING - depth,
+				true,
+			);
+		}
 		this.context.restore();
-		// Register the placed symbol so a later annotation in this system stacks above it.
+		// Register the placed symbol so a later annotation in this system stacks clear of it.
 		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
 		return placed.y;
 	}
@@ -1106,6 +1142,8 @@ export type HarmonyTask = {
 	text: string;
 	symbol: HarmonySymbol;
 	frame: ChordFrame | null;
+	// The side a plain-text symbol prints on; a chord diagram always stands above.
+	placement: Placement;
 	source: Harmony;
 };
 
