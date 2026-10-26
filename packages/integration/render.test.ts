@@ -732,6 +732,18 @@ describe('render', () => {
 		).toMatchScreenshot('rest_multi_measure.png');
 	});
 
+	// Treble stave, 4/4: <multiple-rest use-symbols="yes"> draws old-style rest symbols
+	// (breve and whole rests) instead of the thick bar.
+	// - M1-2: 2 bars. M3-5: 3 bars. M6-9: 4 bars.
+	// - M10-12: use-symbols="no", the thick bar for comparison.
+	it.concurrent('renders rest_multi_measure_symbols.png', async () => {
+		expect(
+			await testing.render('rest_multi_measure_symbols.musicxml', {
+				measureNumbering: 'every',
+			}),
+		).toMatchScreenshot('rest_multi_measure_symbols.png');
+	});
+
 	// Treble stave, 4/4: <measure-style> signs drawn in place of written-out notes, which
 	// still play as written.
 	// - M1: four quarters, C5 D5 E5 F5.

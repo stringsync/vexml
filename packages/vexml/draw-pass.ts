@@ -149,7 +149,11 @@ export class DrawPass {
 	// Document measure index -> the gap spec rendered there (empty when config has none).
 	private readonly gaps: ReadonlyMap<number, Gap>;
 	// The multirest bars to draw over this column's staves, once those staves are on the canvas.
-	private columnMultiRests: Array<{ stave: Stave; count: number }> = [];
+	private columnMultiRests: Array<{
+		stave: Stave;
+		count: number;
+		symbols: boolean;
+	}> = [];
 	// The <measure-style> signs to draw over this column's staves, in their notes' place.
 	private columnMeasureStyles: Array<{ stave: Stave; mark: MeasureStyleMark }> =
 		[];
@@ -971,8 +975,8 @@ export class DrawPass {
 		}
 		// The consolidated multi-bar rests, over the staves that just landed; they paint
 		// onto staff lines, so the staves have to be on the canvas first.
-		for (const { stave, count } of this.columnMultiRests) {
-			this.staveBuilder.drawMultiRest(stave, count);
+		for (const { stave, count, symbols } of this.columnMultiRests) {
+			this.staveBuilder.drawMultiRest(stave, count, symbols);
 		}
 		for (const { stave, mark } of this.columnMeasureStyles) {
 			this.measureStyleDrawer.draw(stave, mark);
@@ -1210,7 +1214,11 @@ export class DrawPass {
 		}
 		if (built.multiRestCount || built.measureStyle) {
 			if (built.multiRestCount) {
-				this.columnMultiRests.push({ stave, count: built.multiRestCount });
+				this.columnMultiRests.push({
+					stave,
+					count: built.multiRestCount,
+					symbols: built.multiRestSymbols,
+				});
 			}
 			this.systemTop ??= stave;
 			this.systemBottom = stave;

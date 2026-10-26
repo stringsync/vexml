@@ -82,6 +82,8 @@ export class StaveBuilder {
 	private readonly gaps: ReadonlyMap<number, Gap>;
 	// Lead measure index -> the number of measures its <multiple-rest> consolidates.
 	private readonly multiRests: ReadonlyMap<number, number>;
+	// Lead measure indexes whose <multiple-rest> draws old-style rest symbols, not the bar.
+	private readonly multiRestSymbols: ReadonlySet<number>;
 	// The stave itself and the clef/key a system opens with, shared with the sticky fold.
 	private readonly factory: StaveFactory;
 
@@ -112,7 +114,9 @@ export class StaveBuilder {
 		// <multiple-rest> runs: the lead measure draws the consolidated bar instead of its own
 		// notes, and the measures it swallows have no box (the layout planner dropped them), so
 		// the measure loop skips them without any extra guard here.
-		this.multiRests = this.reader.multiRestsOf(this.parts).leads;
+		const multiRests = this.reader.multiRestsOf(this.parts);
+		this.multiRests = multiRests.leads;
+		this.multiRestSymbols = multiRests.symbols;
 		this.factory = new StaveFactory(signatures, staves);
 	}
 
@@ -412,6 +416,7 @@ export class StaveBuilder {
 						}
 					: null,
 			multiRestCount: this.multiRests.get(m) ?? null,
+			multiRestSymbols: this.multiRestSymbols.has(m),
 			measureStyle: this.reader.measureStyleOf(measure, staffNumber),
 		};
 	}
@@ -422,12 +427,13 @@ export class StaveBuilder {
 	 * tickable: it stands for the whole measure, so there is nothing for the formatter
 	 * to space it against.
 	 */
-	drawMultiRest(stave: Stave, count: number): void {
+	drawMultiRest(stave: Stave, count: number, symbols: boolean): void {
 		// vexflow measures its padding from the stave's x, so the left inset has to clear
 		// the clef/key/time first: otherwise the bar starts under the time signature and
 		// ends well short of the barline instead of centering in the note area.
 		new MultiMeasureRest(count, {
 			numberOfMeasures: count,
+			useSymbols: symbols,
 			paddingLeft: stave.getNoteStartX() - stave.getX() + MULTI_REST_PADDING,
 			paddingRight: MULTI_REST_PADDING,
 		})
@@ -475,6 +481,8 @@ export interface BuiltStave {
 	/** How many measures the stave's <multiple-rest> consolidates, or null when the
 	 * measure draws its own notes. */
 	multiRestCount: number | null;
+	/** Whether that multirest draws old-style rest symbols instead of the thick bar. */
+	multiRestSymbols: boolean;
 	/** The sign the stave's <measure-style> draws in place of its notes (a measure repeat,
 	 * beat repeats, beat slashes), or null when the measure draws its own notes. */
 	measureStyle: MeasureStyleMark | null;

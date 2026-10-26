@@ -17,7 +17,7 @@ by many elements. Element rows are one per schema element; attribute rows
 are picked by hand.
 
 Elements: 274 drawn, 69 ignored, 99 missing; vexml draws 274 of the 373 that show on the page (73%).
-Attributes: 77 drawn, 5 ignored, 36 missing.
+Attributes: 78 drawn, 5 ignored, 35 missing.
 
 | Element | Status | Proof or reason |
 | --- | --- | --- |
@@ -316,7 +316,7 @@ Attributes: 77 drawn, 5 ignored, 36 missing.
 | `movement-title` | drawn | `header_catalog.musicxml`: the title, or the subtitle under a work-title, with showHeader and no credits |
 | `mp` | drawn | `dynamics.musicxml` |
 | `multiple-rest` | drawn | `rest_multi_measure.musicxml` |
-| `multiple-rest@use-symbols` | missing | task #38; old-style rest symbols not drawn; mdom raw only |
+| `multiple-rest@use-symbols` | drawn | `rest_multi_measure_symbols.musicxml`: breve and whole rest symbols for 2, 3 and 4 bars, plus use-symbols=no |
 | `music-font` | missing | task #51 for its size; its face stays unused on purpose, since vexml engraves in SMuFL Bravura and exporters name non-SMuFL faces (Maestro, Opus); mdom raw only |
 | `mute` | ignored | sound only |
 | `n` | drawn | `dynamics.musicxml` |

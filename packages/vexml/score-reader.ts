@@ -269,9 +269,11 @@ export class ScoreReader {
 	multiRestsOf(parts: Part[]): {
 		leads: Map<number, number>;
 		hidden: Set<number>;
+		symbols: Set<number>;
 	} {
 		const leads = new Map<number, number>();
 		const hidden = new Set<number>();
+		const symbols = new Set<number>();
 		const measureCount = Math.max(
 			0,
 			...parts.map((part) => part.measures.length),
@@ -291,11 +293,38 @@ export class ScoreReader {
 				continue;
 			}
 			leads.set(m, count);
+			if (this.multiRestUsesSymbols(parts[0]?.measures[m])) {
+				symbols.add(m);
+			}
 			for (let swallowed = m + 1; swallowed < m + count; swallowed++) {
 				hidden.add(swallowed);
 			}
 		}
-		return { leads, hidden };
+		return { leads, hidden, symbols };
+	}
+
+	/*
+	 * Whether a measure's <multiple-rest> asks for old-style rest symbols (use-symbols="yes")
+	 * instead of the thick bar. mdom keeps only the count, so the attribute is read off the raw
+	 * element. The first staff speaks for the column, as multiRestCountOf does.
+	 */
+	private multiRestUsesSymbols(measure: Measure | undefined): boolean {
+		for (const node of measure?.children ?? []) {
+			if (!(node instanceof MElement) || node.tag !== 'attributes') {
+				continue;
+			}
+			for (const style of node.childrenNamed('measure-style')) {
+				const number = style.getAttribute('number');
+				if (number !== null && number !== '1') {
+					continue;
+				}
+				const rest = style.child('multiple-rest');
+				if (rest?.getAttribute('use-symbols') === 'yes') {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/*
