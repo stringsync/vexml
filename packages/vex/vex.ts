@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { coverage } from './coverage';
 import { dev } from './dev';
 import { fix } from './fix';
+import { lint } from './lint';
 import { perf } from './perf';
 import { RendererBench } from './perf-bench';
 import { Retrier } from './perf-retrier';
@@ -121,6 +122,26 @@ vex
 		}
 		await render({ ...opts, cwd: invocationDir, log, fs });
 	});
+
+vex
+	.command('lint')
+	.description(
+		'render a musicxml file and judge the pixels: a 0..100 score per renderer, the findings that cost it points, and the png with each finding boxed',
+	)
+	.option('input', z.string(), { description: 'input musicxml file' })
+	.option('renderer', z.string(), {
+		default: 'vexml',
+		description:
+			"renderers to lint, comma separated: vexml, osmd, alphatab, musescore, or 'all'",
+	})
+	.option('output', z.string().optional(), {
+		description:
+			'directory for the marked pngs and the json report (default: .)',
+	})
+	.use(timing)
+	.action((opts, { log, fs, invocationDir }) =>
+		lint({ ...opts, cwd: invocationDir, log, fs }),
+	);
 
 vex
 	.command('perf')
