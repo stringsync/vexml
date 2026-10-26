@@ -17,6 +17,7 @@ import {
 	Tuplet,
 	VibratoBracket,
 } from 'vexflow/core';
+import { BowedTremolo } from './bowed-tremolo';
 import {
 	SINGLE_SLIDE_GAP,
 	SLUR_END_ZONE,
@@ -39,6 +40,7 @@ import { CrispCurve, CURVE_THICKNESS } from './crisp-curve';
 import { CrispTabSlide } from './crisp-tab-slide';
 import { DashedTie } from './dashed-tie';
 import { DisplayTuplet, type TupletNoteValue } from './display-tuplet';
+import { type BeamFan, FeatheredBeam } from './feathered-beam';
 import { Hairpin } from './hairpin';
 import { HeadCurve } from './head-curve';
 import { Ink } from './ink';
@@ -91,6 +93,29 @@ export class SpannerBuilder {
 	private readonly reaches = new Map<Note, number>();
 
 	/*
+	 * Two-note tremolos: each <tremolo type="start"> pairs with the next "stop" in the voice's
+	 * chords, and the slashes between their stems are drawn once the notes are placed.
+	 */
+	buildTremolos(chords: Chord[], byLead: Map<Note, StaveNote>): BowedTremolo[] {
+		const out: BowedTremolo[] = [];
+		let open: { note: StaveNote; marks: number } | undefined;
+		for (const { lead } of chords) {
+			const staveNote = byLead.get(lead);
+			const tremolo = lead.ornaments.find((o) => o.ornamentType === 'tremolo');
+			if (!staveNote || !tremolo) {
+				continue;
+			}
+			if (tremolo.tremoloType === 'start') {
+				open = { note: staveNote, marks: tremolo.tremoloMarks || 1 };
+			} else if (tremolo.tremoloType === 'stop' && open) {
+				out.push(new BowedTremolo(open.note, staveNote, open.marks));
+				open = undefined;
+			}
+		}
+		return out;
+	}
+
+	/*
 	 * Beams: map each beam group's notes to their StaveNotes. Built before formatting
 	 * so the beamed notes drop their flags.
 	 */
@@ -124,7 +149,10 @@ export class SpannerBuilder {
 					!defaultStem &&
 					group.notes.every((note) => !note.stem) &&
 					!notes.every((note) => note.getStemDirection() === beamStem(notes));
-				const beam = new Beam(notes, autoStem);
+				const fan = fanOf(group);
+				const beam = fan
+					? new FeatheredBeam(notes, autoStem, fan)
+					: new Beam(notes, autoStem);
 				// The beam just settled stem directions; re-pin articulations placed
 				// against each note's pre-beam direction onto the notehead side.
 				if (autoStem) {
@@ -1759,4 +1787,17 @@ function rawNormalValue(note: Note): TupletNoteValue | null {
 		return tupletNoteValue(note);
 	}
 	return { type, dots: modification?.childrenNamed('normal-dot').length ?? 0 };
+}
+
+// The fan of a beam group: the first <beam fan> on any of its notes that asks for a feather.
+function fanOf(group: BeamRun): BeamFan | null {
+	for (const note of group.notes) {
+		for (const beam of note.beams) {
+			const fan = beam.getAttribute('fan');
+			if (fan === 'accel' || fan === 'rit') {
+				return fan;
+			}
+		}
+	}
+	return null;
 }

@@ -195,9 +195,14 @@ export class NotationTranslator {
 				continue;
 			}
 			if (ornament.ornamentType === 'tremolo') {
-				// <tremolo type="single">N</tremolo>: N slashes through the stem.
-				// ponytail: the type="start"/"stop" bowed-tremolo pair (slashes BETWEEN two notes)
-				// is not handled: it needs a spanner, and no fixture reaches it yet.
+				// <tremolo type="single">N</tremolo>: N slashes through the stem. The
+				// start/stop pair draws between its notes instead (SpannerBuilder.buildTremolos).
+				if (
+					ornament.tremoloType === 'start' ||
+					ornament.tremoloType === 'stop'
+				) {
+					continue;
+				}
 				staveNote.addModifier(new Tremolo(ornament.tremoloMarks || 1));
 				continue;
 			}

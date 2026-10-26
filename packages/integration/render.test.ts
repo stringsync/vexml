@@ -2719,13 +2719,23 @@ describe('render', () => {
 	//   stop on the same note), which prints no bracket and no number: a single-note tuplet
 	//   has nothing to span, and the slash is what tells a reader the note is subdivided.
 	//   OSMD engraves this identically.
-	// ponytail: only the single-note form draws. The type="start"/"stop" bowed-tremolo pair
-	// (slashes BETWEEN two noteheads) needs a spanner (see the note in addOrnaments) and no
-	// fixture reaches it; see tremelo_two_bars.xml when one does.
+	// The start/stop pair, slashes between two noteheads, is in beam_tremolo_extras.png.
 	it.concurrent('renders tremolo.png', async () => {
 		expect(await testing.render('tremolo.musicxml')).toMatchScreenshot(
 			'tremolo.png',
 		);
+	});
+
+	// Treble stave, 2/4, divisions of 8: the beam and tremolo forms beyond the plain ones.
+	// - M1: eight 32nds under <beam fan="accel">, the three beams opening from one at the left.
+	// - M2: the same run under fan="rit", the beams closing onto one at the right.
+	// - M3: two quarters with <tremolo type="start"/"stop">3, three slashes between the stems.
+	// - M4: two beamed eighth pairs, each a start/stop tremolo of one and then two slashes.
+	// beam@repeater is deprecated in MusicXML 3.0 and ignored.
+	it.concurrent('renders beam_tremolo_extras.png', async () => {
+		expect(
+			await testing.render('beam_tremolo_extras.musicxml'),
+		).toMatchScreenshot('beam_tremolo_extras.png');
 	});
 
 	// <notations><technical> on a NOTATION stave (the tab side of <technical> is covered by

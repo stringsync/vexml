@@ -127,6 +127,9 @@ describe('VoiceBuilder', () => {
 				tupletCalls.push({ chords, map });
 				return [{ built: 'tuplet' }];
 			},
+			buildTremolos() {
+				return [];
+			},
 		};
 	};
 
@@ -323,6 +326,7 @@ describe('VoiceBuilder', () => {
 		beams: [],
 		beamPlans: [],
 		tuplets: [],
+		tremolos: [],
 		tupletChords: [],
 		staveNotes: [],
 		tiedNotes: new Set(),

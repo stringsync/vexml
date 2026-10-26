@@ -67,6 +67,7 @@ export type PendingStave = {
 		defaultStem?: 'up' | 'down';
 	}>;
 	tuplets: ReturnType<SpannerBuilder['buildTuplets']>;
+	tremolos: ReturnType<SpannerBuilder['buildTremolos']>;
 	// Each voice's chords, waiting alongside beamPlans: a tuplet hides its bracket when its
 	// notes are already beamed, so it has to be built AFTER the beams are.
 	tupletChords: Chord[][];
@@ -384,6 +385,9 @@ export class SystemFormatter {
 					);
 					this.recordStaveSpill(this.spillHost(rect, notes, pending, p), rect);
 				}
+			}
+			for (const tremolo of p.tremolos) {
+				tremolo.setContext(this.context).draw();
 			}
 			for (const tuplet of p.tuplets) {
 				tuplet.setContext(this.context).draw();

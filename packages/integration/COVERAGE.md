@@ -78,8 +78,8 @@ are picked by hand.
 | `bass-separator` | drawn | `harmony.musicxml` M20: " over " between chord and bass |
 | `bass-step` | drawn | `harmony.musicxml` |
 | `beam` | drawn | `beam_variations.musicxml` |
-| `beam@fan` | missing | task #35; feathered beams not drawn; mdom raw only |
-| `beam@repeater` | missing | task #35; repeater beams not drawn; mdom raw only |
+| `beam@fan` | drawn | `beam_tremolo_extras.musicxml` M1-M2: accel and rit feathered beams |
+| `beam@repeater` | ignored | deprecated in MusicXML 3.0; tremolos replace it |
 | `beat-repeat` | drawn | `measure_style.musicxml`: a repeat slash per beat; a span starting or stopping mid-measure draws its notes |
 | `beat-type` | drawn | `time.musicxml` |
 | `beat-unit` | drawn | `tempo.musicxml`: metronome mark note value |
@@ -535,7 +535,7 @@ are picked by hand.
 | `touching-pitch` | drawn | `technical_marks.musicxml`: every harmonic draws the diamond, the touching-pitch form |
 | `transpose` | ignored | sound only (written pitch is drawn as-is) |
 | `tremolo` | drawn | `tremolo.musicxml` |
-| `tremolo@type` | missing | task #35; start/stop two-note tremolo between notes not drawn; mdom typed |
+| `tremolo@type` | drawn | `beam_tremolo_extras.musicxml` M3-M4: start/stop slashes between two notes; single in `tremolo.musicxml` |
 | `trill-mark` | drawn | `ornaments.musicxml` |
 | `triple-tongue` | drawn | `technical_marks.musicxml` |
 | `tuning-alter` | drawn | `clef_tab_tuning_alter.musicxml`: frets derived from a half-step-down tuning |

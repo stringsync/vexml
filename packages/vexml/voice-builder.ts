@@ -319,6 +319,7 @@ export class VoiceBuilder {
 			beams: [],
 			beamPlans,
 			tuplets: [],
+			tremolos: [],
 			// Off the full run, like the beams, and so only on the staff that owns the voice: a
 			// triplet whose markers sit on the bass notes still times the notes it crossed up to
 			// the treble with. Read off this staff's projection, those notes carry no marker, so
@@ -474,6 +475,7 @@ export class VoiceBuilder {
 			// its notes already beamed, and draws a redundant one over the beam otherwise.
 			for (const chords of p.tupletChords) {
 				p.tuplets.push(...this.spanners.buildTuplets(chords, this.byLead));
+				p.tremolos.push(...this.spanners.buildTremolos(chords, this.byLead));
 			}
 			p.tupletChords.length = 0;
 		}
@@ -564,6 +566,7 @@ export class VoiceBuilder {
 			beams: [],
 			beamPlans: [],
 			tuplets: [],
+			tremolos: [],
 			tupletChords: [],
 			staveNotes: [],
 			tiedNotes: new Set(),
