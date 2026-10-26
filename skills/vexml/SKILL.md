@@ -176,43 +176,46 @@ await render(musicXML, element, {
 A notation font other than Bravura needs a `url` (or the app's own `@font-face`); vexml
 bundles no other music font.
 
-Bravura ships as a woff2 file, exported as `@stringsync/vexml/fonts/bravura.woff2`. With
-no notation `url` vexml loads it itself through `new URL(..., import.meta.url)`, which
-Vite, Rollup and webpack 5 emit as a hashed asset. To cache it apart from the code and
-preload it, pass its URL and add a preload link:
+Bravura ships as two woff2 files: `@stringsync/vexml/fonts/bravura-common.woff2` (about
+33 kB) holds the glyphs most scores draw (noteheads, rests, flags, clefs, accidentals, time
+signature digits, dynamics, articulations, repeats, tuplets), and
+`@stringsync/vexml/fonts/bravura.woff2` (about 247 kB) is the whole face. With no notation
+`url` vexml loads them itself through `new URL(..., import.meta.url)`, which Vite, Rollup
+and webpack 5 emit as hashed assets: the common file on `BRAVURA_COMMON_RANGE`, the whole
+face behind it on `BRAVURA_REST_RANGE`, so a score that draws only common glyphs never
+fetches the large file. Layout waits for every glyph a score draws, so a score never paints
+with fallback glyphs, and a rare one (an ornament, say) fetches the whole face first.
+
+To cache the files apart from the code and preload them, pass their URLs as `faces` with
+the exported ranges, and preload the common file, which nearly every score needs:
 
 ```ts
-import bravura from '@stringsync/vexml/fonts/bravura.woff2?url'; // Vite
+import { BRAVURA_COMMON_RANGE, BRAVURA_REST_RANGE } from '@stringsync/vexml';
+import bravuraCommon from '@stringsync/vexml/fonts/bravura-common.woff2?url'; // Vite
+import bravura from '@stringsync/vexml/fonts/bravura.woff2?url';
 
-await render(musicXML, element, {
-  fonts: { notation: { family: 'Bravura', url: bravura } },
-});
-// <link rel="preload" href={bravura} as="font" type="font/woff2" crossorigin>
-```
-
-Layout waits for the face, so a score never paints with fallback glyphs.
-
-To keep a large font off the critical path, split it across files by `unicode-range` with
-`faces` in place of `url` (giving both throws). vexml injects one `@font-face` per file and
-loads every file a score's glyphs need before it draws, so the score matches the one drawn
-with the whole face; a score that needs only the first file never fetches the rest.
-
-```ts
 await render(musicXML, element, {
   fonts: {
     notation: {
       family: 'Bravura',
       faces: [
-        { url: '/fonts/bravura-common.woff2', unicodeRange: 'U+0000-E4FF' },
-        { url: '/fonts/bravura.woff2', unicodeRange: 'U+E500-10FFFF' },
+        { url: bravuraCommon, unicodeRange: BRAVURA_COMMON_RANGE },
+        { url: bravura, unicodeRange: BRAVURA_REST_RANGE },
       ],
     },
   },
 });
+// <link rel="preload" href={bravuraCommon} as="font" type="font/woff2" crossorigin>
 ```
 
-Give the files ranges that don't overlap: where two cover a glyph, the browser takes it from
-the one defined last, fetching that file.
+Preload the whole face too only when the app's scores often use rare glyphs: a preload is
+fetched whether a score needs it or not. To load the whole face as one file instead, pass
+`url: bravura`.
+
+Any font can be split the same way: `faces` in place of `url` (giving both throws), one
+`@font-face` per file, every file a score's glyphs need loaded before it draws, so the score
+matches the one drawn with the whole face. Give the files ranges that don't overlap: where
+two cover a glyph, the browser takes it from the one defined last, fetching that file.
 
 ## Colors
 

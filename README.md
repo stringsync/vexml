@@ -125,7 +125,11 @@ await render(musicXML, element, {
 ```
 
 A large font can be split across files by `unicode-range` (`faces` in place of `url`): vexml
-fetches only the files a score's glyphs need, and waits for them before it draws.
+fetches only the files a score's glyphs need, and waits for them before it draws. The
+default Bravura is split so: most scores fetch only its common glyphs
+(`@stringsync/vexml/fonts/bravura-common.woff2`, about 33 kB, on `BRAVURA_COMMON_RANGE`),
+and a rare glyph fetches the whole face (`@stringsync/vexml/fonts/bravura.woff2`, on
+`BRAVURA_REST_RANGE`). Preload the common file to start it with the page.
 
 ### Gap measures
 

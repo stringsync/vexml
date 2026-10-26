@@ -3,7 +3,12 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import { DEFAULT_CONFIG } from './config';
 import { DefaultFontLoader } from './default-font-loader';
 
+const COMMON = '/assets/BravuraCommon-abc123.woff2';
 const BRAVURA = '/assets/Bravura-abc123.woff2';
+const SHIPPED = [
+	{ url: COMMON, unicodeRange: 'U+E050-E0FF' },
+	{ url: BRAVURA, unicodeRange: 'U+E100-10FFFF' },
+];
 
 describe('DefaultFontLoader', () => {
 	const realDocument = globalThis.document;
@@ -20,7 +25,7 @@ describe('DefaultFontLoader', () => {
 		// @ts-expect-error
 		globalThis.document = undefined;
 		expect(() =>
-			new DefaultFontLoader(BRAVURA).load({
+			new DefaultFontLoader(SHIPPED).load({
 				style: { setProperty() {} },
 			} as any),
 		).not.toThrow();
@@ -28,24 +33,30 @@ describe('DefaultFontLoader', () => {
 
 	it('injects the shipped bravura and google fonts, scoping vars to the container by default', async () => {
 		const { head, vars, container } = fakeDom();
-		await new DefaultFontLoader(BRAVURA).load(container);
-		// 1 google <link> for Source Sans 3, 1 <style> for the shipped Bravura.
+		await new DefaultFontLoader(SHIPPED).load(container);
+		// 1 google <link> for Source Sans 3, 1 <style> per file of the shipped Bravura, the
+		// common subset first, each on its own range.
 		expect(head.filter((n) => n.tag === 'link').length).toBe(1);
-		expect(styleText(head)).toContain(`url('${BRAVURA}') format('woff2')`);
-		expect(head.filter((n) => n.tag === 'style').length).toBe(1);
+		const text = styleText(head);
+		expect(text).toContain(`url('${COMMON}') format('woff2')`);
+		expect(text).toContain(`url('${BRAVURA}') format('woff2')`);
+		expect(text.indexOf(COMMON)).toBeLessThan(text.indexOf(BRAVURA));
+		expect(text).toContain('unicode-range: U+E050-E0FF;');
+		expect(text).toContain('unicode-range: U+E100-10FFFF;');
+		expect(head.filter((n) => n.tag === 'style').length).toBe(2);
 		expect(vars['--vexml-font-notation']).toBe("'Bravura', serif");
 		expect(vars['--vexml-font-text']).toBe("'Source Sans 3', sans-serif");
 	});
 
 	it('loads google fonts under the default config', async () => {
 		const { head, container } = fakeDom();
-		await new DefaultFontLoader(BRAVURA).load(container, DEFAULT_CONFIG.fonts);
+		await new DefaultFontLoader(SHIPPED).load(container, DEFAULT_CONFIG.fonts);
 		expect(head.filter((n) => n.tag === 'link').length).toBe(1);
 	});
 
 	it('injects no text font for a named family without a url', async () => {
 		const { head, container } = fakeDom();
-		await new DefaultFontLoader(BRAVURA).load(container, {
+		await new DefaultFontLoader(SHIPPED).load(container, {
 			text: { family: 'Source Sans 3' },
 		});
 		expect(head.filter((n) => n.tag === 'link').length).toBe(0);
@@ -53,7 +64,7 @@ describe('DefaultFontLoader', () => {
 
 	it('loads google fonts when the text config only sets a color', async () => {
 		const { head, container } = fakeDom();
-		await new DefaultFontLoader(BRAVURA).load(container, {
+		await new DefaultFontLoader(SHIPPED).load(container, {
 			text: { color: 'red' },
 		});
 		expect(head.filter((n) => n.tag === 'link').length).toBe(1);
@@ -61,15 +72,15 @@ describe('DefaultFontLoader', () => {
 
 	it('injects nothing new on a second default call', async () => {
 		const { head, container } = fakeDom();
-		await new DefaultFontLoader(BRAVURA).load(container); // dedup markers persist on the document
+		await new DefaultFontLoader(SHIPPED).load(container); // dedup markers persist on the document
 		const after = head.length;
-		await new DefaultFontLoader(BRAVURA).load(container); // fresh loader, same document: still deduped
+		await new DefaultFontLoader(SHIPPED).load(container); // fresh loader, same document: still deduped
 		expect(head.length).toBe(after); // no new tags
 	});
 
 	it('injects a custom notation url, not the bundled path', async () => {
 		const { head, container } = fakeDom();
-		await new DefaultFontLoader(BRAVURA).load(container, {
+		await new DefaultFontLoader(SHIPPED).load(container, {
 			notation: { family: 'Bravura', url: '/static/Custom.woff2' },
 		});
 		expect(styleText(head)).toContain('/static/Custom.woff2');
@@ -79,7 +90,7 @@ describe('DefaultFontLoader', () => {
 
 	it('injects one face per file of a split notation family, each with its range', async () => {
 		const { head, container } = fakeDom();
-		await new DefaultFontLoader(BRAVURA).load(container, {
+		await new DefaultFontLoader(SHIPPED).load(container, {
 			notation: {
 				family: 'Bravura',
 				faces: [
@@ -102,7 +113,7 @@ describe('DefaultFontLoader', () => {
 
 	it('injects the files of a split text family', async () => {
 		const { head, container } = fakeDom();
-		await new DefaultFontLoader(BRAVURA).load(container, {
+		await new DefaultFontLoader(SHIPPED).load(container, {
 			text: {
 				family: 'Inter',
 				faces: [
@@ -119,7 +130,7 @@ describe('DefaultFontLoader', () => {
 	it('ensures nothing had to load when every face is resident', async () => {
 		const { fonts } = fakeFonts([{ status: 'loaded' }]);
 		expect(
-			await new DefaultFontLoader(BRAVURA).ensure([
+			await new DefaultFontLoader(SHIPPED).ensure([
 				{ font: '30pt Bravura', text: '\uE566' },
 			]),
 		).toBe(false);
@@ -137,7 +148,7 @@ describe('DefaultFontLoader', () => {
 			return [rare];
 		};
 		expect(
-			await new DefaultFontLoader(BRAVURA).ensure([
+			await new DefaultFontLoader(SHIPPED).ensure([
 				{ font: '30pt Bravura', text: '\uE566' },
 			]),
 		).toBe(true);
@@ -151,7 +162,7 @@ describe('DefaultFontLoader', () => {
 		]);
 		fonts.answer = () => [faces[0]];
 		expect(
-			await new DefaultFontLoader(BRAVURA).ensure([
+			await new DefaultFontLoader(SHIPPED).ensure([
 				{ font: '30pt Bravura', text: '\uE050' },
 			]),
 		).toBe(false);
@@ -163,7 +174,7 @@ describe('DefaultFontLoader', () => {
 			throw new Error('404');
 		};
 		expect(
-			await new DefaultFontLoader(BRAVURA).ensure([
+			await new DefaultFontLoader(SHIPPED).ensure([
 				{ font: '30pt Bravura', text: '\uE566' },
 			]),
 		).toBe(false);
@@ -171,7 +182,7 @@ describe('DefaultFontLoader', () => {
 
 	it('loads the shipped bravura when the notation config only sets a color', async () => {
 		const { head, container } = fakeDom();
-		await new DefaultFontLoader(BRAVURA).load(container, {
+		await new DefaultFontLoader(SHIPPED).load(container, {
 			notation: { color: 'red' },
 		});
 		expect(styleText(head)).toContain(BRAVURA);
@@ -179,7 +190,7 @@ describe('DefaultFontLoader', () => {
 
 	it('injects nothing for another notation family without a url', async () => {
 		const { head, container } = fakeDom();
-		await new DefaultFontLoader(BRAVURA).load(container, {
+		await new DefaultFontLoader(SHIPPED).load(container, {
 			notation: { family: 'Petaluma' },
 		});
 		expect(head.filter((n) => n.tag === 'style').length).toBe(0);

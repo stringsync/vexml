@@ -2,6 +2,7 @@ import { VexFlow } from 'vexflow/core';
 import {
 	DEFAULT_FONT_CONFIG,
 	type FontConfig,
+	type FontFile,
 	type FontOverride,
 } from './config';
 import { UNICODE_RANGE } from './constants';
@@ -13,9 +14,10 @@ import type { FontLoader, FontSample } from './font-loader';
 // injecting, so the document itself tracks what's been injected: no process-global
 // state. It tracks injected DOM, not font choices.
 export class DefaultFontLoader implements FontLoader {
-	/** @param bravuraUrl where to fetch Bravura when the caller names no notation url:
-	 * vexml's shipped woff2 (BRAVURA_URL) outside tests. */
-	constructor(private readonly bravuraUrl: string) {}
+	/** @param bravura the files to fetch Bravura from when the caller names no notation url:
+	 * outside tests, vexml's common subset first and the whole face behind it on the rest
+	 * (BRAVURA_COMMON_URL, BRAVURA_URL). */
+	constructor(private readonly bravura: readonly FontFile[]) {}
 
 	/** Inject the requested fonts, wait until they are resident, and return the resolved
 	 * family names. The family-name fallbacks are applied here, once, from
@@ -168,10 +170,10 @@ export class DefaultFontLoader implements FontLoader {
 			return;
 		}
 		// Bravura with no URL (no notation config, or one that only sets a color): vexml's
-		// own shipped woff2. vexml imports vexflow/core, which embeds no fonts, so without
-		// this nothing would define the face.
+		// own shipped woff2 files. vexml imports vexflow/core, which embeds no fonts, so
+		// without this nothing would define the face.
 		if (family === DEFAULT_FONT_CONFIG.notation.family) {
-			this.injectFontFace(family, this.bravuraUrl, 'block');
+			this.injectFiles(family, { faces: this.bravura }, 'block');
 		}
 		// Any other family alone: assume it's already available (a system font or the
 		// caller's own @font-face), per FontOverride.url, so it resolves with no fetch.

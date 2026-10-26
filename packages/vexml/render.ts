@@ -1,5 +1,10 @@
 import type { MDocument } from '@stringsync/mdom';
-import { BRAVURA_URL } from './bravura-url';
+import {
+	BRAVURA_COMMON_RANGE,
+	BRAVURA_COMMON_URL,
+	BRAVURA_REST_RANGE,
+	BRAVURA_URL,
+} from './bravura-url';
 import { BrowserIdleScheduler } from './browser-idle-scheduler';
 import { type ConfigInput, resolveConfig } from './config';
 import { DefaultFontLoader } from './default-font-loader';
@@ -74,7 +79,10 @@ export function render(
 	return new ScoreRenderer(
 		resolved,
 		stage,
-		new DefaultFontLoader(BRAVURA_URL),
+		new DefaultFontLoader([
+			{ url: BRAVURA_COMMON_URL, unicodeRange: BRAVURA_COMMON_RANGE },
+			{ url: BRAVURA_URL, unicodeRange: BRAVURA_REST_RANGE },
+		]),
 		new DefaultScoreParser(),
 		ScoreEngraver.create(resolved, reader, gaps, elements, sequences),
 		elements,

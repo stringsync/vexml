@@ -29,7 +29,7 @@ The score should rise and the finding should go, and nothing else should drop.
 
 | Stage | Does | Files |
 | --- | --- | --- |
-| Fonts | Loads Bravura + text face as CSS vars, awaits residency before layout | `font-loader.ts`, `default-font-loader.ts`, `bravura-url.ts` (the shipped `assets/fonts/Bravura.woff2`, VexFlow's own face; vexml imports `vexflow/core`, which embeds none), `recording-font-loader.ts` (test fake that records loads), `glyph-collector.ts` (the probe noting every character the engraving measures, so `score-renderer.ts` loads any split face it needs and engraves again), `font-samples.ts` |
+| Fonts | Loads Bravura + text face as CSS vars, awaits residency before layout | `font-loader.ts`, `default-font-loader.ts`, `bravura-url.ts` (the shipped `assets/fonts/Bravura.woff2`, VexFlow's own face, as vexml imports `vexflow/core`, which embeds none; and `assets/fonts/BravuraCommon.woff2`, its common glyphs cut on `BRAVURA_COMMON_RANGE`, loaded first by default with the whole face on `BRAVURA_REST_RANGE`), `recording-font-loader.ts` (test fake that records loads), `glyph-collector.ts` (the probe noting every character the engraving measures, so `score-renderer.ts` loads any split face it needs and engraves again), `font-samples.ts` |
 | Parse | MusicXML text to an mdom document | `score-parser.ts`, `default-score-parser.ts` |
 | Gaps | Finds the caller's silent measures, inserting positioned ones into vexml's own parse | `gaps.ts`, `gap-inserter.ts` |
 | Layout | Measure widths, system breaks, stave offsets, no drawing | `layout-planner.ts`, `probe-text-canvas.ts` (vexflow's text measuring canvas, answered by the cached probe), `metrics-patch.ts` (vexflow's per-element font/style copies, minus its structuredClone) |

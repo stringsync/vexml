@@ -139,9 +139,11 @@ export interface FontOverride {
 	family?: string;
 	/** woff2 URL, loaded with an injected @font-face. If omitted, the family is assumed
 	 * already loaded (a system font or your own @font-face), except notation Bravura, which
-	 * vexml then loads from its shipped `@stringsync/vexml/fonts/bravura.woff2`. Pass that
-	 * file's bundled URL here to preload or cache it yourself. Give `faces` instead to split
-	 * the family across files; giving both throws. */
+	 * vexml then loads split across its shipped `@stringsync/vexml/fonts/bravura-common.woff2`
+	 * (BRAVURA_COMMON_RANGE) and `@stringsync/vexml/fonts/bravura.woff2` (BRAVURA_REST_RANGE),
+	 * so most scores fetch only the small first file. Pass a file's bundled URL here, or both
+	 * as `faces`, to preload or cache them yourself. Give `faces` instead to split the family
+	 * across files; giving both throws. */
 	url?: string;
 	/** The family split across woff2 files by `unicode-range`, each loaded with its own
 	 * injected @font-face, in place of `url`. Every glyph a render draws is loaded before
