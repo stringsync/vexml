@@ -171,15 +171,24 @@ export class DirectionPlacer {
 				w.text,
 				this.wordsAnchor(w),
 				w.placement,
-				{
-					font: this.faceOf(w.format),
-					size: WORDS_FONT_SIZE * (w.format?.scale ?? 1),
-					italic: w.format?.italic ?? false,
-					bold: w.format?.bold ?? false,
-					align: w.format?.align ?? this.wordsAlign(w),
-					clearsHairpins: true,
-					...this.decorationOf(w.format),
-				},
+				w.glyph
+					? {
+							font: this.notationFont,
+							size: NAVIGATION_FONT_SIZE,
+							italic: false,
+							color: this.notationColor,
+							align: w.format?.align ?? this.wordsAlign(w),
+							clearsHairpins: true,
+						}
+					: {
+							font: this.faceOf(w.format),
+							size: WORDS_FONT_SIZE * (w.format?.scale ?? 1),
+							italic: w.format?.italic ?? false,
+							bold: w.format?.bold ?? false,
+							align: w.format?.align ?? this.wordsAlign(w),
+							clearsHairpins: true,
+							...this.decorationOf(w.format),
+						},
 			);
 			// A below-stave directive grows the crop downward instead (drawWords already
 			// reported the drop); only above-stave text lifts the measure box's top.
@@ -1217,6 +1226,9 @@ export type HarmonyTask = {
 export type WordsTask = {
 	stave: Stave;
 	text: string;
+	/** The text is a SMuFL glyph (an <other-direction smufl>), drawn in the notation font.
+	 * Absent means it is words. */
+	glyph?: boolean;
 	anchor: StaveNote | TabNote | undefined;
 	placement: Placement;
 	/* The direction falls on the bar's first beat (see wordsAnchor). Absent means it doesn't. */

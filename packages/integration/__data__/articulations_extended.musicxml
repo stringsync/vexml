@@ -299,5 +299,126 @@
         <bar-style>light-light</bar-style>
       </barline>
     </measure>
+    <measure number="7">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <articulations>
+            <other-articulation smufl="articMarcatoStaccatoAbove"/>
+          </articulations>
+        </notations>
+        <lyric number="1">
+          <text>marc.stacc.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <articulations>
+            <other-articulation smufl="articMarcatoStaccatoAbove"/>
+          </articulations>
+        </notations>
+        <lyric number="1">
+          <text>marc.stacc.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <articulations>
+            <other-articulation>sf</other-articulation>
+          </articulations>
+        </notations>
+        <lyric number="1">
+          <text>text</text>
+        </lyric>
+      </note>
+      <note>
+        <rest/>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+    </measure>
+    <measure number="8">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <other-notation type="single" smufl="stringsChangeBowDirection"/>
+        </notations>
+        <lyric number="1">
+          <text>bow chg.</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <other-notation type="single" placement="below">x</other-notation>
+        </notations>
+        <lyric number="1">
+          <text>text</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <other-notation type="start" smufl="keyboardPedalPed"/>
+        </notations>
+        <lyric number="1">
+          <text>start</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <other-notation type="stop" smufl="keyboardPedalPed"/>
+        </notations>
+        <lyric number="1">
+          <text>stop</text>
+        </lyric>
+      </note>
+    </measure>
   </part>
 </score-partwise>

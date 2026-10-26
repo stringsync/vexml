@@ -199,7 +199,7 @@ are picked by hand.
 | `glissando` | drawn | `glissando.musicxml`: a straight line between the noteheads, across a barline, or a tick into a lone stop |
 | `glissando@line-type` | drawn | `spanner_line_types.musicxml` M6 |
 | `glyph` | missing | task #36; appearance SMuFL glyph overrides not applied; mdom raw only |
-| `golpe` | missing | task #29; golpe (flamenco tap) glyph on the note; mdom typed |
+| `golpe` | drawn | `technical_marks.musicxml` M23: the golpe glyph above the note |
 | `grace` | drawn | `grace_notes.musicxml` |
 | `grace@make-time` | drawn | `grace_notes.musicxml`: timed, grace adds its own time |
 | `grace@slash` | drawn | `grace_notes.musicxml`: slashed acciaccatura |
@@ -224,7 +224,7 @@ are picked by hand.
 | `harmony` | drawn | `harmony.musicxml`: chord symbol text above the stave |
 | `harmony@print-frame` | drawn | `chord_diagram.musicxml` M13: no box, plain symbol |
 | `harp-pedals` | drawn | `harp_pedals.musicxml`: raised, centered and lowered pedals with the divider, above and below the staff |
-| `haydn` | missing | task #29; haydn ornament glyph above the note; mdom typed |
+| `haydn` | drawn | `ornaments.musicxml` M13 |
 | `heel` | drawn | `technical_marks.musicxml` |
 | `hole` | drawn | `technical_marks.musicxml` |
 | `hole-closed` | drawn | `technical_marks.musicxml`: closed, open and half; half ignores location |
@@ -245,7 +245,7 @@ are picked by hand.
 | `inverted-mordent` | drawn | `ornaments.musicxml` |
 | `inverted-turn` | drawn | `ornaments.musicxml` |
 | `inverted-turn@slash` | drawn | `ornaments.musicxml` |
-| `inverted-vertical-turn` | missing | task #29; inverted vertical turn ornament glyph; mdom typed |
+| `inverted-vertical-turn` | drawn | `ornaments.musicxml` M13 |
 | `ipa` | ignored | pronunciation for synthesis |
 | `key` | drawn | `key.musicxml` |
 | `key@number` | drawn | `staves_different_keys.musicxml`: a key per staff |
@@ -306,9 +306,9 @@ are picked by hand.
 | `miscellaneous-field` | ignored | metadata |
 | `mode` | drawn | `key_modes.musicxml`: read for the key, signature from fifths |
 | `mordent` | drawn | `ornaments.musicxml` |
-| `mordent@approach` | missing | task #29; mordent approach hook not drawn; mdom raw only |
-| `mordent@departure` | missing | task #29; mordent departure hook not drawn; mdom raw only |
-| `mordent@long` | missing | task #29; long mordent glyph not drawn; mdom raw only |
+| `mordent@approach` | drawn | `ornaments.musicxml` M14-M15: approach="above" as SMuFL's precomposed upper-prefix mordents; approach="below", which SMuFL has no glyph for, draws the plain long form |
+| `mordent@departure` | drawn | `ornaments.musicxml` M14-M15: departure="below" on an inverted-mordent as the lower-suffix trill; the forms SMuFL has no glyph for draw the plain long form |
+| `mordent@long` | drawn | `ornaments.musicxml` M14-M15: the long mordent and the long inverted-mordent (the shake wiggle) |
 | `movement-number` | drawn | `header_catalog.musicxml`: "2. Air" in the catalog fallback |
 | `movement-title` | drawn | `header_catalog.musicxml`: the title, or the subtitle under a work-title, with showHeader and no credits |
 | `mp` | drawn | `dynamics.musicxml` |
@@ -348,18 +348,18 @@ are picked by hand.
 | `octave-shift` | drawn | `octave_shift.musicxml` |
 | `octave-shift@size` | drawn | `octave_shift.musicxml`: 8va and 15ma |
 | `offset` | missing | task #38; shift a direction or harmony off its note by divisions; mdom raw only |
-| `open` | missing | task #29; open technical mark (circle) for brass and harp; mdom raw only |
+| `open` | drawn | `technical_marks.musicxml` M24: brassMuteOpen, or the glyph its smufl names |
 | `open-string` | drawn | `technical_marks.musicxml` |
 | `opus` | ignored | a link to an opus document, nothing printed |
 | `ornaments` | drawn | `ornaments.musicxml` |
 | `other-appearance` | missing | task #36; custom engraving appearance from defaults; mdom raw only |
-| `other-articulation` | missing | task #29; free-form SMuFL or text articulation; mdom raw only |
-| `other-direction` | missing | task #29; free-form SMuFL or text direction; mdom raw only |
+| `other-articulation` | drawn | `articulations_extended.musicxml` M7: the smufl glyph on the notehead side, flipping to its Below twin; text when there is no glyph |
+| `other-direction` | drawn | `words.musicxml` M11: the smufl glyph in the notation font, else its text set like words |
 | `other-dynamics` | drawn | `dynamics.musicxml`: italic text |
 | `other-listen` | ignored | interactive performance only |
 | `other-listening` | ignored | interactive performance only |
-| `other-notation` | missing | task #29; free-form SMuFL notation mark; mdom raw only |
-| `other-ornament` | missing | task #29; free-form SMuFL ornament; mdom typed |
+| `other-notation` | drawn | `articulations_extended.musicxml` M8: the smufl glyph above (below for placement="below"), else its text; a start/stop pair draws at its start |
+| `other-ornament` | drawn | `ornaments.musicxml` M13, M16: the smufl glyph, else its text |
 | `other-percussion` | missing | task #16; mdom raw only |
 | `other-play` | ignored | sound only |
 | `other-technical` | drawn | `tab_annotation.musicxml`: text annotation on tab |
@@ -458,7 +458,7 @@ are picked by hand.
 | `slur` | drawn | `slur_default.musicxml` |
 | `slur@bezier-x` | missing | task #38; document curve control points ignored; mdom raw only |
 | `slur@orientation` | drawn | `spanner_line_types.musicxml` M5: over/under when placement is absent |
-| `smear` | missing | task #29; brass smear technical mark (wavy stroke above the note); mdom typed |
+| `smear` | drawn | `technical_marks.musicxml` M23 |
 | `snap-pizzicato` | drawn | `technical_marks.musicxml` |
 | `soft-accent` | drawn | `soft_accent.musicxml` |
 | `software` | ignored | metadata |
@@ -514,7 +514,7 @@ are picked by hand.
 | `system-dividers` | missing | task #20; mdom raw only |
 | `system-layout` | missing | task #20; mdom typed |
 | `system-margins` | missing | task #20; mdom typed |
-| `tap` | missing | task #29; tap technical mark (T or + over the note); mdom typed |
+| `tap` | drawn | `technical_marks.musicxml` M23-M24: its text like a fingering, else the hand's tapping glyph (right when none) |
 | `technical` | drawn | `technical_marks.musicxml` |
 | `tenths` | missing | task #20; mdom typed |
 | `tenuto` | drawn | `articulations.musicxml` |
@@ -559,7 +559,7 @@ are picked by hand.
 | `unpitched` | drawn | `percussion_display_step.musicxml` |
 | `unstress` | drawn | `articulations_extended.musicxml` |
 | `up-bow` | drawn | `technical_marks.musicxml` |
-| `vertical-turn` | missing | task #29; vertical turn ornament glyph; mdom typed |
+| `vertical-turn` | drawn | `ornaments.musicxml` M13 |
 | `virtual-instrument` | ignored | sound only |
 | `virtual-library` | ignored | sound only |
 | `virtual-name` | ignored | sound only |

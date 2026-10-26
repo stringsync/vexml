@@ -875,6 +875,7 @@ export class DrawPass {
 			// none). Drawn after the system is formatted so that note's x is real.
 			for (const {
 				text,
+				glyph,
 				staffNumber,
 				lead,
 				placement,
@@ -891,6 +892,7 @@ export class DrawPass {
 					this.wordsTasks.push({
 						stave: target.stave,
 						text,
+						glyph,
 						anchor: anchor ?? target.staveNotes[0],
 						placement,
 						opensBar,

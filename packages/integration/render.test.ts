@@ -1025,6 +1025,9 @@ describe('render', () => {
 	// - M10: "D.S. al Coda" written after the bar's four B4 quarters, so it falls at the bar's
 	//   end: it ends at the right barline, where the jump happens, instead of starting over
 	//   the first note.
+	// - M11: two <other-direction>s over four B4 quarters: smufl="stringsChangeBowDirection"
+	//   over the first, drawn as the bracketed down-up bow glyph in the notation font, and a
+	//   text-only "con sord." over the third, set like words.
 	it.concurrent('renders words.png', async () => {
 		expect(await testing.render('words.musicxml')).toMatchScreenshot(
 			'words.png',
@@ -2613,6 +2616,12 @@ describe('render', () => {
 	//   marks that name a moment in the bar rather than a way of playing the note, so they sit
 	//   above the staff whichever way the stem points instead of following the notehead-side
 	//   rule the others do.
+	// - M7: <other-articulation smufl="articMarcatoStaccatoAbove"> on a C5 (the marcato over
+	//   a dot, above) and on a stem-up E4, where it flips to its Below twin under the note;
+	//   then a text-only one printing "sf" above, and a quarter rest.
+	// - M8: <other-notation>: smufl="stringsChangeBowDirection" (the bracketed down-up bow
+	//   pair) above, a text-only "x" with placement="below" under the note, then a
+	//   start/stop pair of smufl="keyboardPedalPed", the "Ped." drawn once over its start.
 	// ponytail: an explicit placement="above|below" on an articulation is still ignored: the
 	// side always comes from the stem. See articulation_staccato_placement_above.xml and
 	// articulation_staccato_placement_below.xml; worth its own measure when it matters.
@@ -2646,6 +2655,19 @@ describe('render', () => {
 	//   crossing the stem below the notehead.
 	// - M10: a turn with one <accidental-mark> (a natural above it), then a turn with two (a
 	//   sharp above and a three-quarters-flat below), then a trailing quarter rest.
+	// - M13: haydn (a turn crossed by a short stroke), vertical-turn (the turn standing up,
+	//   upper left to lower right), inverted-vertical-turn (its mirror), and an
+	//   <other-ornament smufl="ornamentPinceCouperin"> drawing that glyph (a short vertical
+	//   stroke between two curls).
+	// - M14: long mordents (the stroked sign): long (a long wiggle crossed by the stroke),
+	//   approach="above" (the same with a hook leading in from above on the left), then
+	//   approach="below" and departure="below", which SMuFL has no glyph for, so both draw
+	//   the plain long form.
+	// - M15: long inverted-mordents (no stroke): long (the long trill wiggle, as a shake),
+	//   approach="above" (a hook leading in from above), approach="below" (no glyph: the
+	//   plain long form), departure="below" (a hook trailing off downward on the right).
+	// - M16: an <other-ornament> with only text prints the text "pinc." over the note, and
+	//   one whose smufl names no glyph prints its text "Bebung"; then a half rest.
 	// ponytail: an ornament's <accidental-mark> placement attribute is ignored: the first mark
 	// goes over the glyph and the second under it, which is how the pair conventionally reads.
 	// See also ornaments.xml and lilypond_33f-Trill-EndingOnGraceNote.xml.
@@ -2708,6 +2730,12 @@ describe('render', () => {
 	//   and a lone left arrowhead "<".
 	// - M22: four <handbell> techniques: the martellato triangle, the damp target, the echo
 	//   hook, and the swing pair of up and down arrows.
+	// - M23: the flamenco golpe asterisk, the brass smear tilde, a <tap>T</tap> printing its
+	//   text "T" like a fingering, and an empty <tap hand="left"> drawing the circled
+	//   left-hand-tapping "T".
+	// - M24: an empty <tap> with no hand (the right-hand-tapping "T" glyph), <open> (the
+	//   brass open ring), <open smufl="guitarOpenPedal"> (its own, near-identical ring), then
+	//   a quarter rest.
 	it.concurrent('renders technical_marks.png', async () => {
 		expect(await testing.render('technical_marks.musicxml')).toMatchScreenshot(
 			'technical_marks.png',

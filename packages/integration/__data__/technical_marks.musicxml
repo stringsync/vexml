@@ -973,5 +973,134 @@
         </lyric>
       </note>
     </measure>
+    <measure number="23">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <golpe/>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>golpe</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <smear/>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>smear</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <tap>T</tap>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>tap T</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <tap hand="left"/>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>tap left</text>
+        </lyric>
+      </note>
+    </measure>
+    <measure number="24">
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <tap/>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>tap</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <open/>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>open</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>C</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <technical>
+            <open smufl="guitarOpenPedal"/>
+          </technical>
+        </notations>
+        <lyric number="1">
+          <text>open ped.</text>
+        </lyric>
+      </note>
+      <note>
+        <rest/>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>

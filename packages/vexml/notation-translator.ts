@@ -2,6 +2,7 @@ import {
 	type Chord,
 	type Lyric,
 	type MElement,
+	type Ornament as MOrnament,
 	type Note,
 	Score,
 	type Technical,
@@ -22,6 +23,7 @@ import { LyricAnnotation } from './lyric-annotation';
 import type { LyricJustify } from './lyric-mark';
 import { NonArpeggioBracket } from './non-arpeggio-bracket';
 import { NoteheadArticulation } from './notehead-articulation';
+import { smuflGlyph } from './smufl';
 import { StaveArticulation } from './stave-articulation';
 import { StringNumberAnnotation } from './string-number-annotation';
 import { UnbrokenArpeggio } from './unbroken-arpeggio';
@@ -52,6 +54,7 @@ export class NotationTranslator {
 			this.addFermata(staveNote, lead);
 			this.addArpeggio(staveNote, lead);
 			this.addNonArpeggiate(staveNote, chord);
+			this.addOtherNotations(staveNote, lead);
 		}
 		const footnote = lead.child('footnote')?.text?.trim();
 		if (footnote) {
@@ -97,6 +100,69 @@ export class NotationTranslator {
 				);
 			}
 		}
+		// <other-articulation>: its smufl glyph on the notehead side like any articulation,
+		// both faces when the font has the name's Above/Below twin, else its text.
+		for (const other of notationMarks(
+			note,
+			'articulations',
+			'other-articulation',
+		)) {
+			const glyph = smuflGlyph(other.getAttribute('smufl'));
+			if (glyph) {
+				staveNote.addModifier(
+					new NoteheadArticulation(
+						mirroredPair(other.getAttribute('smufl') ?? '') ?? glyph,
+					).setSide(staveNote),
+				);
+				continue;
+			}
+			this.addTextMark(staveNote, other);
+		}
+	}
+
+	/*
+	 * A free-text mark with no glyph to draw (an <other-*> with no smufl attribute, or one
+	 * the font lacks): its text, set like a fingering on its placement side of the note.
+	 */
+	private addTextMark(staveNote: StaveNote, mark: MElement): void {
+		const text = mark.text?.trim();
+		if (text) {
+			staveNote.addModifier(
+				new FingeringAnnotation(
+					text,
+					mark.getAttribute('placement') === 'below',
+				),
+				0,
+			);
+		}
+	}
+
+	/*
+	 * A note's <notations><other-notation>: a mark outside every other notations element,
+	 * drawn as its smufl glyph above the note (below for placement="below"), else its text.
+	 * A start/stop pair names a span; only its start draws, the sign marking where it begins.
+	 */
+	private addOtherNotations(staveNote: StaveNote, note: Note): void {
+		const marks = note
+			.childrenNamed('notations')
+			.flatMap((notations) => notations.childrenNamed('other-notation'));
+		for (const mark of marks) {
+			if (mark.getAttribute('type') === 'stop') {
+				continue;
+			}
+			const glyph = smuflGlyph(mark.getAttribute('smufl'));
+			if (!glyph) {
+				this.addTextMark(staveNote, mark);
+				continue;
+			}
+			staveNote.addModifier(
+				new StaveArticulation(glyph).setPosition(
+					mark.getAttribute('placement') === 'below'
+						? Modifier.Position.BELOW
+						: Modifier.Position.ABOVE,
+				),
+			);
+		}
 	}
 
 	/*
@@ -134,11 +200,14 @@ export class NotationTranslator {
 				staveNote.addModifier(new Tremolo(ornament.tremoloMarks || 1));
 				continue;
 			}
-			const slashed = ornament.getAttribute('slash') === 'yes';
-			const type =
-				slashed && SLASHED_TURNS.has(ornament.ornamentType)
-					? SLASHED_TURN
-					: ORNAMENT_TYPES[ornament.ornamentType];
+			if (
+				ornament.ornamentType === 'other-ornament' &&
+				!smuflGlyph(ornament.getAttribute('smufl'))
+			) {
+				this.addTextMark(staveNote, ornament);
+				continue;
+			}
+			const type = ornamentGlyph(ornament);
 			if (!type) {
 				continue;
 			}
@@ -178,8 +247,8 @@ export class NotationTranslator {
 
 	/*
 	 * A note's <notations><technical> marks on a NOTATION stave (the tab side lives in
-	 * addTabModifiers): the bowing/tonguing/pizzicato glyphs, the <fingering>/<pluck> labels,
-	 * and the <string> indicator.
+	 * addTabModifiers): the bowing/tonguing/pizzicato glyphs, the <fingering>/<pluck> labels
+	 * (a <tap> spelled out as text, "T" or "+", prints with them), and the <string> indicator.
 	 *
 	 * Fingerings are per chord MEMBER, so they read off the chord rather than its lead, and they
 	 * stack outward from the notes: the digit nearest the stave belongs to the chord member
@@ -204,7 +273,8 @@ export class NotationTranslator {
 				}
 				if (
 					mark.technicalType === 'fingering' ||
-					mark.technicalType === 'pluck'
+					mark.technicalType === 'pluck' ||
+					(mark.technicalType === 'tap' && mark.text?.trim())
 				) {
 					labels.push(mark);
 					continue;
@@ -227,6 +297,19 @@ export class NotationTranslator {
 						index,
 					);
 				}
+			}
+			// <open> is not one of mdom's technicals, so it is read off the element.
+			for (const open of notationMarks(note, 'technical', 'open')) {
+				staveNote.addModifier(
+					new StaveArticulation(
+						smuflGlyph(open.getAttribute('smufl')) ?? '\uE5E7', // brassMuteOpen
+					).setPosition(
+						open.getAttribute('placement') === 'below'
+							? Modifier.Position.BELOW
+							: Modifier.Position.ABOVE,
+					),
+					index,
+				);
 			}
 			const text = this.fingeringLabel(labels);
 			if (text) {
@@ -514,6 +597,25 @@ const ORNAMENT_TYPES: Record<string, string> = {
 	mordent: 'mordentInverted',
 	'inverted-mordent': 'mordent',
 	schleifer: '\uE587', // ornamentSchleifer
+	haydn: '\uE56F', // ornamentHaydn
+	'vertical-turn': '\uE56A', // ornamentTurnUp
+	'inverted-vertical-turn': '\uE56B', // ornamentTurnUpS
+};
+
+/*
+ * A long mordent (long="yes"), keyed by its tag, approach and departure: SMuFL's precomposed
+ * glyph for each compound form it has one for. approach/departure say which side the hook
+ * that leads in or trails off comes from; a compound form SMuFL has no glyph for draws the
+ * plain long mordent, dropping the hook. MuseScore reads the attributes the same way.
+ * SMuFL's precomposed names flip the stroke: its "inverted mordent with upper prefix" is
+ * the one drawn WITH it, so that is the stroked <mordent>'s.
+ */
+const LONG_MORDENTS: Record<string, string> = {
+	'mordent  ': '\uE5BD', // ornamentPrecompTrillWithMordent
+	'mordent above ': '\uE5C7', // ornamentPrecompInvertedMordentUpperPrefix
+	'inverted-mordent  ': 'prallprall', // ornamentTremblement, as <shake>
+	'inverted-mordent above ': '\uE5C6', // ornamentPrecompMordentUpperPrefix
+	'inverted-mordent  below': '\uE5C8', // ornamentPrecompTrillLowerSuffix
 };
 
 /*
@@ -555,6 +657,8 @@ const TECHNICAL_CODES: Record<string, string> = {
 	'brass-bend': '\uE5E3', // brassBend
 	flip: '\uE5E1', // brassFlip
 	'half-muted': '\uE5E6', // brassMuteHalfClosed
+	golpe: '\uE842', // guitarGolpe
+	smear: '\uE5E2', // brassSmear
 };
 
 /*
@@ -608,6 +712,11 @@ function technicalCode(mark: Technical): string | undefined {
 			return arrowCode(mark);
 		case 'handbell':
 			return HANDBELL_CODES[mark.text?.trim() ?? ''];
+		case 'tap':
+			// An empty <tap> takes its glyph from the hand (a text one prints as a label).
+			return mark.getAttribute('hand') === 'left'
+				? '\uE840' // guitarLeftHandTapping
+				: '\uE841'; // guitarRightHandTapping
 	}
 	return TECHNICAL_CODES[mark.technicalType];
 }
@@ -671,6 +780,57 @@ function arrowCode(mark: Technical): string | undefined {
 		base = head ? 0xeb88 : 0xeb70; // arrowheadOpenUp / arrowOpenUp
 	}
 	return String.fromCharCode(base + direction);
+}
+
+/*
+ * The vexflow Ornament type an <ornaments> child draws, or undefined when it draws none: a
+ * slashed turn's stroked glyph, a long or compound mordent's precomposed one, an
+ * <other-ornament>'s smufl glyph, else the tag's entry in ORNAMENT_TYPES.
+ */
+function ornamentGlyph(ornament: MOrnament): string | undefined {
+	const type = ornament.ornamentType;
+	if (type === 'other-ornament') {
+		return smuflGlyph(ornament.getAttribute('smufl'));
+	}
+	if (ornament.getAttribute('slash') === 'yes' && SLASHED_TURNS.has(type)) {
+		return SLASHED_TURN;
+	}
+	if (type === 'mordent' || type === 'inverted-mordent') {
+		const approach = ornament.getAttribute('approach') ?? '';
+		const departure = ornament.getAttribute('departure') ?? '';
+		// A hook only exists on the long form, so either one implies it.
+		if (ornament.getAttribute('long') === 'yes' || approach || departure) {
+			return (
+				LONG_MORDENTS[`${type} ${approach} ${departure}`] ??
+				LONG_MORDENTS[`${type}  `]
+			);
+		}
+	}
+	return ORNAMENT_TYPES[type];
+}
+
+/* Every `<notations><group><tag>` element on a note, for the marks mdom does not type. */
+function notationMarks(note: Note, group: string, tag: string): MElement[] {
+	return note
+		.childrenNamed('notations')
+		.flatMap((notations) => notations.childrenNamed(group))
+		.flatMap((block) => block.childrenNamed(tag));
+}
+
+/*
+ * The [above, below] faces of a SMuFL articulation named for one side (articAccentAbove), when
+ * the font has its twin, so the mark can flip to whichever side of the notehead it lands on.
+ */
+function mirroredPair(
+	name: string,
+): [above: string, below: string] | undefined {
+	const match = /^(.*)(Above|Below)$/.exec(name);
+	if (!match) {
+		return undefined;
+	}
+	const above = smuflGlyph(`${match[1]}Above`);
+	const below = smuflGlyph(`${match[1]}Below`);
+	return above && below ? [above, below] : undefined;
 }
 
 export interface NotationTranslatorOptions {

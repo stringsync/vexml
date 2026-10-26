@@ -75,7 +75,7 @@ Two rules cut across the draw stage:
 - **Cue notes** (`<cue/>`, `<type size="cue">`): `cue-note.ts` reads them; `chord-translator.ts` draws them as small notes, `sequence-factory.ts` leaves them out of playback
 - **Beams, tuplets, grace notes**: `voice-builder.ts` (grouping), `spanner-builder.ts` (construction), `display-tuplet.ts` (show-number none, note-value glyphs, curved line), `system-formatter.ts` (grace spacing)
 - **Cross-staff notes, beams and tuplets; the ghosts holding a crossed note's time on the other staff**: `voice-builder.ts`, `voice-translator.ts` (`gapFill`), `score-reader.ts` (`staffVoices`)
-- **Articulations, fermatas, ornaments, trills, tremolos, arpeggios, harmonics**: `notation-translator.ts`, `fermata-glyphs.ts` (each fermata shape's glyphs), `stave-articulation.ts` (the lift clear of a beam), `notehead-articulation.ts` (the side opposite the stem), `voice-articulation-placer.ts` (past the stem when another voice crowds that side), `non-arpeggio-bracket.ts` (the `<non-arpeggiate>` bracket), `unbroken-arpeggio.ts` (one `unbroken="yes"` roll across a part's staves, joined in `draw-pass.ts`)
+- **Articulations, fermatas, ornaments, trills, tremolos, arpeggios, harmonics**: `notation-translator.ts`, `fermata-glyphs.ts` (each fermata shape's glyphs), `stave-articulation.ts` (the lift clear of a beam), `notehead-articulation.ts` (the side opposite the stem), `voice-articulation-placer.ts` (past the stem when another voice crowds that side), `non-arpeggio-bracket.ts` (the `<non-arpeggiate>` bracket), `unbroken-arpeggio.ts` (one `unbroken="yes"` roll across a part's staves, joined in `draw-pass.ts`), `smufl.ts` (a `smufl` attribute's glyph, for the `<other-*>` marks)
 - **Staff size (`staff-size`)**: `stave-factory.ts` (line spacing, clef), `system-formatter.ts` (`shrinkNoteheads`)
 - **Editorial marks (`<level>` parentheses/brackets round a note, `<footnote>` text above it)**: `chord-translator.ts` (`addLevel`), `notation-translator.ts`, `footnote-annotation.ts` (stacked by `system-formatter.ts` with the technical labels)
 - **Invisible notes (`print-object="no"`), hidden dots/ledger lines (`print-dot`, `print-leger`), note colors**: `chord-translator.ts`, `invisible-stave-note.ts` (the hidden StaveNote)
@@ -122,7 +122,7 @@ Two rules cut across the draw stage:
 
 ## Text and marks around the stave
 
-- **Dynamics, words directions, rehearsal marks, segno/coda, figured bass, harp pedal diagrams (`harpPedalsOf`)**: `direction-placer.ts`, `score-reader.ts`, `dynamic-glyphs.ts`
+- **Dynamics, words directions (`<other-direction>` among them), rehearsal marks, segno/coda, figured bass, harp pedal diagrams (`harpPedalsOf`)**: `direction-placer.ts`, `score-reader.ts`, `dynamic-glyphs.ts`
 - **Their formatting: face, style, weight, size, underline, enclosure, alignment**: `score-reader.ts` (`formatOf`, `TextFormat`; sizes scale against `<defaults><word-font>`), `direction-placer.ts` (`faceOf`: the document's face only under `documentFonts`), `font-families.ts` (`documentStack`: a MusicXML font-family over the text face), `notation-translator.ts` (`lyricFaceOf`: a lyric's face from its `<text>` or `<lyric-font>`), `formatted-text.ts` (text, underlines and enclosure measured and drawn as one box), `text-enclosure.ts` (each enclosure shape)
 - **Tempo and metronome marks**: `direction-placer.ts`, `metronome-glyph.ts` (the note-group form, tied units, arrows)
 - **Chord symbols (`<harmony>`)**: `direction-placer.ts`

@@ -20,6 +20,7 @@ import { DEFAULT_TEMPO_BPM, EPSILON } from './constants';
 import type { DynamicGlyphs } from './dynamic-glyphs';
 import type { ModulationNote, TempoModulation } from './metronome-glyph';
 import type { Jump } from './sequence';
+import { smuflGlyph } from './smufl';
 import { ENCLOSURE_SHAPES, type EnclosureShape } from './text-enclosure';
 
 export class ScoreReader {
@@ -856,9 +857,13 @@ export class ScoreReader {
 	 * the next note in the file, which is another staff's from the bar's start.
 	 * `format` is the <words> element's own formatting (see {@link TextFormat}), its style
 	 * and weight falling back to the score's `<defaults><word-font>`.
+	 * An <other-direction> rides along after its direction's words: `glyph` says its text is
+	 * the SMuFL glyph its smufl attribute names, to draw in the notation font; without one
+	 * (or with a name the font lacks) it is its own text, set like words.
 	 */
 	wordsOf(measure: Measure): {
 		text: string;
+		glyph: boolean;
 		staffNumber: string;
 		lead: Note | null;
 		placement: Placement;
@@ -875,17 +880,33 @@ export class ScoreReader {
 			const closesBar =
 				beat !== null && !opensBar && beat > measure.endBeat - EPSILON;
 			const lead = closesBar ? null : d.nextNote;
-			return d.wordsElements
+			const at = { staffNumber, lead, placement, opensBar, closesBar };
+			const words = d.wordsElements
 				.filter((words) => words.text)
 				.map((words) => ({
+					...at,
 					text: words.text,
-					staffNumber,
-					lead,
-					placement,
-					opensBar,
-					closesBar,
+					glyph: false,
 					format: this.formatOf(words, wordFont, wordFont),
 				}));
+			const others = d
+				.childrenNamed('direction-type')
+				.flatMap((type) => type.childrenNamed('other-direction'))
+				.flatMap((other) => {
+					const glyph = smuflGlyph(other.getAttribute('smufl'));
+					const text = glyph ?? other.text?.trim();
+					return text
+						? [
+								{
+									...at,
+									text,
+									glyph: glyph !== undefined,
+									format: this.formatOf(other, wordFont, wordFont),
+								},
+							]
+						: [];
+				});
+			return [...words, ...others];
 		});
 	}
 

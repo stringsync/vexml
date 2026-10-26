@@ -553,5 +553,49 @@
         </direction-type>
       </direction>
     </measure>
+    <measure number="11">
+      <direction placement="above">
+        <direction-type>
+          <other-direction smufl="stringsChangeBowDirection"/>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>3</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>3</duration>
+        <type>quarter</type>
+      </note>
+      <direction placement="above">
+        <direction-type>
+          <other-direction>con sord.</other-direction>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>3</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch>
+          <step>B</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>3</duration>
+        <type>quarter</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>

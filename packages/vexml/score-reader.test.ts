@@ -363,6 +363,22 @@ describe('ScoreReader', () => {
 		});
 	});
 
+	it('reads an other-direction as its smufl glyph, else its text', async () => {
+		const reader = new ScoreReader(new DynamicGlyphs());
+		const other = (attrs: string, text: string) =>
+			`<direction><direction-type><other-direction${attrs}>${text}</other-direction></direction-type></direction>`;
+		const measure = await measureOf(
+			other(' smufl="keyboardPedalPed"', 'Ped.'),
+			other(' smufl="noSuchGlyph"', 'con sord.'),
+		);
+		expect(
+			reader.wordsOf(measure).map(({ text, glyph }) => ({ text, glyph })),
+		).toEqual([
+			{ text: '', glyph: true },
+			{ text: 'con sord.', glyph: false },
+		]);
+	});
+
 	it('reads the formatting a words direction asks for', async () => {
 		const reader = new ScoreReader(new DynamicGlyphs());
 		const measure = await measureOf(
