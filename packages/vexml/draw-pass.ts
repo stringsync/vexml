@@ -883,6 +883,7 @@ export class DrawPass {
 				placement,
 				opensBar,
 				closesBar,
+				directive,
 				format,
 			} of this.reader.wordsOf(measure)) {
 				const target =
@@ -899,6 +900,7 @@ export class DrawPass {
 						placement,
 						opensBar,
 						closesBar,
+						directive,
 						format,
 					});
 				}

@@ -1104,6 +1104,16 @@ describe('render', () => {
 		).toMatchScreenshot('text_lyric_music_font.png');
 	});
 
+	// directives_offsets.musicxml:
+	// - M1: an <attributes><directive> "Allegro" prints above the staff at the bar's start.
+	// - M2: a direction@directive="yes" "Moderato" starts at the first note position.
+	// - M3: <offset> moves "late words" to beat 3 and the C and G chords to beats 2 and 4.
+	it.concurrent('renders directives_offsets.png', async () => {
+		expect(
+			await testing.render('directives_offsets.musicxml'),
+		).toMatchScreenshot('directives_offsets.png');
+	});
+
 	// Treble stave, common time: the full <dynamics> vocabulary, one marking per C4 quarter,
 	// drawn as SMuFL glyphs (the bold-italic p/m/f/r/s/z forms, not ordinary text) BELOW the
 	// staff, the engraving default these directions carry no explicit placement for. Every

@@ -130,9 +130,9 @@ are picked by hand.
 | `detached-legato` | drawn | `articulations_extended.musicxml` |
 | `diatonic` | ignored | sound only (transposition; written pitch is drawn) |
 | `direction` | drawn | `words.musicxml`, `dynamics.musicxml` |
-| `direction@directive` | missing | task #38; directive alignment with the time signature ignored; mdom raw only |
+| `direction@directive` | drawn | `directives_offsets.musicxml` M2: words start at the first note position, left of the notes |
 | `direction-type` | drawn | `words.musicxml`, `dynamics.musicxml` |
-| `directive` | missing | task #38; attributes directive text printed above the staff; mdom raw only |
+| `directive` | drawn | `directives_offsets.musicxml` M1: text above the staff at the measure start, like a words direction |
 | `display-octave` | drawn | `rest_pitched.musicxml`, `percussion_display_step.musicxml` |
 | `display-step` | drawn | `rest_pitched.musicxml`, `percussion_display_step.musicxml` |
 | `display-text` | drawn | `notehead_text.musicxml`: inside notehead-text; other parents task #25 |

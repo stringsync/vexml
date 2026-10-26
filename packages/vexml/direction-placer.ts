@@ -6,6 +6,7 @@ import {
 	StaveNote,
 	StaveTempo,
 	TabNote,
+	TimeSignature,
 } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
@@ -900,12 +901,26 @@ export class DirectionPlacer {
 		task: WordsTask,
 	): StaveNote | TabNote | number | undefined {
 		const { anchor, stave } = task;
+		if (task.directive) {
+			return this.directiveX(stave);
+		}
 		if (task.closesBar) {
 			return stave.getX() + stave.getWidth();
 		}
 		return task.opensBar && anchor?.isCenterAligned()
 			? stave.getNoteStartX()
 			: anchor;
+	}
+
+	/* Where a directive starts: the left edge of the stave's time signature, or its first
+	 * note position when it has none. */
+	private directiveX(stave: Stave): number {
+		const timeSignature = stave
+			.getModifiers()
+			.find((m) => m.getCategory() === TimeSignature.CATEGORY);
+		return timeSignature
+			? stave.getX() + timeSignature.getX()
+			: stave.getNoteStartX();
 	}
 
 	/* Right-aligned on the barline for text closing the bar (the way a "D.S. al Coda" is
@@ -1236,6 +1251,9 @@ export type WordsTask = {
 	/* The direction falls at the bar's end, so it ends at the right barline. Absent means it
 	 * doesn't. */
 	closesBar?: boolean;
+	/* The words are a directive (an <attributes><directive> or direction@directive="yes"), so
+	 * they sit left of the first note, aligned with the time signature. Absent means they don't. */
+	directive?: boolean;
 	/** The <words> element's formatting. Absent means the document asks for none. */
 	format?: TextFormat;
 };

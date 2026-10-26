@@ -870,18 +870,31 @@ export class ScoreReader {
 		placement: Placement;
 		opensBar: boolean;
 		closesBar: boolean;
+		directive: boolean;
 		format: TextFormat;
 	}[] {
 		const wordFont = this.wordFontOf(measure);
-		return measure.directions.flatMap((d) => {
+		const written = measure.directions.flatMap((d) => {
 			const staffNumber = d.staff;
 			const placement = this.placementOf(d, 'above');
-			const beat = d.measureBeat;
+			const offset = this.offsetBeatsOf(d, measure);
+			const beat = d.measureBeat === null ? null : d.measureBeat + offset;
 			const opensBar = beat !== null && Math.abs(beat) < EPSILON;
 			const closesBar =
 				beat !== null && !opensBar && beat > measure.endBeat - EPSILON;
-			const lead = closesBar ? null : d.nextNote;
-			const at = { staffNumber, lead, placement, opensBar, closesBar };
+			let lead = closesBar ? null : d.nextNote;
+			if (!closesBar && offset !== 0 && beat !== null) {
+				lead = this.leadAtBeat(measure, beat);
+			}
+			const directive = d.getAttribute('directive') === 'yes';
+			const at = {
+				staffNumber,
+				lead,
+				placement,
+				opensBar,
+				closesBar,
+				directive,
+			};
 			const words = d.wordsElements
 				.filter((words) => words.text)
 				.map((words) => ({
@@ -909,6 +922,77 @@ export class ScoreReader {
 				});
 			return [...words, ...others];
 		});
+		// An <attributes><directive> is text above the staff at the measure's start, like a
+		// tempo word, so it reads as a words direction opening the bar.
+		const lead = this.leadAtBeat(measure, 0);
+		const attributed = measure.childrenNamed('attributes').flatMap((attrs) =>
+			attrs
+				.childrenNamed('directive')
+				.filter((el) => el.text)
+				.map((el) => ({
+					text: el.text ?? '',
+					glyph: false,
+					staffNumber: '1',
+					lead,
+					placement: 'above' as Placement,
+					opensBar: true,
+					closesBar: false,
+					directive: true,
+					format: this.formatOf(el, wordFont, wordFont),
+				})),
+		);
+		return [...attributed, ...written];
+	}
+
+	/*
+	 * A direction's or harmony's <offset>, in beats: how far its mark sits from where it was
+	 * written. The element counts divisions, so the part's divisions in effect at the
+	 * measure turn it into beats. 0 when absent.
+	 */
+	private offsetBeatsOf(element: MElement, measure: Measure): number {
+		const divisions = this.divisionsAt(measure);
+		const offset = Number(element.child('offset')?.text);
+		return Number.isFinite(offset) && divisions > 0 ? offset / divisions : 0;
+	}
+
+	private divisionsAt(measure: Measure): number {
+		let divisions = 0;
+		for (const m of measure.part.measures) {
+			for (const attrs of m.childrenNamed('attributes')) {
+				const value = Number(attrs.child('divisions')?.text);
+				if (value > 0) {
+					divisions = value;
+				}
+			}
+			if (m === measure) {
+				break;
+			}
+		}
+		return divisions;
+	}
+
+	/*
+	 * The note a mark shifted to `beat` binds to: the lead of the last chord starting at or
+	 * before it, or the measure's first when it lands before them all. null in an empty measure.
+	 */
+	private leadAtBeat(measure: Measure, beat: number): Note | null {
+		let found: Note | null = null;
+		let foundBeat = Number.NEGATIVE_INFINITY;
+		for (const { lead } of measure.chords) {
+			const at = this.measureBeatOf(lead);
+			if (at === null) {
+				continue;
+			}
+			if (
+				at <= beat + EPSILON
+					? at >= foundBeat
+					: found === null && foundBeat === Number.NEGATIVE_INFINITY
+			) {
+				found = lead;
+				foundBeat = at;
+			}
+		}
+		return found;
 	}
 
 	/*
@@ -1317,7 +1401,13 @@ export class ScoreReader {
 		}[] = [];
 		const seen = new Set<string>();
 		for (const harmony of measure.harmonies) {
-			const lead = harmony.nextNote;
+			const offset = this.offsetBeatsOf(harmony, measure);
+			const written = harmony.nextNote;
+			const at = written ? this.measureBeatOf(written) : null;
+			const lead =
+				offset === 0 || at === null
+					? written
+					: (this.leadAtBeat(measure, at + offset) ?? written);
 			if (!lead) {
 				continue;
 			}
