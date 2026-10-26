@@ -42,6 +42,9 @@ const GRACE_MS = 65;
 
 type Span = { onset: number; end: number };
 
+// What buildInput asks of every note, read off the document once.
+type NoteRead = { grace: boolean; chordMember: boolean; voice: string };
+
 const EMPTY_GEOMETRY: RawGeometry = {
 	bounds: new Rect(0, 0, 0, 0),
 	notes: [],
@@ -260,6 +263,18 @@ export class SequenceFactory {
 		// Every rate change is in by now, so the map is complete and can date the steps.
 		const tempo = new TempoMap(segments);
 		const startBeats = [...onsets.keys()].sort((a, b) => a - b);
+		// A step's active notes are the intervals sounding at its start. Steps ascend, so one
+		// sweep over the intervals by start finds them: an interval joins once a step reaches its
+		// start and leaves for good once one reaches its end. Indexes keep the walk's order.
+		const byStart = intervals
+			.map((_, i) => i)
+			.sort(
+				(a, b) =>
+					(intervals[a] as Interval).startBeat -
+					(intervals[b] as Interval).startBeat,
+			);
+		let joined = 0;
+		let sounding: number[] = [];
 		const steps: StepSkeleton[] = [];
 		for (const [i, startBeat] of startBeats.entries()) {
 			const onset = onsets.get(startBeat);
@@ -267,12 +282,20 @@ export class SequenceFactory {
 				continue;
 			}
 			const endBeat = startBeats[i + 1] ?? totalBeats;
-			const active = intervals
-				.filter(
-					(iv) =>
-						iv.startBeat <= startBeat && startBeat < iv.endBeat - BEAT_EPSILON,
-				)
-				.map((iv) => iv.note);
+			while (
+				joined < byStart.length &&
+				(intervals[byStart[joined] as number] as Interval).startBeat <=
+					startBeat
+			) {
+				sounding.push(byStart[joined] as number);
+				joined++;
+			}
+			sounding = sounding.filter(
+				(iv) => startBeat < (intervals[iv] as Interval).endBeat - BEAT_EPSILON,
+			);
+			const active = [...sounding]
+				.sort((a, b) => a - b)
+				.map((iv) => (intervals[iv] as Interval).note);
 			steps.push({
 				startBeat,
 				endBeat,
@@ -393,36 +416,61 @@ export class SequenceFactory {
 		// Each note -> its chord's members, so a chord tie can re-resolve to the matching pitch. A
 		// non-<chord/> note starts a group; each following <chord/> member joins it (the array grows
 		// in place, so every member ends up referencing the whole chord).
+		// mdom reads a note's children afresh on each property, and the passes below ask about each
+		// note several times, so what they ask is read once here, with each part's notes by measure.
 		const chordSiblings = new Map<MNote, readonly MNote[]>();
-		for (const part of parts) {
-			for (const measure of part.measures) {
+		const reads = new Map<MNote, NoteRead>();
+		const notesOf = parts.map((part) =>
+			part.measures.map((measure) => {
+				const notes = measure.notes;
 				let chord: MNote[] = [];
-				for (const n of measure.notes) {
-					if (n.isChordMember && chord.length > 0) {
+				for (const n of notes) {
+					const read = {
+						grace: n.isGrace,
+						chordMember: n.isChordMember,
+						voice: n.voice,
+					};
+					reads.set(n, read);
+					if (read.chordMember && chord.length > 0) {
 						chord.push(n);
 					} else {
 						chord = [n];
 					}
 					chordSiblings.set(n, chord);
 				}
-			}
-		}
+				return notes;
+			}),
+		);
+		const readOf = (n: MNote) =>
+			reads.get(n) ?? {
+				grace: n.isGrace,
+				chordMember: n.isChordMember,
+				voice: n.voice,
+			};
 
 		// A note's played span within its measure, warped by swing. Warp onset and end through the
 		// same function, then take the duration as the difference: a swung note's length falls out
 		// of where its neighbors land, so it can never drift out of step with them or with the
 		// measure's own length.
+		// A note is only ever asked about in its own measure, so its span is kept by note.
+		const spans = new Map<MNote, Span | null>();
 		const span = (mnote: MNote, measureIndex: number): Span | null => {
+			const known = spans.get(mnote);
+			if (known !== undefined) {
+				return known;
+			}
 			const measureBeat = this.reader.measureBeatOf(mnote);
 			const beats = this.reader.beatsOf(mnote);
 			const exempt = swingExemptOf(mnote);
-			if (exempt === null || measureBeat === null || beats === null) {
-				return null;
+			let played: Span | null = null;
+			if (exempt !== null && measureBeat !== null && beats !== null) {
+				const warp = exempt
+					? (beat: number) => beat
+					: (beat: number) => swung(measureIndex, beat);
+				played = { onset: warp(measureBeat), end: warp(measureBeat + beats) };
 			}
-			const warp = exempt
-				? (beat: number) => beat
-				: (beat: number) => swung(measureIndex, beat);
-			return { onset: warp(measureBeat), end: warp(measureBeat + beats) };
+			spans.set(mnote, played);
+			return played;
 		};
 
 		// Graces take their time from a neighbor, so a chord can play shorter than written: `starts`
@@ -435,30 +483,34 @@ export class SequenceFactory {
 		const starts = new Map<MNote, number>();
 		const ends = new Map<MNote, number>();
 		const made = new Map<number, Map<number, number>>();
-		for (const part of parts) {
-			for (const [measureIndex, measure] of part.measures.entries()) {
+		for (const measures of notesOf) {
+			for (const [measureIndex, measureNotes] of measures.entries()) {
 				const bpm = bpms[measureIndex] ?? DEFAULT_TEMPO_BPM;
 				const previousByVoice = new Map<string, MNote>();
 				// Graces not yet followed by a note in their voice; those left at the measure's end
 				// are after-graces of the note before them.
 				const pendingByVoice = new Map<string, MNote[]>();
-				for (const n of measure.notes) {
-					if (n.isGrace) {
-						pendingByVoice.set(n.voice, [
-							...(pendingByVoice.get(n.voice) ?? []),
+				for (const n of measureNotes) {
+					const { grace, chordMember, voice } = readOf(n);
+					if (grace) {
+						pendingByVoice.set(voice, [
+							...(pendingByVoice.get(voice) ?? []),
 							n,
 						]);
 						continue;
 					}
-					if (n.isChordMember) {
+					if (chordMember) {
 						continue;
 					}
-					const graces = pendingByVoice.get(n.voice) ?? [];
-					pendingByVoice.delete(n.voice);
-					const previous = previousByVoice.get(n.voice) ?? null;
-					previousByVoice.set(n.voice, n);
+					const graces = pendingByVoice.get(voice) ?? [];
+					pendingByVoice.delete(voice);
+					const previous = previousByVoice.get(voice) ?? null;
+					previousByVoice.set(voice, n);
+					if (graces.length === 0) {
+						continue;
+					}
 					const anchorSpan = span(n, measureIndex);
-					if (graces.length === 0 || !anchorSpan) {
+					if (!anchorSpan) {
 						continue;
 					}
 					const previousSpan = previous ? span(previous, measureIndex) : null;
@@ -567,7 +619,7 @@ export class SequenceFactory {
 					madeBefore(rn.measureIndex, madeGrace.at, false) +
 					madeGrace.offset;
 				played = { onset, end: onset + graceSpan.end - graceSpan.onset };
-			} else if (rn.mnote.isGrace) {
+			} else if (readOf(rn.mnote).grace) {
 				played = graceSpan ?? null;
 			} else {
 				const written = span(rn.mnote, rn.measureIndex);
