@@ -144,6 +144,7 @@ describe('EditingNavigator', () => {
 		expect(navigation.move({ unit: 'voice', direction: 1 })).toBe(false);
 	});
 
+	// scry-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
 	it('switches to a nearby onset, remembers the voice after clearing, and clamps', () => {
 		const measure = document.score.addPart().addMeasure();
 		const first = measure

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import type { Chord } from '@stringsync/mdom';
 import { MDocument } from '@stringsync/mdom';
 import {
@@ -12,6 +12,12 @@ import { Rect } from 'webappwiz/geometry';
 import { GeometryCollector } from './geometry-collector';
 
 describe('GeometryCollector', () => {
+	let collector: GeometryCollector;
+
+	beforeEach(() => {
+		collector = new GeometryCollector();
+	});
+
 	// A real two-note mdom chord (C4 carrying string 2 / fret 5, E4 with no tab technical),
 	// so the collector reads the same shapes the parser produces.
 	const chord = ((): Chord => {
@@ -101,7 +107,6 @@ describe('GeometryCollector', () => {
 		}) as unknown as StaveNote;
 
 	it('captures one raw note per notehead, spanning the head and replaying its glyph', () => {
-		const collector = new GeometryCollector();
 		collector.collectStaveNotes(3, [{ note: staveNote([50, 60]), chord }]);
 		const notes = collector.notes();
 		expect(notes).toHaveLength(2);
@@ -115,7 +120,6 @@ describe('GeometryCollector', () => {
 	});
 
 	it('tracks a displaced notehead (a second) at its own drawn box, not the stem column', () => {
-		const collector = new GeometryCollector();
 		// The lower head of a stem-down second draws a head-width left of the column.
 		collector.collectStaveNotes(0, [
 			{ note: staveNote([60, 50], [-1, 11]), chord },
@@ -127,7 +131,6 @@ describe('GeometryCollector', () => {
 	});
 
 	it("grows a head's ink over its own side modifiers, leaving its chordmates' alone", () => {
-		const collector = new GeometryCollector();
 		collector.collectStaveNotes(0, [
 			{
 				note: staveNote([50, 60], undefined, [
@@ -148,7 +151,6 @@ describe('GeometryCollector', () => {
 	});
 
 	it("counts the chord's arpeggio for every head, spanning them all", () => {
-		const collector = new GeometryCollector();
 		collector.collectStaveNotes(0, [
 			{
 				note: staveNote([50, 60], undefined, [modifier('Stroke', 0, LEFT, 0)]),
@@ -162,13 +164,11 @@ describe('GeometryCollector', () => {
 	});
 
 	it('keeps a notehead rect to the standard band around its staff y', () => {
-		const collector = new GeometryCollector();
 		collector.collectStaveNotes(0, [{ note: staveNote([50]), chord }]);
 		expect(collector.notes()[0]?.rect).toMatchObject({ y: 45, h: 10 });
 	});
 
 	it("spans a rest's whole drawn glyph, so a decoration clears what it stamped", () => {
-		const collector = new GeometryCollector();
 		collector.collectStaveNotes(0, [
 			{ note: staveNote([50]), chord: restChord },
 		]);
@@ -178,7 +178,6 @@ describe('GeometryCollector', () => {
 	});
 
 	it('places a head that never drew (a hidden note) at its column, with no glyph', () => {
-		const collector = new GeometryCollector();
 		// An undrawn head's box reports x 0, which would drag a cursor onset to the page edge.
 		collector.collectStaveNotes(0, [
 			{ note: staveNote([50], [0], [], false), chord: restChord },
@@ -189,13 +188,11 @@ describe('GeometryCollector', () => {
 	});
 
 	it('skips a chord note the formatter gave no y', () => {
-		const collector = new GeometryCollector();
 		collector.collectStaveNotes(0, [{ note: staveNote([50]), chord }]);
 		expect(collector.notes()).toHaveLength(1);
 	});
 
 	it('captures tab frets only for notes carrying string+fret, y from the string line', () => {
-		const collector = new GeometryCollector();
 		const tabNote = {
 			getAbsoluteX: () => 40,
 			getPositions: () => [{ str: 2, fret: '5' }],
@@ -222,7 +219,6 @@ describe('GeometryCollector', () => {
 	});
 
 	it('grows a measure box up to its system decoration ceiling, never shrinking one', () => {
-		const collector = new GeometryCollector();
 		collector.addMeasure({
 			rect: new Rect(0, 40, 100, 60),
 			index: 0,

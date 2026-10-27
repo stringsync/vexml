@@ -125,11 +125,9 @@ describe('ProgressiveEngraving', () => {
 		const { stage, scheduler } = await render(LONG, { progressive: true });
 		scheduler.runAll();
 
-		for (let i = 1; i < stage.extensions.length; i++) {
-			const previous = stage.extensions[i - 1];
-			const current = stage.extensions[i];
-			expect(current?.from).toBe(previous?.engraving.ops.length ?? -1);
-		}
+		expect(stage.extensions.slice(1).map((e) => e.from)).toEqual(
+			stage.extensions.slice(0, -1).map((e) => e.engraving.ops.length),
+		);
 	});
 
 	it('places a cursor moved onto an undrawn system where a whole render would', async () => {
@@ -231,12 +229,10 @@ describe('ProgressiveEngraving', () => {
 		const whole = await render(LONG);
 		const { score } = await render(LONG, { progressive: true });
 		const box = whole.score.getSystems().at(-1)?.getMeasureBoxes().at(-1);
-		if (!box) {
-			throw new Error('fixture has no measure in its last system');
-		}
+		expect(box).toBeDefined();
 		const point = {
-			x: box.rect.x + box.rect.w / 2,
-			y: box.rect.y + box.rect.h / 2,
+			x: (box?.rect.x ?? 0) + (box?.rect.w ?? 0) / 2,
+			y: (box?.rect.y ?? 0) + (box?.rect.h ?? 0) / 2,
 		};
 
 		expect(whole.score.getElements().at(point)).not.toBeNull();

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { MDocument, type Note as MNote } from '@stringsync/mdom';
 import { Rect } from 'webappwiz/geometry';
 import type { Note } from './note';
@@ -6,6 +6,27 @@ import { Sequence, type Step } from './sequence';
 import { TempoMap } from './tempo-map';
 
 describe('Sequence', () => {
+	let part: ReturnType<MDocument['score']['addPart']>;
+	let upper: Note;
+	let lower: Note;
+	let preferred: { part: typeof part; voice: string };
+
+	beforeEach(() => {
+		part = MDocument.empty().score.addPart();
+		const measure = part.addMeasure();
+		upper = fakeNote('upper', [
+			measure
+				.getOrCreateVoice('1')
+				.addNote({ step: 'C', octave: 5, type: 'quarter' }),
+		]);
+		lower = fakeNote('lower', [
+			measure
+				.getOrCreateVoice('2')
+				.addNote({ step: 'C', octave: 3, type: 'quarter' }),
+		]);
+		preferred = { part, voice: '2' };
+	});
+
 	it('counts every note as started or stopped when two steps share none', () => {
 		const seq = withActive([
 			[A, B],
@@ -88,20 +109,6 @@ describe('Sequence', () => {
 	});
 
 	it('prefers the remembered voice near playback and falls back when it has no positions', () => {
-		const part = MDocument.empty().score.addPart();
-		const measure = part.addMeasure();
-		const upper = fakeNote('upper', [
-			measure
-				.getOrCreateVoice('1')
-				.addNote({ step: 'C', octave: 5, type: 'quarter' }),
-		]);
-		const lower = fakeNote('lower', [
-			measure
-				.getOrCreateVoice('2')
-				.addNote({ step: 'C', octave: 3, type: 'quarter' }),
-		]);
-		const preferred = { part, voice: '2' };
-
 		expect(
 			withActive([[lower], [upper], [lower]]).getNoteNearMs(750, {
 				voice: preferred,

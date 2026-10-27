@@ -229,11 +229,9 @@ describe('SystemFormatter', () => {
 		expect(x).toBeNull();
 		expect(sig.moved).toBe(false);
 	});
-});
 
-// Exercise the real parse/layout/draw pipeline: these positions must reach the hit
-// geometry too.
-describe('document horizontal geometry', () => {
+	// Exercise the real parse/layout/draw pipeline: these positions must reach the hit
+	// geometry too.
 	it.each([
 		'follow',
 		'strict',

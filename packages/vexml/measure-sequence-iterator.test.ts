@@ -300,51 +300,49 @@ describe('MeasureSequenceIterator', () => {
 		).toEqual([0, 1]);
 	});
 
-	describe('navigation', () => {
-		const m = (jumps: Jump[], index = 0) => ({ index, jumps });
+	const m = (jumps: Jump[], index = 0) => ({ index, jumps });
 
-		it('iterator: D.C. returns to the start without taking repeats', () => {
-			expect(
-				order([
-					m([{ type: 'repeatstart' }], 0),
-					m([{ type: 'repeatend', times: 1 }], 1),
-					m([{ type: 'dacapo' }], 2),
-				]),
-			).toEqual([0, 1, 0, 1, 2, 0, 1, 2]);
-		});
+	it('iterator: D.C. returns to the start without taking repeats', () => {
+		expect(
+			order([
+				m([{ type: 'repeatstart' }], 0),
+				m([{ type: 'repeatend', times: 1 }], 1),
+				m([{ type: 'dacapo' }], 2),
+			]),
+		).toEqual([0, 1, 0, 1, 2, 0, 1, 2]);
+	});
 
-		it('iterator: D.C. al Fine stops at the fine', () => {
-			expect(
-				order([m([], 0), m([{ type: 'fine' }], 1), m([{ type: 'dacapo' }], 2)]),
-			).toEqual([0, 1, 2, 0, 1]);
-		});
+	it('iterator: D.C. al Fine stops at the fine', () => {
+		expect(
+			order([m([], 0), m([{ type: 'fine' }], 1), m([{ type: 'dacapo' }], 2)]),
+		).toEqual([0, 1, 2, 0, 1]);
+	});
 
-		it('iterator: D.S. al Coda jumps to the segno, then the coda', () => {
-			expect(
-				order([
-					m([], 0),
-					m([{ type: 'segno', id: 's' }], 1),
-					m(
-						[
-							{ type: 'tocoda', id: 'c' },
-							{ type: 'dalsegno', id: 's' },
-						],
-						2,
-					),
-					m([], 3),
-					m([{ type: 'coda', id: 'c' }], 4),
-				]),
-			).toEqual([0, 1, 2, 1, 2, 4]);
-		});
+	it('iterator: D.S. al Coda jumps to the segno, then the coda', () => {
+		expect(
+			order([
+				m([], 0),
+				m([{ type: 'segno', id: 's' }], 1),
+				m(
+					[
+						{ type: 'tocoda', id: 'c' },
+						{ type: 'dalsegno', id: 's' },
+					],
+					2,
+				),
+				m([], 3),
+				m([{ type: 'coda', id: 'c' }], 4),
+			]),
+		).toEqual([0, 1, 2, 1, 2, 4]);
+	});
 
-		it('iterator: ignores a jump with no landmark, and tocoda before a jump', () => {
-			expect(
-				order([
-					m([{ type: 'tocoda', id: 'c' }], 0),
-					m([{ type: 'dalsegno', id: 's' }], 1),
-					m([{ type: 'coda', id: 'c' }], 2),
-				]),
-			).toEqual([0, 1, 2]);
-		});
+	it('iterator: ignores a jump with no landmark, and tocoda before a jump', () => {
+		expect(
+			order([
+				m([{ type: 'tocoda', id: 'c' }], 0),
+				m([{ type: 'dalsegno', id: 's' }], 1),
+				m([{ type: 'coda', id: 'c' }], 2),
+			]),
+		).toEqual([0, 1, 2]);
 	});
 });

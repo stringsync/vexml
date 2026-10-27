@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import {
 	Beam,
 	CanvasContext,
@@ -31,53 +31,99 @@ function notesFor(direction: number, rest = false): StaveNote[] {
 }
 
 describe('SpacedBeam', () => {
-	new ProbeTextCanvas(new FakePaintProbe()).install();
-	for (const direction of [Stem.UP, Stem.DOWN]) {
-		it(`extends an opposing stem through all three widely spaced levels (${direction})`, () => {
-			const plainNotes = notesFor(direction);
-			new Beam(plainNotes, false).postFormat();
-			const wideNotes = notesFor(direction);
-			new SpacedBeam(wideNotes, false).setDistance(15).postFormat();
-			expect(
-				(wideNotes[1]?.getStem()?.getExtension() ?? Number.NaN) -
-					(plainNotes[1]?.getStem()?.getExtension() ?? Number.NaN),
-			).toBeCloseTo(15);
-		});
+	beforeEach(() => {
+		new ProbeTextCanvas(new FakePaintProbe()).install();
+	});
 
-		it(`draws a rest stemlet through the full beam stack (${direction})`, () => {
-			const notes = notesFor(direction, true);
-			const list = new PaintList();
-			const ctx = new CanvasContext(
-				new PaintContext(
-					list,
-					new FakePaintProbe(),
-					null,
-				) as unknown as CanvasRenderingContext2D,
-			);
-			const beam = new SpacedBeam(notes, false).setDistance(15);
-			beam.renderOptions.showStemlets = true;
-			beam.postFormat();
-			notes[1]?.getStem()?.setContext(ctx).draw();
-			const path = list.ops[0]?.path;
-			const startY = Number(path?.[0]?.args[1]);
-			const endY = Number(path?.[1]?.args[1]);
-			expect(Math.abs(endY - startY)).toBeCloseTo(
-				2 * 15 + 5 + 7 - Stem.WIDTH / 2,
-			);
-		});
+	it('extends an opposing stem through all three widely spaced levels (1)', () => {
+		const plainNotes = notesFor(Stem.UP);
+		new Beam(plainNotes, false).postFormat();
+		const wideNotes = notesFor(Stem.UP);
+		new SpacedBeam(wideNotes, false).setDistance(15).postFormat();
+		expect(
+			(wideNotes[1]?.getStem()?.getExtension() ?? Number.NaN) -
+				(plainNotes[1]?.getStem()?.getExtension() ?? Number.NaN),
+		).toBeCloseTo(15);
+	});
 
-		it(`keeps a standard stem below the innermost flat beam (${direction})`, () => {
-			const notes = notesFor(direction, true);
-			const beam = new SpacedBeam(notes, false).setDistance(15);
-			beam.renderOptions.flatBeams = true;
-			beam.renderOptions.minFlatBeamOffset = Stem.HEIGHT - beam.levelDistance();
-			beam.postFormat();
-			const tip = beam.renderOptions.flatBeamOffset ?? Number.NaN;
-			const head = notes[0]?.getYs()[0] ?? Number.NaN;
-			expect((head - tip) * direction - 2 * 15).toBeGreaterThanOrEqual(
-				Stem.HEIGHT,
-			);
-			expect(beam.renderOptions.beamWidth).toBe(5);
-		});
-	}
+	it('draws a rest stemlet through the full beam stack (1)', () => {
+		const notes = notesFor(Stem.UP, true);
+		const list = new PaintList();
+		const ctx = new CanvasContext(
+			new PaintContext(
+				list,
+				new FakePaintProbe(),
+				null,
+			) as unknown as CanvasRenderingContext2D,
+		);
+		const beam = new SpacedBeam(notes, false).setDistance(15);
+		beam.renderOptions.showStemlets = true;
+		beam.postFormat();
+		notes[1]?.getStem()?.setContext(ctx).draw();
+		const path = list.ops[0]?.path;
+		const startY = Number(path?.[0]?.args[1]);
+		const endY = Number(path?.[1]?.args[1]);
+		expect(Math.abs(endY - startY)).toBeCloseTo(
+			2 * 15 + 5 + 7 - Stem.WIDTH / 2,
+		);
+	});
+
+	it('keeps a standard stem below the innermost flat beam (1)', () => {
+		const notes = notesFor(Stem.UP, true);
+		const beam = new SpacedBeam(notes, false).setDistance(15);
+		beam.renderOptions.flatBeams = true;
+		beam.renderOptions.minFlatBeamOffset = Stem.HEIGHT - beam.levelDistance();
+		beam.postFormat();
+		const tip = beam.renderOptions.flatBeamOffset ?? Number.NaN;
+		const head = notes[0]?.getYs()[0] ?? Number.NaN;
+		expect((head - tip) * Stem.UP - 2 * 15).toBeGreaterThanOrEqual(Stem.HEIGHT);
+		expect(beam.renderOptions.beamWidth).toBe(5);
+	});
+
+	it('extends an opposing stem through all three widely spaced levels (-1)', () => {
+		const plainNotes = notesFor(Stem.DOWN);
+		new Beam(plainNotes, false).postFormat();
+		const wideNotes = notesFor(Stem.DOWN);
+		new SpacedBeam(wideNotes, false).setDistance(15).postFormat();
+		expect(
+			(wideNotes[1]?.getStem()?.getExtension() ?? Number.NaN) -
+				(plainNotes[1]?.getStem()?.getExtension() ?? Number.NaN),
+		).toBeCloseTo(15);
+	});
+
+	it('draws a rest stemlet through the full beam stack (-1)', () => {
+		const notes = notesFor(Stem.DOWN, true);
+		const list = new PaintList();
+		const ctx = new CanvasContext(
+			new PaintContext(
+				list,
+				new FakePaintProbe(),
+				null,
+			) as unknown as CanvasRenderingContext2D,
+		);
+		const beam = new SpacedBeam(notes, false).setDistance(15);
+		beam.renderOptions.showStemlets = true;
+		beam.postFormat();
+		notes[1]?.getStem()?.setContext(ctx).draw();
+		const path = list.ops[0]?.path;
+		const startY = Number(path?.[0]?.args[1]);
+		const endY = Number(path?.[1]?.args[1]);
+		expect(Math.abs(endY - startY)).toBeCloseTo(
+			2 * 15 + 5 + 7 - Stem.WIDTH / 2,
+		);
+	});
+
+	it('keeps a standard stem below the innermost flat beam (-1)', () => {
+		const notes = notesFor(Stem.DOWN, true);
+		const beam = new SpacedBeam(notes, false).setDistance(15);
+		beam.renderOptions.flatBeams = true;
+		beam.renderOptions.minFlatBeamOffset = Stem.HEIGHT - beam.levelDistance();
+		beam.postFormat();
+		const tip = beam.renderOptions.flatBeamOffset ?? Number.NaN;
+		const head = notes[0]?.getYs()[0] ?? Number.NaN;
+		expect((head - tip) * Stem.DOWN - 2 * 15).toBeGreaterThanOrEqual(
+			Stem.HEIGHT,
+		);
+		expect(beam.renderOptions.beamWidth).toBe(5);
+	});
 });

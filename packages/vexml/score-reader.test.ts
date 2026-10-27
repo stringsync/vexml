@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import type { Measure as MMeasure } from '@stringsync/mdom';
 import { DefaultScoreParser } from './default-score-parser';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { ScoreReader } from './score-reader';
@@ -590,10 +591,8 @@ describe('ScoreReader', () => {
 					'<fermata type="inverted">angled</fermata></barline>',
 			),
 		);
-		const [measure] = mdoc.score.parts[0]?.measures ?? [];
-		if (!measure) {
-			throw new Error('fixture parsed no measures');
-		}
+		const measure = mdoc.score.parts[0]?.measures[0] as MMeasure;
+		expect(measure).toBeDefined();
 		expect(
 			new ScoreReader(new DynamicGlyphs()).barlineFermatasOf(measure),
 		).toEqual([
@@ -931,125 +930,119 @@ describe('ScoreReader', () => {
 		expect(await headerOf('')).toBeNull();
 	});
 
-	describe('measureStyleOf', () => {
-		it('counts each measure of a two-bar repeat pattern until the stop', async () => {
-			const measures = await styledMeasures([
-				STYLE('<measure-repeat type="start">2</measure-repeat>'),
-				'',
-				'',
-				'',
-				STYLE('<measure-repeat type="stop"/>'),
-			]);
-			const reader = new ScoreReader(new DynamicGlyphs());
-			expect(measures.map((m) => reader.measureStyleOf(m, '1'))).toEqual([
-				{ kind: 'measure-repeat', count: 2, slashes: 1, bar: 0 },
-				{ kind: 'measure-repeat', count: 2, slashes: 1, bar: 1 },
-				{ kind: 'measure-repeat', count: 2, slashes: 1, bar: 0 },
-				{ kind: 'measure-repeat', count: 2, slashes: 1, bar: 1 },
-				null,
-			]);
-		});
+	it('counts each measure of a two-bar repeat pattern until the stop', async () => {
+		const measures = await styledMeasures([
+			STYLE('<measure-repeat type="start">2</measure-repeat>'),
+			'',
+			'',
+			'',
+			STYLE('<measure-repeat type="stop"/>'),
+		]);
+		const reader = new ScoreReader(new DynamicGlyphs());
+		expect(measures.map((m) => reader.measureStyleOf(m, '1'))).toEqual([
+			{ kind: 'measure-repeat', count: 2, slashes: 1, bar: 0 },
+			{ kind: 'measure-repeat', count: 2, slashes: 1, bar: 1 },
+			{ kind: 'measure-repeat', count: 2, slashes: 1, bar: 0 },
+			{ kind: 'measure-repeat', count: 2, slashes: 1, bar: 1 },
+			null,
+		]);
+	});
 
-		it('draws the notes of a measure a beat repeat only partly covers', async () => {
-			const measures = await styledMeasures([
-				`${QUARTER.repeat(2)}${STYLE('<beat-repeat type="start"/>')}`,
-				'',
-			]);
-			const reader = new ScoreReader(new DynamicGlyphs());
-			expect(reader.measureStyleOf(measures[0] as never, '1')).toBeNull();
-			expect(reader.measureStyleOf(measures[1] as never, '1')).toMatchObject({
-				kind: 'beat-repeat',
-				beats: [0, 1, 2, 3],
-			});
-		});
-
-		it('slashes a compound meter on its dotted-quarter beats', async () => {
-			const measures = await styledMeasures(
-				[STYLE('<slash type="start"/>')],
-				'<beats>6</beats><beat-type>8</beat-type>',
-				'<note><pitch><step>C</step><octave>4</octave></pitch><duration>6</duration><type>half</type><dot/></note>',
-			);
-			const reader = new ScoreReader(new DynamicGlyphs());
-			expect(reader.measureStyleOf(measures[0] as never, '1')).toMatchObject({
-				kind: 'beat-slash',
-				unit: 1.5,
-				beats: [0, 1.5],
-			});
+	it('draws the notes of a measure a beat repeat only partly covers', async () => {
+		const measures = await styledMeasures([
+			`${QUARTER.repeat(2)}${STYLE('<beat-repeat type="start"/>')}`,
+			'',
+		]);
+		const reader = new ScoreReader(new DynamicGlyphs());
+		expect(reader.measureStyleOf(measures[0] as never, '1')).toBeNull();
+		expect(reader.measureStyleOf(measures[1] as never, '1')).toMatchObject({
+			kind: 'beat-repeat',
+			beats: [0, 1, 2, 3],
 		});
 	});
 
-	describe('noteStyleOf', () => {
-		it('hides the notes a beat repeat starting mid-measure covers, one sign per beat', async () => {
-			const [measure] = await styledMeasures([
-				`${QUARTER.repeat(2)}${STYLE('<beat-repeat type="start"/>')}`,
-			]);
-			const reader = new ScoreReader(new DynamicGlyphs());
-			expect(
-				measure?.notes.map((note) => {
-					const { hidden, sign } = reader.noteStyleOf(note);
-					return [hidden, sign?.kind ?? null];
-				}),
-			).toEqual([
-				[false, null],
-				[false, null],
-				[true, 'beat-repeat'],
-				[true, 'beat-repeat'],
-			]);
-		});
-
-		it('leaves a voice named by <except-voice> drawn', async () => {
-			const [measure] = await styledMeasures([
-				STYLE('<slash type="start"><except-voice>2</except-voice></slash>'),
-			]);
-			const reader = new ScoreReader(new DynamicGlyphs());
-			const [first] = measure?.notes ?? [];
-			expect(reader.measureStyleOf(measure as never, '1')).toBeNull();
-			expect(reader.noteStyleOf(first as never).hidden).toBe(true);
-			expect(first?.voice).toBe('1');
+	it('slashes a compound meter on its dotted-quarter beats', async () => {
+		const measures = await styledMeasures(
+			[STYLE('<slash type="start"/>')],
+			'<beats>6</beats><beat-type>8</beat-type>',
+			'<note><pitch><step>C</step><octave>4</octave></pitch><duration>6</duration><type>half</type><dot/></note>',
+		);
+		const reader = new ScoreReader(new DynamicGlyphs());
+		expect(reader.measureStyleOf(measures[0] as never, '1')).toMatchObject({
+			kind: 'beat-slash',
+			unit: 1.5,
+			beats: [0, 1.5],
 		});
 	});
 
-	describe('bendOf', () => {
-		const bendOf = async (bend: string) => {
-			const measure = await measureOf(
-				`<note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type><notations><technical><string>3</string><fret>7</fret>${bend}</technical></notations></note>`,
-			);
-			const [note] = measure.notes;
-			return new ScoreReader(new DynamicGlyphs()).bendOf(note as never);
-		};
+	it('hides the notes a beat repeat starting mid-measure covers, one sign per beat', async () => {
+		const [measure] = await styledMeasures([
+			`${QUARTER.repeat(2)}${STYLE('<beat-repeat type="start"/>')}`,
+		]);
+		const reader = new ScoreReader(new DynamicGlyphs());
+		expect(
+			measure?.notes.map((note) => {
+				const { hidden, sign } = reader.noteStyleOf(note);
+				return [hidden, sign?.kind ?? null];
+			}),
+		).toEqual([
+			[false, null],
+			[false, null],
+			[true, 'beat-repeat'],
+			[true, 'beat-repeat'],
+		]);
+	});
 
-		it('reads a plain bend as curved, with no pre-bend or bar', async () => {
-			expect(await bendOf('<bend><bend-alter>2</bend-alter></bend>')).toEqual({
-				semitones: 2,
-				release: false,
-				preBend: false,
-				shape: 'curved',
-				bar: null,
-			});
-		});
+	it('leaves a voice named by <except-voice> drawn', async () => {
+		const [measure] = await styledMeasures([
+			STYLE('<slash type="start"><except-voice>2</except-voice></slash>'),
+		]);
+		const reader = new ScoreReader(new DynamicGlyphs());
+		const [first] = measure?.notes ?? [];
+		expect(reader.measureStyleOf(measure as never, '1')).toBeNull();
+		expect(reader.noteStyleOf(first as never).hidden).toBe(true);
+		expect(first?.voice).toBe('1');
+	});
 
-		it('reads the pre-bend, the angled shape and the bar text', async () => {
-			expect(
-				await bendOf(
-					'<bend shape="angled"><bend-alter>-1</bend-alter><pre-bend/><with-bar> dip </with-bar></bend>',
-				),
-			).toMatchObject({
-				semitones: -1,
-				preBend: true,
-				shape: 'angled',
-				bar: 'dip',
-			});
-		});
+	const bendOf = async (bend: string) => {
+		const measure = await measureOf(
+			`<note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type><notations><technical><string>3</string><fret>7</fret>${bend}</technical></notations></note>`,
+		);
+		const [note] = measure.notes;
+		return new ScoreReader(new DynamicGlyphs()).bendOf(note as never);
+	};
 
-		it('reads an empty <with-bar/> as an empty bar, not a missing one', async () => {
-			expect(
-				await bendOf('<bend><bend-alter>-2</bend-alter><with-bar/></bend>'),
-			).toMatchObject({ bar: '' });
+	it('reads a plain bend as curved, with no pre-bend or bar', async () => {
+		expect(await bendOf('<bend><bend-alter>2</bend-alter></bend>')).toEqual({
+			semitones: 2,
+			release: false,
+			preBend: false,
+			shape: 'curved',
+			bar: null,
 		});
+	});
 
-		it('is null for a note with no bend', async () => {
-			expect(await bendOf('')).toBeNull();
+	it('reads the pre-bend, the angled shape and the bar text', async () => {
+		expect(
+			await bendOf(
+				'<bend shape="angled"><bend-alter>-1</bend-alter><pre-bend/><with-bar> dip </with-bar></bend>',
+			),
+		).toMatchObject({
+			semitones: -1,
+			preBend: true,
+			shape: 'angled',
+			bar: 'dip',
 		});
+	});
+
+	it('reads an empty <with-bar/> as an empty bar, not a missing one', async () => {
+		expect(
+			await bendOf('<bend><bend-alter>-2</bend-alter><with-bar/></bend>'),
+		).toMatchObject({ bar: '' });
+	});
+
+	it('is null for a note with no bend', async () => {
+		expect(await bendOf('')).toBeNull();
 	});
 
 	it('rhythm-slashes the notes from where a <slash use-stems="yes"> starts', async () => {
@@ -1065,152 +1058,145 @@ describe('ScoreReader', () => {
 		]);
 	});
 
-	describe('appearanceOf', () => {
-		const appearanceOf = async (appearance: string) => {
-			const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
+	const appearanceOf = async (appearance: string) => {
+		const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
 <score-partwise version="4.0">
-	<defaults><appearance>${appearance}</appearance></defaults>
-	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
-	<part id="P1"><measure number="1"><note><rest measure="yes"/><duration>4</duration></note></measure></part>
+<defaults><appearance>${appearance}</appearance></defaults>
+<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+<part id="P1"><measure number="1"><note><rest measure="yes"/><duration>4</duration></note></measure></part>
 </score-partwise>`);
-			return reader.appearanceOf(mdoc.score);
-		};
+		return reader.appearanceOf(mdoc.score);
+	};
 
-		it('reads line widths and distances in tenths, as px', async () => {
-			const appearance = await appearanceOf(`
-				<line-width type="stem">0.8333</line-width>
-				<line-width type="slur middle">2.1</line-width>
-				<distance type="hyphen">60</distance>`);
-			expect(appearance.lineWidth('stem')).toBe(0.8333);
-			expect(appearance.lineWidth('slur middle')).toBe(2.1);
-			expect(appearance.lineWidth('beam')).toBeNull();
-			expect(appearance.distance('hyphen')).toBe(60);
-		});
+	it('reads line widths and distances in tenths, as px', async () => {
+		const appearance = await appearanceOf(`
+			<line-width type="stem">0.8333</line-width>
+			<line-width type="slur middle">2.1</line-width>
+			<distance type="hyphen">60</distance>`);
+		expect(appearance.lineWidth('stem')).toBe(0.8333);
+		expect(appearance.lineWidth('slur middle')).toBe(2.1);
+		expect(appearance.lineWidth('beam')).toBeNull();
+		expect(appearance.distance('hyphen')).toBe(60);
+	});
 
-		it('reads glyphs by SMuFL name, null for one the font lacks', async () => {
-			const appearance = await appearanceOf(`
-				<glyph type="quarter-rest">restQuarterZ</glyph>
-				<glyph type="c-clef">noSuchGlyph</glyph>`);
-			expect(appearance.glyph('quarter-rest')).toBe('\uE4F6');
-			expect(appearance.glyph('c-clef')).toBeNull();
-			expect(appearance.glyph('f-clef')).toBeNull();
-		});
+	it('reads glyphs by SMuFL name, null for one the font lacks', async () => {
+		const appearance = await appearanceOf(`
+			<glyph type="quarter-rest">restQuarterZ</glyph>
+			<glyph type="c-clef">noSuchGlyph</glyph>`);
+		expect(appearance.glyph('quarter-rest')).toBe('\uE4F6');
+		expect(appearance.glyph('c-clef')).toBeNull();
+		expect(appearance.glyph('f-clef')).toBeNull();
+	});
 
-		it('leaves out a width that is no positive number', async () => {
-			const appearance = await appearanceOf(`
-				<line-width type="stem">0</line-width>
-				<line-width type="beam">wide</line-width>`);
-			expect(appearance.lineWidth('stem')).toBeNull();
-			expect(appearance.lineWidth('beam')).toBeNull();
+	it('leaves out a width that is no positive number', async () => {
+		const appearance = await appearanceOf(`
+			<line-width type="stem">0</line-width>
+			<line-width type="beam">wide</line-width>`);
+		expect(appearance.lineWidth('stem')).toBeNull();
+		expect(appearance.lineWidth('beam')).toBeNull();
+	});
+
+	const DEFAULTS = `<defaults>
+		<scaling><millimeters>7</millimeters><tenths>40</tenths></scaling>
+		<page-layout>
+			<page-height>1600</page-height><page-width>1200</page-width>
+			<page-margins type="even"><left-margin>1</left-margin><right-margin>1</right-margin><top-margin>1</top-margin><bottom-margin>1</bottom-margin></page-margins>
+			<page-margins type="odd"><left-margin>70</left-margin><right-margin>50</right-margin><top-margin>80</top-margin><bottom-margin>90</bottom-margin></page-margins>
+		</page-layout>
+		<system-layout>
+			<system-margins><left-margin>10</left-margin><right-margin>20</right-margin></system-margins>
+			<system-distance>120</system-distance>
+			<top-system-distance>60</top-system-distance>
+		</system-layout>
+		<staff-layout><staff-distance>65</staff-distance></staff-layout>
+		<staff-layout number="2"><staff-distance>75</staff-distance></staff-layout>
+	</defaults>`;
+
+	it('reads the page in tenths, as px, with the odd-page margins', async () => {
+		const layout = await documentLayoutOf(DEFAULTS, ['', '']);
+		expect(layout.page()).toEqual({
+			width: 1200,
+			height: 1600,
+			margins: { left: 70, right: 50, top: 80, bottom: 90 },
+			evenShift: -69,
+			evenNarrowing: 0,
 		});
 	});
 
-	describe('documentLayoutOf', () => {
-		const DEFAULTS = `<defaults>
-			<scaling><millimeters>7</millimeters><tenths>40</tenths></scaling>
-			<page-layout>
-				<page-height>1600</page-height><page-width>1200</page-width>
-				<page-margins type="even"><left-margin>1</left-margin><right-margin>1</right-margin><top-margin>1</top-margin><bottom-margin>1</bottom-margin></page-margins>
-				<page-margins type="odd"><left-margin>70</left-margin><right-margin>50</right-margin><top-margin>80</top-margin><bottom-margin>90</bottom-margin></page-margins>
-			</page-layout>
-			<system-layout>
-				<system-margins><left-margin>10</left-margin><right-margin>20</right-margin></system-margins>
-				<system-distance>120</system-distance>
-				<top-system-distance>60</top-system-distance>
-			</system-layout>
-			<staff-layout><staff-distance>65</staff-distance></staff-layout>
-			<staff-layout number="2"><staff-distance>75</staff-distance></staff-layout>
-		</defaults>`;
-
-		it('reads the page in tenths, as px, with the odd-page margins', async () => {
-			const layout = await documentLayoutOf(DEFAULTS, ['', '']);
-			expect(layout.page()).toEqual({
-				width: 1200,
-				height: 1600,
-				margins: { left: 70, right: 50, top: 80, bottom: 90 },
-				evenShift: -69,
-				evenNarrowing: 0,
-			});
+	it('shifts even pages to their own margins and flows to the narrower page', async () => {
+		const layout = await documentLayoutOf(
+			DEFAULTS.replace(
+				'<left-margin>1</left-margin><right-margin>1</right-margin>',
+				'<left-margin>20</left-margin><right-margin>300</right-margin>',
+			),
+			['', ''],
+		);
+		expect(layout.page()).toMatchObject({
+			evenShift: -50,
+			evenNarrowing: 200,
 		});
+	});
 
-		it('shifts even pages to their own margins and flows to the narrower page', async () => {
-			const layout = await documentLayoutOf(
-				DEFAULTS.replace(
-					'<left-margin>1</left-margin><right-margin>1</right-margin>',
-					'<left-margin>20</left-margin><right-margin>300</right-margin>',
-				),
-				['', ''],
-			);
-			expect(layout.page()).toMatchObject({
-				evenShift: -50,
-				evenNarrowing: 200,
-			});
-		});
+	it('has no page without a page width, or with margins wider than it', async () => {
+		expect((await documentLayoutOf('', ['', ''])).page()).toBeNull();
+		const cramped = DEFAULTS.replace(
+			'<page-width>1200</page-width>',
+			'<page-width>100</page-width>',
+		);
+		expect((await documentLayoutOf(cramped, ['', ''])).page()).toBeNull();
+	});
 
-		it('has no page without a page width, or with margins wider than it', async () => {
-			expect((await documentLayoutOf('', ['', ''])).page()).toBeNull();
-			const cramped = DEFAULTS.replace(
-				'<page-width>1200</page-width>',
-				'<page-width>100</page-width>',
-			);
-			expect((await documentLayoutOf(cramped, ['', ''])).page()).toBeNull();
-		});
+	it('lets a print override the defaults for its own system only', async () => {
+		const layout = await documentLayoutOf(DEFAULTS, [
+			'',
+			`<print new-system="yes"><system-layout>
+				<system-margins><left-margin>0</left-margin><right-margin>5</right-margin></system-margins>
+				<system-distance>200</system-distance>
+			</system-layout></print>`,
+			'',
+		]);
+		expect(layout.systemMargins(0)).toEqual({ left: 10, right: 20 });
+		expect(layout.systemDistance(0)).toBe(120);
+		expect(layout.systemMargins(1)).toEqual({ left: 0, right: 5 });
+		expect(layout.systemDistance(1)).toBe(200);
+		expect(layout.topSystemDistance(1)).toBe(60);
+		expect(layout.systemDistance(2)).toBe(120);
+	});
 
-		it('lets a print override the defaults for its own system only', async () => {
-			const layout = await documentLayoutOf(DEFAULTS, [
-				'',
-				`<print new-system="yes"><system-layout>
-					<system-margins><left-margin>0</left-margin><right-margin>5</right-margin></system-margins>
-					<system-distance>200</system-distance>
-				</system-layout></print>`,
-				'',
-			]);
-			expect(layout.systemMargins(0)).toEqual({ left: 10, right: 20 });
-			expect(layout.systemDistance(0)).toBe(120);
-			expect(layout.systemMargins(1)).toEqual({ left: 0, right: 5 });
-			expect(layout.systemDistance(1)).toBe(200);
-			expect(layout.topSystemDistance(1)).toBe(60);
-			expect(layout.systemDistance(2)).toBe(120);
-		});
+	it("picks a staff distance by staff number, then the part's print over the defaults", async () => {
+		const layout = await documentLayoutOf(DEFAULTS, [
+			'',
+			'<print><staff-layout number="1"><staff-distance>90</staff-distance></staff-layout></print>',
+		]);
+		expect(layout.staffDistance(0, 0, '1')).toBe(65);
+		expect(layout.staffDistance(0, 0, '2')).toBe(75);
+		expect(layout.staffDistance(1, 0, '1')).toBe(90);
+		expect(layout.staffDistance(1, 0, '2')).toBe(75);
+	});
 
-		it("picks a staff distance by staff number, then the part's print over the defaults", async () => {
-			const layout = await documentLayoutOf(DEFAULTS, [
-				'',
-				'<print><staff-layout number="1"><staff-distance>90</staff-distance></staff-layout></print>',
-			]);
-			expect(layout.staffDistance(0, 0, '1')).toBe(65);
-			expect(layout.staffDistance(0, 0, '2')).toBe(75);
-			expect(layout.staffDistance(1, 0, '1')).toBe(90);
-			expect(layout.staffDistance(1, 0, '2')).toBe(75);
-		});
+	it('leaves what the document never sets to vexml', async () => {
+		const layout = await documentLayoutOf('', ['']);
+		expect(layout.systemMargins(0)).toEqual({ left: 0, right: 0 });
+		expect(layout.systemDistance(0)).toBeNull();
+		expect(layout.topSystemDistance(0)).toBeNull();
+		expect(layout.staffDistance(0, 0, '1')).toBeNull();
+	});
 
-		it('leaves what the document never sets to vexml', async () => {
-			const layout = await documentLayoutOf('', ['']);
-			expect(layout.systemMargins(0)).toEqual({ left: 0, right: 0 });
-			expect(layout.systemDistance(0)).toBeNull();
-			expect(layout.topSystemDistance(0)).toBeNull();
-			expect(layout.staffDistance(0, 0, '1')).toBeNull();
-		});
+	it('notes where the document starts a page', async () => {
+		const layout = await documentLayoutOf('', ['', '<print new-page="yes"/>']);
+		expect(layout.startsPage(0)).toBe(false);
+		expect(layout.startsPage(1)).toBe(true);
+	});
 
-		it('notes where the document starts a page', async () => {
-			const layout = await documentLayoutOf('', [
-				'',
-				'<print new-page="yes"/>',
-			]);
-			expect(layout.startsPage(0)).toBe(false);
-			expect(layout.startsPage(1)).toBe(true);
-		});
-
-		it('counts blank pages only where a page is started', async () => {
-			const layout = await documentLayoutOf('', [
-				'<print blank-page="3"/>',
-				'<print new-page="yes" blank-page="2"/>',
-				'<print new-page="yes"/>',
-			]);
-			expect(layout.blankPages(0)).toBe(0);
-			expect(layout.blankPages(1)).toBe(2);
-			expect(layout.blankPages(2)).toBe(0);
-		});
+	it('counts blank pages only where a page is started', async () => {
+		const layout = await documentLayoutOf('', [
+			'<print blank-page="3"/>',
+			'<print new-page="yes" blank-page="2"/>',
+			'<print new-page="yes"/>',
+		]);
+		expect(layout.blankPages(0)).toBe(0);
+		expect(layout.blankPages(1)).toBe(2);
+		expect(layout.blankPages(2)).toBe(0);
 	});
 });
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { MElement, type Slur } from '@stringsync/mdom';
 import { CanvasContext, StaveNote } from 'vexflow/core';
 import { CrispCurve } from './crisp-curve';
@@ -9,18 +9,18 @@ import { PaintContext } from './paint-context';
 import { PaintList } from './paint-list';
 import { bezierPointOf, curveSegmentOf } from './score-reader';
 
-function recording() {
-	const list = new PaintList();
-	const canvas = new PaintContext(list, new FakePaintProbe(), null);
-	return {
-		list,
-		context: new CanvasContext(canvas as unknown as CanvasRenderingContext2D),
-	};
-}
-
 const controls = { start: { x: 12, y: 30 }, end: { x: -24, y: -10 } };
 
 describe('document Bézier controls', () => {
+	let list: PaintList;
+	let context: CanvasContext;
+
+	beforeEach(() => {
+		list = new PaintList();
+		const canvas = new PaintContext(list, new FakePaintProbe(), null);
+		context = new CanvasContext(canvas as unknown as CanvasRenderingContext2D);
+	});
+
 	it('reads finite axes, preserves zero, and only uses x2/y2 for outgoing continuations', () => {
 		const mark = new MElement('slur');
 		mark.setAttribute('type', 'continue');
@@ -86,32 +86,49 @@ describe('document Bézier controls', () => {
 		expect(curveSegmentOf(inner)?.end).toBe(slurs[2]);
 	});
 
-	for (const direction of [-1, 1]) {
-		it(`draws absolute endpoint offsets regardless of bow direction ${direction}`, () => {
-			const { list, context } = recording();
-			const curve = new CrispCurve(
-				new StaveNote({ keys: ['c/5'], duration: 'q' }),
-				undefined,
-				{ xShift: 0, yShift: 0, bezier: controls },
-			);
-			curve.setContext(context);
-			const cps = curve.renderOptions.cps;
-			curve.renderCurve({
-				firstX: 10,
-				lastX: 110,
-				firstY: 100,
-				lastY: 120,
-				direction,
-			});
-			expect(
-				list.ops[0]?.path?.find((s) => s.kind === 'bezierCurveTo')?.args,
-			).toEqual([22, 70, 86, 130, 110, 120]);
-			expect(curve.renderOptions.cps).toBe(cps);
+	it('draws absolute endpoint offsets regardless of bow direction -1', () => {
+		const curve = new CrispCurve(
+			new StaveNote({ keys: ['c/5'], duration: 'q' }),
+			undefined,
+			{ xShift: 0, yShift: 0, bezier: controls },
+		);
+		curve.setContext(context);
+		const cps = curve.renderOptions.cps;
+		curve.renderCurve({
+			firstX: 10,
+			lastX: 110,
+			firstY: 100,
+			lastY: 120,
+			direction: -1,
 		});
-	}
+		expect(
+			list.ops[0]?.path?.find((s) => s.kind === 'bezierCurveTo')?.args,
+		).toEqual([22, 70, 86, 130, 110, 120]);
+		expect(curve.renderOptions.cps).toBe(cps);
+	});
+
+	it('draws absolute endpoint offsets regardless of bow direction 1', () => {
+		const curve = new CrispCurve(
+			new StaveNote({ keys: ['c/5'], duration: 'q' }),
+			undefined,
+			{ xShift: 0, yShift: 0, bezier: controls },
+		);
+		curve.setContext(context);
+		const cps = curve.renderOptions.cps;
+		curve.renderCurve({
+			firstX: 10,
+			lastX: 110,
+			firstY: 100,
+			lastY: 120,
+			direction: 1,
+		});
+		expect(
+			list.ops[0]?.path?.find((s) => s.kind === 'bezierCurveTo')?.args,
+		).toEqual([22, 70, 86, 130, 110, 120]);
+		expect(curve.renderOptions.cps).toBe(cps);
+	});
 
 	it('retains the automatic axis when a document supplies only one coordinate', () => {
-		const { list, context } = recording();
 		const curve = new CrispCurve(
 			new StaveNote({ keys: ['c/5'], duration: 'q' }),
 			undefined,
@@ -137,37 +154,65 @@ describe('document Bézier controls', () => {
 		).toEqual([35, 100, 85, 85, 110, 100]);
 	});
 
-	for (const dash of [null, [4, 3]]) {
-		it(`draws a ${dash ? 'dashed' : 'solid'} tie as a cubic and reports its control hull`, () => {
-			const { list, context } = recording();
-			const note = new StaveNote({ keys: ['c/5'], duration: 'q' });
-			const tie = new DashedTie(
-				{
-					firstNote: note,
-					lastNote: note,
-					firstIndexes: [0],
-					lastIndexes: [0],
-				},
-				dash,
-				null,
-				controls,
-			);
-			tie.renderOptions.firstXShift = 0;
-			tie.renderOptions.lastXShift = 0;
-			tie.renderOptions.yShift = 0;
-			tie.setContext(context).renderTie({
-				firstX: 10,
-				lastX: 110,
-				firstYs: [100],
-				lastYs: [100],
-				direction: -1,
-			});
-			expect(
-				list.ops[0]?.path?.find((s) => s.kind === 'bezierCurveTo')?.args,
-			).toEqual([22, 70, 86, 110, 110, 100]);
-			expect(tie.inkBounds?.top).toBeLessThanOrEqual(70);
-			expect(tie.inkBounds?.bottom).toBeGreaterThanOrEqual(110);
-			expect(list.ops[0]?.call.kind).toBe(dash ? 'stroke' : 'fill');
+	it('draws a solid tie as a cubic and reports its control hull', () => {
+		const note = new StaveNote({ keys: ['c/5'], duration: 'q' });
+		const tie = new DashedTie(
+			{
+				firstNote: note,
+				lastNote: note,
+				firstIndexes: [0],
+				lastIndexes: [0],
+			},
+			null,
+			null,
+			controls,
+		);
+		tie.renderOptions.firstXShift = 0;
+		tie.renderOptions.lastXShift = 0;
+		tie.renderOptions.yShift = 0;
+		tie.setContext(context).renderTie({
+			firstX: 10,
+			lastX: 110,
+			firstYs: [100],
+			lastYs: [100],
+			direction: -1,
 		});
-	}
+		expect(
+			list.ops[0]?.path?.find((s) => s.kind === 'bezierCurveTo')?.args,
+		).toEqual([22, 70, 86, 110, 110, 100]);
+		expect(tie.inkBounds?.top).toBeLessThanOrEqual(70);
+		expect(tie.inkBounds?.bottom).toBeGreaterThanOrEqual(110);
+		expect(list.ops[0]?.call.kind).toBe('fill');
+	});
+
+	it('draws a dashed tie as a cubic and reports its control hull', () => {
+		const note = new StaveNote({ keys: ['c/5'], duration: 'q' });
+		const tie = new DashedTie(
+			{
+				firstNote: note,
+				lastNote: note,
+				firstIndexes: [0],
+				lastIndexes: [0],
+			},
+			[4, 3],
+			null,
+			controls,
+		);
+		tie.renderOptions.firstXShift = 0;
+		tie.renderOptions.lastXShift = 0;
+		tie.renderOptions.yShift = 0;
+		tie.setContext(context).renderTie({
+			firstX: 10,
+			lastX: 110,
+			firstYs: [100],
+			lastYs: [100],
+			direction: -1,
+		});
+		expect(
+			list.ops[0]?.path?.find((s) => s.kind === 'bezierCurveTo')?.args,
+		).toEqual([22, 70, 86, 110, 110, 100]);
+		expect(tie.inkBounds?.top).toBeLessThanOrEqual(70);
+		expect(tie.inkBounds?.bottom).toBeGreaterThanOrEqual(110);
+		expect(list.ops[0]?.call.kind).toBe('stroke');
+	});
 });

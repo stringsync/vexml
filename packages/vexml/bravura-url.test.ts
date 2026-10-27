@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { create, type Font } from 'fontkit';
@@ -9,18 +9,22 @@ import {
 	BRAVURA_URL,
 } from './bravura-url';
 
-describe('BRAVURA_URL', () => {
+describe('bravura-url', () => {
 	it('points at the face vexflow embeds, byte for byte', async () => {
 		const shipped = await Bun.file(fileURLToPath(BRAVURA_URL)).bytes();
 		expect(shipped.length).toBeGreaterThan(0);
 		expect(Buffer.from(shipped).equals(await vexflowBravura())).toBe(true);
 	});
-});
 
-describe('BRAVURA_COMMON_URL', () => {
-	it('holds exactly the glyphs of the whole face in BRAVURA_COMMON_RANGE', async () => {
-		const whole = await face(BRAVURA_URL);
-		const common = await face(BRAVURA_COMMON_URL);
+	let whole: Font;
+	let common: Font;
+
+	beforeEach(async () => {
+		whole = await face(BRAVURA_URL);
+		common = await face(BRAVURA_COMMON_URL);
+	});
+
+	it('holds exactly the glyphs of the whole face in BRAVURA_COMMON_RANGE', () => {
 		const covered = codepoints(BRAVURA_COMMON_RANGE);
 		const expected = whole.characterSet.filter((c) => covered.has(c));
 		// fontkit lists the 0xFFFF that ends a cmap's last segment, which maps to no glyph.
@@ -32,9 +36,7 @@ describe('BRAVURA_COMMON_URL', () => {
 			expected.map((c) => font.glyphForCodePoint(c).path.toSVG());
 		expect(outlines(common)).toEqual(outlines(whole));
 	});
-});
 
-describe('BRAVURA_REST_RANGE', () => {
 	it('covers every codepoint BRAVURA_COMMON_RANGE leaves out, and none it covers', () => {
 		const common = codepoints(BRAVURA_COMMON_RANGE);
 		const rest = codepoints(BRAVURA_REST_RANGE);

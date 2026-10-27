@@ -20,6 +20,36 @@ import { SpillTracker } from './spill-tracker';
 import type { VoiceTranslator } from './voice-translator';
 
 describe('SpannerResolver', () => {
+	let s: Stave;
+	let note: StaveNote;
+	let offset: number | undefined;
+	let wedge: Hairpin;
+
+	beforeEach(() => {
+		// The default stave: bottom line at 140, so the pedal baseline and bottom text baseline are 160.
+		s = stave();
+		note = {
+			getStave: () => s,
+			getTuplet: () => undefined,
+			getAbsoluteX: () => 100,
+		} as unknown as StaveNote;
+		offset = undefined;
+		wedge = {
+			stave: s,
+			above: false,
+			rect: new Rect(20, 210, 30, 10),
+			bounds: { top: 210, bottom: 220 },
+			setOffset: (o: number) => {
+				offset = o;
+			},
+			getOffset: () => offset ?? 0,
+			setContext() {
+				return this;
+			},
+			draw() {},
+		} as unknown as Hairpin;
+	});
+
 	// A drawable the builder fakes hand back: setContext(...).draw() logs its label, which
 	// is all the resolver does with a built tie/slide/glissando/wavy line.
 	const drawable = (drawn: string[], label: string) => ({
@@ -243,22 +273,6 @@ describe('SpannerResolver', () => {
 
 	it('pushes a below-stave wedge down past a slur bowing into its band', () => {
 		const drawn: string[] = [];
-		const s = stave();
-		let offset: number | undefined;
-		const wedge = {
-			stave: s,
-			above: false,
-			rect: new Rect(20, 210, 30, 10),
-			bounds: { top: 210, bottom: 220 },
-			setOffset: (o: number) => {
-				offset = o;
-			},
-			getOffset: () => offset ?? 0,
-			setContext() {
-				return this;
-			},
-			draw() {},
-		} as unknown as Hairpin;
 		const { resolver } = resolverOf({
 			// The bow dips to y=220 in the wedge's column, so the wedge must drop below it.
 			buildSlurs: () => [slur(drawn, { stave: s, top: 190, bottom: 220 })],
@@ -272,21 +286,6 @@ describe('SpannerResolver', () => {
 
 	it('leaves a wedge alone when the only bow sits on another stave', () => {
 		const drawn: string[] = [];
-		let offset: number | undefined;
-		const wedge = {
-			stave: stave(),
-			above: false,
-			rect: new Rect(20, 210, 30, 10),
-			bounds: { top: 210, bottom: 220 },
-			setOffset: (o: number) => {
-				offset = o;
-			},
-			getOffset: () => offset ?? 0,
-			setContext() {
-				return this;
-			},
-			draw() {},
-		} as unknown as Hairpin;
 		const { resolver } = resolverOf({
 			buildSlurs: () => [
 				slur(drawn, { stave: stave(), top: 190, bottom: 220 }),
@@ -298,26 +297,6 @@ describe('SpannerResolver', () => {
 	});
 
 	it('drops a below-stave wedge under a ledger-line note it spans', () => {
-		const s = stave();
-		const note = {
-			getStave: () => s,
-			getTuplet: () => undefined,
-		} as unknown as StaveNote;
-		let offset: number | undefined;
-		const wedge = {
-			stave: s,
-			above: false,
-			rect: new Rect(20, 210, 30, 10),
-			bounds: { top: 210, bottom: 220 },
-			setOffset: (o: number) => {
-				offset = o;
-			},
-			getOffset: () => offset ?? 0,
-			setContext() {
-				return this;
-			},
-			draw() {},
-		} as unknown as Hairpin;
 		const { resolver, obstacles } = resolverOf({
 			buildWedges: () => [wedge],
 		} as unknown as Partial<SpannerBuilder>);
@@ -328,7 +307,6 @@ describe('SpannerResolver', () => {
 	});
 
 	it('puts a crescendo and the diminuendo it runs into on one line', () => {
-		const s = stave();
 		const offsets = new Map<string, number>();
 		const wedge = (name: string, left: number) =>
 			({
@@ -345,10 +323,6 @@ describe('SpannerResolver', () => {
 				},
 				draw() {},
 			}) as unknown as Hairpin;
-		const note = {
-			getStave: () => s,
-			getTuplet: () => undefined,
-		} as unknown as StaveNote;
 		const { resolver, obstacles } = resolverOf({
 			buildWedges: () => [wedge('cresc', 20), wedge('dim', 50)],
 		} as unknown as Partial<SpannerBuilder>);
@@ -360,11 +334,6 @@ describe('SpannerResolver', () => {
 	});
 
 	it('drops a pedal band below its own low notes and grows the crop under it', () => {
-		const s = stave({ lineBottom: 140 }); // pedal baseline = 160
-		const note = {
-			getStave: () => s,
-			getAbsoluteX: () => 100,
-		} as unknown as StaveNote;
 		let line: number | undefined;
 		const marking = {
 			setLine: (l: number) => {
@@ -389,9 +358,7 @@ describe('SpannerResolver', () => {
 	});
 
 	it('grows the bottom crop under every pedal marker lead', () => {
-		const s = stave({ lineBottom: 140 }); // bottom text baseline = 160
 		const lead = {} as Note;
-		const note = { getStave: () => s } as unknown as StaveNote;
 		const { resolver, page } = resolverOf();
 		resolver.addPedals([{ lead } as PedalMark]);
 		resolver.resolve(anchors(new Map([[lead, note]])));
