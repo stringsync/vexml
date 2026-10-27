@@ -8,6 +8,12 @@ import {
 	type VexmlContext,
 } from '@vexml/renderer';
 
+export interface EvalOptions {
+	/** Slows the tab's CPU by that factor for the render and the fn, for timing under a
+	 * slow device. */
+	cpuThrottle?: number;
+}
+
 const DATA_DIR = path.resolve(import.meta.dir, './__data__');
 
 /**
@@ -25,15 +31,14 @@ export class Testing {
 	}
 
 	/** Render a corpus file and run fn against the live render (see EvalRenderer for
-	 * the no-closures contract). The image reflects whatever fn did. `opts.cpuThrottle`
-	 * slows the tab's CPU by that factor for the render and the fn, for timing under a
-	 * slow device. */
+	 * the no-closures contract). The image reflects whatever fn did. `arg` is fn's second
+	 * argument. */
 	async eval<T, A = undefined>(
 		file: string,
 		config: ConfigInput,
 		fn: (ctx: VexmlContext, arg: A) => T | Promise<T>,
 		arg?: A,
-		opts: { cpuThrottle?: number } = {},
+		opts: EvalOptions = {},
 	): Promise<RenderResult<T>> {
 		return (await this.vexml(file, config, opts.cpuThrottle)).eval(fn, arg);
 	}

@@ -343,17 +343,19 @@ export function formatScore(score: CorpusScore): string[] {
 	return lines;
 }
 
+export interface AddDefectOptions {
+	corpus: string;
+	commit: string;
+	screenshot: string;
+	kind: DefectKind;
+}
+
 /**
  * Adds the defect a commit fixed in one screenshot baseline: the baseline before and
  * after, and the pixels the commit changed as where the defect is. Both sides must be the
  * same size, or the change can't be placed.
  */
-export function addDefect(opts: {
-	corpus: string;
-	commit: string;
-	screenshot: string;
-	kind: DefectKind;
-}): DefectLabel {
+export function addDefect(opts: AddDefectOptions): DefectLabel {
 	const git = (...args: string[]) =>
 		execFileSync('git', args, { maxBuffer: 1 << 28 });
 	const commit = git('rev-parse', '--short', opts.commit).toString().trim();
