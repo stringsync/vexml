@@ -436,7 +436,6 @@ export interface SequenceModel {
 	segments: readonly TempoSegment[];
 	durationBeats: number;
 	measureCount: number;
-	/* [note, the note it is tied from]. */
 	ties: Array<[number, number]>;
 }
 

@@ -15,7 +15,6 @@ export interface ChordDiagramOptions {
 	/* Null when built from a snapshot, which holds no document. */
 	source: Harmony | null;
 	frame: ChordFrame;
-	/* The chord name printed above the box ("Gm7b5"), or null when the frame has no symbol text. */
 	title: string | null;
 	decorations: Decorations;
 }

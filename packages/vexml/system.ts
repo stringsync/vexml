@@ -25,7 +25,6 @@ export class System extends Element {
 		return this.boxList.flatMap((box) => box.getSources());
 	}
 
-	/* The 0-based line number, top to bottom. */
 	getIndex(): number {
 		return this.index;
 	}

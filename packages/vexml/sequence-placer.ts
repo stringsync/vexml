@@ -71,7 +71,6 @@ export class SequencePlacer {
 		});
 	}
 
-	/* The timeline placed on the x and boxes a SequenceInput carries. */
 	placeInput(input: SequenceInput): Sequence {
 		const xs = new Map<Note, number>();
 		for (const sn of input.notes) {

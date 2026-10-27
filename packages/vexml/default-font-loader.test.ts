@@ -75,7 +75,7 @@ describe('DefaultFontLoader', () => {
 		await new DefaultFontLoader(SHIPPED).load(container); // dedup markers persist on the document
 		const after = head.length;
 		await new DefaultFontLoader(SHIPPED).load(container); // fresh loader, same document: still deduped
-		expect(head.length).toBe(after); // no new tags
+		expect(head.length).toBe(after);
 	});
 
 	it('injects a custom notation url, not the bundled path', async () => {

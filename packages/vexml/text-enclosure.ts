@@ -21,7 +21,6 @@ export const ENCLOSURE_SHAPES = [
 
 export type EnclosureShape = (typeof ENCLOSURE_SHAPES)[number];
 
-// The side count of each regular polygon enclosure.
 const POLYGON_SIDES: Partial<Record<EnclosureShape, number>> = {
 	pentagon: 5,
 	hexagon: 6,

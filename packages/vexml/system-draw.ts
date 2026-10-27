@@ -193,12 +193,10 @@ export class SystemDraw {
 			: null;
 	}
 
-	/* Whether every system is settled. */
 	done(): boolean {
 		return this.plan.isComplete() && this.settled >= this.plan.placedSystems();
 	}
 
-	/* The system measure `m` is drawn on. */
 	systemOfMeasure(m: number): number {
 		return this.drawing.systemOfMeasure(m);
 	}

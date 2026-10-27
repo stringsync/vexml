@@ -7,7 +7,6 @@ import type { IdleScheduler, IdleSlice } from './idle-scheduler';
 export class FakeIdleScheduler implements IdleScheduler {
 	private readonly slices: Array<(budget: IdleSlice) => void> = [];
 
-	/* How many slices are waiting to run. */
 	get pending(): number {
 		return this.slices.length;
 	}

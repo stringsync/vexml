@@ -191,7 +191,6 @@ describe('scrollContainer', () => {
 		expectLayersAligned(r);
 	});
 
-	// screenshots
 	test('a halo stays on its note after the scroller moves', async () => {
 		const { image } = await shoot(STANDARD, 1, 0.3);
 		expect(image).toMatchScreenshot('scroll_container_short_halo.png');

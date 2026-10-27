@@ -236,9 +236,7 @@ export type Edit =
 	/* Pull the nth staff (from 1) up to `gap` staff spaces (0.5 by default) under the one
 	 * above it; a negative gap draws it into that staff. */
 	| { squeeze: number; gap?: number }
-	/* Lay a lone line the width of the first staff half a staff space above it. */
 	| { line: true }
-	/* Draw nothing. */
 	| { blank: true };
 
 /* Per screenshot, how many findings of each kind are known false positives. */

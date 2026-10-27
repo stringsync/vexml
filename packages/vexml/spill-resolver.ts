@@ -107,7 +107,6 @@ export class SpillResolver {
 		};
 	}
 
-	/* Every system's re-spaced offsets, keyed by system index. */
 	spacedOffsets(
 		planned: number[],
 		spillBySystem: ReadonlyMap<number, ReadonlyMap<number, StaveSpill>>,

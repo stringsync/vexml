@@ -8,9 +8,7 @@ import type { MeasureBox, ScoreLayout } from './layout-planner';
  */
 export interface LayoutPlan {
 	readonly layout: ScoreLayout;
-	/* How many systems are placed: the boxes of systems 0..n-1 are final. */
 	placedSystems(): number;
-	/* Whether every system is placed. */
 	isComplete(): boolean;
 	/* Place systems through `system`, or to the end of the score if it comes first. */
 	placeThrough(system: number): void;

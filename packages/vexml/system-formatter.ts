@@ -632,7 +632,6 @@ export class SystemFormatter {
 		const xs = sorted.map((c) => c.getX());
 		const first = xs[0] ?? 0;
 		const last = xs[xs.length - 1] ?? 0;
-		// removed[i]: the width cut out before context i.
 		const removed: number[] = [];
 		let cut = 0;
 		for (const [i, context] of sorted.entries()) {
@@ -1037,7 +1036,6 @@ export class SystemFormatter {
 		return host;
 	}
 
-	/* Push every modifier in `group` out to the rightmost x any of them reached. */
 	private squareUp(group: StaveModifier[]): number | null {
 		if (group.length < 2) {
 			return group[0]?.getX() ?? null;

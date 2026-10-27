@@ -17,7 +17,6 @@ export class TiledLayer implements Layer {
 		readonly kind: LayerKind,
 		readonly element: HTMLDivElement,
 		readonly surface: TiledSurface,
-		// Records onto the surface.
 		readonly ctx: CanvasRenderingContext2D,
 		private readonly owner: TiledLayerOwner,
 		// Where the layer stacks: its effective z-index and its creation (DOM) order among the

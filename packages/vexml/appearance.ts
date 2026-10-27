@@ -13,9 +13,7 @@ export class Appearance {
 	static readonly NONE = new Appearance(new Map(), new Map(), new Map());
 
 	constructor(
-		/* `<line-width type>` to its width. */
 		private readonly lineWidths: ReadonlyMap<string, number>,
-		/* `<distance type>` to its distance. */
 		private readonly distances: ReadonlyMap<string, number>,
 		/* `<glyph type>` to the SMuFL glyph name it draws with. */
 		private readonly glyphs: ReadonlyMap<string, string>,
@@ -60,7 +58,6 @@ export type LineWidthType =
 	| 'tuplet bracket'
 	| 'wedge';
 
-/* The `<distance>` types vexml draws to. */
 export type DistanceType = 'beam' | 'hyphen';
 
 /* The `<glyph>` types vexml draws. The octave-shift continue types have nothing to apply to:

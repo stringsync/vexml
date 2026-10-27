@@ -38,8 +38,6 @@ export class ChordTranslator {
 		private readonly notations: NotationTranslator,
 	) {}
 
-	/* Draw the rests built from here on in the document's glyphs (Appearance.NONE for
-	 * vexflow's own). */
 	useAppearance(appearance: Appearance): void {
 		this.appearance = appearance;
 	}

@@ -32,7 +32,7 @@ describe('CollisionResolver', () => {
 		const d = detector();
 		d.add({ rect: new Rect(5, 200, 10, 30), kind: 'note' }); // well below the annotation
 		const natural = new Rect(0, 85, 20, 15); // bottom at y=100
-		expect(d.liftClear(natural, 8, {})).toBe(natural); // returned unchanged
+		expect(d.liftClear(natural, 8, {})).toBe(natural);
 	});
 
 	it('stacks successive annotations above one another', () => {
@@ -74,10 +74,10 @@ describe('CollisionResolver', () => {
 
 	it('leaves an already-clear rect put when dropping, and stacks the next one under it', () => {
 		const d = detector();
-		d.add({ rect: new Rect(5, 0, 10, 30), kind: 'note' }); // well above
+		d.add({ rect: new Rect(5, 0, 10, 30), kind: 'note' });
 		const natural = new Rect(0, 100, 20, 15);
 		expect(d.dropClear(natural, 8, {})).toBe(natural); // returned unchanged
-		d.add({ rect: new Rect(5, 100, 10, 30), kind: 'note' }); // bottom at 130
+		d.add({ rect: new Rect(5, 100, 10, 30), kind: 'note' });
 		const a = d.dropClear(natural, 8, {});
 		d.add({ rect: a, kind: 'annotation' });
 		expect(d.dropClear(natural, 8, {}).y).toBe(a.bottom + 8); // stacks under `a`
