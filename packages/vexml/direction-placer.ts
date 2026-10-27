@@ -69,6 +69,19 @@ import type {
 import type { SpillTracker } from './spill-tracker';
 import type { EnclosureShape } from './text-enclosure';
 
+type RehearsalOptions = {
+	format?: TextFormat;
+	position?: DocumentPosition | null;
+};
+
+type PlaceBesideOptions = {
+	below: boolean;
+	kinds: CollisionKind[];
+	sideGap?: number;
+	pinned?: boolean;
+	pinnedX?: boolean;
+};
+
 /*
  * Places and draws the text a score types beside its staves: rehearsal marks, tempo
  * marks, chord symbols and diagrams, words directives, dynamics, figured bass, percussion
@@ -577,7 +590,7 @@ export class DirectionPlacer {
 			for (const { text, format, position } of this.reader.rehearsalsOf(
 				measure,
 			)) {
-				const top = this.drawRehearsal(topStave, text, format, position);
+				const top = this.drawRehearsal(topStave, text, { format, position });
 				this.reporter.growPageTop(top);
 				this.spill.growDecorationTop(column.systemIndex, top);
 			}
@@ -631,9 +644,9 @@ export class DirectionPlacer {
 	private drawRehearsal(
 		stave: Stave,
 		text: string,
-		format?: TextFormat,
-		position?: DocumentPosition | null,
+		opts: RehearsalOptions = {},
 	): number {
+		const { format, position } = opts;
 		this.context.openGroup('vexml-rehearsal');
 		try {
 			const size = REHEARSAL_FONT_SIZE * (format?.scale ?? 1);
@@ -1344,13 +1357,7 @@ export class DirectionPlacer {
 		stave: Stave,
 		natural: Rect,
 		noteAnchored: boolean,
-		opts: {
-			below: boolean;
-			kinds: CollisionKind[];
-			sideGap?: number;
-			pinned?: boolean;
-			pinnedX?: boolean;
-		},
+		opts: PlaceBesideOptions,
 	): Rect {
 		const { below, kinds } = opts;
 		const band = this.reporter.rowOf(stave);

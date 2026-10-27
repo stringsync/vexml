@@ -41,6 +41,10 @@ export interface PassRevision {
  * part spacing rather than as room made for the symbol. Different planned sizes stay
  * independent, so a grand staff's inner gap doesn't drag the gaps around it open with it.
  */
+type SpacedOffsetsOptions = {
+	plannedBySystem?: ReadonlyMap<number, number[]>;
+	fixedBySystem?: ReadonlyMap<number, readonly boolean[]>;
+};
 
 export class SpillResolver {
 	/*
@@ -64,8 +68,7 @@ export class SpillResolver {
 		const systemStaveOffsets = this.spacedOffsets(
 			planned,
 			report.observedStaveSpill,
-			plannedBySystem,
-			fixedBySystem,
+			{ plannedBySystem, fixedBySystem },
 		);
 		const respace = [...systemStaveOffsets].some(([system, offsets]) =>
 			offsets.some((o, i) => o !== plannedOf(system)[i]),
@@ -110,9 +113,9 @@ export class SpillResolver {
 	spacedOffsets(
 		planned: number[],
 		spillBySystem: ReadonlyMap<number, ReadonlyMap<number, StaveSpill>>,
-		plannedBySystem?: ReadonlyMap<number, number[]>,
-		fixedBySystem?: ReadonlyMap<number, readonly boolean[]>,
+		opts: SpacedOffsetsOptions = {},
 	): Map<number, number[]> {
+		const { plannedBySystem, fixedBySystem } = opts;
 		const bySystem = new Map<number, number[]>();
 		for (const [system, spill] of spillBySystem) {
 			bySystem.set(

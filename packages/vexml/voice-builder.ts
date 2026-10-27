@@ -461,12 +461,10 @@ export class VoiceBuilder {
 						}
 					}
 					p.beams.push(
-						...this.spanners.buildBeams(
-							[group],
-							this.byLead,
-							stem,
+						...this.spanners.buildBeams([group], this.byLead, {
+							defaultStem: stem,
 							notesByLead,
-						),
+						}),
 					);
 				}
 			}

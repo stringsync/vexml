@@ -49,7 +49,7 @@ export class DisplayTuplet extends Tuplet {
 
 	constructor(
 		notes: ConstructorParameters<typeof Tuplet>[0],
-		options: DisplayTupletOptions = {},
+		opts: DisplayTupletOptions = {},
 	) {
 		const {
 			showNumber,
@@ -59,7 +59,7 @@ export class DisplayTuplet extends Tuplet {
 			curved,
 			bracketWidth,
 			...rest
-		} = options;
+		} = opts;
 		super(notes, rest);
 		this.curved = curved ?? false;
 		this.bracketWidth = bracketWidth ?? null;

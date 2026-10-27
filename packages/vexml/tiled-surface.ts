@@ -202,7 +202,7 @@ export class TiledSurface implements PaintSink, Resource {
 			ctx,
 			base,
 			{ scale: s, device: { x: sx, y: sy } },
-			this.opts.ink,
+			{ ink: this.opts.ink },
 		);
 		for (const op of this.grid.opsIn(
 			new Rect(sx / s, sy / s, sw / s, sh / s),
@@ -305,7 +305,7 @@ export class TiledSurface implements PaintSink, Resource {
 			ctx,
 			base,
 			{ scale, device: null },
-			this.opts.ink,
+			{ ink: this.opts.ink },
 		);
 		for (const op of ops) {
 			replayer.replay(op);
@@ -385,7 +385,7 @@ export class TiledSurface implements PaintSink, Resource {
 			ctx,
 			base,
 			{ scale: s, device: { x: x0, y: y0 } },
-			this.opts.ink,
+			{ ink: this.opts.ink },
 		);
 		if (!painted) {
 			for (const op of this.grid.ops(index)) {

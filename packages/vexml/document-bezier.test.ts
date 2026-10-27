@@ -163,9 +163,7 @@ describe('document Bézier controls', () => {
 				firstIndexes: [0],
 				lastIndexes: [0],
 			},
-			null,
-			null,
-			controls,
+			{ bezier: controls },
 		);
 		tie.renderOptions.firstXShift = 0;
 		tie.renderOptions.lastXShift = 0;
@@ -194,9 +192,7 @@ describe('document Bézier controls', () => {
 				firstIndexes: [0],
 				lastIndexes: [0],
 			},
-			[4, 3],
-			null,
-			controls,
+			{ dash: [4, 3], bezier: controls },
 		);
 		tie.renderOptions.firstXShift = 0;
 		tie.renderOptions.lastXShift = 0;

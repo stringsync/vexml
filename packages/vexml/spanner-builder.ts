@@ -90,6 +90,13 @@ export interface SlideOptions {
 	showText: boolean;
 	scope?: SpanScope;
 }
+type BeamOptions = {
+	defaultStem?: 'up' | 'down';
+	/* Overrides what a lead resolves to, for a chord split across two staves: it drew one
+	 * StaveNote per staff and only one of them is reachable through `byLead`, so the caller
+	 * supplies the whole set, already ordered the way the beam should run through them. */
+	notesByLead?: Map<Note, StaveNote[]>;
+};
 
 export class SpannerBuilder {
 	private readonly connectors = new Map<
@@ -149,12 +156,9 @@ export class SpannerBuilder {
 	buildBeams(
 		groups: BeamRun[],
 		byLead: Map<Note, StaveNote>,
-		defaultStem?: 'up' | 'down',
-		// Overrides what a lead resolves to, for a chord split across two staves: it drew one
-		// StaveNote per staff and only one of them is reachable through `byLead`, so the caller
-		// supplies the whole set, already ordered the way the beam should run through them.
-		notesByLead?: Map<Note, StaveNote[]>,
+		opts: BeamOptions = {},
 	): Beam[] {
+		const { defaultStem, notesByLead } = opts;
 		const beams: Beam[] = [];
 		for (const group of groups) {
 			const notes = group.notes
@@ -465,15 +469,14 @@ export class SpannerBuilder {
 						[to.index],
 					);
 					for (const spec of specs) {
-						const staveTie = new DashedTie(
-							spec,
-							tie.dash,
-							this.appearance.lineWidth('tie tip'),
-							tie.bezier && {
+						const staveTie = new DashedTie(spec, {
+							dash: tie.dash,
+							tip: this.appearance.lineWidth('tie tip'),
+							bezier: tie.bezier && {
 								start: spec.firstNote ? tie.bezier.start : { x: null, y: null },
 								end: spec.lastNote ? tie.bezier.end : { x: null, y: null },
 							},
-						);
+						});
 						// A solid tie is the lens between two quadratic bows, cp1 and cp2 off
 						// the ends, so it is (cp2 - cp1) / 2 deep at its middle.
 						const middle = this.appearance.lineWidth('tie middle');
@@ -703,7 +706,7 @@ export class SpannerBuilder {
 								from.index,
 								at.staveNote,
 								at.index,
-								from.dash ?? marker.dash,
+								{ dash: from.dash ?? marker.dash },
 							),
 						);
 					}
@@ -764,15 +767,11 @@ export class SpannerBuilder {
 				(spread): spread is number => spread !== null,
 			);
 			wedges.push(
-				new Hairpin(
-					firstNote,
-					lastNote,
-					from.crescendo,
-					from.placement,
-					from.dash ?? marker.dash,
-					from.niente || marker.niente,
-					spreads.length > 0 ? Math.max(...spreads) : null,
-				).setLineWidth(this.appearance.lineWidth('wedge')),
+				new Hairpin(firstNote, lastNote, from.crescendo, from.placement, {
+					dash: from.dash ?? marker.dash,
+					niente: from.niente || marker.niente,
+					spread: spreads.length > 0 ? Math.max(...spreads) : null,
+				}).setLineWidth(this.appearance.lineWidth('wedge')),
 			);
 		}
 		return wedges;

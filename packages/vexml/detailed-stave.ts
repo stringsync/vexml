@@ -22,8 +22,8 @@ export class DetailedStave extends Stave {
 		x: number,
 		y: number,
 		width: number,
-		options: ConstructorParameters<typeof Stave>[3],
 		private readonly styledLines: LineStyle[],
+		options: ConstructorParameters<typeof Stave>[3],
 	) {
 		super(x, y, width, options);
 	}

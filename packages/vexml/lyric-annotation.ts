@@ -3,6 +3,18 @@ import { LYRIC_FONT_SIZE, LYRIC_PADDING } from './constants';
 import type { LyricJustify, LyricMark } from './lyric-mark';
 import type { DocumentPosition } from './score-reader';
 
+export type LyricAnnotationOptions = {
+	/** A CSS font-family list to type the syllable in. Absent means vexflow's text face. */
+	family?: string;
+	/** Which edge of the note the syllable lines up with (`<lyric justify>`). */
+	justify?: LyricJustify;
+	/** Ratio of the syllable's font-size to the score's lyric-font. */
+	scale?: number;
+	/** Whether the text ends in the hyphen joining it to the next syllable. */
+	hyphenated?: boolean;
+	documentPosition?: DocumentPosition | null;
+};
+
 /*
  * A lyric syllable under the stave. vexflow's own BOTTOM-justified Annotation hangs its
  * text off the note's lowest notehead, so a verse would rise and fall with the melody:
@@ -19,6 +31,9 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 	readonly kind = 'lyric' as const;
 
 	readonly textSize: number;
+	readonly justify: LyricJustify;
+	readonly hyphenated: boolean;
+	readonly documentPosition: DocumentPosition | null;
 
 	private baselineY = 0;
 	private positionX = 0;
@@ -31,17 +46,13 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 		public verseIndex: number,
 		/** Whether a melisma `<extend/>` line trails this syllable (drawn by LyricPlacer). */
 		readonly extend: boolean,
-		/** A CSS font-family list to type the syllable in. Absent means vexflow's text face. */
-		family?: string,
-		/** Which edge of the note the syllable lines up with (`<lyric justify>`). */
-		readonly justify: LyricJustify = 'center',
-		/** Ratio of the syllable's font-size to the score's lyric-font. */
-		scale = 1,
-		/** Whether the text ends in the hyphen joining it to the next syllable. */
-		readonly hyphenated = false,
-		readonly documentPosition: DocumentPosition | null = null,
+		opts: LyricAnnotationOptions = {},
 	) {
 		super(text);
+		const { family, scale = 1 } = opts;
+		this.justify = opts.justify ?? 'center';
+		this.hyphenated = opts.hyphenated ?? false;
+		this.documentPosition = opts.documentPosition ?? null;
 		this.setVerticalJustification(Annotation.VerticalJustify.BOTTOM);
 		this.textSize = LYRIC_FONT_SIZE * scale;
 		if (family) {

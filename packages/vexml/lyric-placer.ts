@@ -29,6 +29,11 @@ export interface PinnedSyllable {
 	readonly lyric: LyricMark;
 }
 
+type PinOptions = {
+	/** The system the row sits in; the first when absent. */
+	system?: number;
+};
+
 /*
  * Hangs each stave row's lyric verses on one shared baseline and remembers how far below
  * the staff every row's verse had to drop, so the next pass can pin the whole row to its
@@ -98,7 +103,13 @@ export class LyricPlacer {
 	 * draws lyrics itself, so this is the only point where their boxes are known, hence
 	 * each is also kept for {@link pinnedSyllables}.
 	 */
-	pin(notes: StaveNote[], row: number, baseline: number, system = 0): void {
+	pin(
+		notes: StaveNote[],
+		row: number,
+		baseline: number,
+		opts: PinOptions = {},
+	): void {
+		const { system = 0 } = opts;
 		const lyricNotes = notes
 			.map((note) => ({ note, lyrics: this.lyricsOf(note) }))
 			.filter(({ lyrics }) => lyrics.length > 0);

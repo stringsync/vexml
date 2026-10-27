@@ -18,5 +18,6 @@ describe('LintCorpus', () => {
 			misses: [],
 			surprises: [],
 		});
-	});
+		// Scoring every fixture takes ~5s alone, the default timeout, and longer under load.
+	}, 60_000);
 });

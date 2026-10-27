@@ -93,10 +93,9 @@ export class LayoutPlanner {
 	// untouched. The busiest staff wins (all staves in a measure share one width).
 	private measureNoteArea(
 		staves: StaveSpec[],
-		floor: number,
-		noteSpacing: number,
-		softmaxFactor: number,
+		opts: NoteAreaOptions,
 	): NoteArea {
+		const { floor, noteSpacing, softmaxFactor } = opts;
 		let minNotes = 0;
 		let logWidth = 0;
 		for (const {
@@ -805,12 +804,11 @@ export class LayoutPlanner {
 			};
 		};
 		const measuredAreaOf = memoized((m) =>
-			this.measureNoteArea(
-				staveSpecsOf(m),
-				floorOf(m),
+			this.measureNoteArea(staveSpecsOf(m), {
+				floor: floorOf(m),
 				noteSpacing,
 				softmaxFactor,
-			),
+			}),
 		);
 		// The same, estimated from the beats alone (see estimateNoteArea), for the forecast of
 		// the measures the plan has not reached.
@@ -1172,6 +1170,12 @@ export type ScoreLayout = {
 /** The two widths a measure's note area can take. `ideal` is what the spacing curve wants;
  * `min` is the hard floor below which the notes no longer fit. Layout squeezes between them
  * and never past `min`, so no configuration can produce a system with cut-off notes. */
+export type NoteAreaOptions = {
+	floor: number;
+	noteSpacing: number;
+	softmaxFactor: number;
+};
+
 export type NoteArea = {
 	min: number;
 	ideal: number;

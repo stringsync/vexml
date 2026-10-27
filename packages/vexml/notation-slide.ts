@@ -1,6 +1,10 @@
 import { Modifier, type RenderContext, type StaveNote } from 'vexflow/core';
 import { SLIDE_MIN_SLANT, SLIDE_PADDING } from './constants';
 
+export type NotationSlideOptions = {
+	dash?: number[] | null;
+};
+
 /*
  * A standard-notation slide/glissando line, tilted by the slide direction: it runs from just
  * clear of the start notehead into the target notehead, rising for an up-slide and falling for
@@ -13,13 +17,16 @@ import { SLIDE_MIN_SLANT, SLIDE_PADDING } from './constants';
  */
 export class NotationSlide {
 	private context?: RenderContext;
+	private readonly dash: number[] | null;
 	constructor(
 		private readonly from: StaveNote,
 		private readonly fromIndex: number,
 		private readonly to: StaveNote,
 		private readonly toIndex: number,
-		private readonly dash: number[] | null = null,
-	) {}
+		opts: NotationSlideOptions = {},
+	) {
+		this.dash = opts.dash ?? null;
+	}
 	setContext(context: RenderContext): this {
 		this.context = context;
 		return this;

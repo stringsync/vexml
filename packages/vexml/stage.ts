@@ -776,7 +776,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 			context,
 			new Affine(kx, 0, 0, ky, -fold.left * kx, 0),
 			{ scale: kx, device: null },
-			this.ink,
+			{ ink: this.ink },
 		);
 		for (const op of strip.ops) {
 			replayer.replay(op);

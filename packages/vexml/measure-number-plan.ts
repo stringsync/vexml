@@ -7,6 +7,10 @@ import type {
 } from './score-reader';
 import type { StavePlan } from './stave-plan';
 
+export type MeasureNumberPlanOptions = {
+	mode: MeasureNumbering;
+};
+
 /*
  * Which staves print a measure's number. A configured mode numbers the system's top stave on
  * its own cadence. 'document' follows each part's `<print><measure-numbering>`, carried forward
@@ -18,13 +22,16 @@ export class MeasureNumberPlan {
 	// Part index -> measure index -> the mark in effect there (null before the first).
 	private readonly marks: (MeasureNumberingMark | null)[][];
 	private readonly followsDocument: boolean;
+	private readonly mode: MeasureNumbering;
 
 	constructor(
 		reader: ScoreReader,
 		private readonly staves: StavePlan,
 		private readonly parts: Part[],
-		private readonly mode: MeasureNumbering,
+		opts: MeasureNumberPlanOptions,
 	) {
+		const { mode } = opts;
+		this.mode = mode;
 		this.marks = parts.map((part) => {
 			let current: MeasureNumberingMark | null = null;
 			return part.measures.map((measure) => {

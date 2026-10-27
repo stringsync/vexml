@@ -48,8 +48,10 @@ describe('MeasureNumberPlan', () => {
 	it("follows the document's value from where it is set", async () => {
 		const plan = await planOf('document', [
 			part('P1', 4, {
-				0: '<measure-numbering>measure</measure-numbering>',
-				2: '<measure-numbering>none</measure-numbering>',
+				prints: {
+					0: '<measure-numbering>measure</measure-numbering>',
+					2: '<measure-numbering>none</measure-numbering>',
+				},
 			}),
 		]);
 		expect(plan.numbers(0, '1', 1, false)).toBe(true);
@@ -59,7 +61,9 @@ describe('MeasureNumberPlan', () => {
 
 	it('lets an explicit config value override the document', async () => {
 		const plan = await planOf('every', [
-			part('P1', 2, { 0: '<measure-numbering>none</measure-numbering>' }),
+			part('P1', 2, {
+				prints: { 0: '<measure-numbering>none</measure-numbering>' },
+			}),
 		]);
 		expect(plan.numbers(0, '1', 1, false)).toBe(true);
 	});
@@ -67,8 +71,8 @@ describe('MeasureNumberPlan', () => {
 	it('numbers the top part once when every part repeats the mark', async () => {
 		const mark = { 0: '<measure-numbering>measure</measure-numbering>' };
 		const plan = await planOf('document', [
-			part('P1', 2, mark),
-			part('P2', 2, mark),
+			part('P1', 2, { prints: mark }),
+			part('P2', 2, { prints: mark }),
 		]);
 		expect(plan.numbers(0, '1', 1, false)).toBe(true);
 		expect(plan.numbers(1, '1', 1, false)).toBe(false);
@@ -77,7 +81,9 @@ describe('MeasureNumberPlan', () => {
 	it('numbers the bottom part under only-bottom', async () => {
 		const plan = await planOf('document', [
 			part('P1', 2, {
-				0: '<measure-numbering system="only-bottom">measure</measure-numbering>',
+				prints: {
+					0: '<measure-numbering system="only-bottom">measure</measure-numbering>',
+				},
 			}),
 			part('P2', 2),
 		]);
@@ -89,7 +95,9 @@ describe('MeasureNumberPlan', () => {
 		const plan = await planOf('document', [
 			part('P1', 2),
 			part('P2', 2, {
-				0: '<measure-numbering system="also-top">measure</measure-numbering>',
+				prints: {
+					0: '<measure-numbering system="also-top">measure</measure-numbering>',
+				},
 			}),
 			part('P3', 2),
 		]);
@@ -100,14 +108,12 @@ describe('MeasureNumberPlan', () => {
 
 	it('numbers the staff the mark names under none', async () => {
 		const plan = await planOf('document', [
-			part(
-				'P1',
-				2,
-				{
+			part('P1', 2, {
+				prints: {
 					0: '<measure-numbering system="none" staff="2">measure</measure-numbering>',
 				},
-				2,
-			),
+				staves: 2,
+			}),
 		]);
 		expect(plan.numbers(0, '1', 1, false)).toBe(false);
 		expect(plan.numbers(0, '2', 1, false)).toBe(true);
@@ -115,13 +121,10 @@ describe('MeasureNumberPlan', () => {
 
 	it('never numbers an implicit measure under the document', async () => {
 		const plan = await planOf('document', [
-			part(
-				'P1',
-				2,
-				{ 0: '<measure-numbering>measure</measure-numbering>' },
-				1,
-				true,
-			),
+			part('P1', 2, {
+				prints: { 0: '<measure-numbering>measure</measure-numbering>' },
+				pickup: true,
+			}),
 		]);
 		expect(plan.numbers(0, '1', 0, true)).toBe(false);
 		expect(plan.numbers(0, '1', 1, false)).toBe(true);
@@ -133,10 +136,13 @@ describe('MeasureNumberPlan', () => {
 function part(
 	id: string,
 	count: number,
-	prints: Record<number, string> = {},
-	staves = 1,
-	pickup = false,
+	opts: {
+		prints?: Record<number, string>;
+		staves?: number;
+		pickup?: boolean;
+	} = {},
 ): { id: string; xml: string } {
+	const { prints = {}, staves = 1, pickup = false } = opts;
 	const measures = Array.from({ length: count }, (_, m) => {
 		const print = prints[m] ? `<print>${prints[m]}</print>` : '';
 		const attributes =
@@ -163,6 +169,6 @@ async function planOf(
 		new ScoreReader(new DynamicGlyphs()),
 		new StavePlan({ showTabs: true, showNotation: true }),
 		mdoc.score.parts,
-		mode,
+		{ mode },
 	);
 }

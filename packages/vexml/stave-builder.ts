@@ -115,12 +115,9 @@ export class StaveBuilder {
 		this.partGroups = opts.partGroups;
 		this.groupTimeSpans = opts.groupTimeSpans;
 		this.totalStaves = opts.totalStaves;
-		this.measureNumbers = new MeasureNumberPlan(
-			reader,
-			staves,
-			opts.parts,
-			opts.measureNumbering,
-		);
+		this.measureNumbers = new MeasureNumberPlan(reader, staves, opts.parts, {
+			mode: opts.measureNumbering,
+		});
 		this.textColor = opts.textColor;
 		this.staveOffsets = opts.staveOffsets;
 		this.systemStaveOffsets = opts.systemStaveOffsets;
@@ -262,7 +259,7 @@ export class StaveBuilder {
 					volta,
 					stave.getX(),
 					voltaTop - stave.getYForTopText(stave.getNumLines()),
-					this.appearance.lineWidth('ending'),
+					{ lineWidth: this.appearance.lineWidth('ending') },
 				),
 			);
 		}

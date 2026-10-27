@@ -76,11 +76,10 @@ describe('GeometryCollector', () => {
 
 	const staveNote = (
 		ys: (number | undefined)[],
-		headXs?: number[],
-		modifiers: Modifier[] = [],
-		drawn = true,
-	) =>
-		({
+		opts: { headXs?: number[]; modifiers?: Modifier[]; drawn?: boolean } = {},
+	) => {
+		const { headXs, modifiers = [], drawn = true } = opts;
+		return {
 			getModifiers: () => modifiers,
 			shouldDrawFlag: () => false,
 			getStem: () => undefined,
@@ -104,7 +103,8 @@ describe('GeometryCollector', () => {
 					getH: () => 30,
 				}),
 			})),
-		}) as unknown as StaveNote;
+		} as unknown as StaveNote;
+	};
 
 	it('captures one raw note per notehead, spanning the head and replaying its glyph', () => {
 		collector.collectStaveNotes(3, [{ note: staveNote([50, 60]), chord }]);
@@ -122,7 +122,7 @@ describe('GeometryCollector', () => {
 	it('tracks a displaced notehead (a second) at its own drawn box, not the stem column', () => {
 		// The lower head of a stem-down second draws a head-width left of the column.
 		collector.collectStaveNotes(0, [
-			{ note: staveNote([60, 50], [-1, 11]), chord },
+			{ note: staveNote([60, 50], { headXs: [-1, 11] }), chord },
 		]);
 		const notes = collector.notes();
 		expect(notes[0]?.rect.x).toBe(-1);
@@ -133,14 +133,16 @@ describe('GeometryCollector', () => {
 	it("grows a head's ink over its own side modifiers, leaving its chordmates' alone", () => {
 		collector.collectStaveNotes(0, [
 			{
-				note: staveNote([50, 60], undefined, [
-					// A flat on the C, pushed 3px further left by the formatter.
-					modifier('Accidental', 0, LEFT, -3),
-					// A dot on the E, so only the E's ink grows to the right.
-					modifier('Dot', 1, RIGHT, 1),
-					// A fermata above the chord: not on the note's line.
-					modifier('Articulation', 0, ABOVE, 0),
-				]),
+				note: staveNote([50, 60], {
+					modifiers: [
+						// A flat on the C, pushed 3px further left by the formatter.
+						modifier('Accidental', 0, LEFT, -3),
+						// A dot on the E, so only the E's ink grows to the right.
+						modifier('Dot', 1, RIGHT, 1),
+						// A fermata above the chord: not on the note's line.
+						modifier('Articulation', 0, ABOVE, 0),
+					],
+				}),
 				chord,
 			},
 		]);
@@ -153,7 +155,9 @@ describe('GeometryCollector', () => {
 	it("counts the chord's arpeggio for every head, spanning them all", () => {
 		collector.collectStaveNotes(0, [
 			{
-				note: staveNote([50, 60], undefined, [modifier('Stroke', 0, LEFT, 0)]),
+				note: staveNote([50, 60], {
+					modifiers: [modifier('Stroke', 0, LEFT, 0)],
+				}),
 				chord,
 			},
 		]);
@@ -180,7 +184,10 @@ describe('GeometryCollector', () => {
 	it('places a head that never drew (a hidden note) at its column, with no glyph', () => {
 		// An undrawn head's box reports x 0, which would drag a cursor onset to the page edge.
 		collector.collectStaveNotes(0, [
-			{ note: staveNote([50], [0], [], false), chord: restChord },
+			{
+				note: staveNote([50], { headXs: [0], drawn: false }),
+				chord: restChord,
+			},
 		]);
 		const rest = collector.notes()[0];
 		expect(rest?.rect).toMatchObject({ x: 10, y: 45, w: 12, h: 10 });

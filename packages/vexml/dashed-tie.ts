@@ -2,6 +2,14 @@ import { StaveTie, type TieNotes } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import type { DocumentBezier } from './score-reader';
 
+export type DashedTieOptions = {
+	dash?: number[] | null;
+	/** How wide a solid tie is at its ends (`<line-width type="tie tip">`); null tapers it
+	 * to a point the way vexflow does. */
+	tip?: number | null;
+	bezier?: DocumentBezier | null;
+};
+
 /*
  * A tie that can be dashed or dotted (<tied line-type>). vexflow fills a tie as a lens between
  * two quadratic curves, which a dash cannot show, so a dashed tie strokes the lens's midline
@@ -11,15 +19,14 @@ import type { DocumentBezier } from './score-reader';
 export class DashedTie extends StaveTie {
 	/* The document cubic's control hull, registered as a fixed collision obstacle. */
 	inkBounds: Rect | null = null;
-	constructor(
-		notes: TieNotes,
-		private readonly dash: number[] | null,
-		/* How wide a solid tie is at its ends (`<line-width type="tie tip">`); null tapers it
-		 * to a point the way vexflow does. */
-		private readonly tip: number | null = null,
-		private readonly bezier: DocumentBezier | null = null,
-	) {
+	private readonly dash: number[] | null;
+	private readonly tip: number | null;
+	private readonly bezier: DocumentBezier | null;
+	constructor(notes: TieNotes, opts: DashedTieOptions = {}) {
 		super(notes);
+		this.dash = opts.dash ?? null;
+		this.tip = opts.tip ?? null;
+		this.bezier = opts.bezier ?? null;
 	}
 
 	override renderTie(params: {

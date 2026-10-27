@@ -451,16 +451,13 @@ export class NotationTranslator {
 				(hyphenated ? '-' : '');
 			if (text) {
 				staveNote.addModifier(
-					new LyricAnnotation(
-						text,
-						index,
-						verse.extend,
-						this.lyricFaceOf(verse),
-						this.justifyOf(verse),
+					new LyricAnnotation(text, index, verse.extend, {
+						family: this.lyricFaceOf(verse),
+						justify: this.justifyOf(verse),
 						scale,
 						hyphenated,
-						this.reader.positionOf(verse),
-					),
+						documentPosition: this.reader.positionOf(verse),
+					}),
 				);
 			}
 		});

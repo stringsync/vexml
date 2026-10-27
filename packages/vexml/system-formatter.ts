@@ -370,7 +370,7 @@ export class SystemFormatter {
 						lyricDrops.get(p.row) ?? LYRIC_Y_OFFSET,
 						this.lyricPlacer.carriedDrop(column.systemIndex, p.row),
 					),
-				column.systemIndex,
+				{ system: column.systemIndex },
 			);
 			for (const vexVoice of p.vexVoices) {
 				for (const note of vexVoice.getTickables()) {

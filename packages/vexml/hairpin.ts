@@ -9,6 +9,12 @@ import {
 // MusicXML's default <wedge spread>, in tenths.
 const DEFAULT_SPREAD = 15;
 
+export type HairpinOptions = {
+	dash?: number[] | null;
+	niente?: boolean;
+	spread?: number | null;
+};
+
 /*
  * A crescendo/diminuendo hairpin between two notes, drawn at a fixed gap from the staff on
  * the side its <wedge> placement names. vexflow's own StaveHairpin derives its y from the
@@ -22,15 +28,20 @@ const DEFAULT_SPREAD = 15;
  */
 export class Hairpin {
 	private context?: RenderContext;
+	private readonly dash: number[] | null;
+	private readonly niente: boolean;
+	private readonly spread: number | null;
 	constructor(
 		private readonly from: StaveNote,
 		private readonly to: StaveNote,
 		private readonly crescendo: boolean,
 		private readonly placement: 'above' | 'below',
-		private readonly dash: number[] | null = null,
-		private readonly niente = false,
-		private readonly spread: number | null = null,
-	) {}
+		opts: HairpinOptions = {},
+	) {
+		this.dash = opts.dash ?? null;
+		this.niente = opts.niente ?? false;
+		this.spread = opts.spread ?? null;
+	}
 	/*
 	 * Extra distance from the staff, set by the caller when the fixed gap would put the wedge
 	 * through something already drawn there (a slur bowing the same way). Signed in the

@@ -111,15 +111,21 @@ describe('VoiceBuilder', () => {
 			order,
 			beamCalls,
 			tupletCalls,
-			// scry-ignore named-options-last: mirrors SpannerBuilder.buildBeams, whose positional signature this fake must match to be injected.
 			buildBeams(
 				groups: unknown[],
 				byLead: Map<Note, StaveNote>,
-				stem?: string,
-				notesByLead?: Map<Note, StaveNote[]>,
+				opts: {
+					defaultStem?: string;
+					notesByLead?: Map<Note, StaveNote[]>;
+				} = {},
 			) {
 				order.push('beams');
-				beamCalls.push({ groups, byLead, stem, notesByLead });
+				beamCalls.push({
+					groups,
+					byLead,
+					stem: opts.defaultStem,
+					notesByLead: opts.notesByLead,
+				});
 				return [{ built: 'beam' }];
 			},
 			buildTuplets(chords: Chord[], map: Map<Note, unknown>) {

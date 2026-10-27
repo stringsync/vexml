@@ -83,26 +83,20 @@ export class StaveFactory {
 		);
 		const stave = isTab
 			? new TabStave(x, y, width, { numLines: tabLines })
-			: new DetailedStave(
-					x,
-					y,
-					width,
-					{
-						// A reduced stave keeps the five-line frame and HIDES the lines it doesn't
-						// draw, rather than declaring fewer of them. vexflow anchors a shorter stave
-						// at the top: its lines come off the bottom, so a 1-line percussion stave
-						// draws where a five-line stave's TOP line goes, while leaving note rows,
-						// ledger lines, clef and time signature in the five-line frame regardless.
-						// Hiding instead centers the drawn lines the way MuseScore and OSMD do (the
-						// single line lands on the middle line, with the percussion clef straddling
-						// it) and leaves everything measured off the stave (note rows, connectors,
-						// part spacing) exactly as it was.
-						spaceAboveStaffLn:
-							((4 + halfNudge) * STAVE_LINE_DISTANCE + centering) / spacing,
-						spacingBetweenLinesPx: spacing,
-					},
-					styled,
-				);
+			: new DetailedStave(x, y, width, styled, {
+					// A reduced stave keeps the five-line frame and HIDES the lines it doesn't
+					// draw, rather than declaring fewer of them. vexflow anchors a shorter stave
+					// at the top: its lines come off the bottom, so a 1-line percussion stave
+					// draws where a five-line stave's TOP line goes, while leaving note rows,
+					// ledger lines, clef and time signature in the five-line frame regardless.
+					// Hiding instead centers the drawn lines the way MuseScore and OSMD do (the
+					// single line lands on the middle line, with the percussion clef straddling
+					// it) and leaves everything measured off the stave (note rows, connectors,
+					// part spacing) exactly as it was.
+					spaceAboveStaffLn:
+						((4 + halfNudge) * STAVE_LINE_DISTANCE + centering) / spacing,
+					spacingBetweenLinesPx: spacing,
+				});
 		// Tab is exempt: its line count IS its string count, so a 4-string stave draws four
 		// lines and means it.
 		for (let line = 0; line < 5 && !isTab && staveLines < 5; line++) {

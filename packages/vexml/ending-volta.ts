@@ -7,6 +7,11 @@ const DEFAULT_TEXT_X = 5;
 /** How far below the line vexflow hangs a volta's label baseline, in px. */
 const TEXT_DROP = 15;
 
+export type EndingVoltaOptions = {
+	/** The bracket's line width (`<line-width type="ending">`); vexflow's 1px when null. */
+	lineWidth?: number | null;
+};
+
 /*
  * A volta (ending) bracket drawn with the document's own geometry: vexflow's Volta draws
  * both jogs at a fixed 1.5 staff spaces and the label at a fixed inset, so this redraws
@@ -15,14 +20,15 @@ const TEXT_DROP = 15;
  * attributes keep vexflow's look.
  */
 export class EndingVolta extends Volta {
+	private readonly lineWidth: number | null;
 	constructor(
 		private readonly decoration: VoltaDecoration,
 		x: number,
 		yShift: number,
-		/* The bracket's line width (`<line-width type="ending">`); vexflow's 1px when null. */
-		private readonly lineWidth: number | null = null,
+		opts: EndingVoltaOptions = {},
 	) {
 		super(decoration.type, decoration.label, x, yShift);
+		this.lineWidth = opts.lineWidth ?? null;
 	}
 
 	override draw(): void {

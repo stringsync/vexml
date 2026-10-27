@@ -256,8 +256,8 @@ describe('SystemFormatter', () => {
 		const body = `<note default-x="160"><pitch><step>E</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type></note>
 		<backup><duration>4</duration></backup>
 		<note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>2</voice><type>whole</type></note>`;
-		const followed = await horizontalGeometry('follow', 320, body);
-		const ignored = await horizontalGeometry('ignore', 320, body);
+		const followed = await horizontalGeometry('follow', 320, { body });
+		const ignored = await horizontalGeometry('ignore', 320, { body });
 		expect(followed.notes[0]?.rect.x).toBeCloseTo(
 			(followed.measures[0]?.rect.x ?? 0) + 160,
 		);
@@ -269,18 +269,8 @@ describe('SystemFormatter', () => {
 	it('keeps a strict document line unbroken when its exact widths overrun the page', async () => {
 		const following = `<measure number="2" width="400"><print new-system="no"/>
 		<note default-x="100"><pitch><step>E</step><octave>4</octave></pitch><duration>4</duration><type>whole</type></note></measure>`;
-		const strict = await horizontalGeometry(
-			'strict',
-			600,
-			undefined,
-			following,
-		);
-		const follow = await horizontalGeometry(
-			'follow',
-			600,
-			undefined,
-			following,
-		);
+		const strict = await horizontalGeometry('strict', 600, { following });
+		const follow = await horizontalGeometry('follow', 600, { following });
 		expect(
 			strict.measures.map((m) => ({ width: m.rect.w, system: m.systemIndex })),
 		).toEqual([
@@ -301,9 +291,9 @@ describe('SystemFormatter', () => {
 async function horizontalGeometry(
 	mode: 'ignore' | 'follow' | 'strict',
 	width: number,
-	body?: string,
-	following = '',
+	opts: { body?: string; following?: string } = {},
 ) {
+	const { body, following = '' } = opts;
 	const config = {
 		...DEFAULT_CONFIG,
 		layout: { ...DEFAULT_STANDARD_LAYOUT, documentLayout: mode },

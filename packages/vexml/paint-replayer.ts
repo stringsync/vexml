@@ -10,6 +10,11 @@ export interface ReplayTarget {
 	readonly device: { readonly x: number; readonly y: number } | null;
 }
 
+export type PaintReplayerOptions = {
+	/** The colors the recording's ink roles paint in. */
+	ink?: Ink;
+};
+
 /*
  * Paints recorded ops onto a real 2D context under a base transform (recorded space to this
  * context's pixels). It remembers what the context already holds, so a run of ops sharing one
@@ -26,14 +31,16 @@ export class PaintReplayer {
 	private dash: readonly number[] | null = null;
 	private matrix: Affine | null = null;
 	private started = false;
+	private readonly ink: Ink;
 
 	constructor(
 		private readonly ctx: CanvasRenderingContext2D,
 		private readonly base: Affine,
 		private readonly target: ReplayTarget,
-		// The colors the recording's ink roles paint in.
-		private readonly ink: Ink = Ink.DEFAULT,
-	) {}
+		opts: PaintReplayerOptions = {},
+	) {
+		this.ink = opts.ink ?? Ink.DEFAULT;
+	}
 
 	replay(op: PaintOp): void {
 		if (!this.started) {
