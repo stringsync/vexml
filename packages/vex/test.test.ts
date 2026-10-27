@@ -24,7 +24,7 @@ describe('test', () => {
 		await test(opts);
 		const [build, run] = ps.getCalls();
 		expect(build).toContain('-t vexml-tests -t vexml-tests:run-4242');
-		expect(run).toEndWith(' vexml-tests:run-4242');
+		expect(run).toEndWith(' vexml-tests:run-4242 --timeout 30000');
 	});
 
 	it('drops its tag once the run is over', async () => {
@@ -46,6 +46,6 @@ describe('test', () => {
 		await test(opts);
 		const calls = ps.getCalls();
 		expect(calls).toHaveLength(1);
-		expect(calls[0]).toEndWith(' vexml-tests');
+		expect(calls[0]).toEndWith(' vexml-tests --timeout 30000');
 	});
 });

@@ -20,7 +20,13 @@ export async function test(opts: TestOptions) {
 	}
 	// No dir: bun discovers every *.test.ts (unit in packages/vexml + integration), skipping
 	// node_modules. bun's -t filters tests by name.
-	const testArgs = opts.pattern ? ['-t', opts.pattern] : [];
+	// bunfig.toml has no test timeout key, so the flag is the only place to raise bun's 5s default.
+	// The renders are CPU-bound, and CI runners and busy dev hosts are several times slower.
+	const testArgs = [
+		'--timeout',
+		'30000',
+		...(opts.pattern ? ['-t', opts.pattern] : []),
+	];
 
 	const args = [
 		'run',
