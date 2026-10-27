@@ -93,7 +93,7 @@ const OVERFLOWS: ReadonlyArray<SegmentedOption<SystemOverflow>> = [
 export default function App() {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const playerRef = useRef<HTMLDivElement>(null);
-	const model = useResource(buildModel);
+	const model = useResource(() => new SiteModel(fixtures, localStorage), []);
 	const {
 		text,
 		input,
@@ -892,14 +892,6 @@ export default function App() {
 			</main>
 		</div>
 	);
-}
-
-// Hoisted, not inline: useResource rebuilds when the factory's identity changes, so an arrow
-// written at the call site would build (and dispose) a fresh model on every render.
-// Render-pure, as useResource requires: SiteModel's constructor wires in-memory state and its own
-// dispatchers, and acquires nothing that needs cleanup (the AudioContext is built lazily).
-function buildModel() {
-	return new SiteModel(fixtures, localStorage);
 }
 
 // What the component reads off the model. Every field is a primitive or a stable reference, so

@@ -63,6 +63,27 @@ describe("classes-over-function-exports", () => {
 		]);
 	});
 
+	it("checks exported functions that destructure a shared dependency without throwing", async () => {
+		const file = new SourceFile(
+			"a.ts",
+			[
+				"export function find({ db }: Deps, id: string) {",
+				"\treturn db.get(id);",
+				"}",
+				"export function drop({ db }: Deps, id: string) {",
+				"\treturn db.delete(id);",
+				"}",
+			].join("\n"),
+		);
+
+		await expect(
+			new ClassesOverFunctionExports({
+				som: new FakeDecider({}, 0.8),
+				llm: new FakeDecider(),
+			}).check(file),
+		).resolves.toBeArray();
+	});
+
 	it("flags the class a cli action builds to call once", async () => {
 		const file = new SourceFile(
 			"a.ts",
@@ -102,5 +123,26 @@ describe("classes-over-function-exports", () => {
 		expect(som.asked.map((asked) => asked.question)).toEqual([
 			"Is NodeFs one implementation of Fs, which has others, such as a fake for tests?",
 		]);
+	});
+
+	it("checks exported functions that destructure their parameter without throwing", async () => {
+		const file = new SourceFile(
+			"a.ts",
+			[
+				"export function find({ db }: Deps, id: string) {",
+				"\treturn db.get(id);",
+				"}",
+				"export function drop({ db }: Deps, id: string) {",
+				"\treturn db.delete(id);",
+				"}",
+			].join("\n"),
+		);
+
+		const findings = await new ClassesOverFunctionExports({
+			som: new FakeDecider(),
+			llm: new FakeDecider(),
+		}).check(file);
+
+		expect(Array.isArray(findings)).toBe(true);
 	});
 });

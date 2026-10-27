@@ -1,6 +1,13 @@
 {
   "version": 1,
   "skills": {
+    "scry": {
+      "source": "jaredjj3/webappwiz",
+      "ref": "v0.0.52",
+      "sourceType": "github",
+      "skillPath": "skills/scry/SKILL.md",
+      "computedHash": "8706a74699438f00dce85b4a4ceb8f725e984864bec5fdde3767c95fdfe2383c"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",

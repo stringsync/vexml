@@ -232,6 +232,9 @@ function typeName(parameter: SyntaxNode): string {
 
 /** Whether a function calls a method on the parameter it names so: `clock.now()`. */
 function callsOn(owner: SyntaxNode, parameter: string): boolean {
+	// A destructured parameter's name is its text, `{ db }`, which ast-grep would read as a regex quantifier.
+	// A destructured parameter's text is `{ db }`, which ast-grep would read as a regex quantifier, so escape it.
+	const escaped = parameter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 	return (
 		owner.findAll({
 			rule: {
@@ -239,7 +242,7 @@ function callsOn(owner: SyntaxNode, parameter: string): boolean {
 				has: {
 					field: "function",
 					kind: "member_expression",
-					has: { field: "object", regex: `^${parameter}$` },
+					has: { field: "object", regex: `^${escaped}$` },
 				},
 			},
 		}).length > 0
