@@ -1,3 +1,4 @@
+// scry-ignore-file comments-say-why-not-what: each glyph is an invisible private-use character, so the trailing SMuFL name is the only readable key to the table
 /*
  * MusicXML <percussion> pictograms -> their SMuFL glyphs. Keyed by the child's tag and then
  * its text, the schema's own spelling (the glass-value, metal-value, ... enumerations), so a
