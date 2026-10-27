@@ -18,12 +18,14 @@ import {
 	VexmlRenderer,
 } from './vexml-renderer';
 
+// Every renderer is inert config: render()/eval() borrow what they need (a pooled tab, a
+// Docker run) and give it back before resolving, so there is nothing per-renderer to
+// dispose. The class object is this package's webappwiz/disposable AsyncResource.
+
 /**
- * The package's one entry: a factory per engine. Every renderer is inert config:
- * render()/eval() borrow what they need (a pooled tab, a Docker run) and give it back
- * before resolving, so there is nothing per-renderer to dispose. The shared machinery
- * behind the factories is the one resource; disposeAsync() releases it (the class
- * object is this package's webappwiz/disposable AsyncResource).
+ * The package's one entry: a factory per engine. Call the factory for the engine you want
+ * and render with the result. Call disposeAsync() once when you are done to release the
+ * machinery the renderers share.
  */
 export class renderers {
 	private constructor() {}

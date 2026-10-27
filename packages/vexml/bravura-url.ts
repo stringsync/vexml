@@ -10,8 +10,10 @@ export const BRAVURA_URL = new URL(
 	import.meta.url,
 ).href;
 
-/** The URL of the common Bravura subset, BRAVURA_COMMON_RANGE cut from BRAVURA_URL, which
- * the font loader injects first with no notation url, so most scores fetch only this file.
+// The font loader injects BRAVURA_URL first with no notation url, so most scores fetch
+// only the common subset.
+
+/** The URL of the common Bravura subset, BRAVURA_COMMON_RANGE cut from BRAVURA_URL.
  * Exported as `@stringsync/vexml/fonts/bravura-common.woff2`. */
 export const BRAVURA_COMMON_URL = new URL(
 	'./assets/fonts/BravuraCommon.woff2',

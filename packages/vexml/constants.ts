@@ -413,9 +413,11 @@ export const TECHNICAL_ROW_GAP = 4;
  * notehead reads as part of the note, whereas the rows above it read as one column. */
 export const TECHNICAL_EDGE_GAP = 9;
 
-/** Extra room between the brackets of NESTED tuplets, on top of vexflow's own 15px
- * Tuplet.NESTING_OFFSET. Its step is shorter than the numeral it centers on each bracket
- * line, so without this an outer "3" and an inner "5" print through each other. */
+// vexflow's own step (15px Tuplet.NESTING_OFFSET) is shorter than the numeral it centers
+// on each bracket line, so without this an outer "3" and an inner "5" print through each
+// other.
+
+/** Extra room between the brackets of NESTED tuplets, on top of vexflow's own spacing. */
 export const TUPLET_NESTING_EXTRA_GAP = 10;
 
 /** Half the height of the band a tuplet's numeral fills around its bracket line, for

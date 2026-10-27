@@ -14,12 +14,13 @@ export interface LineGroup {
 	box: Rect;
 }
 
+// Rows that carry about as much ink as the most inked rows do are staff lines (lyric
+// extenders and multi-rest bars carry far less). Ink is counted rather than run as one
+// stroke because fret numbers and noteheads sit on the line and break it.
+
 /**
- * Finds the staves in a render from its pixels alone: the rows that carry about as much
- * ink as the most inked rows do are staff lines (lyric extenders and multi-rest bars carry
- * far less), and lines that follow one another at one spacing are a staff. Ink is counted
- * rather than run as one stroke because fret numbers and noteheads sit on the line and
- * break it. Works on any renderer's output, which is the point: nothing here asks the
+ * Finds the staves in a render from its pixels alone: lines that follow one another at one
+ * spacing are a staff. Works on any renderer's output, since nothing here asks the
  * renderer where it thinks its staves are.
  */
 export class StaffDetector {

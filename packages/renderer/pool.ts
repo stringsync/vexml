@@ -15,12 +15,14 @@ export interface PageSpec {
 // Pool size ~= perf-core count; bump if renders starve waiting for a tab.
 const POOL_SIZE = 8;
 
+// Renders are stateless (mount clears the container and re-renders), so a render borrows
+// an idle tab instead of paying open() (a fresh page plus a ~2MB bundle parse) itself.
+// Pooling (vs. one shared tab) lets concurrent renders run on separate tabs/renderer
+// processes in parallel; POOL_SIZE caps how many churn at once.
+
 /**
  * A pool of tabs, each loaded with one engine's page exactly once and reused across
- * renders. Renders are stateless (mount clears the container and re-renders), so a
- * render borrows an idle tab instead of paying open() (a fresh page plus a ~2MB bundle
- * parse) itself. Pooling (vs. one shared tab) lets concurrent renders run on separate
- * tabs/renderer processes in parallel; POOL_SIZE caps how many churn at once.
+ * renders. Borrow an idle tab for a render and give it back when the render is done.
  */
 export class TabPool implements AsyncResource {
 	constructor(
