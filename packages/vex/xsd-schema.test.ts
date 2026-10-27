@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { XsdSchema } from './xsd-schema';
 
-const XSD = `<?xml version="1.0"?>
+describe('XsdSchema', () => {
+	let schema: XsdSchema;
+
+	beforeEach(() => {
+		schema = new XsdSchema(`<?xml version="1.0"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 	<xs:attributeGroup name="color">
 		<xs:attribute name="color" type="xs:string"/>
@@ -46,15 +50,15 @@ const XSD = `<?xml version="1.0"?>
 			<xs:attribute name="version" type="xs:string"/>
 		</xs:complexType>
 	</xs:element>
-</xs:schema>`;
+</xs:schema>`);
+	});
 
-function attributesOf(name: string): string[] {
-	return [...(new XsdSchema(XSD).elements().get(name) ?? [])].sort();
-}
+	function attributesOf(name: string): string[] {
+		return [...(schema.elements().get(name) ?? [])].sort();
+	}
 
-describe('XsdSchema', () => {
 	it('lists every declared element in name order', () => {
-		expect([...new XsdSchema(XSD).elements().keys()]).toEqual([
+		expect([...schema.elements().keys()]).toEqual([
 			'accent',
 			'fermata',
 			'notations',

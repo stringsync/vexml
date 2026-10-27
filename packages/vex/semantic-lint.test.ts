@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { PNG } from 'pngjs';
 import { Rect } from 'webappwiz/geometry';
 import { FakeJev } from './fake-jev';
@@ -6,11 +6,18 @@ import type { Engine } from './lint';
 import { SemanticLint } from './semantic-lint';
 
 describe('SemanticLint', () => {
+	let empty: string;
+
+	beforeEach(() => {
+		empty =
+			'<score-partwise><part-list><score-part id="P1"><part-name>Test</part-name></score-part></part-list><part id="P1"><measure number="1"/></part></score-partwise>';
+	});
+
 	it('flags only the outlier when the other two renderers agree', async () => {
 		const client = new FakeJev([{ same: 0.1 }, { same: 0.2 }, { same: 0.99 }]);
 		const result = await new SemanticLint(client).measure(
 			'pickup',
-			EMPTY,
+			empty,
 			renders(['vexml', 'osmd', 'alphatab']),
 		);
 		expect(result.findings.vexml).toEqual([
@@ -27,7 +34,7 @@ describe('SemanticLint', () => {
 	it('does not choose a reference when two renderers disagree', async () => {
 		const result = await new SemanticLint(
 			new FakeJev([{ same: 0.01 }]),
-		).measure('1', EMPTY, renders(['vexml', 'osmd']));
+		).measure('1', empty, renders(['vexml', 'osmd']));
 		expect(result.findings).toEqual({ vexml: [], osmd: [] });
 	});
 	it('does not flag either side of a two versus two split', async () => {
@@ -41,7 +48,7 @@ describe('SemanticLint', () => {
 		]);
 		const result = await new SemanticLint(client).measure(
 			'1',
-			EMPTY,
+			empty,
 			renders(['vexml', 'osmd', 'alphatab', 'musescore']),
 		);
 		expect(result.findings).toEqual({
@@ -55,11 +62,11 @@ describe('SemanticLint', () => {
 	it('leaves uncertain votes alone', async () => {
 		const result = await new SemanticLint(
 			new FakeJev([{ same: 0.1 }, { same: 0.5 }, { same: 0.99 }]),
-		).measure('1', EMPTY, renders(['vexml', 'osmd', 'alphatab']));
+		).measure('1', empty, renders(['vexml', 'osmd', 'alphatab']));
 		expect(result.findings).toEqual({ vexml: [], osmd: [], alphatab: [] });
 	});
 	it('checks XML presence even with one renderer, retaining the probability', async () => {
-		const xml = EMPTY.replace(
+		const xml = empty.replace(
 			'<measure number="1"/>',
 			'<measure number="1"><note><rest/><type>quarter</type><notations><fermata/></notations></note></measure>',
 		);
@@ -82,9 +89,6 @@ describe('SemanticLint', () => {
 		]);
 	});
 });
-
-const EMPTY =
-	'<score-partwise><part-list><score-part id="P1"><part-name>Test</part-name></score-part></part-list><part id="P1"><measure number="1"/></part></score-partwise>';
 
 function renders(engines: Engine[]) {
 	const png = PNG.sync.write(new PNG({ width: 30, height: 40 }));
