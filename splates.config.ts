@@ -14,4 +14,6 @@ export default {
 	// commands CLAUDE.md asks for: fix is biome + tsc + xmllint, test is bun
 	// test. --check so the gate reads the tree instead of writing to it.
 	preMerge: './bin/vex fix --check && ./bin/vex test',
+	// `vex ship` requires a bump type, so `splates ship vexml` publishes the next patch.
+	ship: './bin/vex ship patch',
 };
