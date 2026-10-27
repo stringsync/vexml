@@ -82,65 +82,6 @@ import { UnbrokenArpeggio } from './unbroken-arpeggio';
 import { VoiceBuilder } from './voice-builder';
 import type { VoiceTranslator } from './voice-translator';
 
-/* What a redraw carries over from the pass before it. Both are empty on a first pass, which
- * is what measures them. */
-export interface DrawPassOptions {
-	/* Per lyric row, how far to drop it so it clears the lyrics of the system above. */
-	lyricDrops?: Map<string, number>;
-	/* Per system, how far to lift its volta bracket so it clears the notes under it. */
-	voltaLifts?: Map<number, number>;
-	/* Per system, the below-stave hairpins its words have to drop under. */
-	hairpinBands?: Map<number, HairpinBand[]>;
-}
-
-/* How far a system's ink reaches up and down, in the pass's scratch space. */
-export interface SystemExtent {
-	top: number;
-	bottom: number;
-}
-
-/* What one system's pass measured, as the settle loop weighs it (see ScoreDrawer.draw). */
-export interface SystemObservation {
-	/* Px the system's content rose above its own top: the headroom a redraw reserves. */
-	overflow: number;
-	/* This system's stave rows' spill, keyed by row, or undefined when it drew none. */
-	staveSpill: Map<number, StaveSpill> | undefined;
-	/* The drops its lyric rows hung at, keyed `<systemIndex>:<staveRow>`. */
-	lyricDrops: Map<string, number>;
-	lyricsStepped: boolean;
-	/* How far its volta brackets had to rise, undefined when none did. */
-	voltaLift: number | undefined;
-	voltasLifted: boolean;
-	/* The below-stave hairpins its words ran into, undefined when none. */
-	hairpinBands: HairpinBand[] | undefined;
-	hairpinsStacked: boolean;
-}
-
-/* The page extents and hit-index geometry a pass collected, in its scratch space. */
-export interface DrawPassResult {
-	pageTop: number;
-	pageBottom: number;
-	staveLines: Map<number, SystemExtent>;
-	rawNotes: RawNote[];
-	rawMeasures: RawMeasure[];
-	rawChordDiagrams: RawChordDiagram[];
-}
-
-/* Where a system's draw began, for {@link DrawPass.rewind} to put the pass back to. */
-export interface SystemMark {
-	system: number;
-	pageTop: number;
-	pageBottom: number;
-	systemTopY: number;
-	systemContentBottom: number;
-	currentSystem: number;
-	geometry: GeometryMark;
-	lyrics: number;
-	dynamics: ReturnType<DirectionPlacer['mark']>;
-	spanners: ReturnType<SpannerResolver['mark']>;
-	ops: number;
-}
-
 /*
  * Draw the score one system at a time. `topOverflow` maps a systemIndex to extra space to reserve
  * above that system so its notes (which rise above its own top stave) clear the system
@@ -1922,4 +1863,63 @@ export class DrawPass {
 			}
 		}
 	}
+}
+
+/* What a redraw carries over from the pass before it. Both are empty on a first pass, which
+ * is what measures them. */
+export interface DrawPassOptions {
+	/* Per lyric row, how far to drop it so it clears the lyrics of the system above. */
+	lyricDrops?: Map<string, number>;
+	/* Per system, how far to lift its volta bracket so it clears the notes under it. */
+	voltaLifts?: Map<number, number>;
+	/* Per system, the below-stave hairpins its words have to drop under. */
+	hairpinBands?: Map<number, HairpinBand[]>;
+}
+
+/* How far a system's ink reaches up and down, in the pass's scratch space. */
+export interface SystemExtent {
+	top: number;
+	bottom: number;
+}
+
+/* What one system's pass measured, as the settle loop weighs it (see ScoreDrawer.draw). */
+export interface SystemObservation {
+	/* Px the system's content rose above its own top: the headroom a redraw reserves. */
+	overflow: number;
+	/* This system's stave rows' spill, keyed by row, or undefined when it drew none. */
+	staveSpill: Map<number, StaveSpill> | undefined;
+	/* The drops its lyric rows hung at, keyed `<systemIndex>:<staveRow>`. */
+	lyricDrops: Map<string, number>;
+	lyricsStepped: boolean;
+	/* How far its volta brackets had to rise, undefined when none did. */
+	voltaLift: number | undefined;
+	voltasLifted: boolean;
+	/* The below-stave hairpins its words ran into, undefined when none. */
+	hairpinBands: HairpinBand[] | undefined;
+	hairpinsStacked: boolean;
+}
+
+/* The page extents and hit-index geometry a pass collected, in its scratch space. */
+export interface DrawPassResult {
+	pageTop: number;
+	pageBottom: number;
+	staveLines: Map<number, SystemExtent>;
+	rawNotes: RawNote[];
+	rawMeasures: RawMeasure[];
+	rawChordDiagrams: RawChordDiagram[];
+}
+
+/* Where a system's draw began, for {@link DrawPass.rewind} to put the pass back to. */
+export interface SystemMark {
+	system: number;
+	pageTop: number;
+	pageBottom: number;
+	systemTopY: number;
+	systemContentBottom: number;
+	currentSystem: number;
+	geometry: GeometryMark;
+	lyrics: number;
+	dynamics: ReturnType<DirectionPlacer['mark']>;
+	spanners: ReturnType<SpannerResolver['mark']>;
+	ops: number;
 }

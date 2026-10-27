@@ -1,5 +1,5 @@
-import type { RenderContext, Stave } from 'vexflow/core';
-import { TimeSignature } from 'vexflow/core';
+import type { RenderContext, Stave, TimeSignature } from 'vexflow/core';
+import { GroupTimePlaceholder } from './group-time-placeholder';
 
 /*
  * One large time signature across a `<part-group>` that declares `<group-time/>`. Each of the
@@ -12,7 +12,7 @@ export class GroupTimeSignature {
 	x: number | null = null;
 
 	constructor(
-		private readonly make: () => TimeSignature,
+		private readonly source: TimeSignatureSource,
 		/** How much larger than a single stave's signature the group's draws. */
 		readonly scale: number,
 	) {}
@@ -23,7 +23,10 @@ export class GroupTimeSignature {
 	}
 
 	placeholder(): TimeSignature {
-		return new GroupTimePlaceholder(this, this.make().getWidth() * this.scale);
+		return new GroupTimePlaceholder(
+			this,
+			this.source.make().getWidth() * this.scale,
+		);
 	}
 
 	draw(ctx: RenderContext, top: Stave, bottom: Stave): void {
@@ -46,7 +49,7 @@ export class GroupTimeSignature {
 			} as unknown as Stave;
 			ctx.save();
 			ctx.scale(k, k);
-			this.make().drawAt(ctx, frame, this.x / k);
+			this.source.make().drawAt(ctx, frame, this.x / k);
 			ctx.restore();
 		} finally {
 			ctx.closeGroup();
@@ -54,22 +57,7 @@ export class GroupTimeSignature {
 	}
 }
 
-class GroupTimePlaceholder extends TimeSignature {
-	constructor(
-		private readonly group: GroupTimeSignature,
-		width: number,
-	) {
-		super('4/4');
-		this.width = width;
-	}
-
-	override setTimeSig(timeSpec: string): this {
-		// The base constructor lays out '4/4' before the group is assigned; that layout is moot.
-		return this.group ? this : super.setTimeSig(timeSpec);
-	}
-
-	override drawAt(_ctx: RenderContext, _stave: Stave, x: number): void {
-		this.setRendered();
-		this.group.x = x;
-	}
+/** Builds a fresh time signature each time it is asked, since a vexflow one draws once. */
+export interface TimeSignatureSource {
+	make(): TimeSignature;
 }

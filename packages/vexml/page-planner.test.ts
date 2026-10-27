@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import type { DocumentSystem } from './layout-planner';
-import { PagePlanner, PageWalk } from './page-planner';
+import { PagePlanner } from './page-planner';
+import { PageWalk } from './page-walk';
 
 // 100px pages with 10px margins leave 80px for systems, from y 10 to 90 on the first page.
 const planner = new PagePlanner(100, 10, 10);

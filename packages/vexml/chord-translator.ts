@@ -19,72 +19,6 @@ import type { NotationTranslator } from './notation-translator';
 import { NoteheadText } from './notehead-text';
 import type { NoteStyle } from './score-reader';
 
-const ACCIDENTAL_SIGNS: Readonly<Record<string, string>> = {
-	sharp: '\u266F',
-	flat: '\u266D',
-	natural: '\u266E',
-};
-
-/*
- * MusicXML <accidental> glyph name -> vexflow accidental code. Forms with no vexflow code
- * (the courtesy forms, the arrows, the triples, the Turkish commas) pass their SMuFL glyph
- * straight through: Tables.accidentalCodes returns an unrecognized code verbatim, and
- * the accidental is drawn in the music font either way. The -up/-down values are the
- * Gould arrow quarter-tone glyphs (U+E270-E27B), which SMuFL lays out one per MusicXML
- * value. `other` has no entry: its glyph is named only by @smufl, resolved by smuflGlyph.
- */
-export const ACCIDENTAL_CODES: Record<string, string> = {
-	sharp: '#',
-	flat: 'b',
-	natural: 'n',
-	'double-sharp': '##',
-	'sharp-sharp': '##',
-	'flat-flat': 'bb',
-	'natural-sharp': '\uE268', // accidentalNaturalSharp
-	'natural-flat': '\uE267', // accidentalNaturalFlat
-	'quarter-sharp': '+',
-	'quarter-flat': 'd',
-	'three-quarters-sharp': '++',
-	'three-quarters-flat': 'db',
-	'sharp-down': '', // accidentalQuarterToneSharpArrowDown
-	'sharp-up': '', // accidentalThreeQuarterTonesSharpArrowUp
-	'natural-down': '', // accidentalQuarterToneFlatNaturalArrowDown
-	'natural-up': '', // accidentalQuarterToneSharpNaturalArrowUp
-	'flat-down': '', // accidentalThreeQuarterTonesFlatArrowDown
-	'flat-up': '', // accidentalQuarterToneFlatArrowUp
-	'double-sharp-down': '', // accidentalThreeQuarterTonesSharpArrowDown
-	'double-sharp-up': '', // accidentalFiveQuarterTonesSharpArrowUp
-	'flat-flat-down': '', // accidentalFiveQuarterTonesFlatArrowDown
-	'flat-flat-up': '', // accidentalThreeQuarterTonesFlatArrowUp
-	'arrow-down': '', // accidentalArrowDown
-	'arrow-up': '', // accidentalArrowUp
-	'triple-sharp': '', // accidentalTripleSharp
-	'triple-flat': '', // accidentalTripleFlat
-	'slash-quarter-sharp': '+-', // accidentalKucukMucennebSharp
-	'slash-sharp': '++-', // accidentalBuyukMucennebSharp
-	'slash-flat': 'bs', // accidentalBakiyeFlat
-	'double-slash-flat': 'bss', // accidentalBuyukMucennebFlat
-	'sharp-1': '', // accidental1CommaSharp
-	'sharp-2': '', // accidental2CommaSharp
-	'sharp-3': '', // accidental3CommaSharp
-	'sharp-5': '', // accidental5CommaSharp
-	'flat-1': '', // accidental1CommaFlat
-	'flat-2': '', // accidental2CommaFlat
-	'flat-3': '', // accidental3CommaFlat
-	'flat-4': '', // accidental4CommaFlat
-	sori: 'o',
-	koron: 'k',
-};
-
-/*
- * A SMuFL glyph name (<accidental smufl="accidentalWilsonPlus">) -> its codepoint, from
- * vexflow's Glyphs table. An unknown or missing name draws nothing rather than throwing.
- */
-export function smuflGlyph(name: string | null): string | undefined {
-	const glyphs: Record<string, string> = VexFlow.Glyphs;
-	return name ? glyphs[name] : undefined;
-}
-
 /*
  * Translates one mdom chord (a lead note plus any <chord/> members) to the vexflow StaveNote
  * that draws it: its keys, noteheads, accidentals, dots, stem, and (in a later pass, once the
@@ -607,6 +541,72 @@ export class ChordTranslator {
 			noteHeads[i]?.setText(text);
 		});
 	}
+}
+
+const ACCIDENTAL_SIGNS: Readonly<Record<string, string>> = {
+	sharp: '\u266F',
+	flat: '\u266D',
+	natural: '\u266E',
+};
+
+/*
+ * MusicXML <accidental> glyph name -> vexflow accidental code. Forms with no vexflow code
+ * (the courtesy forms, the arrows, the triples, the Turkish commas) pass their SMuFL glyph
+ * straight through: Tables.accidentalCodes returns an unrecognized code verbatim, and
+ * the accidental is drawn in the music font either way. The -up/-down values are the
+ * Gould arrow quarter-tone glyphs (U+E270-E27B), which SMuFL lays out one per MusicXML
+ * value. `other` has no entry: its glyph is named only by @smufl, resolved by smuflGlyph.
+ */
+export const ACCIDENTAL_CODES: Record<string, string> = {
+	sharp: '#',
+	flat: 'b',
+	natural: 'n',
+	'double-sharp': '##',
+	'sharp-sharp': '##',
+	'flat-flat': 'bb',
+	'natural-sharp': '\uE268', // accidentalNaturalSharp
+	'natural-flat': '\uE267', // accidentalNaturalFlat
+	'quarter-sharp': '+',
+	'quarter-flat': 'd',
+	'three-quarters-sharp': '++',
+	'three-quarters-flat': 'db',
+	'sharp-down': '', // accidentalQuarterToneSharpArrowDown
+	'sharp-up': '', // accidentalThreeQuarterTonesSharpArrowUp
+	'natural-down': '', // accidentalQuarterToneFlatNaturalArrowDown
+	'natural-up': '', // accidentalQuarterToneSharpNaturalArrowUp
+	'flat-down': '', // accidentalThreeQuarterTonesFlatArrowDown
+	'flat-up': '', // accidentalQuarterToneFlatArrowUp
+	'double-sharp-down': '', // accidentalThreeQuarterTonesSharpArrowDown
+	'double-sharp-up': '', // accidentalFiveQuarterTonesSharpArrowUp
+	'flat-flat-down': '', // accidentalFiveQuarterTonesFlatArrowDown
+	'flat-flat-up': '', // accidentalThreeQuarterTonesFlatArrowUp
+	'arrow-down': '', // accidentalArrowDown
+	'arrow-up': '', // accidentalArrowUp
+	'triple-sharp': '', // accidentalTripleSharp
+	'triple-flat': '', // accidentalTripleFlat
+	'slash-quarter-sharp': '+-', // accidentalKucukMucennebSharp
+	'slash-sharp': '++-', // accidentalBuyukMucennebSharp
+	'slash-flat': 'bs', // accidentalBakiyeFlat
+	'double-slash-flat': 'bss', // accidentalBuyukMucennebFlat
+	'sharp-1': '', // accidental1CommaSharp
+	'sharp-2': '', // accidental2CommaSharp
+	'sharp-3': '', // accidental3CommaSharp
+	'sharp-5': '', // accidental5CommaSharp
+	'flat-1': '', // accidental1CommaFlat
+	'flat-2': '', // accidental2CommaFlat
+	'flat-3': '', // accidental3CommaFlat
+	'flat-4': '', // accidental4CommaFlat
+	sori: 'o',
+	koron: 'k',
+};
+
+/*
+ * A SMuFL glyph name (<accidental smufl="accidentalWilsonPlus">) -> its codepoint, from
+ * vexflow's Glyphs table. An unknown or missing name draws nothing rather than throwing.
+ */
+export function smuflGlyph(name: string | null): string | undefined {
+	const glyphs: Record<string, string> = VexFlow.Glyphs;
+	return name ? glyphs[name] : undefined;
 }
 
 /* The settings ChordTranslator.staveNote applies to one chord. */

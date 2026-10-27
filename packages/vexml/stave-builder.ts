@@ -372,7 +372,7 @@ export class StaveBuilder {
 				const group =
 					column.groupTimes.get(span) ??
 					new GroupTimeSignature(
-						make,
+						{ make },
 						GroupTimeSignature.scaleFor(
 							this.staves.groupStaveCount(
 								this.parts,

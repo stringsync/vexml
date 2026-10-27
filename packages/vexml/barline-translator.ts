@@ -2,56 +2,6 @@ import { Barline, BarNote, Volta } from 'vexflow/core';
 import type { MeasureEnding, MeasureRepeat, Winged } from './score-reader';
 
 /*
- * The MusicXML <bar-style> values vexflow's own Barline draws. Its Barline knows four
- * non-repeat types and MusicXML names nine, so the rest (dotted, dashed, heavy, tick, …)
- * have no type here and are painted by DrawPass.paintBarStyle. 'regular' is the plain
- * single line, the style an absent <bar-style> means.
- */
-export const BAR_STYLE_TYPES: Record<string, number> = {
-	regular: Barline.type.SINGLE,
-	'light-light': Barline.type.DOUBLE,
-	'light-heavy': Barline.type.END,
-	none: Barline.type.NONE,
-};
-
-/** The width a mid-measure divider with no vexflow type of its own reserves, matching the
- * SINGLE barline it is painted in place of. */
-const CUSTOM_MID_BAR_WIDTH = 8;
-
-// What a measure's <barline>s ask the renderer to draw at its edges: repeat dots (as a vexflow
-// Barline type) and the volta bracket over it (as a vexflow Volta type + its printed label).
-export type BarlineDecoration = {
-	repeatBegin: boolean;
-	repeatEnd: boolean;
-	/** The printed "Nx" label of a repeat played more than twice, or null. A plain backward
-	 * repeat means two passes and is drawn by its dots alone. */
-	repeatTimesLabel: string | null;
-	/** The wings on the opening and closing repeat signs ('none' for plain ones). */
-	beginWinged: Winged;
-	endWinged: Winged;
-	volta: VoltaDecoration | null;
-};
-
-/** A measure's piece of a volta bracket: its vexflow Volta type, printed label, and the
- * document's own jog lengths and label offset in tenths (null for the defaults). */
-export type VoltaDecoration = {
-	type: number;
-	label: string;
-	startJog: number | null;
-	endJog: number | null;
-	textX: number | null;
-};
-
-export const NO_DECORATION: BarlineDecoration = {
-	repeatBegin: false,
-	repeatEnd: false,
-	repeatTimesLabel: null,
-	beginWinged: 'none',
-	endWinged: 'none',
-	volta: null,
-};
-
-/*
  * Translates mdom measure repeats to the decorations a `<barline>` draws: the repeat dots and
  * volta brackets at a measure's edges, plus the vexflow BarNote a mid-measure one puts between
  * two notes.
@@ -121,3 +71,53 @@ export class BarlineTranslator {
 			.join(' ');
 	}
 }
+
+/*
+ * The MusicXML <bar-style> values vexflow's own Barline draws. Its Barline knows four
+ * non-repeat types and MusicXML names nine, so the rest (dotted, dashed, heavy, tick, …)
+ * have no type here and are painted by DrawPass.paintBarStyle. 'regular' is the plain
+ * single line, the style an absent <bar-style> means.
+ */
+export const BAR_STYLE_TYPES: Record<string, number> = {
+	regular: Barline.type.SINGLE,
+	'light-light': Barline.type.DOUBLE,
+	'light-heavy': Barline.type.END,
+	none: Barline.type.NONE,
+};
+
+/** The width a mid-measure divider with no vexflow type of its own reserves, matching the
+ * SINGLE barline it is painted in place of. */
+const CUSTOM_MID_BAR_WIDTH = 8;
+
+// What a measure's <barline>s ask the renderer to draw at its edges: repeat dots (as a vexflow
+// Barline type) and the volta bracket over it (as a vexflow Volta type + its printed label).
+export type BarlineDecoration = {
+	repeatBegin: boolean;
+	repeatEnd: boolean;
+	/** The printed "Nx" label of a repeat played more than twice, or null. A plain backward
+	 * repeat means two passes and is drawn by its dots alone. */
+	repeatTimesLabel: string | null;
+	/** The wings on the opening and closing repeat signs ('none' for plain ones). */
+	beginWinged: Winged;
+	endWinged: Winged;
+	volta: VoltaDecoration | null;
+};
+
+/** A measure's piece of a volta bracket: its vexflow Volta type, printed label, and the
+ * document's own jog lengths and label offset in tenths (null for the defaults). */
+export type VoltaDecoration = {
+	type: number;
+	label: string;
+	startJog: number | null;
+	endJog: number | null;
+	textX: number | null;
+};
+
+export const NO_DECORATION: BarlineDecoration = {
+	repeatBegin: false,
+	repeatEnd: false,
+	repeatTimesLabel: null,
+	beginWinged: 'none',
+	endWinged: 'none',
+	volta: null,
+};
