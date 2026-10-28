@@ -918,6 +918,31 @@ export class SpannerBuilder {
 				voiceOf.set(note, `${chord.lead.staff}/${chord.lead.voice}`);
 			}
 		}
+		let notesByRow:
+			| Map<number, Array<{ note: StaveNote; index: number }>>
+			| undefined;
+		const onRow = (stave: Stave) => {
+			if (!notesByRow) {
+				const index = new Map<
+					number,
+					Array<{ note: StaveNote; index: number }>
+				>();
+				notesByRow = index;
+				chords.forEach((chord, chordIndex) => {
+					const note = byLead.get(chord.lead);
+					const row = note?.getStave()?.getY();
+					if (note && row !== undefined) {
+						const notes = index.get(row);
+						if (notes) {
+							notes.push({ note, index: chordIndex });
+						} else {
+							index.set(row, [{ note, index: chordIndex }]);
+						}
+					}
+				});
+			}
+			return notesByRow.get(stave.getY()) ?? [];
+		};
 		chords.forEach((chord, i) => {
 			const from = byLead.get(chord.lead);
 			const isGrace = chord.lead.isGrace;
@@ -977,23 +1002,25 @@ export class SpannerBuilder {
 				// measures the ends sit in. A grace curve hugs its two notes and keeps the slice.
 				const sameRow =
 					!!fromStave && !!toStave && toStave.getY() === fromStave.getY();
-				if (crossStave || (sameRow && !isGrace)) {
+				if ((crossStave || (sameRow && !isGrace)) && fromStave && toStave) {
 					const left = from.getAbsoluteX();
 					const right = to.getAbsoluteX();
-					const rows = new Set([fromStave?.getY(), toStave?.getY()]);
 					const sliced = new Set(span);
-					span = chords
-						.map((c) => byLead.get(c.lead))
+					const candidates = crossStave
+						? [...onRow(fromStave), ...onRow(toStave)].sort(
+								(a, b) => a.index - b.index,
+							)
+						: onRow(fromStave);
+					span = candidates
 						.filter(
-							(n): n is StaveNote =>
-								n !== undefined &&
-								rows.has(n.getStave()?.getY() ?? Number.NaN) &&
+							({ note: n }) =>
 								n.getAbsoluteX() >= left &&
 								n.getAbsoluteX() <= right &&
 								// Another voice's rest can make way instead, so only the slice's own
 								// rests count, as they always have.
 								(crossStave || sliced.has(n) || !n.isRest()),
-						);
+						)
+						.map(({ note }) => note);
 				}
 
 				// Bulge up for placement="above", down for "below", otherwise opposite the
