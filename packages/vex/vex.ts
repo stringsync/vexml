@@ -216,6 +216,11 @@ vex
 vex
 	.command('slice')
 	.description('extract measures from a musicxml file into a smaller one')
+	.option('policy', z.enum(['standalone', 'raw'] as const), {
+		default: 'standalone' as const,
+		description:
+			'standalone: play retained measures once in source order; remove all repeats, endings and D.C./D.S./Fine/To Coda navigation, even within the slice. raw: preserve markings across cuts',
+	})
 	.option('input', z.string(), { description: 'input musicxml file' })
 	.option('measures', z.string(), {
 		description: "measures to keep, e.g. '1,3-5,8'",

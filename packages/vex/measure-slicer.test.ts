@@ -8,6 +8,147 @@ import {
 import { MeasureSlicer, parseMeasureSpec } from './measure-slicer';
 
 describe('MeasureSlicer', () => {
+	it.each([
+		'1',
+		'2',
+		'3',
+		'1,3',
+		'1-3',
+	])('linearizes open, closed, and nested repeats for selection %s', (spec) => {
+		const source = rawScoreOf(
+			'<attributes><divisions>1</divisions></attributes><barline location="left"><repeat direction="forward"/></barline>',
+			'<barline location="left"><repeat direction="forward"/></barline><barline><repeat direction="backward" times="3"/></barline>',
+			'<barline><repeat direction="backward"/></barline>',
+		);
+		const xml = slice(source, spec);
+		expect(countOf(xml, 'repeat')).toBe(0);
+		expect(
+			measuresOf(xml).flatMap((m) =>
+				m.notes.map((n) => [n.pitch?.step, n.duration]),
+			),
+		).toEqual(
+			measuresOf(source)
+				.filter((m) => parseMeasureSpec(spec).has(m.number))
+				.flatMap((m) => m.notes.map((n) => [n.pitch?.step, n.duration])),
+		);
+	});
+
+	it.each([
+		'1',
+		'2',
+		'3',
+		'1,3',
+		'1-3',
+	])('removes first and second endings without dropping their notes for %s', (spec) => {
+		const source = rawScoreOf(
+			'<barline location="left"><repeat direction="forward"/></barline>',
+			'<barline location="left"><ending number="1" type="start"/></barline><barline><ending number="1" type="stop"/><repeat direction="backward"/></barline>',
+			'<barline location="left"><ending number="2" type="start"/></barline><barline><ending number="2" type="discontinue"/></barline>',
+		);
+		const xml = slice(source, spec);
+		expect(countOf(xml, 'ending')).toBe(0);
+		expect(countOf(xml, 'repeat')).toBe(0);
+		expect(countOf(xml, 'note')).toBe(parseMeasureSpec(spec).size);
+	});
+
+	it.each([
+		['D.C. al Fine', 'dacapo="yes"', '2'],
+		['D.S. al Coda', 'dalsegno="s"', '2'],
+		['Fine', 'fine="yes"', '2'],
+		['To Coda', 'tocoda="c"', '2'],
+		['Da Capo', 'dacapo="yes"', '2'],
+		['Dal Segno al Fine', 'dalsegno="s"', '2'],
+		['D.C. al Fine', 'dacapo="yes"', '1-3'],
+		['D.S. al Coda', 'dalsegno="s"', '1-3'],
+		['Fine', 'fine="yes"', '1-3'],
+		['To Coda', 'tocoda="c"', '1-3'],
+		['Da Capo', 'dacapo="yes"', '1-3'],
+		['Dal Segno al Fine', 'dalsegno="s"', '1-3'],
+	])('removes %s (%s) in selection %s', (words, attr, spec) => {
+		const source = rawScoreOf(
+			'<direction><direction-type><segno/></direction-type><sound segno="s"/></direction>',
+			`<direction><direction-type><words>${words}</words></direction-type><sound ${attr}/></direction>`,
+			'<direction><direction-type><coda/></direction-type><sound coda="c"/></direction>',
+		);
+		const xml = slice(source, spec);
+		expect(countOf(xml, 'direction')).toBe(0);
+		expect(countOf(xml, 'sound')).toBe(0);
+	});
+
+	it('keeps tempo, dynamics, bar styles and unrelated words while removing implicit repeats', () => {
+		const xml = slice(
+			rawScoreOf(
+				'<direction><direction-type><words>D.C.</words></direction-type><sound dacapo="yes" tempo="96"/></direction>' +
+					'<direction><direction-type><words>Allegro con brio</words></direction-type><direction-type><dynamics><p/></dynamics></direction-type></direction>' +
+					'<sound forward-repeat="yes" time-only="2" dynamics="80"/>' +
+					'<barline><bar-style>light-heavy</bar-style><segno/><coda/><repeat direction="backward"/></barline>',
+			),
+			'1',
+		);
+		expect(xml).toContain('tempo="96"');
+		expect(xml).toContain('dynamics="80"');
+		expect(xml).toContain('Allegro con brio');
+		expect(xml).toContain('<p/>');
+		expect(xml).toContain('<bar-style>light-heavy</bar-style>');
+		expect(xml).not.toMatch(
+			/dacapo|forward-repeat|time-only|<segno|<coda|<repeat/,
+		);
+	});
+
+	it('raw preserves detached repeat, ending and navigation markup', () => {
+		const xml = new MeasureSlicer('2', 'raw').slice(
+			rawScoreOf(
+				'',
+				'<direction><direction-type><words>D.S. al Fine</words></direction-type><sound dalsegno="lost"/></direction>' +
+					'<barline><ending number="1" type="stop"/><repeat direction="backward"/></barline>',
+			),
+		);
+		expect(xml).toContain('dalsegno="lost"');
+		expect(xml).toContain('D.S. al Fine');
+		expect(countOf(xml, 'ending')).toBe(1);
+		expect(countOf(xml, 'repeat')).toBe(1);
+	});
+
+	it('preserves distinct pitches, rests and durations in every retained part', () => {
+		const source = `<score-partwise version="4.0">
+<part-list><score-part id="P1"><part-name>One</part-name></score-part><score-part id="P2"><part-name>Two</part-name></score-part></part-list>
+<part id="P1">
+<measure number="1"><attributes>${DIVISIONS}</attributes>${NOTE}</measure>
+<measure number="2"><note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>half</type></note><barline><repeat direction="backward"/></barline></measure>
+<measure number="3"><note><rest/><duration>4</duration><type>whole</type></note></measure>
+</part>
+<part id="P2">
+<measure number="1"><attributes>${DIVISIONS}</attributes>${NOTE}</measure>
+<measure number="2"><note><pitch><step>F</step><octave>3</octave></pitch><duration>1</duration><type>quarter</type></note><sound dacapo="yes"/></measure>
+<measure number="3">${NOTE}</measure>
+</part></score-partwise>`;
+		const xml = slice(source, '2-3');
+		const doc = new MDOMParser().parseFromString(xml);
+		expect(
+			doc.score.parts.map((p) =>
+				p.measures.map((m) => [
+					m.number,
+					m.notes.map((n) => [
+						n.pitch?.step ?? null,
+						n.pitch?.alter ?? null,
+						n.pitch?.octave ?? null,
+						n.duration,
+					]),
+				]),
+			),
+		).toEqual([
+			[
+				['2', [['D', 1, 5, 2]]],
+				['3', [[null, null, null, 4]]],
+			],
+			[
+				['2', [['F', 0, 3, 1]]],
+				['3', [['C', 0, 4, 1]]],
+			],
+		]);
+		expect(xml).not.toMatch(/<repeat|dacapo/);
+	});
+
 	it('keeps only the requested measures, in document order', () => {
 		const xml = slice(scoreOf(OPENING, NONE, NONE, NONE, NONE), '1,3-4');
 		expect(measuresOf(xml).map((m) => m.number)).toEqual(['1', '3', '4']);
