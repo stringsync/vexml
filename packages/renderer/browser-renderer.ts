@@ -2,13 +2,7 @@ import { PlaywrightTab } from './playwright-tab';
 import type { TabPool } from './pool';
 import type { EvalRenderer, Image, RenderResult } from './renderer';
 
-/**
- * The browser engines' common spine: render = mount + screenshot on a pooled tab, and
- * eval additionally runs the caller's fn (shipped as source text: see EvalRenderer)
- * between the two, so the image reflects whatever the fn did. Subclasses say which
- * pool their page lives in, what its mount global expects, and (optionally) the
- * viewport each render wants.
- */
+/** Render and inspect a score in a browser, with optional mount-only and CPU-profiling diagnostics. */
 export abstract class BrowserRenderer<C> implements EvalRenderer<C> {
 	/** The pool whose tabs are loaded with this engine's page. */
 	protected abstract pool(): TabPool;
@@ -29,6 +23,17 @@ export abstract class BrowserRenderer<C> implements EvalRenderer<C> {
 
 	async render(): Promise<Image> {
 		return (await this.run()).image;
+	}
+
+	/** @internal Mount without capturing, for opt-in timing diagnostics. */
+	async mount(): Promise<void> {
+		return this.pool().withTab(async (tab) => {
+			const viewport = this.viewport();
+			if (viewport) {
+				await tab.resize(viewport.width, viewport.height);
+			}
+			await tab.call('mount', await this.mountInput());
+		});
 	}
 
 	/** @internal Profile mount and PNG capture separately, inspecting the mounted score between them.

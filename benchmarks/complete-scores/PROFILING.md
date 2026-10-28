@@ -329,3 +329,146 @@ Follow-ups are recorded on the task board: #153 caches part staff facts for a re
 A separate full-long-score capture design would
 be required before reporting new full-score end-to-end medians. The current task does
 not raise capture limits or optimize engraving from wall-clock ratios alone.
+
+## Checkpoint after metadata and offset caching
+
+This is a new comparison between rendering source `6fbeff1a34ee5deab2d80bb20d38c9174b9260c5`
+(the parent of both optimizations) and `b9965ed410213d8933a4ba6e2a09152518493c12`
+(#153 plus #154). Both sides used profiling implementation
+`32c2f0d4625ed02225645b29cb244b603f62118e` and the same current slicer, including
+`797cb70f`. Thus the historical pre-slicer-fix numbers above remain untouched and are
+not treated as this comparison's baseline. Temporary-worktree workspace links were
+isolated so each bundle actually resolved its named vexml source.
+
+- [profiling-checkpoint-results.json](profiling-checkpoint-results.json): revisions,
+  settings and warm policy, every ordinary and mount-only sample, input/PNG hashes,
+  model evidence, and sampled CPU attribution.
+- [profiling-checkpoint-cpu.tar.gz](profiling-checkpoint-cpu.tar.gz): raw full-score
+  mount profiles from the first-encounter run (`cold`) and from the diagnostic after
+  three mount-only samples (`warm`), on both revisions.
+
+The host, engine versions, 900-pixel reference width, vexml config, DPR 1, font
+readiness and capture budget are the same as above. Each process first rendered
+`note.musicxml`. Bounded cells then took five ordinary render-plus-PNG samples,
+retaining the first encounter with that score. Full scores took three mount-only
+samples with no capture, also retaining the first encounter. A later, separate
+CPU-profiled mount is not a component of either median. All runs were sequential.
+
+Representative commands (with the full source revision supplied explicitly) were:
+
+```sh
+bun benchmarks/complete-scores/profile.ts run --revision <40-hex-revision> \
+  --score debussy-mandoline --renderer vexml --ranges all --samples 5 --output <dir>
+bun benchmarks/complete-scores/profile.ts run --revision <40-hex-revision> \
+  --score dvorak-american-quartet --renderer vexml \
+  --ranges 1-8,423-430,846-853 --samples 5 --output <dir>
+bun benchmarks/complete-scores/profile.ts run --revision <40-hex-revision> \
+  --score beethoven-symphony-5-i --renderer vexml --ranges all \
+  --mount-samples 3 --output <dir>
+```
+
+The selectors and mount-only sampling are opt-in; mount-only defaults to zero and
+no complete-score measurement is part of the default suite.
+
+### Ordinary bounded render plus capture
+
+Milliseconds, median (minimum to maximum), n=5. These include the first encounter;
+they are not cold-process trials or stable-distribution estimates. Small differences
+in either direction are not attributed to the two metadata changes without a larger
+controlled sample.
+
+| Input | 6fbeff1a | b9965ed4 | Current minus baseline |
+| --- | ---: | ---: | ---: |
+| Debussy complete | 533.5 (515.8–975.1) | 521.9 (502.3–925.8) | -11.5 |
+| Quartet 1–8 | 117.1 (116.1–168.0) | 124.7 (117.4–168.9) | +7.6 |
+| Quartet 423–430 | 91.8 (89.2–170.0) | 92.5 (90.2–165.8) | +0.7 |
+| Quartet 846–853 | 83.1 (82.4–300.0) | 83.7 (82.6–205.8) | +0.6 |
+| Beethoven 1–8 | 141.9 (133.8–206.7) | 148.9 (142.0–216.4) | +7.0 |
+| Beethoven 248–255 | 159.0 (149.7–260.4) | 158.0 (157.2–264.5) | -1.0 |
+| Beethoven 495–502 | 148.8 (141.2–195.4) | 155.6 (149.7–208.2) | +6.7 |
+
+All 35 before/after ordinary capture pairs have exactly equal PNG SHA256s. Each
+cell's five hashes are also identical within its revision. Input hashes and the
+complete diagnostic evidence match: part IDs, per-part measure/staff/note counts,
+container dimensions and text, SVG/canvas counts, DPR and font state. This is direct
+pixel and structural evidence for these bounded inputs, not an inference from image
+height or an equivalence proof for other scores.
+
+### Full-score mount recovery
+
+Milliseconds, median (minimum to maximum), n=3 mount-only samples. No PNG capture is
+included. The first value is the first encounter with the full score; the later two
+show why first-encounter and warm costs must not be conflated.
+
+| Full score | 6fbeff1a | b9965ed4 | Recovered at median |
+| --- | ---: | ---: | ---: |
+| Quartet | 7,232 (6,929–13,903) | 3,585 (3,384–6,851) | 3,647 ms / 50.4% |
+| Beethoven | 5,102 (4,776–9,486) | 3,718 (3,391–7,548) | 1,383 ms / 27.1% |
+
+The separate warm CPU diagnostics measured quartet mounts of 7,140 versus 4,021 ms
+and Beethoven mounts of 4,842 versus 3,499 ms. They corroborate the direction of the
+mount-only medians but remain single profiled observations. Both revisions' full
+captures were rejected by the unchanged 33,554,432-device-pixel budget at the same
+932 × 176,657 and 932 × 254,057 requested sizes. There is no new full-score
+end-to-end timing or screenshot claim; full part/measure/note evidence did match.
+
+### Warm sampled attribution
+
+Approximate inclusive milliseconds from the warm diagnostic after three mount-only
+samples. Recursive names are unioned per sample. These values overlap, are not
+additive, and include no normalization of profile recording time to wall mount time.
+
+| Path | Quartet 6fbeff1a → b9965ed4 | Beethoven 6fbeff1a → b9965ed4 |
+| --- | ---: | ---: |
+| `partsPairTabWithNotation` | 2,624 → 1 | 1,100 → 0 |
+| `offsetBeatsOf` | 859 → 2 | 0 → 0 |
+| `divisionsAt` | 859 → 0 | 58 → 0 |
+| `collectGeometry` | 913 → 35 | 359 → 18 |
+| Initial `plan` | 658 → 323 | 344 → 302 |
+| `drawNext` | 5,230 → 2,117 | 3,496 → 2,359 |
+| `redraw` within settling | 1,694 → 673 | 1,145 → 781 |
+| `tickables` | 819 → 757 | 718 → 717 |
+| `formatAndDraw` | 552 → 587 | 346 → 332 |
+| `resolveSystem` | 282 → 309 | 637 → 725 |
+
+The recovered staff and direction work persists after warming; it is not just a
+first-render artifact. The large geometry-collection reduction overlaps the removed
+staff scans and must not be added to them as independent savings. In contrast,
+tickable construction, formatting, spill redraws and spanner settling remain.
+
+The current warm `tickables` call sites split into approximately 196 / 195 ms in
+layout, 378 / 332 ms in initial drawing and 182 / 163 ms in redraws for quartet /
+Beethoven. `ScoreEngraver.create` already shares one `VoiceTranslator` instance
+between layout and drawing. The repeated cost is its per-voice tickable and VexFlow
+object construction, not repeated translator construction. Initial and retry costs
+also overlap the inclusive `redraw` totals.
+
+For current Beethoven, `buildSlurs` accounts for about 334 sampled ms,
+`buildGlissandos` 170, `buildWavyLines` 118 and `buildTies` 93. Quartet's
+`clearWedge` is about 62 ms. These are nested attribution clues, not independent
+recoverable totals or proof that a collision check can be skipped.
+
+### Go / no-go for the later lane
+
+- **#160, stable preparation: go, with a bounded immutable/render-scoped reuse
+  target.** The remaining 717–757 ms of tickable work and its layout/draw split are
+  still material after both fixes. Do not cache the already-shared translator or
+  share mutable formatted VexFlow tickables without proving reset, font, document
+  revision, stave placement and redraw behavior. Measure reduced duplicate work as
+  well as wall time.
+- **#161, system overflow retries: go for retry-cause instrumentation and one
+  evidenced invariant-reuse target.** Current `redraw` is still 673 / 781 ms, roughly
+  a third of each `drawNext` subtree. The existing one-system-at-a-time settling is
+  correct; this is not evidence for removing retries, weakening spill checks or
+  changing convergence.
+- **#173, spanner resolution: go for the proposed scan investigation, especially on
+  Beethoven.** `resolveSystem` remains about 725 ms there and 309 ms in the quartet,
+  with substantial slur, glissando, wavy-line and tie construction underneath. The
+  profile does not yet identify a safe algorithmic change or prove quadratic work.
+- **Broad collision-policy or interaction/playback ablation: no-go.** The profiles
+  do not justify it, and the lane requires identical placement, geometry, source
+  identities and playback. The exact bounded PNG comparisons are the acceptance
+  standard for the next changes, not a reason to update baselines for a faster diff.
+
+No engraving optimization was made in this checkpoint. Its code changes are limited
+to opt-in profiling selectors, input/output evidence and mount-only sampling.

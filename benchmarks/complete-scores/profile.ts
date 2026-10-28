@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import type { AlphaTabApi } from '@coderline/alphatab';
 import type { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
@@ -10,6 +11,7 @@ import { OsmdRenderer } from '../../packages/renderer/osmd-renderer';
 import { renderers } from '../../packages/renderer/renderers';
 import { VexmlRenderer } from '../../packages/renderer/vexml-renderer';
 import { MeasureSlicer } from '../../packages/vex/measure-slicer';
+import { profileRanges, selectProfileEntries } from './profile-selection';
 
 // Optional diagnostics only: never imported by tests or the normal audit runner.
 const fs = new NodeFs();
@@ -39,10 +41,27 @@ app
 	.command('run')
 	.option('output', z.string(), { default: '/tmp/vexml-renderer-profile' })
 	.option('samples', z.coerce.number().int().min(3).max(5), { default: 3 })
+	.option('mount-samples', z.coerce.number().int().min(0).max(5), {
+		default: 0,
+	})
+	.option('revision', z.string().regex(/^[0-9a-f]{40}$/))
+	.option('score', z.string(), { default: 'all' })
+	.option('renderer', z.enum(['all', ...engines]), { default: 'all' })
+	.option(
+		'ranges',
+		z.string().regex(/^$|^(?:all|\d+-\d+)(?:,(?:all|\d+-\d+))*$/),
+		{
+			default: '',
+		},
+	)
 	.action(async (opts, { log }) => {
 		await fs.mkdir(opts.output);
 		const entries: { id: string; file: string }[] = JSON.parse(
 			await fs.read(resolve(import.meta.dir, 'manifest.json')),
+		);
+		const selectedEntries = selectProfileEntries(entries, opts.score);
+		const selectedEngines = engines.filter(
+			(engine) => opts.renderer === 'all' || engine === opts.renderer,
 		);
 		const warmup = await fs.read(
 			resolve(
@@ -53,20 +72,14 @@ app
 		const timer = new Stopwatch(new SystemClock());
 		const results: unknown[] = [];
 		try {
-			for (const engine of engines) {
+			for (const engine of selectedEngines) {
 				await renderer(engine, warmup).render();
 			}
-			for (const entry of entries) {
+			for (const entry of selectedEntries) {
 				const source = await fs.read(resolve(import.meta.dir, entry.file));
 				const long =
 					entry.id.includes('beethoven') || entry.id.includes('dvorak');
-				let ranges = ['all'];
-				if (entry.id.includes('beethoven')) {
-					ranges = ['1-8', '248-255', '495-502', 'all'];
-				} else if (entry.id.includes('dvorak')) {
-					ranges = ['1-8', '423-430', '846-853', 'all'];
-				}
-				for (const range of ranges) {
+				for (const range of profileRanges(entry.id, opts.ranges)) {
 					let musicXML = source;
 					if (range !== 'all') {
 						// scry-ignore classes-over-function-exports: MeasureSlicer is the shared stateful slicer used by CLI actions and library tests, not this profiling command's action.
@@ -74,10 +87,18 @@ app
 							source,
 						);
 					}
-					for (const engine of engines) {
+					const inputSha256 = createHash('sha256')
+						.update(musicXML)
+						.digest('hex');
+					for (const engine of selectedEngines) {
 						const stem = resolve(opts.output, `${entry.id}-${range}-${engine}`);
 						const target = renderer(engine, musicXML);
-						const samples: { ms: number; width: number; height: number }[] = [];
+						const samples: {
+							ms: number;
+							width: number;
+							height: number;
+							sha256: string;
+						}[] = [];
 						// Full long scores get CPU/mount evidence, but their PNGs exceed the guard.
 						if (!(long && range === 'all')) {
 							for (let i = 0; i < opts.samples; i++) {
@@ -87,11 +108,18 @@ app
 									ms: timer.elapsed().ms,
 									width: image.readUInt32BE(16),
 									height: image.readUInt32BE(20),
+									sha256: createHash('sha256').update(image).digest('hex'),
 								});
 								if (i === 0) {
 									await fs.writeBytes(`${stem}.png`, image);
 								}
 							}
+						}
+						const mountSamples: number[] = [];
+						for (let i = 0; i < opts['mount-samples']; i++) {
+							timer.start();
+							await target.mount();
+							mountSamples.push(timer.elapsed().ms);
 						}
 						const diagnostic = await target.profile((ctx) => {
 							const box = ctx.container.getBoundingClientRect();
@@ -169,10 +197,13 @@ app
 							);
 						}
 						const row = {
+							sourceRevision: opts.revision,
 							score: entry.id,
+							inputSha256,
 							range,
 							engine,
 							samples,
+							mountSamples,
 							mountMs: diagnostic.mount.ms,
 							captureMs: diagnostic.capture?.ms,
 							captureError: diagnostic.captureError,
