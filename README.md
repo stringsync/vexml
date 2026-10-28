@@ -199,3 +199,7 @@ Needs [bun](https://bun.sh) and [docker](https://docs.docker.com/desktop/). The 
 ```
 
 `./bin/vex readme` re-records this README's images and GIFs (it needs ImageMagick).
+
+The optional [complete-score audit](benchmarks/complete-scores/README.md) records
+render timings and visual lint findings without adding to the main test suite.
+Its scores are available in the playground's example picker under **Complete score**.

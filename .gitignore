@@ -13,3 +13,6 @@ RELEASE
 
 # Browser verification artifacts
 packages/integration/__artifacts__/
+
+# Optional complete-score audit output
+benchmarks/complete-scores/output/

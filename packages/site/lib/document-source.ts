@@ -213,6 +213,12 @@ export class DocumentSource
 	}
 
 	private save(value: string): void {
+		// Complete scores can exceed localStorage's quota. Keep them usable in
+		// this session without preventing selection or restoring a stale document.
+		if (value.length > LARGE_SCORE_CHARS) {
+			this.storage.removeItem(STORAGE_KEY);
+			return;
+		}
 		this.storage.setItem(STORAGE_KEY, value);
 	}
 }

@@ -55,10 +55,10 @@ import {
 import { INSTRUMENTS } from '@/lib/instruments';
 import { ScoreFit } from '@/lib/score-fit';
 import { SiteModel } from '@/lib/site-model';
+import completeScores from '../../benchmarks/complete-scores/manifest.json';
 
-// Vite reads the fixtures straight from packages/integration at build time (fs.allow:
-// ['../..'] in vite.config permits it) and hands us the file list: no symlink or manifest.
-// Keyed by basename, each value lazily loads the file's raw text.
+// Lazy imports keep complete scores out of the initial page download, and the
+// separate corpus directory keeps them out of integration test discovery.
 const loaders: Record<string, () => Promise<string>> = {};
 for (const [path, load] of Object.entries(
 	import.meta.glob<string>('../integration/__data__/*.musicxml', {
@@ -68,6 +68,17 @@ for (const [path, load] of Object.entries(
 )) {
 	loaders[path.slice(path.lastIndexOf('/') + 1).replace('.musicxml', '')] =
 		load;
+}
+const completeScoreLoaders = import.meta.glob<string>(
+	'../../benchmarks/complete-scores/scores/*.musicxml',
+	{ query: '?raw', import: 'default' },
+);
+for (const entry of completeScores) {
+	const load =
+		completeScoreLoaders[`../../benchmarks/complete-scores/${entry.file}`];
+	if (load) {
+		loaders[`Complete score: ${entry.title}`] = load;
+	}
 }
 loaders['Try editing'] = () =>
 	import('./editing.musicxml?raw').then((module) => module.default);

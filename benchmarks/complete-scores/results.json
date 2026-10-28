@@ -1,0 +1,6217 @@
+{
+	"date": "2026-10-28",
+	"sourceCommit": "60e28c171e81f370aae5f1b0626570de97438e2b",
+	"platform": "macOS 26.6.2 arm64",
+	"versions": {
+		"@coderline/alphatab": "1.8.4",
+		"opensheetmusicdisplay": "2.1.1",
+		"playwright": "1.61.1"
+	},
+	"method": "One render-and-PNG sample after a small-score warmup, sequential per engine. Browser startup, input file read, mask capture, and lint excluded from renderCaptureMs. Native host fonts; not Docker baselines. Greater than 8 million pixels: structural lint only. Slices leave crossing spanners open and can change layout. These are reconnaissance measurements, not statistically stable rankings.",
+	"results": [
+		{
+			"score": "beethoven-symphony-5-i",
+			"engine": "alphatab",
+			"measures": "all",
+			"stage": "complete",
+			"renderCaptureMs": 2695,
+			"dimensions": "932x171254",
+			"lintCoverage": "structural only; element masks exceed the 8MP audit budget",
+			"lintMs": 854,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "full"
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"engine": "osmd",
+			"measures": "all",
+			"stage": "complete",
+			"renderCaptureMs": 8158,
+			"dimensions": "932x146664",
+			"lintCoverage": "structural only; element masks exceed the 8MP audit budget",
+			"lintMs": 1028,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "full"
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"engine": "vexml",
+			"measures": "all",
+			"stage": "complete",
+			"renderCaptureMs": 13839,
+			"dimensions": "932x254057",
+			"lintCoverage": "structural only; element masks exceed the 8MP audit budget",
+			"lintMs": 1821,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "full"
+		},
+		{
+			"score": "clara-schumann-liebst-du",
+			"engine": "alphatab",
+			"stage": "complete",
+			"renderCaptureMs": 231,
+			"dimensions": "932x7058",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 32254,
+			"lintMs": 120,
+			"lint": {
+				"score": 0,
+				"findings": [
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 154,
+							"y": 1663,
+							"w": 18,
+							"h": 1
+						},
+						"measures": ["9"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 366,
+							"y": 2928,
+							"w": 18,
+							"h": 1
+						},
+						"measures": ["17"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 483,
+							"y": 3684,
+							"w": 2,
+							"h": 3
+						},
+						"measures": ["22"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 485,
+							"y": 5228,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["30"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps accidental ink",
+						"box": {
+							"x": 777,
+							"y": 6568,
+							"w": 1,
+							"h": 10
+						},
+						"measures": ["39"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 838,
+							"y": 1510,
+							"w": 1,
+							"h": 3
+						},
+						"measures": ["10"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 840,
+							"y": 4412,
+							"w": 1,
+							"h": 3
+						},
+						"measures": ["26"]
+					}
+				]
+			},
+			"scope": "full",
+			"measures": "all"
+		},
+		{
+			"score": "clara-schumann-liebst-du",
+			"engine": "osmd",
+			"stage": "complete",
+			"renderCaptureMs": 313,
+			"dimensions": "932x6214",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 16903,
+			"lintMs": 107,
+			"lint": {
+				"score": 0,
+				"findings": [
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 2956,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["19"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 375,
+							"y": 2955,
+							"w": 2,
+							"h": 1
+						},
+						"measures": ["19", "20"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 613,
+							"y": 2954,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["20", "21"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 2963,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["19"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 375,
+							"y": 2964,
+							"w": 2,
+							"h": 1
+						},
+						"measures": ["19", "20"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 613,
+							"y": 2965,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["20", "21"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 3424,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["22"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 410,
+							"y": 3423,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["22", "23"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 645,
+							"y": 3422,
+							"w": 2,
+							"h": 1
+						},
+						"measures": ["23", "24"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 3431,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["22"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 410,
+							"y": 3432,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["22", "23"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 645,
+							"y": 3433,
+							"w": 2,
+							"h": 1
+						},
+						"measures": ["23", "24"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 95,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 227,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 421,
+							"y": 227,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["1", "2"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 376,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 421,
+							"y": 376,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["1", "2"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 503,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["4"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 651,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["4"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 393,
+							"y": 651,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["4", "5"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 790,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["4"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 393,
+							"y": 790,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["4", "5"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 913,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["7"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 1048,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["7"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 396,
+							"y": 1048,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["7", "8"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 1229,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["7"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 397,
+							"y": 1229,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["7", "8"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 1397,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["10"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 1565,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["10"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 434,
+							"y": 1565,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["10", "11"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 1696,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["10"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 434,
+							"y": 1696,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["10", "11"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 1833,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["13"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 1987,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["13"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 376,
+							"y": 1987,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["13", "14"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 2130,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["13"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 376,
+							"y": 2130,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["13", "14"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 2254,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["16"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 2389,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["16"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 385,
+							"y": 2389,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["16", "17"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 2544,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["16"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 385,
+							"y": 2544,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["16", "17"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 2680,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["19"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 2815,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["19"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 375,
+							"y": 2815,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["19", "20"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 3017,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["19"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 375,
+							"y": 3017,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["19", "20"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 3146,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["22"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 3283,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["22"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 410,
+							"y": 3283,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["22", "23"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 3484,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["22"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 410,
+							"y": 3484,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["22", "23"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 3650,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["25"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 3785,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["25"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 404,
+							"y": 3785,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["25", "26"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 3970,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["25"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 404,
+							"y": 3970,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["25", "26"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 4132,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["28"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 4280,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["28"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 362,
+							"y": 4280,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["28", "29"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 4425,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["28"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 362,
+							"y": 4425,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["28", "29"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 4563,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["31"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 4682,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["31"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 537,
+							"y": 4682,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["31", "32"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 4841,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["31"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 537,
+							"y": 4841,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["31", "32"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 4981,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["33"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 5104,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["33"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 551,
+							"y": 5104,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["33", "34"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 5237,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["33"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 551,
+							"y": 5237,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["33", "34"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 5397,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["35"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 5530,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["35"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 533,
+							"y": 5530,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["35", "36"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 5670,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["35"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 533,
+							"y": 5670,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["35", "36"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 5819,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["37"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 5930,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["37"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 377,
+							"y": 5930,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["37", "38"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 6072,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["37"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 377,
+							"y": 6072,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["37", "38"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps clef ink",
+						"box": {
+							"x": 73,
+							"y": 4313,
+							"w": 19,
+							"h": 5
+						},
+						"measures": ["28"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps stem ink",
+						"box": {
+							"x": 161,
+							"y": 4313,
+							"w": 2,
+							"h": 1
+						},
+						"measures": ["28"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps notehead ink",
+						"box": {
+							"x": 162,
+							"y": 4312,
+							"w": 3,
+							"h": 2
+						},
+						"measures": ["28"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps clef ink",
+						"box": {
+							"x": 88,
+							"y": 5924,
+							"w": 2,
+							"h": 2
+						},
+						"measures": ["37"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps connector ink",
+						"box": {
+							"x": 377,
+							"y": 6041,
+							"w": 2,
+							"h": 2
+						},
+						"measures": ["37", "38"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 189,
+							"y": 583,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["4"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 404,
+							"y": 3914,
+							"w": 2,
+							"h": 1
+						},
+						"measures": ["25", "26"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 646,
+							"y": 3913,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["26", "27"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 404,
+							"y": 3923,
+							"w": 2,
+							"h": 1
+						},
+						"measures": ["25", "26"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 646,
+							"y": 3924,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["26", "27"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 185,
+							"y": 4212,
+							"w": 3,
+							"h": 1
+						},
+						"measures": ["28"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps connector ink",
+						"box": {
+							"x": 375,
+							"y": 2939,
+							"w": 2,
+							"h": 3
+						},
+						"measures": ["19", "20"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 178,
+							"y": 2760,
+							"w": 16,
+							"h": 1
+						},
+						"measures": ["19"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps stem ink",
+						"box": {
+							"x": 208,
+							"y": 1108,
+							"w": 2,
+							"h": 2
+						},
+						"measures": ["7"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps beam ink",
+						"box": {
+							"x": 208,
+							"y": 1108,
+							"w": 10,
+							"h": 6
+						},
+						"measures": ["7"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps connector ink",
+						"box": {
+							"x": 397,
+							"y": 1164,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["7", "8"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps connector ink",
+						"box": {
+							"x": 606,
+							"y": 1183,
+							"w": 2,
+							"h": 3
+						},
+						"measures": ["8", "9"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps beam ink",
+						"box": {
+							"x": 843,
+							"y": 1146,
+							"w": 2,
+							"h": 2
+						},
+						"measures": ["9"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 196,
+							"y": 4235,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["28"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps curve ink",
+						"box": {
+							"x": 213,
+							"y": 5586,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["35"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps curve ink",
+						"box": {
+							"x": 213,
+							"y": 5659,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["35"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 219,
+							"y": 4292,
+							"w": 5,
+							"h": 15
+						},
+						"measures": ["28"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps modifiers ink",
+						"box": {
+							"x": 224,
+							"y": 1224,
+							"w": 3,
+							"h": 2
+						},
+						"measures": ["7"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 222,
+							"y": 607,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["4"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 226,
+							"y": 5072,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["33"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 236,
+							"y": 1014,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["7"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 248,
+							"y": 3248,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["22"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 361,
+							"y": 1913,
+							"w": 9,
+							"h": 1
+						},
+						"measures": ["13", "14"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 267,
+							"y": 2027,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["13"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 267,
+							"y": 2017,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["13"]
+					},
+					{
+						"kind": "collision",
+						"message": "beam ink overlaps curve ink",
+						"box": {
+							"x": 360,
+							"y": 2391,
+							"w": 3,
+							"h": 3
+						},
+						"measures": ["16"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps stem ink",
+						"box": {
+							"x": 362,
+							"y": 2393,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["16"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 291,
+							"y": 1073,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["7"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 291,
+							"y": 1229,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["7"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 321,
+							"y": 4310,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["28"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 321,
+							"y": 5470,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["35"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 478,
+							"y": 5211,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["33"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps curve ink",
+						"box": {
+							"x": 348,
+							"y": 1626,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["10"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 335,
+							"y": 3754,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["25"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 351,
+							"y": 681,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["4"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 362,
+							"y": 4280,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["28", "29"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 609,
+							"y": 4280,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["29", "30"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 362,
+							"y": 4425,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["28", "29"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 610,
+							"y": 4425,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["29", "30"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 368,
+							"y": 1073,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["7"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 368,
+							"y": 1229,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["7"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 373,
+							"y": 257,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 375,
+							"y": 1701,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["10"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps modifiers ink",
+						"box": {
+							"x": 375,
+							"y": 1691,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["10"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps modifiers ink",
+						"box": {
+							"x": 374,
+							"y": 1710,
+							"w": 3,
+							"h": 2
+						},
+						"measures": ["10"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 419,
+							"y": 2760,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["20"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 376,
+							"y": 2815,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["19", "20"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 613,
+							"y": 2815,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["20", "21"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 376,
+							"y": 3017,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["19", "20"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 613,
+							"y": 3017,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["20", "21"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 376,
+							"y": 1987,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["13", "14"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 594,
+							"y": 1987,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["14", "15"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 376,
+							"y": 2130,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["13", "14"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 594,
+							"y": 2130,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["14", "15"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 377,
+							"y": 5930,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["37", "38"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 543,
+							"y": 5930,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["38", "39"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 377,
+							"y": 6072,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["37", "38"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 543,
+							"y": 6072,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["38", "39"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 385,
+							"y": 2389,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["16", "17"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 620,
+							"y": 2389,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["17", "18"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 385,
+							"y": 2544,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["16", "17"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 620,
+							"y": 2544,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["17", "18"]
+					},
+					{
+						"kind": "collision",
+						"message": "beam ink overlaps curve ink",
+						"box": {
+							"x": 503,
+							"y": 4671,
+							"w": 6,
+							"h": 4
+						},
+						"measures": ["31"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 393,
+							"y": 651,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["4", "5"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 621,
+							"y": 651,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["5", "6"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 393,
+							"y": 790,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["4", "5"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 621,
+							"y": 790,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["5", "6"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 397,
+							"y": 1048,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["7", "8"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 606,
+							"y": 1048,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["8", "9"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 397,
+							"y": 1229,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["7", "8"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 606,
+							"y": 1229,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["8", "9"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 398,
+							"y": 2334,
+							"w": 8,
+							"h": 1
+						},
+						"measures": ["17"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps modifiers ink",
+						"box": {
+							"x": 402,
+							"y": 1700,
+							"w": 3,
+							"h": 2
+						},
+						"measures": ["10"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps modifiers ink",
+						"box": {
+							"x": 402,
+							"y": 1710,
+							"w": 3,
+							"h": 3
+						},
+						"measures": ["10"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 405,
+							"y": 3785,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["25", "26"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 646,
+							"y": 3785,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["26", "27"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 405,
+							"y": 3970,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["25", "26"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 646,
+							"y": 3970,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["26", "27"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 410,
+							"y": 3283,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["22", "23"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 645,
+							"y": 3283,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["23", "24"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 410,
+							"y": 3484,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["22", "23"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 645,
+							"y": 3484,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["23", "24"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 518,
+							"y": 5600,
+							"w": 9,
+							"h": 1
+						},
+						"measures": ["35", "36"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps beam ink",
+						"box": {
+							"x": 535,
+							"y": 4487,
+							"w": 4,
+							"h": 6
+						},
+						"measures": ["29"]
+					},
+					{
+						"kind": "collision",
+						"message": "tie ink overlaps flag ink",
+						"box": {
+							"x": 445,
+							"y": 5923,
+							"w": 3,
+							"h": 2
+						},
+						"measures": ["38"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 421,
+							"y": 227,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["1", "2"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 640,
+							"y": 227,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["2", "3"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 421,
+							"y": 376,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["1", "2"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 640,
+							"y": 376,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["2", "3"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 429,
+							"y": 2496,
+							"w": 29,
+							"h": 1
+						},
+						"measures": ["17"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 620,
+							"y": 2495,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["17", "18"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps connector ink",
+						"box": {
+							"x": 620,
+							"y": 2498,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["17", "18"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 427,
+							"y": 4637,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["31"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 434,
+							"y": 1565,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["10", "11"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 664,
+							"y": 1565,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["11", "12"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 434,
+							"y": 1696,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["10", "11"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 664,
+							"y": 1696,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["11", "12"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 443,
+							"y": 2787,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["20"]
+					},
+					{
+						"kind": "collision",
+						"message": "beam ink overlaps curve ink",
+						"box": {
+							"x": 448,
+							"y": 786,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["5"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 444,
+							"y": 5072,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["33"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps stem ink",
+						"box": {
+							"x": 472,
+							"y": 3347,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["23"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps beam ink",
+						"box": {
+							"x": 472,
+							"y": 3347,
+							"w": 2,
+							"h": 2
+						},
+						"measures": ["23"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps connector ink",
+						"box": {
+							"x": 645,
+							"y": 3394,
+							"w": 2,
+							"h": 2
+						},
+						"measures": ["23", "24"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps beam ink",
+						"box": {
+							"x": 813,
+							"y": 3368,
+							"w": 14,
+							"h": 6
+						},
+						"measures": ["24"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps stem ink",
+						"box": {
+							"x": 834,
+							"y": 3363,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["24"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 457,
+							"y": 1938,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["14"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 467,
+							"y": 1014,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["8"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 486,
+							"y": 5966,
+							"w": 7,
+							"h": 9
+						},
+						"measures": ["38"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps modifiers ink",
+						"box": {
+							"x": 488,
+							"y": 3479,
+							"w": 3,
+							"h": 2
+						},
+						"measures": ["23"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 491,
+							"y": 1477,
+							"w": 14,
+							"h": 1
+						},
+						"measures": ["11"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 497,
+							"y": 3248,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["23"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 604,
+							"y": 2334,
+							"w": 10,
+							"h": 1
+						},
+						"measures": ["17", "18"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 607,
+							"y": 583,
+							"w": 9,
+							"h": 1
+						},
+						"measures": ["5", "6"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 520,
+							"y": 691,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["5"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 520,
+							"y": 681,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["5"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 521,
+							"y": 5470,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["35", "36"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 533,
+							"y": 5530,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["35", "36"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 5530,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["36"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 533,
+							"y": 5670,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["35", "36"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 5670,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["36"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 537,
+							"y": 4682,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["31", "32"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 4682,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["32"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 537,
+							"y": 4841,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["31", "32"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 4841,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["32"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 544,
+							"y": 5940,
+							"w": 1,
+							"h": 31
+						},
+						"measures": ["38", "39"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 700,
+							"y": 5930,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["39", "40"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 544,
+							"y": 6072,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["38", "39"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 700,
+							"y": 6072,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["39", "40"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 550,
+							"y": 2359,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["17"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 551,
+							"y": 5104,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["33", "34"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 5104,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["34"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 551,
+							"y": 5237,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["33", "34"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 5237,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["34"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 598,
+							"y": 257,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["2"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 595,
+							"y": 1997,
+							"w": 1,
+							"h": 31
+						},
+						"measures": ["14", "15"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 1987,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["15"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 595,
+							"y": 2130,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["14", "15"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 2130,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["15"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 606,
+							"y": 1048,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["8", "9"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 1048,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["9"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 606,
+							"y": 1229,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["8", "9"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 1229,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["9"]
+					},
+					{
+						"kind": "collision",
+						"message": "beam ink overlaps curve ink",
+						"box": {
+							"x": 611,
+							"y": 5664,
+							"w": 2,
+							"h": 2
+						},
+						"measures": ["36"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 610,
+							"y": 4280,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["29", "30"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 4280,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["30"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 610,
+							"y": 4425,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["29", "30"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 4425,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["30"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 613,
+							"y": 5176,
+							"w": 8,
+							"h": 1
+						},
+						"measures": ["34"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 613,
+							"y": 2815,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["20", "21"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 2815,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["21"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 613,
+							"y": 3017,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["20", "21"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 3017,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["21"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 619,
+							"y": 3308,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["23"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 619,
+							"y": 3484,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["23"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 620,
+							"y": 2389,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["17", "18"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 2389,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["18"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 620,
+							"y": 2544,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["17", "18"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 2544,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["18"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 622,
+							"y": 651,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["5", "6"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 651,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["6"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 622,
+							"y": 790,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["5", "6"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 790,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["6"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 623,
+							"y": 1274,
+							"w": 12,
+							"h": 11
+						},
+						"measures": ["9"]
+					},
+					{
+						"kind": "collision",
+						"message": "beam ink overlaps flag ink",
+						"box": {
+							"x": 707,
+							"y": 1199,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["9"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 640,
+							"y": 227,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["2", "3"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 227,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["3"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 640,
+							"y": 376,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["2", "3"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 376,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["3"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 646,
+							"y": 3283,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["23", "24"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 3283,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["24"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 646,
+							"y": 3484,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["23", "24"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 3484,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["24"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 646,
+							"y": 3785,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["26", "27"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 3785,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["27"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 646,
+							"y": 3970,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["26", "27"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 3970,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["27"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 654,
+							"y": 1938,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["15"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 659,
+							"y": 3226,
+							"w": 27,
+							"h": 1
+						},
+						"measures": ["24"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 664,
+							"y": 1565,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["11", "12"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 1565,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["12"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 664,
+							"y": 1696,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["11", "12"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 1696,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["12"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 691,
+							"y": 1477,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["12"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 686,
+							"y": 3730,
+							"w": 15,
+							"h": 1
+						},
+						"measures": ["27"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 700,
+							"y": 5930,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["39", "40"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 778,
+							"y": 5930,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["40", "41"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 700,
+							"y": 6072,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["39", "40"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 778,
+							"y": 6072,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["40", "41"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 709,
+							"y": 1501,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["12"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 709,
+							"y": 607,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["6"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 711,
+							"y": 4235,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["30"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 720,
+							"y": 3248,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["24"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 778,
+							"y": 1913,
+							"w": 4,
+							"h": 1
+						},
+						"measures": ["15"]
+					},
+					{
+						"kind": "collision",
+						"message": "beam ink overlaps curve ink",
+						"box": {
+							"x": 845,
+							"y": 4685,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["32"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 749,
+							"y": 2434,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["18"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 762,
+							"y": 175,
+							"w": 8,
+							"h": 1
+						},
+						"measures": ["3"]
+					},
+					{
+						"kind": "collision",
+						"message": "tie ink overlaps connector ink",
+						"box": {
+							"x": 778,
+							"y": 5976,
+							"w": 2,
+							"h": 2
+						},
+						"measures": ["40", "41"]
+					},
+					{
+						"kind": "collision",
+						"message": "tie ink overlaps connector ink",
+						"box": {
+							"x": 778,
+							"y": 6103,
+							"w": 2,
+							"h": 2
+						},
+						"measures": ["40", "41"]
+					},
+					{
+						"kind": "collision",
+						"message": "tie ink overlaps connector ink",
+						"box": {
+							"x": 778,
+							"y": 6060,
+							"w": 2,
+							"h": 2
+						},
+						"measures": ["40", "41"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 765,
+							"y": 4637,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["32"]
+					},
+					{
+						"kind": "collision",
+						"message": "beam ink overlaps curve ink",
+						"box": {
+							"x": 846,
+							"y": 1973,
+							"w": 7,
+							"h": 6
+						},
+						"measures": ["15"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 778,
+							"y": 5930,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["40", "41"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 861,
+							"y": 5930,
+							"w": 6,
+							"h": 41
+						},
+						"measures": ["41"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 778,
+							"y": 6072,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["40", "41"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 861,
+							"y": 6072,
+							"w": 6,
+							"h": 41
+						},
+						"measures": ["41"]
+					},
+					{
+						"kind": "collision",
+						"message": "line ink overlaps line ink",
+						"box": {
+							"x": 781,
+							"y": 3886,
+							"w": 4,
+							"h": 1
+						},
+						"measures": ["27"]
+					},
+					{
+						"kind": "collision",
+						"message": "beam ink overlaps curve ink",
+						"box": {
+							"x": 813,
+							"y": 3863,
+							"w": 9,
+							"h": 4
+						},
+						"measures": ["27"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 799,
+							"y": 1014,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["9"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 800,
+							"y": 1938,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["15"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 822,
+							"y": 257,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["3"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 828,
+							"y": 1595,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["12"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 840,
+							"y": 3313,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["24"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 840,
+							"y": 3489,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["24"]
+					}
+				]
+			},
+			"scope": "full",
+			"measures": "all"
+		},
+		{
+			"score": "clara-schumann-liebst-du",
+			"engine": "vexml",
+			"stage": "complete",
+			"renderCaptureMs": 408,
+			"dimensions": "932x8069",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 718,
+			"lintMs": 126,
+			"lint": {
+				"score": 0,
+				"findings": [
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 137,
+							"y": 3491,
+							"w": 6,
+							"h": 10
+						},
+						"measures": ["16"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 137,
+							"y": 6634,
+							"w": 6,
+							"h": 10
+						},
+						"measures": ["32"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps hairpin ink",
+						"box": {
+							"x": 145,
+							"y": 2421,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["12"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 144,
+							"y": 2491,
+							"w": 10,
+							"h": 10
+						},
+						"measures": ["12"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 144,
+							"y": 2481,
+							"w": 9,
+							"h": 10
+						},
+						"measures": ["12"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 145,
+							"y": 2476,
+							"w": 5,
+							"h": 5
+						},
+						"measures": ["12"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps rest ink",
+						"box": {
+							"x": 144,
+							"y": 5149,
+							"w": 5,
+							"h": 2
+						},
+						"measures": ["25"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 146,
+							"y": 7433,
+							"w": 10,
+							"h": 10
+						},
+						"measures": ["36"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 147,
+							"y": 7423,
+							"w": 9,
+							"h": 10
+						},
+						"measures": ["36"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 147,
+							"y": 7418,
+							"w": 6,
+							"h": 5
+						},
+						"measures": ["36"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 153,
+							"y": 736,
+							"w": 10,
+							"h": 10
+						},
+						"measures": ["3"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 154,
+							"y": 726,
+							"w": 9,
+							"h": 10
+						},
+						"measures": ["3"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 154,
+							"y": 721,
+							"w": 6,
+							"h": 5
+						},
+						"measures": ["3"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 166,
+							"y": 244,
+							"w": 11,
+							"h": 10
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 167,
+							"y": 234,
+							"w": 8,
+							"h": 10
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 167,
+							"y": 229,
+							"w": 6,
+							"h": 5
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "tie ink overlaps flag ink",
+						"box": {
+							"x": 225,
+							"y": 7813,
+							"w": 3,
+							"h": 2
+						},
+						"measures": ["38"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps beam ink",
+						"box": {
+							"x": 220,
+							"y": 5718,
+							"w": 3,
+							"h": 4
+						},
+						"measures": ["27"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps stem ink",
+						"box": {
+							"x": 221,
+							"y": 5719,
+							"w": 2,
+							"h": 3
+						},
+						"measures": ["27"]
+					},
+					{
+						"kind": "collision",
+						"message": "hairpin ink overlaps notehead ink",
+						"box": {
+							"x": 237,
+							"y": 5518,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["27"]
+					},
+					{
+						"kind": "collision",
+						"message": "hairpin ink overlaps notehead ink",
+						"box": {
+							"x": 280,
+							"y": 5521,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["27"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps beam ink",
+						"box": {
+							"x": 241,
+							"y": 813,
+							"w": 3,
+							"h": 4
+						},
+						"measures": ["3"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps stem ink",
+						"box": {
+							"x": 243,
+							"y": 814,
+							"w": 1,
+							"h": 3
+						},
+						"measures": ["3"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 209,
+							"y": 4823,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["23"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps slur ink",
+						"box": {
+							"x": 240,
+							"y": 7508,
+							"w": 10,
+							"h": 2
+						},
+						"measures": ["36"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps notehead ink",
+						"box": {
+							"x": 210,
+							"y": 3079,
+							"w": 7,
+							"h": 6
+						},
+						"measures": ["14"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps notehead ink",
+						"box": {
+							"x": 214,
+							"y": 1329,
+							"w": 6,
+							"h": 5
+						},
+						"measures": ["6"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps notehead ink",
+						"box": {
+							"x": 319,
+							"y": 2189,
+							"w": 5,
+							"h": 4
+						},
+						"measures": ["10"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps notehead ink",
+						"box": {
+							"x": 227,
+							"y": 6189,
+							"w": 6,
+							"h": 4
+						},
+						"measures": ["30"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps stem ink",
+						"box": {
+							"x": 321,
+							"y": 4801,
+							"w": 1,
+							"h": 3
+						},
+						"measures": ["23"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps stem ink",
+						"box": {
+							"x": 438,
+							"y": 4803,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["23"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps flag ink",
+						"box": {
+							"x": 445,
+							"y": 4804,
+							"w": 3,
+							"h": 2
+						},
+						"measures": ["23"]
+					},
+					{
+						"kind": "collision",
+						"message": "hairpin ink overlaps notehead ink",
+						"box": {
+							"x": 300,
+							"y": 588,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["3"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps hairpin ink",
+						"box": {
+							"x": 369,
+							"y": 5520,
+							"w": 8,
+							"h": 2
+						},
+						"measures": ["28"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps hairpin ink",
+						"box": {
+							"x": 400,
+							"y": 588,
+							"w": 9,
+							"h": 1
+						},
+						"measures": ["4"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 399,
+							"y": 736,
+							"w": 10,
+							"h": 10
+						},
+						"measures": ["4"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 400,
+							"y": 726,
+							"w": 9,
+							"h": 10
+						},
+						"measures": ["4"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 400,
+							"y": 721,
+							"w": 6,
+							"h": 5
+						},
+						"measures": ["4"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps stem ink",
+						"box": {
+							"x": 430,
+							"y": 7813,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["39"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps beam ink",
+						"box": {
+							"x": 440,
+							"y": 7803,
+							"w": 13,
+							"h": 5
+						},
+						"measures": ["39"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps hairpin ink",
+						"box": {
+							"x": 424,
+							"y": 3719,
+							"w": 20,
+							"h": 2
+						},
+						"measures": ["19"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps beam ink",
+						"box": {
+							"x": 472,
+							"y": 5718,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["28"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps stem ink",
+						"box": {
+							"x": 473,
+							"y": 5719,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["28"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 423,
+							"y": 3872,
+							"w": 10,
+							"h": 10
+						},
+						"measures": ["19"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 423,
+							"y": 3862,
+							"w": 9,
+							"h": 10
+						},
+						"measures": ["19"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 424,
+							"y": 3857,
+							"w": 5,
+							"h": 5
+						},
+						"measures": ["19"]
+					},
+					{
+						"kind": "collision",
+						"message": "hairpin ink overlaps notehead ink",
+						"box": {
+							"x": 530,
+							"y": 3716,
+							"w": 15,
+							"h": 1
+						},
+						"measures": ["19"]
+					},
+					{
+						"kind": "collision",
+						"message": "hairpin ink overlaps notehead ink",
+						"box": {
+							"x": 582,
+							"y": 3714,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["19"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 424,
+							"y": 3378,
+							"w": 9,
+							"h": 10
+						},
+						"measures": ["16"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps beam ink",
+						"box": {
+							"x": 493,
+							"y": 813,
+							"w": 2,
+							"h": 3
+						},
+						"measures": ["4"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps stem ink",
+						"box": {
+							"x": 494,
+							"y": 814,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["4"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps beam ink",
+						"box": {
+							"x": 518,
+							"y": 3963,
+							"w": 2,
+							"h": 2
+						},
+						"measures": ["19"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps stem ink",
+						"box": {
+							"x": 519,
+							"y": 3963,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["19"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 467,
+							"y": 6499,
+							"w": 9,
+							"h": 10
+						},
+						"measures": ["32"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps rest ink",
+						"box": {
+							"x": 493,
+							"y": 1650,
+							"w": 4,
+							"h": 2
+						},
+						"measures": ["9"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 492,
+							"y": 1799,
+							"w": 12,
+							"h": 10
+						},
+						"measures": ["9"]
+					},
+					{
+						"kind": "collision",
+						"message": "beam ink overlaps notehead ink",
+						"box": {
+							"x": 540,
+							"y": 1769,
+							"w": 12,
+							"h": 5
+						},
+						"measures": ["9"]
+					},
+					{
+						"kind": "collision",
+						"message": "beam ink overlaps notehead ink",
+						"box": {
+							"x": 588,
+							"y": 1769,
+							"w": 12,
+							"h": 5
+						},
+						"measures": ["9"]
+					},
+					{
+						"kind": "collision",
+						"message": "stem ink overlaps rest ink",
+						"box": {
+							"x": 513,
+							"y": 3071,
+							"w": 2,
+							"h": 2
+						},
+						"measures": ["15"]
+					},
+					{
+						"kind": "collision",
+						"message": "stem ink overlaps rest ink",
+						"box": {
+							"x": 515,
+							"y": 6181,
+							"w": 2,
+							"h": 3
+						},
+						"measures": ["31"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 513,
+							"y": 3068,
+							"w": 10,
+							"h": 6
+						},
+						"measures": ["15"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 515,
+							"y": 6179,
+							"w": 10,
+							"h": 7
+						},
+						"measures": ["31"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 535,
+							"y": 244,
+							"w": 10,
+							"h": 10
+						},
+						"measures": ["2"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 536,
+							"y": 234,
+							"w": 8,
+							"h": 10
+						},
+						"measures": ["2"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 536,
+							"y": 229,
+							"w": 5,
+							"h": 5
+						},
+						"measures": ["2"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps hairpin ink",
+						"box": {
+							"x": 569,
+							"y": 3303,
+							"w": 6,
+							"h": 2
+						},
+						"measures": ["17"]
+					},
+					{
+						"kind": "collision",
+						"message": "beam ink overlaps notehead ink",
+						"box": {
+							"x": 619,
+							"y": 4837,
+							"w": 12,
+							"h": 5
+						},
+						"measures": ["24"]
+					},
+					{
+						"kind": "collision",
+						"message": "beam ink overlaps notehead ink",
+						"box": {
+							"x": 660,
+							"y": 4841,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["24"]
+					},
+					{
+						"kind": "collision",
+						"message": "hairpin ink overlaps notehead ink",
+						"box": {
+							"x": 675,
+							"y": 3300,
+							"w": 13,
+							"h": 1
+						},
+						"measures": ["17"]
+					},
+					{
+						"kind": "collision",
+						"message": "hairpin ink overlaps notehead ink",
+						"box": {
+							"x": 723,
+							"y": 3299,
+							"w": 4,
+							"h": 1
+						},
+						"measures": ["17"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps rest ink",
+						"box": {
+							"x": 561,
+							"y": 3381,
+							"w": 8,
+							"h": 2
+						},
+						"measures": ["17"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 566,
+							"y": 2078,
+							"w": 11,
+							"h": 10
+						},
+						"measures": ["11"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 567,
+							"y": 2068,
+							"w": 8,
+							"h": 10
+						},
+						"measures": ["11"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 567,
+							"y": 2063,
+							"w": 6,
+							"h": 5
+						},
+						"measures": ["11"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 576,
+							"y": 6502,
+							"w": 4,
+							"h": 2
+						},
+						"measures": ["33"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 591,
+							"y": 5330,
+							"w": 4,
+							"h": 4
+						},
+						"measures": ["26"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps notehead ink",
+						"box": {
+							"x": 596,
+							"y": 1322,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["7"]
+					},
+					{
+						"kind": "collision",
+						"message": "beam ink overlaps tie ink",
+						"box": {
+							"x": 664,
+							"y": 5343,
+							"w": 16,
+							"h": 2
+						},
+						"measures": ["26"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps notehead ink",
+						"box": {
+							"x": 617,
+							"y": 4380,
+							"w": 3,
+							"h": 2
+						},
+						"measures": ["22"]
+					},
+					{
+						"kind": "collision",
+						"message": "hairpin ink overlaps notehead ink",
+						"box": {
+							"x": 740,
+							"y": 1979,
+							"w": 14,
+							"h": 2
+						},
+						"measures": ["11"]
+					},
+					{
+						"kind": "collision",
+						"message": "hairpin ink overlaps notehead ink",
+						"box": {
+							"x": 823,
+							"y": 1977,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["11"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps hairpin ink",
+						"box": {
+							"x": 681,
+							"y": 3714,
+							"w": 14,
+							"h": 3
+						},
+						"measures": ["20"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 679,
+							"y": 3872,
+							"w": 10,
+							"h": 10
+						},
+						"measures": ["20"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 680,
+							"y": 3862,
+							"w": 9,
+							"h": 10
+						},
+						"measures": ["20"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 680,
+							"y": 3857,
+							"w": 6,
+							"h": 5
+						},
+						"measures": ["20"]
+					},
+					{
+						"kind": "collision",
+						"message": "hairpin ink overlaps notehead ink",
+						"box": {
+							"x": 730,
+							"y": 3719,
+							"w": 7,
+							"h": 2
+						},
+						"measures": ["20"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps hairpin ink",
+						"box": {
+							"x": 694,
+							"y": 2420,
+							"w": 18,
+							"h": 2
+						},
+						"measures": ["13"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps hairpin ink",
+						"box": {
+							"x": 712,
+							"y": 2834,
+							"w": 9,
+							"h": 1
+						},
+						"measures": ["15"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps beam ink",
+						"box": {
+							"x": 775,
+							"y": 3962,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["20"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps stem ink",
+						"box": {
+							"x": 775,
+							"y": 3963,
+							"w": 2,
+							"h": 2
+						},
+						"measures": ["20"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps hairpin ink",
+						"box": {
+							"x": 727,
+							"y": 3299,
+							"w": 10,
+							"h": 1
+						},
+						"measures": ["17"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps hairpin ink",
+						"box": {
+							"x": 762,
+							"y": 587,
+							"w": 16,
+							"h": 2
+						},
+						"measures": ["5"]
+					},
+					{
+						"kind": "collision",
+						"message": "slur ink overlaps rest ink",
+						"box": {
+							"x": 805,
+							"y": 6070,
+							"w": 5,
+							"h": 4
+						},
+						"measures": ["31"]
+					},
+					{
+						"kind": "collision",
+						"message": "notehead ink overlaps words ink",
+						"box": {
+							"x": 800,
+							"y": 7531,
+							"w": 2,
+							"h": 1
+						},
+						"measures": ["37"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 805,
+							"y": 2937,
+							"w": 6,
+							"h": 5
+						},
+						"measures": ["15"]
+					},
+					{
+						"kind": "collision",
+						"message": "rest ink overlaps notehead ink",
+						"box": {
+							"x": 806,
+							"y": 6047,
+							"w": 6,
+							"h": 5
+						},
+						"measures": ["31"]
+					}
+				]
+			},
+			"scope": "full",
+			"measures": "all"
+		},
+		{
+			"score": "debussy-mandoline",
+			"engine": "alphatab",
+			"stage": "complete",
+			"renderCaptureMs": 395,
+			"dimensions": "932x11106",
+			"lintCoverage": "structural only; element masks exceed the 8MP audit budget",
+			"lintMs": 100,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "full",
+			"measures": "all"
+		},
+		{
+			"score": "debussy-mandoline",
+			"engine": "osmd",
+			"stage": "complete",
+			"renderCaptureMs": 476,
+			"dimensions": "932x11426",
+			"lintCoverage": "structural only; element masks exceed the 8MP audit budget",
+			"lintMs": 97,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "full",
+			"measures": "all"
+		},
+		{
+			"score": "debussy-mandoline",
+			"engine": "vexml",
+			"stage": "complete",
+			"renderCaptureMs": 928,
+			"dimensions": "932x11853",
+			"lintCoverage": "structural only; element masks exceed the 8MP audit budget",
+			"lintMs": 99,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "full",
+			"measures": "all"
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"engine": "alphatab",
+			"stage": "complete",
+			"renderCaptureMs": 2585,
+			"dimensions": "932x150022",
+			"lintCoverage": "structural only; element masks exceed the 8MP audit budget",
+			"lintMs": 715,
+			"lint": {
+				"score": 0,
+				"findings": [
+					{
+						"kind": "blank",
+						"message": "nothing was drawn",
+						"box": {
+							"x": 0,
+							"y": 0,
+							"w": 932,
+							"h": 150022
+						}
+					}
+				]
+			},
+			"scope": "full",
+			"measures": "all"
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"engine": "osmd",
+			"stage": "complete",
+			"renderCaptureMs": 12469,
+			"dimensions": "932x150808",
+			"lintCoverage": "structural only; element masks exceed the 8MP audit budget",
+			"lintMs": 1097,
+			"lint": {
+				"score": 0,
+				"findings": [
+					{
+						"kind": "stray-line",
+						"message": "a line across the system within a staff space of a staff: a staff drawn into it, or a spanner lying on it",
+						"box": {
+							"x": 61,
+							"y": 52380,
+							"w": 806,
+							"h": 1
+						}
+					},
+					{
+						"kind": "stray-line",
+						"message": "a line across the system within a staff space of a staff: a staff drawn into it, or a spanner lying on it",
+						"box": {
+							"x": 61,
+							"y": 85117,
+							"w": 806,
+							"h": 1
+						}
+					},
+					{
+						"kind": "stray-line",
+						"message": "a line across the system within a staff space of a staff: a staff drawn into it, or a spanner lying on it",
+						"box": {
+							"x": 61,
+							"y": 85119,
+							"w": 806,
+							"h": 1
+						}
+					},
+					{
+						"kind": "stray-line",
+						"message": "a line across the system within a staff space of a staff: a staff drawn into it, or a spanner lying on it",
+						"box": {
+							"x": 61,
+							"y": 87718,
+							"w": 806,
+							"h": 1
+						}
+					},
+					{
+						"kind": "stray-line",
+						"message": "a line across the system within a staff space of a staff: a staff drawn into it, or a spanner lying on it",
+						"box": {
+							"x": 61,
+							"y": 87720,
+							"w": 806,
+							"h": 1
+						}
+					},
+					{
+						"kind": "stray-line",
+						"message": "a line across the system within a staff space of a staff: a staff drawn into it, or a spanner lying on it",
+						"box": {
+							"x": 61,
+							"y": 118249,
+							"w": 770,
+							"h": 1
+						}
+					}
+				]
+			},
+			"scope": "full",
+			"measures": "all"
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"engine": "vexml",
+			"stage": "complete",
+			"renderCaptureMs": 17404,
+			"dimensions": "932x176657",
+			"lintCoverage": "structural only; element masks exceed the 8MP audit budget",
+			"lintMs": 1296,
+			"lint": {
+				"score": 80,
+				"findings": [
+					{
+						"kind": "stray-line",
+						"message": "a line across the system within a staff space of a staff: a staff drawn into it, or a spanner lying on it",
+						"box": {
+							"x": 23,
+							"y": 133826,
+							"w": 879,
+							"h": 1
+						}
+					}
+				]
+			},
+			"scope": "full",
+			"measures": "all"
+		},
+		{
+			"score": "schubert-erlkonig",
+			"engine": "alphatab",
+			"stage": "complete",
+			"renderCaptureMs": 652,
+			"dimensions": "932x22532",
+			"lintCoverage": "structural only; element masks exceed the 8MP audit budget",
+			"lintMs": 187,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "full",
+			"measures": "all"
+		},
+		{
+			"score": "schubert-erlkonig",
+			"engine": "osmd",
+			"stage": "complete",
+			"renderCaptureMs": 984,
+			"dimensions": "932x21538",
+			"lintCoverage": "structural only; element masks exceed the 8MP audit budget",
+			"lintMs": 168,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "full",
+			"measures": "all"
+		},
+		{
+			"score": "schubert-erlkonig",
+			"engine": "vexml",
+			"stage": "complete",
+			"renderCaptureMs": 2291,
+			"dimensions": "932x27973",
+			"lintCoverage": "structural only; element masks exceed the 8MP audit budget",
+			"lintMs": 219,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "full",
+			"measures": "all"
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"engine": "alphatab",
+			"measures": "1-3",
+			"stage": "complete",
+			"renderCaptureMs": 98,
+			"dimensions": "932x1767",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 3920,
+			"lintMs": 32,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "samples"
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"engine": "osmd",
+			"measures": "1-3",
+			"stage": "complete",
+			"renderCaptureMs": 106,
+			"dimensions": "932x1682",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 367,
+			"lintMs": 25,
+			"lint": {
+				"score": 0,
+				"findings": [
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 135,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 215,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 295,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 375,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 455,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 542,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 622,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 702,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 782,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 862,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 942,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 1022,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 1102,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 1182,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 1304,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 1384,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 1464,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 1547,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["1"]
+					}
+				]
+			},
+			"scope": "samples"
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"engine": "vexml",
+			"measures": "1-3",
+			"stage": "complete",
+			"renderCaptureMs": 118,
+			"dimensions": "932x2367",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 165,
+			"lintMs": 28,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "samples"
+		},
+		{
+			"score": "debussy-mandoline",
+			"engine": "alphatab",
+			"measures": "35-37",
+			"stage": "complete",
+			"renderCaptureMs": 82,
+			"dimensions": "932x860",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 2116,
+			"lintMs": 20,
+			"lint": {
+				"score": 85,
+				"findings": [
+					{
+						"kind": "collision",
+						"message": "tie ink overlaps accidental ink",
+						"box": {
+							"x": 401,
+							"y": 65,
+							"w": 2,
+							"h": 2
+						},
+						"measures": ["35"]
+					}
+				]
+			},
+			"scope": "samples"
+		},
+		{
+			"score": "debussy-mandoline",
+			"engine": "osmd",
+			"measures": "35-37",
+			"stage": "complete",
+			"renderCaptureMs": 89,
+			"dimensions": "932x838",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 208,
+			"lintMs": 17,
+			"lint": {
+				"score": 0,
+				"findings": [
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 103,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["35"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 234,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["35"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 523,
+							"y": 234,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["35", "36"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 327,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["35"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 524,
+							"y": 327,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["35", "36"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 481,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["37"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 573,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["37"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 436,
+							"y": 573,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["37"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 701,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["37"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 436,
+							"y": 701,
+							"w": 2,
+							"h": 41
+						},
+						"measures": ["37"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps stavenote ink",
+						"box": {
+							"x": 204,
+							"y": 377,
+							"w": 4,
+							"h": 1
+						},
+						"measures": ["35"]
+					},
+					{
+						"kind": "collision",
+						"message": "tie ink overlaps modifiers ink",
+						"box": {
+							"x": 412,
+							"y": 368,
+							"w": 6,
+							"h": 2
+						},
+						"measures": ["35"]
+					},
+					{
+						"kind": "collision",
+						"message": "curve ink overlaps modifiers ink",
+						"box": {
+							"x": 412,
+							"y": 101,
+							"w": 1,
+							"h": 1
+						},
+						"measures": ["35"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 425,
+							"y": 176,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["35"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 524,
+							"y": 234,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["35", "36"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 234,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["36"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 524,
+							"y": 327,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["35", "36"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 327,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["36"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 631,
+							"y": 176,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["36"]
+					}
+				]
+			},
+			"scope": "samples"
+		},
+		{
+			"score": "debussy-mandoline",
+			"engine": "vexml",
+			"measures": "35-37",
+			"stage": "complete",
+			"renderCaptureMs": 122,
+			"dimensions": "932x866",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 115,
+			"lintMs": 17,
+			"lint": {
+				"score": 85,
+				"findings": [
+					{
+						"kind": "collision",
+						"message": "words ink overlaps stem ink",
+						"box": {
+							"x": 153,
+							"y": 690,
+							"w": 2,
+							"h": 12
+						},
+						"measures": ["37"]
+					}
+				]
+			},
+			"scope": "samples"
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"engine": "alphatab",
+			"measures": "380-382",
+			"stage": "complete",
+			"renderCaptureMs": 63,
+			"dimensions": "932x435",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 956,
+			"lintMs": 13,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "samples"
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"engine": "osmd",
+			"measures": "380-382",
+			"stage": "complete",
+			"renderCaptureMs": 44,
+			"dimensions": "932x468",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 75,
+			"lintMs": 12,
+			"lint": {
+				"score": 40,
+				"findings": [
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 95,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["380"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 175,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["380"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 258,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["380"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 338,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["380"]
+					}
+				]
+			},
+			"scope": "samples"
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"engine": "vexml",
+			"measures": "380-382",
+			"stage": "complete",
+			"renderCaptureMs": 51,
+			"dimensions": "932x499",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 57,
+			"lintMs": 13,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "samples"
+		},
+		{
+			"score": "schubert-erlkonig",
+			"engine": "alphatab",
+			"measures": "75-77",
+			"stage": "complete",
+			"renderCaptureMs": 79,
+			"dimensions": "932x760",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 1717,
+			"lintMs": 16,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "samples"
+		},
+		{
+			"score": "schubert-erlkonig",
+			"engine": "osmd",
+			"measures": "75-77",
+			"stage": "complete",
+			"renderCaptureMs": 79,
+			"dimensions": "932x727",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 166,
+			"lintMs": 16,
+			"lint": {
+				"score": 0,
+				"findings": [
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 93,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["75"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 195,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["75"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 195,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["75"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 275,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["75"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 866,
+							"y": 275,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["75"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 395,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["76"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 512,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["76"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 330,
+							"y": 512,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["76", "77"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 66,
+							"y": 601,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["76"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 330,
+							"y": 601,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["76", "77"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps stem ink",
+						"box": {
+							"x": 159,
+							"y": 490,
+							"w": 2,
+							"h": 3
+						},
+						"measures": ["76"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps stem ink",
+						"box": {
+							"x": 177,
+							"y": 173,
+							"w": 2,
+							"h": 3
+						},
+						"measures": ["75"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps stem ink",
+						"box": {
+							"x": 205,
+							"y": 490,
+							"w": 2,
+							"h": 3
+						},
+						"measures": ["76"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps stem ink",
+						"box": {
+							"x": 251,
+							"y": 490,
+							"w": 1,
+							"h": 3
+						},
+						"measures": ["76"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps stem ink",
+						"box": {
+							"x": 297,
+							"y": 490,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["76"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 288,
+							"y": 151,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["75"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 330,
+							"y": 512,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["76", "77"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 589,
+							"y": 512,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["77"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 330,
+							"y": 601,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["76", "77"]
+					},
+					{
+						"kind": "collision",
+						"message": "stave ink overlaps connector ink",
+						"box": {
+							"x": 589,
+							"y": 601,
+							"w": 1,
+							"h": 41
+						},
+						"measures": ["77"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps stem ink",
+						"box": {
+							"x": 348,
+							"y": 173,
+							"w": 2,
+							"h": 3
+						},
+						"measures": ["75"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps stem ink",
+						"box": {
+							"x": 358,
+							"y": 490,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["77"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 379,
+							"y": 469,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["77"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 394,
+							"y": 151,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["75"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps stem ink",
+						"box": {
+							"x": 417,
+							"y": 490,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["77"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 438,
+							"y": 469,
+							"w": 5,
+							"h": 1
+						},
+						"measures": ["77"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps stem ink",
+						"box": {
+							"x": 469,
+							"y": 490,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["77"]
+					},
+					{
+						"kind": "collision",
+						"message": "text ink overlaps text ink",
+						"box": {
+							"x": 491,
+							"y": 469,
+							"w": 6,
+							"h": 1
+						},
+						"measures": ["77"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps stem ink",
+						"box": {
+							"x": 519,
+							"y": 173,
+							"w": 1,
+							"h": 3
+						},
+						"measures": ["75"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps stem ink",
+						"box": {
+							"x": 529,
+							"y": 490,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["77"]
+					},
+					{
+						"kind": "collision",
+						"message": "modifiers ink overlaps stem ink",
+						"box": {
+							"x": 690,
+							"y": 173,
+							"w": 1,
+							"h": 2
+						},
+						"measures": ["75"]
+					}
+				]
+			},
+			"scope": "samples"
+		},
+		{
+			"score": "schubert-erlkonig",
+			"engine": "vexml",
+			"measures": "75-77",
+			"stage": "complete",
+			"renderCaptureMs": 114,
+			"dimensions": "932x829",
+			"lintCoverage": "structural and element collisions",
+			"attributedCaptureMs": 108,
+			"lintMs": 15,
+			"lint": {
+				"score": 100,
+				"findings": []
+			},
+			"scope": "samples"
+		}
+	],
+	"claraMeasures11to13": {
+		"vexml": {
+			"score": 0,
+			"findings": [
+				{
+					"kind": "collision",
+					"message": "rest ink overlaps notehead ink",
+					"box": {
+						"x": 166,
+						"y": 260,
+						"w": 11,
+						"h": 10
+					},
+					"measures": ["11"]
+				},
+				{
+					"kind": "collision",
+					"message": "rest ink overlaps notehead ink",
+					"box": {
+						"x": 167,
+						"y": 250,
+						"w": 8,
+						"h": 10
+					},
+					"measures": ["11"]
+				},
+				{
+					"kind": "collision",
+					"message": "rest ink overlaps notehead ink",
+					"box": {
+						"x": 167,
+						"y": 245,
+						"w": 6,
+						"h": 5
+					},
+					"measures": ["11"]
+				},
+				{
+					"kind": "collision",
+					"message": "notehead ink overlaps hairpin ink",
+					"box": {
+						"x": 229,
+						"y": 604,
+						"w": 18,
+						"h": 2
+					},
+					"measures": ["13"]
+				},
+				{
+					"kind": "collision",
+					"message": "notehead ink overlaps hairpin ink",
+					"box": {
+						"x": 265,
+						"y": 164,
+						"w": 21,
+						"h": 2
+					},
+					"measures": ["11"]
+				},
+				{
+					"kind": "collision",
+					"message": "hairpin ink overlaps notehead ink",
+					"box": {
+						"x": 349,
+						"y": 162,
+						"w": 15,
+						"h": 1
+					},
+					"measures": ["11"]
+				},
+				{
+					"kind": "collision",
+					"message": "hairpin ink overlaps notehead ink",
+					"box": {
+						"x": 437,
+						"y": 160,
+						"w": 6,
+						"h": 1
+					},
+					"measures": ["11"]
+				},
+				{
+					"kind": "collision",
+					"message": "notehead ink overlaps hairpin ink",
+					"box": {
+						"x": 545,
+						"y": 160,
+						"w": 6,
+						"h": 1
+					},
+					"measures": ["12"]
+				},
+				{
+					"kind": "collision",
+					"message": "rest ink overlaps notehead ink",
+					"box": {
+						"x": 544,
+						"y": 260,
+						"w": 10,
+						"h": 10
+					},
+					"measures": ["12"]
+				},
+				{
+					"kind": "collision",
+					"message": "rest ink overlaps notehead ink",
+					"box": {
+						"x": 545,
+						"y": 250,
+						"w": 9,
+						"h": 10
+					},
+					"measures": ["12"]
+				},
+				{
+					"kind": "collision",
+					"message": "rest ink overlaps notehead ink",
+					"box": {
+						"x": 545,
+						"y": 245,
+						"w": 6,
+						"h": 5
+					},
+					"measures": ["12"]
+				},
+				{
+					"kind": "collision",
+					"message": "hairpin ink overlaps notehead ink",
+					"box": {
+						"x": 629,
+						"y": 164,
+						"w": 15,
+						"h": 2
+					},
+					"measures": ["12"]
+				}
+			]
+		},
+		"osmd": {
+			"score": 0,
+			"findings": [
+				{
+					"kind": "collision",
+					"message": "stave ink overlaps connector ink",
+					"box": {
+						"x": 66,
+						"y": 93,
+						"w": 1,
+						"h": 41
+					},
+					"measures": ["11"]
+				},
+				{
+					"kind": "collision",
+					"message": "stave ink overlaps connector ink",
+					"box": {
+						"x": 66,
+						"y": 256,
+						"w": 1,
+						"h": 41
+					},
+					"measures": ["11"]
+				},
+				{
+					"kind": "collision",
+					"message": "stave ink overlaps connector ink",
+					"box": {
+						"x": 429,
+						"y": 256,
+						"w": 1,
+						"h": 41
+					},
+					"measures": ["11", "12"]
+				},
+				{
+					"kind": "collision",
+					"message": "stave ink overlaps connector ink",
+					"box": {
+						"x": 66,
+						"y": 387,
+						"w": 1,
+						"h": 41
+					},
+					"measures": ["11"]
+				},
+				{
+					"kind": "collision",
+					"message": "stave ink overlaps connector ink",
+					"box": {
+						"x": 429,
+						"y": 387,
+						"w": 1,
+						"h": 41
+					},
+					"measures": ["11", "12"]
+				},
+				{
+					"kind": "collision",
+					"message": "line ink overlaps line ink",
+					"box": {
+						"x": 238,
+						"y": 173,
+						"w": 16,
+						"h": 1
+					},
+					"measures": ["11"]
+				},
+				{
+					"kind": "collision",
+					"message": "notehead ink overlaps notehead ink",
+					"box": {
+						"x": 385,
+						"y": 286,
+						"w": 1,
+						"h": 1
+					},
+					"measures": ["11"]
+				},
+				{
+					"kind": "collision",
+					"message": "stave ink overlaps connector ink",
+					"box": {
+						"x": 429,
+						"y": 256,
+						"w": 1,
+						"h": 41
+					},
+					"measures": ["11", "12"]
+				},
+				{
+					"kind": "collision",
+					"message": "stave ink overlaps connector ink",
+					"box": {
+						"x": 628,
+						"y": 256,
+						"w": 1,
+						"h": 41
+					},
+					"measures": ["12", "13"]
+				},
+				{
+					"kind": "collision",
+					"message": "stave ink overlaps connector ink",
+					"box": {
+						"x": 429,
+						"y": 387,
+						"w": 1,
+						"h": 41
+					},
+					"measures": ["11", "12"]
+				},
+				{
+					"kind": "collision",
+					"message": "stave ink overlaps connector ink",
+					"box": {
+						"x": 628,
+						"y": 387,
+						"w": 1,
+						"h": 41
+					},
+					"measures": ["12", "13"]
+				},
+				{
+					"kind": "collision",
+					"message": "line ink overlaps line ink",
+					"box": {
+						"x": 456,
+						"y": 173,
+						"w": 1,
+						"h": 1
+					},
+					"measures": ["12"]
+				},
+				{
+					"kind": "collision",
+					"message": "text ink overlaps text ink",
+					"box": {
+						"x": 473,
+						"y": 197,
+						"w": 6,
+						"h": 1
+					},
+					"measures": ["12"]
+				},
+				{
+					"kind": "collision",
+					"message": "notehead ink overlaps notehead ink",
+					"box": {
+						"x": 591,
+						"y": 286,
+						"w": 1,
+						"h": 1
+					},
+					"measures": ["12"]
+				},
+				{
+					"kind": "collision",
+					"message": "stave ink overlaps connector ink",
+					"box": {
+						"x": 628,
+						"y": 256,
+						"w": 1,
+						"h": 41
+					},
+					"measures": ["12", "13"]
+				},
+				{
+					"kind": "collision",
+					"message": "stave ink overlaps connector ink",
+					"box": {
+						"x": 866,
+						"y": 256,
+						"w": 1,
+						"h": 41
+					},
+					"measures": ["13"]
+				},
+				{
+					"kind": "collision",
+					"message": "stave ink overlaps connector ink",
+					"box": {
+						"x": 628,
+						"y": 387,
+						"w": 1,
+						"h": 41
+					},
+					"measures": ["12", "13"]
+				},
+				{
+					"kind": "collision",
+					"message": "stave ink overlaps connector ink",
+					"box": {
+						"x": 866,
+						"y": 387,
+						"w": 1,
+						"h": 41
+					},
+					"measures": ["13"]
+				},
+				{
+					"kind": "collision",
+					"message": "line ink overlaps line ink",
+					"box": {
+						"x": 850,
+						"y": 173,
+						"w": 10,
+						"h": 1
+					},
+					"measures": ["13"]
+				},
+				{
+					"kind": "collision",
+					"message": "notehead ink overlaps notehead ink",
+					"box": {
+						"x": 754,
+						"y": 296,
+						"w": 1,
+						"h": 1
+					},
+					"measures": ["13"]
+				},
+				{
+					"kind": "collision",
+					"message": "notehead ink overlaps notehead ink",
+					"box": {
+						"x": 754,
+						"y": 286,
+						"w": 1,
+						"h": 1
+					},
+					"measures": ["13"]
+				}
+			]
+		},
+		"alphatab": {
+			"score": 100,
+			"findings": []
+		}
+	},
+	"validation": {
+		"valid": [
+			"clara-schumann-liebst-du",
+			"debussy-mandoline",
+			"schubert-erlkonig",
+			"beethoven-symphony-5-i"
+		],
+		"invalid": {
+			"dvorak-american-quartet": "MusicXML 4.0 schema rejects dynamics child <r> at source XML line 202494. Preserved unchanged."
+		}
+	},
+	"cpu": "Apple M4 Max",
+	"quadStrayLineLocation": [
+		{
+			"number": "77",
+			"rect": {
+				"x": 30.999999999999996,
+				"y": 133616.82308465912,
+				"width": 284.0899212403806,
+				"height": 369.97598014932896,
+				"top": 133616.82308465912,
+				"right": 315.0899212403806,
+				"bottom": 133986.79906480844,
+				"left": 30.999999999999996
+			}
+		},
+		{
+			"number": "78",
+			"rect": {
+				"x": 315.0899212403806,
+				"y": 133616.82308465912,
+				"width": 186.91007875961932,
+				"height": 369.97598014932896,
+				"top": 133616.82308465912,
+				"right": 501.9999999999999,
+				"bottom": 133986.79906480844,
+				"left": 315.0899212403806
+			}
+		},
+		{
+			"number": "79",
+			"rect": {
+				"x": 501.9999999999999,
+				"y": 133616.82308465912,
+				"width": 212.08992124038053,
+				"height": 369.97598014932896,
+				"top": 133616.82308465912,
+				"right": 714.0899212403804,
+				"bottom": 133986.79906480844,
+				"left": 501.9999999999999
+			}
+		},
+		{
+			"number": "80",
+			"rect": {
+				"x": 714.0899212403805,
+				"y": 133616.82308465912,
+				"width": 186.91007875961927,
+				"height": 369.97598014932896,
+				"top": 133616.82308465912,
+				"right": 900.9999999999998,
+				"bottom": 133986.79906480844,
+				"left": 714.0899212403805
+			}
+		}
+	]
+}
