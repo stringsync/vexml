@@ -228,8 +228,20 @@ rests on beats rather than as pitched-note objects, so its lower note count alon
 | Beethoven | 10,029 | 10,029 | 225 / 225 |
 
 The one quartet Violin II discrepancy (3,830 source pitched notes versus 3,829 in the
-alphaTab model) is unresolved; a merged duplicate, importer omission or alternate
-representation must be distinguished before declaring a missing audible note. Aggregate
+alphaTab model) is the score's only `<cue/>` note: P2 measure 63, voice 2, an E4 16th
+with `print-object="no"`, `<stem>none</stem>` and a slur stop. alphaTab 1.8.4's MusicXML
+importer returns from note parsing on `<cue>` (`case "cue": return;` in
+`alphaTab.core.mjs`), so it never enters the model. The `forAlphatab` rewrites leave
+`<cue>` and `print-object` alone. A per-measure diff of source pitch and duration against
+the model imported from the raw source finds no other missing or extra pitched note in
+any score. The note is hidden, so no engine should draw it: this is no rendering defect
+and no missing music on the page. The same diff shows two model differences that change
+playback, not drawing, neither traced in alphaTab's code: 17 Schubert and quartet measures
+where a beat before a grace note is 120 ticks short (one is 24 short), which looks like
+alphaTab taking the grace's time from the previous beat, and Beethoven P5, transposed
+`chromatic -2` in measure 1 only, sounding 2 semitones higher than written plus
+transpose in 46 measures from measure 49 on, which may be the diff script's fault rather
+than alphaTab's. Aggregate
 counts cannot prove every pitch, voice, duration, lyric syllable or notation is correct.
 Likewise, all-tracks selection and model counts cannot certify the rejected full PNGs.
 
@@ -296,7 +308,8 @@ observations establish substantial implementation cost independently of screensh
 area. They do not partition the historical wall-time gap into precise percentages.
 
 No missing part or missing block of measures explains the alphaTab song speedups.
-There is one unresolved pitched-note discrepancy in the quartet, and several definite
+The one pitched-note discrepancy in the quartet is a hidden cue note alphaTab drops on
+import, and there are several definite
 notation/styling differences. Their isolated timing contributions are **unmeasured**.
 The profiles support narrower follow-ups on repeated metadata/offset scans, rather than
 a broad renderer rewrite or disabling the public interaction/playback features.
@@ -312,7 +325,7 @@ tests; no screenshot changes). Full checks run in the normal splates merge gate.
 
 Follow-ups are recorded on the task board: #153 caches part staff facts for a render,
 #154 avoids repeated direction-offset history scans, #155 investigates the grace notes,
-#156 covers rest fermatas, and deferred #157 localizes the alphaTab note-count discrepancy.
+#156 covers rest fermatas, and #157 traced the alphaTab note-count discrepancy to the hidden cue note above.
 A separate full-long-score capture design would
 be required before reporting new full-score end-to-end medians. The current task does
 not raise capture limits or optimize engraving from wall-clock ratios alone.
