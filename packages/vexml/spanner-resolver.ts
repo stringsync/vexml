@@ -13,6 +13,7 @@ import { Rect } from 'webappwiz/geometry';
 import type { Appearance, GlyphType } from './appearance';
 import { CollisionResolver } from './collision-resolver';
 import {
+	HAIRPIN_CHAIN_GAP,
 	OTTAVA_TEXT_LINE,
 	PEDAL_BOTTOM_MARGIN,
 	PEDAL_BOTTOM_TEXT_LINE,
@@ -664,7 +665,8 @@ export class SpannerResolver {
 	 * Put hairpins that run end to end on one line: a crescendo straight into a diminuendo
 	 * reads as one swell, so each cleared on its own (one dropped under low notes, the next
 	 * left at the staff) would draw the swell as a step. Every wedge in a chain takes the
-	 * furthest offset any of them needed, which still clears what each one cleared.
+	 * furthest offset any of them needed, which still clears what each one cleared. A
+	 * crescendo and the diminuendo it meets keep a small gap between their mouths.
 	 */
 	private alignWedgeChains(wedges: readonly Hairpin[]): void {
 		const touch = 2 * this.translator.noteheadHalfWidth();
@@ -684,6 +686,12 @@ export class SpannerResolver {
 					next.above === tail.above &&
 					Math.abs(next.rect.left - tail.rect.right) <= touch
 				) {
+					if (tail.opens && !next.opens) {
+						const gap = next.rect.left - tail.rect.right;
+						const inset = Math.max(0, (HAIRPIN_CHAIN_GAP - gap) / 2);
+						tail.setHorizontalInsets(0, inset);
+						next.setHorizontalInsets(inset, 0);
+					}
 					chain.push(next);
 					tail = next;
 				}

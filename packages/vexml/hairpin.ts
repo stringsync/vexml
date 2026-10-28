@@ -48,6 +48,8 @@ export class Hairpin {
 	 * direction the hairpin sits: positive is further from the staff.
 	 */
 	private offset = 0;
+	private startInset = 0;
+	private endInset = 0;
 	/* The wedge's stroke width (`<line-width type="wedge">`); null strokes at the context's. */
 	private lineWidth: number | null = null;
 	setContext(context: RenderContext): this {
@@ -61,6 +63,11 @@ export class Hairpin {
 	getOffset(): number {
 		return this.offset;
 	}
+	setHorizontalInsets(start: number, end: number): this {
+		this.startInset = start;
+		this.endInset = end;
+		return this;
+	}
 	setLineWidth(lineWidth: number | null): this {
 		this.lineWidth = lineWidth;
 		return this;
@@ -70,6 +77,9 @@ export class Hairpin {
 	}
 	get above(): boolean {
 		return this.placement === 'above';
+	}
+	get opens(): boolean {
+		return this.crescendo;
 	}
 	/** The band the wedge occupies, for the caller's page crop and clearance check. */
 	get bounds(): { top: number; bottom: number } {
@@ -95,8 +105,8 @@ export class Hairpin {
 	/** The box the wedge is drawn in: the band above, over the notes it spans. */
 	get rect(): Rect {
 		const { top, bottom } = this.bounds;
-		const x1 = this.from.getAbsoluteX();
-		const x2 = this.to.getAbsoluteX();
+		const x1 = this.from.getAbsoluteX() + this.startInset;
+		const x2 = this.to.getAbsoluteX() - this.endInset;
 		return new Rect(Math.min(x1, x2), top, Math.abs(x2 - x1), bottom - top);
 	}
 	draw(): void {
@@ -108,8 +118,8 @@ export class Hairpin {
 		const mid = (top + bottom) / 2;
 		// The wedge spans notehead to notehead. A crescendo opens rightward (its point sits
 		// at the first note), a diminuendo closes rightward (its point sits at the last).
-		const x1 = this.from.getAbsoluteX();
-		const x2 = this.to.getAbsoluteX();
+		const x1 = this.from.getAbsoluteX() + this.startInset;
+		const x2 = this.to.getAbsoluteX() - this.endInset;
 		const [pointX, mouthX] = this.crescendo ? [x1, x2] : [x2, x1];
 		// A niente point is a small circle the two arms run up to, not a shared vertex.
 		const radius = this.niente ? HAIRPIN_NIENTE_RADIUS : 0;

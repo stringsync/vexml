@@ -3,7 +3,7 @@ import type { Chord, Note } from '@stringsync/mdom';
 import type { RenderContext, Stave, StaveNote, TabNote } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import { Appearance } from './appearance';
-import { WORDS_NOTE_CLEARANCE } from './constants';
+import { HAIRPIN_CHAIN_GAP, WORDS_NOTE_CLEARANCE } from './constants';
 import type { DirectionLineTask, DirectionPlacer } from './direction-placer';
 import type { Hairpin } from './hairpin';
 import type { DirectionLineSpan, PedalMark, WedgeMark } from './score-reader';
@@ -317,18 +317,23 @@ describe('SpannerResolver', () => {
 		expect(offset).toBe(225 + WORDS_NOTE_CLEARANCE - 210);
 	});
 
-	it('puts a crescendo and the diminuendo it runs into on one line', () => {
+	it('separates a crescendo from its diminuendo and keeps both on one line', () => {
 		const offsets = new Map<string, number>();
+		const insets = new Map<string, number[]>();
 		const wedge = (name: string, left: number) =>
 			({
 				stave: s,
 				above: false,
+				opens: name === 'cresc',
 				rect: new Rect(left, 210, 30, 10),
 				bounds: { top: 210, bottom: 220 },
 				setOffset: (o: number) => {
 					offsets.set(name, o);
 				},
 				getOffset: () => offsets.get(name) ?? 0,
+				setHorizontalInsets: (start: number, end: number) => {
+					insets.set(name, [start, end]);
+				},
 				setContext() {
 					return this;
 				},
@@ -340,6 +345,8 @@ describe('SpannerResolver', () => {
 		// Only the crescendo's column has a low note; the diminuendo follows it down anyway.
 		obstacles.set(note, new Rect(30, 180, 10, 45));
 		resolver.resolve(anchors(new Map([[{} as Note, note]])));
+		expect(insets.get('cresc')).toEqual([0, HAIRPIN_CHAIN_GAP / 2]);
+		expect(insets.get('dim')).toEqual([HAIRPIN_CHAIN_GAP / 2, 0]);
 		expect(offsets.get('cresc')).toBe(225 + WORDS_NOTE_CLEARANCE - 210);
 		expect(offsets.get('dim')).toBe(offsets.get('cresc'));
 	});

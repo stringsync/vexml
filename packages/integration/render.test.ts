@@ -1209,8 +1209,8 @@ describe('render', () => {
 	//   triplet 16ths G3-E4-G3 at divisions 6, the G3s on ledger lines, each triplet's "3"
 	//   placed below with no bracket. A crescendo over the first three triplets runs straight
 	//   into a diminuendo over the last three. Both wedges sit below the ledger-line noteheads
-	//   and the "3"s, clear of both, and on one line, so the pair reads as a single swell
-	//   rather than a step. Wraps to its own system.
+	//   and the "3"s, clear of both, and on one line, with a small gap at the shared note,
+	//   so the pair reads as a single swell rather than a step. Wraps to its own system.
 	// - M9: a below diminuendo over three B4s with a below "espressivo" on the first note
 	//   (Beethoven, An die ferne Geliebte m. 9). The hairpin keeps its place at the staff and
 	//   the words sit under it, clear of the wedge, rather than printed through it.

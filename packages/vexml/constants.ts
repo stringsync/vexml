@@ -356,6 +356,9 @@ export const NAVIGATION_TEXT_GAP = 4;
 /** How tall a crescendo/diminuendo hairpin's open mouth is. */
 export const HAIRPIN_HEIGHT = 10;
 
+/** Horizontal air between a crescendo and the diminuendo immediately following it. */
+export const HAIRPIN_CHAIN_GAP = 4;
+
 /** Radius of the circle at a niente hairpin's point. */
 export const HAIRPIN_NIENTE_RADIUS = 3;
 
