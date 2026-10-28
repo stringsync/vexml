@@ -2953,6 +2953,16 @@ describe('render', () => {
 		);
 	});
 
+	// Treble stave, 4/4: fermatas on rests.
+	// - M1: a whole-measure rest with a normal fermata above.
+	// - M2: a quarter rest with an inverted fermata below, a quarter rest pinned to E4 with a
+	//   normal fermata above, then a half-note C5.
+	it.concurrent('renders rest-fermata.png', async () => {
+		expect(await testing.render('rest-fermata.musicxml')).toMatchScreenshot(
+			'rest-fermata.png',
+		);
+	});
+
 	// Treble stave, 4/4: cue notes, printed at cue size and silent in playback.
 	// - M1: C5, a <cue/> D5, an E5 with <type size="cue"> and F5; the cue D5 and E5 are small.
 	// - M2: a beamed cue eighth pair (F#5 with its accidental, A5), a dotted cue quarter on

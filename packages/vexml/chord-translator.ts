@@ -70,6 +70,7 @@ export class ChordTranslator {
 			this.hideSpacing(rest, lead);
 			this.attachSign(rest, opts);
 			this.addDots(rest, lead);
+			this.notations.attachRest(rest, chord);
 			return rest;
 		}
 		if (lead.isGrace) {

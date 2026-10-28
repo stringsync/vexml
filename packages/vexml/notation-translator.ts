@@ -69,6 +69,13 @@ export class NotationTranslator {
 		}
 	}
 
+	/* A rest takes only its fermata: its other notations have no notehead to sit on. */
+	attachRest(staveNote: StaveNote, chord: Chord): void {
+		if (!this.hidesNotations(chord.lead)) {
+			this.addFermata(staveNote, chord.lead);
+		}
+	}
+
 	private hidesNotations(note: Note): boolean {
 		const groups = note.childrenNamed('notations');
 		return (
