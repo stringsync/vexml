@@ -472,3 +472,42 @@ recoverable totals or proof that a collision check can be skipped.
 
 No engraving optimization was made in this checkpoint. Its code changes are limited
 to opt-in profiling selectors, input/output evidence and mount-only sampling.
+
+## No-go: render-scoped chord preparation reuse
+
+A bounded experiment at `be37bcd48b4a6ba27f83db0daffd0b9ec65fb74d` cached plain
+`ChordTranslator` constructor inputs and key-line metrics against baseline `4a4c778b`.
+It never shared VexFlow tickables: each layout, draw and spill retry still built fresh notes,
+modifiers and voices. Clef, octave shift, centering, slash form and both stem inputs keyed the
+cache, and starting a render cleared it, including progressive and font-residency retries.
+
+- [profiling-reuse-preparation-results.json](profiling-reuse-preparation-results.json):
+  revisions, settings, every sample, input/PNG hashes, content evidence and duplicate-read
+  counters. Both bounded cells used the checkpoint's 900-pixel reference width, vexml config,
+  DPR 1, font readiness and capture guard. Each process warmed `note.musicxml`; five ordinary
+  render-plus-PNG samples retained the first encounter. Runs were sequential, baseline then
+  current, with no full-score measurement.
+
+Milliseconds, median (minimum to maximum), n=5:
+
+| Input | Baseline | Preparation reuse | Current minus baseline |
+| --- | ---: | ---: | ---: |
+| Debussy complete | 515.8 (509.6–942.9) | 511.2 (496.7–925.7) | -4.6 |
+| Quartet 423–430 | 92.0 (90.0–168.9) | 98.6 (92.1–182.1) | +6.6 |
+
+The separate diagnostic mounts were 310.7 → 313.5 ms for Debussy and 28.9 → 28.7 ms for the
+quartet cell. These single observations are not medians and agree with the ordinary samples:
+there is no consistent material engraving gain. The small improvement is below the spread,
+while the dense cell did not improve.
+
+Every sample's PNG SHA256 matched within and across revisions. Part IDs, measure/staff/note
+counts, dimensions, canvas counts, DPR and loaded font state also matched. Focused counters
+showed that two equal pitched-note builds saved one of four duration reads, equal key-line
+lookups made one VexFlow key-properties read instead of two, and reset or changed inputs forced
+recomputation. They also proved fresh note and key-array identities. Thus duplicate work did
+fall, but the saved plain-data preparation is not a worthwhile share of mount time.
+
+**No-go for this target.** The experiment and its focused tests were removed rather than landed
+as a speculative refactor. The profile still does not justify sharing mutable, formatted VexFlow
+tickables across passes. No rendering source, screenshot, geometry or collision behavior changes
+result from this investigation.

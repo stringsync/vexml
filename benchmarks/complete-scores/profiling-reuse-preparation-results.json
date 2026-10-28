@@ -1,0 +1,94 @@
+{
+	"date": "2026-10-28",
+	"baselineRevision": "4a4c778b51b16450cc1ee4de022dc9f7a490b15a",
+	"currentRevision": "be37bcd48b4a6ba27f83db0daffd0b9ec65fb74d",
+	"profilingToolingRevision": "be37bcd48b4a6ba27f83db0daffd0b9ec65fb74d",
+	"host": "Apple M4 Max; macOS 26.6.2 arm64; Bun 1.4.4",
+	"chromium": "149.0.7827.55 (Playwright revision 1228)",
+	"policy": {
+		"execution": "sequential baseline then current for each cell; one Chromium process and reusable vexml tab per invocation",
+		"warmup": "one note.musicxml render per process; first encounter with each measured score retained in samples",
+		"ordinarySamplesPerBoundedCell": 5,
+		"diagnostics": "one additional CPU-profiled mount after the ordinary samples; capture profiled separately",
+		"referenceWidth": 900,
+		"dpr": 1,
+		"vexmlConfig": {
+			"stretchSingleSystem": false,
+			"minLastSystemFill": 1,
+			"progressive": false
+		},
+		"captureLimitDevicePixels": 33554432,
+		"fullScores": "not measured"
+	},
+	"cells": [
+		{
+			"score": "debussy-mandoline",
+			"range": "all",
+			"inputSha256": "b1933c028a13609a93bca0d7099c71ce8c2b1396a8fefe96ae958519486b4337",
+			"png": {
+				"width": 932,
+				"height": 11911,
+				"sha256": "70c64a01a286de9e40028462862e6729552c7327d72abc99b1593467c741f1f8"
+			},
+			"content": [
+				{ "id": "P1", "measures": 70, "staves": 1, "notes": 232 },
+				{ "id": "P2", "measures": 70, "staves": 2, "notes": 1228 }
+			],
+			"baseline": {
+				"samplesMs": [
+					942.8772499999999, 510.04158299999995, 515.772667, 522.5900409999999,
+					509.64545799999996
+				],
+				"diagnosticMountMs": 310.69450000000006,
+				"diagnosticCaptureMs": 181.62020800000028
+			},
+			"current": {
+				"samplesMs": [
+					925.6884160000001, 496.6731669999999, 511.19462499999986,
+					524.3217920000002, 508.42166700000007
+				],
+				"diagnosticMountMs": 313.5227920000002,
+				"diagnosticCaptureMs": 180.7725000000005
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "423-430",
+			"inputSha256": "427656f8f06ad2cc3c290680916ed9547176ba3a70ba0f1f64bad488c0d28e74",
+			"png": {
+				"width": 932,
+				"height": 1774,
+				"sha256": "ca5ffadab19bd32c407307b9f2d86b883d0cba49f13eaf921d497e108d204fbf"
+			},
+			"content": [
+				{ "id": "P1", "measures": 8, "staves": 1, "notes": 22 },
+				{ "id": "P2", "measures": 8, "staves": 1, "notes": 13 },
+				{ "id": "P3", "measures": 8, "staves": 1, "notes": 14 },
+				{ "id": "P4", "measures": 8, "staves": 1, "notes": 13 }
+			],
+			"baseline": {
+				"samplesMs": [
+					168.91374999999994, 92.02512500000012, 101.09904099999994,
+					91.48679199999992, 90.00566700000013
+				],
+				"diagnosticMountMs": 28.92470800000001,
+				"diagnosticCaptureMs": 71.07129200000008
+			},
+			"current": {
+				"samplesMs": [
+					182.07124999999996, 99.20083299999988, 98.64462500000013,
+					92.05437500000016, 92.7404590000001
+				],
+				"diagnosticMountMs": 28.673999999999978,
+				"diagnosticCaptureMs": 70.575875
+			}
+		}
+	],
+	"duplicateWorkCoverage": {
+		"constructorPreparation": "two equal pitched-note builds made three duration reads rather than the uncached four; the remaining two reads belong to per-note slash-head dressing",
+		"freshState": "cached preparation still returned distinct StaveNote and keys-array identities; mutating one note's stem did not affect the other",
+		"cacheKeys": "clef, octave shift, default stem, planned stem, slash form, and centering each forced preparation; reset forced it again",
+		"keyLineMetrics": "equal inputs made one VexFlow key-properties read; octave shift and render reset each forced another",
+		"disposition": "coverage and implementation were removed after the bounded timings showed no worthwhile gain"
+	}
+}
