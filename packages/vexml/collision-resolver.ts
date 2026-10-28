@@ -217,6 +217,7 @@ export class CollisionResolver {
 
 export type CollisionKind =
 	| 'note'
+	| 'stem'
 	| 'tie'
 	| 'annotation'
 	| 'diagram'

@@ -1218,6 +1218,9 @@ describe('render', () => {
 	//   (the default draws vexml's usual mouth): its mouth opens twice as wide as M4's.
 	// - M11: a below diminuendo opening at spread="7", about half the default: a narrow
 	//   mouth closing to its point. Both keep the center line of the default band.
+	// - M12: Clara Schumann's Liebst du um Schönheit, m.12 (five flats): a below
+	//   diminuendo from Db5 to Ab4 closes under the syllables "Ju-gend," without crossing
+	//   their ink, followed by a half rest.
 	// ponytail: a hairpin that wraps across a system break isn't split into two partials the
 	// way a tie or slur is; no fixture reaches that yet.
 	it.concurrent('renders wedges.png', async () => {
@@ -3559,6 +3562,16 @@ describe('render', () => {
 		expect(await testing.render('staff_dynamics.musicxml')).toMatchScreenshot(
 			'staff_dynamics.png',
 		);
+	});
+
+	// Debussy's Mandoline, m.37: two treble staves in 6/8, three beamed cross-staff pairs
+	// of A3/E4/A4 and A4/E5/A5 eighth-note chords. Automatic placement centers mf below
+	// staff 1 on the first chord, directly beside its long stem; the dynamic moves sideways
+	// clear of that stem without dropping past the staff.
+	it.concurrent('renders dynamics_cross_stave.png', async () => {
+		expect(
+			await testing.render('dynamics_cross_stave.musicxml'),
+		).toMatchScreenshot('dynamics_cross_stave.png');
 	});
 
 	// Three transposing parts (Bb trumpet, Eb horn, piano) each playing the same concert C

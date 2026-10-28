@@ -1398,13 +1398,24 @@ export class DirectionPlacer {
 						0,
 					)
 				: cleared;
+		// A cross-staff stem spans too far for a vertical lift/drop to clear without
+		// carrying the mark past another stave. Move beside its thin column instead.
+		const stemmed = this.collisionResolver
+			.query(bounded)
+			.some((c) => c.other.kind === 'stem')
+			? this.collisionResolver.pushRightOf(
+					bounded,
+					'stem',
+					WORDS_NOTE_CLEARANCE,
+				)
+			: bounded;
 		// A mark anchored near the right edge would run off the canvas and be clipped (there's
 		// no horizontal crop-growth knob), so pull it back inside: the same treatment a chord
 		// diagram at the edge gets.
 		const placed = opts.pinnedX
 			? bounded
 			: this.collisionResolver.nudgeInsideX(
-					bounded,
+					stemmed,
 					this.scratchViewport,
 					PAGE_MARGIN_X,
 				);

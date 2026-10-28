@@ -60,6 +60,8 @@ export interface SpannerReporter {
 	 * beam-extended stem tip ∪ above articulations) to its bottom, one notehead wide:
 	 * what a pedal band or ottava label has to drop/lift clear of. */
 	noteObstacle(note: StaveNote): Rect;
+	/** The lyric boxes pinned on `stave`, for hairpins resolving after the note pass. */
+	lyricObstacles(stave: Stave): readonly Rect[];
 	/** Ink that reached `top`: keeps the page crop above it. */
 	growPageTop(top: number): void;
 	/** Ink that reached `bottom`: keeps the page crop below it. */
@@ -563,10 +565,10 @@ export class SpannerResolver {
 
 	/*
 	 * Move a hairpin further from the staff until it clears what reaches into its band: the
-	 * notes it spans, their tuplet numbers, and any slur bowing the same way. A wedge parks at
-	 * a fixed gap from the staff, which is exactly where ledger-line notes, a below-placed
-	 * triplet's "3" and an under-slur over low notes all land. None of them can yield (each is
-	 * pinned to its notes), so the wedge is the one that moves.
+	 * notes it spans, their tuplet numbers and lyrics, and any slur bowing the same way. A
+	 * wedge parks at a fixed gap from the staff, which is exactly where ledger-line notes, a
+	 * below-placed triplet's "3", lyrics and an under-slur over low notes all land. None of
+	 * them can yield (each is pinned to its notes), so the wedge is the one that moves.
 	 *
 	 * Scoped like {@link dropPedalClear}: the shared index is per-system and wedges resolve
 	 * after the last one, so this indexes only what was drawn over this wedge's own stave.
@@ -594,6 +596,9 @@ export class SpannerResolver {
 		}
 		for (const tuplet of tuplets) {
 			scoped.add({ rect: this.translator.tupletRect(tuplet), kind: 'note' });
+		}
+		for (const rect of this.reporter.lyricObstacles(wedge.stave)) {
+			scoped.add({ rect, kind: 'annotation' });
 		}
 		const placed = wedge.above
 			? scoped.liftClear(natural, WORDS_NOTE_CLEARANCE, {})

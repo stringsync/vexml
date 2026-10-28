@@ -24,6 +24,7 @@ export interface PinnedSyllable {
 	readonly row: number;
 	readonly left: number;
 	readonly width: number;
+	readonly rect: Rect;
 	readonly verseIndex: number;
 	readonly textSize: number;
 	readonly lyric: LyricMark;
@@ -173,6 +174,7 @@ export class LyricPlacer {
 					row,
 					left: rect.x,
 					width: w,
+					rect,
 					verseIndex: lyric.verseIndex,
 					textSize: lyric.textSize,
 					lyric,

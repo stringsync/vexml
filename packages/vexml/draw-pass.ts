@@ -514,6 +514,11 @@ export class DrawPass {
 			// live here with the rest of the page state.
 			{
 				noteObstacle: (note) => this.systemFormatter.noteRect(note),
+				lyricObstacles: (stave) =>
+					this.lyricPlacer
+						.pinnedSyllables()
+						.filter((syllable) => syllable.stave === stave)
+						.map((syllable) => syllable.rect),
 				growPageTop: (top) => {
 					this.pageTop = Math.min(this.pageTop, top);
 				},

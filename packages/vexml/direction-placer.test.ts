@@ -556,6 +556,26 @@ describe('DirectionPlacer', () => {
 		]);
 	});
 
+	it('moves a below dynamic beside a cross-staff stem instead of under it', () => {
+		const { placer, texts, resolver } = makePlacer();
+		resolver.add({ rect: new Rect(195, 140, 2, 100), kind: 'stem' });
+		placer.placeColumn(
+			column({
+				dynamics: [
+					{
+						stave: stave(),
+						text: 'p',
+						glyph: true,
+						anchor: note(200, stave()),
+						placement: 'below',
+					},
+				],
+			}),
+		);
+		expect(texts[0]?.x).toBe(197 + WORDS_NOTE_CLEARANCE);
+		expect(texts[0]?.y).toBe(140 + WORDS_Y_OFFSET + 24);
+	});
+
 	it('stacks figured-bass rows downward off each other', () => {
 		const { placer, texts } = makePlacer();
 		placer.placeColumn(

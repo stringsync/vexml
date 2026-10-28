@@ -132,6 +132,7 @@ describe('SpannerResolver', () => {
 		// The crop growth and note obstacles the resolver reports back to its driver.
 		const page = { top: Infinity, bottom: 0 };
 		const obstacles = new Map<StaveNote, Rect>();
+		const lyrics: Rect[] = [];
 		const resolver = new SpannerResolver(
 			{ openGroup() {}, closeGroup() {} } as unknown as RenderContext,
 			builder(spanners),
@@ -145,6 +146,7 @@ describe('SpannerResolver', () => {
 			{
 				noteObstacle: (note: StaveNote) =>
 					obstacles.get(note) ?? new Rect(0, 0, 0, 0),
+				lyricObstacles: () => lyrics,
 				growPageTop: (top: number) => {
 					page.top = Math.min(page.top, top);
 				},
@@ -163,7 +165,7 @@ describe('SpannerResolver', () => {
 				...opts,
 			},
 		);
-		return { resolver, spill, directionLines, page, obstacles };
+		return { resolver, spill, directionLines, page, obstacles, lyrics };
 	};
 
 	const anchors = (
@@ -303,6 +305,15 @@ describe('SpannerResolver', () => {
 		// The note hangs to y=225 inside the wedge's column.
 		obstacles.set(note, new Rect(30, 180, 10, 45));
 		resolver.resolve(anchors(new Map([[{} as Note, note]])));
+		expect(offset).toBe(225 + WORDS_NOTE_CLEARANCE - 210);
+	});
+
+	it('drops a below-stave wedge under lyrics on its stave', () => {
+		const { resolver, lyrics } = resolverOf({
+			buildWedges: () => [wedge],
+		} as unknown as Partial<SpannerBuilder>);
+		lyrics.push(new Rect(30, 200, 30, 25));
+		resolver.resolve(anchors());
 		expect(offset).toBe(225 + WORDS_NOTE_CLEARANCE - 210);
 	});
 

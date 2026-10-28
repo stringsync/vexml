@@ -467,8 +467,8 @@ export class SystemFormatter {
 				);
 				// Register each note as a collision obstacle now that its position is final, so the
 				// above-stave annotations drawn next can be nudged clear of it (and of high ties).
-				// A cross-staff stem is left out like its spill: lifting a dynamic clear of it
-				// would carry the dynamic past the far stave.
+				// A cross-staff stem is a separate obstacle: vertical clearance would carry
+				// a dynamic past the far stave, so side text moves beside it instead.
 				this.collisionResolver.add({
 					rect: heads
 						? new Rect(box.getX(), spillTop, box.getW(), spillBottom - spillTop)
@@ -476,6 +476,18 @@ export class SystemFormatter {
 					kind: 'note',
 					band: p.row,
 				});
+				if (heads && note.hasStem()) {
+					const { topY, baseY } = note.getStemExtents();
+					this.collisionResolver.add({
+						rect: new Rect(
+							note.getStemX() - Stem.WIDTH / 2,
+							Math.min(topY, baseY),
+							Stem.WIDTH,
+							Math.abs(baseY - topY),
+						),
+						kind: 'stem',
+					});
+				}
 				if (p.tiedNotes.has(note) && note.getStemDirection() === Stem.DOWN) {
 					this.collisionResolver.add({
 						rect: this.tieApexRect(note),

@@ -673,5 +673,64 @@
         <type>quarter</type>
       </note>
     </measure>
+    <!-- Clara Schumann, Liebst du um Schönheit, m.12: a hairpin below lyrics. -->
+    <measure number="12">
+      <attributes>
+        <divisions>2</divisions>
+        <key>
+          <fifths>-5</fifths>
+        </key>
+        <time symbol="common">
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+      </attributes>
+      <direction placement="below">
+        <direction-type>
+          <wedge type="diminuendo" number="1"/>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch>
+          <step>D</step>
+          <alter>-1</alter>
+          <octave>5</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>down</stem>
+        <lyric number="1">
+          <syllabic>begin</syllabic>
+          <text>Ju</text>
+        </lyric>
+      </note>
+      <direction placement="below">
+        <direction-type>
+          <wedge type="stop" number="1"/>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch>
+          <step>A</step>
+          <alter>-1</alter>
+          <octave>4</octave>
+        </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <stem>up</stem>
+        <lyric number="1">
+          <syllabic>end</syllabic>
+          <text>gend,</text>
+        </lyric>
+      </note>
+      <note>
+        <rest/>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+      </note>
+    </measure>
   </part>
 </score-partwise>
