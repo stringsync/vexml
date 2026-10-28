@@ -1,4 +1,5 @@
 import { MDOMParser, MElement, MusicXMLSerializer } from '@stringsync/mdom';
+import { materializeSliceState } from './slice-state';
 
 export type SlicePolicy = 'standalone' | 'raw';
 export type SliceCoordinate = 'label' | 'position';
@@ -15,7 +16,11 @@ export type SliceCoordinate = 'label' | 'position';
  * all retained alternative endings. All repeats (even complete or nested ones),
  * endings, and D.C./D.S./Fine/To Coda navigation are removed rather than repaired
  * or expanded. `raw` preserves these for contextual reproductions. Other
- * spanners, such as ties, slurs, and wedges, stay half-open across cuts.
+ * direction spans are reopened and closed at each contiguous retained run.
+ * Note-anchored spans (ties, slurs, tuplets, glissandi, etc.) retain their source
+ * endpoints, including dangling endpoints: moving one would change its note.
+ * Measure styles reopen at each run and may remain active through its end;
+ * multiple-rest counts are clipped. Raw mode only materializes opening signatures.
  */
 export class MeasureSlicer {
 	private readonly wanted: Set<string>;
@@ -83,7 +88,11 @@ export class MeasureSlicer {
 					`part ${part.id} has no measures matching "${this.spec}"`,
 				);
 			}
-			first.materializeSignatures();
+			if (this.policy === 'standalone') {
+				materializeSliceState(measures, selected);
+			} else {
+				first.materializeSignatures();
+			}
 			for (const measure of measures) {
 				if (!selected.has(measure)) {
 					measure.remove();

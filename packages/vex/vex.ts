@@ -25,9 +25,8 @@ import { WarmBench } from './warm-bench';
 export interface VexDeps extends Deps {
 	fs: Fs;
 	/**
-	 * Where the user actually ran `vex`. index.ts chdir'd to the repo root
-	 * before running, so the commands that take user paths resolve them
-	 * against this instead of the working directory.
+	 * Directory where the user invoked `vex`, used to resolve relative input
+	 * and output paths.
 	 */
 	invocationDir: string;
 }
@@ -224,7 +223,7 @@ vex
 	.option('policy', z.enum(['standalone', 'raw'] as const), {
 		default: 'standalone' as const,
 		description:
-			'standalone: play retained measures once in source order; remove all repeats, endings and D.C./D.S./Fine/To Coda navigation, even within the slice. raw: preserve markings across cuts',
+			'standalone: play retained measures once in source order; remove all repeats, endings and D.C./D.S./Fine/To Coda navigation, even within the slice; restore direction spans and measure styles at cuts, preserving note-anchored endpoints. raw: preserve markings across cuts',
 	})
 	.option('input', z.string(), { description: 'input musicxml file' })
 	.option('measures', z.string(), {
