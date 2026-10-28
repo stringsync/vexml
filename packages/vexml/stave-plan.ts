@@ -169,8 +169,8 @@ export class StavePlan {
 		// third part alongside a split notation/TAB pair.
 		const kinds: boolean[] = [];
 		for (const part of parts) {
-			for (let staff = 1; staff <= Math.max(part.staveCount, 1); staff++) {
-				kinds.push(this.isTab(part, String(staff)));
+			for (const staff of this.visibleNumbers(part)) {
+				kinds.push(this.isTab(part, staff));
 			}
 		}
 		return kinds.includes(true) && kinds.includes(false);

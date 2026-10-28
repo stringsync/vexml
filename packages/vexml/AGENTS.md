@@ -44,7 +44,8 @@ Two rules cut across the draw stage:
 - `score-reader.ts` is the only place that reads mdom attributes (clefs, keys,
   times, part groups, repeats, directions, endings); nothing else reads the
   document directly. Questions that also need the caller's config live in
-  `stave-plan.ts` (which staves a part shows, which are tablature).
+  `stave-plan.ts` (which staves a part shows, which are tablature, with its
+  render-local metadata cache covered by `stave-plan.test.ts`).
 - The translators turn one mdom chord into vexflow objects. A single wrong
   note is one of these:
   - `chord-translator.ts`: the StaveNote itself: keys, noteheads,
