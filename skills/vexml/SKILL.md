@@ -455,10 +455,11 @@ Rules that keep an editor correct:
   consumer, must run inside `editor.history.edit(label, () => { ... })`. Transactions
   are synchronous and atomic. Read `history.canUndo`, `canRedo`, `undoLabel` and
   `redoLabel` for controls.
-- Use one controller per render. Options: `selection: { color, focusColor }`,
-  `follow`, `allowDeselect`, `bindings`, `view`; set `selection`, `keyboard`, `pointer`
-  or `follow` to `false` to disable one. `editing.execute(command)` lets buttons issue
-  commands and `editing.setEnabled(false)` suspends input while keeping the session.
+- Use one controller per render. Options: `selection: { color, focusColor, caretColor,
+  caretWidth }`, `follow`, `allowDeselect`, `bindings`, `view`; set `selection`,
+  `keyboard`, `pointer` or `follow` to `false` to disable one. `editing.execute(command)`
+  lets buttons issue commands and `editing.setEnabled(false)` suspends input and visuals
+  while keeping the session.
 - Without a controller, use `select(note)`, `selectNotes(notes)` or
   `selectElements(...)` and listen for `selectionchange` and `voicechange`.
 - Select structures with `selectMeasure(measure)` and
@@ -467,10 +468,19 @@ Rules that keep an editor correct:
   `selectBarline({ measure, location, barline })` selects a left, right or middle barline;
   pass `barline: null` for an implicit ordinary barline. An explicit mdom barline at that
   location is retained automatically when the argument is null.
-- Note and structural selections are mutually exclusive. `getFocus()` and `getSelection()`
-  remain note-only; use `getStructuralFocus()`, `getStructuralAnchor()`,
-  `getSelectedMeasures()` and `getSelectedBarline()` for structural targets. All emit
-  `selectionchange`, and selecting never mutates the document or creates history.
+- Note selections, structural selections and the step-entry caret are mutually exclusive.
+  `getFocus()` and `getSelection()` remain note-only; use `getStructuralFocus()`,
+  `getStructuralAnchor()`, `getSelectedMeasures()` and `getSelectedBarline()` for structural
+  targets. All emit `selectionchange`, and selecting never mutates the document or creates
+  history.
+- Place a step-entry caret with `setCaret({ part, measure, voice, staff, onset })`; `onset`
+  is quarter-note beats from the measure start, and the measure may be empty. Read the
+  current document target with `getCaret()`, move its onset with `moveCaret(onset)`, and
+  clear it with `clearCaret()`. These emit `caretchange`, never `documentchange`, and create
+  no undo step. The default controller draws a 2px staff-height caret and follows it into
+  view. Escape and empty-staff clicks clear it only when `allowDeselect` permits; disabling
+  the controller hides but retains it. A detached measure hides the caret until undo
+  restores it, and each new controller resolves it against that render's geometry.
 - `setPitch` supports ordinary pitched notes only; rests, unpitched, tied notes and
   string/fret assignments are rejected before the group changes.
 - `setTabPosition({ string, fret, pitch })` changes pitch and fingering together as one

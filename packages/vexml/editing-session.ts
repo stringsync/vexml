@@ -8,6 +8,7 @@ import {
 } from '@stringsync/mdom';
 import { Disposer, type Resource } from 'webappwiz/disposable';
 import { Dispatcher, type Eventful } from 'webappwiz/events';
+import type { EditingCaret } from './editing-caret';
 import { EditingNavigator } from './editing-navigator';
 import type { Element } from './element';
 import type { ElementIndex } from './element-index';
@@ -39,6 +40,7 @@ export type EditingStructuralTarget = MMeasure | EditingBarline;
 
 export type EditingSessionEvents = {
 	selectionchange: undefined;
+	caretchange: undefined;
 	voicechange: undefined;
 	documentchange: undefined;
 };
@@ -60,6 +62,7 @@ export class EditingSession
 	private structuralAnchor: EditingStructuralTarget | null = null;
 	private selectedMeasures: MMeasure[] = [];
 	private selectedBarline: EditingBarline | null = null;
+	private caret: EditingCaret | null = null;
 
 	constructor(readonly document: MDocument) {
 		this.disposer.defer(
@@ -123,6 +126,49 @@ export class EditingSession
 
 	clearSelection(): void {
 		this.selectNotes([]);
+	}
+
+	getCaret(): EditingCaret | null {
+		return this.caret && this.contains(this.caret.measure)
+			? { ...this.caret }
+			: null;
+	}
+
+	/** Move the insertion target without editing the document or creating history. */
+	setCaret(caret: EditingCaret): void {
+		this.requireCaret(caret);
+		const hadSelection = Boolean(
+			this.focus ||
+				this.anchor ||
+				this.selected.length ||
+				this.structuralFocus ||
+				this.structuralAnchor ||
+				this.selectedMeasures.length ||
+				this.selectedBarline,
+		);
+		this.clearNoteSelection();
+		this.clearStructuralSelection();
+		this.caret = { ...caret };
+		if (hadSelection) {
+			this.selectionChanged();
+		}
+		this.dispatcher.dispatch('caretchange');
+	}
+
+	moveCaret(onset: number): boolean {
+		const caret = this.getCaret();
+		if (!caret) {
+			return false;
+		}
+		this.setCaret({ ...caret, onset });
+		return true;
+	}
+
+	clearCaret(): void {
+		if (this.caret) {
+			this.caret = null;
+			this.dispatcher.dispatch('caretchange');
+		}
 	}
 
 	/** Whether a gesture can extend the existing range without crossing voices. */
@@ -196,6 +242,7 @@ export class EditingSession
 			this.selectedMeasures = [measure];
 		}
 		this.clearNoteSelection();
+		this.clearCaret();
 		this.selectedBarline = null;
 		this.structuralFocus = measure;
 		this.selectionChanged();
@@ -225,6 +272,7 @@ export class EditingSession
 			barline,
 		});
 		this.clearNoteSelection();
+		this.clearCaret();
 		this.structuralFocus = selected;
 		this.structuralAnchor = selected;
 		this.selectedMeasures = [];
@@ -254,6 +302,7 @@ export class EditingSession
 		}
 		this.clearStructuralSelection();
 		this.focus = note;
+		this.clearCaret();
 		this.selectionChanged();
 	}
 
@@ -266,6 +315,7 @@ export class EditingSession
 		this.selected = [...new Set(notes)];
 		this.focus = this.selected.at(-1) ?? null;
 		this.anchor = this.focus;
+		this.clearCaret();
 		this.selectionChanged();
 	}
 
@@ -387,6 +437,22 @@ export class EditingSession
 
 	private requireNote(note: MNote): void {
 		this.requireElement(note);
+	}
+
+	private requireCaret(caret: EditingCaret): void {
+		if (!this.contains(caret.measure) || caret.measure.part !== caret.part) {
+			throw new Error('editing: caret does not belong to this document');
+		}
+		if (
+			!caret.voice ||
+			!Number.isInteger(caret.staff) ||
+			caret.staff < 1 ||
+			caret.staff > caret.measure.staveCount ||
+			!Number.isFinite(caret.onset) ||
+			caret.onset < 0
+		) {
+			throw new Error('editing: invalid caret target');
+		}
 	}
 
 	private voiceNotes(note: MNote): MNote[] {

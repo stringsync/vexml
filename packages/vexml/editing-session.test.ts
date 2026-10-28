@@ -657,6 +657,82 @@ describe('EditingSession', () => {
 		expect(editor.getSelectedBarline()?.measure).toBe(note.measure);
 	});
 
+	it('sets, moves and clears a caret in an empty measure without creating history', () => {
+		const part = required(emptyDocument.score.parts[0], 'part');
+		const measure = required(part.measures[0], 'measure');
+		const editor = new EditingSession(emptyDocument);
+		const events: string[] = [];
+		editor.events.on('caretchange', () => events.push('caret'));
+		editor.events.on('documentchange', () => events.push('document'));
+		editor.setCaret({ part, measure, voice: '1', staff: 1, onset: 0 });
+		expect(editor.getCaret()).toEqual({
+			part,
+			measure,
+			voice: '1',
+			staff: 1,
+			onset: 0,
+		});
+		expect(editor.moveCaret(2)).toBe(true);
+		expect(editor.getCaret()?.onset).toBe(2);
+		expect(editor.history.canUndo).toBe(false);
+		editor.clearCaret();
+		expect(editor.getCaret()).toBeNull();
+		expect(editor.moveCaret(1)).toBe(false);
+		expect(events).toEqual(['caret', 'caret', 'caret']);
+	});
+
+	it('makes caret and other selections mutually exclusive and validates targets', () => {
+		const document = createDocument(['C']);
+		const part = required(document.score.parts[0], 'part');
+		const measure = required(part.measures[0], 'measure');
+		const note = noteAt(document, 0);
+		const editor = new EditingSession(document);
+		editor.select(note);
+		editor.setCaret({ part, measure, voice: '1', staff: 1, onset: 1 });
+		expect(editor.getSelection()).toEqual([]);
+		expect(editor.getFocus()).toBeNull();
+		editor.select(note);
+		expect(editor.getCaret()).toBeNull();
+		expect(editor.getSelection()).toEqual([note]);
+		editor.setCaret({ part, measure, voice: '1', staff: 1, onset: 0 });
+		editor.selectMeasure(measure);
+		expect(editor.getCaret()).toBeNull();
+		editor.setCaret({ part, measure, voice: '1', staff: 1, onset: 0 });
+		expect(editor.getSelectedMeasures()).toEqual([]);
+		const foreign = createDocument(['D']);
+		expect(() =>
+			editor.setCaret({
+				part: required(foreign.score.parts[0], 'foreign part'),
+				measure: required(
+					foreign.score.parts[0]?.measures[0],
+					'foreign measure',
+				),
+				voice: '1',
+				staff: 1,
+				onset: 0,
+			}),
+		).toThrow('this document');
+		expect(() =>
+			editor.setCaret({ part, measure, voice: '1', staff: 1, onset: -1 }),
+		).toThrow('invalid caret');
+		expect(() =>
+			editor.setCaret({ part, measure, voice: '1', staff: 2, onset: 0 }),
+		).toThrow('invalid caret');
+	});
+
+	it('hides a caret while its measure is detached and restores it with undo', () => {
+		const part = required(emptyDocument.score.parts[0], 'part');
+		const measure = required(part.measures[0], 'measure');
+		const editor = new EditingSession(emptyDocument);
+		editor.setCaret({ part, measure, voice: '1', staff: 1, onset: 0 });
+		editor.history.edit('Remove measure', () => measure.remove());
+		expect(editor.getCaret()).toBeNull();
+		editor.undo();
+		expect(editor.getCaret()?.measure).toBe(measure);
+		editor.redo();
+		expect(editor.getCaret()).toBeNull();
+	});
+
 	it('releases its subscription while leaving caller-owned history usable', () => {
 		const document = createDocument(['C']);
 		const note = noteAt(document, 0);

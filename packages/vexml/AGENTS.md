@@ -209,7 +209,7 @@ in the finish pass, after the shared index clears.
 ## Interaction and playback
 
 - **Editing controller activation, selection colors, shaded regions and cursor halo/outline**: `editing-controller.ts`, `selection-overlay.ts`, `color-style.ts`, `halo-style.ts`
-- **Editing focus, active voice, range/set selection and undo/redo**: `editing-session.ts`, `pitch-edit.ts`, `tab-position-edit.ts`; public usage and limitations in `skills/vexml/SKILL.md` (Editing)
+- **Editing focus, active voice, range/set selection, step-entry caret and undo/redo**: `editing-session.ts`, `editing-caret.ts` (document target and render-space geometry), `pitch-edit.ts`, `tab-position-edit.ts`; public usage and limitations in `skills/vexml/SKILL.md` (Editing)
 - **Editing navigation in written order and across rendered systems**: `editing-navigator.ts`, `chord-note-order.ts` (staff and written-position order within a chord), `editing-layout.ts`, `score-editing-layout.ts`
 - **Editing keyboard/pointer controller, focus scrolling and selection overlay**: `editing-controller.ts`, `editing-bindings.ts`, `default-editing-bindings.ts`, `editing-view.ts`, `selection-overlay.ts`; default composition in `score.ts`
 - **Rendering an editor-owned mdom document without reparsing**: `render.ts`, `score-parser.ts`, `default-score-parser.ts`, `score-renderer.ts`
@@ -234,15 +234,19 @@ Public integration guidance lives in [`skills/vexml/SKILL.md`](../../skills/vexm
 Keep the session tied to document nodes: rendered wrappers and geometry belong to
 one `Score` and must be resolved again after rendering.
 
-- `editing-session.ts` owns focus, active voice and range/set selection; mdom owns history.
-  The session subscribes to native history and must be disposed separately from its controllers;
-  it installs no DOM listeners. Note and structural selections are mutually exclusive;
-  the note getters stay note-only. Measure ranges keep a fixed anchor and reject
-  cross-part selection before mutation; note ranges also reject cross-voice selection.
-  Barline targets pair a measure with left/right/middle and retain an explicit mdom
-  barline, or null for an implicit one. Explicit note sets use the last distinct note
-  as focus and anchor. Getters return snapshots; detached targets disappear from
-  selection, and selecting detached or foreign targets throws.
+- `editing-session.ts` owns focus, active voice, range/set selection and the step-entry
+  caret; mdom owns history. The session subscribes to native history and must be disposed
+  separately from its controllers; it installs no DOM listeners. Note selections,
+  structural selections and the caret are mutually exclusive; the note getters stay
+  note-only. Measure ranges keep a fixed anchor and reject cross-part selection before
+  mutation; note ranges also reject cross-voice selection. Barline targets pair a measure
+  with left/right/middle and retain an explicit mdom barline, or null for an implicit one.
+  Explicit note sets use the last distinct note as focus and anchor. Getters return
+  snapshots; detached targets disappear, and selecting detached or foreign targets throws.
+  A caret names a document part, measure, voice, staff and quarter-note onset, including
+  in an empty measure; moving it creates no history, and undo restores a detached measure's
+  caret. `editing-caret.ts` resolves that target against the current render's staves and
+  note geometry without manufacturing document content.
 - `pitch-edit.ts` is a conservative pitch command, preserving note identity and unrelated
   notation. A changed pitch removes the explicit accidental. The session runs it
   inside `document.history.edit`; mdom owns rollback and reversal. Once a session
@@ -263,17 +267,19 @@ one `Score` and must be resolved again after rendering.
 - `score.ts` composes and owns its controllers; early controller disposal unregisters
   it. The controller owns its view and listeners, never the session. Only handle
   keyboard events targeted at the container, preserving nested controls. Restore
-  any tabindex added by the controller on disposal. Selection changes update the
-  presentation without engraving; focus changes drive scrolling, with measure-box
-  fallback for unindexed notes. Manual scrolling does not trigger focus following.
+  any tabindex added by the controller on disposal. Selection and caret changes update
+  the presentation without engraving; caret and focus changes drive scrolling, with
+  measure-box fallback for unindexed notes. Manual scrolling does not trigger following.
+  Disabled controllers hide presentation without discarding session state, and document
+  changes re-resolve it so detached caret geometry cannot linger.
 - `selection-overlay.ts` puts cursor halos and per-system regions behind engraving,
-  with selection coloring and the cursor outline above hover. Preserve playback
-  and hover decoration state. During marquee dragging, publish preview notes and
-  score-space `presentation.marquee` without changing the session until release.
-  Deduplicate notehead/fret hits and require full enclosure. Escape, cancellation,
-  suspension, disposal or capture loss with the primary button held cancels;
-  capture loss after release commits even before `pointerup`. Dragging does not
-  trigger focus following. Unindexed notes remain reachable through navigation.
+  with selection coloring, the cursor outline and a configurable staff-height caret
+  above hover. Preserve playback and hover decoration state. During marquee dragging,
+  publish preview notes and score-space `presentation.marquee` without changing the
+  session until release. Deduplicate notehead/fret hits and require full enclosure.
+  Escape, cancellation, suspension, disposal or capture loss with the primary button
+  held cancels; capture loss after release commits even before `pointerup`. Dragging
+  does not trigger focus following. Unindexed notes remain reachable through navigation.
 - Document rendering must not reparse or edit the session's document. Its gaps must
   name measures already in it (`insertGaps`, run by the caller inside a history edit);
   `render.ts` rejects positioned gaps for document input before touching the container.

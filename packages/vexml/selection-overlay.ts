@@ -11,12 +11,17 @@ export interface SelectionOverlayOptions {
 	color?: string;
 	/** Cursor halo outline color; defaults to the selection color. */
 	focusColor?: string;
+	/** Step-entry caret color; defaults to the focus color. */
+	caretColor?: string;
+	/** Step-entry caret width in score pixels. Defaults to 2. */
+	caretWidth?: number;
 }
 
 /** Shared halo geometry on editing-owned layers, independent of hover and playback. */
 export class SelectionOverlay implements EditingView {
 	private previous: Rect[] = [];
 	private previousFocus: Rect[] = [];
+	private previousCaret: Rect | null = null;
 	private readonly halo = new HaloStyle();
 	private readonly color = new ColorStyle();
 	constructor(
@@ -32,12 +37,15 @@ export class SelectionOverlay implements EditingView {
 		if (
 			this.previous.length === 0 &&
 			this.previousFocus.length === 0 &&
+			!this.previousCaret &&
 			!state.marquee &&
 			!state.focus &&
+			!state.caret &&
 			state.selected.length === 0
 		) {
 			return;
 		}
+		const caretWidth = this.opts.caretWidth ?? 2;
 		const ctx = this.layer.ctx;
 		for (const rect of this.previous) {
 			ctx.clearRect(rect.x - 1, rect.y - 1, rect.w + 2, rect.h + 2);
@@ -52,6 +60,15 @@ export class SelectionOverlay implements EditingView {
 			);
 		}
 		this.previousFocus = [];
+		if (this.previousCaret) {
+			this.focusLayer.ctx.clearRect(
+				this.previousCaret.x - caretWidth / 2 - 1,
+				this.previousCaret.y - 1,
+				caretWidth + 2,
+				this.previousCaret.h + 2,
+			);
+			this.previousCaret = null;
+		}
 		ctx.save();
 		const color = this.opts.color ?? '#155dfc';
 		ctx.fillStyle = color;
@@ -93,6 +110,17 @@ export class SelectionOverlay implements EditingView {
 					this.previousFocus.push(this.halo.bounds(element));
 				}
 			}
+		}
+		if (state.caret) {
+			foreground.fillStyle =
+				this.opts.caretColor ?? this.opts.focusColor ?? color;
+			foreground.fillRect(
+				state.caret.x - caretWidth / 2,
+				state.caret.y,
+				caretWidth,
+				state.caret.h,
+			);
+			this.previousCaret = state.caret;
 		}
 		foreground.restore();
 		ctx.globalAlpha = 1;

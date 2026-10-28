@@ -8,6 +8,7 @@ import type {
 	EditingCommand,
 	EditingKey,
 } from './editing-bindings';
+import { editingCaretRect } from './editing-caret';
 import type { EditingNavigator } from './editing-navigator';
 import type { EditingSession, EditingVoice } from './editing-session';
 import type { EditingPresentation, EditingView } from './editing-view';
@@ -84,6 +85,10 @@ export class EditingController
 		}
 		this.disposer.defer(
 			editor.events.on('selectionchange', () => this.refresh()),
+		);
+		this.disposer.defer(editor.events.on('caretchange', () => this.refresh()));
+		this.disposer.defer(
+			editor.events.on('documentchange', () => this.refresh()),
 		);
 		if (opts.pointer !== false) {
 			this.disposer.defer(
@@ -170,7 +175,7 @@ export class EditingController
 		this.deps.view?.render(
 			this.enabled
 				? this.presentation
-				: { selected: [], focus: null, position: null },
+				: { selected: [], focus: null, caret: null, position: null },
 		);
 	}
 
@@ -232,7 +237,9 @@ export class EditingController
 					}
 					break;
 				}
-				moved = this.editor.getSelection().length > 0;
+				moved =
+					this.editor.getSelection().length > 0 ||
+					this.editor.getCaret() !== null;
 				this.editor.clearSelection();
 				break;
 		}
@@ -432,11 +439,13 @@ export class EditingController
 		const previous = this.presentation.position;
 		this.presentation = this.resolve();
 		this.renderView();
+		const position = this.presentation.position;
 		if (
 			this.enabled &&
 			!this.drag &&
 			this.opts.follow !== false &&
-			this.presentation.position !== previous
+			position !== previous &&
+			(!position || !previous || !position.isEqual(previous))
 		) {
 			this.scrollIntoView({ behavior: 'smooth' });
 		}
@@ -453,6 +462,8 @@ export class EditingController
 					.measureBoxes()
 					.find((box) => box.getSources().includes(source.measure))
 			: null;
+		const target = this.drag?.rect ? null : this.editor.getCaret();
+		const caret = target ? editingCaretRect(this.deps.elements, target) : null;
 		return {
 			selected: this.drag?.rect
 				? this.drag.notes.flatMap((note) => {
@@ -462,7 +473,8 @@ export class EditingController
 				: this.editor.getSelectedElements(this.deps.elements),
 			...(this.drag?.rect ? { marquee: this.drag.rect } : {}),
 			focus,
-			position: focus?.rect ?? fallback?.rect ?? null,
+			caret,
+			position: caret ?? focus?.rect ?? fallback?.rect ?? null,
 		};
 	}
 }

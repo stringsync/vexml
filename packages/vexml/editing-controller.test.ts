@@ -353,6 +353,7 @@ describe('EditingController', () => {
 		expect(view.renders.at(-1)).toEqual({
 			selected: [],
 			focus: null,
+			caret: null,
 			position: null,
 		});
 		expect(host.scroller.calls).toHaveLength(0);
@@ -368,6 +369,94 @@ describe('EditingController', () => {
 		const count = view.renders.length;
 		controller.setEnabled(false);
 		expect(view.renders).toHaveLength(count);
+	});
+
+	it('resolves and follows a caret before, between and after notes', () => {
+		const { host, controller } = f.create();
+		const target = {
+			part: f.first.part,
+			measure: f.first.measure,
+			voice: '1',
+			staff: 1,
+		};
+		f.editor.setCaret({ ...target, onset: 0 });
+		expect(controller.getPresentation().caret).toEqual(new Rect(20, 40, 0, 40));
+		f.editor.moveCaret(0.5);
+		expect(controller.getPresentation().caret).toEqual(new Rect(35, 40, 0, 40));
+		expect(host.scroller.calls.at(-1)).toEqual(new Rect(35, 40, 0, 40));
+		f.editor.moveCaret(3);
+		expect(controller.getPresentation().caret).toEqual(
+			new Rect(200, 40, 0, 40),
+		);
+	});
+
+	it('clears the caret for note selection and honors allowDeselect on dismissal', () => {
+		const { host, controller } = f.create(0, { allowDeselect: false });
+		const target = {
+			part: f.first.part,
+			measure: f.first.measure,
+			voice: '1',
+			staff: 1,
+			onset: 0,
+		};
+		f.editor.setCaret(target);
+		host.dom.dispatchEvent(new FakeClickEvent(22, 42));
+		expect(f.editor.getCaret()).toBeNull();
+		expect(f.editor.getSelection()).toEqual([f.first]);
+		f.editor.setCaret(target);
+		host.dom.dispatchEvent(new FakeClickEvent(150, 80));
+		expect(f.editor.getCaret()).toEqual(target);
+		expect(controller.execute({ type: 'clear' })).toBe(false);
+		expect(f.editor.getCaret()).toEqual(target);
+		controller.setEnabled(false);
+		expect(controller.getPresentation().caret).toEqual(new Rect(20, 40, 0, 40));
+	});
+
+	it('rebinds the caret to replacement render geometry', () => {
+		const old = f.create();
+		f.editor.setCaret({
+			part: f.first.part,
+			measure: f.first.measure,
+			voice: '1',
+			staff: 1,
+			onset: 0.5,
+		});
+		old.score.dispose();
+		const next = f.create(10);
+		expect(next.controller.getPresentation().caret).toEqual(
+			new Rect(45, 40, 0, 40),
+		);
+	});
+
+	it('draws a configured caret, clears its ink and disposes its layers', () => {
+		const { host, score } = f.create(0, {
+			view: undefined,
+			selection: { caretColor: '#123456', caretWidth: 4 },
+		});
+		f.editor.setCaret({
+			part: f.first.part,
+			measure: f.first.measure,
+			voice: '1',
+			staff: 1,
+			onset: 0,
+		});
+		const focus = host.created[1];
+		expect(focus?.recording.fills).toContainEqual({
+			x: 18,
+			y: 40,
+			w: 4,
+			h: 40,
+			style: '#123456',
+		});
+		f.editor.clearCaret();
+		expect(focus?.recording.clears).toContainEqual({
+			x: 17,
+			y: 39,
+			w: 6,
+			h: 42,
+		});
+		score.dispose();
+		expect(host.created.every((layer) => layer.disposed)).toBe(true);
 	});
 
 	it('allows opting out of native input and following while retaining command execution', () => {
@@ -526,7 +615,16 @@ function fixture() {
 							index: 0,
 							number: '1',
 							systemIndex: 0,
-							staves: [],
+							staves: [
+								{
+									part: measure.part.id,
+									staff: 1,
+									lines: [40, 50, 60, 70, 80],
+									left: 0,
+									right: 200,
+									noteStartX: 10,
+								},
+							],
 							barlines: [],
 						},
 					],

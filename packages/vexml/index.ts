@@ -34,6 +34,7 @@ export type {
 	EditingCommand,
 	EditingKey,
 } from './editing-bindings';
+export type { EditingCaret } from './editing-caret';
 export {
 	EditingController,
 	type EditingControllerDeps,

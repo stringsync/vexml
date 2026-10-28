@@ -6,7 +6,9 @@ export interface EditingPresentation {
 	readonly marquee?: Rect;
 	readonly selected: readonly Note[];
 	readonly focus: Note | null;
-	/** The focus glyph, or its measure box if it has no indexed glyph. */
+	/** Zero-width step-entry caret on its target staff, in score coordinates. */
+	readonly caret: Rect | null;
+	/** The caret, focus glyph, or its measure box if it has no indexed glyph. */
 	readonly position: Rect | null;
 }
 
