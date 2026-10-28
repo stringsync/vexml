@@ -39,7 +39,27 @@ export class StaffDetector {
 		// or a word, not a system. The most, not the median: a short score has more rows of
 		// beams and ties over the long mark than rows of staff line.
 		const most = Math.max(0, ...rows.map((row) => row.count));
-		const staffRows = rows.filter((row) => row.count >= most * STAFF);
+		// A beam touching a staff can have just enough ink to pass the global cutoff
+		// on some rows but not others. Group the long rows before that cutoff, then
+		// keep the narrow ridge of staff ink above the beam's shorter rows. A uniform
+		// wide beam still has no narrow ridge and is rejected by MAX_THICK below.
+		const staffRows: typeof rows = [];
+		let bandStart = 0;
+		for (let i = 1; i <= rows.length; i++) {
+			const row = rows[i];
+			const previous = rows[i - 1];
+			if (row && previous && row.y === previous.y + 1) {
+				continue;
+			}
+			const band = rows.slice(bandStart, i);
+			bandStart = i;
+			const peak = Math.max(0, ...band.map((r) => r.count));
+			staffRows.push(
+				...band.filter(
+					(r) => r.count >= most * STAFF && r.count >= peak * RIDGE,
+				),
+			);
+		}
 
 		// A line is a few rows thick: the consecutive rows merge into one line at their center.
 		const lines: StaffLine[] = [];
@@ -133,6 +153,8 @@ const STAFF = 0.6;
 const MAX_GAP = 60;
 // The thickest a staff line gets, in rows; a beam is thicker on any renderer.
 const MAX_THICK = 3;
+// Within a touching band, a staff row extends substantially beyond the beam.
+const RIDGE = 0.9;
 // How far a gap may stray from its run's first gap and still be the same staff: a fifth,
 // or a pixel, since antialiasing moves a line's center by a half.
 const TOLERANCE = 0.2;

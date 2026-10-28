@@ -33,3 +33,16 @@ Construction contacts (staff/barline joints, stems and heads, beams and stems,
 shared unison heads, curves crossing staff lines or barlines) are allowed by kind.
 Two different annotations, rests against heads, and separate same-kind elements
 still require disjoint opaque pixels. Bounding boxes only select candidates.
+
+## Beam/staff crop
+
+`clean-masks/dvorak-beam-staff-crop.json.gz` is a structural-only clean crop
+(`masks: []`), not a new full-score baseline. Its pixels come from the second violin and viola
+staves in the optional Dvořák American Quartet capture, final-movement labels
+77–80 (source positions 548–551, selected with `vex slice --coordinate position`).
+It keeps the full capture width, source crop rows 40–199 from the audit's
+`quartet-detail.png`, with 10 white rows above and below so the crop boundary
+is not mistaken for capture clipping. The top staff line crosses a beam: its
+874 ink pixels rise above the beam's 523–527. Previously the global row cutoff
+split the beam into extra lines and reported the true staff line as stray.
+The ordinary synthetic stray-line and squeezed-staff defects remain enabled.

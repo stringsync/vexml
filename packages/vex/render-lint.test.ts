@@ -120,6 +120,23 @@ describe('RenderLint', () => {
 		expect(report.findings.map((f) => f.kind)).toEqual(['stray-line']);
 	});
 
+	it('accepts a beam touching the top staff line without hiding a real stray line', () => {
+		const beam: Stroke[] = [9, 11, 12, 13, 14].map((y, i) => [
+			y,
+			5,
+			62 + Number(i >= 3),
+		]);
+		const strokes = [...staff(10, 2, 98, 10), ...beam];
+		expect(
+			new RenderLint(InkMap.fromRows(canvas(100, 70, strokes))).lint(),
+		).toEqual({ score: 100, findings: [] });
+		const report = new RenderLint(
+			InkMap.fromRows(canvas(100, 70, [...strokes, [56, 2, 98]])),
+		).lint();
+		expect(report.findings.map((f) => f.kind)).toEqual(['stray-line']);
+		expect(report.findings[0]?.box.y).toBe(56);
+	});
+
 	it('leaves a lone line more than a staff space from any staff alone', () => {
 		const rows = canvas(40, 80, [...staff(4, 2, 38, 10), [70, 2, 38]]);
 		expect(new RenderLint(InkMap.fromRows(rows)).lint().findings).toEqual([]);

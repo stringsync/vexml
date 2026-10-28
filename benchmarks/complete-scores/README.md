@@ -108,8 +108,17 @@ Beethoven is 932 × 254,057. Full-image comparisons are expensive in memory as w
 - **Dvořák, 380-382:** vexml and alphaTab report none; OSMD reports four contacts.
 - **Beethoven, 1-3:** vexml and alphaTab report none; OSMD reports 18 contacts.
 - **Dvořák full-score stray-line:** at y=133826, across printed labels 77-80 in the final
-  movement. The reviewed crop shows a beam coinciding with the staff line and no obvious
-  staff collision. This is a suspected lint false positive, not a confirmed rendering bug.
+  movement (source positions 548-551). `vex slice --coordinate position --measures 548-551`
+  selects this occurrence alone. The original viola crop confirms a lint false positive:
+  a beam touching the top staff line fragmented the detector's row selection. The lint
+  now keeps the narrower staff ridge within the touching band; the focused crop is in
+  the lint corpus. The complete score has not been recaptured.
+- **Clara tiny voice contacts:** original vexml crops at measures 7 and 23 show adjacent
+  heads touching by one opaque pixel; measure 9 shows a shared unison head, while 26
+  has a larger head contact. These are candidates for engraving review, not equivalent
+  defects. Exact shared unison masks and heads in one chord remain allowed; separate
+  heads with different masks remain reported, even at one pixel. No minimum-area filter
+  or broad notehead/voice exemption was added.
 
 The linter subtracts a fixed penalty per contact, reaches zero quickly on long scores, and
 can flag allowed one-pixel or shared-voice contacts. It is useful for locating candidates;

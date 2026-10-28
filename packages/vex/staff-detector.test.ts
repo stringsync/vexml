@@ -84,6 +84,21 @@ describe('StaffDetector', () => {
 		expect(lines.map((l) => l.y)).toEqual([2, 6, 10, 14, 18]);
 	});
 
+	it.each([
+		0, 1, 2, 3, 4,
+	])('keeps staff line %i when a beam touches it', (index) => {
+		const top = 10 + index * 10;
+		const beam = [top - 1, top + 1, top + 2, top + 3, top + 4].map(
+			(y, i) => [y, 5, 62 + Number(i >= 3)] as Stroke,
+		);
+		const rows = canvas(100, 70, [...staff(10, 2, 98, 10), ...beam]);
+		expect(
+			new StaffDetector(InkMap.fromRows(rows))
+				.groups()
+				.map((g) => g.lines.map((l) => l.y)),
+		).toEqual([[10, 20, 30, 40, 50]]);
+	});
+
 	it('ignores a short run even when it is the only one', () => {
 		const rows = canvas(100, 10, line(5, 10, 20));
 		expect(new StaffDetector(InkMap.fromRows(rows)).lines()).toEqual([]);

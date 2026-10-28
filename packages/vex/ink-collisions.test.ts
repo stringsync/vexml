@@ -40,6 +40,34 @@ describe('InkCollisions', () => {
 			new InkCollisions([head, { ...head, id: 1, kind: 'rest' }]).findings(),
 		).toHaveLength(1);
 	});
+	it('allows touching chord heads but keeps a one-pixel contact between distinct voices', () => {
+		const head: InkMask = {
+			...first,
+			kind: 'notehead',
+			parent: 10,
+			runs: [0, 6],
+		};
+		const touching: InkMask = { ...head, id: 1, x: 12, y: 21 };
+		expect(new InkCollisions([head, touching]).findings()).toEqual([]);
+		expect(
+			new InkCollisions([head, { ...touching, parent: 11 }]).findings(),
+		).toEqual([
+			{
+				kind: 'collision',
+				message: 'notehead ink overlaps notehead ink',
+				box: new Rect(12, 21, 1, 1),
+			},
+		]);
+	});
+	it('allows beam/staff construction while retaining beam/head collisions', () => {
+		const beam = { ...first, kind: 'beam' };
+		expect(
+			new InkCollisions([beam, { ...second, kind: 'stave' }]).findings(),
+		).toEqual([]);
+		expect(
+			new InkCollisions([beam, { ...second, kind: 'notehead' }]).findings(),
+		).toHaveLength(1);
+	});
 	it('boxes only the opaque ink intersection, including a single pixel', () => {
 		expect(new InkCollisions([first, second]).findings()).toEqual([
 			{
