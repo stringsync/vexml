@@ -1,0 +1,4662 @@
+{
+	"date": "2026-10-28",
+	"sourceRevision": "8ac677a1b1e86300bd58f719e89ee80412dd2943",
+	"historicalAuditRevision": "60e28c171e81f370aae5f1b0626570de97438e2b",
+	"host": "Apple M4 Max; macOS 26.6.2 arm64",
+	"bun": "1.4.4",
+	"chromium": "149.0.7827.55 (Playwright revision 1228)",
+	"versions": {
+		"@coderline/alphatab": "1.8.4",
+		"@stringsync/mdom": "0.8.0",
+		"opensheetmusicdisplay": "2.1.1",
+		"playwright": "1.61.1",
+		"vexflow": "5.0.0",
+		"webappwiz": "0.0.52"
+	},
+	"sourceCounts": [
+		{
+			"score": "dvorak-american-quartet",
+			"parts": [
+				{
+					"id": "P1",
+					"measureColumns": 853,
+					"notesAndRests": 3810,
+					"rests": 435,
+					"pitched": 3375,
+					"lyrics": 0,
+					"maxStaves": 1
+				},
+				{
+					"id": "P2",
+					"measureColumns": 853,
+					"notesAndRests": 4265,
+					"rests": 435,
+					"pitched": 3830,
+					"lyrics": 0,
+					"maxStaves": 1
+				},
+				{
+					"id": "P3",
+					"measureColumns": 853,
+					"notesAndRests": 4254,
+					"rests": 397,
+					"pitched": 3857,
+					"lyrics": 0,
+					"maxStaves": 1
+				},
+				{
+					"id": "P4",
+					"measureColumns": 853,
+					"notesAndRests": 3329,
+					"rests": 780,
+					"pitched": 2549,
+					"lyrics": 0,
+					"maxStaves": 1
+				}
+			]
+		},
+		{
+			"score": "clara-schumann-liebst-du",
+			"parts": [
+				{
+					"id": "P1",
+					"measureColumns": 41,
+					"notesAndRests": 129,
+					"rests": 27,
+					"pitched": 102,
+					"lyrics": 94,
+					"maxStaves": 1
+				},
+				{
+					"id": "P2",
+					"measureColumns": 41,
+					"notesAndRests": 865,
+					"rests": 102,
+					"pitched": 763,
+					"lyrics": 0,
+					"maxStaves": 2
+				}
+			]
+		},
+		{
+			"score": "schubert-erlkonig",
+			"parts": [
+				{
+					"id": "P1",
+					"measureColumns": 148,
+					"notesAndRests": 429,
+					"rests": 91,
+					"pitched": 338,
+					"lyrics": 318,
+					"maxStaves": 1
+				},
+				{
+					"id": "P2",
+					"measureColumns": 148,
+					"notesAndRests": 2768,
+					"rests": 213,
+					"pitched": 2555,
+					"lyrics": 0,
+					"maxStaves": 2
+				}
+			]
+		},
+		{
+			"score": "debussy-mandoline",
+			"parts": [
+				{
+					"id": "P1",
+					"measureColumns": 70,
+					"notesAndRests": 232,
+					"rests": 26,
+					"pitched": 206,
+					"lyrics": 154,
+					"maxStaves": 1
+				},
+				{
+					"id": "P2",
+					"measureColumns": 70,
+					"notesAndRests": 1228,
+					"rests": 213,
+					"pitched": 1015,
+					"lyrics": 0,
+					"maxStaves": 2
+				}
+			]
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"parts": [
+				{
+					"id": "P1",
+					"measureColumns": 502,
+					"notesAndRests": 797,
+					"rests": 303,
+					"pitched": 494,
+					"lyrics": 41,
+					"maxStaves": 1
+				},
+				{
+					"id": "P2",
+					"measureColumns": 502,
+					"notesAndRests": 731,
+					"rests": 357,
+					"pitched": 374,
+					"lyrics": 2,
+					"maxStaves": 1
+				},
+				{
+					"id": "P3",
+					"measureColumns": 502,
+					"notesAndRests": 783,
+					"rests": 297,
+					"pitched": 486,
+					"lyrics": 8,
+					"maxStaves": 1
+				},
+				{
+					"id": "P4",
+					"measureColumns": 502,
+					"notesAndRests": 757,
+					"rests": 350,
+					"pitched": 407,
+					"lyrics": 0,
+					"maxStaves": 1
+				},
+				{
+					"id": "P5",
+					"measureColumns": 502,
+					"notesAndRests": 840,
+					"rests": 271,
+					"pitched": 569,
+					"lyrics": 8,
+					"maxStaves": 1
+				},
+				{
+					"id": "P6",
+					"measureColumns": 502,
+					"notesAndRests": 809,
+					"rests": 292,
+					"pitched": 517,
+					"lyrics": 1,
+					"maxStaves": 1
+				},
+				{
+					"id": "P7",
+					"measureColumns": 502,
+					"notesAndRests": 824,
+					"rests": 201,
+					"pitched": 623,
+					"lyrics": 1,
+					"maxStaves": 1
+				},
+				{
+					"id": "P8",
+					"measureColumns": 502,
+					"notesAndRests": 806,
+					"rests": 201,
+					"pitched": 605,
+					"lyrics": 0,
+					"maxStaves": 1
+				},
+				{
+					"id": "P9",
+					"measureColumns": 502,
+					"notesAndRests": 743,
+					"rests": 332,
+					"pitched": 411,
+					"lyrics": 9,
+					"maxStaves": 1
+				},
+				{
+					"id": "P10",
+					"measureColumns": 502,
+					"notesAndRests": 741,
+					"rests": 332,
+					"pitched": 409,
+					"lyrics": 0,
+					"maxStaves": 1
+				},
+				{
+					"id": "P11",
+					"measureColumns": 502,
+					"notesAndRests": 674,
+					"rests": 417,
+					"pitched": 257,
+					"lyrics": 1,
+					"maxStaves": 1
+				},
+				{
+					"id": "P12",
+					"measureColumns": 502,
+					"notesAndRests": 674,
+					"rests": 417,
+					"pitched": 257,
+					"lyrics": 0,
+					"maxStaves": 1
+				},
+				{
+					"id": "P13",
+					"measureColumns": 502,
+					"notesAndRests": 693,
+					"rests": 450,
+					"pitched": 243,
+					"lyrics": 0,
+					"maxStaves": 1
+				},
+				{
+					"id": "P14",
+					"measureColumns": 502,
+					"notesAndRests": 1252,
+					"rests": 154,
+					"pitched": 1098,
+					"lyrics": 119,
+					"maxStaves": 1
+				},
+				{
+					"id": "P15",
+					"measureColumns": 502,
+					"notesAndRests": 1221,
+					"rests": 145,
+					"pitched": 1076,
+					"lyrics": 17,
+					"maxStaves": 1
+				},
+				{
+					"id": "P16",
+					"measureColumns": 502,
+					"notesAndRests": 1085,
+					"rests": 180,
+					"pitched": 905,
+					"lyrics": 15,
+					"maxStaves": 1
+				},
+				{
+					"id": "P17",
+					"measureColumns": 502,
+					"notesAndRests": 944,
+					"rests": 225,
+					"pitched": 719,
+					"lyrics": 3,
+					"maxStaves": 1
+				},
+				{
+					"id": "P18",
+					"measureColumns": 502,
+					"notesAndRests": 887,
+					"rests": 308,
+					"pitched": 579,
+					"lyrics": 0,
+					"maxStaves": 1
+				}
+			]
+		}
+	],
+	"rows": [
+		{
+			"score": "clara-schumann-liebst-du",
+			"range": "all",
+			"engine": "vexml",
+			"samples": [
+				{
+					"ms": 426.18525,
+					"width": 932,
+					"height": 8069
+				},
+				{
+					"ms": 364.9045409999999,
+					"width": 932,
+					"height": 8069
+				},
+				{
+					"ms": 359.08270800000014,
+					"width": 932,
+					"height": 8069
+				}
+			],
+			"mountMs": 215.34850000000006,
+			"captureMs": 140.77441700000008,
+			"evidence": {
+				"width": 932,
+				"height": 8068.609375,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					},
+					{
+						"family": "Bravura",
+						"status": "unloaded"
+					}
+				],
+				"content": [
+					{
+						"id": "P1",
+						"measures": 41,
+						"staves": 1,
+						"notes": 129
+					},
+					{
+						"id": "P2",
+						"measures": 41,
+						"staves": 2,
+						"notes": 865
+					}
+				],
+				"svgCount": 0,
+				"canvasCount": 33
+			},
+			"ordinaryMs": {
+				"median": 364.9045409999999,
+				"min": 359.08270800000014,
+				"max": 426.18525
+			},
+			"mountCpu": {
+				"samplingWindowMs": 286.928,
+				"selfMs": {
+					"(program)": 77.498,
+					"measureText": 15.664,
+					"": 13.546,
+					"get notes": 12.064,
+					"(garbage collector)": 8.628,
+					"set": 7.531,
+					"(idle)": 7.34,
+					"Note2": 6.02,
+					"write": 5.705,
+					"buildWavyLines": 4.827,
+					"Tickable": 4.504,
+					"get isRest": 4.499,
+					"getStemX": 3.307,
+					"adopt": 3.021,
+					"get glissandos": 3.018
+				},
+				"inclusiveMs": {
+					"engrave": 187.808,
+					"draw": 132.739,
+					"drawSystem": 132.739,
+					"settleNext": 132.739,
+					"advance": 132.739,
+					"drawNext": 132.739,
+					"drawMeasureColumn": 111.504,
+					"": 88.338,
+					"(program)": 77.498,
+					"buildStave": 52.178,
+					"tickables": 47.44,
+					"staveNote": 45.935,
+					"redraw": 42.829,
+					"buildNotes": 41.428,
+					"render": 35.515,
+					"formatAndDraw": 33.755,
+					"StaveNote": 29.336,
+					"build": 27.323,
+					"parseFromString": 26.443,
+					"parse": 26.443,
+					"resolveSystem": 21.235,
+					"resolveSpanners": 21.235,
+					"endSystem": 21.235,
+					"measureText": 20.169,
+					"drawWithStyle": 19.624,
+					"plan": 19.579,
+					"measureNoteArea": 18.068,
+					"areaOf": 18.068,
+					"consume": 18.068,
+					"complete": 18.068
+				},
+				"scoreEngraverChildrenMs": {
+					"plan": 19.579,
+					"draw": 132.739,
+					"model": 1.507,
+					"create": 1.513
+				}
+			}
+		},
+		{
+			"score": "clara-schumann-liebst-du",
+			"range": "all",
+			"engine": "osmd",
+			"samples": [
+				{
+					"ms": 323.47504100000015,
+					"width": 932,
+					"height": 6214
+				},
+				{
+					"ms": 269.2890419999999,
+					"width": 932,
+					"height": 6214
+				},
+				{
+					"ms": 255.80112499999996,
+					"width": 932,
+					"height": 6214
+				}
+			],
+			"mountMs": 126.61362499999996,
+			"captureMs": 123.06229200000007,
+			"evidence": {
+				"width": 900,
+				"height": 6181.5,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [],
+				"content": {
+					"parts": 2,
+					"measures": 41,
+					"notes": 994
+				},
+				"svgCount": 1,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 269.2890419999999,
+				"min": 255.80112499999996,
+				"max": 323.47504100000015
+			},
+			"mountCpu": {
+				"samplingWindowMs": 212.302,
+				"selfMs": {
+					"(program)": 91.194,
+					"d": 19.138,
+					"correctNotePositions": 13.106,
+					"addBezierCurve": 8.851,
+					"": 7.534,
+					"(garbage collector)": 6.148,
+					"element": 6.037,
+					"i": 4.513,
+					"parseFromString": 4.512,
+					"elements": 4.508,
+					"(idle)": 4.342,
+					"draw": 2.999,
+					"f": 2.856,
+					"updateLines": 2.808,
+					"attribute": 1.513
+				},
+				"inclusiveMs": {
+					"mount": 109.745,
+					"(program)": 91.194,
+					"render": 70.626,
+					"": 52.261,
+					"draw": 48.882,
+					"calculate": 43.558,
+					"reCalculate": 43.558,
+					"evaluate": 39.119,
+					"calculateMusicSystems": 37.738,
+					"load": 37.61,
+					"d": 31.724,
+					"f": 29.331,
+					"calculateLinesGeometric": 29.14,
+					"calculateLines": 29.14,
+					"computeSkyBottomLinesFor": 29.14,
+					"calculateSkyBottomLines": 29.14,
+					"drawMeasure": 27.068,
+					"drawStaffLine": 27.068,
+					"drawMusicSystemComponents": 27.068,
+					"drawMusicSystem": 27.068,
+					"drawPage": 27.068,
+					"drawSheet": 27.068,
+					"getWidth": 26.331,
+					"readNextXmlMeasure": 19.579,
+					"_createMusicSheet": 19.579,
+					"createMusicSheet": 19.579,
+					"drawWithStyle": 16.389,
+					"prepareGraphicalMusicSheet": 13.519,
+					"initialize": 13.519,
+					"e.GraphicalMusicSheet": 13.519
+				}
+			}
+		},
+		{
+			"score": "clara-schumann-liebst-du",
+			"range": "all",
+			"engine": "alphatab",
+			"samples": [
+				{
+					"ms": 240.69683299999951,
+					"width": 932,
+					"height": 7058
+				},
+				{
+					"ms": 218.2212499999996,
+					"width": 932,
+					"height": 7058
+				},
+				{
+					"ms": 214.19024999999965,
+					"width": 932,
+					"height": 7058
+				}
+			],
+			"mountMs": 50.25287500000013,
+			"captureMs": 148.3941249999998,
+			"evidence": {
+				"width": 900,
+				"height": 7026,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "alphaTab",
+						"status": "loaded"
+					}
+				],
+				"content": {
+					"selectedTracks": 2,
+					"parts": [
+						{
+							"name": "Voice",
+							"staves": 1,
+							"measures": [41],
+							"notes": 102,
+							"lyrics": 94
+						},
+						{
+							"name": "Piano",
+							"staves": 2,
+							"measures": [41, 41],
+							"notes": 763,
+							"lyrics": 0
+						}
+					]
+				},
+				"svgCount": 21,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 218.2212499999996,
+				"min": 214.19024999999965,
+				"max": 240.69683299999951
+			},
+			"mountCpu": {
+				"samplingWindowMs": 145.188,
+				"selfMs": {
+					"(program)": 85.156,
+					"beginUpdateRenderResults": 13.831,
+					"get isVisible": 13.545,
+					"_cyrb53": 4.525,
+					"parseFromString": 4.508,
+					"children": 3.013,
+					"replaceChildren": 3.012,
+					"parse": 3.007,
+					"addNote": 1.51,
+					"addSpring": 1.508,
+					"(idle)": 1.507,
+					"doLayout": 1.506,
+					"createVoiceGlyphs": 1.503,
+					"serializeToString": 1.502,
+					"(garbage collector)": 1.502
+				},
+				"inclusiveMs": {
+					"(program)": 85.156,
+					"": 55.967,
+					"mount": 22.577,
+					"evaluate": 22.577,
+					"renderScore": 21.355,
+					"trigger": 19.845,
+					"_layoutAndRenderScore": 19.845,
+					"doLayoutAndRender": 19.845,
+					"layoutAndRender": 19.845,
+					"_layoutAndRender": 19.845,
+					"render": 19.845,
+					"_onFontLoaded": 19.845,
+					"successHandler": 19.845,
+					"checkFont": 19.845,
+					"_paintSystem": 15.328,
+					"alphatab.alphatab": 15.04,
+					"beginUpdateRenderResults": 13.831,
+					"_updateRenderResult": 13.831,
+					"_internalRenderLazyPartial": 13.831,
+					"registerPartial": 13.831,
+					"get isVisible": 13.545,
+					"initialRender": 13.545,
+					"forAlphatab": 9.023,
+					"load": 6.017,
+					"_cyrb53": 4.525,
+					"_createStyleElements": 4.525,
+					"initialize": 4.525,
+					"AlphaTabApiBase": 4.525,
+					"AlphaTabApi": 4.525,
+					"doLayout": 4.517
+				}
+			}
+		},
+		{
+			"score": "debussy-mandoline",
+			"range": "all",
+			"engine": "vexml",
+			"samples": [
+				{
+					"ms": 880.9430000000002,
+					"width": 932,
+					"height": 11853
+				},
+				{
+					"ms": 534.1433750000006,
+					"width": 932,
+					"height": 11853
+				},
+				{
+					"ms": 508.6618749999998,
+					"width": 932,
+					"height": 11853
+				}
+			],
+			"mountMs": 318.06466699999964,
+			"captureMs": 185.57745799999975,
+			"evidence": {
+				"width": 932,
+				"height": 11852.609375,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					},
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					}
+				],
+				"content": [
+					{
+						"id": "P1",
+						"measures": 70,
+						"staves": 1,
+						"notes": 232
+					},
+					{
+						"id": "P2",
+						"measures": 70,
+						"staves": 2,
+						"notes": 1226
+					}
+				],
+				"svgCount": 0,
+				"canvasCount": 47
+			},
+			"ordinaryMs": {
+				"median": 534.1433750000006,
+				"min": 508.6618749999998,
+				"max": 880.9430000000002
+			},
+			"mountCpu": {
+				"samplingWindowMs": 403.396,
+				"selfMs": {
+					"(program)": 94.764,
+					"": 32.465,
+					"(idle)": 15.207,
+					"measureText": 13.553,
+					"child": 12.398,
+					"get": 11.729,
+					"set": 7.544,
+					"childrenNamed": 7.529,
+					"build": 7.519,
+					"childrenOfType": 7.156,
+					"appendAll": 6.043,
+					"Note2": 6.04,
+					"(garbage collector)": 6.039,
+					"memo": 6.03,
+					"buildGlissandos": 5.518
+				},
+				"inclusiveMs": {
+					"engrave": 285.821,
+					"drawSystem": 197.014,
+					"draw": 197.014,
+					"settleNext": 197.014,
+					"drawNext": 197.014,
+					"": 165.309,
+					"drawMeasureColumn": 154.984,
+					"(program)": 94.764,
+					"tickables": 90.796,
+					"buildStave": 84.38,
+					"staveNote": 81.761,
+					"buildNotes": 78.364,
+					"redraw": 63.181,
+					"render": 49.735,
+					"formatAndDraw": 45.067,
+					"resolveSystem": 42.03,
+					"endSystem": 42.03,
+					"StaveNote": 40.725,
+					"parseFromString": 40.678,
+					"parse": 40.678,
+					"resolveIn": 33.842,
+					"plan": 33.075,
+					"build": 31.656,
+					"consume": 27.067,
+					"complete": 27.067,
+					"Note2": 25.63,
+					"areaOf": 25.565,
+					"measureNoteArea": 22.935,
+					"reset": 22.617,
+					"buildNoteHeads": 18.11
+				},
+				"scoreEngraverChildrenMs": {
+					"plan": 33.075,
+					"draw": 197.014,
+					"model": 1.508,
+					"create": 4.489
+				}
+			}
+		},
+		{
+			"score": "debussy-mandoline",
+			"range": "all",
+			"engine": "osmd",
+			"samples": [
+				{
+					"ms": 458.92575000000033,
+					"width": 932,
+					"height": 11426
+				},
+				{
+					"ms": 418.17654200000015,
+					"width": 932,
+					"height": 11426
+				},
+				{
+					"ms": 411.09549999999945,
+					"width": 932,
+					"height": 11426
+				}
+			],
+			"mountMs": 217.4422080000004,
+			"captureMs": 193.85675000000083,
+			"evidence": {
+				"width": 900,
+				"height": 11393.6875,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [],
+				"content": {
+					"parts": 2,
+					"measures": 70,
+					"notes": 1460
+				},
+				"svgCount": 1,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 418.17654200000015,
+				"min": 411.09549999999945,
+				"max": 458.92575000000033
+			},
+			"mountCpu": {
+				"samplingWindowMs": 279.696,
+				"selfMs": {
+					"(program)": 72.791,
+					"d": 22.573,
+					"getVoicesWithinMeasure": 15.968,
+					"getBBox": 13.554,
+					"element": 9.023,
+					"draw": 9.002,
+					"": 8.76,
+					"parseFromString": 7.497,
+					"addBezierCurve": 7.207,
+					"(idle)": 6.073,
+					"readNextXmlMeasure": 6.022,
+					"updateLines": 6.02,
+					"i": 6.015,
+					"setAttributeNS": 5.594,
+					"(garbage collector)": 4.527
+				},
+				"inclusiveMs": {
+					"mount": 194.997,
+					"render": 137.169,
+					"draw": 98.783,
+					"": 78.188,
+					"(program)": 72.791,
+					"calculate": 68.136,
+					"reCalculate": 68.136,
+					"drawMusicSystemComponents": 67.519,
+					"drawMusicSystem": 67.519,
+					"drawPage": 67.519,
+					"drawSheet": 67.519,
+					"drawStaffLine": 66.013,
+					"calculateMusicSystems": 60.63,
+					"evaluate": 59.327,
+					"load": 56.317,
+					"drawMeasure": 50.954,
+					"calculateLinesGeometric": 42.881,
+					"calculateLines": 42.881,
+					"computeSkyBottomLinesFor": 42.881,
+					"calculateSkyBottomLines": 42.881,
+					"d": 34.296,
+					"drawWithStyle": 33.719,
+					"reset": 32.782,
+					"_createMusicSheet": 30.097,
+					"createMusicSheet": 30.097,
+					"readNextXmlMeasure": 28.59,
+					"getOutlineBoundingBox": 26.759,
+					"f": 26.759,
+					"getWidth": 25.254,
+					"prepareGraphicalMusicSheet": 18.723
+				}
+			}
+		},
+		{
+			"score": "debussy-mandoline",
+			"range": "all",
+			"engine": "alphatab",
+			"samples": [
+				{
+					"ms": 397.0216670000009,
+					"width": 932,
+					"height": 11106
+				},
+				{
+					"ms": 372.92916700000023,
+					"width": 932,
+					"height": 11106
+				},
+				{
+					"ms": 375.85170800000014,
+					"width": 932,
+					"height": 11106
+				}
+			],
+			"mountMs": 70.42562499999985,
+			"captureMs": 296.6197090000005,
+			"evidence": {
+				"width": 900,
+				"height": 11074,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "alphaTab",
+						"status": "loaded"
+					}
+				],
+				"content": {
+					"selectedTracks": 2,
+					"parts": [
+						{
+							"name": "Chant",
+							"staves": 1,
+							"measures": [70],
+							"notes": 206,
+							"lyrics": 154
+						},
+						{
+							"name": "Piano",
+							"staves": 2,
+							"measures": [70, 70],
+							"notes": 1015,
+							"lyrics": 0
+						}
+					]
+				},
+				"svgCount": 34,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 375.85170800000014,
+				"min": 372.92916700000023,
+				"max": 397.0216670000009
+			},
+			"mountCpu": {
+				"samplingWindowMs": 145.704,
+				"selfMs": {
+					"(program)": 60.087,
+					"get isVisible": 22.568,
+					"beginUpdateRenderResults": 13.55,
+					"parseFromString": 7.504,
+					"(idle)": 6.039,
+					"children": 4.534,
+					"replaceChildren": 4.514,
+					"serializeToString": 3.018,
+					"parse": 3.014,
+					"createVoiceGlyphs": 1.512,
+					"_cyrb53": 1.511,
+					"addBeat": 1.511,
+					"_internalGetNoteY": 1.511,
+					"bezierCurveTo": 1.508,
+					"SpacingGlyph": 1.507
+				},
+				"inclusiveMs": {
+					"": 77.856,
+					"(program)": 60.087,
+					"mount": 28.593,
+					"evaluate": 28.593,
+					"renderScore": 28.196,
+					"_layoutAndRenderScore": 26.695,
+					"doLayoutAndRender": 26.695,
+					"layoutAndRender": 26.695,
+					"_layoutAndRender": 26.695,
+					"render": 26.695,
+					"trigger": 26.695,
+					"_onFontLoaded": 26.695,
+					"successHandler": 26.695,
+					"checkFont": 26.695,
+					"alphatab.alphatab": 22.568,
+					"get isVisible": 22.568,
+					"initialRender": 22.568,
+					"_paintSystem": 16.569,
+					"_internalRenderLazyPartial": 15.058,
+					"registerPartial": 15.058,
+					"forAlphatab": 15.056,
+					"beginUpdateRenderResults": 13.55,
+					"_updateRenderResult": 13.55,
+					"_createStaffSystem": 8.636,
+					"parseFromString": 7.504,
+					"addBar": 7.129,
+					"addBars": 7.129,
+					"doLayout": 7.119,
+					"(idle)": 6.039,
+					"load": 6.007
+				}
+			}
+		},
+		{
+			"score": "schubert-erlkonig",
+			"range": "all",
+			"engine": "vexml",
+			"samples": [
+				{
+					"ms": 1335.9218330000003,
+					"width": 932,
+					"height": 27973
+				},
+				{
+					"ms": 1237.7803750000003,
+					"width": 932,
+					"height": 27973
+				},
+				{
+					"ms": 1270.6560420000005,
+					"width": 932,
+					"height": 27973
+				}
+			],
+			"mountMs": 876.5018330000003,
+			"captureMs": 394.6810000000005,
+			"evidence": {
+				"width": 932,
+				"height": 27972.90625,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					},
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					}
+				],
+				"content": [
+					{
+						"id": "P1",
+						"measures": 148,
+						"staves": 1,
+						"notes": 429
+					},
+					{
+						"id": "P2",
+						"measures": 148,
+						"staves": 2,
+						"notes": 2768
+					}
+				],
+				"svgCount": 0,
+				"canvasCount": 7
+			},
+			"ordinaryMs": {
+				"median": 1270.6560420000005,
+				"min": 1237.7803750000003,
+				"max": 1335.9218330000003
+			},
+			"mountCpu": {
+				"samplingWindowMs": 1018.268,
+				"selfMs": {
+					"(program)": 187.502,
+					"buildGlissandos": 127.087,
+					"buildWavyLines": 36.055,
+					"childrenNamed": 36.042,
+					"child": 32.661,
+					"(garbage collector)": 31.67,
+					"buildSlurs": 31.574,
+					"childrenOfType": 28.427,
+					"get staveCount": 27.046,
+					"set": 25.58,
+					"(idle)": 23.688,
+					"": 17.82,
+					"measureText": 17.728,
+					"memo": 15.022,
+					"get voice": 14.776
+				},
+				"inclusiveMs": {
+					"engrave": 767.241,
+					"draw": 580.552,
+					"drawNext": 579.048,
+					"settleNext": 577.551,
+					"drawSystem": 576.04,
+					"drawMeasureColumn": 323.021,
+					"resolveSystem": 253.019,
+					"endSystem": 253.019,
+					"": 252.058,
+					"resolveIn": 248.5,
+					"redraw": 189.724,
+					"(program)": 187.502,
+					"buildStave": 143.86,
+					"tickables": 140.175,
+					"staveNote": 127.719,
+					"buildGlissandos": 127.087,
+					"buildNotes": 115.547,
+					"render": 108.043,
+					"parseFromString": 106.539,
+					"parse": 106.539,
+					"formatAndDraw": 94.015,
+					"build": 91.222,
+					"plan": 65.096,
+					"buildSlurs": 58.733,
+					"StaveNote": 55.028,
+					"areaOf": 54.585,
+					"consume": 54.585,
+					"complete": 54.585,
+					"measureNoteArea": 49.758,
+					"appendAll": 48.139
+				},
+				"scoreEngraverChildrenMs": {
+					"plan": 65.096,
+					"draw": 580.552,
+					"model": 3.018,
+					"build": 1.509,
+					"create": 9.023
+				}
+			}
+		},
+		{
+			"score": "schubert-erlkonig",
+			"range": "all",
+			"engine": "osmd",
+			"samples": [
+				{
+					"ms": 1013.9524999999994,
+					"width": 932,
+					"height": 21538
+				},
+				{
+					"ms": 933.5585840000022,
+					"width": 932,
+					"height": 21538
+				},
+				{
+					"ms": 902.7360840000001,
+					"width": 932,
+					"height": 21538
+				}
+			],
+			"mountMs": 541.843417,
+			"captureMs": 331.5944579999996,
+			"evidence": {
+				"width": 900,
+				"height": 21505.5,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [],
+				"content": {
+					"parts": 2,
+					"measures": 148,
+					"notes": 3197
+				},
+				"svgCount": 1,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 933.5585840000022,
+				"min": 902.7360840000001,
+				"max": 1013.9524999999994
+			},
+			"mountCpu": {
+				"samplingWindowMs": 667.729,
+				"selfMs": {
+					"(program)": 162.003,
+					"getVoicesWithinMeasure": 106.909,
+					"d": 46.391,
+					"draw": 40.266,
+					"element": 31.846,
+					"(garbage collector)": 31.58,
+					"(idle)": 23.58,
+					"parseFromString": 20.24,
+					"i": 19.067,
+					"bezierCurveTo": 15.061,
+					"addBezierCurve": 13.807,
+					"setAttributeNS": 13.253,
+					"": 10.014,
+					"setAttribute": 9.035,
+					"elements": 8.716
+				},
+				"inclusiveMs": {
+					"mount": 448.41,
+					"render": 316.653,
+					"draw": 253.561,
+					"": 191.557,
+					"calculate": 168.893,
+					"reCalculate": 168.893,
+					"(program)": 162.003,
+					"calculateMusicSystems": 157.857,
+					"drawSheet": 147.76,
+					"drawMusicSystemComponents": 146.259,
+					"drawMusicSystem": 146.259,
+					"drawPage": 146.259,
+					"drawMeasure": 143.258,
+					"drawStaffLine": 143.258,
+					"calculateLines": 135.356,
+					"computeSkyBottomLinesFor": 135.356,
+					"calculateSkyBottomLines": 135.356,
+					"calculateLinesGeometric": 133.857,
+					"evaluate": 133.26,
+					"load": 127.665,
+					"getVoicesWithinMeasure": 106.909,
+					"correctNotePositions": 106.909,
+					"drawWithStyle": 82.142,
+					"_createMusicSheet": 77.705,
+					"createMusicSheet": 77.705,
+					"readNextXmlMeasure": 75.118,
+					"d": 72.26,
+					"reset": 68.183,
+					"getWidth": 60.993,
+					"f": 60.65
+				}
+			}
+		},
+		{
+			"score": "schubert-erlkonig",
+			"range": "all",
+			"engine": "alphatab",
+			"samples": [
+				{
+					"ms": 650.9487920000029,
+					"width": 932,
+					"height": 22532
+				},
+				{
+					"ms": 600.8367079999989,
+					"width": 932,
+					"height": 22532
+				},
+				{
+					"ms": 604.6350410000014,
+					"width": 932,
+					"height": 22532
+				}
+			],
+			"mountMs": 170.8402500000011,
+			"captureMs": 418.51429199999984,
+			"evidence": {
+				"width": 900,
+				"height": 22500,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "alphaTab",
+						"status": "loaded"
+					}
+				],
+				"content": {
+					"selectedTracks": 2,
+					"parts": [
+						{
+							"name": "Clarinet\u00a0in\u00a0C",
+							"staves": 1,
+							"measures": [148],
+							"notes": 338,
+							"lyrics": 318
+						},
+						{
+							"name": "Piano",
+							"staves": 2,
+							"measures": [148, 148],
+							"notes": 2555,
+							"lyrics": 0
+						}
+					]
+				},
+				"svgCount": 72,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 604.6350410000014,
+				"min": 600.8367079999989,
+				"max": 650.9487920000029
+			},
+			"mountCpu": {
+				"samplingWindowMs": 366.46,
+				"selfMs": {
+					"(program)": 157.856,
+					"get isVisible": 53.329,
+					"beginUpdateRenderResults": 35.926,
+					"parseFromString": 19.289,
+					"(garbage collector)": 13.579,
+					"(idle)": 13.014,
+					"serializeToString": 10.139,
+					"replaceChildren": 9.993,
+					"parse": 8.515,
+					"querySelectorAll": 4.18,
+					"children": 4.12,
+					"createVoiceGlyphs": 3.009,
+					"finish": 3.001,
+					"paint": 2.752,
+					"resolveSpelling": 1.552
+				},
+				"inclusiveMs": {
+					"": 181.531,
+					"(program)": 157.856,
+					"mount": 70.235,
+					"evaluate": 70.235,
+					"renderScore": 61.989,
+					"alphatab.alphatab": 58.861,
+					"_layoutAndRender": 57.967,
+					"render": 57.967,
+					"trigger": 57.967,
+					"_onFontLoaded": 57.967,
+					"successHandler": 57.967,
+					"checkFont": 57.967,
+					"_layoutAndRenderScore": 56.46,
+					"doLayoutAndRender": 56.46,
+					"layoutAndRender": 56.46,
+					"get isVisible": 53.329,
+					"initialRender": 53.329,
+					"_paintSystem": 41.69,
+					"_internalRenderLazyPartial": 40.185,
+					"registerPartial": 40.185,
+					"forAlphatab": 39.235,
+					"beginUpdateRenderResults": 35.926,
+					"_updateRenderResult": 35.926,
+					"parseFromString": 19.289,
+					"load": 18.122,
+					"_createStaffSystem": 14.77,
+					"readScore": 14.1,
+					"loadScoreFromBytes": 14.1,
+					"(garbage collector)": 13.579,
+					"(idle)": 13.014
+				}
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "1-8",
+			"engine": "vexml",
+			"samples": [
+				{
+					"ms": 264.8974999999991,
+					"width": 932,
+					"height": 2112
+				},
+				{
+					"ms": 132.93304100000023,
+					"width": 932,
+					"height": 2112
+				},
+				{
+					"ms": 116.5377499999995,
+					"width": 932,
+					"height": 2112
+				}
+			],
+			"mountMs": 39.28254100000049,
+			"captureMs": 74.75837500000125,
+			"evidence": {
+				"width": 932,
+				"height": 2111.640625,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					},
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					}
+				],
+				"content": [
+					{
+						"id": "P1",
+						"measures": 8,
+						"staves": 1,
+						"notes": 49
+					},
+					{
+						"id": "P2",
+						"measures": 8,
+						"staves": 1,
+						"notes": 42
+					},
+					{
+						"id": "P3",
+						"measures": 8,
+						"staves": 1,
+						"notes": 40
+					},
+					{
+						"id": "P4",
+						"measures": 8,
+						"staves": 1,
+						"notes": 25
+					}
+				],
+				"svgCount": 0,
+				"canvasCount": 9
+			},
+			"ordinaryMs": {
+				"median": 132.93304100000023,
+				"min": 116.5377499999995,
+				"max": 264.8974999999991
+			},
+			"mountCpu": {
+				"samplingWindowMs": 99.598,
+				"selfMs": {
+					"(program)": 58.158,
+					"": 10.446,
+					"(idle)": 3.106,
+					"StaveNote": 2.997,
+					"(garbage collector)": 2.529,
+					"close": 1.509,
+					"set": 1.509,
+					"record": 1.506,
+					"childrenOfType": 1.506,
+					"addField": 1.504,
+					"Curve": 1.504,
+					"Note2": 1.499,
+					"fillText": 1.497,
+					"calculateSlope": 1.493,
+					"appendAll": 1.484
+				},
+				"inclusiveMs": {
+					"(program)": 58.158,
+					"engrave": 32.953,
+					"": 23.234,
+					"drawSystem": 21.807,
+					"draw": 21.807,
+					"settleNext": 21.807,
+					"drawNext": 21.807,
+					"drawMeasureColumn": 20.303,
+					"tickables": 10.112,
+					"buildNotes": 8.694,
+					"buildStave": 8.694,
+					"redraw": 8.282,
+					"render": 7.133,
+					"staveNote": 7.107,
+					"formatAndDraw": 6.792,
+					"parseFromString": 5.636,
+					"parse": 5.636,
+					"childrenOfType": 4.522,
+					"buildSlurs": 4.511,
+					"StaveNote": 4.496,
+					"measureNoteArea": 4.013,
+					"areaOf": 4.013,
+					"consume": 4.013,
+					"complete": 4.013,
+					"plan": 4.013,
+					"buildPartBeams": 3.718,
+					"(idle)": 3.106,
+					"get beams": 3.023,
+					"fanOf": 3.023,
+					"buildBeams": 3.023
+				},
+				"scoreEngraverChildrenMs": {
+					"plan": 4.013,
+					"draw": 21.807
+				}
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "1-8",
+			"engine": "osmd",
+			"samples": [
+				{
+					"ms": 104.10016700000051,
+					"width": 932,
+					"height": 1846
+				},
+				{
+					"ms": 100.34675000000061,
+					"width": 932,
+					"height": 1846
+				},
+				{
+					"ms": 99.56433299999844,
+					"width": 932,
+					"height": 1846
+				}
+			],
+			"mountMs": 26.4877919999999,
+			"captureMs": 68.83541600000171,
+			"evidence": {
+				"width": 900,
+				"height": 1813.5,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [],
+				"content": {
+					"parts": 4,
+					"measures": 8,
+					"notes": 156
+				},
+				"svgCount": 1,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 100.34675000000061,
+				"min": 99.56433299999844,
+				"max": 104.10016700000051
+			},
+			"mountCpu": {
+				"samplingWindowMs": 117.624,
+				"selfMs": {
+					"(program)": 91.952,
+					"d": 6.031,
+					"(idle)": 1.594,
+					"(garbage collector)": 1.517,
+					"replaceChildren": 1.509,
+					"calculateTopBottomBorders": 1.509,
+					"readNextXmlMeasure": 1.507,
+					"addBezierCurve": 1.505,
+					"getCueNoteAndNoteTypeXml": 1.504,
+					"setAttributeNS": 1.503,
+					"getVoicesWithinMeasure": 1.498,
+					"i": 1.495,
+					"fill": 1.494,
+					"drawCachedGlyphOutline": 1.491
+				},
+				"inclusiveMs": {
+					"(program)": 91.952,
+					"mount": 21.046,
+					"": 13.549,
+					"render": 13.531,
+					"calculateMusicSystems": 9.043,
+					"calculate": 9.043,
+					"reCalculate": 9.043,
+					"draw": 8.982,
+					"d": 7.536,
+					"evaluate": 7.515,
+					"getOutlineBoundingBox": 6.045,
+					"reset": 6.045,
+					"f": 6.045,
+					"load": 6.006,
+					"calculateLinesGeometric": 5.99,
+					"calculateLines": 5.99,
+					"computeSkyBottomLinesFor": 5.99,
+					"calculateSkyBottomLines": 5.99,
+					"getWidth": 4.545,
+					"getGlyphWidth": 4.545,
+					"readNextXmlMeasure": 4.506,
+					"_createMusicSheet": 4.506,
+					"createMusicSheet": 4.506,
+					"drawMeasure": 4.488,
+					"drawStaffLine": 4.488,
+					"drawMusicSystemComponents": 4.488,
+					"drawMusicSystem": 4.488,
+					"drawPage": 4.488,
+					"drawSheet": 4.488,
+					"preFormat": 3.04
+				}
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "1-8",
+			"engine": "alphatab",
+			"samples": [
+				{
+					"ms": 97.84379199999967,
+					"width": 932,
+					"height": 1726
+				},
+				{
+					"ms": 88.30741599999965,
+					"width": 932,
+					"height": 1726
+				},
+				{
+					"ms": 89.82395799999722,
+					"width": 932,
+					"height": 1726
+				}
+			],
+			"mountMs": 13.36845799999719,
+			"captureMs": 69.29020799999853,
+			"evidence": {
+				"width": 900,
+				"height": 1694,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "alphaTab",
+						"status": "loaded"
+					}
+				],
+				"content": {
+					"selectedTracks": 4,
+					"parts": [
+						{
+							"name": "Violin\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 48,
+							"lyrics": 0
+						},
+						{
+							"name": "Violin\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 40,
+							"lyrics": 0
+						},
+						{
+							"name": "Viola",
+							"staves": 1,
+							"measures": [8],
+							"notes": 35,
+							"lyrics": 0
+						},
+						{
+							"name": "Violoncello",
+							"staves": 1,
+							"measures": [8],
+							"notes": 16,
+							"lyrics": 0
+						}
+					]
+				},
+				"svgCount": 5,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 89.82395799999722,
+				"min": 88.30741599999965,
+				"max": 97.84379199999967
+			},
+			"mountCpu": {
+				"samplingWindowMs": 93.036,
+				"selfMs": {
+					"(program)": 77.845,
+					"get isVisible": 2.993,
+					"(idle)": 2.958,
+					"internalPaint": 1.517,
+					"getBoundingBoxBottom": 1.51,
+					"parseFromString": 1.508,
+					"replaceChildren": 1.505,
+					"calculateBeamingOverflows": 1.502,
+					"serializeToString": 1.374
+				},
+				"inclusiveMs": {
+					"(program)": 77.845,
+					"": 11.909,
+					"_layoutAndRenderScore": 4.529,
+					"doLayoutAndRender": 4.529,
+					"layoutAndRender": 4.529,
+					"_layoutAndRender": 4.529,
+					"render": 4.529,
+					"renderScore": 4.529,
+					"trigger": 4.529,
+					"_onFontLoaded": 4.529,
+					"successHandler": 4.529,
+					"checkFont": 4.529,
+					"mount": 4.387,
+					"evaluate": 4.387,
+					"doLayout": 3.012,
+					"addBar": 3.012,
+					"addBars": 3.012,
+					"_createStaffSystem": 3.012,
+					"get isVisible": 2.993,
+					"initialRender": 2.993,
+					"(idle)": 2.958,
+					"forAlphatab": 2.882,
+					"alphatab.alphatab": 2.882,
+					"internalPaint": 1.517,
+					"paint": 1.517,
+					"paintContent": 1.517,
+					"paintPartial": 1.517,
+					"_internalRenderLazyPartial": 1.517,
+					"registerPartial": 1.517,
+					"_paintSystem": 1.517
+				}
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "423-430",
+			"engine": "vexml",
+			"samples": [
+				{
+					"ms": 129.75774999999703,
+					"width": 932,
+					"height": 1813
+				},
+				{
+					"ms": 91.44429200000013,
+					"width": 932,
+					"height": 1813
+				},
+				{
+					"ms": 89.40204099999755,
+					"width": 932,
+					"height": 1813
+				}
+			],
+			"mountMs": 104.7042909999982,
+			"captureMs": 69.30533399999695,
+			"evidence": {
+				"width": 932,
+				"height": 1812.390625,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					},
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					}
+				],
+				"content": [
+					{
+						"id": "P1",
+						"measures": 8,
+						"staves": 1,
+						"notes": 22
+					},
+					{
+						"id": "P2",
+						"measures": 8,
+						"staves": 1,
+						"notes": 13
+					},
+					{
+						"id": "P3",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P4",
+						"measures": 8,
+						"staves": 1,
+						"notes": 13
+					}
+				],
+				"svgCount": 0,
+				"canvasCount": 8
+			},
+			"ordinaryMs": {
+				"median": 91.44429200000013,
+				"min": 89.40204099999755,
+				"max": 129.75774999999703
+			},
+			"mountCpu": {
+				"samplingWindowMs": 160.167,
+				"selfMs": {
+					"(idle)": 81.853,
+					"(program)": 56.341,
+					"": 2.612,
+					"setProperty": 1.773,
+					"get beams": 1.521,
+					"DrawPass": 1.514,
+					"Note2": 1.513,
+					"build": 1.511,
+					"get notes": 1.511,
+					"child": 1.504,
+					"Element": 1.493,
+					"createTickContexts": 1.48,
+					"drawMeasureColumn": 1.375,
+					"MNode": 1.266,
+					"get voices": 1.077
+				},
+				"inclusiveMs": {
+					"(idle)": 81.853,
+					"(program)": 56.341,
+					"engrave": 17.902,
+					"draw": 12.555,
+					"drawMeasureColumn": 11.041,
+					"drawSystem": 11.041,
+					"settleNext": 11.041,
+					"drawNext": 11.041,
+					"": 10.416,
+					"build": 6.061,
+					"render": 4.55,
+					"buildStave": 4.545,
+					"redraw": 4.121,
+					"format": 3.617,
+					"buildNotes": 3.034,
+					"staveNote": 3.006,
+					"tickables": 3.006,
+					"parseFromString": 2.777,
+					"parse": 2.777,
+					"formatAndDraw": 2.528,
+					"setProperty": 1.773,
+					"setStyle": 1.773,
+					"open": 1.773,
+					"Stage": 1.773,
+					"mount": 1.773,
+					"evaluate": 1.773,
+					"get beams": 1.521,
+					"groupBeamRuns": 1.521,
+					"DrawPass": 1.514,
+					"SystemDraw": 1.514
+				},
+				"scoreEngraverChildrenMs": {
+					"plan": 1.493,
+					"draw": 12.555,
+					"model": 1.077
+				}
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "423-430",
+			"engine": "osmd",
+			"samples": [
+				{
+					"ms": 87.77724999999919,
+					"width": 932,
+					"height": 1504
+				},
+				{
+					"ms": 81.89608299999963,
+					"width": 932,
+					"height": 1504
+				},
+				{
+					"ms": 83.62766600000032,
+					"width": 932,
+					"height": 1504
+				}
+			],
+			"mountMs": 15.092290999997203,
+			"captureMs": 65.53791700000147,
+			"evidence": {
+				"width": 900,
+				"height": 1471.25,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [],
+				"content": {
+					"parts": 4,
+					"measures": 8,
+					"notes": 62
+				},
+				"svgCount": 1,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 83.62766600000032,
+				"min": 81.89608299999963,
+				"max": 87.77724999999919
+			},
+			"mountCpu": {
+				"samplingWindowMs": 102.057,
+				"selfMs": {
+					"(program)": 89.29,
+					"d": 4.194,
+					"getBBox": 1.505,
+					"k": 1.499,
+					"draw": 1.496,
+					"drawCachedGlyphOutline": 1.485,
+					"elements": 1.361,
+					"element": 1.079
+				},
+				"inclusiveMs": {
+					"(program)": 89.29,
+					"mount": 12.619,
+					"render": 8.68,
+					"": 6.639,
+					"draw": 5.98,
+					"drawStaffLine": 4.495,
+					"drawMusicSystemComponents": 4.495,
+					"drawMusicSystem": 4.495,
+					"drawPage": 4.495,
+					"drawSheet": 4.495,
+					"d": 4.194,
+					"calculate": 4.185,
+					"reCalculate": 4.185,
+					"load": 3.939,
+					"evaluate": 3.939,
+					"calculateLinesGeometric": 2.997,
+					"calculateLines": 2.997,
+					"computeSkyBottomLinesFor": 2.997,
+					"calculateSkyBottomLines": 2.997,
+					"calculateMusicSystems": 2.997,
+					"drawMeasure": 2.99,
+					"renderOutline": 2.979,
+					"renderToStave": 2.979,
+					"getOutlineBoundingBox": 2.7,
+					"reset": 2.7,
+					"f": 2.7,
+					"getWidth": 2.7,
+					"getGlyphWidth": 2.7,
+					"preFormat": 2.7,
+					"_createMusicSheet": 2.44
+				}
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "423-430",
+			"engine": "alphatab",
+			"samples": [
+				{
+					"ms": 79.30966600000102,
+					"width": 932,
+					"height": 1521
+				},
+				{
+					"ms": 82.93066700000054,
+					"width": 932,
+					"height": 1521
+				},
+				{
+					"ms": 73.29883300000074,
+					"width": 932,
+					"height": 1521
+				}
+			],
+			"mountMs": 10.77758299999914,
+			"captureMs": 62.41954199999964,
+			"evidence": {
+				"width": 900,
+				"height": 1489,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "alphaTab",
+						"status": "loaded"
+					}
+				],
+				"content": {
+					"selectedTracks": 4,
+					"parts": [
+						{
+							"name": "Violin\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 22,
+							"lyrics": 0
+						},
+						{
+							"name": "Violin\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 12,
+							"lyrics": 0
+						},
+						{
+							"name": "Viola",
+							"staves": 1,
+							"measures": [8],
+							"notes": 13,
+							"lyrics": 0
+						},
+						{
+							"name": "Violoncello",
+							"staves": 1,
+							"measures": [8],
+							"notes": 12,
+							"lyrics": 0
+						}
+					]
+				},
+				"svgCount": 4,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 79.30966600000102,
+				"min": 73.29883300000074,
+				"max": 82.93066700000054
+			},
+			"mountCpu": {
+				"samplingWindowMs": 99.142,
+				"selfMs": {
+					"(program)": 87.719,
+					"get isVisible": 2.994,
+					"(idle)": 2.773,
+					"beginUpdateRenderResults": 2.642,
+					"fret": 1.513,
+					"clone": 1.139
+				},
+				"inclusiveMs": {
+					"(program)": 87.719,
+					"": 8.288,
+					"get isVisible": 2.994,
+					"initialRender": 2.994,
+					"(idle)": 2.773,
+					"mount": 2.652,
+					"evaluate": 2.652,
+					"beginUpdateRenderResults": 2.642,
+					"_updateRenderResult": 2.642,
+					"trigger": 2.642,
+					"_internalRenderLazyPartial": 2.642,
+					"registerPartial": 2.642,
+					"_paintSystem": 2.642,
+					"_layoutAndRenderScore": 2.642,
+					"doLayoutAndRender": 2.642,
+					"layoutAndRender": 2.642,
+					"_layoutAndRender": 2.642,
+					"render": 2.642,
+					"renderScore": 2.642,
+					"_onFontLoaded": 2.642,
+					"successHandler": 2.642,
+					"checkFont": 2.642,
+					"fret": 1.513,
+					"forAlphatab": 1.513,
+					"alphatab.alphatab": 1.513,
+					"clone": 1.139,
+					"get bravuraDefaults": 1.139,
+					"RenderingResources": 1.139,
+					"DisplaySettings": 1.139,
+					"Settings": 1.139
+				}
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "846-853",
+			"engine": "vexml",
+			"samples": [
+				{
+					"ms": 131.94879199999923,
+					"width": 932,
+					"height": 1094
+				},
+				{
+					"ms": 83.17704199999935,
+					"width": 932,
+					"height": 1094
+				},
+				{
+					"ms": 82.84866599999805,
+					"width": 932,
+					"height": 1094
+				}
+			],
+			"mountMs": 19.902000000001863,
+			"captureMs": 62.68000000000029,
+			"evidence": {
+				"width": 932,
+				"height": 1093.1875,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					},
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					}
+				],
+				"content": [
+					{
+						"id": "P1",
+						"measures": 8,
+						"staves": 1,
+						"notes": 28
+					},
+					{
+						"id": "P2",
+						"measures": 8,
+						"staves": 1,
+						"notes": 29
+					},
+					{
+						"id": "P3",
+						"measures": 8,
+						"staves": 1,
+						"notes": 28
+					},
+					{
+						"id": "P4",
+						"measures": 8,
+						"staves": 1,
+						"notes": 19
+					}
+				],
+				"svgCount": 0,
+				"canvasCount": 5
+			},
+			"ordinaryMs": {
+				"median": 83.17704199999935,
+				"min": 82.84866599999805,
+				"max": 131.94879199999923
+			},
+			"mountCpu": {
+				"samplingWindowMs": 100.467,
+				"selfMs": {
+					"(program)": 79.385,
+					"(idle)": 2.616,
+					"measureText": 1.505,
+					"StaveNote": 1.505,
+					"get voices": 1.505,
+					"get textMetrics": 1.503,
+					"module.exports": 1.5,
+					"modulationOf": 1.5,
+					"formatAndDraw": 1.5,
+					"": 1.496,
+					"attributeBack": 1.493,
+					"(garbage collector)": 1.487,
+					"get": 1.486,
+					"appendAll": 1.178
+				},
+				"inclusiveMs": {
+					"(program)": 79.385,
+					"engrave": 16.171,
+					"drawMeasureColumn": 8.983,
+					"drawSystem": 8.983,
+					"draw": 8.983,
+					"settleNext": 8.983,
+					"drawNext": 8.983,
+					"": 7.492,
+					"formatAndDraw": 4.499,
+					"staveNote": 4.496,
+					"tickables": 4.496,
+					"buildStave": 4.484,
+					"StaveNote": 3.01,
+					"plan": 3.005,
+					"redraw": 3.005,
+					"buildNotes": 2.991,
+					"parseFromString": 2.678,
+					"parse": 2.678,
+					"render": 2.678,
+					"build": 2.671,
+					"(idle)": 2.616,
+					"measureText": 1.505,
+					"set width": 1.505,
+					"Note2": 1.505,
+					"StemmableNote": 1.505,
+					"measureNoteArea": 1.505,
+					"areaOf": 1.505,
+					"consume": 1.505,
+					"complete": 1.505,
+					"get voices": 1.505
+				},
+				"scoreEngraverChildrenMs": {
+					"plan": 3.005,
+					"draw": 8.983,
+					"model": 1.505
+				}
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "846-853",
+			"engine": "osmd",
+			"samples": [
+				{
+					"ms": 78.55045800000153,
+					"width": 932,
+					"height": 903
+				},
+				{
+					"ms": 73.74725000000035,
+					"width": 932,
+					"height": 903
+				},
+				{
+					"ms": 75.9965000000011,
+					"width": 932,
+					"height": 903
+				}
+			],
+			"mountMs": 15.381583000002138,
+			"captureMs": 65.90516699999716,
+			"evidence": {
+				"width": 900,
+				"height": 870.5,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [],
+				"content": {
+					"parts": 4,
+					"measures": 8,
+					"notes": 104
+				},
+				"svgCount": 1,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 75.9965000000011,
+				"min": 73.74725000000035,
+				"max": 78.55045800000153
+			},
+			"mountCpu": {
+				"samplingWindowMs": 114.487,
+				"selfMs": {
+					"(program)": 100.654,
+					"d": 4.462,
+					"setAttributeNS": 1.508,
+					"readNextXmlMeasure": 1.506,
+					"addSingleNote": 1.501,
+					"restore": 1.491,
+					"calculateAbsolutePositionsRecursive": 1.388,
+					"(garbage collector)": 1.093
+				},
+				"inclusiveMs": {
+					"(program)": 100.654,
+					"mount": 11.856,
+					"": 8.977,
+					"render": 7.357,
+					"load": 4.499,
+					"evaluate": 4.499,
+					"d": 4.462,
+					"getOutlineBoundingBox": 4.462,
+					"reset": 4.462,
+					"f": 4.462,
+					"getWidth": 4.462,
+					"calculateMusicSystems": 4.358,
+					"calculate": 4.358,
+					"reCalculate": 4.358,
+					"readNextXmlMeasure": 3.007,
+					"_createMusicSheet": 3.007,
+					"createMusicSheet": 3.007,
+					"draw": 2.999,
+					"drawMeasure": 2.999,
+					"drawStaffLine": 2.999,
+					"drawMusicSystemComponents": 2.999,
+					"drawMusicSystem": 2.999,
+					"drawPage": 2.999,
+					"drawSheet": 2.999,
+					"getGlyphWidth": 2.97,
+					"preFormat": 2.97,
+					"format": 2.97,
+					"formatToStave": 2.97,
+					"calculateLinesGeometric": 2.848,
+					"calculateLines": 2.848
+				}
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "846-853",
+			"engine": "alphatab",
+			"samples": [
+				{
+					"ms": 69.98858299999847,
+					"width": 932,
+					"height": 893
+				},
+				{
+					"ms": 68.02824999999939,
+					"width": 932,
+					"height": 893
+				},
+				{
+					"ms": 65.47683300000062,
+					"width": 932,
+					"height": 893
+				}
+			],
+			"mountMs": 9.916916000001947,
+			"captureMs": 56.291707999997016,
+			"evidence": {
+				"width": 900,
+				"height": 861,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "alphaTab",
+						"status": "loaded"
+					}
+				],
+				"content": {
+					"selectedTracks": 4,
+					"parts": [
+						{
+							"name": "Violin\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 24,
+							"lyrics": 0
+						},
+						{
+							"name": "Violin\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 25,
+							"lyrics": 0
+						},
+						{
+							"name": "Viola",
+							"staves": 1,
+							"measures": [8],
+							"notes": 24,
+							"lyrics": 0
+						},
+						{
+							"name": "Violoncello",
+							"staves": 1,
+							"measures": [8],
+							"notes": 15,
+							"lyrics": 0
+						}
+					]
+				},
+				"svgCount": 3,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 68.02824999999939,
+				"min": 65.47683300000062,
+				"max": 69.98858299999847
+			},
+			"mountCpu": {
+				"samplingWindowMs": 92.539,
+				"selfMs": {
+					"(program)": 82.571,
+					"get isVisible": 2.401,
+					"(idle)": 1.614,
+					"serializeToString": 1.501,
+					"getFlagBottomY": 1.491,
+					"_cyrb53": 1.124,
+					"beginUpdateRenderResults": 1.029
+				},
+				"inclusiveMs": {
+					"(program)": 82.571,
+					"": 7.546,
+					"mount": 2.625,
+					"evaluate": 2.625,
+					"_internalRenderLazyPartial": 2.52,
+					"registerPartial": 2.52,
+					"_paintSystem": 2.52,
+					"_layoutAndRenderScore": 2.52,
+					"doLayoutAndRender": 2.52,
+					"layoutAndRender": 2.52,
+					"_layoutAndRender": 2.52,
+					"render": 2.52,
+					"renderScore": 2.52,
+					"trigger": 2.52,
+					"_onFontLoaded": 2.52,
+					"successHandler": 2.52,
+					"checkFont": 2.52,
+					"get isVisible": 2.401,
+					"initialRender": 2.401,
+					"(idle)": 1.614,
+					"serializeToString": 1.501,
+					"forAlphatab": 1.501,
+					"alphatab.alphatab": 1.501,
+					"getFlagBottomY": 1.491,
+					"initializeBeamDrawingInfo": 1.491,
+					"ensureBeamDrawingInfo": 1.491,
+					"calculateBeamY": 1.491,
+					"paintBar": 1.491,
+					"paintBeamHelper": 1.491,
+					"paintBeams": 1.491
+				}
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "all",
+			"engine": "vexml",
+			"samples": [],
+			"mountMs": 7775.601292000003,
+			"captureError": "Unsupported capture size: 932x176657 device pixels for #screenshot; image or expanded viewport exceeds the 33554432-pixel capture budget. Capture a smaller measure slice.",
+			"evidence": {
+				"width": 932,
+				"height": 176657,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					},
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					}
+				],
+				"content": [
+					{
+						"id": "P1",
+						"measures": 853,
+						"staves": 1,
+						"notes": 3810
+					},
+					{
+						"id": "P2",
+						"measures": 853,
+						"staves": 1,
+						"notes": 4265
+					},
+					{
+						"id": "P3",
+						"measures": 853,
+						"staves": 1,
+						"notes": 4254
+					},
+					{
+						"id": "P4",
+						"measures": 853,
+						"staves": 1,
+						"notes": 3329
+					}
+				],
+				"svgCount": 0,
+				"canvasCount": 7
+			},
+			"mountCpu": {
+				"samplingWindowMs": 7846.503,
+				"selfMs": {
+					"get staveCount": 2533.241,
+					"": 770.192,
+					"memo": 768.289,
+					"(program)": 441.266,
+					"childrenNamed": 214.353,
+					"(garbage collector)": 210.705,
+					"measureText": 139.527,
+					"(idle)": 133.402,
+					"childrenOfType": 129.167,
+					"get": 123.739,
+					"set": 90.665,
+					"child": 82.418,
+					"appendAll": 64.573,
+					"write": 62.317,
+					"build": 60.613
+				},
+				"inclusiveMs": {
+					"engrave": 7006.515,
+					"draw": 5776.167,
+					"settleNext": 5763.567,
+					"drawNext": 5763.567,
+					"drawSystem": 5750.941,
+					"drawMeasureColumn": 5384.861,
+					"": 2961.97,
+					"partsPairTabWithNotation": 2768.819,
+					"get staveCount": 2767.003,
+					"buildStave": 1927.7,
+					"redraw": 1872.333,
+					"build": 1418.149,
+					"drawConnectors": 950.903,
+					"collectGeometry": 948.929,
+					"drawSystemStart": 946.194,
+					"tickables": 929.156,
+					"systemSymbol": 914.84,
+					"connectorExtent": 914.84,
+					"wordsOf": 905.612,
+					"memo": 873.162,
+					"measuresOf": 841.32,
+					"offsetBeatsOf": 838.39,
+					"get measures": 838.309,
+					"staveNote": 835.642,
+					"buildNotes": 742.054,
+					"plan": 703.528,
+					"formatAndDraw": 656.477,
+					"(program)": 441.266,
+					"render": 440.606,
+					"parseFromString": 436.178
+				},
+				"scoreEngraverChildrenMs": {
+					"resolve": 1.863,
+					"plan": 703.528,
+					"draw": 5776.167,
+					"model": 12.488,
+					"build": 7.47,
+					"create": 62.889
+				}
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "all",
+			"engine": "osmd",
+			"samples": [],
+			"mountMs": 15353.711709000003,
+			"captureError": "Unsupported capture size: 932x150808 device pixels for #screenshot; image or expanded viewport exceeds the 33554432-pixel capture budget. Capture a smaller measure slice.",
+			"evidence": {
+				"width": 900,
+				"height": 150775.59375,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [],
+				"content": {
+					"parts": 4,
+					"measures": 853,
+					"notes": 15658
+				},
+				"svgCount": 1,
+				"canvasCount": 0
+			},
+			"mountCpu": {
+				"samplingWindowMs": 15493.205,
+				"selfMs": {
+					"draw": 4253.12,
+					"t.getValue": 2108.613,
+					"correctNotePositions": 2102.917,
+					"notehead": 1619.509,
+					"e.defaultToString": 1617.471,
+					"(program)": 650.714,
+					"r": 347.781,
+					"d": 343.736,
+					"setAttributeNS": 177.27,
+					"getBBox": 165.824,
+					"(garbage collector)": 132.388,
+					"(idle)": 127.268,
+					"": 126.278,
+					"addBezierCurve": 114.766,
+					"element": 100.619
+				},
+				"inclusiveMs": {
+					"mount": 14578.237,
+					"render": 13917.576,
+					"draw": 13244.998,
+					"correctNotePositions": 7889.342,
+					"calculate": 6968.938,
+					"reCalculate": 6968.938,
+					"drawMusicSystem": 6948.638,
+					"drawPage": 6948.638,
+					"drawSheet": 6948.638,
+					"drawMusicSystemComponents": 6944.119,
+					"drawStaffLine": 6907.726,
+					"drawMeasure": 6849.345,
+					"calculateMusicSystems": 6839.074,
+					"calculateLines": 6560.577,
+					"computeSkyBottomLinesFor": 6560.577,
+					"calculateSkyBottomLines": 6560.577,
+					"calculateLinesGeometric": 6557.551,
+					"GNote": 4104.208,
+					"FromNote": 4079.213,
+					"t.getValue": 4067.672,
+					"e.defaultToString": 1960.556,
+					"notehead": 1619.509,
+					"": 1277.108,
+					"evaluate": 698.593,
+					"load": 659.147,
+					"(program)": 650.714,
+					"d": 537.301,
+					"reset": 507.085,
+					"f": 500.978,
+					"getWidth": 470.264
+				}
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "all",
+			"engine": "alphatab",
+			"samples": [],
+			"mountMs": 851.8865839999999,
+			"captureError": "Unsupported capture size: 932x150022 device pixels for #screenshot; image or expanded viewport exceeds the 33554432-pixel capture budget. Capture a smaller measure slice.",
+			"evidence": {
+				"width": 900,
+				"height": 149990,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "alphaTab",
+						"status": "loaded"
+					}
+				],
+				"content": {
+					"selectedTracks": 4,
+					"parts": [
+						{
+							"name": "Violin\u00a01",
+							"staves": 1,
+							"measures": [853],
+							"notes": 3375,
+							"lyrics": 0
+						},
+						{
+							"name": "Violin\u00a02",
+							"staves": 1,
+							"measures": [853],
+							"notes": 3829,
+							"lyrics": 0
+						},
+						{
+							"name": "Viola",
+							"staves": 1,
+							"measures": [853],
+							"notes": 3857,
+							"lyrics": 0
+						},
+						{
+							"name": "Violoncello",
+							"staves": 1,
+							"measures": [853],
+							"notes": 2549,
+							"lyrics": 0
+						}
+					]
+				},
+				"svgCount": 383,
+				"canvasCount": 0
+			},
+			"mountCpu": {
+				"samplingWindowMs": 1258.866,
+				"selfMs": {
+					"get isVisible": 294.237,
+					"beginUpdateRenderResults": 189.038,
+					"(program)": 164.152,
+					"(idle)": 114.543,
+					"parseFromString": 93.541,
+					"parse": 36.831,
+					"serializeToString": 35.342,
+					"(garbage collector)": 33.793,
+					"children": 20.232,
+					"doLayout": 16.064,
+					"paint": 12.805,
+					"shareBreaks": 9.786,
+					"querySelectorAll": 8.778,
+					"fret": 8.652,
+					"encode": 8.368
+				},
+				"inclusiveMs": {
+					"": 938.152,
+					"renderScore": 370.908,
+					"_layoutAndRender": 336.46,
+					"render": 336.46,
+					"trigger": 336.46,
+					"_onFontLoaded": 336.46,
+					"successHandler": 336.46,
+					"checkFont": 336.46,
+					"_layoutAndRenderScore": 334.962,
+					"doLayoutAndRender": 334.962,
+					"layoutAndRender": 334.962,
+					"mount": 307.455,
+					"evaluate": 307.455,
+					"alphatab.alphatab": 305.895,
+					"get isVisible": 294.237,
+					"initialRender": 294.237,
+					"_paintSystem": 229.303,
+					"_internalRenderLazyPartial": 225.049,
+					"registerPartial": 225.049,
+					"beginUpdateRenderResults": 189.038,
+					"_updateRenderResult": 189.038,
+					"forAlphatab": 177.613,
+					"(program)": 164.152,
+					"load": 116.983,
+					"(idle)": 114.543,
+					"_createStaffSystem": 104.049,
+					"addBars": 93.917,
+					"parseFromString": 93.541,
+					"doLayout": 86.796,
+					"addBar": 86.649
+				}
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "1-8",
+			"engine": "vexml",
+			"samples": [
+				{
+					"ms": 197.671583000003,
+					"width": 932,
+					"height": 4924
+				},
+				{
+					"ms": 308.4977910000016,
+					"width": 932,
+					"height": 4924
+				},
+				{
+					"ms": 157.9617500000022,
+					"width": 932,
+					"height": 4924
+				}
+			],
+			"mountMs": 56.30687500000204,
+			"captureMs": 87.02395799999795,
+			"evidence": {
+				"width": 932,
+				"height": 4923.921875,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					},
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					}
+				],
+				"content": [
+					{
+						"id": "P1",
+						"measures": 8,
+						"staves": 1,
+						"notes": 8
+					},
+					{
+						"id": "P2",
+						"measures": 8,
+						"staves": 1,
+						"notes": 8
+					},
+					{
+						"id": "P3",
+						"measures": 8,
+						"staves": 1,
+						"notes": 8
+					},
+					{
+						"id": "P4",
+						"measures": 8,
+						"staves": 1,
+						"notes": 8
+					},
+					{
+						"id": "P5",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P6",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P7",
+						"measures": 8,
+						"staves": 1,
+						"notes": 8
+					},
+					{
+						"id": "P8",
+						"measures": 8,
+						"staves": 1,
+						"notes": 8
+					},
+					{
+						"id": "P9",
+						"measures": 8,
+						"staves": 1,
+						"notes": 8
+					},
+					{
+						"id": "P10",
+						"measures": 8,
+						"staves": 1,
+						"notes": 8
+					},
+					{
+						"id": "P11",
+						"measures": 8,
+						"staves": 1,
+						"notes": 8
+					},
+					{
+						"id": "P12",
+						"measures": 8,
+						"staves": 1,
+						"notes": 8
+					},
+					{
+						"id": "P13",
+						"measures": 8,
+						"staves": 1,
+						"notes": 8
+					},
+					{
+						"id": "P14",
+						"measures": 8,
+						"staves": 1,
+						"notes": 17
+					},
+					{
+						"id": "P15",
+						"measures": 8,
+						"staves": 1,
+						"notes": 17
+					},
+					{
+						"id": "P16",
+						"measures": 8,
+						"staves": 1,
+						"notes": 17
+					},
+					{
+						"id": "P17",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P18",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					}
+				],
+				"svgCount": 0,
+				"canvasCount": 16
+			},
+			"ordinaryMs": {
+				"median": 197.671583000003,
+				"min": 157.9617500000022,
+				"max": 308.4977910000016
+			},
+			"mountCpu": {
+				"samplingWindowMs": 91.142,
+				"selfMs": {
+					"(program)": 39.411,
+					"": 4.518,
+					"(garbage collector)": 3.016,
+					"Note2": 3.01,
+					"tickables": 3.006,
+					"measureText": 2.867,
+					"touch": 2.431,
+					"(idle)": 1.603,
+					"contentEnd": 1.513,
+					"drawMeasureColumn": 1.512,
+					"save": 1.508,
+					"setStave": 1.507,
+					"childrenOfType": 1.507,
+					"stemOf": 1.506,
+					"Barline2": 1.506
+				},
+				"inclusiveMs": {
+					"engrave": 46.064,
+					"(program)": 39.411,
+					"drawMeasureColumn": 31.946,
+					"drawSystem": 31.946,
+					"draw": 31.946,
+					"settleNext": 31.946,
+					"advance": 31.946,
+					"drawNext": 31.946,
+					"": 21.836,
+					"buildStave": 14.436,
+					"redraw": 14.04,
+					"tickables": 12.79,
+					"formatAndDraw": 10.516,
+					"buildNotes": 9.923,
+					"staveNote": 8.421,
+					"build": 6.944,
+					"render": 6.729,
+					"plan": 5.889,
+					"StaveNote": 5.412,
+					"parseFromString": 5.221,
+					"parse": 5.221,
+					"measureNoteArea": 4.376,
+					"areaOf": 4.376,
+					"consume": 4.376,
+					"complete": 4.376,
+					"Note2": 4.37,
+					"StemmableNote": 4.37,
+					"(garbage collector)": 3.016,
+					"create": 3.006,
+					"measureText": 2.867
+				},
+				"scoreEngraverChildrenMs": {
+					"plan": 5.889,
+					"draw": 31.946,
+					"create": 1.5
+				}
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "1-8",
+			"engine": "osmd",
+			"samples": [
+				{
+					"ms": 164.2934580000001,
+					"width": 932,
+					"height": 3268
+				},
+				{
+					"ms": 115.27045799999905,
+					"width": 932,
+					"height": 3268
+				},
+				{
+					"ms": 116.32887499999924,
+					"width": 932,
+					"height": 3268
+				}
+			],
+			"mountMs": 34.412374999999884,
+			"captureMs": 84.9328749999986,
+			"evidence": {
+				"width": 900,
+				"height": 3235.25,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [],
+				"content": {
+					"parts": 18,
+					"measures": 8,
+					"notes": 195
+				},
+				"svgCount": 1,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 116.32887499999924,
+				"min": 115.27045799999905,
+				"max": 164.2934580000001
+			},
+			"mountCpu": {
+				"samplingWindowMs": 284.034,
+				"selfMs": {
+					"(program)": 251.062,
+					"setAttribute": 3.02,
+					"": 2.998,
+					"setAttributeNS": 2.995,
+					"d": 2.992,
+					"(idle)": 1.61,
+					"getSkyLineMin": 1.513,
+					"lessThan": 1.51,
+					"parseFromString": 1.509,
+					"calculateLinesGeometric": 1.509,
+					"t.setValue": 1.508,
+					"createElementNS": 1.508,
+					"preFormat": 1.506,
+					"elements": 1.503,
+					"bezierCurveTo": 1.503
+				},
+				"inclusiveMs": {
+					"(program)": 251.062,
+					"mount": 31.182,
+					"render": 23.669,
+					"calculate": 16.162,
+					"reCalculate": 16.162,
+					"": 16.13,
+					"calculateMusicSystems": 14.653,
+					"draw": 12.005,
+					"calculateLinesGeometric": 10.131,
+					"calculateLines": 10.131,
+					"computeSkyBottomLinesFor": 10.131,
+					"calculateSkyBottomLines": 10.131,
+					"evaluate": 9.013,
+					"load": 7.513,
+					"drawMeasure": 7.507,
+					"drawStaffLine": 7.507,
+					"drawMusicSystemComponents": 7.507,
+					"drawMusicSystem": 7.507,
+					"drawPage": 7.507,
+					"drawSheet": 7.507,
+					"format": 5.63,
+					"formatToStave": 5.63,
+					"f": 4.503,
+					"d": 4.495,
+					"e": 4.124,
+					"prepareMeasureForGeometricSkyline": 4.124,
+					"preFormat": 4.12,
+					"setAttribute": 3.02,
+					"drawWithStyle": 3.009,
+					"prepareGraphicalMusicSheet": 3.008
+				}
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "1-8",
+			"engine": "alphatab",
+			"samples": [
+				{
+					"ms": 176.0877079999991,
+					"width": 932,
+					"height": 3165
+				},
+				{
+					"ms": 108.62470800000301,
+					"width": 932,
+					"height": 3165
+				},
+				{
+					"ms": 105.57683299999917,
+					"width": 932,
+					"height": 3165
+				}
+			],
+			"mountMs": 16.55658300000505,
+			"captureMs": 88.3348330000008,
+			"evidence": {
+				"width": 900,
+				"height": 3133,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "alphaTab",
+						"status": "loaded"
+					}
+				],
+				"content": {
+					"selectedTracks": 18,
+					"parts": [
+						{
+							"name": "Flute\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 0,
+							"lyrics": 0
+						},
+						{
+							"name": "Flute\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 0,
+							"lyrics": 0
+						},
+						{
+							"name": "Oboe\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 0,
+							"lyrics": 0
+						},
+						{
+							"name": "Oboe\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 0,
+							"lyrics": 0
+						},
+						{
+							"name": "B\u266dClarinet",
+							"staves": 1,
+							"measures": [8],
+							"notes": 9,
+							"lyrics": 0
+						},
+						{
+							"name": "B\u266dClarinet\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 9,
+							"lyrics": 0
+						},
+						{
+							"name": "Bassoon\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 2,
+							"lyrics": 0
+						},
+						{
+							"name": "Bassoon\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 2,
+							"lyrics": 0
+						},
+						{
+							"name": "E\u266dHorn\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 0,
+							"lyrics": 0
+						},
+						{
+							"name": "E\u266dHorn\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 0,
+							"lyrics": 0
+						},
+						{
+							"name": "C\u00a0Trumpet\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 0,
+							"lyrics": 0
+						},
+						{
+							"name": "C\u00a0Trumpet\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 0,
+							"lyrics": 0
+						},
+						{
+							"name": "C,\u00a0G\u00a0Timpani",
+							"staves": 1,
+							"measures": [8],
+							"notes": 0,
+							"lyrics": 0
+						},
+						{
+							"name": "Violin\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 12,
+							"lyrics": 3
+						},
+						{
+							"name": "Violin\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 1
+						},
+						{
+							"name": "Viola",
+							"staves": 1,
+							"measures": [8],
+							"notes": 13,
+							"lyrics": 1
+						},
+						{
+							"name": "Violoncello",
+							"staves": 1,
+							"measures": [8],
+							"notes": 11,
+							"lyrics": 0
+						},
+						{
+							"name": "Contrabass",
+							"staves": 1,
+							"measures": [8],
+							"notes": 9,
+							"lyrics": 0
+						}
+					]
+				},
+				"svgCount": 3,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 108.62470800000301,
+				"min": 105.57683299999917,
+				"max": 176.0877079999991
+			},
+			"mountCpu": {
+				"samplingWindowMs": 223.902,
+				"selfMs": {
+					"(program)": 204.609,
+					"get isVisible": 5.471,
+					"beginUpdateRenderResults": 2.989,
+					"(idle)": 1.594,
+					"replaceChildren": 1.509,
+					"createPreBeatGlyphs": 1.509,
+					"parseFromString": 1.507,
+					"children": 1.496,
+					"_parsePartMeasure": 1.365,
+					"getSharedLayoutData": 1.22
+				},
+				"inclusiveMs": {
+					"(program)": 204.609,
+					"": 17.066,
+					"mount": 5.877,
+					"evaluate": 5.877,
+					"_layoutAndRenderScore": 5.718,
+					"doLayoutAndRender": 5.718,
+					"layoutAndRender": 5.718,
+					"_layoutAndRender": 5.718,
+					"render": 5.718,
+					"renderScore": 5.718,
+					"trigger": 5.718,
+					"_onFontLoaded": 5.718,
+					"successHandler": 5.718,
+					"checkFont": 5.718,
+					"get isVisible": 5.471,
+					"initialRender": 5.471,
+					"alphatab.alphatab": 4.368,
+					"forAlphatab": 3.003,
+					"beginUpdateRenderResults": 2.989,
+					"_updateRenderResult": 2.989,
+					"_internalRenderLazyPartial": 2.989,
+					"registerPartial": 2.989,
+					"_paintSystem": 2.989,
+					"_createStaffSystem": 2.729,
+					"(idle)": 1.594,
+					"replaceChildren": 1.509,
+					"createPreBeatGlyphs": 1.509,
+					"reLayout": 1.509,
+					"addBarRenderer": 1.509,
+					"addMasterBarRenderers": 1.509
+				}
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "248-255",
+			"engine": "vexml",
+			"samples": [
+				{
+					"ms": 201.35012500000448,
+					"width": 932,
+					"height": 4575
+				},
+				{
+					"ms": 174.62049999999726,
+					"width": 932,
+					"height": 4575
+				},
+				{
+					"ms": 175.14600000000064,
+					"width": 932,
+					"height": 4575
+				}
+			],
+			"mountMs": 78.15858299999672,
+			"captureMs": 91.2488330000051,
+			"evidence": {
+				"width": 932,
+				"height": 4574.15625,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					},
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					}
+				],
+				"content": [
+					{
+						"id": "P1",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P2",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P3",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P4",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P5",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P6",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P7",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P8",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P9",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P10",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P11",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P12",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P13",
+						"measures": 8,
+						"staves": 1,
+						"notes": 14
+					},
+					{
+						"id": "P14",
+						"measures": 8,
+						"staves": 1,
+						"notes": 20
+					},
+					{
+						"id": "P15",
+						"measures": 8,
+						"staves": 1,
+						"notes": 17
+					},
+					{
+						"id": "P16",
+						"measures": 8,
+						"staves": 1,
+						"notes": 15
+					},
+					{
+						"id": "P17",
+						"measures": 8,
+						"staves": 1,
+						"notes": 15
+					},
+					{
+						"id": "P18",
+						"measures": 8,
+						"staves": 1,
+						"notes": 15
+					}
+				],
+				"svgCount": 0,
+				"canvasCount": 19
+			},
+			"ordinaryMs": {
+				"median": 175.14600000000064,
+				"min": 174.62049999999726,
+				"max": 201.35012500000448
+			},
+			"mountCpu": {
+				"samplingWindowMs": 101.446,
+				"selfMs": {
+					"(program)": 27.404,
+					"measureText": 4.536,
+					"": 4.492,
+					"(garbage collector)": 3.181,
+					"(idle)": 3.069,
+					"set": 3.016,
+					"get staveCount": 3.003,
+					"draw": 2.987,
+					"save": 1.528,
+					"setBegBarType": 1.516,
+					"Note2": 1.513,
+					"placeInput": 1.512,
+					"set width": 1.51,
+					"buildNotes": 1.51,
+					"register": 1.508
+				},
+				"inclusiveMs": {
+					"engrave": 66.121,
+					"draw": 46.553,
+					"drawSystem": 45.049,
+					"settleNext": 45.049,
+					"advance": 45.049,
+					"drawNext": 45.049,
+					"drawMeasureColumn": 42.04,
+					"": 33.071,
+					"(program)": 27.404,
+					"buildStave": 24.056,
+					"redraw": 16.5,
+					"buildNotes": 13.539,
+					"tickables": 13.535,
+					"formatAndDraw": 13.483,
+					"staveNote": 12.028,
+					"build": 12.02,
+					"render": 9.036,
+					"StaveNote": 9.029,
+					"plan": 9.02,
+					"parseFromString": 7.508,
+					"parse": 7.508,
+					"areaOf": 7.508,
+					"consume": 7.508,
+					"complete": 7.508,
+					"drawWithStyle": 7.502,
+					"reset": 6.027,
+					"measureNoteArea": 6.014,
+					"preFormat": 6.007,
+					"measureText": 4.536,
+					"minNoteWidth": 4.508
+				},
+				"scoreEngraverChildrenMs": {
+					"plan": 9.02,
+					"draw": 46.553,
+					"create": 1.512
+				}
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "248-255",
+			"engine": "osmd",
+			"samples": [
+				{
+					"ms": 141.84537500000442,
+					"width": 932,
+					"height": 3489
+				},
+				{
+					"ms": 142.59187499999825,
+					"width": 932,
+					"height": 3489
+				},
+				{
+					"ms": 140.75645800000348,
+					"width": 932,
+					"height": 3489
+				}
+			],
+			"mountMs": 49.55108299999847,
+			"captureMs": 90.8522909999956,
+			"evidence": {
+				"width": 900,
+				"height": 3456.09375,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [],
+				"content": {
+					"parts": 18,
+					"measures": 8,
+					"notes": 264
+				},
+				"svgCount": 1,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 141.84537500000442,
+				"min": 140.75645800000348,
+				"max": 142.59187499999825
+			},
+			"mountCpu": {
+				"samplingWindowMs": 325.816,
+				"selfMs": {
+					"(program)": 277.101,
+					"d": 12.018,
+					"(garbage collector)": 4.539,
+					"element": 4.281,
+					"": 3.003,
+					"(idle)": 1.621,
+					"setStave": 1.513,
+					"t.setValue": 1.511,
+					"m.keyProperties": 1.511,
+					"bezierCurveTo": 1.51,
+					"getBoundingBox": 1.507,
+					"elements": 1.504,
+					"getModifiers": 1.504,
+					"parseFromString": 1.503,
+					"setAttribute": 1.503
+				},
+				"inclusiveMs": {
+					"(program)": 277.101,
+					"mount": 41.824,
+					"render": 30.018,
+					"": 20.796,
+					"calculate": 19.514,
+					"reCalculate": 19.514,
+					"draw": 18.013,
+					"calculateMusicSystems": 18.007,
+					"calculateLinesGeometric": 16.504,
+					"calculateLines": 16.504,
+					"computeSkyBottomLinesFor": 16.504,
+					"calculateSkyBottomLines": 16.504,
+					"d": 15.024,
+					"getOutlineBoundingBox": 12.007,
+					"reset": 12.007,
+					"f": 12.007,
+					"load": 11.806,
+					"evaluate": 11.806,
+					"getWidth": 10.511,
+					"drawMeasure": 10.504,
+					"drawStaffLine": 10.504,
+					"drawMusicSystemComponents": 10.504,
+					"drawMusicSystem": 10.504,
+					"drawPage": 10.504,
+					"drawSheet": 10.504,
+					"format": 9.005,
+					"drawWithStyle": 7.501,
+					"getGlyphWidth": 6.015,
+					"initialize": 6.011,
+					"formatToStave": 5.998
+				}
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "248-255",
+			"engine": "alphatab",
+			"samples": [
+				{
+					"ms": 137.40554200000042,
+					"width": 932,
+					"height": 3850
+				},
+				{
+					"ms": 130.93904200000543,
+					"width": 932,
+					"height": 3850
+				},
+				{
+					"ms": 169.77029200000106,
+					"width": 932,
+					"height": 3850
+				}
+			],
+			"mountMs": 19.3848749999961,
+			"captureMs": 100.60512499999459,
+			"evidence": {
+				"width": 900,
+				"height": 3818,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "alphaTab",
+						"status": "loaded"
+					}
+				],
+				"content": {
+					"selectedTracks": 18,
+					"parts": [
+						{
+							"name": "Flute\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 10,
+							"lyrics": 0
+						},
+						{
+							"name": "Flute\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 10,
+							"lyrics": 0
+						},
+						{
+							"name": "Oboe\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 12,
+							"lyrics": 0
+						},
+						{
+							"name": "Oboe\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 10,
+							"lyrics": 0
+						},
+						{
+							"name": "B\u266dClarinet",
+							"staves": 1,
+							"measures": [8],
+							"notes": 10,
+							"lyrics": 0
+						},
+						{
+							"name": "B\u266dClarinet\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 10,
+							"lyrics": 0
+						},
+						{
+							"name": "Bassoon\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 12,
+							"lyrics": 0
+						},
+						{
+							"name": "Bassoon\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 12,
+							"lyrics": 0
+						},
+						{
+							"name": "E\u266dHorn\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 10,
+							"lyrics": 0
+						},
+						{
+							"name": "E\u266dHorn\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 10,
+							"lyrics": 0
+						},
+						{
+							"name": "C\u00a0Trumpet\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 9,
+							"lyrics": 0
+						},
+						{
+							"name": "C\u00a0Trumpet\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 9,
+							"lyrics": 0
+						},
+						{
+							"name": "C,\u00a0G\u00a0Timpani",
+							"staves": 1,
+							"measures": [8],
+							"notes": 9,
+							"lyrics": 0
+						},
+						{
+							"name": "Violin\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 17,
+							"lyrics": 3
+						},
+						{
+							"name": "Violin\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 15,
+							"lyrics": 1
+						},
+						{
+							"name": "Viola",
+							"staves": 1,
+							"measures": [8],
+							"notes": 11,
+							"lyrics": 0
+						},
+						{
+							"name": "Violoncello",
+							"staves": 1,
+							"measures": [8],
+							"notes": 11,
+							"lyrics": 0
+						},
+						{
+							"name": "Contrabass",
+							"staves": 1,
+							"measures": [8],
+							"notes": 11,
+							"lyrics": 0
+						}
+					]
+				},
+				"svgCount": 3,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 137.40554200000042,
+				"min": 130.93904200000543,
+				"max": 169.77029200000106
+			},
+			"mountCpu": {
+				"samplingWindowMs": 153.381,
+				"selfMs": {
+					"(program)": 130.684,
+					"get isVisible": 6.019,
+					"(idle)": 3.114,
+					"beginUpdateRenderResults": 3.017,
+					"childElements": 1.51,
+					"decode": 1.507,
+					"replaceChildren": 1.505,
+					"querySelectorAll": 1.5,
+					"encode": 1.496,
+					"finalizeBracket": 1.491,
+					"paintStaffLines": 1.49
+				},
+				"inclusiveMs": {
+					"(program)": 130.684,
+					"": 19.535,
+					"mount": 7.518,
+					"evaluate": 7.518,
+					"get isVisible": 6.019,
+					"initialRender": 6.019,
+					"alphatab.alphatab": 6.013,
+					"_layoutAndRenderScore": 5.998,
+					"doLayoutAndRender": 5.998,
+					"layoutAndRender": 5.998,
+					"_layoutAndRender": 5.998,
+					"render": 5.998,
+					"renderScore": 5.998,
+					"trigger": 5.998,
+					"_onFontLoaded": 5.998,
+					"successHandler": 5.998,
+					"checkFont": 5.998,
+					"_internalRenderLazyPartial": 4.507,
+					"registerPartial": 4.507,
+					"_paintSystem": 4.507,
+					"(idle)": 3.114,
+					"beginUpdateRenderResults": 3.017,
+					"_updateRenderResult": 3.017,
+					"childElements": 1.51,
+					"_parsePartMeasure": 1.51,
+					"_parsePartwiseMeasure": 1.51,
+					"_parsePartwisePart": 1.51,
+					"_parsePartwise": 1.51,
+					"_parseDom": 1.51,
+					"readScore": 1.51
+				}
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "495-502",
+			"engine": "vexml",
+			"samples": [
+				{
+					"ms": 227.02537500000471,
+					"width": 932,
+					"height": 4040
+				},
+				{
+					"ms": 165.76345800000126,
+					"width": 932,
+					"height": 4040
+				},
+				{
+					"ms": 174.78604100000666,
+					"width": 932,
+					"height": 4040
+				}
+			],
+			"mountMs": 79.0208749999947,
+			"captureMs": 85.93212500000664,
+			"evidence": {
+				"width": 932,
+				"height": 4040,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					},
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					}
+				],
+				"content": [
+					{
+						"id": "P1",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P2",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P3",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P4",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P5",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P6",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P7",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P8",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P9",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P10",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P11",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P12",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P13",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P14",
+						"measures": 8,
+						"staves": 1,
+						"notes": 42
+					},
+					{
+						"id": "P15",
+						"measures": 8,
+						"staves": 1,
+						"notes": 42
+					},
+					{
+						"id": "P16",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P17",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					},
+					{
+						"id": "P18",
+						"measures": 8,
+						"staves": 1,
+						"notes": 18
+					}
+				],
+				"svgCount": 0,
+				"canvasCount": 17
+			},
+			"ordinaryMs": {
+				"median": 174.78604100000666,
+				"min": 165.76345800000126,
+				"max": 227.02537500000471
+			},
+			"mountCpu": {
+				"samplingWindowMs": 102.788,
+				"selfMs": {
+					"(program)": 25.354,
+					"": 9.04,
+					"child": 4.501,
+					"formatAndDraw": 3.028,
+					"childrenNamed": 3.021,
+					"childrenOfType": 3.018,
+					"appendAll": 2.997,
+					"measureText": 2.994,
+					"(garbage collector)": 1.545,
+					"Voice2": 1.519,
+					"get isChordMember": 1.511,
+					"assertWritable": 1.51,
+					"module.exports": 1.509,
+					"resetLines": 1.508,
+					"getBoundingBox": 1.507
+				},
+				"inclusiveMs": {
+					"engrave": 73.24,
+					"drawSystem": 48.024,
+					"draw": 48.024,
+					"settleNext": 48.024,
+					"advance": 48.024,
+					"drawNext": 48.024,
+					"drawMeasureColumn": 45.027,
+					"": 37.255,
+					"(program)": 25.354,
+					"buildStave": 22.552,
+					"redraw": 16.526,
+					"tickables": 15.003,
+					"build": 14.999,
+					"buildNotes": 13.56,
+					"staveNote": 13.496,
+					"render": 13.214,
+					"formatAndDraw": 12.053,
+					"parseFromString": 10.521,
+					"parse": 10.521,
+					"areaOf": 8.979,
+					"consume": 8.979,
+					"complete": 8.979,
+					"plan": 8.979,
+					"measureNoteArea": 7.486,
+					"StaveNote": 7.481,
+					"childrenNamed": 4.528,
+					"preFormat": 4.523,
+					"format": 4.523,
+					"appendAll": 4.507,
+					"child": 4.501
+				},
+				"scoreEngraverChildrenMs": {
+					"get parts": 1.525,
+					"plan": 8.979,
+					"draw": 48.024,
+					"create": 1.498
+				}
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "495-502",
+			"engine": "osmd",
+			"samples": [
+				{
+					"ms": 162.18154199999844,
+					"width": 932,
+					"height": 3166
+				},
+				{
+					"ms": 156.95945800000482,
+					"width": 932,
+					"height": 3166
+				},
+				{
+					"ms": 152.06487500000367,
+					"width": 932,
+					"height": 3166
+				}
+			],
+			"mountMs": 61.12229099999968,
+			"captureMs": 94.5474999999933,
+			"evidence": {
+				"width": 900,
+				"height": 3133.5,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [],
+				"content": {
+					"parts": 18,
+					"measures": 8,
+					"notes": 372
+				},
+				"svgCount": 1,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 156.95945800000482,
+				"min": 152.06487500000367,
+				"max": 162.18154199999844
+			},
+			"mountCpu": {
+				"samplingWindowMs": 341.833,
+				"selfMs": {
+					"(program)": 287.968,
+					"d": 5.778,
+					"getOutlineBoundingBox": 4.512,
+					"draw": 3.007,
+					"bezierCurveTo": 3.005,
+					"": 2.994,
+					"calculateLinesGeometric": 2.991,
+					"(idle)": 1.612,
+					"moveTo": 1.509,
+					"(garbage collector)": 1.508,
+					"updateLines": 1.508,
+					"i": 1.507,
+					"drawStaffLine": 1.507,
+					"parseFromString": 1.506,
+					"calculateAbsolutePositionsRecursive": 1.505
+				},
+				"inclusiveMs": {
+					"(program)": 287.968,
+					"mount": 50.363,
+					"render": 35.783,
+					"": 28.078,
+					"calculate": 23.767,
+					"reCalculate": 23.767,
+					"calculateMusicSystems": 22.267,
+					"calculateLinesGeometric": 17.77,
+					"calculateLines": 17.77,
+					"computeSkyBottomLinesFor": 17.77,
+					"calculateSkyBottomLines": 17.77,
+					"evaluate": 16.069,
+					"draw": 14.779,
+					"load": 14.58,
+					"reset": 13.27,
+					"drawStaffLine": 12.016,
+					"drawMusicSystemComponents": 12.016,
+					"drawMusicSystem": 12.016,
+					"drawPage": 12.016,
+					"drawSheet": 12.016,
+					"getOutlineBoundingBox": 11.785,
+					"f": 11.785,
+					"drawMeasure": 10.509,
+					"getWidth": 10.281,
+					"d": 10.278,
+					"preFormat": 8.991,
+					"format": 8.991,
+					"formatToStave": 8.991,
+					"drawWithStyle": 8.771,
+					"e": 7.496
+				}
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "495-502",
+			"engine": "alphatab",
+			"samples": [
+				{
+					"ms": 108.61675000000105,
+					"width": 932,
+					"height": 2796
+				},
+				{
+					"ms": 108.15379100000428,
+					"width": 932,
+					"height": 2796
+				},
+				{
+					"ms": 107.86758399999235,
+					"width": 932,
+					"height": 2796
+				}
+			],
+			"mountMs": 21.511834000004455,
+			"captureMs": 80.37004200000956,
+			"evidence": {
+				"width": 900,
+				"height": 2764,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "alphaTab",
+						"status": "loaded"
+					}
+				],
+				"content": {
+					"selectedTracks": 18,
+					"parts": [
+						{
+							"name": "Flute\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						},
+						{
+							"name": "Flute\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						},
+						{
+							"name": "Oboe\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 2
+						},
+						{
+							"name": "Oboe\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						},
+						{
+							"name": "B\u266dClarinet",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						},
+						{
+							"name": "B\u266dClarinet\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						},
+						{
+							"name": "Bassoon\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						},
+						{
+							"name": "Bassoon\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						},
+						{
+							"name": "E\u266dHorn\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						},
+						{
+							"name": "E\u266dHorn\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						},
+						{
+							"name": "C\u00a0Trumpet\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						},
+						{
+							"name": "C\u00a0Trumpet\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						},
+						{
+							"name": "C,\u00a0G\u00a0Timpani",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						},
+						{
+							"name": "Violin\u00a01",
+							"staves": 1,
+							"measures": [8],
+							"notes": 38,
+							"lyrics": 0
+						},
+						{
+							"name": "Violin\u00a02",
+							"staves": 1,
+							"measures": [8],
+							"notes": 38,
+							"lyrics": 0
+						},
+						{
+							"name": "Viola",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						},
+						{
+							"name": "Violoncello",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						},
+						{
+							"name": "Contrabass",
+							"staves": 1,
+							"measures": [8],
+							"notes": 14,
+							"lyrics": 0
+						}
+					]
+				},
+				"svgCount": 3,
+				"canvasCount": 0
+			},
+			"ordinaryMs": {
+				"median": 108.15379100000428,
+				"min": 107.86758399999235,
+				"max": 108.61675000000105
+			},
+			"mountCpu": {
+				"samplingWindowMs": 165.952,
+				"selfMs": {
+					"(program)": 139.148,
+					"get isVisible": 7.517,
+					"beginUpdateRenderResults": 4.022,
+					"(idle)": 3.108,
+					"replaceChildren": 3.008,
+					"get isRestOnly": 1.511,
+					"parseFromString": 1.504,
+					"children": 1.504,
+					"encode": 1.5,
+					"get isRestBeamHelper": 1.494,
+					"doLayout": 1.49
+				},
+				"inclusiveMs": {
+					"(program)": 139.148,
+					"": 23.55,
+					"mount": 9.027,
+					"evaluate": 9.027,
+					"get isVisible": 7.517,
+					"initialRender": 7.517,
+					"_layoutAndRenderScore": 7.006,
+					"doLayoutAndRender": 7.006,
+					"layoutAndRender": 7.006,
+					"_layoutAndRender": 7.006,
+					"render": 7.006,
+					"renderScore": 7.006,
+					"trigger": 7.006,
+					"_onFontLoaded": 7.006,
+					"successHandler": 7.006,
+					"checkFont": 7.006,
+					"alphatab.alphatab": 6.019,
+					"_internalRenderLazyPartial": 5.516,
+					"registerPartial": 5.516,
+					"_paintSystem": 5.516,
+					"beginUpdateRenderResults": 4.022,
+					"_updateRenderResult": 4.022,
+					"(idle)": 3.108,
+					"replaceChildren": 3.008,
+					"forAlphatab": 3.008,
+					"get isRestOnly": 1.511,
+					"finish": 1.511,
+					"readScore": 1.511,
+					"loadScoreFromBytes": 1.511,
+					"load": 1.511
+				}
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "all",
+			"engine": "vexml",
+			"samples": [],
+			"mountMs": 5485.697709,
+			"captureError": "Unsupported capture size: 932x254057 device pixels for #screenshot; image or expanded viewport exceeds the 33554432-pixel capture budget. Capture a smaller measure slice.",
+			"evidence": {
+				"width": 932,
+				"height": 254057,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					},
+					{
+						"family": "Bravura",
+						"status": "loaded"
+					}
+				],
+				"content": [
+					{
+						"id": "P1",
+						"measures": 502,
+						"staves": 1,
+						"notes": 797
+					},
+					{
+						"id": "P2",
+						"measures": 502,
+						"staves": 1,
+						"notes": 731
+					},
+					{
+						"id": "P3",
+						"measures": 502,
+						"staves": 1,
+						"notes": 783
+					},
+					{
+						"id": "P4",
+						"measures": 502,
+						"staves": 1,
+						"notes": 757
+					},
+					{
+						"id": "P5",
+						"measures": 502,
+						"staves": 1,
+						"notes": 840
+					},
+					{
+						"id": "P6",
+						"measures": 502,
+						"staves": 1,
+						"notes": 809
+					},
+					{
+						"id": "P7",
+						"measures": 502,
+						"staves": 1,
+						"notes": 824
+					},
+					{
+						"id": "P8",
+						"measures": 502,
+						"staves": 1,
+						"notes": 806
+					},
+					{
+						"id": "P9",
+						"measures": 502,
+						"staves": 1,
+						"notes": 743
+					},
+					{
+						"id": "P10",
+						"measures": 502,
+						"staves": 1,
+						"notes": 741
+					},
+					{
+						"id": "P11",
+						"measures": 502,
+						"staves": 1,
+						"notes": 674
+					},
+					{
+						"id": "P12",
+						"measures": 502,
+						"staves": 1,
+						"notes": 674
+					},
+					{
+						"id": "P13",
+						"measures": 502,
+						"staves": 1,
+						"notes": 693
+					},
+					{
+						"id": "P14",
+						"measures": 502,
+						"staves": 1,
+						"notes": 1252
+					},
+					{
+						"id": "P15",
+						"measures": 502,
+						"staves": 1,
+						"notes": 1221
+					},
+					{
+						"id": "P16",
+						"measures": 502,
+						"staves": 1,
+						"notes": 1085
+					},
+					{
+						"id": "P17",
+						"measures": 502,
+						"staves": 1,
+						"notes": 944
+					},
+					{
+						"id": "P18",
+						"measures": 502,
+						"staves": 1,
+						"notes": 887
+					}
+				],
+				"svgCount": 0,
+				"canvasCount": 7
+			},
+			"mountCpu": {
+				"samplingWindowMs": 5528.032,
+				"selfMs": {
+					"get staveCount": 1087.118,
+					"": 563.12,
+					"childrenNamed": 320.95,
+					"(program)": 291.801,
+					"childrenOfType": 194.477,
+					"(garbage collector)": 186.03,
+					"child": 133.183,
+					"measureText": 130.623,
+					"buildSlurs": 101.476,
+					"(idle)": 94.198,
+					"get": 87.65,
+					"memo": 76.292,
+					"Note2": 74.82,
+					"attributeBackFrom": 68.466,
+					"get staff": 62.912
+				},
+				"inclusiveMs": {
+					"engrave": 4926.679,
+					"draw": 4145.598,
+					"settleNext": 4133.581,
+					"advance": 4133.581,
+					"drawNext": 4133.581,
+					"drawSystem": 4126.074,
+					"drawMeasureColumn": 3286.86,
+					"": 1982.662,
+					"buildStave": 1537.78,
+					"redraw": 1359.661,
+					"partsPairTabWithNotation": 1165.725,
+					"get staveCount": 1161.218,
+					"build": 951.387,
+					"tickables": 850.081,
+					"endSystem": 831.687,
+					"resolveSpanners": 830.192,
+					"resolveSystem": 828.695,
+					"resolveIn": 792.672,
+					"buildNotes": 726.254,
+					"staveNote": 722.736,
+					"formatAndDraw": 446.585,
+					"collectGeometry": 430.462,
+					"StaveNote": 429.516,
+					"plan": 398.819,
+					"systemSymbol": 397.242,
+					"connectorExtent": 395.751,
+					"drawConnectors": 389.099,
+					"buildSlurs": 375.706,
+					"childrenNamed": 370.171,
+					"drawSystemStart": 363.563
+				},
+				"scoreEngraverChildrenMs": {
+					"resolve": 1.499,
+					"plan": 398.819,
+					"draw": 4145.598,
+					"model": 17.83,
+					"build": 6.978,
+					"create": 39.977
+				}
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "all",
+			"engine": "osmd",
+			"samples": [],
+			"mountMs": 6112.689417000001,
+			"captureError": "Unsupported capture size: 932x146664 device pixels for #screenshot; image or expanded viewport exceeds the 33554432-pixel capture budget. Capture a smaller measure slice.",
+			"evidence": {
+				"width": 900,
+				"height": 146631.5,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [],
+				"content": {
+					"parts": 18,
+					"measures": 502,
+					"notes": 15261
+				},
+				"svgCount": 1,
+				"canvasCount": 0
+			},
+			"mountCpu": {
+				"samplingWindowMs": 6594.399,
+				"selfMs": {
+					"draw": 1009.296,
+					"e.defaultToString": 673.252,
+					"(program)": 658.95,
+					"correctNotePositions": 626.522,
+					"t.getValue": 550.223,
+					"notehead": 528.996,
+					"d": 428.812,
+					"(garbage collector)": 188.932,
+					"setAttributeNS": 167.043,
+					"": 133.669,
+					"addBezierCurve": 132.57,
+					"(idle)": 93.865,
+					"element": 73.865,
+					"r": 68.6,
+					"parseFromString": 64.979
+				},
+				"inclusiveMs": {
+					"mount": 5632.986,
+					"render": 5113.582,
+					"draw": 4192.278,
+					"calculate": 2799.528,
+					"reCalculate": 2799.528,
+					"calculateMusicSystems": 2686.47,
+					"calculateLinesGeometric": 2464.761,
+					"calculateLines": 2464.761,
+					"computeSkyBottomLinesFor": 2464.761,
+					"calculateSkyBottomLines": 2464.761,
+					"correctNotePositions": 2457.244,
+					"drawMusicSystemComponents": 2312.547,
+					"drawMusicSystem": 2312.547,
+					"drawPage": 2312.547,
+					"drawSheet": 2312.547,
+					"drawStaffLine": 2308.04,
+					"drawMeasure": 2288.289,
+					"": 1366.449,
+					"t.getValue": 1292.075,
+					"GNote": 1291.177,
+					"FromNote": 1285.77,
+					"e.defaultToString": 741.852,
+					"(program)": 658.95,
+					"getWidth": 633.168,
+					"f": 607.484,
+					"reset": 605.432,
+					"d": 603.049,
+					"evaluate": 570.569,
+					"getOutlineBoundingBox": 570.447,
+					"format": 566.319
+				}
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "all",
+			"engine": "alphatab",
+			"samples": [],
+			"mountMs": 827.794624999995,
+			"captureError": "Unsupported capture size: 932x171254 device pixels for #screenshot; image or expanded viewport exceeds the 33554432-pixel capture budget. Capture a smaller measure slice.",
+			"evidence": {
+				"width": 900,
+				"height": 171222,
+				"dpr": 1,
+				"fontStatus": "loaded",
+				"fonts": [
+					{
+						"family": "alphaTab",
+						"status": "loaded"
+					}
+				],
+				"content": {
+					"selectedTracks": 18,
+					"parts": [
+						{
+							"name": "Flute\u00a01",
+							"staves": 1,
+							"measures": [502],
+							"notes": 494,
+							"lyrics": 41
+						},
+						{
+							"name": "Flute\u00a02",
+							"staves": 1,
+							"measures": [502],
+							"notes": 374,
+							"lyrics": 2
+						},
+						{
+							"name": "Oboe\u00a01",
+							"staves": 1,
+							"measures": [502],
+							"notes": 486,
+							"lyrics": 8
+						},
+						{
+							"name": "Oboe\u00a02",
+							"staves": 1,
+							"measures": [502],
+							"notes": 407,
+							"lyrics": 0
+						},
+						{
+							"name": "B\u266dClarinet",
+							"staves": 1,
+							"measures": [502],
+							"notes": 569,
+							"lyrics": 8
+						},
+						{
+							"name": "B\u266dClarinet\u00a02",
+							"staves": 1,
+							"measures": [502],
+							"notes": 517,
+							"lyrics": 1
+						},
+						{
+							"name": "Bassoon\u00a01",
+							"staves": 1,
+							"measures": [502],
+							"notes": 623,
+							"lyrics": 1
+						},
+						{
+							"name": "Bassoon\u00a02",
+							"staves": 1,
+							"measures": [502],
+							"notes": 605,
+							"lyrics": 0
+						},
+						{
+							"name": "E\u266dHorn\u00a01",
+							"staves": 1,
+							"measures": [502],
+							"notes": 411,
+							"lyrics": 9
+						},
+						{
+							"name": "E\u266dHorn\u00a02",
+							"staves": 1,
+							"measures": [502],
+							"notes": 409,
+							"lyrics": 0
+						},
+						{
+							"name": "C\u00a0Trumpet\u00a01",
+							"staves": 1,
+							"measures": [502],
+							"notes": 257,
+							"lyrics": 1
+						},
+						{
+							"name": "C\u00a0Trumpet\u00a02",
+							"staves": 1,
+							"measures": [502],
+							"notes": 257,
+							"lyrics": 0
+						},
+						{
+							"name": "C,\u00a0G\u00a0Timpani",
+							"staves": 1,
+							"measures": [502],
+							"notes": 243,
+							"lyrics": 0
+						},
+						{
+							"name": "Violin\u00a01",
+							"staves": 1,
+							"measures": [502],
+							"notes": 1098,
+							"lyrics": 119
+						},
+						{
+							"name": "Violin\u00a02",
+							"staves": 1,
+							"measures": [502],
+							"notes": 1076,
+							"lyrics": 17
+						},
+						{
+							"name": "Viola",
+							"staves": 1,
+							"measures": [502],
+							"notes": 905,
+							"lyrics": 15
+						},
+						{
+							"name": "Violoncello",
+							"staves": 1,
+							"measures": [502],
+							"notes": 719,
+							"lyrics": 3
+						},
+						{
+							"name": "Contrabass",
+							"staves": 1,
+							"measures": [502],
+							"notes": 579,
+							"lyrics": 0
+						}
+					]
+				},
+				"svgCount": 112,
+				"canvasCount": 0
+			},
+			"mountCpu": {
+				"samplingWindowMs": 1350.422,
+				"selfMs": {
+					"get isVisible": 344.713,
+					"beginUpdateRenderResults": 247.106,
+					"(program)": 215.749,
+					"(idle)": 75.318,
+					"(garbage collector)": 65.098,
+					"parseFromString": 62.872,
+					"parse": 33.147,
+					"serializeToString": 28.361,
+					"createVoiceGlyphs": 18.234,
+					"children": 15.076,
+					"fret": 12.024,
+					"addEvent": 11.972,
+					"doLayout": 10.541,
+					"querySelectorAll": 9.052,
+					"encode": 8.238
+				},
+				"inclusiveMs": {
+					"": 993.259,
+					"renderScore": 433.497,
+					"_layoutAndRender": 393.584,
+					"render": 393.584,
+					"trigger": 393.584,
+					"_onFontLoaded": 393.584,
+					"successHandler": 393.584,
+					"checkFont": 393.584,
+					"_layoutAndRenderScore": 391.463,
+					"doLayoutAndRender": 391.463,
+					"layoutAndRender": 391.463,
+					"get isVisible": 344.713,
+					"initialRender": 344.713,
+					"_paintSystem": 280.076,
+					"_internalRenderLazyPartial": 277.108,
+					"registerPartial": 277.108,
+					"mount": 254.962,
+					"evaluate": 254.962,
+					"alphatab.alphatab": 251.95,
+					"beginUpdateRenderResults": 247.106,
+					"_updateRenderResult": 247.106,
+					"(program)": 215.749,
+					"forAlphatab": 133.399,
+					"load": 105.812,
+					"_createStaffSystem": 104.828,
+					"addBars": 89.792,
+					"addBar": 86.752,
+					"doLayout": 83.782,
+					"(idle)": 75.318,
+					"readScore": 65.899
+				}
+			}
+		}
+	]
+}

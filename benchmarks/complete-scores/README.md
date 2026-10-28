@@ -1,5 +1,9 @@
 # Complete-score audit
 
+The follow-up [renderer profiling report](PROFILING.md) separates warm render timings
+from CPU-sampled mount work and PNG capture, checks source/model content, and records
+the limits of comparing these engines' output. Its opt-in inputs stay outside the tests.
+
 An optional corpus for rendering, timing, and visual lint reconnaissance. These files are
 not integration fixtures and are not registered in the default test suite or merge gate.
 The dev site's example picker lists them under **Complete score:** and imports their XML

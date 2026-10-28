@@ -9,6 +9,24 @@ beforeAll(async () => {
 });
 afterAll(() => browser.close());
 
+it('profiles an operation and releases the sampler after an error', async () => {
+	const page = await browser.newPage();
+	try {
+		const tab = new PlaywrightTab(page);
+		await expect(
+			tab.profile(async () => {
+				throw new Error('failed mount');
+			}),
+		).rejects.toThrow('failed mount');
+		const measured = await tab.profile(() => page.evaluate(() => 42));
+		expect(measured.result).toBe(42);
+		expect(measured.ms).toBeGreaterThanOrEqual(0);
+		expect(measured.profile.nodes.length).toBeGreaterThan(0);
+	} finally {
+		await page.close();
+	}
+});
+
 it.each([
 	{ width: 64, height: 150022, middle: 75020, end: 150000 },
 	{ width: 932, height: 19480, middle: 9740, end: 19450 },

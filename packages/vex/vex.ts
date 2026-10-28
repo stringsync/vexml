@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { cli, type Deps, type Next } from 'webappwiz/cmd';
 import { color } from 'webappwiz/log';
 import type { Fs } from 'webappwiz/system';
@@ -178,6 +179,11 @@ vex
 
 vex
 	.command('perf')
+	.option('corpus', z.string().optional(), {
+		default: undefined,
+		description:
+			'opt-in directory of MusicXML inputs, relative to the invocation directory',
+	})
 	.description(
 		'render every musicxml fixture through vexml, osmd, and alphatab once (after an untimed warm-up render per engine), and tabulate time and output size; pattern filters by filename',
 	)
@@ -190,12 +196,15 @@ vex
 		description: 'also watch the run, and compare the outputs, in a browser',
 	})
 	.use(timing)
-	.action(async (opts, { log, fs }) => {
-		const renderer = new RendererBench(fs);
+	.action(async (opts, { log, fs, invocationDir }) => {
+		const dataDir = opts.corpus
+			? resolve(invocationDir, opts.corpus)
+			: undefined;
+		const renderer = new RendererBench(fs, dataDir);
 		const bench = new WarmBench(renderer);
 		if (!opts.ui) {
 			try {
-				await perf({ pattern: opts.pattern, bench, log, fs });
+				await perf({ pattern: opts.pattern, dataDir, bench, log, fs });
 			} finally {
 				await renderer.disposeAsync();
 			}
@@ -206,7 +215,14 @@ vex
 		const run = new PerfRun(clock);
 		const retries = new Retrier({ run, bench, log });
 		log.info(`perf ui at ${await servePerfUi({ run, retries })}`);
-		await perf({ pattern: opts.pattern, bench, log, fs, listener: run });
+		await perf({
+			pattern: opts.pattern,
+			dataDir,
+			bench,
+			log,
+			fs,
+			listener: run,
+		});
 		retries.open();
 		log.info('run done; the page stays up, for retries, until ctrl-c');
 		await new Promise(() => {});

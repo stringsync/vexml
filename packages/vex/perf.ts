@@ -22,6 +22,8 @@ export interface PerfListener {
 }
 
 export interface PerfOptions {
+	/** Optional opt-in corpus; never adds files to the default integration suite. */
+	dataDir?: string;
 	/** Substring of the fixture filename; every fixture when absent. */
 	pattern?: string;
 	bench: Bench;
@@ -36,7 +38,7 @@ export interface PerfOptions {
  * renderers do, so a time column on its own would read as a loss it isn't.
  */
 export async function perf(opts: PerfOptions) {
-	const files = (await opts.fs.readdir(DATA_DIR))
+	const files = (await opts.fs.readdir(opts.dataDir ?? DATA_DIR))
 		.filter((file) => file.endsWith('.musicxml'))
 		.filter((file) => !opts.pattern || file.includes(opts.pattern))
 		.sort();

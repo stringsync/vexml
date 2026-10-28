@@ -1,5 +1,27 @@
 import { describe, expect, it } from 'bun:test';
-import { type Row, table } from './perf';
+import { MemoryLogger } from 'webappwiz/log';
+import { FakeFs } from 'webappwiz/system/testing';
+import { perf, type Row, table } from './perf';
+
+it('selects an optional corpus without reading the integration fixtures', async () => {
+	const fs = new FakeFs();
+	await fs.mkdir('/optional');
+	await fs.write('/optional/song.musicxml', '<score-partwise/>');
+	await fs.write('/optional/README.md', 'not a score');
+	const measured: string[] = [];
+	await perf({
+		dataDir: '/optional',
+		fs,
+		log: new MemoryLogger(),
+		bench: {
+			async measure(fixture, engine) {
+				measured.push(`${fixture}/${engine}`);
+				return { cell: { ms: 1, size: '10x10' } };
+			},
+		},
+	});
+	expect(measured).toEqual(['song/vexml', 'song/osmd', 'song/alphatab']);
+});
 
 function row(name: string, ...times: Array<number | string>): Row {
 	return {

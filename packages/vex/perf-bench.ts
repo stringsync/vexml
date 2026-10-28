@@ -35,14 +35,17 @@ export class RendererBench implements Bench {
 	// Each fixture goes through every engine in turn, so one read serves all three.
 	#last: { fixture: string; musicXML: string } | undefined;
 
-	constructor(fs: Fs) {
+	constructor(
+		fs: Fs,
+		private readonly dataDir = DATA_DIR,
+	) {
 		this.#fs = fs;
 	}
 
 	async measure(fixture: string, engine: Engine): Promise<Measurement> {
 		if (this.#last?.fixture !== fixture) {
 			const musicXML = await this.#fs.read(
-				path.join(DATA_DIR, `${fixture}.musicxml`),
+				path.join(this.dataDir, `${fixture}.musicxml`),
 			);
 			this.#last = { fixture, musicXML };
 		}

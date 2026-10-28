@@ -1,3 +1,4 @@
+import { PlaywrightTab } from './playwright-tab';
 import type { TabPool } from './pool';
 import type { EvalRenderer, Image, RenderResult } from './renderer';
 
@@ -28,6 +29,36 @@ export abstract class BrowserRenderer<C> implements EvalRenderer<C> {
 
 	async render(): Promise<Image> {
 		return (await this.run()).image;
+	}
+
+	/** @internal Profile mount and PNG capture separately, inspecting the mounted score between them.
+	 * Use this opt-in diagnostic to retain mount evidence when a large capture is rejected. */
+	async profile<T>(inspect: (ctx: C) => T | Promise<T>) {
+		return this.pool().withTab(async (tab) => {
+			if (!(tab instanceof PlaywrightTab)) {
+				throw new Error('profiling requires a Playwright tab');
+			}
+			const viewport = this.viewport();
+			if (viewport) {
+				await tab.resize(viewport.width, viewport.height);
+			}
+			const input = await this.mountInput();
+			const mount = await tab.profile(() => tab.call('mount', input));
+			const evidence = await tab.call<T>('evaluate', {
+				fnSrc: inspect.toString(),
+			});
+			try {
+				const capture = await tab.profile(() => tab.screenshot('#screenshot'));
+				return { mount, evidence, capture, captureError: undefined };
+			} catch (error) {
+				return {
+					mount,
+					evidence,
+					capture: undefined,
+					captureError: error instanceof Error ? error.message : String(error),
+				};
+			}
+		});
 	}
 
 	async eval<T, A = undefined>(

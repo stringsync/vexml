@@ -1,4 +1,5 @@
 import type { CDPSession, Page } from 'playwright';
+import { Stopwatch, SystemClock } from 'webappwiz/time';
 import type { Tab } from './tab';
 
 // Bound both the PNG and the enlarged viewport to 128 MiB of raw RGBA pixels each.
@@ -8,6 +9,24 @@ const MAX_CAPTURE_PIXELS = 33_554_432;
 
 export class PlaywrightTab implements Tab {
 	constructor(private readonly page: Page) {}
+
+	/** @internal Measure an operation's elapsed time and collect its browser CPU profile. */
+	async profile<T>(operation: () => Promise<T>) {
+		const session = await this.page.context().newCDPSession(this.page);
+		const timer = new Stopwatch(new SystemClock());
+		try {
+			await session.send('Profiler.enable');
+			await session.send('Profiler.start');
+			timer.start();
+			const result = await operation();
+			const ms = timer.elapsed().ms;
+			const { profile } = await session.send('Profiler.stop');
+			return { result, ms, profile };
+		} finally {
+			timer.dispose();
+			await session.detach();
+		}
+	}
 
 	async call<T = void>(name: string, arg?: unknown): Promise<T> {
 		// The one serialized function in the repo: page.evaluate ships this dispatcher into
