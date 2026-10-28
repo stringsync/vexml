@@ -343,4 +343,49 @@ describe('EditingNavigator', () => {
 		navigator.move({ unit: 'vertical', direction: -1 });
 		expect(editor.getFocus()).toBe(chord.lead);
 	});
+
+	it('steps and extends a measure focus over empty bars, changing part only without extending', () => {
+		const upper = document.score.addPart();
+		const start = upper.addMeasure();
+		const middle = upper.addMeasure();
+		const end = upper.addMeasure();
+		const lower = document.score.addPart();
+		lower.addMeasure();
+		const below = lower.addMeasure();
+		const editor = new EditingSession(document);
+		const navigator = new EditingNavigator(editor);
+		editor.selectMeasure(middle);
+		expect(
+			navigator.move({ unit: 'note', direction: 1 }, { extend: true }),
+		).toBe(true);
+		expect(editor.getSelectedMeasures()).toEqual([middle, end]);
+		expect(navigator.move({ unit: 'note', direction: 1 })).toBe(false);
+		navigator.move({ unit: 'note', direction: -1 }, { extend: true });
+		navigator.move({ unit: 'note', direction: -1 }, { extend: true });
+		expect(editor.getSelectedMeasures()).toEqual([start, middle]);
+		expect(
+			navigator.move({ unit: 'vertical', direction: 1 }, { extend: true }),
+		).toBe(false);
+		navigator.move({ unit: 'note', direction: 1 });
+		expect(navigator.move({ unit: 'vertical', direction: 1 })).toBe(true);
+		expect(editor.getSelectedMeasures()).toEqual([below]);
+		expect(editor.getFocus()).toBeNull();
+	});
+
+	it('steps a barline focus through its part in written order', () => {
+		const part = document.score.addPart();
+		const first = part.addMeasure();
+		const second = part.addMeasure();
+		const editor = new EditingSession(document);
+		const navigator = new EditingNavigator(editor);
+		editor.selectBarline({ measure: first, location: 'right', barline: null });
+		expect(navigator.move({ unit: 'note', direction: 1 })).toBe(true);
+		expect(editor.getSelectedBarline()).toEqual({
+			measure: second,
+			location: 'right',
+			barline: null,
+		});
+		expect(navigator.move({ unit: 'note', direction: 1 })).toBe(false);
+		expect(navigator.move({ unit: 'chordPitch', direction: -1 })).toBe(false);
+	});
 });

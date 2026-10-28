@@ -1,4 +1,6 @@
 import type { Rect } from 'webappwiz/geometry';
+import type { Barline } from './barline';
+import type { Measure } from './measure';
 import type { Note } from './note';
 
 export interface EditingPresentation {
@@ -8,7 +10,13 @@ export interface EditingPresentation {
 	readonly focus: Note | null;
 	/** Zero-width step-entry caret on its target staff, in score coordinates. */
 	readonly caret: Rect | null;
-	/** The caret, focus glyph, or its measure box if it has no indexed glyph. */
+	/** Selected per-part measures, in part order; empty unless a measure range is selected. */
+	readonly measures: readonly Measure[];
+	/** The selected barline to highlight; null when none is selected or the selected edge is not drawn. */
+	readonly barline: Barline | null;
+	/** The measure a range last moved to, or the selected barline. */
+	readonly structuralFocus: Measure | Barline | null;
+	/** The caret, focus glyph, its measure box if it has no indexed glyph, or the structural focus. */
 	readonly position: Rect | null;
 }
 

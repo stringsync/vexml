@@ -1,8 +1,10 @@
-import type { Rect } from 'webappwiz/geometry';
+import { Rect } from 'webappwiz/geometry';
+import type { Barline } from './barline';
 import { ColorStyle } from './color-style';
 import type { EditingPresentation, EditingView } from './editing-view';
 import { HaloStyle } from './halo-style';
 import type { Layer } from './layer';
+import type { Measure } from './measure';
 import type { Note } from './note';
 import type { System } from './system';
 
@@ -16,6 +18,9 @@ export interface SelectionOverlayOptions {
 	/** Step-entry caret width in score pixels. Defaults to 2. */
 	caretWidth?: number;
 }
+
+/* How far a measure or barline's shading reaches past its staff lines. */
+const STRUCTURE_PAD = 4;
 
 /** Shared halo geometry on editing-owned layers, independent of hover and playback. */
 export class SelectionOverlay implements EditingView {
@@ -41,7 +46,10 @@ export class SelectionOverlay implements EditingView {
 			!state.marquee &&
 			!state.focus &&
 			!state.caret &&
-			state.selected.length === 0
+			state.selected.length === 0 &&
+			state.measures.length === 0 &&
+			!state.barline &&
+			!state.structuralFocus
 		) {
 			return;
 		}
@@ -75,7 +83,10 @@ export class SelectionOverlay implements EditingView {
 		ctx.globalAlpha = 0.1;
 		const regions = state.marquee
 			? [state.marquee]
-			: this.regions(state.selected);
+			: [
+					...this.regions(state.selected),
+					...this.measureRegions(state.measures),
+				];
 		for (const rect of regions) {
 			ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
 			this.previous.push(rect);
@@ -122,15 +133,24 @@ export class SelectionOverlay implements EditingView {
 			);
 			this.previousCaret = state.caret;
 		}
+		if (state.barline) {
+			const rect = this.padded(state.barline);
+			ctx.globalAlpha = 0.24;
+			ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+			this.previous.push(rect);
+		}
+		if (state.structuralFocus) {
+			const rect = this.padded(state.structuralFocus);
+			foreground.fillStyle = this.opts.focusColor ?? color;
+			this.outline(foreground, rect, 2);
+			this.previousFocus.push(rect);
+		}
 		foreground.restore();
 		ctx.globalAlpha = 1;
 		if (state.marquee) {
 			const rect = state.marquee;
 			ctx.fillStyle = color;
-			ctx.fillRect(rect.x, rect.y, rect.w, 1);
-			ctx.fillRect(rect.x, rect.bottom - 1, rect.w, 1);
-			ctx.fillRect(rect.x, rect.y, 1, rect.h);
-			ctx.fillRect(rect.right - 1, rect.y, 1, rect.h);
+			this.outline(ctx, rect, 1);
 		}
 		ctx.restore();
 	}
@@ -140,6 +160,34 @@ export class SelectionOverlay implements EditingView {
 		if (this.focusLayer !== this.layer) {
 			this.focusLayer.dispose();
 		}
+	}
+
+	/** A frame `width` thick inside `rect`. */
+	private outline(
+		ctx: CanvasRenderingContext2D,
+		rect: Rect,
+		width: number,
+	): void {
+		ctx.fillRect(rect.x, rect.y, rect.w, width);
+		ctx.fillRect(rect.x, rect.bottom - width, rect.w, width);
+		ctx.fillRect(rect.x, rect.y, width, rect.h);
+		ctx.fillRect(rect.right - width, rect.y, width, rect.h);
+	}
+
+	private padded(element: Measure | Barline): Rect {
+		const r = element.rect;
+		return new Rect(r.x, r.y - STRUCTURE_PAD, r.w, r.h + 2 * STRUCTURE_PAD);
+	}
+
+	/** One band per score line, so a range across a system break shades each line's bars only. */
+	private measureRegions(measures: readonly Measure[]): Rect[] {
+		const systems = new Map<System, Rect>();
+		for (const measure of measures) {
+			const system = measure.getBox().getSystem();
+			const rect = this.padded(measure);
+			systems.set(system, systems.get(system)?.union(rect) ?? rect);
+		}
+		return [...systems.values()];
 	}
 
 	/** Separate enclosures per score line avoid shading the gap between wrapped systems. */

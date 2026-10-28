@@ -13,6 +13,7 @@ import { FakeHost } from './fake-host';
 import { FakeKeyEvent } from './fake-key-event';
 import { FakePointerEvent } from './fake-pointer-event';
 import { FakeViewport } from './fake-viewport';
+import { renderedScore } from './render-harness';
 import { Score } from './score';
 import { Sequence } from './sequence';
 import { TempoMap } from './tempo-map';
@@ -354,6 +355,9 @@ describe('EditingController', () => {
 			selected: [],
 			focus: null,
 			caret: null,
+			measures: [],
+			barline: null,
+			structuralFocus: null,
 			position: null,
 		});
 		expect(host.scroller.calls).toHaveLength(0);
@@ -569,7 +573,227 @@ describe('EditingController', () => {
 		controller.execute({ type: 'select', note: high, chordEdge: 'bottom' });
 		expect(f.editor.getFocus()).toBe(chord.lead);
 	});
+
+	it('selects explicit repeat and implicit ordinary barlines by pointer', async () => {
+		const { score, editor, controller, click, key } =
+			await structural('repeats.musicxml');
+		const barlines = score.getElements().barlines();
+		const forward = required(
+			barlines.find(
+				(barline) =>
+					barline.getLocation() === 'left' &&
+					barline.getSources()[0]?.repeat === 'forward',
+			),
+			'forward repeat',
+		);
+		const implicit = required(
+			barlines.find(
+				(barline) =>
+					barline.getLocation() === 'right' &&
+					barline.getSources().length === 0,
+			),
+			'implicit barline',
+		);
+		click(forward.rect);
+		expect(editor.getSelectedBarline()).toEqual({
+			measure: required(forward.getMeasure().getSources()[0], 'measure'),
+			location: 'left',
+			barline: required(forward.getSources()[0], 'repeat barline'),
+		});
+		expect(controller.getPresentation().barline).toBe(forward);
+		expect(controller.getPresentation().structuralFocus).toBe(forward);
+		expect(controller.getPresentation().position).toBe(forward.rect);
+
+		click(implicit.rect);
+		const selected = required(editor.getSelectedBarline(), 'selection');
+		expect(selected.location).toBe('right');
+		expect(selected.barline).toBeNull();
+		expect(selected.measure).toBe(
+			required(implicit.getMeasure().getSources()[0], 'measure'),
+		);
+		expect(controller.getPresentation().barline).toBe(implicit);
+
+		// Shift-click selects one barline at a time; arrows step through the part's barlines.
+		click(forward.rect, true);
+		expect(controller.getPresentation().barline).toBe(forward);
+		key('ArrowRight');
+		expect(editor.getSelectedBarline()).toEqual({
+			measure: required(forward.getMeasure().getSources()[0], 'measure'),
+			location: 'right',
+			barline: null,
+		});
+	});
+
+	it('selects an empty measure in the clicked part only', async () => {
+		const { score, editor, controller, click } = await structural(
+			'structure_two_parts.musicxml',
+		);
+		const [top, bottom] = score.getElements().measures();
+		const lower = required(bottom, 'second part measure');
+		click(lower.rect);
+		expect(editor.getSelectedMeasures()).toEqual([
+			required(lower.getSources()[0], 'measure'),
+		]);
+		expect(controller.getPresentation().measures).toEqual([lower]);
+		expect(controller.getPresentation().measures).not.toContain(top);
+		expect(controller.getPresentation().structuralFocus).toBe(lower);
+
+		// A measure range never crosses parts: Shift-click in another part starts afresh.
+		click(required(top, 'first part measure').rect, true);
+		expect(editor.getSelectedMeasures()).toEqual([
+			required(top?.getSources()[0], 'measure'),
+		]);
+	});
+
+	it('extends a measure range forwards and backwards across a wrapped system', async () => {
+		const { score, editor, controller, click, key } = await structural(
+			'print_new_system.musicxml',
+			{ view: undefined },
+		);
+		const measures = score.getElements().measures();
+		expect(new Set(measures.map((m) => m.getBox().getSystem())).size).toBe(2);
+		const at = (i: number) => required(measures[i], `measure ${i}`);
+		const blank = (i: number) => {
+			// Staff space between the start of the bar and its first note.
+			const rect = at(i).rect;
+			return new Rect(rect.x + 2, rect.y + 2, 2, 2);
+		};
+		const sources = (from: number, to: number) =>
+			measures.slice(from, to + 1).flatMap((m) => m.getSources());
+
+		click(at(1).rect);
+		click(at(3).rect, true);
+		expect(editor.getSelectedMeasures()).toEqual(sources(1, 3));
+		click(blank(0), true);
+		expect(editor.getSelectedMeasures()).toEqual(sources(0, 1));
+		expect(controller.getPresentation().structuralFocus).toBe(at(0));
+
+		key('ArrowRight', true);
+		key('ArrowRight', true);
+		key('ArrowRight', true);
+		expect(editor.getSelectedMeasures()).toEqual(sources(1, 3));
+		key('ArrowLeft', true);
+		expect(editor.getSelectedMeasures()).toEqual(sources(1, 2));
+		expect(controller.getPresentation().measures).toEqual([at(1), at(2)]);
+
+		// A plain arrow collapses the range to the bar it moves to.
+		key('ArrowRight', true);
+		key('ArrowLeft');
+		expect(editor.getSelectedMeasures()).toEqual(sources(2, 2));
+		key('ArrowRight', true);
+		expect(controller.getPresentation().measures).toEqual([at(2), at(3)]);
+	});
+
+	it('extends from the focused note to a Shift-clicked bar, and a note click drops the range', async () => {
+		const { score, editor, click, key } = await structural(
+			'print_new_system.musicxml',
+		);
+		const notes = score.getElements().notes();
+		const measures = score.getElements().measures();
+		const note = required(notes[1], 'second note');
+		click(note.rect);
+		click(required(measures[3], 'last measure').rect, true);
+		expect(editor.getSelectedMeasures()).toEqual(
+			measures.slice(1).flatMap((m) => m.getSources()),
+		);
+		expect(editor.getSelection()).toEqual([]);
+
+		click(required(notes[0], 'first note').rect);
+		expect(editor.getSelectedMeasures()).toEqual([]);
+		expect(editor.getFocus()).toBe(
+			required(notes[0]?.getSources()[0], 'first mdom note'),
+		);
+
+		click(required(measures[0], 'first measure').rect);
+		key('Escape');
+		expect(editor.getStructuralFocus()).toBeNull();
+	});
+
+	it('follows a structural focus and leaves history untouched', async () => {
+		const { score, document, stage, click, key } = await structural(
+			'print_new_system.musicxml',
+		);
+		let changes = 0;
+		document.history.events.on('change', () => changes++);
+		const measures = score.getElements().measures();
+		click(required(measures[0], 'first measure').rect);
+		const scrolls = stage.scroller.calls.length;
+		key('ArrowRight');
+		key('ArrowRight');
+		expect(stage.scroller.calls.length).toBe(scrolls + 2);
+		expect(stage.scroller.calls.at(-1)).toBe(measures[2]?.rect);
+		expect(changes).toBe(0);
+	});
+
+	it('draws focus and range overlays and refreshes them after rerendering the same document', async () => {
+		const first = await structural('print_new_system.musicxml', {
+			view: undefined,
+		});
+		const measures = first.score.getElements().measures();
+		first.click(required(measures[0], 'first measure').rect);
+		const background = required(first.stage.created[0], 'background layer');
+		const foreground = required(first.stage.created[1], 'focus layer');
+		const drawn = background.recording.fills.length;
+		const outlined = foreground.recording.fills.length;
+		first.click(required(measures[3], 'last measure').rect, true);
+		const systems = new Set(measures.map((m) => m.getBox().getSystem()));
+		expect(background.recording.fills.slice(drawn)).toHaveLength(systems.size);
+		const focus = required(measures[3], 'focus').rect;
+		expect(foreground.recording.fills.slice(outlined)).toContainEqual(
+			expect.objectContaining({ x: focus.x, w: focus.w, h: 2 }),
+		);
+
+		first.controller.dispose();
+		const { score: rerendered, stage } = await renderedScore(first.document);
+		const view = new FakeEditingView();
+		const controller = rerendered.createEditingController(first.editor, {
+			view,
+		});
+		const fresh = rerendered.getElements().measures();
+		expect(controller.getPresentation().measures).toEqual(fresh);
+		expect(controller.getPresentation().measures[0]).not.toBe(measures[0]);
+		expect(controller.getPresentation().structuralFocus).toBe(
+			required(fresh[3], 'fresh focus'),
+		);
+		stage.dom.dispatchEvent(new FakeKeyEvent('ArrowLeft', { shiftKey: true }));
+		expect(view.renders.at(-1)?.measures).toEqual(fresh.slice(0, 3));
+	});
 });
+
+async function structural(
+	input: string | MDocument,
+	opts: EditingControllerOptions = {},
+) {
+	const { score, document, stage } = await renderedScore(input);
+	const source = required(
+		typeof input === 'string' ? document : input,
+		'document',
+	);
+	const editor = new EditingSession(source);
+	const view = new FakeEditingView();
+	const controller = score.createEditingController(editor, {
+		view,
+		...opts,
+	});
+	const click = (rect: Rect, shiftKey = false) =>
+		stage.dom.dispatchEvent(
+			new FakeClickEvent(rect.x + rect.w / 2, rect.y + rect.h / 2, {
+				shiftKey,
+			}),
+		);
+	const key = (name: string, shiftKey = false) =>
+		stage.dom.dispatchEvent(new FakeKeyEvent(name, { shiftKey }));
+	return {
+		score,
+		document: source,
+		stage,
+		editor,
+		view,
+		controller,
+		click,
+		key,
+	};
+}
 
 type Fixture = ReturnType<typeof fixture>;
 

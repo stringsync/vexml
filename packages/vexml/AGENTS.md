@@ -9,7 +9,8 @@ that draws it.
 this package, or a concept moved between files, updates this map in the same commit.
 `CLAUDE.md` is a symlink to this file.
 
-Files not named here are test fakes (`fake-*.ts`) or the public surface
+Files not named here are test fakes (`fake-*.ts`, `fake-stage.ts` among them), the
+test-only `render-harness.ts` (a fixture through the real engraving pipeline, no DOM), or the public surface
 (`index.ts`, `config.ts`, `constants.ts`). `Rect` and the hit-index `QuadTree`
 come from `webappwiz/geometry`, not this repo. Every feature has a fixture in
 `packages/integration/render.test.ts`, named for the concept.
@@ -258,7 +259,10 @@ one `Score` and must be resolved again after rendering.
   validates the whole group first, rejects unpitched and tied notes, preserves timing
   and unrelated notation, and removes an explicit accidental only when pitch changes.
 - `editing-navigator.ts` follows written order without expanding repeats and skips
-  empty measures. `chord-note-order.ts` sorts by staff, then written diatonic
+  empty measures for notes. A structural focus moves instead: a measure steps through its
+  part, empty bars included, extending from the fixed anchor; a barline steps through its
+  part's explicit left and middle barlines and every right edge; vertical moves change
+  part at the same bar and never extend. `chord-note-order.ts` sorts by staff, then written diatonic
   position (display position for unpitched notes), ignoring accidentals and keeping
   document order for ties. Vertical moves exhaust chord members before changing
   voices, entering at the top when descending and bottom when ascending.
@@ -271,10 +275,15 @@ one `Score` and must be resolved again after rendering.
   the presentation without engraving; caret and focus changes drive scrolling, with
   measure-box fallback for unindexed notes. Manual scrolling does not trigger following.
   Disabled controllers hide presentation without discarding session state, and document
-  changes re-resolve it so detached caret geometry cannot linger.
+  changes re-resolve it so detached caret geometry cannot linger. Pointer hits on a
+  per-part `Measure` or a `Barline` select structural targets (never the cross-part
+  `MeasureBox`); Shift-click extends a measure range within the clicked part, from a
+  focused note's bar when no measure anchors it. Structural targets resolve to the
+  current render's elements on every presentation; an undrawn barline scrolls to its measure.
 - `selection-overlay.ts` puts cursor halos and per-system regions behind engraving,
-  with selection coloring, the cursor outline and a configurable staff-height caret
-  above hover. Preserve playback and hover decoration state. During marquee dragging,
+  measure-range bands (one per system) and selected barlines behind engraving too,
+  with selection coloring, the cursor outline, the structural focus outline and a
+  configurable staff-height caret above hover. Preserve playback and hover decoration state. During marquee dragging,
   publish preview notes and score-space `presentation.marquee` without changing the
   session until release. Deduplicate notehead/fret hits and require full enclosure.
   Escape, cancellation, suspension, disposal or capture loss with the primary button

@@ -473,6 +473,11 @@ Rules that keep an editor correct:
   `getStructuralAnchor()`, `getSelectedMeasures()` and `getSelectedBarline()` for structural
   targets. All emit `selectionchange`, and selecting never mutates the document or creates
   history.
+- The controller resolves structural targets against each render: `presentation.measures`
+  (per-part `Measure` elements), `presentation.barline` (a drawn `Barline`, or null) and
+  `presentation.structuralFocus`. The default overlay shades a measure range one band per
+  system, shades a selected barline, outlines the structural focus, and follows it into
+  view. A new controller over the same session redraws them from the new render.
 - Place a step-entry caret with `setCaret({ part, measure, voice, staff, onset })`; `onset`
   is quarter-note beats from the measure start, and the measure may be empty. Read the
   current document target with `getCaret()`, move its onset with `moveCaret(onset)`, and
@@ -502,6 +507,16 @@ chord members and neighboring voices, Shift (arrows or click) extends a range wi
 one part and voice, Command/Ctrl-click toggles a note, drag selects enclosed notes and
 frets (Command/Ctrl-drag adds; touch drag keeps native scrolling), Escape or a
 background click clears, Command/Ctrl+Z undoes and Shift redoes.
+
+Measures and barlines: a click on a part's staff space (an empty bar, or between notes)
+selects that part's measure, and a click on a drawn barline selects it; either replaces a
+note selection or caret, and a note click replaces them in turn. Shift-click extends a
+measure range in the clicked part from the structural anchor, or from the focused note's
+bar, forwards or backwards across systems; a bar in another part starts a new range.
+Barlines select one at a time. With a measure focused, left/right step through the part's
+bars (empty ones included) and Shift extends or shrinks the range; up/down move to the same
+bar in the neighboring part. With a barline focused, left/right step through the part's
+barlines in written order and up/down change part. Escape clears.
 
 ## Snapshots
 

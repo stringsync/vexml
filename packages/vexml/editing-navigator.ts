@@ -2,7 +2,9 @@ import type { Measure, Note } from '@stringsync/mdom';
 import { ChordNoteOrder } from './chord-note-order';
 import type { EditingLayout } from './editing-layout';
 import type {
+	EditingBarline,
 	EditingSession,
+	EditingStructuralTarget,
 	EditingVoice,
 	SelectionOptions,
 } from './editing-session';
@@ -21,6 +23,10 @@ export class EditingNavigator {
 	) {}
 
 	move(move: EditingNavigation, opts: SelectionOptions = {}): boolean {
+		const structural = this.editor.getStructuralFocus();
+		if (structural) {
+			return this.moveStructural(structural, move, opts);
+		}
 		const focus = this.editor.getFocus();
 		let target: Note | undefined;
 		switch (move.unit) {
@@ -81,6 +87,91 @@ export class EditingNavigator {
 		}
 		this.editor.select(target);
 		return true;
+	}
+
+	/** A measure steps through its part, empty bars included, extending from the anchor;
+	 * a barline steps through its part's barlines; vertical moves change part at the same bar. */
+	private moveStructural(
+		focus: EditingStructuralTarget,
+		move: EditingNavigation,
+		opts: SelectionOptions,
+	): boolean {
+		const vertical = move.unit === 'vertical' || move.unit === 'voice';
+		if (move.unit === 'chordPitch' || (vertical && opts.extend)) {
+			return false;
+		}
+		const measure = this.isBarline(focus) ? focus.measure : focus;
+		if (vertical) {
+			const parts = this.editor.document.score.parts;
+			const part = parts[parts.indexOf(measure.part) + move.direction];
+			const target = part?.measures[measure.index];
+			if (!target) {
+				return false;
+			}
+			if (this.isBarline(focus)) {
+				this.editor.selectBarline({
+					measure: target,
+					location: focus.location,
+					barline: null,
+				});
+			} else {
+				this.editor.selectMeasure(target);
+			}
+			return true;
+		}
+		if (this.isBarline(focus)) {
+			const barlines = this.barlines(measure);
+			const at = barlines.findIndex(
+				(barline) =>
+					barline.measure === focus.measure &&
+					barline.location === focus.location &&
+					barline.barline === focus.barline,
+			);
+			const target = barlines[at + move.direction];
+			if (at < 0 || !target) {
+				return false;
+			}
+			this.editor.selectBarline(target);
+			return true;
+		}
+		const target = measure.part.measures[measure.index + move.direction];
+		if (!target) {
+			return false;
+		}
+		this.editor.selectMeasure(target, opts);
+		return true;
+	}
+
+	/** A part's barlines in written order: each measure's explicit left and middle ones, then
+	 * its right edge, explicit or implicit. */
+	private barlines(measure: Measure): EditingBarline[] {
+		return measure.part.measures.flatMap((candidate) => {
+			const explicit = (location: string) =>
+				candidate.barlines.filter((barline) => barline.location === location);
+			return [
+				...explicit('left').map((barline) => ({
+					measure: candidate,
+					location: 'left' as const,
+					barline,
+				})),
+				...explicit('middle')
+					.sort((a, b) => (a.measureBeat ?? 0) - (b.measureBeat ?? 0))
+					.map((barline) => ({
+						measure: candidate,
+						location: 'middle' as const,
+						barline,
+					})),
+				{
+					measure: candidate,
+					location: 'right' as const,
+					barline: explicit('right')[0] ?? null,
+				},
+			];
+		});
+	}
+
+	private isBarline(target: EditingStructuralTarget): target is EditingBarline {
+		return 'barline' in target;
 	}
 
 	private notes(voice: EditingVoice, measures = voice.part.measures): Note[] {
