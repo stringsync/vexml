@@ -75,7 +75,7 @@ Two rules cut across the draw stage:
 ## Notes and voices
 
 - **Noteheads, accidentals, stems, flags, rests, dots, ledger lines**: `chord-translator.ts`, `notehead-text.ts` (the <notehead-text> label inside a head)
-- **Voices on one stave, stem direction, voice-level layout**: `voice-builder.ts`
+- **Voices on one stave, stem direction, voice-level layout**: `voice-builder.ts`; `system-formatter.ts` (`placeRests`: rests clear the other voices through a stave-local `CollisionResolver` after formatting, keeping explicit rest display pitches)
 - **Cue notes** (`<cue/>`, `<type size="cue">`): `cue-note.ts` reads them; `chord-translator.ts` draws them as small notes, `sequence-factory.ts` leaves them out of playback
 - **Beams, tuplets, grace notes**: `voice-builder.ts` (grouping), `spanner-builder.ts` (construction), `spaced-beam.ts` (document beam distance, stem reach and flat-beam clearance), `feathered-beam.ts` (`beam@fan`), `display-tuplet.ts` (show-number none, note-value glyphs, curved line), `system-formatter.ts` (grace spacing)
 - **Cross-staff notes, beams and tuplets; the ghosts holding a crossed note's time on the other staff**: `voice-builder.ts`, `voice-translator.ts` (`gapFill`), `score-reader.ts` (`staffVoices`)

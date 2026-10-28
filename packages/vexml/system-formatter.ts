@@ -8,6 +8,7 @@ import {
 	Formatter,
 	GraceNoteGroup,
 	Modifier,
+	type NoteHead,
 	type RenderContext,
 	Stave,
 	type StaveModifier,
@@ -26,9 +27,10 @@ import {
 } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
 import type { ChordTranslator } from './chord-translator';
-import type { CollisionResolver } from './collision-resolver';
+import { CollisionResolver } from './collision-resolver';
 import type { ConnectorDrawer } from './connector-drawer';
 import {
+	FAR,
 	GRACE_GROUP_SPACING_STAVE,
 	GRACE_SPACING,
 	LYRIC_NOTE_CLEARANCE,
@@ -283,6 +285,9 @@ export class SystemFormatter {
 			}
 		}
 		this.pushAfterGraces(allVoices, noteEndX);
+		for (const p of pending) {
+			this.placeRests(p);
+		}
 
 		let bottom = 0;
 		// Track how high content rises above the staves from each note's noteheads and its
@@ -861,6 +866,95 @@ export class SystemFormatter {
 				}
 			}
 		}
+	}
+
+	/* VexFlow's shared-voice formatter moves a clashing rest by only one staff line.
+	 * A low chord can still cover it. Finish the clearance after x positions settle,
+	 * keeping each rest on its voice's side and snapping outward to staff half-lines.
+	 * Explicit display pitches stay under the document's control. */
+	private placeRests(p: PendingStave): void {
+		if (p.isTab || p.vexVoices.length < 2) {
+			return;
+		}
+		const resolver = new CollisionResolver(
+			new Rect(-FAR, -FAR, 2 * FAR, 2 * FAR),
+			{},
+		);
+		const visible = p.noteChords.filter(
+			({ note }) =>
+				!(note instanceof InvisibleStaveNote) &&
+				note.renderOptions.draw !== false,
+		);
+		for (const { note } of visible) {
+			if (!note.isRest()) {
+				// Heads and stems occupy separate columns: a rest can legitimately sit
+				// beside a long stem without clearing its entire bounding rectangle.
+				for (const head of note.noteHeads) {
+					resolver.add({ rect: this.headRect(note, head), kind: 'note' });
+				}
+				if (note.hasStem() && !this.crossStaveNotes.has(note)) {
+					const { topY, baseY } = note.getStemExtents();
+					resolver.add({
+						rect: new Rect(
+							note.getStemX() - Stem.WIDTH / 2,
+							Math.min(topY, baseY),
+							Stem.WIDTH,
+							Math.abs(baseY - topY),
+						),
+						kind: 'note',
+					});
+				}
+			}
+		}
+		const voiceOf = new Map(
+			p.vexVoices.flatMap((voice, index) =>
+				voice.getTickables().map((note) => [note, index] as const),
+			),
+		);
+		const step = p.stave.getSpacingBetweenLines() / 2;
+		for (const { note, chord } of visible) {
+			if (!note.isRest()) {
+				continue;
+			}
+			const head = note.noteHeads[0];
+			if (!head) {
+				continue;
+			}
+			let rect = this.headRect(note, head);
+			if (!chord.lead.restPosition && resolver.query(rect).length > 0) {
+				const up = voiceOf.get(note) === 0;
+				const clear = up
+					? resolver.liftClear(rect, step, {})
+					: resolver.dropClear(rect, step, {});
+				const steps = Math.ceil(Math.abs(clear.y - rect.y) / step);
+				if (steps > 0) {
+					const dy = (up ? -1 : 1) * steps * step;
+					note.setKeyLine(
+						0,
+						note.getKeyLine(0) - dy / p.stave.getSpacingBetweenLines(),
+					);
+					note.setStave(p.stave);
+					this.shrinkNoteheads(note, p.stave);
+					rect = this.headRect(note, note.noteHeads[0] ?? head);
+				}
+			}
+			resolver.add({ rect, kind: 'note' });
+		}
+	}
+
+	/* A head learns its x only when drawn; reconstruct that column for pre-draw
+	 * clearance, including the displaced heads in a chord containing seconds. */
+	private headRect(note: StaveNote, head: NoteHead): Rect {
+		const metrics = head.getTextMetrics();
+		const displacement = head.isDisplaced()
+			? (head.getWidth() - Stem.WIDTH / 2) * note.getStemDirection()
+			: 0;
+		return new Rect(
+			note.getNoteHeadBeginX() + displacement,
+			head.getY() - metrics.actualBoundingBoxAscent,
+			head.getWidth(),
+			metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent,
+		);
 	}
 
 	/*

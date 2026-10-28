@@ -3426,6 +3426,11 @@ describe('render', () => {
 	// - M2-3: settle into quarter-quarter-half motion in every voice, the alto/tenor halves
 	//   aligning vertically with the soprano/bass halves, closing on a C-major chord
 	//   (E5/C5/G4/C3).
+	// - M4: Clara Schumann's Liebst du um Schönheit, m.11 (five flats): RH V1 holds
+	//   a dotted-half Db4/F4/Ab4 chord then C4/Ab4; V2 begins with quarter/eighth
+	//   rests, then Ab3 and beamed Bb3/Gb4/F4/Eb4 eighths. The quarter rest drops
+	//   below the low chord. LH has an eighth rest, beamed Db2/Ab2/F3, then Eb3
+	//   and Ab2/Gb3 quarters. All three source rests remain visible.
 	it.concurrent('renders voices_grand_staff.png', async () => {
 		expect(
 			await testing.render('voices_grand_staff.musicxml'),

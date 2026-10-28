@@ -266,6 +266,35 @@ describe('SystemFormatter', () => {
 		);
 	});
 
+	it('keeps a lower voice rest below every head of a low chord', async () => {
+		const geometry = await horizontalGeometry('ignore', 320, {
+			body: `<note><pitch><step>D</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type></note>
+			<note><chord/><pitch><step>F</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type></note>
+			<note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type></note>
+			<backup><duration>4</duration></backup>
+			<note><rest/><duration>1</duration><voice>2</voice><type>quarter</type></note>`,
+		});
+		expect(geometry.notes).toHaveLength(4);
+		expect(geometry.notes[3]?.ink.y).toBeGreaterThanOrEqual(
+			geometry.notes[0]?.ink.bottom ?? Infinity,
+		);
+	});
+
+	it('keeps an upper voice rest above a high chord', async () => {
+		const geometry = await horizontalGeometry('ignore', 320, {
+			body: `<note><rest/><duration>1</duration><voice>1</voice><type>quarter</type></note>
+			<forward><duration>3</duration></forward>
+			<backup><duration>4</duration></backup>
+			<note><pitch><step>B</step><octave>4</octave></pitch><duration>4</duration><voice>2</voice><type>whole</type></note>
+			<note><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><voice>2</voice><type>whole</type></note>
+			<note><chord/><pitch><step>F</step><octave>5</octave></pitch><duration>4</duration><voice>2</voice><type>whole</type></note>`,
+		});
+		expect(geometry.notes).toHaveLength(4);
+		expect(geometry.notes[0]?.ink.bottom).toBeLessThanOrEqual(
+			geometry.notes[3]?.ink.y ?? -Infinity,
+		);
+	});
+
 	it('keeps a strict document line unbroken when its exact widths overrun the page', async () => {
 		const following = `<measure number="2" width="400"><print new-system="no"/>
 		<note default-x="100"><pitch><step>E</step><octave>4</octave></pitch><duration>4</duration><type>whole</type></note></measure>`;
