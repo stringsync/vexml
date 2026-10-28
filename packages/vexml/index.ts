@@ -41,7 +41,13 @@ export {
 } from './editing-controller';
 export type { EditingLayout } from './editing-layout';
 export { type EditingNavigation, EditingNavigator } from './editing-navigator';
-export type { EditingSessionEvents, EditingVoice } from './editing-session';
+export type {
+	BarlineLocation,
+	EditingBarline,
+	EditingSessionEvents,
+	EditingStructuralTarget,
+	EditingVoice,
+} from './editing-session';
 export {
 	type EditingMove,
 	EditingSession,

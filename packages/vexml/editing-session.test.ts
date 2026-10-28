@@ -484,6 +484,179 @@ describe('EditingSession', () => {
 		editor.dispose();
 	});
 
+	it('selects an empty measure without changing the document or history', () => {
+		const document = MDocument.empty();
+		const part = document.score.addPart();
+		part.addMeasure();
+		const empty = part.addMeasure();
+		const editor = new EditingSession(document);
+		let selections = 0;
+		let documents = 0;
+		editor.events.on('selectionchange', () => selections++);
+		editor.events.on('documentchange', () => documents++);
+		editor.selectMeasure(empty);
+		expect(editor.getStructuralFocus()).toBe(empty);
+		expect(editor.getStructuralAnchor()).toBe(empty);
+		expect(editor.getSelectedMeasures()).toEqual([empty]);
+		expect(editor.getSelectedBarline()).toBeNull();
+		expect(editor.getFocus()).toBeNull();
+		expect(editor.getSelection()).toEqual([]);
+		const returned = editor.getSelectedMeasures() as unknown[];
+		returned.length = 0;
+		expect(editor.getSelectedMeasures()).toEqual([empty]);
+		expect(selections).toBe(1);
+		expect(documents).toBe(0);
+		expect(editor.history.canUndo).toBe(false);
+		editor.clearSelection();
+		expect(editor.getStructuralFocus()).toBeNull();
+		expect(editor.getStructuralAnchor()).toBeNull();
+		expect(editor.getSelectedMeasures()).toEqual([]);
+		expect(selections).toBe(2);
+		expect(editor.history.canUndo).toBe(false);
+	});
+
+	it('extends, shrinks and reverses measure ranges across empty bars in one part', () => {
+		const document = MDocument.empty();
+		const part = document.score.addPart();
+		const otherPart = document.score.addPart();
+		const first = part.addMeasure();
+		const anchor = part.addMeasure();
+		const middle = part.addMeasure();
+		const last = part.addMeasure();
+		const foreign = otherPart.addMeasure();
+		const editor = new EditingSession(document);
+		editor.selectMeasure(anchor);
+		editor.selectMeasure(last, { extend: true });
+		expect(editor.getSelectedMeasures()).toEqual([anchor, middle, last]);
+		editor.selectMeasure(middle, { extend: true });
+		expect(editor.getSelectedMeasures()).toEqual([anchor, middle]);
+		editor.selectMeasure(first, { extend: true });
+		expect(editor.getSelectedMeasures()).toEqual([first, anchor]);
+		expect(editor.getStructuralAnchor()).toBe(anchor);
+		expect(editor.getStructuralFocus()).toBe(first);
+		expect(editor.getSelectedMeasures()).not.toContain(foreign);
+		expect(() => editor.selectMeasure(foreign, { extend: true })).toThrow(
+			'one part',
+		);
+		expect(editor.getSelectedMeasures()).toEqual([first, anchor]);
+		expect(editor.getStructuralFocus()).toBe(first);
+	});
+
+	it('selects explicit repeat and middle barlines and implicit ordinary barlines', () => {
+		const document = MDocument.empty();
+		const part = document.score.addPart();
+		const repeatedMeasure = part.addMeasure();
+		const middleMeasure = part.addMeasure();
+		const ordinaryMeasure = part.addMeasure();
+		const repeat = repeatedMeasure.addBarline({
+			location: 'right',
+			repeat: { direction: 'backward' },
+		});
+		const middle = middleMeasure.addBarline({
+			location: 'middle',
+			barStyle: 'dotted',
+		});
+		const editor = new EditingSession(document);
+		editor.selectBarline({
+			measure: repeatedMeasure,
+			location: 'right',
+			barline: repeat,
+		});
+		expect(editor.getSelectedBarline()).toEqual({
+			measure: repeatedMeasure,
+			location: 'right',
+			barline: repeat,
+		});
+		editor.selectBarline({
+			measure: middleMeasure,
+			location: 'middle',
+			barline: null,
+		});
+		expect(editor.getSelectedBarline()?.barline).toBe(middle);
+		editor.selectBarline({
+			measure: ordinaryMeasure,
+			location: 'right',
+			barline: null,
+		});
+		const selected = editor.getSelectedBarline();
+		expect(selected).toEqual({
+			measure: ordinaryMeasure,
+			location: 'right',
+			barline: null,
+		});
+		expect(editor.getStructuralFocus()).toBe(selected);
+		expect(editor.getStructuralAnchor()).toBe(selected);
+		expect(editor.getSelectedMeasures()).toEqual([]);
+	});
+
+	it('prunes detached structural targets and restores them on undo', () => {
+		const document = MDocument.empty();
+		const measure = document.score.addPart().addMeasure();
+		const barline = measure.addBarline({ location: 'right' });
+		const editor = new EditingSession(document);
+		editor.selectMeasure(measure);
+		editor.history.edit('Remove measure', () => measure.remove());
+		expect(editor.getStructuralFocus()).toBeNull();
+		expect(editor.getStructuralAnchor()).toBeNull();
+		expect(editor.getSelectedMeasures()).toEqual([]);
+		editor.undo();
+		expect(editor.getStructuralFocus()).toBe(measure);
+		expect(editor.getSelectedMeasures()).toEqual([measure]);
+		editor.selectBarline({ measure, location: 'right', barline });
+		editor.history.edit('Remove barline', () => barline.remove());
+		expect(editor.getStructuralFocus()).toBeNull();
+		expect(editor.getStructuralAnchor()).toBeNull();
+		expect(editor.getSelectedBarline()).toBeNull();
+		editor.undo();
+		expect(editor.getStructuralFocus()).toBe(editor.getSelectedBarline());
+		expect(editor.getSelectedBarline()?.barline).toBe(barline);
+	});
+
+	it('rejects foreign structural targets before changing the selection', () => {
+		const document = MDocument.empty();
+		const measure = document.score.addPart().addMeasure();
+		const foreignDocument = MDocument.empty();
+		const foreignMeasure = foreignDocument.score.addPart().addMeasure();
+		const foreignBarline = foreignMeasure.addBarline({ location: 'right' });
+		const editor = new EditingSession(document);
+		editor.selectMeasure(measure);
+		expect(() => editor.selectMeasure(foreignMeasure)).toThrow('this document');
+		expect(() =>
+			editor.selectBarline({
+				measure,
+				location: 'right',
+				barline: foreignBarline,
+			}),
+		).toThrow('this document');
+		expect(editor.getStructuralFocus()).toBe(measure);
+		expect(editor.getSelectedMeasures()).toEqual([measure]);
+	});
+
+	it('keeps note and structural selections mutually exclusive', () => {
+		const document = createDocument(['C']);
+		const note = noteAt(document, 0);
+		const editor = new EditingSession(document);
+		editor.select(note);
+		editor.selectMeasure(note.measure);
+		expect(editor.getFocus()).toBeNull();
+		expect(editor.getSelection()).toEqual([]);
+		expect(editor.getSelectedMeasures()).toEqual([note.measure]);
+		editor.select(note);
+		expect(editor.getFocus()).toBe(note);
+		expect(editor.getSelection()).toEqual([note]);
+		expect(editor.getStructuralFocus()).toBeNull();
+		expect(editor.getStructuralAnchor()).toBeNull();
+		expect(editor.getSelectedMeasures()).toEqual([]);
+		editor.selectBarline({
+			measure: note.measure,
+			location: 'right',
+			barline: null,
+		});
+		expect(editor.getFocus()).toBeNull();
+		expect(editor.getSelection()).toEqual([]);
+		expect(editor.getSelectedBarline()?.measure).toBe(note.measure);
+	});
+
 	it('releases its subscription while leaving caller-owned history usable', () => {
 		const document = createDocument(['C']);
 		const note = noteAt(document, 0);

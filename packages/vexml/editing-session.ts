@@ -1,5 +1,8 @@
 import {
+	type Barline as MBarline,
 	type MDocument,
+	type MElement,
+	type Measure as MMeasure,
 	Note as MNote,
 	type Part as MPart,
 } from '@stringsync/mdom';
@@ -13,7 +16,7 @@ import { PitchEdit, type PitchInput } from './pitch-edit';
 import { TabPositionEdit, type TabPositionInput } from './tab-position-edit';
 
 export interface SelectionOptions {
-	/** Extend from the fixed anchor within its part and voice. */
+	/** Extend from the fixed anchor within the selection's part and scope. */
 	extend?: boolean;
 }
 
@@ -24,15 +27,23 @@ export interface EditingVoice {
 	readonly voice: string;
 }
 
+export type BarlineLocation = 'left' | 'right' | 'middle';
+
+export interface EditingBarline {
+	readonly measure: MMeasure;
+	readonly location: BarlineLocation;
+	readonly barline: MBarline | null;
+}
+
+export type EditingStructuralTarget = MMeasure | EditingBarline;
+
 export type EditingSessionEvents = {
 	selectionchange: undefined;
 	voicechange: undefined;
 	documentchange: undefined;
 };
 
-/** A note-editing session outlives rendered Scores. Optional EditingControllers own
- * input and overlays; the host schedules rerenders. mdom owns document history.
- * Once created, all document mutations must run through document.history.edit(). */
+/** Select notes, measures and barlines on an mdom document and run undoable edits. */
 export class EditingSession
 	implements Eventful<EditingSessionEvents>, Resource
 {
@@ -45,6 +56,10 @@ export class EditingSession
 	private focus: MNote | null = null;
 	private anchor: MNote | null = null;
 	private selected: MNote[] = [];
+	private structuralFocus: EditingStructuralTarget | null = null;
+	private structuralAnchor: EditingStructuralTarget | null = null;
+	private selectedMeasures: MMeasure[] = [];
+	private selectedBarline: EditingBarline | null = null;
 
 	constructor(readonly document: MDocument) {
 		this.disposer.defer(
@@ -136,6 +151,87 @@ export class EditingSession
 		return this.selected.filter((note) => this.contains(note));
 	}
 
+	getStructuralFocus(): EditingStructuralTarget | null {
+		return this.structuralFocus &&
+			this.containsStructuralTarget(this.structuralFocus)
+			? this.structuralFocus
+			: null;
+	}
+
+	getStructuralAnchor(): EditingStructuralTarget | null {
+		return this.structuralAnchor &&
+			this.containsStructuralTarget(this.structuralAnchor)
+			? this.structuralAnchor
+			: null;
+	}
+
+	getSelectedMeasures(): readonly MMeasure[] {
+		return this.selectedMeasures.filter((measure) => this.contains(measure));
+	}
+
+	getSelectedBarline(): EditingBarline | null {
+		return this.selectedBarline &&
+			this.containsStructuralTarget(this.selectedBarline)
+			? this.selectedBarline
+			: null;
+	}
+
+	/** Select a measure or extend the fixed measure anchor within one part. */
+	selectMeasure(measure: MMeasure, opts: SelectionOptions = {}): void {
+		this.requireElement(measure);
+		const anchor = this.getStructuralAnchor();
+		if (opts.extend && anchor && !this.isBarlineTarget(anchor)) {
+			if (anchor.part !== measure.part) {
+				throw new Error('editing: a measure range must stay within one part');
+			}
+			const measures = anchor.part.measures;
+			const start = measures.indexOf(anchor);
+			const end = measures.indexOf(measure);
+			this.selectedMeasures = measures.slice(
+				Math.min(start, end),
+				Math.max(start, end) + 1,
+			);
+		} else {
+			this.structuralAnchor = measure;
+			this.selectedMeasures = [measure];
+		}
+		this.clearNoteSelection();
+		this.selectedBarline = null;
+		this.structuralFocus = measure;
+		this.selectionChanged();
+	}
+
+	/** Select a barline by measure and location, retaining its mdom node when present. */
+	selectBarline(target: EditingBarline): void {
+		this.requireElement(target.measure);
+		const barline =
+			target.barline ??
+			target.measure.barlines.find(
+				(candidate) => candidate.location === target.location,
+			) ??
+			null;
+		if (barline) {
+			this.requireElement(barline);
+			if (
+				barline.parent !== target.measure ||
+				barline.location !== target.location
+			) {
+				throw new Error('editing: barline target does not match its measure');
+			}
+		}
+		const selected = Object.freeze({
+			measure: target.measure,
+			location: target.location,
+			barline,
+		});
+		this.clearNoteSelection();
+		this.structuralFocus = selected;
+		this.structuralAnchor = selected;
+		this.selectedMeasures = [];
+		this.selectedBarline = selected;
+		this.selectionChanged();
+	}
+
 	/** Selecting a note starts a selection; extend: true extends the existing voice range.
 	 * Chord members, grace notes and invisible notes remain individual targets. */
 	select(note: MNote, opts: SelectionOptions = {}): void {
@@ -156,6 +252,7 @@ export class EditingSession
 			this.anchor = note;
 			this.selected = [note];
 		}
+		this.clearStructuralSelection();
 		this.focus = note;
 		this.selectionChanged();
 	}
@@ -165,6 +262,7 @@ export class EditingSession
 		for (const note of notes) {
 			this.requireNote(note);
 		}
+		this.clearStructuralSelection();
 		this.selected = [...new Set(notes)];
 		this.focus = this.selected.at(-1) ?? null;
 		this.anchor = this.focus;
@@ -238,8 +336,21 @@ export class EditingSession
 		return this.history.redo();
 	}
 
-	private contains(note: MNote): boolean {
-		let node = note.parent;
+	private clearNoteSelection(): void {
+		this.focus = null;
+		this.anchor = null;
+		this.selected = [];
+	}
+
+	private clearStructuralSelection(): void {
+		this.structuralFocus = null;
+		this.structuralAnchor = null;
+		this.selectedMeasures = [];
+		this.selectedBarline = null;
+	}
+
+	private contains(element: MElement): boolean {
+		let node = element.parent;
 		while (node) {
 			if (node === this.document.root) {
 				return true;
@@ -249,10 +360,33 @@ export class EditingSession
 		return false;
 	}
 
-	private requireNote(note: MNote): void {
-		if (!this.contains(note)) {
+	private containsStructuralTarget(target: EditingStructuralTarget): boolean {
+		if (!this.isBarlineTarget(target)) {
+			return this.contains(target);
+		}
+		return (
+			this.contains(target.measure) &&
+			(!target.barline ||
+				(this.contains(target.barline) &&
+					target.barline.parent === target.measure &&
+					target.barline.location === target.location))
+		);
+	}
+
+	private isBarlineTarget(
+		target: EditingStructuralTarget,
+	): target is EditingBarline {
+		return 'barline' in target;
+	}
+
+	private requireElement(element: MElement): void {
+		if (!this.contains(element)) {
 			throw new Error('editing: target does not belong to this document');
 		}
+	}
+
+	private requireNote(note: MNote): void {
+		this.requireElement(note);
 	}
 
 	private voiceNotes(note: MNote): MNote[] {

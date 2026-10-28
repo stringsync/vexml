@@ -461,6 +461,16 @@ Rules that keep an editor correct:
   commands and `editing.setEnabled(false)` suspends input while keeping the session.
 - Without a controller, use `select(note)`, `selectNotes(notes)` or
   `selectElements(...)` and listen for `selectionchange` and `voicechange`.
+- Select structures with `selectMeasure(measure)` and
+  `selectMeasure(measure, { extend: true })`; extension keeps a fixed anchor and a
+  contiguous range in one part, including empty measures and reversal across the anchor.
+  `selectBarline({ measure, location, barline })` selects a left, right or middle barline;
+  pass `barline: null` for an implicit ordinary barline. An explicit mdom barline at that
+  location is retained automatically when the argument is null.
+- Note and structural selections are mutually exclusive. `getFocus()` and `getSelection()`
+  remain note-only; use `getStructuralFocus()`, `getStructuralAnchor()`,
+  `getSelectedMeasures()` and `getSelectedBarline()` for structural targets. All emit
+  `selectionchange`, and selecting never mutates the document or creates history.
 - `setPitch` supports ordinary pitched notes only; rests, unpitched, tied notes and
   string/fret assignments are rejected before the group changes.
 - `setTabPosition({ string, fret, pitch })` changes pitch and fingering together as one
@@ -472,8 +482,8 @@ Rules that keep an editor correct:
 - Use `editor.history.edit(label, () => { /* mutate editor.document */ })` for any
   other mdom operation; it may touch any part of the document regardless of selection.
   No-op transactions emit no `documentchange` and keep redo.
-- Removed notes drop out of the selection; undo restores them. Keep the document and
-  history usable after a render error so users can undo.
+- Removed notes and structural targets drop out of the selection; undo restores them.
+  Keep the document and history usable after a render error so users can undo.
 - The host supplies the container's accessible name, any live selection announcements,
   and whether selection should seek or pause playback.
 

@@ -231,15 +231,18 @@ in the finish pass, after the shared index clears.
 ## Editing implementation contracts
 
 Public integration guidance lives in [`skills/vexml/SKILL.md`](../../skills/vexml/SKILL.md#editing).
-Keep the session tied to document notes: rendered wrappers and geometry belong to
+Keep the session tied to document nodes: rendered wrappers and geometry belong to
 one `Score` and must be resolved again after rendering.
 
 - `editing-session.ts` owns focus, active voice and range/set selection; mdom owns history.
   The session subscribes to native history and must be disposed separately from its controllers;
-  it installs no DOM listeners. Ranges keep a fixed anchor and reject cross-part
-  or cross-voice selection before mutation. Explicit sets use the last distinct
-  note as focus and anchor. Getters return snapshots; detached notes disappear
-  from selection, and selecting detached or foreign notes throws.
+  it installs no DOM listeners. Note and structural selections are mutually exclusive;
+  the note getters stay note-only. Measure ranges keep a fixed anchor and reject
+  cross-part selection before mutation; note ranges also reject cross-voice selection.
+  Barline targets pair a measure with left/right/middle and retain an explicit mdom
+  barline, or null for an implicit one. Explicit note sets use the last distinct note
+  as focus and anchor. Getters return snapshots; detached targets disappear from
+  selection, and selecting detached or foreign targets throws.
 - `pitch-edit.ts` is a conservative pitch command, preserving note identity and unrelated
   notation. A changed pitch removes the explicit accidental. The session runs it
   inside `document.history.edit`; mdom owns rollback and reversal. Once a session
