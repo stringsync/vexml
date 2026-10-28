@@ -34,12 +34,14 @@
       "name": "@vexml/renderer",
       "version": "1.13.1",
       "dependencies": {
-        "@coderline/alphatab": "^1.8.4",
         "@stringsync/mdom": "0.8.0",
         "@stringsync/vexml": "workspace:*",
-        "opensheetmusicdisplay": "^2.1.1",
         "playwright": "^1.61.1",
         "webappwiz": "0.0.52",
+      },
+      "devDependencies": {
+        "@coderline/alphatab": "^1.8.4",
+        "opensheetmusicdisplay": "^2.2.1",
       },
     },
     "packages/site": {
@@ -959,7 +961,7 @@
 
     "open": ["open@11.0.2", "", { "dependencies": { "default-browser": "^5.5.1", "define-lazy-prop": "^3.0.0", "is-in-ssh": "^1.0.0", "is-inside-container": "^1.0.0", "powershell-utils": "^0.2.1", "wsl-utils": "^1.0.0" } }, "sha512-RWqF+pBSkqecEvCKOn8QYhaNdRMJDZRIrlS/7rTDdLHaPcfXGCZ/h8zb413NfvdeAV0MR7T1yJcA34/q+CSm1Q=="],
 
-    "opensheetmusicdisplay": ["opensheetmusicdisplay@2.1.1", "", { "dependencies": { "@types/vexflow": "^1.2.38", "jszip": "3.10.1", "loglevel": "^1.8.0", "typescript-collections": "^1.3.3", "vexflow": "1.2.93" }, "optionalDependencies": { "gl": "^9.0.0-rc.10" } }, "sha512-IdAhb/J1jl0Q0xY/lEqj0Rv3hA7e99ZllGxSjjOwAy/AaoVZbRSXrf/NXmSTIXxRNi61QlOEdPlIjpUFfjcDtg=="],
+    "opensheetmusicdisplay": ["opensheetmusicdisplay@2.2.1", "", { "dependencies": { "@types/vexflow": "^1.2.38", "jszip": "3.10.1", "loglevel": "^1.8.0", "typescript-collections": "^1.3.3", "vexflow": "1.2.93" }, "optionalDependencies": { "gl": "^9.0.0-rc.10" } }, "sha512-2DqI2lQKKzDDoIe7yD8yNyWTofSdRbFZYTD3nGRzEo1XmTK2DJWcUXLRXZ2E5xzOt7Pd+RmSGL1quFQZRCqDMw=="],
 
     "ora": ["ora@8.2.0", "", { "dependencies": { "chalk": "^5.3.0", "cli-cursor": "^5.0.0", "cli-spinners": "^2.9.2", "is-interactive": "^2.0.0", "is-unicode-supported": "^2.0.0", "log-symbols": "^6.0.0", "stdin-discarder": "^0.2.2", "string-width": "^7.2.0", "strip-ansi": "^7.1.0" } }, "sha512-weP+BZ8MVNnlCm8c0Qdc1WSWq4Qn7I+9CJGm7Qali6g44e/PUzbjNqJX5NJ9ljlNMosfJvg1fKEGILklK9cwnw=="],
 

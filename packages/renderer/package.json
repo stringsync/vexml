@@ -7,11 +7,13 @@
 		".": "./index.ts"
 	},
 	"dependencies": {
-		"@coderline/alphatab": "^1.8.4",
 		"@stringsync/mdom": "0.8.0",
 		"@stringsync/vexml": "workspace:*",
-		"opensheetmusicdisplay": "^2.1.1",
 		"playwright": "^1.61.1",
 		"webappwiz": "0.0.52"
+	},
+	"devDependencies": {
+		"@coderline/alphatab": "^1.8.4",
+		"opensheetmusicdisplay": "^2.2.1"
 	}
 }
