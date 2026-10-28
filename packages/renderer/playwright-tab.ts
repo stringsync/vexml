@@ -1,6 +1,11 @@
 import type { CDPSession, Page } from 'playwright';
 import type { Tab } from './tab';
 
+// Bound both the PNG and the enlarged viewport to 128 MiB of raw RGBA pixels each.
+// Larger captures can silently lose SVG ink (the full alphaTab quartet did), even
+// when Chromium returns a valid PNG. This is a capture budget, not an engine limit.
+const MAX_CAPTURE_PIXELS = 33_554_432;
+
 export class PlaywrightTab implements Tab {
 	constructor(private readonly page: Page) {}
 
@@ -40,17 +45,36 @@ export class PlaywrightTab implements Tab {
 		const prior = this.page.viewportSize();
 		const box = await locator.boundingBox();
 		const bottom = Math.ceil((box?.y ?? 0) + (box?.height ?? 0));
+		if (box) {
+			const scale = await this.page.evaluate(() => window.devicePixelRatio);
+			const width = Math.ceil(box.width * scale);
+			const height = Math.ceil(box.height * scale);
+			const viewportPixels = prior
+				? Math.ceil(prior.width * scale) *
+					Math.ceil(Math.max(prior.height, bottom) * scale)
+				: 0;
+			if (
+				width * height > MAX_CAPTURE_PIXELS ||
+				viewportPixels > MAX_CAPTURE_PIXELS
+			) {
+				throw new Error(
+					`Unsupported capture size: ${width}x${height} device pixels for ${selector}; ` +
+						`image or expanded viewport exceeds the ${MAX_CAPTURE_PIXELS}-pixel capture budget. ` +
+						'Capture a smaller measure slice.',
+				);
+			}
+		}
 		if (!prior || bottom <= prior.height) {
 			return locator.screenshot();
 		}
-		await this.page.setViewportSize({ width: prior.width, height: bottom });
-		await this.page.evaluate(
-			() =>
-				new Promise((resolve) =>
-					requestAnimationFrame(() => requestAnimationFrame(resolve)),
-				),
-		);
 		try {
+			await this.page.setViewportSize({ width: prior.width, height: bottom });
+			await this.page.evaluate(
+				() =>
+					new Promise((resolve) =>
+						requestAnimationFrame(() => requestAnimationFrame(resolve)),
+					),
+			);
 			return await locator.screenshot();
 		} finally {
 			await this.page.setViewportSize(prior);

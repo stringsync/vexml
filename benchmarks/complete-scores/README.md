@@ -22,6 +22,15 @@ termination timeout. Runs are sequential. Failures are recorded and the next cel
 exit zero from the overall survey does not mean every cell succeeded. Check the cell JSON
 and any `*-failure.json`. Reuse an empty output directory for an independent survey.
 
+Browser captures now reject an image or expanded viewport above 33,554,432 device pixels
+before resizing or encoding a PNG (128 MiB of raw RGBA per surface). The complete quartet
+and similarly large scores therefore report **Unsupported capture size**; use `--measures`
+for a smaller slice. This conservative capture budget bounds memory and avoids recording
+an unreliable blank capture as a successful timing. It is not a notation-engine limit.
+A narrow synthetic SVG of height 150,022 retains ink at its top, middle, and end; height
+alone does not explain the original alphaTab blank. The alphaTab root cause remains
+unconfirmed, and the historical observations below have not been rerun.
+
 The engines are vexml, OSMD, and alphaTab, using the existing renderer adapters. alphaTab's
 adapter includes the repository's existing input compatibility adjustments. MuseScore is
 not included in this first pass. No screenshot baselines are accepted by this runner.
