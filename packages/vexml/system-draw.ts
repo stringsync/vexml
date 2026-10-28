@@ -203,10 +203,10 @@ export class SystemDraw {
 
 	/*
 	 * Draw and settle the next system; returns it, or null once every system is. A slur or
-	 * hairpin wrapping off the end of a system is drawn and measured with the next one, so the
-	 * next is drawn ahead before this one is weighed. A system that needs room is drawn again,
-	 * and the one drawn ahead with it, once this one is placed. Finishes a system advance()
-	 * began.
+	 * hairpin wrapping off the end of a system is drawn and measured with the next one, so
+	 * when one does, the next is drawn ahead before this one is weighed. A system that needs
+	 * room is drawn again, and the one drawn ahead with it, once this one is placed. Finishes a
+	 * system advance() began.
 	 */
 	drawNext(): number | null {
 		while (!this.done()) {
@@ -344,15 +344,22 @@ export class SystemDraw {
 			this.draw(system);
 			yield;
 		}
-		this.drawnAhead = next !== undefined;
-		if (next !== undefined) {
+		// The next system is drawn ahead only for the spanners it draws back onto this one. With
+		// none, this one is weighed now, and one that needs room is redrawn before the next is
+		// drawn at all, rather than drawn ahead only to be rewound with it.
+		const early = this.drawing.reachesPast(system)
+			? undefined
+			: this.weigh(system);
+		const drawAhead = next !== undefined && !early?.revision.needed;
+		this.drawnAhead = drawAhead;
+		if (drawAhead) {
 			this.draw(next);
 			yield;
 		}
-		const seen = this.weigh(system);
+		const seen = drawAhead || !early ? this.weigh(system) : early;
 		if (seen.revision.needed) {
 			this.reserve(system, seen);
-			this.redraw(system, next ?? system);
+			this.redraw(system, drawAhead && next !== undefined ? next : system);
 			this.drawnAhead = false;
 			yield;
 		}

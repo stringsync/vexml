@@ -695,6 +695,11 @@ export class DrawPass {
 		this.shifts.set(system, dx);
 	}
 
+	/* Whether a later system's spanners draw onto `system` (see SpannerResolver.reachesPast). */
+	reachesPast(system: number): boolean {
+		return this.spannerResolver.reachesPast(system);
+	}
+
 	/* What `system` measured while it was drawn (see SystemObservation). */
 	observe(system: number): SystemObservation {
 		const voltaLift = this.observedVoltaLifts.get(system);

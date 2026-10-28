@@ -1,0 +1,949 @@
+{
+	"date": "2026-10-28",
+	"baselineRevision": "cd63908c5a5bbf19b7266c7dd79bbfb140213877",
+	"currentRevision": "0b62c4fa2686815e53bff05e96b04dc5169f4bb8",
+	"profilingToolingRevision": "cd63908c5a5bbf19b7266c7dd79bbfb140213877",
+	"host": "Apple M4 Max; macOS 26.6.2 arm64; Bun 1.4.4",
+	"chromium": "149.0.7827.55 (Playwright revision 1228)",
+	"policy": {
+		"run1": "sequential: every baseline cell, then every current cell; one Chromium process per invocation",
+		"run2": "interleaved: baseline, current, baseline, current; Debussy complete and quartet full mount-only only",
+		"warmup": "one note.musicxml render per process; first encounter with each score retained in samples",
+		"ordinarySamplesPerBoundedCell": 5,
+		"mountOnlySamples": 3,
+		"referenceWidth": 900,
+		"dpr": 1,
+		"vexmlConfig": {
+			"stretchSingleSystem": false,
+			"minLastSystemFill": 1,
+			"progressive": false
+		},
+		"captureLimitDevicePixels": 33554432
+	},
+	"run1": [
+		{
+			"score": "debussy-mandoline",
+			"range": "all",
+			"inputSha256": "b1933c028a13609a93bca0d7099c71ce8c2b1396a8fefe96ae958519486b4337",
+			"mountOnly": false,
+			"png": {
+				"width": 932,
+				"height": 11911,
+				"sha256": "70c64a01a286de9e40028462862e6729552c7327d72abc99b1593467c741f1f8"
+			},
+			"captureError": null,
+			"content": [
+				{
+					"id": "P1",
+					"measures": 70,
+					"staves": 1,
+					"notes": 232
+				},
+				{
+					"id": "P2",
+					"measures": 70,
+					"staves": 2,
+					"notes": 1228
+				}
+			],
+			"evidenceEqual": true,
+			"baseline": {
+				"samplesMs": [
+					820.2905000000001, 449.6612909999999, 458.84358399999974, 465.294625,
+					459.31620799999973
+				],
+				"diagnosticMountMs": 274.2472090000001,
+				"diagnosticCaptureMs": 163.51137500000004
+			},
+			"current": {
+				"samplesMs": [
+					901.340541, 497.9765, 484.77095799999984, 513.9100000000003,
+					499.7801669999999
+				],
+				"diagnosticMountMs": 296.45395800000006,
+				"diagnosticCaptureMs": 178.36287500000026
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "1-8",
+			"inputSha256": "efbb6b2c8a21f55403badf519ae49060c623fea2644e46c32bb6aa1081d43c9b",
+			"mountOnly": false,
+			"png": {
+				"width": 932,
+				"height": 2112,
+				"sha256": "23c61ff91bea47ff385e36d8c43bf7016674da692980b562d3e009a2cd3257d7"
+			},
+			"captureError": null,
+			"content": [
+				{
+					"id": "P1",
+					"measures": 8,
+					"staves": 1,
+					"notes": 49
+				},
+				{
+					"id": "P2",
+					"measures": 8,
+					"staves": 1,
+					"notes": 42
+				},
+				{
+					"id": "P3",
+					"measures": 8,
+					"staves": 1,
+					"notes": 40
+				},
+				{
+					"id": "P4",
+					"measures": 8,
+					"staves": 1,
+					"notes": 25
+				}
+			],
+			"evidenceEqual": true,
+			"baseline": {
+				"samplesMs": [
+					153.7525830000002, 118.61500000000001, 116.97516599999994,
+					107.81937500000004, 116.69929200000001
+				],
+				"diagnosticMountMs": 38.73833300000001,
+				"diagnosticCaptureMs": 68.94275000000016
+			},
+			"current": {
+				"samplesMs": [
+					161.84162500000002, 123.66879200000017, 118.11012499999993,
+					115.97287499999993, 116.21900000000005
+				],
+				"diagnosticMountMs": 45.47074999999995,
+				"diagnosticCaptureMs": 72.68579200000022
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "423-430",
+			"inputSha256": "427656f8f06ad2cc3c290680916ed9547176ba3a70ba0f1f64bad488c0d28e74",
+			"mountOnly": false,
+			"png": {
+				"width": 932,
+				"height": 1774,
+				"sha256": "ca5ffadab19bd32c407307b9f2d86b883d0cba49f13eaf921d497e108d204fbf"
+			},
+			"captureError": null,
+			"content": [
+				{
+					"id": "P1",
+					"measures": 8,
+					"staves": 1,
+					"notes": 22
+				},
+				{
+					"id": "P2",
+					"measures": 8,
+					"staves": 1,
+					"notes": 13
+				},
+				{
+					"id": "P3",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P4",
+					"measures": 8,
+					"staves": 1,
+					"notes": 13
+				}
+			],
+			"evidenceEqual": true,
+			"baseline": {
+				"samplesMs": [
+					156.9371659999997, 92.36491699999988, 91.67933400000038,
+					92.33187499999985, 89.66354100000035
+				],
+				"diagnosticMountMs": 22.603665999999976,
+				"diagnosticCaptureMs": 66.94012500000008
+			},
+			"current": {
+				"samplesMs": [
+					160.39962500000001, 91.25087499999972, 91.82695799999965,
+					91.69279200000028, 90.87408300000016
+				],
+				"diagnosticMountMs": 22.028084000000035,
+				"diagnosticCaptureMs": 65.53970799999979
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "846-853",
+			"inputSha256": "3af435434dfa48a5cec57fe204fbed63bfd9db2329a3e1498a75728baf62a28c",
+			"mountOnly": false,
+			"png": {
+				"width": 932,
+				"height": 1094,
+				"sha256": "eaebc3a944f77cc899284a23f815fd700c8047369d0c51337806dcac54543f91"
+			},
+			"captureError": null,
+			"content": [
+				{
+					"id": "P1",
+					"measures": 8,
+					"staves": 1,
+					"notes": 28
+				},
+				{
+					"id": "P2",
+					"measures": 8,
+					"staves": 1,
+					"notes": 29
+				},
+				{
+					"id": "P3",
+					"measures": 8,
+					"staves": 1,
+					"notes": 28
+				},
+				{
+					"id": "P4",
+					"measures": 8,
+					"staves": 1,
+					"notes": 19
+				}
+			],
+			"evidenceEqual": true,
+			"baseline": {
+				"samplesMs": [
+					182.38554099999965, 82.65129100000013, 79.84954200000084,
+					76.9409999999998, 74.40979100000004
+				],
+				"diagnosticMountMs": 18.832541999999194,
+				"diagnosticCaptureMs": 57.9955829999999
+			},
+			"current": {
+				"samplesMs": [
+					195.94416600000022, 83.01433300000008, 77.67766699999993,
+					81.59454100000039, 82.61845799999992
+				],
+				"diagnosticMountMs": 19.720000000000255,
+				"diagnosticCaptureMs": 58.65320900000006
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "1-8",
+			"inputSha256": "c53ec166997b27ec56701efa80559663c90e37ae83c7390543b66bffbe4b5d07",
+			"mountOnly": false,
+			"png": {
+				"width": 932,
+				"height": 4924,
+				"sha256": "6fab671371bd771286a94b83db45536439c38917c64184e92e3af3bac8b8f707"
+			},
+			"captureError": null,
+			"content": [
+				{
+					"id": "P1",
+					"measures": 8,
+					"staves": 1,
+					"notes": 8
+				},
+				{
+					"id": "P2",
+					"measures": 8,
+					"staves": 1,
+					"notes": 8
+				},
+				{
+					"id": "P3",
+					"measures": 8,
+					"staves": 1,
+					"notes": 8
+				},
+				{
+					"id": "P4",
+					"measures": 8,
+					"staves": 1,
+					"notes": 8
+				},
+				{
+					"id": "P5",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P6",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P7",
+					"measures": 8,
+					"staves": 1,
+					"notes": 8
+				},
+				{
+					"id": "P8",
+					"measures": 8,
+					"staves": 1,
+					"notes": 8
+				},
+				{
+					"id": "P9",
+					"measures": 8,
+					"staves": 1,
+					"notes": 8
+				},
+				{
+					"id": "P10",
+					"measures": 8,
+					"staves": 1,
+					"notes": 8
+				},
+				{
+					"id": "P11",
+					"measures": 8,
+					"staves": 1,
+					"notes": 8
+				},
+				{
+					"id": "P12",
+					"measures": 8,
+					"staves": 1,
+					"notes": 8
+				},
+				{
+					"id": "P13",
+					"measures": 8,
+					"staves": 1,
+					"notes": 8
+				},
+				{
+					"id": "P14",
+					"measures": 8,
+					"staves": 1,
+					"notes": 17
+				},
+				{
+					"id": "P15",
+					"measures": 8,
+					"staves": 1,
+					"notes": 17
+				},
+				{
+					"id": "P16",
+					"measures": 8,
+					"staves": 1,
+					"notes": 17
+				},
+				{
+					"id": "P17",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P18",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				}
+			],
+			"evidenceEqual": true,
+			"baseline": {
+				"samplesMs": [
+					173.1846250000001, 167.54083300000002, 132.9987920000001, 134.738292,
+					129.16820899999993
+				],
+				"diagnosticMountMs": 40.122916999999916,
+				"diagnosticCaptureMs": 83.85941600000001
+			},
+			"current": {
+				"samplesMs": [
+					175.4347499999999, 165.62408400000004, 134.41750000000002,
+					133.57487500000002, 131.66054199999985
+				],
+				"diagnosticMountMs": 41.4704999999999,
+				"diagnosticCaptureMs": 83.99758300000008
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "248-255",
+			"inputSha256": "2b7c1b09ce2a8e4c9b819598444ce8d7a1b629d5af7cb93a3557eeeda70345ea",
+			"mountOnly": false,
+			"png": {
+				"width": 932,
+				"height": 4575,
+				"sha256": "1ddf8e3c57b5eefad2ac2d1e595d2a069f7327bcb57b7555dafd69de4ca1919d"
+			},
+			"captureError": null,
+			"content": [
+				{
+					"id": "P1",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P2",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P3",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P4",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P5",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P6",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P7",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P8",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P9",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P10",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P11",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P12",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P13",
+					"measures": 8,
+					"staves": 1,
+					"notes": 14
+				},
+				{
+					"id": "P14",
+					"measures": 8,
+					"staves": 1,
+					"notes": 20
+				},
+				{
+					"id": "P15",
+					"measures": 8,
+					"staves": 1,
+					"notes": 17
+				},
+				{
+					"id": "P16",
+					"measures": 8,
+					"staves": 1,
+					"notes": 15
+				},
+				{
+					"id": "P17",
+					"measures": 8,
+					"staves": 1,
+					"notes": 15
+				},
+				{
+					"id": "P18",
+					"measures": 8,
+					"staves": 1,
+					"notes": 15
+				}
+			],
+			"evidenceEqual": true,
+			"baseline": {
+				"samplesMs": [
+					255.11883399999988, 157.9844579999999, 150.64404100000002,
+					148.5457080000001, 166.1847499999999
+				],
+				"diagnosticMountMs": 57.636957999999595,
+				"diagnosticCaptureMs": 96.29312500000015
+			},
+			"current": {
+				"samplesMs": [
+					253.2342910000002, 149.10733400000026, 149.22187500000018,
+					149.76149999999961, 150.06287500000008
+				],
+				"diagnosticMountMs": 60.02158300000019,
+				"diagnosticCaptureMs": 91.75900000000001
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "495-502",
+			"inputSha256": "d9e3ee80a9b91d88797f2a8d50614382189362596e72f00cb867387bd8831f8f",
+			"mountOnly": false,
+			"png": {
+				"width": 932,
+				"height": 4040,
+				"sha256": "36106cb1b3b179e3bf7c423c1875cfd3c433147586eec6625c0636897d60606d"
+			},
+			"captureError": null,
+			"content": [
+				{
+					"id": "P1",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P2",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P3",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P4",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P5",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P6",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P7",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P8",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P9",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P10",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P11",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P12",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P13",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P14",
+					"measures": 8,
+					"staves": 1,
+					"notes": 42
+				},
+				{
+					"id": "P15",
+					"measures": 8,
+					"staves": 1,
+					"notes": 42
+				},
+				{
+					"id": "P16",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P17",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				},
+				{
+					"id": "P18",
+					"measures": 8,
+					"staves": 1,
+					"notes": 18
+				}
+			],
+			"evidenceEqual": true,
+			"baseline": {
+				"samplesMs": [
+					171.88058300000012, 146.29708299999947, 148.16087499999958,
+					141.983209, 141.34183399999984
+				],
+				"diagnosticMountMs": 65.6728750000002,
+				"diagnosticCaptureMs": 84.1733750000003
+			},
+			"current": {
+				"samplesMs": [
+					172.7096249999995, 153.35037499999999, 199.92320800000016,
+					141.33066599999984, 141.19083299999966
+				],
+				"diagnosticMountMs": 61.18224999999984,
+				"diagnosticCaptureMs": 84.54120799999964
+			}
+		},
+		{
+			"score": "dvorak-american-quartet",
+			"range": "all",
+			"inputSha256": "607a9b9e9eb514f3a57519e1d147dc12ea6991b39438b19009f811c1f98585f9",
+			"mountOnly": true,
+			"png": null,
+			"captureError": "Unsupported capture size: 932x176657 device pixels for #screenshot; image or expanded viewport exceeds the 33554432-pixel capture budget. Capture a smaller measure slice.",
+			"content": [
+				{
+					"id": "P1",
+					"measures": 853,
+					"staves": 1,
+					"notes": 3810
+				},
+				{
+					"id": "P2",
+					"measures": 853,
+					"staves": 1,
+					"notes": 4265
+				},
+				{
+					"id": "P3",
+					"measures": 853,
+					"staves": 1,
+					"notes": 4254
+				},
+				{
+					"id": "P4",
+					"measures": 853,
+					"staves": 1,
+					"notes": 3329
+				}
+			],
+			"evidenceEqual": true,
+			"baseline": {
+				"samplesMs": [5865.734958, 2920.6828749999995, 2860.7417920000007],
+				"diagnosticMountMs": 3539.4344579999997,
+				"diagnosticCaptureMs": null
+			},
+			"current": {
+				"samplesMs": [5687.197709, 2834.1882920000007, 2762.866],
+				"diagnosticMountMs": 2877.9936660000003,
+				"diagnosticCaptureMs": null
+			}
+		},
+		{
+			"score": "beethoven-symphony-5-i",
+			"range": "all",
+			"inputSha256": "5de9f153c72b3831757d43584c5d5ec792510d36cc5a389a4160aa90697fc17b",
+			"mountOnly": true,
+			"png": null,
+			"captureError": "Unsupported capture size: 932x254057 device pixels for #screenshot; image or expanded viewport exceeds the 33554432-pixel capture budget. Capture a smaller measure slice.",
+			"content": [
+				{
+					"id": "P1",
+					"measures": 502,
+					"staves": 1,
+					"notes": 797
+				},
+				{
+					"id": "P2",
+					"measures": 502,
+					"staves": 1,
+					"notes": 731
+				},
+				{
+					"id": "P3",
+					"measures": 502,
+					"staves": 1,
+					"notes": 783
+				},
+				{
+					"id": "P4",
+					"measures": 502,
+					"staves": 1,
+					"notes": 757
+				},
+				{
+					"id": "P5",
+					"measures": 502,
+					"staves": 1,
+					"notes": 840
+				},
+				{
+					"id": "P6",
+					"measures": 502,
+					"staves": 1,
+					"notes": 809
+				},
+				{
+					"id": "P7",
+					"measures": 502,
+					"staves": 1,
+					"notes": 824
+				},
+				{
+					"id": "P8",
+					"measures": 502,
+					"staves": 1,
+					"notes": 806
+				},
+				{
+					"id": "P9",
+					"measures": 502,
+					"staves": 1,
+					"notes": 743
+				},
+				{
+					"id": "P10",
+					"measures": 502,
+					"staves": 1,
+					"notes": 741
+				},
+				{
+					"id": "P11",
+					"measures": 502,
+					"staves": 1,
+					"notes": 674
+				},
+				{
+					"id": "P12",
+					"measures": 502,
+					"staves": 1,
+					"notes": 674
+				},
+				{
+					"id": "P13",
+					"measures": 502,
+					"staves": 1,
+					"notes": 693
+				},
+				{
+					"id": "P14",
+					"measures": 502,
+					"staves": 1,
+					"notes": 1252
+				},
+				{
+					"id": "P15",
+					"measures": 502,
+					"staves": 1,
+					"notes": 1221
+				},
+				{
+					"id": "P16",
+					"measures": 502,
+					"staves": 1,
+					"notes": 1085
+				},
+				{
+					"id": "P17",
+					"measures": 502,
+					"staves": 1,
+					"notes": 944
+				},
+				{
+					"id": "P18",
+					"measures": 502,
+					"staves": 1,
+					"notes": 887
+				}
+			],
+			"evidenceEqual": true,
+			"baseline": {
+				"samplesMs": [
+					7128.711625000001, 3448.1386249999996, 3740.5180420000015
+				],
+				"diagnosticMountMs": 3551.3015419999992,
+				"diagnosticCaptureMs": null
+			},
+			"current": {
+				"samplesMs": [6739.789541, 3227.9325, 3537.229374999999],
+				"diagnosticMountMs": 3329.0002909999985,
+				"diagnosticCaptureMs": null
+			}
+		}
+	],
+	"run2Interleaved": [
+		{
+			"round": 1,
+			"revision": "baseline",
+			"debussyAll": {
+				"samplesMs": [
+					823.0802090000001, 447.1315420000001, 448.9934169999999,
+					468.7157500000003, 472.9083330000003
+				],
+				"pngSha256": [
+					"70c64a01a286de9e40028462862e6729552c7327d72abc99b1593467c741f1f8"
+				],
+				"diagnosticMountMs": 269.0077080000001
+			},
+			"quartetFullMountOnly": {
+				"samplesMs": [5473.528875, 2700.512125, 2666.442916],
+				"diagnosticMountMs": 3266.7271249999994
+			}
+		},
+		{
+			"round": 1,
+			"revision": "current",
+			"debussyAll": {
+				"samplesMs": [
+					832.2432500000001, 468.7254580000001, 463.24762499999974,
+					474.36308299999973, 466.94712500000014
+				],
+				"pngSha256": [
+					"70c64a01a286de9e40028462862e6729552c7327d72abc99b1593467c741f1f8"
+				],
+				"diagnosticMountMs": 269.74370799999997
+			},
+			"quartetFullMountOnly": {
+				"samplesMs": [5517.302208, 2792.5580419999997, 2700.7076670000006],
+				"diagnosticMountMs": 3586.3954999999987
+			}
+		},
+		{
+			"round": 2,
+			"revision": "baseline",
+			"debussyAll": {
+				"samplesMs": [
+					891.2137500000001, 493.2215000000001, 490.5850840000003,
+					514.3126669999997, 490.8855840000001
+				],
+				"pngSha256": [
+					"70c64a01a286de9e40028462862e6729552c7327d72abc99b1593467c741f1f8"
+				],
+				"diagnosticMountMs": 293.257208
+			},
+			"quartetFullMountOnly": {
+				"samplesMs": [5970.414083, 2977.3534170000003, 2972.997791],
+				"diagnosticMountMs": 3677.1697079999994
+			}
+		},
+		{
+			"round": 2,
+			"revision": "current",
+			"debussyAll": {
+				"samplesMs": [
+					856.1085830000001, 471.70241699999997, 465.9044590000001, 494.456541,
+					489.11474999999973
+				],
+				"pngSha256": [
+					"70c64a01a286de9e40028462862e6729552c7327d72abc99b1593467c741f1f8"
+				],
+				"diagnosticMountMs": 280.24974999999995
+			},
+			"quartetFullMountOnly": {
+				"samplesMs": [5691.315375, 2810.916375, 2806.252875],
+				"diagnosticMountMs": 3360.7036669999998
+			}
+		}
+	],
+	"headless": {
+		"setup": "bun, FakePaintProbe, ScoreRenderer with the same vexml config at 900 px; SystemDraw methods counted by a throwaway harness, not committed",
+		"retries": {
+			"debussy-mandoline": {
+				"systems": 33,
+				"redrawn": 33,
+				"drawsBefore": 65,
+				"drawsAfter": 58
+			},
+			"clara-schumann-liebst-du": {
+				"systems": 18,
+				"redrawn": 18,
+				"drawsBefore": 35
+			},
+			"schubert-erlkonig": {
+				"systems": 71,
+				"redrawn": 70,
+				"drawsBefore": 141
+			},
+			"dvorak-american-quartet": {
+				"systems": 327,
+				"redrawn": 326,
+				"drawsBefore": 652,
+				"drawsAfter": 428,
+				"discardedAheadDrawsBefore": 325,
+				"discardedAheadDrawsAfter": 101
+			},
+			"beethoven-symphony-5-i": {
+				"systems": 112,
+				"redrawn": 112,
+				"drawsBefore": 223,
+				"drawsAfter": 203,
+				"discardedAheadDrawsBefore": 111,
+				"discardedAheadDrawsAfter": 91
+			}
+		},
+		"redrawCauses": "every redraw had observed stave spill; lyrics stepping, top overflow and stacked hairpins joined it on some systems",
+		"totalMsBeforeAfter": {
+			"debussy-mandoline": [[463, 459, 466], [438, 457, 437]],
+			"dvorak-american-quartet": [[4158, 4201, 4203], [3600, 3573, 3614]],
+			"beethoven-symphony-5-i": [[4725, 4736, 4753], [4632, 4605, 4671]]
+		}
+	},
+	"equivalence": {
+		"inputs": "239 integration fixtures x standard 900 px, standard 360 px, paged, documentLayout follow; plus the 5 complete scores at 900 px",
+		"snapshotModelGeometrySequence": "identical in every render",
+		"ops": "identical call, path, bounds, matrix, clips and dash in every render",
+		"differences": "50 fixture renders and all 5 scores differ only in inherited canvas state the op never reads (font on fill, fillRect and stroke; lineWidth on fill, fillRect and fillText) and in renumbered paint element ids; the discarded ahead draw used to leave its state and consume ids before the redraw"
+	}
+}

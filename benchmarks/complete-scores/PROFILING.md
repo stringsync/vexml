@@ -511,3 +511,72 @@ fall, but the saved plain-data preparation is not a worthwhile share of mount ti
 as a speculative refactor. The profile still does not justify sharing mutable, formatted VexFlow
 tickables across passes. No rendering source, screenshot, geometry or collision behavior changes
 result from this investigation.
+
+## System settling: no ahead draw for a system nothing wraps onto
+
+`SystemDraw` settles one system at a time, and that stays. Counting its work headlessly at the
+checkpoint's 900-pixel width and vexml config showed that almost every system is redrawn: the
+quartet 326 of 327, Beethoven 112 of 112, Debussy 33 of 33. Every redraw had observed stave spill,
+sometimes with stepped lyrics, top overflow or stacked hairpins. Those redraws are the settling
+working as designed and are not removed.
+
+The duplicate was the next system. It was drawn ahead before this one was weighed, because a
+slur or hairpin wrapping off this system is drawn and measured with the next. A redraw then
+rewound it, and the next round drew it again: one full system draw discarded per redraw, 325 in
+the quartet. Since baseline `cd63908c`, `SpannerResolver.reachesPast` asks whether any spanner a
+later system draws reaches back onto this one: a start whose partner is drawn later, a hairpin or
+pedal still open, or an ottava or bracket/dashes line crossing the break. When none does, the
+system is weighed first and, when it needs room, redrawn before the next is drawn at all. A
+reach-only test was not enough: in Debussy a span it misses raised a stave row by 69 px.
+
+- [profiling-system-settling-results.json](profiling-system-settling-results.json): revisions,
+  settings, every sample of both browser runs, PNG hashes, content evidence, headless counts and
+  the equivalence summary.
+
+**Output.** A throwaway harness rendered the 239 integration fixtures in standard 900 px, standard
+360 px, paged and documentLayout 'follow', plus the five complete scores, through both drivers.
+Every snapshot's element model, geometry and timeline matched. Every op's call, path, bounds,
+transform, clips and dash matched. The only differences were inherited canvas state that the
+op never reads (a font on a stroke, a line width on a fill) and renumbered paint element ids:
+the discarded ahead draw used to leave both behind for the redraw. In the browser, all 35
+bounded captures have identical PNG hashes before and after, with equal content evidence.
+
+**Duplicate work removed.** Headless draws per render: quartet 652 → 428, Beethoven 223 → 203,
+Debussy 65 → 58. Beethoven keeps most of its ahead draws because most of its systems end with
+a spanner still open. Headless totals over three sequential samples: quartet 4,158–4,203 →
+3,573–3,614 ms, Beethoven 4,725–4,753 → 4,605–4,671, Debussy 459–466 → 437–457.
+
+**Browser timing.** Milliseconds, median (minimum to maximum). Run 1 measured every baseline cell,
+then every current cell:
+
+| Input | cd63908c | 0b62c4fa | Current minus baseline |
+| --- | ---: | ---: | ---: |
+| Debussy complete, n=5 | 459.3 (449.7–820.3) | 499.8 (484.8–901.3) | +40.5 |
+| Quartet 1–8, n=5 | 117.0 (107.8–153.8) | 118.1 (116.0–161.8) | +1.1 |
+| Quartet 423–430, n=5 | 92.3 (89.7–156.9) | 91.7 (90.9–160.4) | -0.6 |
+| Quartet 846–853, n=5 | 79.8 (74.4–182.4) | 82.6 (77.7–195.9) | +2.8 |
+| Beethoven 1–8, n=5 | 134.7 (129.2–173.2) | 134.4 (131.7–175.4) | -0.3 |
+| Beethoven 248–255, n=5 | 158.0 (148.5–255.1) | 149.8 (149.1–253.2) | -8.2 |
+| Beethoven 495–502, n=5 | 146.3 (141.3–171.9) | 153.4 (141.2–199.9) | +7.1 |
+| Quartet full, mount only, n=3 | 2,920.7 (2,860.7–5,865.7) | 2,834.2 (2,762.9–5,687.2) | -86.5 |
+| Beethoven full, mount only, n=3 | 3,740.5 (3,448.1–7,128.7) | 3,537.2 (3,227.9–6,739.8) | -203.3 |
+
+Run 2 interleaved baseline, current, baseline, current, to test the Debussy rise:
+
+| Round | Debussy cd63908c | Debussy 0b62c4fa | Quartet mount cd63908c | Quartet mount 0b62c4fa |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | 468.7 (447.1–823.1) | 468.7 (463.2–832.2) | 2,701 (2,666–5,474) | 2,793 (2,701–5,517) |
+| 2 | 493.2 (490.6–891.2) | 489.1 (465.9–856.1) | 2,977 (2,973–5,970) | 2,811 (2,806–5,691) |
+
+The Debussy rise was host drift: interleaved, the revisions match. But the quartet's baseline
+also moved 276 ms between rounds, more than any difference between revisions. Thus the browser
+does not resolve this change's wall-time gain from host noise. The sampled `drawNext` in run 1's
+single diagnostic mounts fell 1,722 → 1,566 ms (quartet) and 2,301 → 2,152 (Beethoven), which is
+consistent with a few percent, not with the headless 14%. A likely reason, not proven, is that
+the discarded ahead draw also warmed text-measurement and glyph caches that the real draw then
+reused, and measuring with a real canvas costs more than with the headless fake.
+
+**Remaining gap.** The settling's redraws remain: each system is drawn about twice, the redraw
+reserved by what the first draw saw. Removing those would mean predicting spill before drawing,
+a spacing change this lane rules out. Tickable construction and formatting inside each draw, and
+`resolveSystem` (#173), remain the larger costs.

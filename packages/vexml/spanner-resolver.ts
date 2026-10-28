@@ -281,6 +281,28 @@ export class SpannerResolver {
 	}
 
 	/*
+	 * Whether a spanner a later system draws reaches back onto `system`, once it is resolved:
+	 * a start it or an earlier system holds whose partner is drawn later, a hairpin or pedal
+	 * still waiting for its stop, or an ottava or bracket line running past its end. When none
+	 * does, what `system` measured is all its weighing needs.
+	 */
+	reachesPast(system: number): boolean {
+		if (this.windowStart(system + 1) <= system) {
+			return true;
+		}
+		const crosses = (from: Note | undefined, to: Note | undefined) =>
+			from !== undefined &&
+			to !== undefined &&
+			this.systemOfMeasure(from.measure.index) <= system &&
+			this.systemOfMeasure(to.measure.index) > system;
+		return (
+			this.octaveShiftSpans.some((span) =>
+				crosses(span.notes[0], span.notes.at(-1)),
+			) || this.directionLineSpans.some((span) => crosses(span.from, span.to))
+		);
+	}
+
+	/*
 	 * The oldest system `system`'s window has to reach back to: one holding a start whose
 	 * partner is drawn on `system` or later, or a hairpin or pedal still waiting for its stop.
 	 */
