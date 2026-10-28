@@ -1,4 +1,5 @@
 import {
+	type Barline,
 	type BeamRun,
 	Chord,
 	type Clef,
@@ -339,13 +340,21 @@ export class ScoreReader {
 	 * dotted divider mid-bar, which MusicXML writes between two notes rather than at an
 	 * edge. Left/right barlines are the measure's own edges and are read elsewhere.
 	 */
-	midBarlinesOf(measure: Measure): { beat: number; style: string }[] {
+	midBarlinesOf(measure: Measure): MidBarline[] {
 		return measure.barlines
 			.filter((barline) => barline.location === 'middle')
 			.map((barline) => ({
 				beat: barline.measureBeat ?? 0,
 				style: barline.barStyle ?? 'regular',
+				source: barline,
 			}));
+	}
+
+	/* The explicit barline at one measure edge, if the document wrote one. */
+	barlineAt(measure: Measure, location: 'left' | 'right'): Barline | null {
+		return (
+			measure.barlines.find((barline) => barline.location === location) ?? null
+		);
 	}
 
 	/*
@@ -3607,6 +3616,12 @@ const CREDIT_ROLES = new Map<string, 'title' | 'subtitle' | 'left' | 'right'>([
 	['poet', 'left'],
 	['translator', 'left'],
 ]);
+
+export interface MidBarline {
+	beat: number;
+	style: string;
+	source: Barline;
+}
 
 /** A `<barline><fermata>`: the edge it sits on, its shape, and whether it hangs below. */
 export type BarlineFermata = {

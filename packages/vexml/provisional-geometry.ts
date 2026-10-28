@@ -81,8 +81,9 @@ export class ProvisionalGeometry {
 				index: m,
 				number: parts[0]?.measures[m]?.number ?? String(m + 1),
 				systemIndex: box.systemIndex,
-				// Its staves are known once drawn (see ElementPlacer.place).
+				// Its staves and barlines are known once drawn (see ElementPlacer.place).
 				staves: [],
+				barlines: [],
 			});
 			for (const p of this.placeholdersOf(m)) {
 				const x = box.x + (box.width * p.beat) / p.span;

@@ -9,7 +9,7 @@ import type { TempoSegment } from './tempo-map';
 
 /** Bumped whenever a snapshot's shape or meaning changes: a snapshot from another version
  * throws SnapshotMismatchError rather than render wrong. */
-export const SNAPSHOT_VERSION = 5;
+export const SNAPSHOT_VERSION = 6;
 
 /** Marks a ScoreSnapshot among render's other inputs. */
 export const SNAPSHOT_FORMAT = 'vexml-score-snapshot';
@@ -85,6 +85,7 @@ export interface SnapshotElements {
 		id: string;
 		label: string | null;
 		measures: Array<{
+			rect: SnapshotRect;
 			index: number;
 			number: string;
 			voices: Array<{ id: string; staff: number; notes: number[] }>;
@@ -105,6 +106,12 @@ export interface SnapshotElements {
 		rect: SnapshotRect;
 		frame: ChordFrame;
 		title: string | null;
+	}>;
+	barlines: Array<{
+		rect: SnapshotRect;
+		location: 'left' | 'right' | 'middle';
+		part: number;
+		measure: number;
 	}>;
 	targets: number[];
 }

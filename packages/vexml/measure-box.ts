@@ -6,9 +6,9 @@ import type { System } from './system';
 import type { Viewport } from './viewport';
 
 /* A measure column's box: the full-width strip across all parts at one measure index, and the
- * background element hit when a pointer lands on staff space (not a note). Purely layout: the
- * musical content lives in the per-part Measures it joins to (getMeasures). Its `type` stays
- * 'measure': it is what pointer events report for staff-space hits.
+ * fallback below its per-part Measures when a pointer lands on staff space (not a note or
+ * barline). Purely layout: the musical content lives in the per-part Measures it joins to
+ * (getMeasures). Its `type` stays 'measure' for pointer-event compatibility.
  * Not Highlightable in v1 (coloring a whole measure box reads as a selection, not a decoration). */
 export class MeasureBox extends Element {
 	readonly type = 'measure';

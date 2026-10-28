@@ -1,5 +1,6 @@
 import type {
 	Harmony,
+	Barline as MBarline,
 	Measure as MMeasure,
 	Note as MNote,
 	Part as MPart,
@@ -18,7 +19,7 @@ import type { Viewport } from './viewport';
  */
 
 /** The mdom nodes a vexml Element can be built from. */
-export type MSource = MNote | MMeasure | MPart | Harmony;
+export type MSource = MNote | MMeasure | MPart | Harmony | MBarline;
 
 /* An element that can be visually marked: color recolors its own glyph/box, halo glows behind it. */
 export interface Highlightable {

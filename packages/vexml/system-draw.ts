@@ -564,6 +564,10 @@ export class SystemDraw {
 						right: s.right + dxOf,
 						noteStartX: s.noteStartX + dxOf,
 					})),
+					barlines: mm.barlines.map((barline) => ({
+						...barline,
+						rect: toScore(barline.rect, mm.systemIndex),
+					})),
 				};
 			}),
 			chordDiagrams: pass.rawChordDiagrams.map((d) => ({

@@ -45,6 +45,8 @@ describe('Measure', () => {
 		);
 		boxes.push(box);
 		measure = new Measure(
+			rect,
+			viewport,
 			mmeasure,
 			mmeasure.number,
 			mmeasure.index,

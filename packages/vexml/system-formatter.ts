@@ -1,4 +1,9 @@
-import type { BeamRun, Chord, Note } from '@stringsync/mdom';
+import type {
+	BeamRun,
+	Chord,
+	Barline as MBarline,
+	Note,
+} from '@stringsync/mdom';
 import {
 	Barline,
 	BarNote,
@@ -26,6 +31,7 @@ import {
 	type Voice,
 } from 'vexflow/core';
 import { Rect } from 'webappwiz/geometry';
+import { BAR_STYLE_TYPES } from './barline-translator';
 import type { ChordTranslator } from './chord-translator';
 import { CollisionResolver } from './collision-resolver';
 import type { ConnectorDrawer } from './connector-drawer';
@@ -89,9 +95,9 @@ export type PendingStave = {
 	graceChords: Array<{ note: StaveNote; chord: Chord }>;
 	// The tab analog of graceChords: grace fret glyphs, so a tab grace colors with its notation one.
 	graceTabChords: Array<{ note: TabNote; chord: Chord }>;
-	// Mid-measure dividers whose <bar-style> vexflow can't draw: the invisible BarNote holding
-	// the divider's place, painted at its formatted x once the voice is drawn.
-	midBars: Array<{ note: BarNote; style: string }>;
+	// Mid-measure dividers and their formatted BarNotes. Styles vexflow can't draw are painted
+	// after the voice; every visible one feeds the hit index.
+	midBars: Array<{ note: BarNote; style: string; source: MBarline }>;
 };
 
 /*
@@ -411,7 +417,13 @@ export class SystemFormatter {
 			// The mid-measure dividers vexflow drew nothing for: their BarNote reserved the
 			// width and now has a formatted x, so paint the real stroke over it.
 			for (const { note, style } of p.midBars) {
-				this.connectorDrawer.paintBarStyle(p.stave, note.getAbsoluteX(), style);
+				if (BAR_STYLE_TYPES[style] === undefined) {
+					this.connectorDrawer.paintBarStyle(
+						p.stave,
+						note.getAbsoluteX(),
+						style,
+					);
+				}
 			}
 			for (const beam of p.beams) {
 				beam.setContext(this.context).draw();

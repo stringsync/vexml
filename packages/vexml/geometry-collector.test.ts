@@ -232,6 +232,7 @@ describe('GeometryCollector', () => {
 			number: '1',
 			systemIndex: 0,
 			staves: [],
+			barlines: [],
 		});
 		collector.addMeasure({
 			rect: new Rect(0, 40, 100, 60),
@@ -239,6 +240,7 @@ describe('GeometryCollector', () => {
 			number: '2',
 			systemIndex: 1,
 			staves: [],
+			barlines: [],
 		});
 		const decorated = collector.decoratedMeasures({
 			decorationTopOf: (system: number) => (system === 0 ? 25 : 90),

@@ -154,6 +154,7 @@ function snapshotOf(config: Config): ScoreSnapshot {
 			notes: [],
 			tabs: [],
 			diagrams: [],
+			barlines: [],
 			targets: [],
 		},
 		sequence: {

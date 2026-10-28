@@ -1,8 +1,9 @@
 import { type QuadTree, Rect } from 'webappwiz/geometry';
+import { Barline } from './barline';
 import { ChordDiagram } from './chord-diagram';
 import type { Decorations } from './decoration';
 import type { Element } from './element';
-import { staveModelsOf } from './element-model';
+import { type StaveModel, staveModelsOf } from './element-model';
 import type {
 	RawChordDiagram,
 	RawMeasure,
@@ -26,7 +27,7 @@ export interface DrawnSystem {
  * built over the geometry the layout forecast (see ProvisionalGeometry), so this gives each its
  * drawn box and glyph and puts it in the pointer tree, which holds nothing of a system until
  * then: a pointer over an undrawn system hits nothing rather than a planned spot. Chord
- * diagrams exist only once drawn, so they are made here. Until a system is drawn, its elements
+ * diagrams and barlines exist only once drawn, so they are made here. Until a system is drawn, its elements
  * follow the forecast as the plan advances (see forecast). Built by ElementFactory.buildPlaceable
  * over the same collections the ElementIndex reads.
  */
@@ -42,6 +43,7 @@ export class ElementPlacer {
 		private readonly systemByIndex: Map<number, System>,
 		private readonly boxesOfSystem: Map<number, MeasureBox[]>,
 		private readonly diagrams: ChordDiagram[],
+		private readonly barlines: Barline[],
 		private readonly viewport: Viewport,
 		private readonly decorations: Decorations,
 	) {}
@@ -56,7 +58,27 @@ export class ElementPlacer {
 			}
 			box.relocate(m.rect);
 			for (const measure of box.getMeasures()) {
-				measure.drawn(staveModelsOf(m.staves, measure.getPart().getId()));
+				const staves = staveModelsOf(m.staves, measure.getPart().getId());
+				measure.drawn(staves, rectOfStaves(staves) ?? m.rect);
+				if (staves.length > 0) {
+					this.insert(measure);
+				}
+			}
+			for (const raw of m.barlines) {
+				const measure = box
+					.getMeasures()
+					.find((candidate) => candidate.getPart().getId() === raw.part);
+				if (measure) {
+					const barline = new Barline(
+						raw.rect,
+						this.viewport,
+						measure,
+						raw.location,
+						raw.source,
+					);
+					this.barlines.push(barline);
+					this.insert(barline);
+				}
 			}
 			bounds = bounds ? bounds.union(m.rect) : m.rect;
 			this.insert(box);
@@ -195,4 +217,17 @@ export class ElementPlacer {
 			this.tree.insert(element, element.rect);
 		}
 	}
+}
+
+function rectOfStaves(staves: readonly StaveModel[]): Rect | null {
+	if (staves.length === 0) {
+		return null;
+	}
+	const left = Math.min(...staves.map((stave) => stave.left));
+	const right = Math.max(...staves.map((stave) => stave.right));
+	const top = Math.min(...staves.map((stave) => stave.lines[0] ?? Infinity));
+	const bottom = Math.max(
+		...staves.map((stave) => stave.lines[stave.lines.length - 1] ?? -Infinity),
+	);
+	return new Rect(left, top, right - left, bottom - top);
 }

@@ -1,4 +1,9 @@
-import type { Chord, Harmony, Note as MNote } from '@stringsync/mdom';
+import type {
+	Chord,
+	Harmony,
+	Barline as MBarline,
+	Note as MNote,
+} from '@stringsync/mdom';
 import {
 	type Element,
 	Modifier,
@@ -46,7 +51,7 @@ export interface RawNote {
 
 /*
  * The hit-index geometry one draw pass collects, in scratch space: every notehead/fret
- * paired with its mdom note, every measure's box, every chord diagram. Read off the drawn
+ * paired with its mdom note, every measure's box, staves and barlines, every chord diagram. Read off the drawn
  * vexflow objects as each measure column completes; the pass driver shifts the rects into
  * final score space once the crop is known. One instance lives and dies with its DrawPass.
  */
@@ -376,6 +381,19 @@ export interface RawMeasure {
 	systemIndex: number;
 	/* Every stave drawn in the column, top to bottom. */
 	staves: RawStave[];
+	/* Every visible barline in the column, keyed back to its part and mdom source when explicit. */
+	barlines: RawBarline[];
+}
+
+export type BarlineLocation = 'left' | 'right' | 'middle';
+
+/* One visible barline's hit band in a measure column. */
+export interface RawBarline {
+	rect: Rect;
+	part: string;
+	location: BarlineLocation;
+	/* The explicit <barline>, or null for an ordinary implicit edge. */
+	source: MBarline | null;
 }
 
 /* One part's stave in a measure column: its line ys top to bottom, its left and right x, and the

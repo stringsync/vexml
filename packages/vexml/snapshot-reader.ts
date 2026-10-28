@@ -110,6 +110,7 @@ export class SnapshotReader {
 					source: null,
 					measures: part.measures.map((measure) => ({
 						...measure,
+						rect: rect(measure.rect),
 						source: null,
 					})),
 				})),
@@ -152,6 +153,11 @@ export class SnapshotReader {
 				diagrams: elements.diagrams.map((diagram) => ({
 					...diagram,
 					rect: rect(diagram.rect),
+					source: null,
+				})),
+				barlines: elements.barlines.map((barline) => ({
+					...barline,
+					rect: rect(barline.rect),
 					source: null,
 				})),
 				targets: elements.targets,

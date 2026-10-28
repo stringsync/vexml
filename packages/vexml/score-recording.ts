@@ -103,6 +103,7 @@ export class ScoreRecording implements SnapshotSource {
 					id: part.id,
 					label: part.label,
 					measures: part.measures.map((measure) => ({
+						rect: rect(measure.rect),
 						index: measure.index,
 						number: measure.number,
 						voices: measure.voices.map((voice) => ({
@@ -156,6 +157,12 @@ export class ScoreRecording implements SnapshotSource {
 					rect: rect(diagram.rect),
 					frame: structuredClone(diagram.frame),
 					title: diagram.title,
+				})),
+				barlines: elements.barlines.map((barline) => ({
+					rect: rect(barline.rect),
+					location: barline.location,
+					part: barline.part,
+					measure: barline.measure,
 				})),
 				targets: [...elements.targets],
 			},

@@ -16,15 +16,52 @@ describe('ElementFactory', () => {
 		expect((hit as Note).getPitch()).toBe('C/4');
 	});
 
-	it('empty staff space hits the measure', () => {
-		const hit = build().index.at({ x: 150, y: 80 });
-		expect(hit?.type).toBe('measure');
+	it("empty staff space hits the per-part measure over its column's fallback", () => {
+		const { index } = build();
+		const measure = must(index.measures()[0], 'measure');
+		const box = must(index.measureBoxes()[0], 'box');
+		expect(measure.rect).toEqual(new Rect(0, 40, 200, 40));
+		expect(index.at({ x: 150, y: 60 })).toBe(measure);
+		expect(index.allAt({ x: 150, y: 60 }).at(-1)).toBe(box);
+	});
+
+	it('barlines hit by location, with explicit sources and null implicit provenance', () => {
+		const { index, mmeasure } = build();
+		const left = must(
+			index.barlines().find((barline) => barline.getLocation() === 'left'),
+			'left barline',
+		);
+		const right = must(
+			index.barlines().find((barline) => barline.getLocation() === 'right'),
+			'right barline',
+		);
+		const middle = must(
+			index.barlines().find((barline) => barline.getLocation() === 'middle'),
+			'middle barline',
+		);
+		expect(index.at({ x: 2, y: 60 })).toBe(left);
+		expect(index.at({ x: 196, y: 60 })).toBe(right);
+		expect(index.at({ x: 100, y: 60 })).toBe(middle);
+		expect(left.getMeasure()).toBe(must(index.measures()[0], 'measure'));
+		expect(left.getSources()).toEqual([
+			must(
+				mmeasure.barlines.find((barline) => barline.location === 'left'),
+				'left source',
+			),
+		]);
+		expect(middle.getSources()).toEqual([
+			must(
+				mmeasure.barlines.find((barline) => barline.location === 'middle'),
+				'middle source',
+			),
+		]);
+		expect(right.getSources()).toEqual([]);
 	});
 
 	it('allAt returns every overlapping element, and [0] is the at() winner', () => {
 		const { index } = build();
 		const all = index.allAt({ x: 54, y: 44 });
-		expect(all.map((t) => t.type)).toEqual(['note', 'measure']); // notehead before its measure
+		expect(all.map((t) => t.type)).toEqual(['note', 'measure', 'measure']);
 		expect(all[0]).toBe(index.at({ x: 54, y: 44 }) ?? undefined);
 	});
 
@@ -132,12 +169,14 @@ const XML = `<?xml version="1.0"?>
   <part id="P1">
     <measure number="1">
       <attributes><divisions>1</divisions></attributes>
+      <barline location="left"><bar-style>heavy-light</bar-style><repeat direction="forward"/></barline>
       <harmony><root><root-step>C</root-step></root><kind>major</kind><frame>
         <frame-strings>6</frame-strings><frame-frets>4</frame-frets>
         <frame-note><string>5</string><fret>3</fret></frame-note>
       </frame></harmony>
       <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
       <note><chord/><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+      <barline location="middle"><bar-style>dotted</bar-style></barline>
       <note><pitch><step>B</step><alter>-1</alter><octave>3</octave></pitch><duration>1</duration><type>quarter</type></note>
     </measure>
   </part>
@@ -199,7 +238,42 @@ function build() {
 				index: 0,
 				number: '1',
 				systemIndex: 0,
-				staves: [],
+				staves: [
+					{
+						part: 'P1',
+						staff: 1,
+						lines: [40, 50, 60, 70, 80],
+						left: 0,
+						right: 200,
+						noteStartX: 20,
+					},
+				],
+				barlines: [
+					{
+						rect: new Rect(0, 40, 8, 40),
+						part: 'P1',
+						location: 'left',
+						source:
+							mmeasure.barlines.find(
+								(barline) => barline.location === 'left',
+							) ?? null,
+					},
+					{
+						rect: new Rect(192, 40, 8, 40),
+						part: 'P1',
+						location: 'right',
+						source: null,
+					},
+					{
+						rect: new Rect(96, 40, 8, 40),
+						part: 'P1',
+						location: 'middle',
+						source:
+							mmeasure.barlines.find(
+								(barline) => barline.location === 'middle',
+							) ?? null,
+					},
+				],
 			},
 		],
 		chordDiagrams: [

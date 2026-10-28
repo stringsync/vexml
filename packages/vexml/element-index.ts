@@ -1,7 +1,9 @@
 import type { Rect } from 'webappwiz/geometry';
+import type { Barline } from './barline';
 import type { ChordDiagram } from './chord-diagram';
 import type { Element } from './element';
 import type { HitTester } from './hit-tester';
+import type { Measure } from './measure';
 import type { MeasureBox } from './measure-box';
 import type { Note, NoteKey } from './note';
 import type { Part } from './part';
@@ -21,6 +23,7 @@ export class ElementIndex {
 		private readonly boxByIndex: ReadonlyMap<number, MeasureBox>,
 		private readonly tabByKey: ReadonlyMap<NoteKey, TabPosition>,
 		private readonly diagramList: readonly ChordDiagram[],
+		private readonly barlineList: readonly Barline[],
 		private readonly partList: readonly Part[],
 		// Live: a progressive render's forecast adds and drops systems until it is complete.
 		private readonly systemByIndex: ReadonlyMap<number, System>,
@@ -29,6 +32,8 @@ export class ElementIndex {
 	all(): Element[] {
 		return [
 			...this.notes(),
+			...this.barlines(),
+			...this.measures(),
 			...this.measureBoxes(),
 			...this.tabPositions(),
 			...this.chordDiagrams(),
@@ -40,8 +45,16 @@ export class ElementIndex {
 		return [...this.noteByKey.values()];
 	}
 
+	measures(): Measure[] {
+		return this.partList.flatMap((part) => part.getMeasures());
+	}
+
 	measureBoxes(): MeasureBox[] {
 		return [...this.boxByIndex.values()];
+	}
+
+	barlines(): Barline[] {
+		return [...this.barlineList];
 	}
 
 	tabPositions(): TabPosition[] {

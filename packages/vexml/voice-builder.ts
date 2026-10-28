@@ -9,9 +9,8 @@ import {
 	type TabNote,
 	type TabStave,
 } from 'vexflow/core';
-import { BAR_STYLE_TYPES } from './barline-translator';
 import { isLyricMark } from './lyric-mark';
-import type { ScoreReader, StaffVoice } from './score-reader';
+import type { MidBarline, ScoreReader, StaffVoice } from './score-reader';
 import type { MidClefSpec } from './signature-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import type { PendingStave } from './system-formatter';
@@ -30,7 +29,7 @@ export interface BuildNotesOptions {
 	 * clef's octave down), before any <octave-shift> on top. */
 	clefOctaveShift?: number;
 	/** Mid-measure dividers (see ScoreReader.midBarlinesOf), drawn on the first voice. */
-	barlines?: { beat: number; style: string }[];
+	barlines?: MidBarline[];
 	/** Mid-measure clef changes (see ScoreReader.midClefsOf), which re-aim every later note. */
 	midClefs?: MidClefSpec[];
 }
@@ -219,7 +218,7 @@ export class VoiceBuilder {
 		// A mid-measure divider belongs to the measure, not to a voice, so it goes in the
 		// first voice only: a second copy in each of the others would draw the same line
 		// again at the same x.
-		const midBars: Array<{ note: BarNote; style: string }> = [];
+		const midBars: PendingStave['midBars'] = [];
 		// How many lyric rows the voices before this one have used. Each voice numbers its own
 		// <lyric verse>s from 1, so two voices sharing a stave both claim row 0 and would print
 		// their words on top of each other; offsetting by the rows already taken stacks the
@@ -268,9 +267,12 @@ export class VoiceBuilder {
 				const barNotes = tickables.filter((t) => t instanceof BarNote);
 				barlines.forEach((barline, index) => {
 					const note = barNotes[index];
-					// A style vexflow has a type for is drawn by the BarNote itself.
-					if (note && BAR_STYLE_TYPES[barline.style] === undefined) {
-						midBars.push({ note, style: barline.style });
+					if (note) {
+						midBars.push({
+							note,
+							style: barline.style,
+							source: barline.source,
+						});
 					}
 				});
 			}

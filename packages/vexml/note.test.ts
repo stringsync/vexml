@@ -181,6 +181,8 @@ function bareMeasure(
 		[],
 	);
 	return new Measure(
+		rect,
+		viewport,
 		mmeasure,
 		mmeasure.number,
 		mmeasure.index,

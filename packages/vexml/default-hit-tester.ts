@@ -10,9 +10,9 @@ export class DefaultHitTester implements HitTester {
 	constructor(private readonly tree: QuadTree<Element>) {}
 
 	/*
-	 * The element under `point`: a foreground glyph (note / fret) beats the measure background it
-	 * sits on, and among same-tier overlaps the tighter (smaller-area) box wins, so a notehead
-	 * is picked over the measure, and the nearer notehead of a chord over its neighbor.
+	 * The element under `point`: a foreground glyph (note / fret / barline) beats the measure
+	 * background it sits on, and among same-tier overlaps the tighter (smaller-area) box wins, so
+	 * a per-part measure beats its column and the nearer notehead of a chord beats its neighbor.
 	 */
 	hitTest(point: { x: number; y: number }): Element | null {
 		const probe = new Rect(point.x, point.y, 1, 1);

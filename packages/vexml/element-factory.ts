@@ -4,16 +4,19 @@ import type {
 	Part as MPart,
 } from '@stringsync/mdom';
 import { QuadTree, Rect } from 'webappwiz/geometry';
+import { Barline } from './barline';
 import { ChordDiagram } from './chord-diagram';
 import type { Decorations } from './decoration';
 import { DefaultHitTester } from './default-hit-tester';
 import type { Element } from './element';
 import { ElementIndex } from './element-index';
 import type {
+	BarlineModel,
 	ElementModel,
 	MeasureModel,
 	NoteModel,
 	PartModel,
+	StaveModel,
 	TabModel,
 } from './element-model';
 import { staveModelsOf } from './element-model';
@@ -67,9 +70,12 @@ export class ElementFactory {
 			});
 		}
 		const boxes = [...boxByIndex.values()];
-		// A repeated index takes its last drawing's staves, as its box takes its last rect.
+		// A repeated index takes its last drawing's staves and barlines, as its box takes its last rect.
 		const stavesByIndex = new Map(
 			geometry.measures.map((m) => [m.index, m.staves]),
+		);
+		const barlinesByIndex = new Map(
+			geometry.measures.map((m) => [m.index, m.barlines]),
 		);
 
 		// Musical axis: one Measure per (part, rendered column). A measure the draw pass emitted no
@@ -83,16 +89,39 @@ export class ElementFactory {
 					continue;
 				}
 				where.set(mmeasure, { part, measure: measures.length });
+				const staves = staveModelsOf(
+					stavesByIndex.get(box.index) ?? [],
+					mpart.id,
+				);
 				measures.push({
+					rect: rectOfStaves(staves) ?? box.rect,
 					index: mmeasure.index,
 					number: mmeasure.number,
 					voices: [],
-					staves: staveModelsOf(stavesByIndex.get(box.index) ?? [], mpart.id),
+					staves,
 					source: mmeasure,
 				});
 			}
 			return { id: mpart.id, label: mpart.label, measures, source: mpart };
 		});
+		const barlines: BarlineModel[] = boxes.flatMap((box) =>
+			(barlinesByIndex.get(box.index) ?? []).flatMap((raw) => {
+				const part = parts.findIndex((mpart) => mpart.id === raw.part);
+				const mmeasure = parts[part]?.measures[box.index];
+				const at = mmeasure && where.get(mmeasure);
+				return at
+					? [
+							{
+								rect: raw.rect,
+								location: raw.location,
+								part: at.part,
+								measure: at.measure,
+								source: raw.source,
+							},
+						]
+					: [];
+			}),
+		);
 
 		// A note drawn twice (on a notation stave and a tab stave) is one Note: it keeps its first
 		// place and takes its last drawing.
@@ -179,6 +208,7 @@ export class ElementFactory {
 				title: d.title,
 				source: d.harmonySource,
 			})),
+			barlines,
 			targets,
 		};
 	}
@@ -190,11 +220,19 @@ export class ElementFactory {
 		decorations: Decorations,
 	): ElementIndex {
 		const linked = this.link(model, viewport, decorations);
-		const { tree, notes, tabList, boxes } = linked;
+		const { tree, notes, tabList, barlines, measures, boxes } = linked;
 		for (const target of model.targets) {
 			const element = target < 0 ? tabList[~target] : notes[target];
 			if (element) {
 				tree.insert(element, element.rect);
+			}
+		}
+		for (const barline of barlines) {
+			tree.insert(barline, barline.rect);
+		}
+		for (const measure of measures) {
+			if (measure.getStaves().length > 0) {
+				tree.insert(measure, measure.rect);
 			}
 		}
 		for (const box of boxes.values()) {
@@ -222,6 +260,7 @@ export class ElementFactory {
 				linked.systems,
 				linked.boxesOfSystem,
 				linked.diagrams,
+				linked.barlines,
 				viewport,
 				decorations,
 			),
@@ -246,6 +285,8 @@ export class ElementFactory {
 		// Each System's own box list, which it reads live.
 		boxesOfSystem: Map<number, MeasureBox[]>;
 		diagrams: ChordDiagram[];
+		barlines: Barline[];
+		measures: Measure[];
 	} {
 		// Layout axis: one System per line, its rect the union of the line's measure columns.
 		const rawsBySystem = new Map<number, Rect[]>();
@@ -319,6 +360,8 @@ export class ElementFactory {
 					(v) => new Voice(v.id, v.staff, keysOf(v.notes), noteByKey),
 				);
 				const measure = new Measure(
+					mm.rect,
+					viewport,
 					mm.source,
 					mm.number,
 					mm.index,
@@ -384,6 +427,13 @@ export class ElementFactory {
 					decorations,
 				}),
 		);
+		const barlines = model.barlines.flatMap((raw) => {
+			const measure = measuresOfPart[raw.part]?.[raw.measure];
+			return measure
+				? [new Barline(raw.rect, viewport, measure, raw.location, raw.source)]
+				: [];
+		});
+		const measures = measuresOfPart.flat();
 
 		const tree = new QuadTree<Element>(model.bounds);
 		const notes = [...noteByKey.values()];
@@ -397,6 +447,7 @@ export class ElementFactory {
 			boxes,
 			tabByKey,
 			diagrams,
+			barlines,
 			partList,
 			systems,
 		);
@@ -411,6 +462,21 @@ export class ElementFactory {
 			systems,
 			boxesOfSystem,
 			diagrams,
+			barlines,
+			measures,
 		};
 	}
+}
+
+function rectOfStaves(staves: readonly StaveModel[]): Rect | null {
+	if (staves.length === 0) {
+		return null;
+	}
+	const left = Math.min(...staves.map((stave) => stave.left));
+	const right = Math.max(...staves.map((stave) => stave.right));
+	const top = Math.min(...staves.map((stave) => stave.lines[0] ?? Infinity));
+	const bottom = Math.max(
+		...staves.map((stave) => stave.lines[stave.lines.length - 1] ?? -Infinity),
+	);
+	return new Rect(left, top, right - left, bottom - top);
 }

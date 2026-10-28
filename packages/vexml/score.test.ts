@@ -394,6 +394,7 @@ function elementIndex(hitTester: HitTester): ElementIndex {
 		new Map(),
 		[],
 		[],
+		[],
 		new Map(),
 	);
 }

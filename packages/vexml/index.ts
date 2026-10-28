@@ -2,6 +2,7 @@
  * boxes every element reports, without depending on webappwiz directly. */
 export type { Resource } from 'webappwiz/disposable';
 export { Rect } from 'webappwiz/geometry';
+export { Barline } from './barline';
 export { BRAVURA_COMMON_RANGE, BRAVURA_REST_RANGE } from './bravura-url';
 export { ChordDiagram } from './chord-diagram';
 export { ChordNoteOrder } from './chord-note-order';

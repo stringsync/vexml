@@ -1,12 +1,17 @@
 import type {
 	Harmony,
+	Barline as MBarline,
 	Measure as MMeasure,
 	Note as MNote,
 	Part as MPart,
 } from '@stringsync/mdom';
 import type { Rect } from 'webappwiz/geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
-import type { NoteGlyph, RawStave } from './geometry-collector';
+import type {
+	BarlineLocation,
+	NoteGlyph,
+	RawStave,
+} from './geometry-collector';
 import type { NoteFacts, NoteKey } from './note';
 
 /*
@@ -22,8 +27,9 @@ export interface ElementModel {
 	notes: NoteModel[];
 	tabs: TabModel[];
 	diagrams: DiagramModel[];
+	barlines: BarlineModel[];
 	/* The pointer tree's notes and frets, in the order they go in: a note's index, or the
-	 * bitwise NOT of a tab's (~i). The boxes follow them. */
+	 * bitwise NOT of a tab's (~i). Barlines, per-part measures, then boxes follow them. */
 	targets: number[];
 }
 
@@ -45,12 +51,22 @@ export interface PartModel {
 
 /* One part's measure, engraved in the box with the same index. */
 export interface MeasureModel {
+	rect: Rect;
 	index: number;
 	number: string;
 	voices: VoiceModel[];
 	/* Its drawn staves, top to bottom; none until its system is drawn. */
 	staves: StaveModel[];
 	source: MMeasure | null;
+}
+
+export interface BarlineModel {
+	rect: Rect;
+	location: BarlineLocation;
+	/* Its measure: parts[part].measures[measure]. */
+	part: number;
+	measure: number;
+	source: MBarline | null;
 }
 
 /* A stave's lines, in score space (see Stave). */

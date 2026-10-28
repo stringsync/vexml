@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import {
+	Barline,
 	type Chord,
 	groupBeamRuns,
 	type Measure,
@@ -258,7 +259,13 @@ describe('VoiceBuilder', () => {
 
 	it('routes mid-measure dividers and clef glyphs through the first voice only', () => {
 		const translator = fakeTranslator();
-		const barlines = [{ beat: 1, style: 'dashed' }];
+		const barlines = [
+			{
+				beat: 1,
+				style: 'dashed',
+				source: new Barline(),
+			},
+		];
 		const midClefs = [
 			{
 				beat: 1,
@@ -283,9 +290,11 @@ describe('VoiceBuilder', () => {
 		expect(second?.opts.midClefs).toBe(midClefs);
 	});
 
-	it('queues only the dividers vexflow has no barline type for', () => {
+	it('queues every divider with its source for geometry and custom painting', () => {
 		const custom = barNote();
 		const styled = barNote();
+		const customSource = new Barline();
+		const styledSource = new Barline();
 		// The real translator interleaves BarNotes with the notes, in barline order.
 		const translator = fakeTranslator(() => [custom, styled]);
 		const pending = makeBuilder({ translator }).buildNotes(
@@ -295,12 +304,15 @@ describe('VoiceBuilder', () => {
 			'treble',
 			{
 				barlines: [
-					{ beat: 1, style: 'dashed' },
-					{ beat: 2, style: 'light-light' },
+					{ beat: 1, style: 'dashed', source: customSource },
+					{ beat: 2, style: 'light-light', source: styledSource },
 				],
 			},
 		);
-		expect(pending.midBars).toEqual([{ note: custom, style: 'dashed' }]);
+		expect(pending.midBars).toEqual([
+			{ note: custom, style: 'dashed', source: customSource },
+			{ note: styled, style: 'light-light', source: styledSource },
+		]);
 	});
 
 	// scry-ignore simple-test-setup: the translator and lyric marks are specific to this verse-row scenario; no other test shares them.

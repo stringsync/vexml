@@ -5,6 +5,7 @@ import {
 	type Events,
 	type Unlisten,
 } from 'webappwiz/events';
+import { Barline } from './barline';
 import { CompleteDrawing } from './complete-drawing';
 import { LOUPE_OPTIONS } from './constants';
 import { CursorController } from './cursor-controller';
@@ -24,6 +25,7 @@ import type { Layer, LayerKind } from './layer';
 import { LazyLayer } from './lazy-layer';
 import { type Loupe, type LoupeOptions, resolveLoupeOptions } from './loupe';
 import type { Marker } from './marker';
+import { Measure } from './measure';
 import { MeasureBox } from './measure-box';
 import { Note } from './note';
 import type { Page } from './page';
@@ -415,6 +417,10 @@ export class Score implements Eventful<ScoreEventMap> {
 			const note = target instanceof Note ? target : target.getNote();
 			const index = this.sequence.getFirstStepOfNote(note);
 			return index === null ? null : { start: index, end: index };
+		}
+		if (target instanceof Measure || target instanceof Barline) {
+			const measure = target instanceof Measure ? target : target.getMeasure();
+			return this.sequence.getStepRangeOfMeasure(measure.getIndex());
 		}
 		if (target instanceof MeasureBox) {
 			return this.sequence.getStepRangeOfMeasure(target.getIndex());

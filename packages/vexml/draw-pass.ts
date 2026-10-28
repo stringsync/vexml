@@ -45,6 +45,7 @@ import type { Gaps } from './gaps';
 import {
 	GeometryCollector,
 	type GeometryMark,
+	type RawBarline,
 	type RawChordDiagram,
 	type RawMeasure,
 	type RawNote,
@@ -1502,14 +1503,107 @@ export class DrawPass {
 				this.systemContentBottom,
 				connector?.bottom ?? -Infinity,
 			);
+			const staves = this.edge ? [] : this.rawStaves();
 			this.geometry.addMeasure({
 				rect: new Rect(left, top, right - left, Math.max(0, bottom - top)),
 				index: m,
 				number: this.parts[0]?.measures[m]?.number ?? String(m + 1),
 				systemIndex: this.systemIndex,
-				staves: this.edge ? [] : this.rawStaves(),
+				staves,
+				barlines: this.rawBarlines(m, staves),
 			});
 		}
+	}
+
+	private rawBarlines(m: number, staves: readonly RawStave[]): RawBarline[] {
+		const barlines: RawBarline[] = [];
+		const rowsByPart = new Map<string, RawStave[]>();
+		for (const stave of staves) {
+			const rows = rowsByPart.get(stave.part) ?? [];
+			rows.push(stave);
+			rowsByPart.set(stave.part, rows);
+		}
+		const rectOf = (rows: readonly RawStave[]) => {
+			const left = Math.min(...rows.map((s) => s.left));
+			const right = Math.max(...rows.map((s) => s.right));
+			const top = Math.min(...rows.map((s) => s.lines[0] ?? Infinity));
+			const bottom = Math.max(
+				...rows.map((s) => s.lines[s.lines.length - 1] ?? -Infinity),
+			);
+			return new Rect(left, top, right - left, bottom - top);
+		};
+		const hitAt = (x: number, rect: Rect) => new Rect(x - 4, rect.y, 8, rect.h);
+		for (const [partId, rows] of rowsByPart) {
+			const part = this.parts.find((candidate) => candidate.id === partId);
+			const measure = part?.measures[m];
+			if (!part || !measure) {
+				continue;
+			}
+			const rect = rectOf(rows);
+			const first = rows[0];
+			const soleTab =
+				this.totalStaves === 1 &&
+				first !== undefined &&
+				this.staves.isTab(part, String(first.staff));
+			const leftVisible =
+				(this.decoration.repeatBegin && !this.suppressBegRepeat) ||
+				(this.isSystemStart && (this.totalStaves > 1 || soleTab));
+			if (leftVisible) {
+				barlines.push({
+					rect: hitAt(rect.x, rect),
+					part: partId,
+					location: 'left',
+					source: this.reader.barlineAt(measure, 'left'),
+				});
+			}
+			const rightVisible =
+				this.decoration.repeatEnd ||
+				this.repeatBoth ||
+				this.totalStaves > 1 ||
+				this.barStyle !== 'none';
+			if (rightVisible) {
+				barlines.push({
+					rect: hitAt(rect.right, rect),
+					part: partId,
+					location: 'right',
+					source: this.reader.barlineAt(measure, 'right'),
+				});
+			}
+		}
+
+		const middleBySource = new Map<
+			NonNullable<RawBarline['source']>,
+			RawBarline
+		>();
+		for (const pending of this.systemPending) {
+			const owner = this.columnStaveOwners.get(pending.stave);
+			if (!owner) {
+				continue;
+			}
+			const rect = rectOf(
+				staves.filter(
+					(stave) => stave.part === owner.part && stave.staff === owner.staff,
+				),
+			);
+			for (const { note, style, source } of pending.midBars) {
+				if (style === 'none') {
+					continue;
+				}
+				const hit = hitAt(note.getAbsoluteX(), rect);
+				const existing = middleBySource.get(source);
+				if (existing) {
+					existing.rect = existing.rect.union(hit);
+				} else {
+					middleBySource.set(source, {
+						rect: hit,
+						part: owner.part,
+						location: 'middle',
+						source,
+					});
+				}
+			}
+		}
+		return [...barlines, ...middleBySource.values()];
 	}
 
 	/* Where this column's staves drew their lines, now that the format has placed the notes'
