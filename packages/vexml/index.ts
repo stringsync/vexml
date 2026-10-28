@@ -101,6 +101,7 @@ export {
 export { Stave } from './stave';
 export { System } from './system';
 export { TabPosition } from './tab-position';
+export type { TabPositionInput } from './tab-position-edit';
 export { Timeline, type TimelineBar } from './timeline';
 export type { Toggle } from './toggle';
 export { Voice } from './voice';

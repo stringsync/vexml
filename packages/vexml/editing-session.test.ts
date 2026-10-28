@@ -44,6 +44,13 @@ describe('EditingSession', () => {
 		expect(session.undo()).toBe(false);
 		expect(session.redo()).toBe(false);
 		expect(session.setPitch({ step: 'D', octave: 4 })).toBe(false);
+		expect(
+			session.setTabPosition({
+				string: 5,
+				fret: 3,
+				pitch: { step: 'C', octave: 3 },
+			}),
+		).toBe(false);
 	});
 
 	it('starts at the first written note and clamps at both boundaries', () => {
@@ -336,6 +343,46 @@ describe('EditingSession', () => {
 		expect(session.undo()).toBe(false);
 		expect(session.redo()).toBe(true);
 		expect([c.pitch?.step, d.pitch?.step]).toEqual(['F', 'F']);
+	});
+
+	it('edits tab positions as one undo/redo step', () => {
+		const document = createDocument(['E', 'D', 'E']);
+		const session = new EditingSession(document);
+		const first = noteAt(document, 0);
+		const second = noteAt(document, 1);
+		const unselected = noteAt(document, 2);
+		session.selectNotes([first, second]);
+		const spec = {
+			string: 5,
+			fret: 3,
+			pitch: { step: 'C', octave: 3 },
+		};
+		expect(session.setTabPosition(spec)).toBe(true);
+		expect(
+			[first, second, unselected].map((note) => [
+				note.pitch?.step,
+				note.string,
+				note.fret,
+			]),
+		).toEqual([
+			['C', 5, 3],
+			['C', 5, 3],
+			['E', null, null],
+		]);
+		expect(session.undo()).toBe(true);
+		expect(
+			[first, second].map((note) => [note.pitch?.step, note.string, note.fret]),
+		).toEqual([
+			['E', null, null],
+			['D', null, null],
+		]);
+		expect(session.redo()).toBe(true);
+		expect(
+			[first, second].map((note) => [note.pitch?.step, note.string, note.fret]),
+		).toEqual([
+			['C', 5, 3],
+			['C', 5, 3],
+		]);
 	});
 
 	it('preserves redo after a no-op and drops it after a new edit', () => {

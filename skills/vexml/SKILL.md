@@ -432,6 +432,11 @@ editor.history.edit('Add staccato', () => {
   }
 });
 editor.setPitch({ step: 'F', octave: 5 }); // one undo step for the group
+editor.setTabPosition({
+  string: 5,
+  fret: 3,
+  pitch: { step: 'C', octave: 3 },
+});
 
 // Rerender after a document change, keeping the session.
 score.dispose(); // also disposes the controller, not the session
@@ -458,6 +463,9 @@ Rules that keep an editor correct:
   `selectElements(...)` and listen for `selectionchange` and `voicechange`.
 - `setPitch` supports ordinary pitched notes only; rests, unpitched, tied notes and
   string/fret assignments are rejected before the group changes.
+- `setTabPosition({ string, fret, pitch })` changes pitch and fingering together as one
+  undo step. The caller supplies the pitch spelling. Rests, unpitched and tied notes are
+  rejected before the group changes; empty and unchanged selections return `false`.
 - Dispose the session when its consumer goes away, then `document.history.dispose()`
   when discarding the document. Reparsing requires a new session.
 

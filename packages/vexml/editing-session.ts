@@ -10,6 +10,7 @@ import type { Element } from './element';
 import type { ElementIndex } from './element-index';
 import type { Note } from './note';
 import { PitchEdit, type PitchInput } from './pitch-edit';
+import { TabPositionEdit, type TabPositionInput } from './tab-position-edit';
 
 export interface SelectionOptions {
 	/** Extend from the fixed anchor within its part and voice. */
@@ -219,6 +220,13 @@ export class EditingSession
 	setPitch(spec: PitchInput): boolean {
 		return this.history.edit('Set pitch', () =>
 			new PitchEdit(this.getSelection()).apply(spec),
+		);
+	}
+
+	/** Set pitch and fingering together. Tied notes are rejected before the group changes. */
+	setTabPosition(spec: TabPositionInput): boolean {
+		return this.history.edit('Set tab position', () =>
+			new TabPositionEdit(this.getSelection()).apply(spec),
 		);
 	}
 

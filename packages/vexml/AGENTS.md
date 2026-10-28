@@ -209,7 +209,7 @@ in the finish pass, after the shared index clears.
 ## Interaction and playback
 
 - **Editing controller activation, selection colors, shaded regions and cursor halo/outline**: `editing-controller.ts`, `selection-overlay.ts`, `color-style.ts`, `halo-style.ts`
-- **Editing focus, active voice, range/set selection and undo/redo**: `editing-session.ts`, `pitch-edit.ts`; public usage and limitations in `skills/vexml/SKILL.md` (Editing)
+- **Editing focus, active voice, range/set selection and undo/redo**: `editing-session.ts`, `pitch-edit.ts`, `tab-position-edit.ts`; public usage and limitations in `skills/vexml/SKILL.md` (Editing)
 - **Editing navigation in written order and across rendered systems**: `editing-navigator.ts`, `chord-note-order.ts` (staff and written-position order within a chord), `editing-layout.ts`, `score-editing-layout.ts`
 - **Editing keyboard/pointer controller, focus scrolling and selection overlay**: `editing-controller.ts`, `editing-bindings.ts`, `default-editing-bindings.ts`, `editing-view.ts`, `selection-overlay.ts`; default composition in `score.ts`
 - **Rendering an editor-owned mdom document without reparsing**: `render.ts`, `score-parser.ts`, `default-score-parser.ts`, `score-renderer.ts`
@@ -247,6 +247,9 @@ one `Score` and must be resolved again after rendering.
   preserve redo. Forward `documentchange` for native committed edits, undo and redo.
   Selection does not create history. Detached focus becomes null; retained node
   references resolve again after undo. The caller owns document history disposal.
+- `tab-position-edit.ts` sets caller-supplied pitch, string and fret atomically. It
+  validates the whole group first, rejects unpitched and tied notes, preserves timing
+  and unrelated notation, and removes an explicit accidental only when pitch changes.
 - `editing-navigator.ts` follows written order without expanding repeats and skips
   empty measures. `chord-note-order.ts` sorts by staff, then written diatonic
   position (display position for unpitched notes), ignoring accidentals and keeping
