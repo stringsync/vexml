@@ -23,6 +23,7 @@ import {
 	TUPLET_NUMERAL_HALF_HEIGHT,
 } from './constants';
 import type { DurationTranslator } from './duration-translator';
+import { GraceHostGhostNote } from './grace-host-ghost-note';
 import type { ScoreReader } from './score-reader';
 import {
 	type MidClefSpec,
@@ -234,6 +235,28 @@ export class VoiceTranslator {
 		// Graces still pending at the end have no note left to lead, so they're after-graces of
 		// the last one. Flushed before the trailing ghosts so they anchor to a real note rather
 		// than to padding.
+		if (tickables.length === 0 && pendingGrace.length > 0) {
+			// A voice that only passes through this staff for its graces (the main note sits
+			// on another staff) has nothing to follow, but its graces still lead that note.
+			// Its stand-in ghost holds the beat on this staff, so they hang off that instead.
+			tickables.push(
+				...this.gapFill(cursor, endBeat, run, recordStandIn, true),
+			);
+			cursor = endBeat;
+			const lead = tickables[0];
+			if (lead instanceof GraceHostGhostNote) {
+				const group = new GraceNoteGroup(pendingGrace.map((g) => g.note));
+				if (this.beamsGraceGroup(pendingGrace)) {
+					group.beamNotes();
+				}
+				group.preFormat();
+				lead.addModifier(group, 0);
+				for (const g of pendingGrace) {
+					record?.(g.lead, g.note);
+				}
+				pendingGrace = [];
+			}
+		}
 		flushAfterGraces(pendingGrace);
 		pendingGrace = [];
 		flushBarlines(Number.POSITIVE_INFINITY);
@@ -315,6 +338,7 @@ export class VoiceTranslator {
 		to: number,
 		run: readonly Chord[],
 		recordStandIn: ((lead: Note, ghost: GhostNote) => void) | undefined,
+		hostsGraces = false,
 	): GhostNote[] {
 		const ghosts: GhostNote[] = [];
 		let cursor = from;
@@ -334,10 +358,12 @@ export class VoiceTranslator {
 			) {
 				continue;
 			}
-			const ghost = new GhostNote({
-				duration: this.durations.code(lead),
-				dots: lead.dots,
-			});
+			const struct = { duration: this.durations.code(lead), dots: lead.dots };
+			// Only the first ghost, which stands where the graces lead.
+			const ghost =
+				hostsGraces && ghosts.length === 0
+					? new GraceHostGhostNote(struct)
+					: new GhostNote(struct);
 			ghosts.push(ghost);
 			recordStandIn?.(lead, ghost);
 			cursor = onset + beats;

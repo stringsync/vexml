@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Piano</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1: a staff-2 grace note in voice 1 leads a voice 1 half note written on staff 1,
+         while staff 2 holds only a measure rest in voice 5. The bass staff has no main
+         note of that voice to attach the grace to, so it hangs off the beat the voice holds
+         there: a slashed G3 grace slurred up into the treble G4. -->
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <time>
+          <beats>6</beats>
+          <beat-type>8</beat-type>
+        </time>
+        <staves>2</staves>
+        <clef number="1">
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+        <clef number="2">
+          <sign>F</sign>
+          <line>4</line>
+        </clef>
+      </attributes>
+      <note>
+        <grace slash="yes" />
+        <pitch><step>G</step><octave>3</octave></pitch>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>up</stem>
+        <staff>2</staff>
+        <notations><slur type="start" orientation="over" number="1" /></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>12</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <dot />
+        <stem>up</stem>
+        <staff>1</staff>
+        <notations><slur type="stop" number="1" /></notations>
+      </note>
+      <backup>
+        <duration>12</duration>
+      </backup>
+      <note>
+        <rest measure="yes" />
+        <duration>12</duration>
+        <voice>5</voice>
+        <staff>2</staff>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

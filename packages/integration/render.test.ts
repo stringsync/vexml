@@ -3329,6 +3329,15 @@ describe('render', () => {
 		);
 	});
 
+	// Piano, 6/8: a grace on the bass stave (voice 1) leads a half note of the same voice
+	// on the treble stave, while the bass holds only a measure rest (voice 5). The grace
+	// still draws, slashed on the bass stave, slurred up to the treble G4.
+	it.concurrent('renders grace_cross_staff_rest.png', async () => {
+		expect(
+			await testing.render('grace_cross_staff_rest.musicxml'),
+		).toMatchScreenshot('grace_cross_staff_rest.png');
+	});
+
 	// Treble notation stave + 6-line TAB (transposed guitar), 4/4, Bb major: grace-note
 	// measure-width allocation in a dense real-world excerpt (measures 6-8 of a lead sheet).
 	// A measure with grace notes is allocated extra width to fit them, so the graces get
