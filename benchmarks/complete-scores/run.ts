@@ -133,30 +133,16 @@ app
 			await fs.writeBytes(`${stem}.png`, png);
 			await save();
 			log.info(`render + PNG: ${report.renderCaptureMs}ms`);
-			const pixels = png.readUInt32BE(16) * png.readUInt32BE(20);
-			// Reference mask capture can use gigabytes even on a short song. Keep the
-			// first survey bounded; large scores still get the structural pixel checks.
-			if (pixels > 8_000_000) {
-				report.lintCoverage =
-					'structural only; element masks exceed the 8MP audit budget';
-				timer.start();
-				const lint = new RenderLint(InkMap.fromPng(png)).lint();
-				report.lintMs = Math.round(timer.elapsed().ms);
-				report.lint = lint;
-				report.stage = 'complete';
-				await fs.writeBytes(
-					`${stem}-lint.png`,
-					markFindings(png, lint.findings),
-				);
-				await save();
-				return;
-			}
 			report.stage = 'attributed capture';
 			report.lintCoverage = 'structural and element collisions';
 			await save();
 			timer.start();
 			const located = await locate(opts.renderer, musicXML);
 			report.attributedCaptureMs = Math.round(timer.elapsed().ms);
+			report.maskCount = located.masks?.length ?? 0;
+			report.maskRuns =
+				located.masks?.reduce((sum, mask) => sum + mask.runs.length / 2, 0) ??
+				0;
 			const measures = new MeasureMap(located.measures);
 			report.stage = 'lint';
 			timer.start();

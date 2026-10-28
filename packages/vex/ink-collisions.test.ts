@@ -118,4 +118,89 @@ describe('InkCollisions', () => {
 			new InkCollisions([first, { ...second, x: 100 }]).findings(),
 		).toEqual([]);
 	});
+
+	it('intersects enormous sparse masks without allocating their bounding bitmap', () => {
+		const huge = {
+			...first,
+			x: -10,
+			y: -20,
+			width: 1_000_000,
+			height: 1_000_000,
+			runs: [999_999_999_998, 2],
+		};
+		const small = {
+			...second,
+			x: 999_989,
+			y: 999_979,
+			width: 1,
+			height: 1,
+			runs: [0, 1],
+		};
+		expect(new InkCollisions([huge, small]).findings()[0]?.box).toEqual(
+			new Rect(999_989, 999_979, 1, 1),
+		);
+	});
+
+	it.each(
+		Array.from({ length: 100 }, (_, seed) => seed),
+	)('matches a pixel oracle for cropped, multirow runs (case %i)', (seed) => {
+		const a = generatedMask(seed, 0),
+			b = generatedMask(seed, 1);
+		expect(new InkCollisions([a, b]).findings().map((f) => f.box)).toEqual(
+			pixelIntersection(a, b),
+		);
+	});
 });
+
+function generatedMask(seed: number, id: number): InkMask {
+	const width = 1 + ((seed + id * 3) % 9);
+	const height = 1 + ((seed * 7 + id) % 8);
+	const runs: number[] = [];
+	let start = -1;
+	for (let p = 0; p <= width * height; p++) {
+		const ink = p < width * height && (p * 17 + seed * 3 + id) % 11 < 7;
+		if (ink && start < 0) {
+			start = p;
+		} else if (!ink && start >= 0) {
+			runs.push(start, p - start);
+			start = -1;
+		}
+	}
+	return {
+		id,
+		kind: id ? 'tempo' : 'harmony',
+		x: ((seed + id * 2) % 5) - 3,
+		y: ((seed * 3 + id) % 5) - 2,
+		width,
+		height,
+		runs,
+	};
+}
+
+function pixelIntersection(a: InkMask, b: InkMask): Rect[] {
+	const opaque = (mask: InkMask, x: number, y: number) => {
+		if (
+			x < mask.x ||
+			x >= mask.x + mask.width ||
+			y < mask.y ||
+			y >= mask.y + mask.height
+		) {
+			return false;
+		}
+		const p = (y - mask.y) * mask.width + x - mask.x;
+		return mask.runs.some(
+			(start, i) =>
+				i % 2 === 0 && p >= start && p < start + (mask.runs[i + 1] ?? 0),
+		);
+	};
+	let expected: Rect | null = null;
+	for (let y = -3; y < 15; y++) {
+		for (let x = -3; x < 15; x++) {
+			if (opaque(a, x, y) && opaque(b, x, y)) {
+				const pixel = new Rect(x, y, 1, 1);
+				expected = expected ? expected.union(pixel) : pixel;
+			}
+		}
+	}
+	return expected ? [expected] : [];
+}

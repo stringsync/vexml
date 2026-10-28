@@ -1,73 +1,120 @@
 import type { InkMask } from '@vexml/renderer';
 import { Rect } from 'webappwiz/geometry';
-import { InkMap } from './ink-map';
 import type { Finding } from './render-lint';
 
 /** Compares independently rasterized elements. Bounding boxes only choose candidates;
  * a finding requires a pixel opaque in both masks. */
 export class InkCollisions {
-	private readonly masks: Array<{ source: InkMask; box: Rect; ink: InkMap }>;
+	private readonly masks: Array<{ source: InkMask; box: Rect; order: number }>;
 
 	constructor(masks: readonly InkMask[]) {
 		this.masks = masks
-			.map((source) => {
-				const pixels = new Uint8Array(source.width * source.height);
-				for (let i = 0; i < source.runs.length; i += 2) {
-					const start = source.runs[i] ?? 0;
-					pixels.fill(1, start, start + (source.runs[i + 1] ?? 0));
-				}
-				return {
-					source,
-					box: new Rect(source.x, source.y, source.width, source.height),
-					ink: new InkMap(source.width, source.height, pixels),
-				};
-			})
-			.sort((a, b) => a.box.left - b.box.left);
+			.map((source) => ({
+				source,
+				box: new Rect(source.x, source.y, source.width, source.height),
+			}))
+			.sort((a, b) => a.box.left - b.box.left)
+			.map((mask, order) => ({ ...mask, order }))
+			// A vertical sweep leaves completed systems behind on long scores.
+			.sort((a, b) => a.box.top - b.box.top);
 	}
 
 	findings(): Finding[] {
-		const findings: Finding[] = [];
+		const found: Array<{ first: number; second: number; finding: Finding }> =
+			[];
 		for (const [i, a] of this.masks.entries()) {
 			for (let j = i + 1; j < this.masks.length; j++) {
 				const b = this.masks[j];
-				if (!b || b.box.left >= a.box.right) {
+				if (!b || b.box.top >= a.box.bottom) {
 					break;
 				}
-				if (allowed(a.source, b.source)) {
-					continue;
-				}
 				const candidate = a.box.intersection(b.box);
-				if (!candidate) {
+				if (!candidate || allowed(a.source, b.source)) {
 					continue;
 				}
-				let left = Infinity;
-				let top = Infinity;
-				let right = -Infinity;
-				let bottom = -Infinity;
-				for (let y = candidate.top; y < candidate.bottom; y++) {
-					for (let x = candidate.left; x < candidate.right; x++) {
-						if (
-							!a.ink.isInk(x - a.box.x, y - a.box.y) ||
-							!b.ink.isInk(x - b.box.x, y - b.box.y)
-						) {
-							continue;
-						}
-						left = Math.min(left, x);
-						top = Math.min(top, y);
-						right = Math.max(right, x + 1);
-						bottom = Math.max(bottom, y + 1);
-					}
-				}
-				if (left < right) {
-					findings.push({
-						kind: 'collision',
-						message: `${a.source.kind} ink overlaps ${b.source.kind} ink`,
-						box: new Rect(left, top, right - left, bottom - top),
+				const box = intersection(a.source, b.source, candidate);
+				if (box) {
+					// Preserve the historical left-to-right finding/message order.
+					const [first, second] = a.order < b.order ? [a, b] : [b, a];
+					found.push({
+						first: first.order,
+						second: second.order,
+						finding: {
+							kind: 'collision',
+							message: `${first.source.kind} ink overlaps ${second.source.kind} ink`,
+							box,
+						},
 					});
 				}
 			}
 		}
-		return findings;
+		return found
+			.sort((a, b) => a.first - b.first || a.second - b.second)
+			.map(({ finding }) => finding);
+	}
+}
+
+/** Compare sorted row spans without expanding a sparse owner to a full bitmap. */
+function intersection(a: InkMask, b: InkMask, candidate: Rect): Rect | null {
+	const aa = spans(a, candidate);
+	const bb = spans(b, candidate);
+	let av = aa.next();
+	let bv = bb.next();
+	let left = Infinity,
+		top = Infinity,
+		right = -Infinity,
+		bottom = -Infinity;
+	while (!av.done && !bv.done) {
+		const [ay, al, ar] = av.value;
+		const [by, bl, br] = bv.value;
+		if (ay === by && al < br && bl < ar) {
+			left = Math.min(left, Math.max(al, bl));
+			right = Math.max(right, Math.min(ar, br));
+			top = Math.min(top, ay);
+			bottom = Math.max(bottom, ay + 1);
+		}
+		if (ay < by || (ay === by && ar <= br)) {
+			av = aa.next();
+		} else {
+			bv = bb.next();
+		}
+	}
+	return left < right ? new Rect(left, top, right - left, bottom - top) : null;
+}
+
+function* spans(
+	mask: InkMask,
+	candidate: Rect,
+): Generator<[number, number, number]> {
+	const first = (candidate.top - mask.y) * mask.width;
+	const last = (candidate.bottom - mask.y) * mask.width;
+	// Skip runs above the candidate, including those of score-wide parents.
+	let lo = 0,
+		hi = mask.runs.length / 2;
+	while (lo < hi) {
+		const mid = Math.floor((lo + hi) / 2);
+		if ((mask.runs[mid * 2] ?? 0) + (mask.runs[mid * 2 + 1] ?? 0) <= first) {
+			lo = mid + 1;
+		} else {
+			hi = mid;
+		}
+	}
+	for (let i = lo * 2; i < mask.runs.length; i += 2) {
+		const start = mask.runs[i] ?? 0;
+		if (start >= last) {
+			break;
+		}
+		const end = Math.min(last, start + (mask.runs[i + 1] ?? 0));
+		for (let at = Math.max(first, start); at < end; ) {
+			const row = Math.floor(at / mask.width);
+			const next = Math.min(end, (row + 1) * mask.width);
+			const left = Math.max(candidate.left, mask.x + at - row * mask.width);
+			const right = Math.min(candidate.right, mask.x + next - row * mask.width);
+			if (left < right) {
+				yield [mask.y + row, left, right];
+			}
+			at = next;
+		}
 	}
 }
 

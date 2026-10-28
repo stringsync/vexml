@@ -29,7 +29,7 @@ for a smaller slice. This conservative capture budget bounds memory and avoids r
 an unreliable blank capture as a successful timing. It is not a notation-engine limit.
 A narrow synthetic SVG of height 150,022 retains ink at its top, middle, and end; height
 alone does not explain the original alphaTab blank. The alphaTab root cause remains
-unconfirmed, and the historical observations below have not been rerun.
+unconfirmed. The bounded-mask rerun below records the current capture coverage.
 
 The engines are vexml, OSMD, and alphaTab, using the existing renderer adapters. alphaTab's
 adapter includes the repository's existing input compatibility adjustments. MuseScore is
@@ -40,11 +40,18 @@ includes layout, drawing, and PNG capture; it excludes browser startup, input fi
 element-mask capture, and lint. It is not an isolated engraving measurement or a statistical
 performance ranking. The second render captures attribution for collision checks.
 
-Above 8 million image pixels, the survey uses **structural lint only**: blank output,
-clipping, staff intersections, and stray lines. It explicitly skips element-mask collisions.
-This budget avoids the multi-gigabyte SVG mask capture observed on even a short song.
-A score of 100 in this mode does **not** mean the notation is collision-free. Three-measure
-samples exercise element collisions without adding full-score test costs.
+Every supported capture now receives both structural and element-collision lint. SVG owners
+are packed into at most 1024 × 1024 pixel atlases, with separate clipped tiles and shared
+font decoding. Oversized owners are tiled without dropping their masks. Collisions compare
+compressed runs instead of retaining a bitmap per owner. The screenshot itself still has
+the 33,554,432-pixel limit above; unsupported scores have no lint verdict.
+
+To compare all masks and collision findings on the five historical three-measure samples
+against the pre-tiling SVG implementation (requires git revision `ad132953`):
+
+```sh
+bun benchmarks/complete-scores/compare-masks.ts
+```
 
 `--measures` uses existing `vex slice` printed-label semantics. In particular, labels repeat
 across the quartet's movements. A request for 77-79 selects multiple occurrences; 380-382
@@ -132,6 +139,48 @@ The first three-engine `vex lint` run on Clara took 51.5 seconds and reported ma
 resident set size around 7.5 GB. The isolated alphaTab attributed capture took about
 35 seconds, compared with about 0.23 seconds for its ordinary capture. This motivated
 bounded optional audits and small collision samples.
+
+## Bounded-mask rerun, 2026-10-28
+
+Same native host as the initial audit. The opt-in runner now attempts full collision lint
+on every supported score. `bounded-masks-results.json` records timings, mask/run counts,
+finding counts and rejected captures. The complete survey took 88.62 seconds, including
+layout attempts for rejected scores, with `/usr/bin/time -l` reporting 1.844 GB maximum RSS.
+This operating-system metric is not the sum of simultaneous browser and Bun process RSS.
+
+| Complete score | vexml attributed capture | OSMD | alphaTab | Collision flags (vexml / OSMD / alphaTab) |
+| --- | ---: | ---: | ---: | --- |
+| Clara Schumann | 753 ms | 1,065 ms | 1,112 ms | 96 / 300 / 7 |
+| Debussy | 1,065 ms | 1,817 ms | 1,757 ms | 41 / 470 / 46 |
+| Schubert | 2,435 ms | 4,182 ms | 3,489 ms | 10 / 1,293 / 131 |
+
+Attributed capture includes a second render, masks and PNG. Structural-plus-collision lint
+then took 78–235 ms per successful cell. No successful cell skipped masks; Debussy and
+Schubert now have whole-score collision coverage. These contact counts are candidates,
+not adjudicated engraving defects or engine rankings.
+
+All six complete quartet/symphony engine cells were rejected by the existing image-size
+budget before mask capture. They have **no full-score collision coverage**. Their small
+samples remain covered. No MuseScore run was added.
+
+The same three-engine Clara CLI lint used in the initial audit took 5.50 seconds and
+reported 973,602,816 bytes (0.974 GB) maximum RSS, versus the earlier 51.5 seconds and roughly
+7.5 GB. alphaTab's isolated attributed capture fell from roughly 35 seconds to 1.11 seconds.
+These are single observations, not repeated performance measurements. Reproduce the CLI
+measurement with an existing output directory:
+
+```sh
+mkdir -p /tmp/vexml-clara-lint
+/usr/bin/time -l ./bin/vex lint --input benchmarks/complete-scores/scores/clara-schumann-liebst-du.musicxml --renderer vexml,osmd,alphatab --output /tmp/vexml-clara-lint
+```
+
+The old/new sample comparison found **1,877 of 1,877 masks exactly equal**, including IDs,
+ancestry, crop coordinates and compressed pixels, with identical collision findings across
+all ten OSMD/alphaTab samples. Synthetic regressions also check tile seams, root clipping,
+percentages, inherited styles, nested ownership, high DPI and distant ink in a tall SVG.
+For rotated translucent layers and high-DPI text, Chromium's clipped rasterization can change under 1% of
+thresholded ink pixels within a one-pixel edge fringe; the synthetic comparison explicitly
+checks that tolerance. Ordinary sampled score masks require exact equality.
 
 ## Follow-up lane
 
