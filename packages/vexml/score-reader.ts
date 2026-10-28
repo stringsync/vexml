@@ -51,6 +51,7 @@ export class ScoreReader {
 		Map<string, StaffVoice[]>
 	>();
 	private readonly voiceCache = new WeakMap<Measure, MeasureVoice[]>();
+	private readonly divisionsByMeasure = new WeakMap<Measure, number>();
 	// One staff's <measure-style> regions, walked once per part and staff (see staffStylesOf).
 	private readonly staffStyleCache = new WeakMap<
 		Part,
@@ -973,12 +974,19 @@ export class ScoreReader {
 	 * measure turn it into beats. 0 when absent.
 	 */
 	private offsetBeatsOf(element: MElement, measure: Measure): number {
-		const divisions = this.divisionsAt(measure);
 		const offset = Number(element.child('offset')?.text);
-		return Number.isFinite(offset) && divisions > 0 ? offset / divisions : 0;
+		if (!Number.isFinite(offset) || offset === 0) {
+			return 0;
+		}
+		const divisions = this.divisionsAt(measure);
+		return divisions > 0 ? offset / divisions : 0;
 	}
 
 	private divisionsAt(measure: Measure): number {
+		const cached = this.divisionsByMeasure.get(measure);
+		if (cached !== undefined) {
+			return cached;
+		}
 		let divisions = 0;
 		for (const m of measure.part.measures) {
 			for (const attrs of m.childrenNamed('attributes')) {
@@ -991,6 +999,7 @@ export class ScoreReader {
 				break;
 			}
 		}
+		this.divisionsByMeasure.set(measure, divisions);
 		return divisions;
 	}
 

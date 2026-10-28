@@ -401,6 +401,94 @@ describe('ScoreReader', () => {
 		});
 	});
 
+	it.each([
+		'',
+		'<offset>0</offset>',
+	])('does not scan part history for absent or zero offset %j', async (offset) => {
+		const measure = await measureOf(
+			`<direction><direction-type><words>Andante</words></direction-type>${offset}</direction>`,
+		);
+		const part = measure.part;
+		const measures = part.measures;
+		let historyReads = 0;
+		Object.defineProperty(part, 'measures', {
+			get: () => {
+				historyReads++;
+				return measures;
+			},
+		});
+
+		expect(reader.wordsOf(measure)[0]).toMatchObject({
+			text: 'Andante',
+			lead: measure.notes[0],
+		});
+		expect(historyReads).toBe(0);
+	});
+
+	it('caches divisions for nonzero word and harmony offsets', async () => {
+		const measure = await measureOf(
+			'<direction><direction-type><words>later</words></direction-type><offset>1</offset></direction>' +
+				'<harmony><root><root-step>C</root-step></root><kind>major</kind><offset>1</offset></harmony>',
+		);
+		const part = measure.part;
+		const measures = part.measures;
+		let historyReads = 0;
+		Object.defineProperty(part, 'measures', {
+			get: () => {
+				historyReads++;
+				return measures;
+			},
+		});
+
+		expect(reader.wordsOf(measure)[0]?.lead).toBe(measure.notes[1]);
+		expect(reader.harmoniesOf(measure)[0]?.lead).toBe(measure.notes[1]);
+		expect(reader.wordsOf(measure)[0]?.lead).toBe(measure.notes[1]);
+		expect(historyReads).toBe(1);
+	});
+
+	it('uses the divisions in effect at each measure', async () => {
+		const direction = (offset: number) =>
+			`<direction><direction-type><words>later</words></direction-type><offset>${offset}</offset></direction>`;
+		const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
+<score-partwise version="4.0">
+	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+	<part id="P1">
+		<measure number="1"><attributes><divisions>1</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes>${direction(1)}${HALF.repeat(3)}</measure>
+		<measure number="2"><attributes><divisions>2</divisions></attributes>${direction(2)}${HALF.repeat(3)}</measure>
+	</part>
+</score-partwise>`);
+		const measures = mdoc.score.parts[0]?.measures ?? [];
+		const reader = new ScoreReader(new DynamicGlyphs());
+
+		expect(reader.wordsOf(measures[0] as MMeasure)[0]?.lead).toBe(
+			measures[0]?.notes[0],
+		);
+		expect(reader.wordsOf(measures[1] as MMeasure)[0]?.lead).toBe(
+			measures[1]?.notes[1],
+		);
+	});
+
+	it('reads edited divisions afresh in a new render', async () => {
+		const measure = await measureOf(
+			'<direction><direction-type><words>later</words></direction-type><offset>1</offset></direction>',
+		);
+		expect(reader.wordsOf(measure)[0]?.lead).toBe(measure.notes[1]);
+		measure.setDivisions(2);
+
+		const part = measure.part;
+		const measures = part.measures;
+		let historyReads = 0;
+		Object.defineProperty(part, 'measures', {
+			get: () => {
+				historyReads++;
+				return measures;
+			},
+		});
+		const nextRender = new ScoreReader(new DynamicGlyphs());
+		expect(nextRender.wordsOf(measure)[0]?.lead).toBe(measure.notes[1]);
+		expect(historyReads).toBe(1);
+	});
+
 	it('reads an other-direction as its smufl glyph, else its text', async () => {
 		const reader = new ScoreReader(new DynamicGlyphs());
 		const other = (attrs: string, text: string) =>
@@ -1287,6 +1375,8 @@ const stop = (n: string, type: string) =>
 
 const QUARTER =
 	'<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>';
+const HALF =
+	'<note><pitch><step>C</step><octave>4</octave></pitch><duration>2</duration><type>half</type></note>';
 const STYLE = (inner: string) =>
 	`<attributes><measure-style>${inner}</measure-style></attributes>`;
 
