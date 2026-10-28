@@ -1275,8 +1275,8 @@ describe('render', () => {
 
 	// Treble stave, 3/4 (lilypond_33a-Spanners M10-15): the direction-type LINE spanners:
 	// <bracket>, the analysis/phrase bracket, and <dashes>, the line that trails a "cresc.".
-	// Every measure is three identical B4 quarters spanned end to end, so only the line above
-	// the stave varies. All six spans sit on the same horizontal band, above the notes.
+	// M10-16 are three identical B4 quarters spanned end to end, so only the line above the
+	// stave varies. All six above-stave spans sit on the same horizontal band, above the notes.
 	// - M10: solid bracket, line-end="down" at both ends: a plain rule with a vertical hook
 	//   dropping toward the stave at each end, the form that reads as enclosing the passage.
 	// - M11: the same bracket with line-type="dashed": dashed rule, both hooks still drawn
@@ -1289,6 +1289,8 @@ describe('render', () => {
 	// - M16: the realistic <dashes>: a "cresc." words direction over the first note with the
 	//   dashed line running past it to the last. The words print on their own row and the line
 	//   on the band above, so the two do not overprint.
+	// - M17: the same text and dashes below three ledger-lined G3 quarters. The notes push the
+	//   words down, and the dashed line drops further to stay clear of them.
 	// ponytail: line-end="arrow" draws the same tick "down" does (an arrowhead needs its own
 	// path), line-type="wavy" falls back to solid, and a span wrapping onto a later system is
 	// dropped rather than split. None has a fixture.

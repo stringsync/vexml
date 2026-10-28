@@ -698,4 +698,41 @@ describe('DirectionPlacer', () => {
 		expect(pageTops).toEqual([80 - DIRECTION_LINE_HOOK]);
 		expect(pageBottoms).toEqual([80 + DIRECTION_LINE_HOOK]);
 	});
+
+	it('drops a below-stave dashed line clear of words pushed onto its row', () => {
+		const { placer, segments, resolver, drops, pageBottoms } = makePlacer();
+		const anchorStave = stave();
+		resolver.add({
+			rect: new Rect(100, 150, 100, 20),
+			kind: 'note',
+		});
+		placer.placeColumn(
+			column({
+				words: [
+					{
+						stave: anchorStave,
+						text: 'cresc.',
+						anchor: note(100, anchorStave),
+						placement: 'below',
+					},
+				],
+			}),
+		);
+		placer.drawDirectionLines([
+			{
+				span: {
+					kind: 'dashes',
+					above: false,
+					dash: [4, 4],
+					startEnd: 'none',
+					stopEnd: 'none',
+				} as unknown as DirectionLineSpan,
+				start: note(100, anchorStave),
+				stop: note(200, anchorStave),
+			},
+		]);
+		const y = (drops[0]?.bottom ?? 0) + WORDS_NOTE_CLEARANCE;
+		expect(segments).toEqual([{ x1: 100, y1: y, x2: 210, y2: y }]);
+		expect(pageBottoms).toEqual([y + DIRECTION_LINE_HOOK]);
+	});
 });

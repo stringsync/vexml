@@ -187,8 +187,9 @@ reaching into the gap between staves widens it. The
 volta bracket resolves against the index like anything else, but a pass late:
 it draws with the stave, before the notes are formatted, so the lift is
 measured after the format pass and applied on the NEXT draw pass
-(`draw-pass.ts`, `observedVoltaLifts`), one shared height per system. `<bracket>`/`<dashes>` spans take
-vexflow's fixed text line, drawn in the finish pass, after the index clears.
+(`draw-pass.ts`, `observedVoltaLifts`), one shared height per system. `<bracket>`/`<dashes>` spans start on
+vexflow's fixed text line; below-stave spans drop clear of words through a scoped resolver
+in the finish pass, after the shared index clears.
 
 ## Tablature
 

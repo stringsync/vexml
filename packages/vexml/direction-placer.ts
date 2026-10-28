@@ -12,7 +12,7 @@ import { Rect } from 'webappwiz/geometry';
 import { AccordionRegistrationGlyph } from './accordion-registration-glyph';
 import { Appearance } from './appearance';
 import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
-import type { CollisionKind, CollisionResolver } from './collision-resolver';
+import { type CollisionKind, CollisionResolver } from './collision-resolver';
 import {
 	ACCORDION_REGISTRATION_SIZE,
 	BARLINE_FERMATA_FONT_SIZE,
@@ -110,8 +110,8 @@ export class DirectionPlacer {
 		{ text: string; measure: number }
 	>();
 
-	// Every below-stave words direction placed so far, by its stave: a hairpin resolved later
-	// under the same stave reports the words it ran into (see SpannerResolver).
+	// Every below-stave words direction placed so far, by its stave: hairpins and direction
+	// lines resolved later under the same stave clear them (see SpannerResolver).
 	private readonly belowWords = new Map<Stave, Rect[]>();
 
 	// The one dependency this builds rather than takes: it is a pure spelling table with no
@@ -1437,10 +1437,10 @@ export class DirectionPlacer {
 	 *
 	 * Drawn straight on the context rather than as a vexflow element: TextBracket, the nearest
 	 * thing vexflow has, hooks only its stop end and only downward, so it can draw none of the
-	 * five bracket forms MusicXML spells out. Placement is vexflow's own above/below-stave text
-	 * line: they are drawn in the finish pass, after the per-system collision index has been
-	 * cleared, so they take that fixed anchor instead of resolving (see AGENTS.md,
-	 * "Collisions and nudges").
+	 * five bracket forms MusicXML spells out. Placement starts on vexflow's own above/below-stave
+	 * text line. They are drawn in the finish pass, after the per-system collision index has
+	 * been cleared, so a below-stave line uses a scoped resolver to drop under any words that
+	 * were pushed onto its row.
 	 * ponytail: 'arrow' draws the same tick 'down' does; an arrowhead needs its own path and no
 	 * fixture asks for one.
 	 */
@@ -1458,9 +1458,21 @@ export class DirectionPlacer {
 				continue;
 			}
 			const stave = start.checkStave();
-			const y = span.above
+			const naturalY = span.above
 				? stave.getYForTopText(DIRECTION_LINE_TEXT_LINE)
 				: stave.getYForBottomText(DIRECTION_LINE_TEXT_LINE);
+			let y = naturalY;
+			if (!span.above) {
+				const scoped = new CollisionResolver(this.scratchViewport, {});
+				for (const rect of this.belowWordsOn(stave)) {
+					scoped.add({ rect, kind: 'annotation' });
+				}
+				y = scoped.dropClear(
+					new Rect(left, naturalY, right - left, 1),
+					WORDS_NOTE_CLEARANCE,
+					{},
+				).y;
+			}
 			// A hook drops toward the staff from an above-stave line and rises toward it from a
 			// below-stave one, so the whole bracket flips with its placement.
 			const toward = span.above ? 1 : -1;
