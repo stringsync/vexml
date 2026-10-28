@@ -15,7 +15,6 @@ import {
 	Tremolo,
 } from 'vexflow/core';
 import { ACCIDENTAL_CODES } from './chord-translator';
-import { DynamicGlyphs } from './dynamic-glyphs';
 import { FERMATA_GLYPHS } from './fermata-glyphs';
 import { FingeringAnnotation } from './fingering-annotation';
 import { FontFamilies } from './font-families';
@@ -25,7 +24,7 @@ import { LyricAnnotation } from './lyric-annotation';
 import type { LyricJustify } from './lyric-mark';
 import { NonArpeggioBracket } from './non-arpeggio-bracket';
 import { NoteheadArticulation } from './notehead-articulation';
-import { ScoreReader } from './score-reader';
+import type { ScoreReader } from './score-reader';
 import { smuflGlyph } from './smufl';
 import { StaveArticulation } from './stave-articulation';
 import { StringNumberAnnotation } from './string-number-annotation';
@@ -42,10 +41,12 @@ import { UnbrokenArpeggio } from './unbroken-arpeggio';
  */
 export class NotationTranslator {
 	// Each score's `<defaults><lyric-font>`s, read once per score.
-	private readonly reader = new ScoreReader(new DynamicGlyphs());
 	private readonly lyricFonts = new WeakMap<Score, MElement[]>();
 
-	constructor(private readonly opts: NotationTranslatorOptions = {}) {}
+	constructor(
+		private readonly reader: ScoreReader,
+		private readonly opts: NotationTranslatorOptions = {},
+	) {}
 
 	/* Attach everything `chord` asks for to the StaveNote built from it. */
 	attach(staveNote: StaveNote, chord: Chord): void {
@@ -191,7 +192,7 @@ export class NotationTranslator {
 	private addOrnaments(staveNote: StaveNote, note: Note): void {
 		let last: Ornament | undefined;
 		let accidentalMarks = 0;
-		for (const ornament of note.ornaments) {
+		for (const ornament of this.reader.ornamentsOf(note)) {
 			if (ornament.ornamentType === 'accidental-mark') {
 				const code = ACCIDENTAL_CODES[ornament.accidentalMark ?? ''];
 				if (last && code) {
@@ -283,7 +284,7 @@ export class NotationTranslator {
 		chord.notes.forEach((note, index) => {
 			const labels: Technical[] = [];
 			let below = false;
-			for (const mark of note.technicals) {
+			for (const mark of this.reader.technicalsOf(note)) {
 				if (mark.placement === 'below') {
 					below = true;
 				}
@@ -440,7 +441,7 @@ export class NotationTranslator {
 	 * melisma <extend/> flag is passed through for LyricPlacer.pin to draw.
 	 */
 	private addLyrics(staveNote: StaveNote, lead: Note): void {
-		const verses = [...lead.lyrics].sort(
+		const verses = [...this.reader.lyricsOf(lead)].sort(
 			(a, b) => Number(a.verse) - Number(b.verse),
 		);
 		const lyricFont = lead.measure.part.score

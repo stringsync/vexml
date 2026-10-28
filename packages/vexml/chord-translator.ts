@@ -17,7 +17,7 @@ import { isDiamondHarmonic } from './harmonic-kind';
 import { InvisibleStaveNote } from './invisible-stave-note';
 import type { NotationTranslator } from './notation-translator';
 import { NoteheadText } from './notehead-text';
-import type { NoteStyle } from './score-reader';
+import type { NoteStyle, ScoreReader } from './score-reader';
 
 /*
  * Translates one mdom chord (a lead note plus any <chord/> members) to the vexflow StaveNote
@@ -36,6 +36,7 @@ export class ChordTranslator {
 	constructor(
 		private readonly durations: DurationTranslator,
 		private readonly notations: NotationTranslator,
+		private readonly reader: ScoreReader,
 	) {}
 
 	useAppearance(appearance: Appearance): void {
@@ -44,7 +45,7 @@ export class ChordTranslator {
 
 	/* The held tail of a tie: the note sounds on, but nothing about it is struck again. */
 	private isHeld(note: Chord['notes'][number]): boolean {
-		return note.ties.some((tie) => tie.tieType === 'stop');
+		return this.reader.tiesOf(note).some((tie) => tie.tieType === 'stop');
 	}
 
 	/*
@@ -200,7 +201,7 @@ export class ChordTranslator {
 						'b/4',
 				],
 				duration: `${duration}r`,
-				dots: lead.dots,
+				dots: this.reader.dotsOf(lead),
 				// Only a display position resolves against the clef. The 'b/4' default and the
 				// voice offsets around it are vexflow's centered line and must stay
 				// clef-independent, or every bass-stave rest would jump to where B4 sits in
@@ -223,7 +224,7 @@ export class ChordTranslator {
 				? [this.middleKey(clef)]
 				: chord.notes.map((note) => this.vexflowKey(note)),
 			duration,
-			dots: lead.dots,
+			dots: this.reader.dotsOf(lead),
 			clef,
 			octaveShift,
 			stemDirection: direction ? STEM[direction] : undefined,
@@ -309,7 +310,7 @@ export class ChordTranslator {
 		if (!key) {
 			return 'b/4';
 		}
-		if (isDiamondHarmonic(note)) {
+		if (isDiamondHarmonic(note, this.reader)) {
 			return `${key}/H`;
 		}
 		const notehead = note.notehead;
@@ -365,7 +366,7 @@ export class ChordTranslator {
 			if (note.notehead?.value === 'x' || this.isHeld(note)) {
 				return;
 			}
-			const printed = note.accidental;
+			const printed = this.reader.accidentalOf(note);
 			const code =
 				printed &&
 				(printed.value === 'other'
@@ -477,7 +478,7 @@ export class ChordTranslator {
 		if (note.getAttribute('print-dot') === 'no') {
 			return;
 		}
-		for (let i = 0; i < note.dots; i++) {
+		for (let i = 0; i < this.reader.dotsOf(note); i++) {
 			Dot.buildAndAttach([staveNote], { all: true });
 		}
 	}

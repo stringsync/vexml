@@ -139,7 +139,7 @@ function planner(): LayoutPlanner {
 	const staves = new StavePlan({ showTabs: true, showNotation: true });
 	const tab = new TabVoiceTranslator(durations, reader, 'none');
 	const translator = new VoiceTranslator(
-		new ChordTranslator(durations, new NotationTranslator()),
+		new ChordTranslator(durations, new NotationTranslator(reader), reader),
 		durations,
 		new BarlineTranslator(),
 		reader,

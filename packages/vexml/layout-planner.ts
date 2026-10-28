@@ -448,7 +448,7 @@ export class LayoutPlanner {
 		document: DocumentLayout,
 		strict: boolean,
 	): (DocumentSystem & { staveOffsets: number[] })[] {
-		const factory = new StaveFactory(this.signatures, this.staves);
+		const factory = new StaveFactory(this.signatures, this.staves, this.reader);
 		const rows = parts.flatMap((part, partIndex) =>
 			this.staves
 				.visibleNumbers(part)

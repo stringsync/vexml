@@ -1,4 +1,5 @@
 import type { Note, Technical } from '@stringsync/mdom';
+import type { ScoreReader } from './score-reader';
 
 /*
  * A <harmonic>'s <base-pitch>, <touching-pitch> or <sounding-pitch> says which pitch the
@@ -15,8 +16,11 @@ const HARMONIC_PITCH_TAGS: Record<string, HarmonicPitch> = {
 	'sounding-pitch': 'sounding',
 };
 
-export function harmonicPitch(note: Note): HarmonicPitch | null {
-	const harmonic = harmonicMark(note);
+export function harmonicPitch(
+	note: Note,
+	reader: ScoreReader,
+): HarmonicPitch | null {
+	const harmonic = harmonicMark(note, reader);
 	if (!harmonic) {
 		return null;
 	}
@@ -29,10 +33,13 @@ export function harmonicPitch(note: Note): HarmonicPitch | null {
 }
 
 /** Whether the note's head is the harmonic diamond. */
-export function isDiamondHarmonic(note: Note): boolean {
-	return harmonicPitch(note) === 'touching';
+export function isDiamondHarmonic(note: Note, reader: ScoreReader): boolean {
+	return harmonicPitch(note, reader) === 'touching';
 }
 
-function harmonicMark(note: Note): Technical | null {
-	return note.technicals.find((t) => t.technicalType === 'harmonic') ?? null;
+function harmonicMark(note: Note, reader: ScoreReader): Technical | null {
+	return (
+		reader.technicalsOf(note).find((t) => t.technicalType === 'harmonic') ??
+		null
+	);
 }

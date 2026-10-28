@@ -57,7 +57,7 @@ export class SignatureFold implements Fold {
 		private readonly score: Score,
 		private readonly opts: SignatureFoldOptions,
 	) {
-		this.factory = new StaveFactory(signatures, staves);
+		this.factory = new StaveFactory(signatures, staves, reader);
 		this.parts = score.parts;
 		this.height = opts.height;
 		this.systemX = opts.boxes.find((box) => box !== undefined)?.x ?? 0;

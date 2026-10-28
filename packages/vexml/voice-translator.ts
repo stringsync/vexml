@@ -358,7 +358,10 @@ export class VoiceTranslator {
 			) {
 				continue;
 			}
-			const struct = { duration: this.durations.code(lead), dots: lead.dots };
+			const struct = {
+				duration: this.durations.code(lead),
+				dots: this.reader.dotsOf(lead),
+			};
 			// Only the first ghost, which stands where the graces lead.
 			const ghost =
 				hostsGraces && ghosts.length === 0

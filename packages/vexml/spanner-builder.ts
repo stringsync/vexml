@@ -53,6 +53,7 @@ import {
 	type DocumentBezier,
 	lineDashOf,
 	type PedalMark,
+	type ScoreReader,
 	type WedgeMark,
 } from './score-reader';
 import { SingleSlide } from './single-slide';
@@ -111,6 +112,8 @@ export class SpannerBuilder {
 	private appearance = Appearance.NONE;
 	private documentCurves = false;
 
+	constructor(private readonly reader: ScoreReader) {}
+
 	useDocumentCurves(enabled: boolean): void {
 		if (enabled !== this.documentCurves) {
 			this.connectors.clear();
@@ -135,7 +138,9 @@ export class SpannerBuilder {
 		let open: { note: StaveNote; marks: number } | undefined;
 		for (const { lead } of chords) {
 			const staveNote = byLead.get(lead);
-			const tremolo = lead.ornaments.find((o) => o.ornamentType === 'tremolo');
+			const tremolo = this.reader
+				.ornamentsOf(lead)
+				.find((o) => o.ornamentType === 'tremolo');
 			if (!staveNote || !tremolo) {
 				continue;
 			}
@@ -180,7 +185,7 @@ export class SpannerBuilder {
 					!defaultStem &&
 					group.notes.every((note) => !note.stem) &&
 					!notes.every((note) => note.getStemDirection() === beamStem(notes));
-				const beam = this.beamOf(notes, autoStem, fanOf(group));
+				const beam = this.beamOf(notes, autoStem, fanOf(group, this.reader));
 				beam.renderOptions.beamWidth =
 					this.appearance.lineWidth('beam') ?? beam.renderOptions.beamWidth;
 				// The beam just settled stem directions; re-pin articulations placed
@@ -376,8 +381,10 @@ export class SpannerBuilder {
 							location,
 							showNumber: display?.showNumber ?? null,
 							showType: display?.showType ?? null,
-							actualValue: display?.actualValue ?? tupletNoteValue(lead),
-							normalValue: display?.normalValue ?? rawNormalValue(lead),
+							actualValue:
+								display?.actualValue ?? tupletNoteValue(lead, this.reader),
+							normalValue:
+								display?.normalValue ?? rawNormalValue(lead, this.reader),
 							curved: display?.curved ?? false,
 							bracketWidth: this.appearance.lineWidth('tuplet bracket'),
 							// Signed the way vexflow's own nesting offset is: away from the stave.
@@ -1627,7 +1634,8 @@ export class SpannerBuilder {
 	private tiesOf(note: Note): TieEnd[] {
 		let ties = this.ties.get(note);
 		if (!ties) {
-			ties = note.ties
+			ties = this.reader
+				.tiesOf(note)
 				.filter(
 					(tie) =>
 						tie.tieType === 'start' ||
@@ -1922,27 +1930,33 @@ function displayValue(
 }
 
 /* The note's own written value, which <tuplet-actual> falls back to. */
-function tupletNoteValue(note: Note): TupletNoteValue | null {
-	return note.type ? { type: note.type, dots: note.dots } : null;
+function tupletNoteValue(
+	note: Note,
+	reader: ScoreReader,
+): TupletNoteValue | null {
+	return note.type ? { type: note.type, dots: reader.dotsOf(note) } : null;
 }
 
 /*
  * The <time-modification> <normal-type>/<normal-dot> value, which mdom keeps raw; without it
  * the normal side prints the note's own value.
  */
-function rawNormalValue(note: Note): TupletNoteValue | null {
+function rawNormalValue(
+	note: Note,
+	reader: ScoreReader,
+): TupletNoteValue | null {
 	const modification = note.child('time-modification');
 	const type = modification?.child('normal-type')?.text?.trim();
 	if (!type) {
-		return tupletNoteValue(note);
+		return tupletNoteValue(note, reader);
 	}
 	return { type, dots: modification?.childrenNamed('normal-dot').length ?? 0 };
 }
 
 // The fan of a beam group: the first <beam fan> on any of its notes that asks for a feather.
-function fanOf(group: BeamRun): BeamFan | null {
+function fanOf(group: BeamRun, reader: ScoreReader): BeamFan | null {
 	for (const note of group.notes) {
-		for (const beam of note.beams) {
+		for (const beam of reader.beamsOf(note)) {
 			const fan = beam.getAttribute('fan');
 			if (fan === 'accel' || fan === 'rit') {
 				return fan;

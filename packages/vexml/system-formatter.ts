@@ -516,7 +516,7 @@ export class SystemFormatter {
 			// outside `noteChords`, so slurSpans never pairs it and it registers nothing.
 			// Widen to the system's chords if a wrapping bow ever collides with text.
 			const hasLyrics = p.noteChords.some(({ chord }) =>
-				chord.notes.some((note) => note.lyrics.length > 0),
+				chord.notes.some((note) => this.opts.reader.lyricsOf(note).length > 0),
 			);
 			for (const slur of this.spanners.buildSlurs(
 				p.noteChords.map(({ chord }) => chord),

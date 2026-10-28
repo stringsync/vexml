@@ -64,7 +64,7 @@ export class TabVoiceTranslator {
 
 	/* The held tail of a tie: the string isn't re-struck, so guitar tab omits its fret. */
 	private isHeld(note: Chord['notes'][number]): boolean {
-		return note.ties.some((tie) => tie.tieType === 'stop');
+		return this.reader.tiesOf(note).some((tie) => tie.tieType === 'stop');
 	}
 
 	/*
@@ -114,7 +114,7 @@ export class TabVoiceTranslator {
 					// a tuplet-sized hole isn't dyadic, so it would drop a sub-128th remainder.
 					const ghost = new GhostNote({
 						duration: this.durations.code(chord.lead),
-						dots: chord.lead.dots,
+						dots: this.reader.dotsOf(chord.lead),
 					});
 					tickables.push(ghost);
 					record?.(chord.lead, ghost);
@@ -165,7 +165,7 @@ export class TabVoiceTranslator {
 				// Count the dot(s) in the note's ticks (as the notation path does) so a dotted
 				// tab note isn't a tick-position short and drift out of alignment with the
 				// notation stave it's formatted against. Tab omits the drawn dot glyph.
-				dots: lead.dots,
+				dots: this.reader.dotsOf(lead),
 				stemDirection: this.tabStemPlacement === 'above' ? Stem.UP : Stem.DOWN,
 			},
 			this.tabStemPlacement !== 'none',

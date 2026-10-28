@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import type { Measure as MMeasure } from '@stringsync/mdom';
+import { groupBeamRuns, type Measure as MMeasure } from '@stringsync/mdom';
 import { DefaultScoreParser } from './default-score-parser';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { ScoreReader } from './score-reader';
@@ -15,6 +15,75 @@ describe('ScoreReader', () => {
 				framePosition: { x: 0, y: 130 },
 			},
 		]);
+	});
+
+	it('reads hot note children once per render reader', async () => {
+		const measure = await measureOf(QUARTER);
+		const note = required(measure.notes[0], 'fixture note');
+		const cache = new ScoreReader(new DynamicGlyphs());
+		let dotReads = 0;
+		let accidentalReads = 0;
+		let chordReads = 0;
+		Object.defineProperty(note, 'dots', {
+			get: () => {
+				dotReads++;
+				return 2;
+			},
+		});
+		Object.defineProperty(note, 'accidental', {
+			get: () => {
+				accidentalReads++;
+				return null;
+			},
+		});
+		Object.defineProperty(note, 'isChordMember', {
+			get: () => {
+				chordReads++;
+				return false;
+			},
+		});
+
+		expect(cache.notesOf(measure)).toBe(cache.notesOf(measure));
+		expect(cache.beamsOf(note)).toBe(cache.beamsOf(note));
+		expect(cache.technicalsOf(note)).toBe(cache.technicalsOf(note));
+		expect(cache.lyricsOf(note)).toBe(cache.lyricsOf(note));
+		expect(cache.ornamentsOf(note)).toBe(cache.ornamentsOf(note));
+		expect(cache.tiesOf(note)).toBe(cache.tiesOf(note));
+		expect(cache.dotsOf(note)).toBe(2);
+		expect(cache.dotsOf(note)).toBe(2);
+		expect(cache.accidentalOf(note)).toBeNull();
+		expect(cache.accidentalOf(note)).toBeNull();
+		expect(cache.isChordMember(note)).toBe(false);
+		expect(cache.isChordMember(note)).toBe(false);
+		expect(dotReads).toBe(1);
+		expect(accidentalReads).toBe(1);
+		expect(chordReads).toBe(1);
+
+		const nextRender = new ScoreReader(new DynamicGlyphs());
+		expect(nextRender.dotsOf(note)).toBe(2);
+		expect(dotReads).toBe(2);
+	});
+
+	it('keeps cached beam grouping equivalent to mdom', async () => {
+		const note = (inner: string) =>
+			`<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type>${inner}</note>`;
+		const measure = await measureOf(
+			note('<beam number="1">begin</beam><beam number="2">begin</beam>') +
+				note('<chord/><beam number="1">continue</beam>') +
+				note('<beam number="1">continue</beam><beam number="2">end</beam>') +
+				'<note><rest/><duration>1</duration><type>quarter</type></note>' +
+				note('<beam number="1">end</beam>'),
+		);
+		const cache = new ScoreReader(new DynamicGlyphs());
+		const notes = cache.notesOf(measure);
+		const actual = cache.beamRuns(notes);
+		const expected = groupBeamRuns(notes);
+		const shape = (runs: typeof expected) =>
+			runs.map((run) => ({
+				notes: run.notes.map((note) => notes.indexOf(note)),
+				breaksAfter: run.breaksAfter,
+			}));
+		expect(shape(actual)).toEqual(shape(expected));
 	});
 
 	/*
@@ -1322,6 +1391,13 @@ function scoreOf(...barlines: string[]): string {
 	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
 	<part id="P1">${measures}</part>
 </score-partwise>`;
+}
+
+function required<T>(value: T | undefined, what: string): T {
+	if (value === undefined) {
+		throw new Error(`missing ${what}`);
+	}
+	return value;
 }
 
 /* A one-part 4/4 measure of quarter notes, prefixed with the directions under test: what the

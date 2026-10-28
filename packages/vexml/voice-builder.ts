@@ -1,9 +1,4 @@
-import {
-	type Chord,
-	groupBeamRuns,
-	type Measure,
-	type Note,
-} from '@stringsync/mdom';
+import type { Chord, Measure, Note } from '@stringsync/mdom';
 import {
 	BarNote,
 	GhostNote,
@@ -121,7 +116,7 @@ export class VoiceBuilder {
 				}
 				const defaultStem = voiceStem(voiceIndex, staffVoices.length);
 				const chordOf = new Map(voice.beamChords.map((c) => [c.lead, c]));
-				for (const group of groupBeamRuns(
+				for (const group of this.reader.beamRuns(
 					voice.beamChords.map((c) => c.lead),
 				)) {
 					// Each chord's noteheads per row: a chord split across staves draws a note on each.
@@ -179,7 +174,8 @@ export class VoiceBuilder {
 				heads.get(c.lead) === c.notes.length,
 			]),
 		);
-		return groupBeamRuns(voice.beamChords.map((c) => c.lead))
+		return this.reader
+			.beamRuns(voice.beamChords.map((c) => c.lead))
 			.map((group) => group.notes)
 			.filter((leads) =>
 				leads.every((lead) => !lead.stem && whole.get(lead) === true),
@@ -253,7 +249,7 @@ export class VoiceBuilder {
 				record: (lead, note) => {
 					this.byLead.set(lead, note);
 					staveNotes.push(note);
-					if (lead.ties.length > 0) {
+					if (this.reader.tiesOf(lead).length > 0) {
 						tiedNotes.add(note);
 					}
 					const chord = chordByLead.get(lead);
@@ -306,7 +302,7 @@ export class VoiceBuilder {
 						{
 							// Chord members are transparent to the fold (the <beam> markers hang off
 							// the lead), so the lead list is the whole run.
-							groups: groupBeamRuns(v.beamChords.map((c) => c.lead)),
+							groups: this.reader.beamRuns(v.beamChords.map((c) => c.lead)),
 							defaultStem: stemFor(voiceIndex),
 						},
 					],
@@ -365,7 +361,7 @@ export class VoiceBuilder {
 				rowOf.set(note, p.row);
 			}
 			for (const { note, chord } of p.noteChords) {
-				if (!chord.lead.isChordMember) {
+				if (!this.reader.isChordMember(chord.lead)) {
 					continue;
 				}
 				const key = splitKey(

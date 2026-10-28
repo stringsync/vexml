@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import type { Chord, Measure, Note } from '@stringsync/mdom';
+import {
+	type Chord,
+	groupBeamRuns,
+	type Measure,
+	type Note,
+} from '@stringsync/mdom';
 import {
 	BarNote,
 	GhostNote,
@@ -157,6 +162,9 @@ describe('VoiceBuilder', () => {
 			{
 				endBeatOf: () => overrides.endBeat ?? 0,
 				measureBeatOf: (note: Note) => note.measureBeat,
+				tiesOf: (note: Note) => note.ties,
+				beamRuns: (notes: Note[]) => groupBeamRuns(notes),
+				isChordMember: (note: Note) => note.isChordMember,
 				isRhythmSlashed: () => false,
 				staffVoices: (_voices: unknown, staffNumber: string) =>
 					overrides.staffVoices?.(staffNumber) ?? [],

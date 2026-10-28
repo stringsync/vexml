@@ -120,7 +120,7 @@ function makeBuilder() {
 	const reader = new ScoreReader(new DynamicGlyphs());
 	const durations = new DurationTranslator(reader);
 	const translator = new VoiceTranslator(
-		new ChordTranslator(durations, new NotationTranslator()),
+		new ChordTranslator(durations, new NotationTranslator(reader), reader),
 		durations,
 		new BarlineTranslator(),
 		reader,
@@ -130,7 +130,7 @@ function makeBuilder() {
 		translator,
 		new TabVoiceTranslator(durations, reader, 'none'),
 		reader,
-		new SpannerBuilder(),
+		new SpannerBuilder(reader),
 		{
 			softmaxFactor: 100,
 			octaveShiftByNote: new Map(),

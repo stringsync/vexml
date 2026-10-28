@@ -91,11 +91,12 @@ export class ScoreEngraver {
 		);
 		const chords = new ChordTranslator(
 			durations,
-			new NotationTranslator({
+			new NotationTranslator(reader, {
 				documentFonts: config.documentFonts
 					? { textFont: new FontFamilies(config.fonts).textStack }
 					: undefined,
 			}),
+			reader,
 		);
 		// ONE translator instance shared by layout and draw: both must build identical vexflow
 		// voices for the measured widths to match the drawn ones.
@@ -112,7 +113,7 @@ export class ScoreEngraver {
 				staves,
 				barlines,
 				reader,
-				new SpannerBuilder(),
+				new SpannerBuilder(reader),
 				gaps,
 				new SpillResolver(),
 			),

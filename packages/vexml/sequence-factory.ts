@@ -422,12 +422,12 @@ export class SequenceFactory {
 		const reads = new Map<MNote, NoteRead>();
 		const notesOf = parts.map((part) =>
 			part.measures.map((measure) => {
-				const notes = measure.notes;
+				const notes = this.reader.notesOf(measure);
 				let chord: MNote[] = [];
 				for (const n of notes) {
 					const read = {
 						grace: n.isGrace,
-						chordMember: n.isChordMember,
+						chordMember: this.reader.isChordMember(n),
 						voice: n.voice,
 					};
 					reads.set(n, read);
@@ -444,7 +444,7 @@ export class SequenceFactory {
 		const readOf = (n: MNote) =>
 			reads.get(n) ?? {
 				grace: n.isGrace,
-				chordMember: n.isChordMember,
+				chordMember: this.reader.isChordMember(n),
 				voice: n.voice,
 			};
 
@@ -670,7 +670,7 @@ export class SequenceFactory {
 	): Map<MNote, Span> {
 		// A <chord/> grace sounds with the grace before it, so only chord leads take a flick each.
 		const flicks = graces.filter(
-			(grace, i) => i === 0 || !grace.isChordMember,
+			(grace, i) => i === 0 || !this.reader.isChordMember(grace),
 		).length;
 		const flick = (GRACE_MS * bpm) / 60000;
 		const room = (victim.end - victim.onset) / 2;
@@ -680,7 +680,7 @@ export class SequenceFactory {
 		let at = from === 'start' ? victim.onset : victim.end - beats * flicks;
 		const placed = new Map<MNote, Span>();
 		for (const [i, grace] of graces.entries()) {
-			if (i > 0 && !grace.isChordMember) {
+			if (i > 0 && !this.reader.isChordMember(grace)) {
 				at += beats;
 			}
 			placed.set(grace, { onset: at, end: at + beats });
@@ -725,7 +725,7 @@ export class SequenceFactory {
 			if (!measure) {
 				continue;
 			}
-			for (const note of measure.notes) {
+			for (const note of this.reader.notesOf(measure)) {
 				const onset = this.reader.measureBeatOf(note);
 				const beats = this.reader.beatsOf(note);
 				if (onset !== null && beats !== null) {
@@ -759,7 +759,7 @@ export class SequenceFactory {
 		notesByMnote: ReadonlyMap<NoteKey, Note>,
 		chordSiblings: ReadonlyMap<MNote, readonly MNote[]>,
 	): Note | null {
-		for (const tie of mnote.ties) {
+		for (const tie of this.reader.tiesOf(mnote)) {
 			if (tie.tieType !== 'stop') {
 				continue;
 			}

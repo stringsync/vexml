@@ -48,7 +48,11 @@ describe('ScoreRenderer', () => {
 		const signatures = new SignatureTranslator();
 		const staves = new StavePlan({ showTabs: true, showNotation: true });
 		const tab = new TabVoiceTranslator(durations, reader, 'none');
-		const chords = new ChordTranslator(durations, new NotationTranslator());
+		const chords = new ChordTranslator(
+			durations,
+			new NotationTranslator(reader),
+			reader,
+		);
 		const translator = new VoiceTranslator(chords, durations, barlines, reader);
 		const gaps = new Gaps([], new GapInserter(reader));
 		const elements = new ElementFactory();
@@ -70,7 +74,7 @@ describe('ScoreRenderer', () => {
 					staves,
 					barlines,
 					reader,
-					new SpannerBuilder(),
+					new SpannerBuilder(reader),
 					gaps,
 					new SpillResolver(),
 				),

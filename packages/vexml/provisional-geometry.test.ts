@@ -164,7 +164,7 @@ async function begin(fixture: string) {
 	);
 	const plan = new LayoutPlanner(
 		new VoiceTranslator(
-			new ChordTranslator(durations, new NotationTranslator()),
+			new ChordTranslator(durations, new NotationTranslator(reader), reader),
 			durations,
 			new BarlineTranslator(),
 			reader,
@@ -187,7 +187,11 @@ async function engrave(fixture: string) {
 	const staves = new StavePlan({ showTabs: true, showNotation: true });
 	const signatures = new SignatureTranslator();
 	const tab = new TabVoiceTranslator(durations, reader, 'none');
-	const chords = new ChordTranslator(durations, new NotationTranslator());
+	const chords = new ChordTranslator(
+		durations,
+		new NotationTranslator(reader),
+		reader,
+	);
 	const translator = new VoiceTranslator(
 		chords,
 		durations,

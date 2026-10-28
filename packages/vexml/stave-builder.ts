@@ -130,7 +130,7 @@ export class StaveBuilder {
 		const multiRests = this.reader.multiRestsOf(this.parts);
 		this.multiRests = multiRests.leads;
 		this.multiRestSymbols = multiRests.symbols;
-		this.factory = new StaveFactory(signatures, staves);
+		this.factory = new StaveFactory(signatures, staves, reader);
 	}
 
 	/*

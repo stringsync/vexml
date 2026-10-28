@@ -8,6 +8,7 @@ import {
 import { CancellingKeySignature } from './cancelling-key-signature';
 import { CustomKeySignature } from './custom-key-signature';
 import { DetailedStave, type LineStyle } from './detailed-stave';
+import type { ScoreReader } from './score-reader';
 import {
 	type KeyCancel,
 	type SignatureTranslator,
@@ -41,6 +42,7 @@ export class StaveFactory {
 	constructor(
 		private readonly signatures: SignatureTranslator,
 		private readonly staves: StavePlan,
+		private readonly reader: ScoreReader,
 	) {}
 
 	create(
@@ -113,7 +115,9 @@ export class StaveFactory {
 		// An ossia staff shows only where it holds notes.
 		const emptyOssia =
 			staffType === 'ossia' &&
-			!measure.notes.some((n) => n.staff === staffNumber && !n.isRest);
+			!this.reader
+				.notesOf(measure)
+				.some((n) => n.staff === staffNumber && !n.isRest);
 		if (
 			measure.getStaffDetails(staffNumber)?.printObject === false ||
 			emptyOssia

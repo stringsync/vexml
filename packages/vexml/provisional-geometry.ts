@@ -174,7 +174,7 @@ export class ProvisionalGeometry {
 				(chord.lead.isRest ||
 					(!chord.lead.isGrace &&
 						chord.notes.every((note) =>
-							note.ties.some((tie) => tie.tieType === 'stop'),
+							this.reader.tiesOf(note).some((tie) => tie.tieType === 'stop'),
 						)))
 			) {
 				continue;

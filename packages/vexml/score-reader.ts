@@ -1,4 +1,5 @@
 import {
+	type BeamRun,
 	Chord,
 	type Clef,
 	Dashes,
@@ -38,9 +39,22 @@ import type { Jump } from './sequence';
 import { smuflGlyph } from './smufl';
 import { ENCLOSURE_SHAPES, type EnclosureShape } from './text-enclosure';
 
+interface NoteReads {
+	beams: Note['beams'];
+	technicals: Note['technicals'];
+	lyrics: Note['lyrics'];
+	ornaments: Note['ornaments'];
+	dots: number;
+	accidental: Note['accidental'];
+	ties: Note['ties'];
+	chordMember: boolean;
+}
+
 export class ScoreReader {
 	private readonly measureBeats = new Map<Note, number | null>();
 	private readonly lengths = new Map<Note, number | null>();
+	private readonly noteLists = new WeakMap<Measure, Note[]>();
+	private readonly noteReads = new WeakMap<Note, Partial<NoteReads>>();
 	// Read per measure and staff by the layout and every draw pass alike.
 	private readonly midClefCache = new WeakMap<
 		Measure,
@@ -81,6 +95,100 @@ export class ScoreReader {
 			this.lengths.set(note, note.beats);
 		}
 		return this.lengths.get(note) ?? null;
+	}
+
+	notesOf(measure: Measure): Note[] {
+		let notes = this.noteLists.get(measure);
+		if (!notes) {
+			notes = measure.notes;
+			this.noteLists.set(measure, notes);
+		}
+		return notes;
+	}
+
+	private readNote<K extends keyof NoteReads>(
+		note: Note,
+		key: K,
+		read: () => NoteReads[K],
+	): NoteReads[K] {
+		let reads = this.noteReads.get(note);
+		if (!reads) {
+			reads = {};
+			this.noteReads.set(note, reads);
+		}
+		let value = reads[key];
+		if (value === undefined) {
+			value = read();
+			reads[key] = value;
+		}
+		return value as NoteReads[K];
+	}
+
+	beamsOf(note: Note): Note['beams'] {
+		return this.readNote(note, 'beams', () => note.beams);
+	}
+
+	technicalsOf(note: Note): Note['technicals'] {
+		return this.readNote(note, 'technicals', () => note.technicals);
+	}
+
+	lyricsOf(note: Note): Note['lyrics'] {
+		return this.readNote(note, 'lyrics', () => note.lyrics);
+	}
+
+	ornamentsOf(note: Note): Note['ornaments'] {
+		return this.readNote(note, 'ornaments', () => note.ornaments);
+	}
+
+	dotsOf(note: Note): number {
+		return this.readNote(note, 'dots', () => note.dots);
+	}
+
+	accidentalOf(note: Note): Note['accidental'] {
+		return this.readNote(note, 'accidental', () => note.accidental);
+	}
+
+	tiesOf(note: Note): Note['ties'] {
+		return this.readNote(note, 'ties', () => note.ties);
+	}
+
+	isChordMember(note: Note): boolean {
+		return this.readNote(note, 'chordMember', () => note.isChordMember);
+	}
+
+	beamRuns(notes: Note[]): BeamRun[] {
+		const runs: BeamRun[] = [];
+		let current: BeamRun | null = null;
+		for (const note of notes) {
+			if (this.isChordMember(note)) {
+				continue;
+			}
+			const beams = this.beamsOf(note);
+			const value = beams.find((beam) => beam.number === '1')?.text ?? null;
+			if (value === 'begin') {
+				current = { notes: [note], breaksAfter: [] };
+				runs.push(current);
+			} else if (value !== null) {
+				current?.notes.push(note);
+			} else if (beams.length === 0 && note.isRest) {
+				continue;
+			} else {
+				current = null;
+				continue;
+			}
+			if (
+				current &&
+				beams.some((beam) => beam.number !== '1' && beam.text === 'end')
+			) {
+				current.breaksAfter.push(current.notes.length - 1);
+			}
+		}
+		for (const run of runs) {
+			run.breaksAfter = run.breaksAfter.filter(
+				(index) => index < run.notes.length - 1,
+			);
+		}
+		return runs;
 	}
 
 	/*
@@ -448,7 +556,7 @@ export class ScoreReader {
 		if (!span) {
 			return NOT_STYLED;
 		}
-		const covered = measure.notes
+		const covered = this.notesOf(measure)
 			.filter((n) => n.staff === note.staff && !n.isGrace)
 			.flatMap((n) => {
 				const at = this.measureBeatOf(n);
@@ -487,7 +595,9 @@ export class ScoreReader {
 	 */
 	bendOf(note: Note): TabBendMark | null {
 		const bend = note.bend;
-		const elements = note.technicals.filter((t) => t.technicalType === 'bend');
+		const elements = this.technicalsOf(note).filter(
+			(t) => t.technicalType === 'bend',
+		);
 		const element = elements[0];
 		if (!bend || !element) {
 			return null;
@@ -1447,7 +1557,7 @@ export class ScoreReader {
 	 * later system draws one bracket running right-to-left. Both need a fixture first.
 	 */
 	octaveShiftsOf(part: Part): OctaveShiftSpan[] {
-		const notes = part.measures.flatMap((measure) => measure.notes);
+		const notes = part.measures.flatMap((measure) => this.notesOf(measure));
 		const indexOf = new Map(notes.map((note, index) => [note, index]));
 		const spans: OctaveShiftSpan[] = [];
 		const open = new Map<string, { from: Note; size: number; down: boolean }>();
