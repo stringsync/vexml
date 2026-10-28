@@ -1,12 +1,17 @@
 import { basename, extname, isAbsolute, resolve } from 'node:path';
 import type { Logger } from 'webappwiz/log';
 import type { Fs } from 'webappwiz/system';
-import { MeasureSlicer, type SlicePolicy } from './measure-slicer';
+import {
+	MeasureSlicer,
+	type SliceCoordinate,
+	type SlicePolicy,
+} from './measure-slicer';
 
 export interface SliceOptions {
 	input: string;
 	/* Which measures to keep, e.g. `1,3-5,8`. */
 	measures: string;
+	coordinate?: SliceCoordinate;
 	policy?: SlicePolicy;
 	/* Defaults to `<input stem>.slice.musicxml` beside the input. */
 	output?: string;
@@ -26,9 +31,11 @@ export async function slice(opts: SliceOptions) {
 
 	// A bad --measures throws, which the cli reports as one line and no stack
 	// trace: user error, not a crash.
-	const sliced = new MeasureSlicer(opts.measures, opts.policy).slice(
-		await opts.fs.read(input),
-	);
+	const sliced = new MeasureSlicer(
+		opts.measures,
+		opts.policy,
+		opts.coordinate,
+	).slice(await opts.fs.read(input));
 
 	await opts.fs.write(output, sliced);
 	opts.log.info(`wrote ${output}`);

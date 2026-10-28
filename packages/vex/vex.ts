@@ -216,6 +216,11 @@ vex
 vex
 	.command('slice')
 	.description('extract measures from a musicxml file into a smaller one')
+	.option('coordinate', z.enum(['label', 'position'] as const), {
+		default: 'label' as const,
+		description:
+			'label: match printed measure numbers (all occurrences). position: 1-based source measure ordinals, shared across parts; count every measure including pickups, without restarting at movements or expanding repeats. Requires equal measure counts in all parts; preserves labels and document order',
+	})
 	.option('policy', z.enum(['standalone', 'raw'] as const), {
 		default: 'standalone' as const,
 		description:

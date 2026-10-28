@@ -9,6 +9,95 @@ import { MeasureSlicer, parseMeasureSpec } from './measure-slicer';
 
 describe('MeasureSlicer', () => {
 	it.each([
+		'standalone',
+		'raw',
+	] as const)('selects exactly three source columns across movement resets with %s policy', (policy) => {
+		const xml = new MeasureSlicer('8,6-7,6', policy, 'position').slice(
+			twoMovements(),
+		);
+		const parts = new MDOMParser().parseFromString(xml).score.parts;
+		expect(
+			parts.map((p) =>
+				p.measures.map((m) => [
+					m.number,
+					m.notes[0]?.pitch?.step,
+					m.notes[0]?.pitch?.octave,
+				]),
+			),
+		).toEqual([
+			[
+				['X1', 'F', 4],
+				['77', 'G', 4],
+				['78', 'A', 4],
+			],
+			[
+				['X1', 'F', 3],
+				['77', 'G', 3],
+				['78', 'A', 3],
+			],
+		]);
+		expect(
+			parts.map((part) => [
+				part.measures[0]?.getKey()?.fifths,
+				part.measures[0]?.getTime()?.beats,
+				part.measures[0]?.getClef()?.sign,
+			]),
+		).toEqual([
+			[-2, '3', 'G'],
+			[-2, '3', 'F'],
+		]);
+	});
+
+	it('counts pickups and nonnumeric labels without renumbering them', () => {
+		const xml = new MeasureSlicer('05-6', 'standalone', 'position').slice(
+			twoMovements(),
+		);
+		expect(measuresOf(xml).map((m) => m.number)).toEqual(['0', 'X1']);
+	});
+
+	it('keeps every occurrence when selecting printed labels by default', () => {
+		const xml = slice(twoMovements(), 'X1,0,77-78');
+		expect(measuresOf(xml).map((m) => m.number)).toEqual([
+			'0',
+			'X1',
+			'77',
+			'78',
+			'0',
+			'X1',
+			'77',
+			'78',
+		]);
+	});
+
+	it.each([
+		'0',
+		'-1',
+		'X1',
+		'1.5',
+		'1,,2',
+		'3-2',
+		'9007199254740992',
+		'1-9007199254740992',
+	])('rejects invalid positional selection %s', (spec) => {
+		expect(() => new MeasureSlicer(spec, 'standalone', 'position')).toThrow();
+	});
+
+	it('rejects a selection containing an out-of-bounds position', () => {
+		expect(() =>
+			new MeasureSlicer('6,9', 'standalone', 'position').slice(twoMovements()),
+		).toThrow('position 9');
+	});
+
+	it('rejects unequal part lengths rather than silently selecting different columns', () => {
+		const doc = new MDOMParser().parseFromString(twoMovements());
+		doc.score.parts[1]?.measures.at(-1)?.remove();
+		const source = new MusicXMLSerializer().serializeToString(doc);
+		expect(() =>
+			new MeasureSlicer('2', 'standalone', 'position').slice(source),
+		).toThrow('same measure count');
+	});
+
+	it.each([
 		'1',
 		'2',
 		'3',
@@ -338,6 +427,25 @@ function slice(xml: string, spec: string): string {
 const DIVISIONS = '<divisions>1</divisions>';
 const NOTE =
 	'<note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>';
+
+/* Both movements reset their printed labels; each part has distinct registers. */
+function twoMovements(): string {
+	const parts = [4, 3]
+		.map((octave, index) => {
+			const measures = ['0', 'X1', '77', '78', '0', 'X1', '77', '78']
+				.map((label, i) => {
+					const attributes =
+						i === 0 || i === 4
+							? `<attributes>${DIVISIONS}<key><fifths>${i === 0 ? 3 : -2}</fifths></key><time><beats>${i === 0 ? 4 : 3}</beats><beat-type>4</beat-type></time><clef><sign>${index === 0 ? 'G' : 'F'}</sign><line>${index === 0 ? 2 : 4}</line></clef></attributes>`
+							: '';
+					return `<measure number="${label}">${attributes}<note><pitch><step>${['C', 'D', 'E', 'F', 'E', 'F', 'G', 'A'][i]}</step><octave>${octave}</octave></pitch><duration>1</duration><type>quarter</type></note></measure>`;
+				})
+				.join('');
+			return `<part id="P${index + 1}">${measures}</part>`;
+		})
+		.join('');
+	return `<score-partwise version="4.0"><part-list><score-part id="P1"><part-name>One</part-name></score-part><score-part id="P2"><part-name>Two</part-name></score-part></part-list>${parts}</score-partwise>`;
+}
 
 function rawScoreOf(...measures: string[]): string {
 	const body = measures

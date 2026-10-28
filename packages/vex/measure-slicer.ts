@@ -1,10 +1,13 @@
 import { MDOMParser, MElement, MusicXMLSerializer } from '@stringsync/mdom';
 
 export type SlicePolicy = 'standalone' | 'raw';
+export type SliceCoordinate = 'label' | 'position';
 
 /**
  * Keeps only the measures named by a spec like `1,3-5,8`, matching on the
- * `<measure number>` label. The kept opening measure inherits the signatures
+ * `<measure number>` label by default. `position` instead uses 1-based source
+ * ordinals in every part, counting pickups and continuing across movements.
+ * The kept opening measure inherits the signatures
  * that were in effect where the slice starts, so it still renders correctly on
  * its own.
  *
@@ -21,16 +24,60 @@ export class MeasureSlicer {
 	constructor(
 		private readonly spec: string,
 		private readonly policy: SlicePolicy = 'standalone',
+		private readonly coordinate: SliceCoordinate = 'label',
 	) {
-		this.wanted = parseMeasureSpec(spec);
+		if (coordinate === 'position') {
+			for (const token of spec.split(',')) {
+				if (
+					!/^\d+(?:-\d+)?$/.test(token.trim()) ||
+					token
+						.trim()
+						.split('-')
+						.some((n) => !Number.isSafeInteger(Number(n)) || Number(n) < 1)
+				) {
+					throw new Error(
+						`invalid measure position "${token}": use positive 1-based integers`,
+					);
+				}
+			}
+		}
+		const wanted = parseMeasureSpec(spec);
+		this.wanted =
+			coordinate === 'position'
+				? new Set([...wanted].map((n) => String(Number(n))))
+				: wanted;
 	}
 
 	slice(xml: string): string {
 		const doc = new MDOMParser().parseFromString(xml);
+		if (this.coordinate === 'position') {
+			const count = doc.score.parts[0]?.measures.length ?? 0;
+			for (const part of doc.score.parts) {
+				if (part.measures.length !== count) {
+					throw new Error(
+						'positional slicing requires the same measure count in every part',
+					);
+				}
+			}
+			for (const position of this.wanted) {
+				if (Number(position) > count) {
+					throw new Error(
+						`measure position ${position} exceeds the score's ${count} measures`,
+					);
+				}
+			}
+		}
 
 		for (const part of doc.score.parts) {
 			const measures = part.measures;
-			const [first] = measures.filter((m) => this.wanted.has(m.number));
+			const selected = new Set(
+				measures.filter((m, index) =>
+					this.wanted.has(
+						this.coordinate === 'position' ? String(index + 1) : m.number,
+					),
+				),
+			);
+			const [first] = selected;
 			if (!first) {
 				throw new Error(
 					`part ${part.id} has no measures matching "${this.spec}"`,
@@ -38,7 +85,7 @@ export class MeasureSlicer {
 			}
 			first.materializeSignatures();
 			for (const measure of measures) {
-				if (!this.wanted.has(measure.number)) {
+				if (!selected.has(measure)) {
 					measure.remove();
 				} else if (this.policy === 'standalone') {
 					this.removeNavigation(measure);
@@ -126,6 +173,9 @@ export function parseMeasureSpec(spec: string): Set<string> {
 			continue;
 		}
 		const [from, to] = [Number(range[1]), Number(range[2])];
+		if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to)) {
+			throw new Error(`unsafe measure range "${part}"`);
+		}
 		if (to < from) {
 			throw new Error(`descending measure range "${part}"`);
 		}
