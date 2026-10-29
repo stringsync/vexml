@@ -1,6 +1,13 @@
 import type { PaintElement, PaintOp } from './paint-op';
 import type { PaintSink } from './paint-sink';
 
+/* Where a {@link PaintList} stood, for {@link PaintList.rewind}. */
+export interface PaintListMark {
+	ops: number;
+	groups: number;
+	nextElement: number;
+}
+
 /* A sink that only keeps the ops, in order: what the engraving is drawn into before its final
  * size and crop are known, then loaded into a surface whole. */
 export class PaintList implements PaintSink {
@@ -53,6 +60,22 @@ export class PaintList implements PaintSink {
 		throw new Error(
 			'vexml: the engraving cannot be read back while it is drawn',
 		);
+	}
+
+	/* The group depth and element counter as they are now, for {@link rewind}; the ops are marked by length. */
+	mark(): PaintListMark {
+		return {
+			ops: this.ops.length,
+			groups: this.groups.length,
+			nextElement: this.nextElement,
+		};
+	}
+
+	/* Back to `mark`: later ops go and so do the ids they took, so what is kept depends on nothing discarded. */
+	rewind(mark: PaintListMark): void {
+		this.ops.length = mark.ops;
+		this.groups.length = mark.groups;
+		this.nextElement = mark.nextElement;
 	}
 
 	reset(): void {

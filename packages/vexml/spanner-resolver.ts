@@ -468,7 +468,13 @@ export class SpannerResolver {
 				span.above,
 			);
 			this.context.openGroup('vexml-bracket');
+			// TextBracket.draw never applies its render options, so its line took whatever width and
+			// color the context was left with.
+			this.context.save();
+			this.context.setLineWidth(bracket.renderOptions.lineWidth);
+			this.context.setStrokeStyle(Ink.NOTATION);
 			bracket.setContext(this.context).draw();
+			this.context.restore();
 			this.context.closeGroup();
 		}
 		// The <bracket>/<dashes> spans, with each endpoint resolved to its drawn note (or

@@ -57,7 +57,8 @@ import { Ink } from './ink';
 import type { DocumentSystem, MeasureBox, ScoreLayout } from './layout-planner';
 import { LyricPlacer } from './lyric-placer';
 import { MeasureStyleDrawer } from './measure-style-drawer';
-import type { PaintList } from './paint-list';
+import type { PaintContext, PaintContextMark } from './paint-context';
+import type { PaintList, PaintListMark } from './paint-list';
 import { RepeatWingDrawer } from './repeat-wing-drawer';
 import type {
 	DirectionLineSpan,
@@ -311,6 +312,7 @@ export class DrawPass {
 		scratchHeight: number,
 		private readonly topOverflow: Map<number, number>,
 		private readonly list: PaintList,
+		private readonly paint: PaintContext,
 		opts: DrawPassOptions,
 	) {
 		// CanvasContext discards VexFlow's notation groups. Keep them on the recording
@@ -635,7 +637,8 @@ export class DrawPass {
 			lyrics: this.lyricPlacer.mark(),
 			dynamics: this.directionPlacer.mark(),
 			spanners: this.spannerResolver.mark(),
-			ops: this.list.ops.length,
+			list: this.list.mark(),
+			paint: this.paint.mark(),
 		};
 	}
 
@@ -646,7 +649,8 @@ export class DrawPass {
 	 * system drawn since, which goes too when the one after was drawn ahead.
 	 */
 	rewind(mark: SystemMark, through: number): void {
-		this.list.ops.length = mark.ops;
+		this.list.rewind(mark.list);
+		this.paint.rewind(mark.paint);
 		this.pageTop = mark.pageTop;
 		this.pageBottom = mark.pageBottom;
 		this.systemTopY = mark.systemTopY;
@@ -2025,5 +2029,6 @@ export interface SystemMark {
 	lyrics: number;
 	dynamics: ReturnType<DirectionPlacer['mark']>;
 	spanners: ReturnType<SpannerResolver['mark']>;
-	ops: number;
+	list: PaintListMark;
+	paint: PaintContextMark;
 }

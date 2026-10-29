@@ -17,6 +17,24 @@ describe('PaintContext', () => {
 		) as unknown as CanvasRenderingContext2D;
 	});
 
+	it('rewinds the state and the element ids to a mark, so a redraw starts where the first began', () => {
+		const paint = ctx as unknown as PaintContext;
+		const mark = { paint: paint.mark(), list: list.mark() };
+		ctx.lineWidth = 5;
+		ctx.save();
+		list.openGroup('note');
+		ctx.fillRect(0, 0, 4, 4);
+		list.closeGroup();
+		paint.rewind(mark.paint);
+		list.rewind(mark.list);
+		ctx.fillRect(0, 0, 4, 4);
+		expect(list.ops).toHaveLength(1);
+		expect(list.ops[0]?.element?.id).toBe(0);
+		expect(ctx.lineWidth).toBe(1);
+		ctx.restore();
+		expect(ctx.lineWidth).toBe(1);
+	});
+
 	it('records a fill with its path, boxed with a pixel of antialiasing', () => {
 		ctx.beginPath();
 		ctx.moveTo(10, 10);

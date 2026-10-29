@@ -22,6 +22,12 @@ import {
  * context (measureText, isPointInPath, gradients). The settable properties are defined on the
  * prototype below the class.
  */
+/* Where a {@link PaintContext} stood, for {@link PaintContext.rewind}. */
+export interface PaintContextMark {
+	state: PaintState;
+	stack: number;
+}
+
 export class PaintContext {
 	private state = PaintState.INITIAL;
 	private readonly stack: PaintState[] = [];
@@ -58,6 +64,18 @@ export class PaintContext {
 
 	restore(): void {
 		this.state = this.stack.pop() ?? this.state;
+	}
+
+	/* The state and save stack as they are now, for {@link rewind} to put back. */
+	mark(): PaintContextMark {
+		return { state: this.state, stack: this.stack.length };
+	}
+
+	/* Back to `mark`: the state is immutable, so a reference to it is the whole snapshot. */
+	rewind(mark: PaintContextMark): void {
+		this.state = mark.state;
+		this.stack.length = Math.min(this.stack.length, mark.stack);
+		this.beginPath();
 	}
 
 	reset(): void {

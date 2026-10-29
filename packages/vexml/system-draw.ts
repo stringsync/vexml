@@ -143,12 +143,9 @@ export class SystemDraw {
 		// Recorded, not drawn: a canvas the size of a long score goes blank past the browser's
 		// per-side cap (and vexflow crops one at 32767px), so the ops are kept and the stage replays
 		// them into tiles. Recording needs no final height up front, which a canvas did.
+		const paint = new PaintContext(this.list, probe, null);
 		const context = new CanvasContext(
-			new PaintContext(
-				this.list,
-				probe,
-				null,
-			) as unknown as CanvasRenderingContext2D,
+			paint as unknown as CanvasRenderingContext2D,
 		);
 
 		// Part labels and words use the text font, and the few glyphs vexml types itself out of
@@ -181,6 +178,7 @@ export class SystemDraw {
 			pageHeight,
 			this.topOverflow,
 			this.list,
+			paint,
 			{
 				lyricDrops: this.lyricDrops,
 				voltaLifts: this.voltaLifts,
@@ -405,7 +403,7 @@ export class SystemDraw {
 			this.drawHeader();
 		}
 		const ahead = this.drawnAhead ? this.marks.get(this.settled) : undefined;
-		this.settledOpCount = ahead ? ahead.ops : this.list.ops.length;
+		this.settledOpCount = ahead ? ahead.list.ops : this.list.ops.length;
 		return system;
 	}
 
