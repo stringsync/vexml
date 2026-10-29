@@ -6,7 +6,7 @@
 	"dependencies": {
 		"@stringsync/vexml": "workspace:*",
 		"@vexml/renderer": "workspace:*",
-		"webappwiz": "0.0.52"
+		"webappwiz": "0.0.54"
 	},
 	"devDependencies": {
 		"@napi-rs/canvas": "^1.0.10",

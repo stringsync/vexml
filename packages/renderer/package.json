@@ -10,7 +10,7 @@
 		"@stringsync/mdom": "0.8.0",
 		"@stringsync/vexml": "workspace:*",
 		"playwright": "^1.61.1",
-		"webappwiz": "0.0.52"
+		"webappwiz": "0.0.54"
 	},
 	"devDependencies": {
 		"@coderline/alphatab": "^1.8.4",
