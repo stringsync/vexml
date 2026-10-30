@@ -8,7 +8,7 @@
 		"vex": "./index.ts"
 	},
 	"dependencies": {
-		"@stringsync/mdom": "0.8.0",
+		"@stringsync/mdom": "0.8.1",
 		"@vexml/renderer": "workspace:*",
 		"pngjs": "^7.0.0",
 		"vite": "^8.1.0",

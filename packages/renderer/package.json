@@ -7,7 +7,7 @@
 		".": "./index.ts"
 	},
 	"dependencies": {
-		"@stringsync/mdom": "0.8.0",
+		"@stringsync/mdom": "0.8.1",
 		"@stringsync/vexml": "workspace:*",
 		"playwright": "^1.61.1",
 		"webappwiz": "0.0.54"
