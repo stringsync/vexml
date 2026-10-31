@@ -73,7 +73,7 @@ export function fileStart(
 	// and a child whose reader has stopped blocks once its FIFO fills.
 	const { stdin = "pipe", runtime: rt = runtime, ...spawnOptions } = opts;
 	opts.signal?.throwIfAborted();
-	const dir = mkdtempSync(join(tmpdir(), "webappwiz-ps-"));
+	const dir = mkdtempSync(join(tmpdir(), "core-ps-"));
 	let out: FifoOutput | undefined;
 	let err: FifoOutput | undefined;
 	const writers: number[] = [];

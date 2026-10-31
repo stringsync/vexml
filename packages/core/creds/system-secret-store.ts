@@ -1,13 +1,14 @@
 import { basename, dirname } from "node:path";
-import { type Fs, NodeFs, NodePs, type Ps } from "core/system";
+import { type Fs, NodePs, type Ps } from "core/system";
 import { credentialName } from "./credential-source";
 import type { SecretStore } from "./secret-store";
 
 /** The entry each service lists its names under; no credential can have it. */
 const NAMES = ".names";
 
-/** What `SystemSecretStore.forProject` reads through; the real ones by default. */
+/** What `SystemSecretStore.forProject` reads through; the real one by default. */
 export interface ForProjectOptions {
+	/** @deprecated Unused: the name no longer comes from config files. */
 	fs?: Fs;
 	ps?: Ps;
 }
@@ -16,8 +17,8 @@ export interface ForProjectOptions {
  * The operating system's own store, through `Bun.secrets`: the Keychain on
  * macOS, Credential Manager on Windows, and on Linux whatever secret service
  * daemon is running, such as GNOME Keyring or KWallet. A project's values are
- * kept under the service `webappwiz:<project>`, so each project's are its
- * own, and the device's under `webappwiz`, for keys that belong to the person
+ * kept under the service `mono:<project>`, so each project's are its
+ * own, and the device's under `mono`, for keys that belong to the person
  * rather than to one project. Encrypted at rest by the system. A headless
  * server often has no secret service, which is why a deployed app reads the
  * environment instead. The system cannot list a service's entries, so each
@@ -39,17 +40,16 @@ export class SystemSecretStore implements SecretStore {
 		this.label = `${system} as "${service}"`;
 	}
 
-	/** The store of the project named `project`, kept as `webappwiz:<project>`. */
+	/** The store of the project named `project`, kept as `mono:<project>`. */
 	static project(project: string): SystemSecretStore {
-		return new SystemSecretStore(`webappwiz:${project}`);
+		return new SystemSecretStore(`mono:${project}`);
 	}
 
 	/**
 	 * The store of the project around `dir` (the working directory by
-	 * default). Its name is `credentials.project` from the user's
-	 * `~/.config/wiz/config.ts`, else from the project's `.wiz/config.ts`,
-	 * else the directory of the repository's main worktree, so a value added
-	 * from one git worktree is there in every other.
+	 * default). Its name is the directory of the
+	 * repository's main worktree, so a value added from one git worktree is
+	 * there in every other.
 	 */
 	static async forProject(
 		dir?: string,
@@ -58,15 +58,14 @@ export class SystemSecretStore implements SecretStore {
 		return SystemSecretStore.project(await projectName(dir, opts));
 	}
 
-	/** The device's store, kept as `webappwiz`, shared by every project. */
+	/** The device's store, kept as `mono`, shared by every project. */
 	static device(): SystemSecretStore {
-		return new SystemSecretStore("webappwiz");
+		return new SystemSecretStore("mono");
 	}
 
 	async get(name: string): Promise<string | undefined> {
-		return (
-			(await Bun.secrets.get({ service: this.service, name })) ?? undefined
-		);
+		const value = await Bun.secrets.get({ service: this.service, name });
+		return value ?? undefined;
 	}
 
 	async set(name: string, value: string): Promise<void> {
@@ -98,7 +97,7 @@ export class SystemSecretStore implements SecretStore {
 		return (list ?? "").split("\n").filter((name) => name !== "");
 	}
 
-	/** Keeps `names` as the service's list, sorted, or none when empty. */
+	/** Keeps `names` as its list, sorted, or none when empty. */
 	private async list(names: string[]): Promise<void> {
 		if (names.length === 0) {
 			await Bun.secrets.delete({ service: this.service, name: NAMES });
@@ -114,15 +113,13 @@ export class SystemSecretStore implements SecretStore {
 
 /**
  * What the project around `dir` is called on this device, which its
- * credentials and anything else kept outside it go under: the last
- * `credentials.project` among its config and the user's, else the directory
- * of the repository's main worktree, so every worktree shares it.
+ * credentials and anything else kept outside it go under: the directory of
+ * the repository's main worktree, so every worktree shares it.
  */
 export async function projectName(
 	dir: string | undefined,
 	opts: ForProjectOptions = {},
 ): Promise<string> {
-	const fs = opts.fs ?? new NodeFs();
 	const ps = opts.ps ?? new NodePs();
 	const from = dir ?? ps.cwd();
 	const { stdout, exitCode } = await ps.spawnCapture([
@@ -134,21 +131,6 @@ export async function projectName(
 		"--show-toplevel",
 		"--git-common-dir",
 	]);
-	const [root, common] = exitCode === 0 ? stdout.trim().split("\n") : [];
-	const home = ps.env("XDG_CONFIG_HOME") ?? `${ps.env("HOME") ?? "~"}/.config`;
-	let named: string | undefined;
-	for (const path of [
-		`${root ?? from}/.wiz/config.ts`,
-		`${home}/wiz/config.ts`,
-	]) {
-		if (await fs.exists(path)) {
-			// failing beats falling back: a store silently chosen by the wrong
-			// name is a credential that is never found
-			const mod = (await import(path).catch((cause: unknown) => {
-				throw new Error(`could not load ${path}: ${cause}`, { cause });
-			})) as { default?: { credentials?: { project?: string } } };
-			named = mod.default?.credentials?.project ?? named;
-		}
-	}
-	return named ?? basename(common === undefined ? from : dirname(common));
+	const [_root, common] = exitCode === 0 ? stdout.trim().split("\n") : [];
+	return basename(common === undefined ? from : dirname(common));
 }

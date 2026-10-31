@@ -1,6 +1,6 @@
 {
 	"name": "@vexml/vex",
-	"version": "1.13.3",
+	"version": "1.13.4",
 	"private": true,
 	"type": "module",
 	"module": "index.ts",
@@ -8,7 +8,7 @@
 		"vex": "./index.ts"
 	},
 	"dependencies": {
-		"@stringsync/mdom": "^0.8.3",
+		"@stringsync/mdom": "^0.8.4",
 		"@vexml/renderer": "workspace:*",
 		"core": "workspace:*",
 		"pngjs": "^7.0.0",

@@ -12,7 +12,7 @@
     },
     "packages/benchmarks": {
       "name": "@vexml/benchmarks",
-      "version": "1.13.3",
+      "version": "1.13.4",
       "dependencies": {
         "@coderline/alphatab": "^1.8.4",
         "@vexml/renderer": "workspace:*",
@@ -24,7 +24,7 @@
     },
     "packages/core": {
       "name": "core",
-      "version": "1.13.3",
+      "version": "1.13.4",
       "dependencies": {
         "@standard-schema/spec": "^1.1.0",
       },
@@ -40,7 +40,7 @@
     },
     "packages/integration": {
       "name": "@vexml/integration",
-      "version": "1.13.3",
+      "version": "1.13.4",
       "dependencies": {
         "@stringsync/vexml": "workspace:*",
         "@vexml/renderer": "workspace:*",
@@ -56,9 +56,9 @@
     },
     "packages/renderer": {
       "name": "@vexml/renderer",
-      "version": "1.13.3",
+      "version": "1.13.4",
       "dependencies": {
-        "@stringsync/mdom": "^0.8.3",
+        "@stringsync/mdom": "^0.8.4",
         "@stringsync/vexml": "workspace:*",
         "@typescript/typescript6": "^6.0.2",
         "core": "workspace:*",
@@ -72,12 +72,12 @@
     },
     "packages/site": {
       "name": "@vexml/site",
-      "version": "1.13.3",
+      "version": "1.13.4",
       "dependencies": {
         "@fontsource-variable/anybody": "^5.3.0",
         "@fontsource/ibm-plex-mono": "^5.3.0",
         "@fontsource/ibm-plex-sans": "^5.3.0",
-        "@stringsync/mdom": "^0.8.3",
+        "@stringsync/mdom": "^0.8.4",
         "@stringsync/vexml": "workspace:*",
         "@vexml/benchmarks": "workspace:*",
         "class-variance-authority": "^0.7.1",
@@ -103,12 +103,12 @@
     },
     "packages/vex": {
       "name": "@vexml/vex",
-      "version": "1.13.3",
+      "version": "1.13.4",
       "bin": {
         "vex": "./index.ts",
       },
       "dependencies": {
-        "@stringsync/mdom": "^0.8.3",
+        "@stringsync/mdom": "^0.8.4",
         "@vexml/renderer": "workspace:*",
         "core": "workspace:*",
         "pngjs": "^7.0.0",
@@ -121,9 +121,9 @@
     },
     "packages/vexml": {
       "name": "@stringsync/vexml",
-      "version": "1.13.3",
+      "version": "1.13.4",
       "dependencies": {
-        "@stringsync/mdom": "^0.8.3",
+        "@stringsync/mdom": "^0.8.4",
         "@types/fontkit": "2.0.9",
         "core": "workspace:*",
         "fontkit": "2.0.4",
@@ -441,7 +441,7 @@
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 
-    "@stringsync/mdom": ["@stringsync/mdom@0.8.3", "", { "dependencies": { "jszip": "^3.10.1", "xml-js": "^1.6.11" } }, "sha512-X0XsGtLnyNAWy7UOvCR90ER8Qrr7PjuTlbNsqLmQMJGNAD9kj27mbWD5zSN8T5RzZO7JHdKfIrZALsqRCk9kow=="],
+    "@stringsync/mdom": ["@stringsync/mdom@0.8.4", "", { "dependencies": { "jszip": "^3.10.1", "xml-js": "^1.6.11" } }, "sha512-q4iNZSFo3rV6lu8xfrOcmKwUPBCU5+jUz3Ubymi+bUEDLydmH8OfCQOUfJQWwtdSJJS9VzJDZ5y5aD/xnOywZQ=="],
 
     "@stringsync/vexml": ["@stringsync/vexml@workspace:packages/vexml"],
 

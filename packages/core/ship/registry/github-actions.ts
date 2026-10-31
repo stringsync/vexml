@@ -22,7 +22,7 @@ export interface GithubActionsOptions {
 	ps?: Ps;
 	/**
 	 * What a refused run says to run to set up npm's trust, which calls
-	 * `Release.trust()`; `bunx @webappwiz/cli ship trust` by default.
+	 * `Release.trust()`; unset, it names only the `npm trust github` line.
 	 */
 	trustCommand?: string;
 	/**
@@ -57,7 +57,7 @@ export class GithubActions {
 	private readonly workflows: Workflows;
 	/** The attempt of the run a rerun started from, whose result is stale until a newer one shows. */
 	private rerunFrom?: { id: string; attempt: number };
-	private readonly trustCommand: string;
+	private readonly trustCommand: string | undefined;
 	private readonly pause: (duration: Duration) => Promise<void>;
 
 	constructor(opts: GithubActionsOptions = {}) {
@@ -65,7 +65,7 @@ export class GithubActions {
 		this.git = opts.git ?? new CliGit(ps.cwd(), { ps });
 		this.workflows =
 			opts.workflows ?? new CliWorkflows({ ps, repo: opts.repo });
-		this.trustCommand = opts.trustCommand ?? "bunx @webappwiz/cli ship trust";
+		this.trustCommand = opts.trustCommand;
 		this.pause = opts.pause ?? sleep;
 	}
 
@@ -169,7 +169,9 @@ export class GithubActions {
 	private async setup(name: string): Promise<string> {
 		const repo = await this.workflows.repo();
 		return [
-			`npm refused the run: ${name} has no trusted publisher entry for it. Run \`${this.trustCommand}\` to set one up for every package, or for this one alone:`,
+			this.trustCommand === undefined
+				? `npm refused the run: ${name} has no trusted publisher entry for it. Set one up:`
+				: `npm refused the run: ${name} has no trusted publisher entry for it. Run \`${this.trustCommand}\` to set one up for every package, or for this one alone:`,
 			`  npm trust github ${name} --repo ${repo} --file ${this.file} --allow-publish`,
 			"The package must already exist. A new entry lapses after about two days unless a publish uses it. Then ship again to rerun the failed run.",
 		].join("\n");

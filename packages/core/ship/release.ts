@@ -138,14 +138,7 @@ export class Release {
 			dryRun,
 		});
 		const runner = new StepRunner(
-			new StepEvents(
-				ps.env("WEBAPPWIZ_SHIP_EVENTS") ?? ps.env("SPLATES_SHIP_EVENTS"),
-				fs,
-				opts.wallClock,
-				ps.env("WEBAPPWIZ_SHIP_PROGRESS") === "1"
-					? { line: (text) => log.info(text) }
-					: undefined,
-			),
+			new StepEvents(ps.env("SPLATES_SHIP_EVENTS"), fs, opts.wallClock),
 			opts.timer,
 		);
 
@@ -264,11 +257,7 @@ export class Release {
 				step,
 			}));
 		const runner = new StepRunner(
-			new StepEvents(
-				ps.env("WEBAPPWIZ_SHIP_EVENTS") ?? ps.env("SPLATES_SHIP_EVENTS"),
-				fs,
-				opts.wallClock,
-			),
+			new StepEvents(ps.env("SPLATES_SHIP_EVENTS"), fs, opts.wallClock),
 			opts.timer,
 		);
 		await runner.declare(steps);

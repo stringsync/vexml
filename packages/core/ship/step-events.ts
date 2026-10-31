@@ -5,20 +5,12 @@ import type { CheckReport, Step, StepStage } from "./step";
 /** Check an event line's `schema` against this before reading the rest of it. */
 export const EVENTS_SCHEMA = 1 as const;
 
-/** The states a progress line reports; the vocabulary of `wiz dev ship plan` ids. */
-type ProgressState = "start" | "done" | "failed" | "skipped";
-
-/**
- * JSON-lines release progress. No path means no event file; `progress`, when
- * given, also receives one `{"event":"step",...}` line per start, done, failure
- * or skip, for a caller reading the release's own output.
- */
+/** JSON-lines release progress. No path means no event file. */
 export class StepEvents {
 	constructor(
 		private readonly path: string | undefined,
 		private readonly fs: Fs,
 		private readonly clock: WallClock = new SystemWallClock(),
-		private readonly progress?: ProgressSink,
 	) {}
 
 	async declared({
@@ -40,7 +32,6 @@ export class StepEvents {
 	}
 
 	async started({ id, step }: StepDeclaration): Promise<void> {
-		this.report(id, "start");
 		await this.write({ type: "started", id, name: step.name, at: this.at() });
 	}
 
@@ -74,18 +65,15 @@ export class StepEvents {
 	}
 
 	async done({ id, step }: StepDeclaration): Promise<void> {
-		this.report(id, "done");
 		await this.write({ type: "done", id, name: step.name, at: this.at() });
 	}
 
 	/** A step a resumed release found already landed. */
 	async skipped({ id, step }: StepDeclaration): Promise<void> {
-		this.report(id, "skipped");
 		await this.write({ type: "skipped", id, name: step.name, at: this.at() });
 	}
 
 	async failed({ id, step }: StepDeclaration, error: unknown): Promise<void> {
-		this.report(id, "failed");
 		await this.write({
 			type: "failed",
 			id,
@@ -93,12 +81,6 @@ export class StepEvents {
 			error: error instanceof Error ? error.message : String(error),
 			at: this.at(),
 		});
-	}
-
-	private report(id: string, state: ProgressState): void {
-		this.progress?.line(
-			JSON.stringify({ event: "step", id, state, at: this.at() }),
-		);
 	}
 
 	private async write(event: Unversioned): Promise<void> {
@@ -113,11 +95,6 @@ export class StepEvents {
 	private at(): string {
 		return new Date(this.clock.now()).toISOString();
 	}
-}
-
-/** Where progress lines go; the release's own logger in practice. */
-export interface ProgressSink {
-	line(text: string): void;
 }
 
 interface StepEvent {
@@ -169,7 +146,7 @@ export interface StepFailedEvent extends StepEvent {
 	readonly error: string;
 }
 
-/** One line in the release event file named by WEBAPPWIZ_SHIP_EVENTS or SPLATES_SHIP_EVENTS. */
+/** One line in the release event file named by SPLATES_SHIP_EVENTS. */
 export type ReleaseStepEvent =
 	| StepDeclaredEvent
 	| StepStartedEvent

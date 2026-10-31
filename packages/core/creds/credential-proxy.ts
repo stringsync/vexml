@@ -55,7 +55,7 @@ const HOP_BY_HOP = [
  *
  * The placeholder is only as private as the program's environment: on a
  * machine where the program runs as the proxy's own user, make the process
- * holding the key undumpable (`makeUndumpable()` from `webappwiz/system`),
+ * holding the key undumpable (`makeUndumpable()` from `core/system`),
  * or run the program in a container.
  */
 export class CredentialProxy implements AsyncResource {

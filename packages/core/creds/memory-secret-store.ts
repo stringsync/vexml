@@ -13,7 +13,7 @@ import type { SecretStore } from "./secret-store";
  * `Bun.inspect` nor `JSON.stringify` of the store shows one; its label and
  * errors never hold one either. JavaScript cannot wipe a string, so a dropped
  * value lingers in the heap until the garbage collector reuses its memory:
- * pair it with `makeUndumpable()` from `webappwiz/system`, so no other
+ * pair it with `makeUndumpable()` from `core/system`, so no other
  * process can read that memory meanwhile.
  */
 export class MemorySecretStore implements SecretStore, Resource {
