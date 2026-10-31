@@ -1,5 +1,6 @@
 import { basename } from "node:path";
 import { NodePs, type Ps } from "core/system";
+import { Duration, sleep } from "core/time";
 import { CliGit } from "../git/cli-git";
 import type { Git } from "../git/git";
 import { CliWorkflows } from "../github/cli-workflows";
@@ -9,6 +10,10 @@ import type { CheckReport } from "../step";
 
 /** How many lines of a failed run's log an error carries. */
 const LOG_LINES = 20;
+
+/** How long GitHub gets to register a workflow file a push just added, and how often to ask. */
+const REGISTER_WITHIN = Duration.mins(2);
+const REGISTER_EVERY = Duration.secs(5);
 
 /** Pass `git` or `workflows` to run `GithubActions` against fakes in tests; the real ones by default. */
 export interface GithubActionsOptions {
@@ -26,6 +31,8 @@ export interface GithubActionsOptions {
 	 * workflow in a mirror's repository.
 	 */
 	repo?: string;
+	/** What waits between asks while GitHub registers the workflow; real time by default. */
+	pause?: (duration: Duration) => Promise<void>;
 }
 
 /** Use it as `releases.npm`'s `via`: `githubActions()` makes one. */
@@ -51,6 +58,7 @@ export class GithubActions {
 	/** The attempt of the run a rerun started from, whose result is stale until a newer one shows. */
 	private rerunFrom?: { id: string; attempt: number };
 	private readonly trustCommand: string;
+	private readonly pause: (duration: Duration) => Promise<void>;
 
 	constructor(opts: GithubActionsOptions = {}) {
 		const ps = opts.ps ?? new NodePs();
@@ -58,6 +66,7 @@ export class GithubActions {
 		this.workflows =
 			opts.workflows ?? new CliWorkflows({ ps, repo: opts.repo });
 		this.trustCommand = opts.trustCommand ?? "bunx @webappwiz/cli ship trust";
+		this.pause = opts.pause ?? sleep;
 	}
 
 	/**
@@ -81,6 +90,7 @@ export class GithubActions {
 	async start(): Promise<void> {
 		const branch = await this.git.branch();
 		await this.git.push(branch);
+		await this.untilRegistered();
 		const sha = await this.git.head();
 		const [latest] = await this.workflows.runs(this.file, sha);
 		if (latest === undefined) {
@@ -92,6 +102,24 @@ export class GithubActions {
 			// A cancelled or timed out run left jobs unrun that a failed-only
 			// rerun would skip.
 			await this.workflows.rerun(latest.id, latest.conclusion === "failure");
+		}
+	}
+
+	/**
+	 * Polls until GitHub lists the workflow as active. The push that first
+	 * brings the workflow file to the default branch is not seen at once, and
+	 * asking for its runs or dispatching it before then fails.
+	 */
+	private async untilRegistered(): Promise<void> {
+		let waited = Duration.zero();
+		while (!(await this.workflows.registered(this.file))) {
+			if (waited.ms >= REGISTER_WITHIN.ms) {
+				throw new Error(
+					`GitHub has not registered ${this.file} ${REGISTER_WITHIN.ms / 1000}s after the push: check that it is on the repository's default branch, then ship again`,
+				);
+			}
+			await this.pause(REGISTER_EVERY);
+			waited = waited.add(REGISTER_EVERY);
 		}
 	}
 

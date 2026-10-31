@@ -32,6 +32,19 @@ export class CliWorkflows implements Workflows {
 		);
 	}
 
+	async registered(file: string): Promise<boolean> {
+		await ghLogin(this.ps);
+		const { exitCode, stdout } = await this.ps.spawnCapture([
+			"gh",
+			"api",
+			`repos/${await this.repo()}/actions/workflows/${file}`,
+			"--jq",
+			".state",
+		]);
+		// A workflow GitHub has yet to see is a 404, which is an answer: not yet.
+		return exitCode === 0 && stdout.trim() === "active";
+	}
+
 	async dispatch(
 		file: string,
 		branch: string,

@@ -15,6 +15,8 @@ export interface WorkflowRun {
 export interface Workflows {
 	/** The repository as `owner/name`. */
 	repo(): Promise<string>;
+	/** Whether GitHub lists the workflow file as active on the default branch. */
+	registered(file: string): Promise<boolean>;
 	/** Starts the workflow file on `branch`, handing it `inputs`. */
 	dispatch(
 		file: string,
