@@ -3,7 +3,7 @@ import type {
 	Note as MNote,
 	Part as MPart,
 } from '@stringsync/mdom';
-import { QuadTree, Rect } from 'webappwiz/geometry';
+import { QuadTree, Rect } from 'core/geometry';
 import { Barline } from './barline';
 import { ChordDiagram } from './chord-diagram';
 import type { Decorations } from './decoration';

@@ -1,3 +1,52 @@
+# dependencies (bun install)
+node_modules
+
+# output
+out
+dist
+*.tgz
+
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
+_.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
+# dotenv environment variable files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# a release under way; the last part to land deletes it (wiz dev ship)
+RELEASE
+
+# IntelliJ based IDEs
+.idea
+
+# Finder (MacOS) folder config
+.DS_Store
+
+# agent scratch notes (splates worktrees)
+ARBOR.md
+SPLATES.md
+
+# snapshots and screenshots an agent's browser leaves behind
+.playwright-mcp
+.arbor-shots
+.splates-shots
+
+# the splates server page, compiled by splates/packages/web/build.ts
+
 node_modules
 packages/site/dist
 .zed
@@ -15,4 +64,4 @@ RELEASE
 packages/integration/__artifacts__/
 
 # Optional complete-score audit output
-benchmarks/complete-scores/output/
+packages/benchmarks/output/

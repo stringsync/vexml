@@ -1,5 +1,5 @@
 import type { Note as MNote } from '@stringsync/mdom';
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import type { Decorations } from './decoration';
 import { Element, type Highlightable, type Playable } from './element';
 import type { NoteGlyph } from './geometry-collector';

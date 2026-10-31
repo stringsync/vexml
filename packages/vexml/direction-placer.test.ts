@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Measure } from '@stringsync/mdom';
+import { Rect } from 'core/geometry';
 import {
 	Element,
 	type RenderContext,
@@ -8,7 +9,6 @@ import {
 	TabNote,
 	TickContext,
 } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
 import {
 	DIRECTION_LINE_HOOK,
@@ -427,6 +427,7 @@ describe('DirectionPlacer', () => {
 		expect(texts[0]?.x).toBe(200);
 	});
 
+	// vet-ignore simple-test-setup: each case builds its placer from the mode under test and stubs a text measurement canvas that no sibling uses
 	it.each([
 		['follow', 'top', 43],
 		['strict', 'top', 43],
@@ -463,36 +464,36 @@ describe('DirectionPlacer', () => {
 		expect(texts.map(({ y }) => y)).toEqual([expected]);
 	});
 
-	it.each([
-		undefined,
-		'follow',
-	] as const)('keeps automatic valign under %s without default-y', (mode) => {
-		const { placer, texts } = makePlacer({}, { documentPositions: mode });
-		const task = placedWords({ y: mode ? null : 60, dx: 0, dy: 0 }, null, {
-			...PLAIN,
-			valign: 'top',
-		});
-		placer.placeColumn(task);
-		expect(texts.map(({ y }) => y)).toEqual([100 - WORDS_Y_OFFSET]);
-	});
+	it.each([undefined, 'follow'] as const)(
+		'keeps automatic valign under %s without default-y',
+		(mode) => {
+			const { placer, texts } = makePlacer({}, { documentPositions: mode });
+			const task = placedWords({ y: mode ? null : 60, dx: 0, dy: 0 }, null, {
+				...PLAIN,
+				valign: 'top',
+			});
+			placer.placeColumn(task);
+			expect(texts.map(({ y }) => y)).toEqual([100 - WORDS_Y_OFFSET]);
+		},
+	);
 
-	it.each([
-		'follow',
-		'strict',
-	] as const)('places default-x from the measure start in %s', (mode) => {
-		const { placer, texts } = makePlacer({}, { documentPositions: mode });
-		placer.placeColumn(placedWords({ x: 85, y: 30, dx: 5, dy: 0 }));
-		expect(texts[0]?.x).toBe(130);
-	});
+	it.each(['follow', 'strict'] as const)(
+		'places default-x from the measure start in %s',
+		(mode) => {
+			const { placer, texts } = makePlacer({}, { documentPositions: mode });
+			placer.placeColumn(placedWords({ x: 85, y: 30, dx: 5, dy: 0 }));
+			expect(texts[0]?.x).toBe(130);
+		},
+	);
 
-	it.each([
-		'follow',
-		'strict',
-	] as const)('keeps a zero default-x at the barline in %s', (mode) => {
-		const { placer, texts } = makePlacer({}, { documentPositions: mode });
-		placer.placeColumn(placedWords({ x: 0, y: 30, dx: 0, dy: 0 }));
-		expect(texts[0]?.x).toBe(40);
-	});
+	it.each(['follow', 'strict'] as const)(
+		'keeps a zero default-x at the barline in %s',
+		(mode) => {
+			const { placer, texts } = makePlacer({}, { documentPositions: mode });
+			placer.placeColumn(placedWords({ x: 0, y: 30, dx: 0, dy: 0 }));
+			expect(texts[0]?.x).toBe(40);
+		},
+	);
 
 	it('lifts a followed position clear of a note, but keeps a strict one', () => {
 		const follow = makePlacer({}, { documentPositions: 'follow' });
@@ -699,6 +700,7 @@ describe('DirectionPlacer', () => {
 		expect(pageBottoms).toEqual([80 + DIRECTION_LINE_HOOK]);
 	});
 
+	// vet-ignore simple-test-setup: the placer, anchor stave and blocking note are specific to this below-stave scenario
 	it('drops a below-stave dashed line clear of words pushed onto its row', () => {
 		const { placer, segments, resolver, drops, pageBottoms } = makePlacer();
 		const anchorStave = stave();

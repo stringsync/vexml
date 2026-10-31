@@ -1,5 +1,5 @@
 import type { MDocument } from '@stringsync/mdom';
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import type { Config } from './config';
 import { DefaultDecorations } from './default-decorations';
 import type { Drawing } from './drawing';
@@ -57,7 +57,7 @@ export interface RenderStage
 export class ScoreRenderer {
 	constructor(
 		private readonly config: Config,
-		// scry-ignore classes-over-function-exports: RenderStage is already the interface Stage implements; score-renderer.test.ts injects its FakeStage through it.
+		// vet-ignore classes-over-function-exports: RenderStage is already the interface Stage implements; score-renderer.test.ts injects its FakeStage through it.
 		private readonly stage: RenderStage,
 		private readonly fontLoader: FontLoader,
 		private readonly parser: ScoreParser,
@@ -237,9 +237,7 @@ export class ScoreRenderer {
 			sequence,
 			this.stage.scroller,
 			gaps,
-			pages,
-			snapshots,
-			drawing,
+			{ pages, snapshots, drawing },
 		);
 	}
 }

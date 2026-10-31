@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { CollisionResolver } from './collision-resolver';
 
 function detector(): CollisionResolver {

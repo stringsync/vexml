@@ -1,7 +1,7 @@
 /* Re-exported so a caller can name what sync()/follow()/observe*() hand back, and the
  * boxes every element reports, without depending on webappwiz directly. */
-export type { Resource } from 'webappwiz/disposable';
-export { Rect } from 'webappwiz/geometry';
+export type { Resource } from 'core/disposable';
+export { Rect } from 'core/geometry';
 export { Barline } from './barline';
 export { BRAVURA_COMMON_RANGE, BRAVURA_REST_RANGE } from './bravura-url';
 export { ChordDiagram } from './chord-diagram';

@@ -1,5 +1,5 @@
-import type { Logger } from 'webappwiz/log';
-import type { Fs } from 'webappwiz/system';
+import type { Logger } from 'core/log';
+import type { Fs } from 'core/system';
 import { CoverageTable } from './coverage-table';
 import { XsdSchema } from './xsd-schema';
 

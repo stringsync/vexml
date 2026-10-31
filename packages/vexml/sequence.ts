@@ -1,5 +1,5 @@
 import type { Note as MNote } from '@stringsync/mdom';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { BAR_WIDTH } from './constants';
 import type { Note } from './note';
 import type { TempoMap, TempoSegment } from './tempo-map';

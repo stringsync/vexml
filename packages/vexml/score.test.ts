@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { LOUPE_OPTIONS } from './constants';
 import { DefaultDecorations } from './default-decorations';
 import { DynamicGlyphs } from './dynamic-glyphs';
@@ -54,9 +54,7 @@ describe('Score', () => {
 			EMPTY_SEQUENCE,
 			host.scroller,
 			[],
-			[],
-			null,
-			drawing,
+			{ drawing },
 		);
 		const drawn: number[][] = [];
 		let completes = 0;

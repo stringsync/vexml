@@ -1,5 +1,7 @@
+// vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
 import type { DocumentLayoutMode, SystemOverflow } from '@stringsync/vexml';
-import { useDisposerEffect, useReactive, useResource } from '@webappwiz/react';
+import completeScores from '@vexml/benchmarks/manifest.json';
+import { useDisposerEffect, useReactive, useResource } from 'core/react';
 import {
 	ChevronRightIcon,
 	Rows3Icon,
@@ -55,7 +57,6 @@ import {
 import { INSTRUMENTS } from '@/lib/instruments';
 import { ScoreFit } from '@/lib/score-fit';
 import { SiteModel } from '@/lib/site-model';
-import completeScores from '../../benchmarks/complete-scores/manifest.json';
 
 // Lazy imports keep complete scores out of the initial page download, and the
 // separate corpus directory keeps them out of integration test discovery.
@@ -70,12 +71,11 @@ for (const [path, load] of Object.entries(
 		load;
 }
 const completeScoreLoaders = import.meta.glob<string>(
-	'../../benchmarks/complete-scores/scores/*.musicxml',
+	'../benchmarks/scores/*.musicxml',
 	{ query: '?raw', import: 'default' },
 );
 for (const entry of completeScores) {
-	const load =
-		completeScoreLoaders[`../../benchmarks/complete-scores/${entry.file}`];
+	const load = completeScoreLoaders[`../benchmarks/${entry.file}`];
 	if (load) {
 		loaders[`Complete score: ${entry.title}`] = load;
 	}

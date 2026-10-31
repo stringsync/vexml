@@ -1,5 +1,0 @@
-.github
-.vscode
-node_modules
-
-packages/integration/__artifacts__

@@ -30,7 +30,7 @@ describe('paint', () => {
 			'score_amazing_grace.musicxml',
 			{},
 			paintOnly,
-			{ config: CONFIG, snapshot: null },
+			{ arg: { config: CONFIG, snapshot: null } },
 		);
 		expect(result.tiles).toBeGreaterThan(0);
 		expect(image).toMatchScreenshot('score_amazing_grace.png');
@@ -46,7 +46,7 @@ describe('paint', () => {
 			'score_amazing_grace.musicxml',
 			{},
 			paintOnly,
-			{ config: CONFIG, snapshot },
+			{ arg: { config: CONFIG, snapshot } },
 		);
 		expect(image).toMatchScreenshot('headless_amazing_grace.png');
 	});
@@ -56,7 +56,7 @@ describe('paint', () => {
 			'score_schubert_gute_nacht.musicxml',
 			{},
 			paintThenRender,
-			{ config: CONFIG, renderConfig: CONFIG },
+			{ arg: { config: CONFIG, renderConfig: CONFIG } },
 		);
 		expect(result.painted).toBeGreaterThan(0);
 		expect(result.keptWhileLoading).toBe(true);
@@ -74,12 +74,14 @@ describe('paint', () => {
 			{},
 			paintThenRender,
 			{
-				config: CONFIG,
-				renderConfig: {
-					...CONFIG,
-					fonts: {
-						notation: { family: 'Bravura', color: '#1d4ed8' },
-						text: { family: 'Source Sans 3', color: '#c2410c' },
+				arg: {
+					config: CONFIG,
+					renderConfig: {
+						...CONFIG,
+						fonts: {
+							notation: { family: 'Bravura', color: '#1d4ed8' },
+							text: { family: 'Source Sans 3', color: '#c2410c' },
+						},
 					},
 				},
 			},
@@ -95,7 +97,7 @@ describe('paint', () => {
 			'score_amazing_grace.musicxml',
 			{},
 			paintMismatched,
-			CONFIG,
+			{ arg: CONFIG },
 		);
 		expect(result).toEqual({ reason: 'version', untouched: true });
 	});
@@ -105,7 +107,7 @@ describe('paint', () => {
 			'score_amazing_grace.musicxml',
 			{},
 			paintDisposed,
-			{ ...CONFIG, maxHeight: 300, backgroundColor: '#fce4ec' },
+			{ arg: { ...CONFIG, maxHeight: 300, backgroundColor: '#fce4ec' } },
 		);
 		expect(result).toEqual({ painted: true, restored: true, empty: true });
 	});

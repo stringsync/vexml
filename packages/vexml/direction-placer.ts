@@ -1,4 +1,6 @@
+// vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
 import type { Harmony, Measure } from '@stringsync/mdom';
+import { Rect } from 'core/geometry';
 import {
 	Element,
 	type RenderContext,
@@ -8,7 +10,6 @@ import {
 	TabNote,
 	TimeSignature,
 } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import { AccordionRegistrationGlyph } from './accordion-registration-glyph';
 import { Appearance } from './appearance';
 import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
@@ -118,6 +119,7 @@ export class DirectionPlacer {
 	// state, and nothing about a render varies it.
 	private readonly dynamics = new DynamicGlyphs();
 
+	// vet-ignore named-options-last: the six collaborators are required dependencies, kept positional; the optional settings already trail as one named opts object.
 	constructor(
 		private readonly context: RenderContext,
 		private readonly reader: ScoreReader,
@@ -726,10 +728,10 @@ export class DirectionPlacer {
 		baseline: number,
 	): { rect: Rect; markWidth: number } {
 		const tempo = task.tempo;
-		//  is SMuFL metNoteQuarterUp; vexflow's Glyphs enum isn't re-exported.
-		const glyph = new Element('StaveTempo.glyph').setText('');
-		//  is metAugmentationDot, the dot StaveTempo trails a dotted beat unit with.
-		const dot = new Element('StaveTempo.glyph').setText('');
+		// \uECA5 is SMuFL metNoteQuarterUp; vexflow's Glyphs enum isn't re-exported.
+		const glyph = new Element('StaveTempo.glyph').setText('\uECA5');
+		// \uECB7 is metAugmentationDot, the dot StaveTempo trails a dotted beat unit with.
+		const dot = new Element('StaveTempo.glyph').setText('\uECB7');
 		const text = new Element('StaveTempo');
 		const ink = glyph.getTextMetrics();
 		let w = 0;
@@ -1711,7 +1713,9 @@ export type FiguredBassTask = {
  * sits on a hidden staff. */
 export type DirectionLineTask = {
 	span: DirectionLineSpan;
+	// vet-ignore noop-objects-over-null: a spanner end can lack a note; absence is score data, and a stand-in VexFlow note would anchor a wedge to nothing
 	start: StaveNote | undefined;
+	// vet-ignore noop-objects-over-null: a spanner end can lack a note; absence is score data, and a stand-in VexFlow note would anchor a wedge to nothing
 	stop: StaveNote | undefined;
 };
 
@@ -1725,6 +1729,7 @@ export interface DirectionColumn {
 	systemIndex: number;
 	/** The system's top stave at this column, where measure-level marks print; undefined
 	 * until a stave exists. */
+	// vet-ignore noop-objects-over-null: a part can lack a stave in a system; absence is layout data, not a missing collaborator
 	topStave: Stave | undefined;
 	/** The first part's measure: a rehearsal or navigation mark belongs to the measure
 	 * rather than to one part (every part carries the same one), so it's read from the

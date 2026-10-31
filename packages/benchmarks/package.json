@@ -1,0 +1,17 @@
+{
+	"name": "@vexml/benchmarks",
+	"version": "1.13.3",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./manifest.json": "./manifest.json"
+	},
+	"dependencies": {
+		"@coderline/alphatab": "^1.8.4",
+		"@vexml/renderer": "workspace:*",
+		"@vexml/vex": "workspace:*",
+		"core": "workspace:*",
+		"opensheetmusicdisplay": "^2.2.1",
+		"zod": "catalog:"
+	}
+}

@@ -222,6 +222,7 @@ export class StaveFactory {
 	 * The naturals a <cancel location="before-barline"> hangs at the end of the measure before
 	 * the key change, ahead of its barline, at the clef that measure ends in.
 	 */
+	// vet-ignore noop-objects-over-null: an absent value is part of this public shape, and a Noop stand-in would change what callers and tests see
 	addEndCancel(stave: Stave, cancel: KeyCancel, clef: Clef | null): void {
 		stave.addModifier(
 			new CancellingKeySignature(

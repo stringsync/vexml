@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { MDocument, type Part } from '@stringsync/mdom';
 import { StavePlan, type StaveVisibility } from './stave-plan';
 
@@ -10,12 +10,17 @@ function required<T>(value: T | null | undefined, name: string): T {
 }
 
 describe('StavePlan', () => {
+	let staves: StavePlan;
+
+	beforeEach(() => {
+		staves = plan();
+		staves.isTab = () => false;
+	});
+
 	it('reads implicit single-staff counts once across cross-part pairing queries', () => {
 		const document = score([null, null]);
 		const parts = document.score.parts;
 		const reads = parts.map(countStaveReads);
-		const staves = plan();
-		staves.isTab = () => false;
 
 		expect(staves.partsPairTabWithNotation(parts)).toBe(false);
 		expect(staves.partsPairTabWithNotation(parts)).toBe(false);
@@ -27,8 +32,6 @@ describe('StavePlan', () => {
 		const document = score([2, 2]);
 		const parts = document.score.parts;
 		const reads = parts.map(countStaveReads);
-		const staves = plan();
-		staves.isTab = () => false;
 
 		expect(staves.partsPairTabWithNotation(parts)).toBe(false);
 		expect(staves.partsPairTabWithNotation(parts)).toBe(false);

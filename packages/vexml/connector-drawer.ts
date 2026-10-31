@@ -40,7 +40,9 @@ export interface ConnectorColumn {
 	 * when there is no such sign. */
 	begRepeatX: number | null;
 	/** The system's top and bottom staves at this column; undefined until a stave exists. */
+	// vet-ignore noop-objects-over-null: a system can lack a stave; absence is layout data, and a stand-in VexFlow Stave would draw a connector to nothing
 	systemTop: Stave | undefined;
+	// vet-ignore noop-objects-over-null: a system can lack a stave; absence is layout data, and a stand-in VexFlow Stave would draw a connector to nothing
 	systemBottom: Stave | undefined;
 	/** This column's top/bottom stave per part index, so a <part-group> connector can span
 	 * from one part's top stave to another's bottom. Sparse: a part with no measure here

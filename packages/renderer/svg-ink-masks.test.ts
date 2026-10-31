@@ -15,13 +15,12 @@ describe('SvgInkMasks', () => {
 		{ scale: 2, rotation: 0 },
 		{ scale: 1, rotation: 0.5 },
 		{ scale: 2, rotation: 0.5 },
-	])('tiles exclusive SVG masks at DPR $scale with rotation $rotation', async ({
-		scale,
-		rotation,
-	}) => {
-		const page = await browser.newPage({ deviceScaleFactor: scale });
-		try {
-			await page.setContent(`<body style="margin:0"><style>
+	])(
+		'tiles exclusive SVG masks at DPR $scale with rotation $rotation',
+		async ({ scale, rotation }) => {
+			const page = await browser.newPage({ deviceScaleFactor: scale });
+			try {
+				await page.setContent(`<body style="margin:0"><style>
 svg .paint { fill: black; stroke: black; stroke-width: 3; }
 .ink-parent { opacity: .8; }
 </style><div id="screenshot" style="padding:7.25px;display:inline-block"><div id="score">
@@ -40,35 +39,37 @@ svg .paint { fill: black; stroke: black; stroke-width: 3; }
 <g class="ink-start"><rect x="10.25" y="10.25" width="20" height="20"/></g>
 <g class="ink-end"><rect x="10.25" y="150000.25" width="20" height="20"/></g>
 </svg></div></div></body>`);
-			await page.addScriptTag({
-				content: `globalThis.Masks = ${SvgInkMasks.toString()}`,
-			});
-			const result = await page.evaluate(compareRasterization);
-			expect(result.largest).toBeLessThanOrEqual(1024);
-			expect(
-				maskDifferences(
-					result.masks.slice(0, result.reference.length),
-					result.reference,
-					rotation,
-				),
-			).toEqual([]);
-			expect(result.masks.map((mask) => mask.kind)).toEqual([
-				'parent',
-				'child',
-				'percent',
-				'hidden',
-				'edge',
-				'start',
-				'end',
-			]);
-			expect(result.masks[1]?.ancestors).toContain(result.masks[0]?.id);
-			expect(result.masks[3]?.runs).toEqual([]);
-			expect(result.masks.at(-1)?.y).toBeGreaterThan(150000 * scale);
-			expect(result.masks.at(-1)?.runs.length).toBeGreaterThan(0);
-		} finally {
-			await page.close();
-		}
-	}, 30000);
+				await page.addScriptTag({
+					content: `globalThis.Masks = ${SvgInkMasks.toString()}`,
+				});
+				const result = await page.evaluate(compareRasterization);
+				expect(result.largest).toBeLessThanOrEqual(1024);
+				expect(
+					maskDifferences(
+						result.masks.slice(0, result.reference.length),
+						result.reference,
+						rotation,
+					),
+				).toEqual([]);
+				expect(result.masks.map((mask) => mask.kind)).toEqual([
+					'parent',
+					'child',
+					'percent',
+					'hidden',
+					'edge',
+					'start',
+					'end',
+				]);
+				expect(result.masks[1]?.ancestors).toContain(result.masks[0]?.id);
+				expect(result.masks[3]?.runs).toEqual([]);
+				expect(result.masks.at(-1)?.y).toBeGreaterThan(150000 * scale);
+				expect(result.masks.at(-1)?.runs.length).toBeGreaterThan(0);
+			} finally {
+				await page.close();
+			}
+		},
+		30000,
+	);
 });
 
 function maskDifferences(

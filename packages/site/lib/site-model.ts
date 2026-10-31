@@ -1,8 +1,8 @@
 import { GuitarProParser, MDOMParser, type MDocument } from '@stringsync/mdom';
 import { type ConfigInput, EditingSession, render } from '@stringsync/vexml';
-import { Disposer, type Resource } from 'webappwiz/disposable';
-import { Dispatcher, type Eventful } from 'webappwiz/events';
-import { SystemClock } from 'webappwiz/time';
+import { Disposer, type Resource } from 'core/disposable';
+import { Dispatcher, type Eventful } from 'core/events';
+import { SystemClock } from 'core/time';
 import {
 	type DocumentFormat,
 	DocumentSource,

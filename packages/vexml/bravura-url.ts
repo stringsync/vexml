@@ -20,14 +20,12 @@ export const BRAVURA_COMMON_URL = new URL(
 	import.meta.url,
 ).href;
 
-/** The SMuFL glyphs most scores draw, as a CSS unicode-range: brackets, repeats, clefs,
- * time signature digits, noteheads, the augmentation dot, flags, accidentals,
- * articulations, fermatas, rests, octave lines, dynamics, chord symbols, tuplet digits and
- * metronome notes, plus Latin-1 so typed text never reaches the rest of the face.
- * `assets/fonts/BravuraCommon.woff2` is this range cut from `Bravura.woff2` with fontTools:
- * `pyftsubset Bravura.woff2 --unicodes="<range>" --flavor=woff2 --notdef-outline
- * --output-file=BravuraCommon.woff2`. Change both together. */
+/** The CSS unicode-range of the SMuFL glyphs most scores draw, plus Latin-1 so typed text
+ * never reaches the rest of the face. */
 export const BRAVURA_COMMON_RANGE =
+	// `assets/fonts/BravuraCommon.woff2` is this range cut from `Bravura.woff2` with fontTools:
+	// `pyftsubset Bravura.woff2 --unicodes="<range>" --flavor=woff2 --notdef-outline
+	// --output-file=BravuraCommon.woff2`. Change both together.
 	'U+0000-00FF, U+E000-E00F, U+E040-E06F, U+E080-E08F, U+E0A0-E0DF, U+E1E7, U+E240-E26F, U+E4A0-E4FF, U+E510-E54F, U+E870-E88F, U+ECA0-ECBF';
 
 /** Every codepoint BRAVURA_COMMON_RANGE leaves out, the range of the whole face behind the

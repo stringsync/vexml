@@ -1,4 +1,4 @@
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 
 /** A measure as an engine laid it out: its MusicXML number and where it sits in the PNG. */
 export interface PlacedMeasure {

@@ -31,8 +31,27 @@ function notesFor(direction: number, rest = false): StaveNote[] {
 }
 
 describe('SpacedBeam', () => {
+	let list: PaintList;
+	let ctx: CanvasContext;
+	let upNotes: StaveNote[];
+	let downNotes: StaveNote[];
+	let upBeam: SpacedBeam;
+	let downBeam: SpacedBeam;
+
 	beforeEach(() => {
 		new ProbeTextCanvas(new FakePaintProbe()).install();
+		list = new PaintList();
+		ctx = new CanvasContext(
+			new PaintContext(
+				list,
+				new FakePaintProbe(),
+				null,
+			) as unknown as CanvasRenderingContext2D,
+		);
+		upNotes = notesFor(Stem.UP, true);
+		downNotes = notesFor(Stem.DOWN, true);
+		upBeam = new SpacedBeam(upNotes, false).setDistance(15);
+		downBeam = new SpacedBeam(downNotes, false).setDistance(15);
 	});
 
 	it('extends an opposing stem through all three widely spaced levels (1)', () => {
@@ -47,16 +66,8 @@ describe('SpacedBeam', () => {
 	});
 
 	it('draws a rest stemlet through the full beam stack (1)', () => {
-		const notes = notesFor(Stem.UP, true);
-		const list = new PaintList();
-		const ctx = new CanvasContext(
-			new PaintContext(
-				list,
-				new FakePaintProbe(),
-				null,
-			) as unknown as CanvasRenderingContext2D,
-		);
-		const beam = new SpacedBeam(notes, false).setDistance(15);
+		const notes = upNotes;
+		const beam = upBeam;
 		beam.renderOptions.showStemlets = true;
 		beam.postFormat();
 		notes[1]?.getStem()?.setContext(ctx).draw();
@@ -69,8 +80,8 @@ describe('SpacedBeam', () => {
 	});
 
 	it('keeps a standard stem below the innermost flat beam (1)', () => {
-		const notes = notesFor(Stem.UP, true);
-		const beam = new SpacedBeam(notes, false).setDistance(15);
+		const notes = upNotes;
+		const beam = upBeam;
 		beam.renderOptions.flatBeams = true;
 		beam.renderOptions.minFlatBeamOffset = Stem.HEIGHT - beam.levelDistance();
 		beam.postFormat();
@@ -92,16 +103,8 @@ describe('SpacedBeam', () => {
 	});
 
 	it('draws a rest stemlet through the full beam stack (-1)', () => {
-		const notes = notesFor(Stem.DOWN, true);
-		const list = new PaintList();
-		const ctx = new CanvasContext(
-			new PaintContext(
-				list,
-				new FakePaintProbe(),
-				null,
-			) as unknown as CanvasRenderingContext2D,
-		);
-		const beam = new SpacedBeam(notes, false).setDistance(15);
+		const notes = downNotes;
+		const beam = downBeam;
 		beam.renderOptions.showStemlets = true;
 		beam.postFormat();
 		notes[1]?.getStem()?.setContext(ctx).draw();
@@ -114,8 +117,8 @@ describe('SpacedBeam', () => {
 	});
 
 	it('keeps a standard stem below the innermost flat beam (-1)', () => {
-		const notes = notesFor(Stem.DOWN, true);
-		const beam = new SpacedBeam(notes, false).setDistance(15);
+		const notes = downNotes;
+		const beam = downBeam;
 		beam.renderOptions.flatBeams = true;
 		beam.renderOptions.minFlatBeamOffset = Stem.HEIGHT - beam.levelDistance();
 		beam.postFormat();

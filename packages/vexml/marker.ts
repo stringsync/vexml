@@ -1,4 +1,4 @@
-import type { Resource } from 'webappwiz/disposable';
+import type { Resource } from 'core/disposable';
 
 /** Where a marker's box sits, in score px. A `Rect` is one; so is any plain `{ x, y, w, h }`. */
 export interface MarkerRect {

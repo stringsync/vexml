@@ -1,4 +1,4 @@
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import type { PaintOp } from './paint-op';
 
 /* Where a grid's recorded ops sit relative to the surface: an engraving is recorded with headroom
@@ -20,7 +20,7 @@ export class TileGrid {
 	private readonly lists: Filed[][];
 	private seq = 0;
 
-	// scry-ignore named-options-last: width, height, tileSize and origin are the grid's geometry,
+	// vet-ignore named-options-last: width, height, tileSize and origin are the grid's geometry,
 	// values the caller measures, not choices about how the grid behaves.
 	constructor(
 		readonly width: number,

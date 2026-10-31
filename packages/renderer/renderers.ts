@@ -1,4 +1,4 @@
-import type { AsyncResource } from 'webappwiz/disposable';
+import type { AsyncResource } from 'core/disposable';
 import {
 	type AlphatabContext,
 	type AlphatabInput,

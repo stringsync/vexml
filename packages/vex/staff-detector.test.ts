@@ -1,8 +1,16 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { InkMap } from './ink-map';
 import { StaffDetector } from './staff-detector';
 
 describe('StaffDetector', () => {
+	let wideStaff: Stroke[];
+	let spacedStaff: Stroke[];
+
+	beforeEach(() => {
+		wideStaff = staff(2, 0, 100, 4);
+		spacedStaff = staff(10, 2, 98, 10);
+	});
+
 	it('finds five evenly spaced lines as one staff', () => {
 		const ink = InkMap.fromRows(canvas(40, 20, staff(2, 0, 40, 4)));
 		const groups = new StaffDetector(ink).groups();
@@ -53,13 +61,13 @@ describe('StaffDetector', () => {
 	});
 
 	it('ignores a long run well short of the staff width', () => {
-		const rows = canvas(100, 30, [...staff(2, 0, 100, 4), ...line(26, 10, 40)]);
+		const rows = canvas(100, 30, [...wideStaff, ...line(26, 10, 40)]);
 		const lines = new StaffDetector(InkMap.fromRows(rows)).lines();
 		expect(lines.map((l) => l.y)).toEqual([2, 6, 10, 14, 18]);
 	});
 
 	it('keeps a staff line that fret numbers break into pieces', () => {
-		const rows = canvas(100, 30, staff(2, 0, 100, 4)).map((row, y) =>
+		const rows = canvas(100, 30, wideStaff).map((row, y) =>
 			y === 10
 				? `${row.slice(0, 30)}...${row.slice(33, 60)}...${row.slice(63)}`
 				: row,
@@ -72,32 +80,33 @@ describe('StaffDetector', () => {
 		const beams = [21, 22, 23, 24, 25, 26, 27, 28].map(
 			(y) => [y, 0, 25] as Stroke,
 		);
-		const rows = canvas(100, 30, [...staff(2, 0, 100, 4), ...beams]);
+		const rows = canvas(100, 30, [...wideStaff, ...beams]);
 		const lines = new StaffDetector(InkMap.fromRows(rows)).lines();
 		expect(lines.map((l) => l.y)).toEqual([2, 6, 10, 14, 18]);
 	});
 
 	it('drops a line thicker than a staff line, which is a beam', () => {
 		const beam = [22, 23, 24, 25, 26].map((y) => [y, 0, 100] as Stroke);
-		const rows = canvas(100, 30, [...staff(2, 0, 100, 4), ...beam]);
+		const rows = canvas(100, 30, [...wideStaff, ...beam]);
 		const lines = new StaffDetector(InkMap.fromRows(rows)).lines();
 		expect(lines.map((l) => l.y)).toEqual([2, 6, 10, 14, 18]);
 	});
 
-	it.each([
-		0, 1, 2, 3, 4,
-	])('keeps staff line %i when a beam touches it', (index) => {
-		const top = 10 + index * 10;
-		const beam = [top - 1, top + 1, top + 2, top + 3, top + 4].map(
-			(y, i) => [y, 5, 62 + Number(i >= 3)] as Stroke,
-		);
-		const rows = canvas(100, 70, [...staff(10, 2, 98, 10), ...beam]);
-		expect(
-			new StaffDetector(InkMap.fromRows(rows))
-				.groups()
-				.map((g) => g.lines.map((l) => l.y)),
-		).toEqual([[10, 20, 30, 40, 50]]);
-	});
+	it.each([0, 1, 2, 3, 4])(
+		'keeps staff line %i when a beam touches it',
+		(index) => {
+			const top = 10 + index * 10;
+			const beam = [top - 1, top + 1, top + 2, top + 3, top + 4].map(
+				(y, i) => [y, 5, 62 + Number(i >= 3)] as Stroke,
+			);
+			const rows = canvas(100, 70, [...spacedStaff, ...beam]);
+			expect(
+				new StaffDetector(InkMap.fromRows(rows))
+					.groups()
+					.map((g) => g.lines.map((l) => l.y)),
+			).toEqual([[10, 20, 30, 40, 50]]);
+		},
+	);
 
 	it('ignores a short run even when it is the only one', () => {
 		const rows = canvas(100, 10, line(5, 10, 20));

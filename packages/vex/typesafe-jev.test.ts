@@ -1,6 +1,6 @@
 import { expect, it } from 'bun:test';
-import { Credentials } from 'webappwiz/creds';
-import { FakeSecretStore } from 'webappwiz/creds/testing';
+import { Credentials } from 'core/creds';
+import { FakeSecretStore } from 'core/creds/testing';
 import { TypesafeJev } from './typesafe-jev';
 
 it('allows semantic checks to be skipped when the credential source has no key', async () => {

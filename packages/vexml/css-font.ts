@@ -11,7 +11,6 @@ export class CssFont {
 		// The size as written (`30pt`), and in px.
 		readonly size: string,
 		readonly sizePx: number,
-		// The families in order, unquoted.
 		readonly families: readonly string[],
 	) {}
 

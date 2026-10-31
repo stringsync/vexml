@@ -48,7 +48,7 @@ describe('stage', () => {
 				return { before, after };
 			},
 			// The fn can't fetch (no server); the fixture rides in as its arg.
-			await testing.fixture('structure_single_stave.musicxml'),
+			{ arg: await testing.fixture('structure_single_stave.musicxml') },
 		);
 
 		expect(result.before.overflowY).toBe('auto');
@@ -100,7 +100,7 @@ describe('stage', () => {
 				scroller.remove();
 				return result;
 			},
-			await testing.fixture('score_mozart_an_chloe.musicxml'),
+			{ arg: await testing.fixture('score_mozart_an_chloe.musicxml') },
 		);
 
 		expect(result.hiddenAtEnd).toBe(true);
@@ -326,7 +326,7 @@ describe('stage', () => {
 					noteStep: noteTime?.stepIndex ?? null,
 				};
 			},
-			xml,
+			{ arg: xml },
 		);
 
 		// The box shrank to the cell, about half size, and the tiles with it.

@@ -43,7 +43,7 @@ describe('createSnapshot', () => {
 			'score_amazing_grace.musicxml',
 			{},
 			colorHeadless,
-			snapshot,
+			{ arg: snapshot },
 		);
 		expect(result).toBeGreaterThan(0);
 		expect(image).toMatchScreenshot('headless_colored_amazing_grace.png');
@@ -78,7 +78,9 @@ async function headless(file: string, config: ConfigInput = {}) {
 		createCanvas(1, 1),
 		{ config, fonts: FONTS, fontRegistry: GlobalFonts },
 	);
-	return testing.eval(file, config, replayHeadless, { snapshot, config });
+	return testing.eval(file, config, replayHeadless, {
+		arg: { snapshot, config },
+	});
 }
 
 // Runs in the page, so it's self-contained: eval serializes it, and nothing outside it exists there.

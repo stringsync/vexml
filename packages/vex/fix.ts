@@ -1,5 +1,14 @@
-import type { Logger } from 'webappwiz/log';
-import type { Ps } from 'webappwiz/system';
+import type { Logger } from 'core/log';
+import type { Ps } from 'core/system';
+
+const PACKAGES = [
+	'benchmarks',
+	'integration',
+	'renderer',
+	'site',
+	'vex',
+	'vexml',
+];
 
 export interface FixOptions {
 	/* Report what would change instead of writing it. */
@@ -25,7 +34,16 @@ export async function fix(opts: FixOptions) {
 		...(opts.check ? [] : ['--write', '--unsafe']),
 		'.',
 	]);
-	await step('tsc', ['bunx', 'tsc', '--noEmit']);
+	// One program per package, each with its own lib and types.
+	for (const pkg of PACKAGES) {
+		await step(`tsc ${pkg}`, [
+			'bunx',
+			'tsc',
+			'--noEmit',
+			'-p',
+			`packages/${pkg}/tsconfig.json`,
+		]);
+	}
 	opts.log.info('tsc: Compilation successful.');
 	await step('xmllint', ['./packages/vex/xmllint/validate.sh']);
 }

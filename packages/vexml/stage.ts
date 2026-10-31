@@ -1,6 +1,7 @@
-import { Disposer } from 'webappwiz/disposable';
-import { Dispatcher } from 'webappwiz/events';
-import { Rect } from 'webappwiz/geometry';
+// vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
+import { Disposer } from 'core/disposable';
+import { Dispatcher } from 'core/events';
+import { Rect } from 'core/geometry';
 import { Affine } from './affine';
 import { CanvasPaintProbe } from './canvas-paint-probe';
 import { FOLD_SHADOW_WIDTH, TILE_BUDGET, TILE_SIZE } from './constants';

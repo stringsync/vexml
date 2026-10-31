@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { NodeFs, NodePs } from 'webappwiz/system';
+import { NodeFs, NodePs } from 'core/system';
 import { vex } from './vex';
 
 const ps = new NodePs();

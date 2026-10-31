@@ -1,4 +1,6 @@
+// vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
 import type { Chord, Note } from '@stringsync/mdom';
+import { Rect } from 'core/geometry';
 import {
 	Font,
 	type PedalMarking,
@@ -9,7 +11,6 @@ import {
 	type TabNote,
 	type Tuplet,
 } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import type { Appearance, GlyphType } from './appearance';
 import { CollisionResolver } from './collision-resolver';
 import {

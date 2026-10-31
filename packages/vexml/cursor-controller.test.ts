@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { CursorController } from './cursor-controller';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import type { CursorChangeEvent } from './events';
@@ -88,7 +88,7 @@ describe('CursorController', () => {
 	it('change reports note deltas: a retrigger is stop(prev) + start(next)', () => {
 		const events: CursorChangeEvent[] = [];
 		cursor.events.on('change', (e) => events.push(e));
-		cursor.next(); // 0 -> 1
+		cursor.next();
 		expect(events).toHaveLength(1);
 		const e = events[0];
 		expect(e?.index).toBe(1);
@@ -132,7 +132,7 @@ describe('CursorController', () => {
 	});
 
 	it('scrolls while following only when the bar is not fully visible', () => {
-		// scry-ignore comments-say-why-not-what: names what the bare rect means for the bar, which the numbers can't say
+		// vet-ignore comments-say-why-not-what: names what the bare rect means for the bar, which the numbers can't say
 		host.vp = new Rect(0, 0, 1000, 1000); // covers the bar
 		const unfollow = cursor.follow();
 		cursor.next();
@@ -183,11 +183,11 @@ describe('CursorController', () => {
 		host.moveViewport(new Rect(0, 0, 25, 1000));
 		expect(seen).toEqual([]);
 
-		cursor.next(); // -> x 20, still inside; no event
+		cursor.next();
 		expect(seen).toEqual([]);
-		cursor.next(); // -> x 30, scrolls off the right edge
+		cursor.next();
 		expect(seen).toEqual([false]);
-		cursor.next(); // -> x 40, still off; no repeat
+		cursor.next();
 		expect(seen).toEqual([false]);
 
 		host.moveViewport(new Rect(0, 0, 1000, 1000)); // widen: the bar is fully visible again

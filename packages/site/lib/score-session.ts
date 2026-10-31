@@ -1,3 +1,4 @@
+// vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
 import type {
 	CursorController,
 	EditingController,
@@ -10,10 +11,10 @@ import type {
 	Score,
 } from '@stringsync/vexml';
 import { Note, TabPosition } from '@stringsync/vexml';
-import { AnimationLoop, type Frame, raf } from 'webappwiz/browser';
-import { Disposer, type Resource } from 'webappwiz/disposable';
-import { Dispatcher, type Eventful, type Events } from 'webappwiz/events';
-import { Duration, SystemClock, SystemTimer } from 'webappwiz/time';
+import { AnimationLoop, type Frame, raf } from 'core/browser';
+import { Disposer, type Resource } from 'core/disposable';
+import { Dispatcher, type Eventful, type Events } from 'core/events';
+import { Duration, SystemClock, SystemTimer } from 'core/time';
 import {
 	ACTIVE_COLOR,
 	CURSOR_COLOR,

@@ -1,5 +1,5 @@
+import type { Rect } from 'core/geometry';
 import { PNG } from 'pngjs';
-import type { Rect } from 'webappwiz/geometry';
 
 /** Fits a crop within Jev's image limits, preserving aspect ratio and padding white. */
 export function prepareJevImage(bytes: Buffer, box?: Rect): Buffer {

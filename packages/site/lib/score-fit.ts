@@ -1,4 +1,4 @@
-import { Disposer, type Resource } from 'webappwiz/disposable';
+import { Disposer, type Resource } from 'core/disposable';
 
 /* What the fit reports its measurement to. RenderConfig implements it. */
 export interface HeightSink {

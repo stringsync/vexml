@@ -1,9 +1,8 @@
 import type { InkMask } from '@vexml/renderer';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import type { Finding } from './render-lint';
 
-/** Compares independently rasterized elements. Bounding boxes only choose candidates;
- * a finding requires a pixel opaque in both masks. */
+/** Finds elements that draw ink on the same pixel, given each one's raster mask. */
 export class InkCollisions {
 	private readonly masks: Array<{ source: InkMask; box: Rect; order: number }>;
 

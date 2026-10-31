@@ -5,7 +5,7 @@ import {
 	type Note as MNote,
 	type Part as MPart,
 } from '@stringsync/mdom';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { isHighlightable, isPlayable } from './element';
 import { FakeDecorations } from './fake-decorations';
 import { FakeViewport } from './fake-viewport';

@@ -1,4 +1,4 @@
-import { AsyncDisposer, type AsyncResource } from 'webappwiz/disposable';
+import { AsyncDisposer, type AsyncResource } from 'core/disposable';
 import type { Browser } from './browser';
 import type { Tab } from './tab';
 

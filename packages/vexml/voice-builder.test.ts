@@ -120,10 +120,7 @@ describe('VoiceBuilder', () => {
 			buildBeams(
 				groups: unknown[],
 				byLead: Map<Note, StaveNote>,
-				opts: {
-					defaultStem?: string;
-					notesByLead?: Map<Note, StaveNote[]>;
-				} = {},
+				opts: BuildBeamsOptions = {},
 			) {
 				order.push('beams');
 				beamCalls.push({
@@ -315,7 +312,7 @@ describe('VoiceBuilder', () => {
 		]);
 	});
 
-	// scry-ignore simple-test-setup: the translator and lyric marks are specific to this verse-row scenario; no other test shares them.
+	// vet-ignore simple-test-setup: the translator and lyric marks are specific to this verse-row scenario; no other test shares them.
 	it('stacks a later voice’s verses beneath the rows already used', () => {
 		const upper = new FakeLyricMark(1, {});
 		const low = new FakeLyricMark(0, {});
@@ -589,7 +586,7 @@ describe('VoiceBuilder', () => {
 		expect(spanners.beamCalls[0]?.stem).toBe('up');
 	});
 
-	// scry-ignore simple-test-setup: the main/next/member leads and their notes are specific to this split-chord scenario; no other test shares them.
+	// vet-ignore simple-test-setup: the main/next/member leads and their notes are specific to this split-chord scenario; no other test shares them.
 	it('orders a split chord’s halves top staff first for the beam', () => {
 		const main = lead({ measureBeat: 1 });
 		const next = lead({ measureBeat: 2 });
@@ -623,7 +620,7 @@ describe('VoiceBuilder', () => {
 		expect(mainNote.stemDirections).toEqual([Stem.DOWN]);
 	});
 
-	// scry-ignore simple-test-setup: the rest/struck/grace leads, ghost and tuning are specific to this tab scenario; no other test shares them.
+	// vet-ignore simple-test-setup: the rest/struck/grace leads, ghost and tuning are specific to this tab scenario; no other test shares them.
 	it('records struck tab notes into the shared tab registry and skips ghosts', () => {
 		const rest = lead({ isRest: true });
 		const struck = lead();
@@ -680,3 +677,8 @@ describe('VoiceBuilder', () => {
 		).toEqual([100, 100]);
 	});
 });
+
+interface BuildBeamsOptions {
+	defaultStem?: string;
+	notesByLead?: Map<Note, StaveNote[]>;
+}

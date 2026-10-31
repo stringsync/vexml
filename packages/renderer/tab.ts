@@ -1,4 +1,4 @@
-import type { AsyncResource } from 'webappwiz/disposable';
+import type { AsyncResource } from 'core/disposable';
 
 /**
  * One open tab. The page's document lives in the browser process, not this one, so the

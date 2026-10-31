@@ -4,9 +4,9 @@ import type {
 	PanoramicLayout,
 	StandardLayout,
 } from '@stringsync/vexml';
-import { Disposer, type Resource } from 'webappwiz/disposable';
-import { Dispatcher, type Eventful } from 'webappwiz/events';
-import { Debouncer, Duration, SystemTimer } from 'webappwiz/time';
+import { Disposer, type Resource } from 'core/disposable';
+import { Dispatcher, type Eventful } from 'core/events';
+import { Debouncer, Duration, SystemTimer } from 'core/time';
 import { DEBOUNCE_MS, FAST_RENDER_MS } from './constants';
 
 type RenderConfigEvents = { changed: undefined };

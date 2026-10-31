@@ -1,10 +1,10 @@
-import { Disposer, type Resource } from 'webappwiz/disposable';
+import { Disposer, type Resource } from 'core/disposable';
 import {
 	Dispatcher,
 	type Eventful,
 	type Events,
 	type Unlisten,
-} from 'webappwiz/events';
+} from 'core/events';
 import { Barline } from './barline';
 import { CompleteDrawing } from './complete-drawing';
 import { LOUPE_OPTIONS } from './constants';
@@ -27,6 +27,7 @@ import { type Loupe, type LoupeOptions, resolveLoupeOptions } from './loupe';
 import type { Marker } from './marker';
 import { Measure } from './measure';
 import { MeasureBox } from './measure-box';
+import { NoopEditingView } from './noop-editing-view';
 import { Note } from './note';
 import type { Page } from './page';
 import type { Part } from './part';
@@ -63,6 +64,15 @@ export interface GapInfo {
  * is observed from construction instead: it also resizes viewport layers, which must happen even
  * with no resize subscriber.
  */
+export interface ScoreOptions {
+	/** The pages of a paged layout, top to bottom; none when absent. */
+	pages?: readonly Page[];
+	/** Absent for a score a test built by hand, which has nothing to snapshot. */
+	snapshots?: SnapshotSource | null;
+	/** How far the engraving has come: whole when absent, unless the render is progressive. */
+	drawing?: Drawing;
+}
+
 export class Score implements Eventful<ScoreEventMap> {
 	private readonly dispatcher = new Dispatcher<ScoreEventMap>();
 	private readonly disposer = new Disposer();
@@ -116,6 +126,10 @@ export class Score implements Eventful<ScoreEventMap> {
 	private readonly cursors = new Set<CursorController>();
 	private readonly editors = new Set<EditingController>();
 
+	private readonly pages: readonly Page[];
+	private readonly snapshots: SnapshotSource | null;
+	private readonly drawing: Drawing;
+
 	constructor(
 		private readonly host: Host,
 		private readonly elements: ElementIndex,
@@ -126,12 +140,12 @@ export class Score implements Eventful<ScoreEventMap> {
 			suspendForResize(): void;
 		},
 		private readonly gaps: readonly GapInfo[],
-		private readonly pages: readonly Page[] = [],
-		// Null for a score a test built by hand, which has nothing to snapshot.
-		private readonly snapshots: SnapshotSource | null = null,
-		// How far the engraving has come: whole, unless the render is progressive.
-		private readonly drawing: Drawing = new CompleteDrawing(),
+		opts: ScoreOptions = {},
 	) {
+		this.pages = opts.pages ?? [];
+		this.snapshots = opts.snapshots ?? null;
+		const drawing = opts.drawing ?? new CompleteDrawing();
+		this.drawing = drawing;
 		// Released in reverse: editors and cursors first, the host they draw on last.
 		this.disposer.use(host);
 		this.disposer.use(this.dispatcher);
@@ -259,7 +273,7 @@ export class Score implements Eventful<ScoreEventMap> {
 		const view =
 			opts.view ??
 			(opts.selection === false
-				? null
+				? new NoopEditingView()
 				: new SelectionOverlay(
 						// Lazy: a viewer that never edits never pays for two score-sized canvases.
 						new LazyLayer(this.host, 'background'),

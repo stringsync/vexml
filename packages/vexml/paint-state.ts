@@ -1,4 +1,4 @@
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import { Affine } from './affine';
 import type { PathSegment } from './paint-op';
 

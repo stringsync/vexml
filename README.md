@@ -190,6 +190,8 @@ await score.whenComplete();
 
 ## Development
 
+Pull requests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md) for how they land.
+
 Needs [bun](https://bun.sh) and [docker](https://docs.docker.com/desktop/). The library is
 [`packages/vexml`](packages/vexml); the rest of the repo builds, tests and demos it.
 
@@ -200,6 +202,6 @@ Needs [bun](https://bun.sh) and [docker](https://docs.docker.com/desktop/). The 
 
 `./bin/vex readme` re-records this README's images and GIFs (it needs ImageMagick).
 
-The optional [complete-score audit](benchmarks/complete-scores/README.md) records
+The optional [complete-score audit](packages/benchmarks/README.md) records
 render timings and visual lint findings without adding to the main test suite.
 Its scores are available in the playground's example picker under **Complete score**.

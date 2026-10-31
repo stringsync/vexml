@@ -5,7 +5,7 @@ import type {
 	Note as MNote,
 	Part as MPart,
 } from '@stringsync/mdom';
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
 import type {
 	BarlineLocation,

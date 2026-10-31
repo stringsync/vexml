@@ -1,7 +1,7 @@
 import { isAbsolute, resolve } from 'node:path';
 import { ReadmeMedia, type ReadmeSources } from '@vexml/renderer';
-import type { Logger } from 'webappwiz/log';
-import type { Fs } from 'webappwiz/system';
+import type { Logger } from 'core/log';
+import type { Fs } from 'core/system';
 import { MeasureSlicer } from './measure-slicer';
 
 export interface ReadmeOptions {

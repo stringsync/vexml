@@ -19,6 +19,7 @@ export class EditingNavigator {
 	private readonly chordOrder = new ChordNoteOrder();
 	constructor(
 		private readonly editor: EditingSession,
+		// vet-ignore noop-objects-over-null: an absent value is part of this public shape, and a Noop stand-in would change what callers and tests see
 		private readonly layout?: EditingLayout,
 	) {}
 

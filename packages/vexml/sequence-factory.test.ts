@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { DefaultScoreParser } from './default-score-parser';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { GapInserter } from './gap-inserter';
@@ -10,7 +10,7 @@ import type { MeasureInfo, SequenceInput, SequenceNote } from './sequence';
 import { SequenceFactory } from './sequence-factory';
 
 describe('SequenceFactory', () => {
-	// scry-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
+	// vet-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
 	it('assembly: two 4/4 measures of quarters → 8 steps with correct beats/ms', () => {
 		const notes: SequenceNote[] = [
 			quarter(fakeNote('m0b0'), 0, 0, 10),
@@ -45,7 +45,7 @@ describe('SequenceFactory', () => {
 		expect(seq.getMeasureIndexAtBeats(5)).toBe(1);
 	});
 
-	// scry-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
+	// vet-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
 	it('assembly: 3:2 sixteenth triplets in a measure starting at beat 4 keep one note active per step', () => {
 		// 1/6-beat onsets: (4 + 1/6) + 1/6 and 4 + 2/6 are the same instant but differ by 1 ULP, so a
 		// strict `startBeat < endBeat` test leaks the previous note into the next step.
@@ -78,7 +78,7 @@ describe('SequenceFactory', () => {
 		);
 	});
 
-	// scry-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
+	// vet-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
 	it('assembly: a voice that ends before its measure does stops sounding at the note end', () => {
 		// Voice 1 fills only beat 1 of a 4-beat measure and has no trailing rest, so nothing onsets at
 		// beat 1; without a step seeded there the quarter rings until the next measure.
@@ -122,7 +122,7 @@ describe('SequenceFactory', () => {
 		expect(seq.getStep(1)?.measureIndex).toBe(0);
 	});
 
-	// scry-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
+	// vet-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
 	it('assembly: a gap measure plays for exactly gapMs, silent, and the next measure resumes the carried tempo', () => {
 		const a = fakeNote('a');
 		const b = fakeNote('b');
@@ -365,7 +365,7 @@ describe('SequenceFactory', () => {
 		expect(seq.getFirstStepOfNote(a)).toBe(0);
 	});
 
-	// scry-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
+	// vet-ignore simple-test-setup: the measures and notes are this test's input, they differ in every test, so there is no shared setup to hoist
 	it('assembly: overlapping voices window the active set; classify reports held vs released', () => {
 		const half = fakeNote('half'); // voice A, [0, 2)
 		const q1 = fakeNote('q1'); // voice B, [0, 1)
@@ -487,7 +487,7 @@ describe('SequenceFactory', () => {
 		expect(seq.getStepIndexAtMs(500)).toBe(1);
 	});
 
-	// scry-ignore simple-test-setup: the score and gaps are this test's input, used by no other test, so there is no shared setup to hoist
+	// vet-ignore simple-test-setup: the score and gaps are this test's input, used by no other test, so there is no shared setup to hoist
 	it('times a score without geometry: one bar per pass, gaps placed as render places them', async () => {
 		const xml = `<?xml version="1.0"?>
 <score-partwise version="4.0">

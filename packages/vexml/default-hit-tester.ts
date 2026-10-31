@@ -1,5 +1,5 @@
-import type { QuadTree } from 'webappwiz/geometry';
-import { Rect } from 'webappwiz/geometry';
+import type { QuadTree } from 'core/geometry';
+import { Rect } from 'core/geometry';
 import type { Element } from './element';
 import type { HitTester } from './hit-tester';
 

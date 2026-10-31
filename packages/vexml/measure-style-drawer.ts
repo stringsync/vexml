@@ -179,13 +179,13 @@ function timeSigDigits(count: number): string {
 
 // SMuFL codepoints: repeat1Bar, repeat2Bars, repeat4Bars, repeatBarSlash,
 // repeatBarUpperDot, repeatBarLowerDot, augmentationDot, timeSig0.
-const REPEAT_1_BAR = '';
-const REPEAT_2_BARS = '';
-const REPEAT_4_BARS = '';
-const REPEAT_BAR_SLASH = '';
-const REPEAT_BAR_UPPER_DOT = '';
-const REPEAT_BAR_LOWER_DOT = '';
-const AUGMENTATION_DOT = '';
+const REPEAT_1_BAR = '\uE500';
+const REPEAT_2_BARS = '\uE501';
+const REPEAT_4_BARS = '\uE502';
+const REPEAT_BAR_SLASH = '\uE504';
+const REPEAT_BAR_UPPER_DOT = '\uE503';
+const REPEAT_BAR_LOWER_DOT = '\uE505';
+const AUGMENTATION_DOT = '\uE1E7';
 const TIME_SIG_0 = 0xe080;
 
 // The stave line a multi-bar repeat's count centers on: half a space above the top line,

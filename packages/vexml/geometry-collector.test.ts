@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import type { Chord } from '@stringsync/mdom';
 import { MDocument } from '@stringsync/mdom';
+import { Rect } from 'core/geometry';
 import {
 	type Modifier,
 	type StaveNote,
@@ -8,7 +9,6 @@ import {
 	type TabStave,
 	Modifier as VexModifier,
 } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import { GeometryCollector } from './geometry-collector';
 
 describe('GeometryCollector', () => {
@@ -76,7 +76,7 @@ describe('GeometryCollector', () => {
 
 	const staveNote = (
 		ys: (number | undefined)[],
-		opts: { headXs?: number[]; modifiers?: Modifier[]; drawn?: boolean } = {},
+		opts: StaveNoteOptions = {},
 	) => {
 		const { headXs, modifiers = [], drawn = true } = opts;
 		return {
@@ -93,7 +93,7 @@ describe('GeometryCollector', () => {
 			getNoteHeadEndX: () => 22,
 			getYs: () => ys,
 			noteHeads: ys.map((y, i) => ({
-				getText: () => '',
+				getText: () => '\uE0A4',
 				getFont: () => '30px Bravura',
 				isRendered: () => drawn,
 				getBoundingBox: () => ({
@@ -199,6 +199,7 @@ describe('GeometryCollector', () => {
 		expect(collector.notes()).toHaveLength(1);
 	});
 
+	// vet-ignore simple-test-setup: the tab note and stave are fakes only this test uses, so no sibling shares them
 	it('captures tab frets only for notes carrying string+fret, y from the string line', () => {
 		const tabNote = {
 			getAbsoluteX: () => 40,
@@ -253,3 +254,9 @@ describe('GeometryCollector', () => {
 		expect(collector.measures()[0]?.rect).toMatchObject({ y: 40, h: 60 });
 	});
 });
+
+interface StaveNoteOptions {
+	headXs?: number[];
+	modifiers?: Modifier[];
+	drawn?: boolean;
+}

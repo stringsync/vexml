@@ -1,18 +1,29 @@
 {
 	"name": "vexml",
-	"version": "1.13.2",
+	"version": "1.13.3",
 	"private": true,
 	"type": "module",
-	"workspaces": [
-		"packages/*"
-	],
-	"devDependencies": {
-		"@biomejs/biome": "2.5.1",
-		"@types/bun": "latest",
-		"@webappwiz/cli": "0.0.54",
-		"@webappwiz/scry": "0.0.54"
+	"workspaces": {
+		"packages": [
+			"packages/benchmarks",
+			"packages/integration",
+			"packages/renderer",
+			"packages/site",
+			"packages/vex",
+			"packages/vexml",
+			"packages/core"
+		],
+		"catalog": {
+			"@types/bun": "^1.4",
+			"zod": "^4.4.3",
+			"react": "^19.2.4",
+			"react-dom": "^19.2.4",
+			"@types/react": "^19.1.13"
+		}
 	},
-	"peerDependencies": {
-		"typescript": "^5"
+	"devDependencies": {
+		"@biomejs/biome": "2.5.7",
+		"@types/bun": "catalog:",
+		"typescript": "^7.0.2"
 	}
 }

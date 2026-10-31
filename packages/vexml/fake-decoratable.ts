@@ -1,4 +1,4 @@
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import type { Decoratable } from './decoration';
 import type { NoteGlyph } from './geometry-collector';
 

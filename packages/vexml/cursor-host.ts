@@ -1,6 +1,6 @@
-import type { Resource } from 'webappwiz/disposable';
-import type { Eventful } from 'webappwiz/events';
-import type { Rect } from 'webappwiz/geometry';
+import type { Resource } from 'core/disposable';
+import type { Eventful } from 'core/events';
+import type { Rect } from 'core/geometry';
 
 /* The host fires this whenever the viewport moves or resizes, so the cursor can re-test visibility
  * even though it hasn't moved. Payload-free: the cursor reads viewportRect()/clientRectOf() itself. */

@@ -1,4 +1,5 @@
 import type { Measure, Part } from '@stringsync/mdom';
+import { Rect } from 'core/geometry';
 import {
 	Barline,
 	MultiMeasureRest,
@@ -6,7 +7,6 @@ import {
 	type Stave,
 	TimeSignature,
 } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import type { Appearance } from './appearance';
 import { BAR_STYLE_TYPES, type BarlineDecoration } from './barline-translator';
 import type { CollisionResolver } from './collision-resolver';
@@ -138,6 +138,7 @@ export class StaveBuilder {
 	 * `measure`, the measure before it; null when `next` changes no key or cancels elsewhere.
 	 */
 	private endCancelOf(
+		// vet-ignore noop-objects-over-null: an absent value is part of this public shape, and a Noop stand-in would change what callers and tests see
 		next: Measure | undefined,
 		measure: Measure,
 		staffNumber: string,

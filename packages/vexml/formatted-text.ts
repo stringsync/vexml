@@ -1,5 +1,5 @@
+import { Rect } from 'core/geometry';
 import { Element, type RenderContext } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import {
 	ENCLOSED_BASELINE,
 	UNDERLINE_GAP,
@@ -167,6 +167,7 @@ export type FormattedTextStyle = {
 	/** How many lines run under the text. Absent means none. */
 	underline?: number;
 	/** The shape drawn around the text. Absent means none. */
+	// vet-ignore noop-objects-over-null: an absent value is part of this public shape, and a Noop stand-in would change what callers and tests see
 	enclosure?: EnclosureShape;
 	/** Air between the text and its enclosure. */
 	padding?: number;

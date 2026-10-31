@@ -1,4 +1,4 @@
-import { disposables, type Resource } from 'webappwiz/disposable';
+import { disposables, type Resource } from 'core/disposable';
 import type { IdleScheduler, IdleSlice } from './idle-scheduler';
 
 /* Fake fulfilling the IdleScheduler seam (preferred over mocks): a test runs the slices itself,

@@ -9,9 +9,9 @@ import {
 } from 'node:fs';
 import * as path from 'node:path';
 import { createCanvas, createImageData } from 'canvas';
+import { ConsoleLogger, color } from 'core/log';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
-import { ConsoleLogger, color } from 'webappwiz/log';
 
 // The screenshot half of the tests: a `toMatchScreenshot` matcher that pixel-diffs a PNG
 // against its committed baseline in `__screenshots__/`, writes a side-by-side composite to

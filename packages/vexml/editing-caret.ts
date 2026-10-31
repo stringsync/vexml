@@ -1,5 +1,5 @@
 import type { Measure as MMeasure, Part as MPart } from '@stringsync/mdom';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import type { ElementIndex } from './element-index';
 
 /** A step-entry insertion point. Onset is in quarter-note beats from the measure start. */

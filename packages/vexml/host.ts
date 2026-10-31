@@ -1,5 +1,5 @@
-import type { Resource } from 'webappwiz/disposable';
-import type { Eventful } from 'webappwiz/events';
+import type { Resource } from 'core/disposable';
+import type { Eventful } from 'core/events';
 import type { LayerHost } from './layer-host';
 import type { LoupeHost } from './loupe';
 import type { MarkerHost } from './marker';

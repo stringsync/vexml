@@ -1,5 +1,5 @@
+import { Rect } from 'core/geometry';
 import { Bend, Element, Modifier, type TabNote } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import type { TabBendMark } from './score-reader';
 
 /* The SMuFL vibrato-bar glyphs a <with-bar> names by its content. */

@@ -1,5 +1,5 @@
+import { Rect } from 'core/geometry';
 import { PNG } from 'pngjs';
-import { Rect } from 'webappwiz/geometry';
 
 /**
  * A render's pixels reduced to what matters for a lint: which of them are ink. A linter

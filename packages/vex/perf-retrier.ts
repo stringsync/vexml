@@ -1,4 +1,4 @@
-import type { Logger } from 'webappwiz/log';
+import type { Logger } from 'core/log';
 import { format } from './perf';
 import type { Bench } from './perf-bench';
 import { ENGINES } from './perf-events';

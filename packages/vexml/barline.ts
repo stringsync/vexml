@@ -1,5 +1,5 @@
 import type { Barline as MBarline } from '@stringsync/mdom';
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import { Element } from './element';
 import type { BarlineLocation } from './geometry-collector';
 import type { Measure } from './measure';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { NodeFs } from 'webappwiz/system';
+import { NodeFs } from 'core/system';
 import { CoverageReader, TABLE_PATH } from './coverage';
 
 const ROOT = `${import.meta.dir}/../..`;

@@ -74,7 +74,7 @@ describe('editing', () => {
 					sameMeasures,
 				};
 			},
-			xml,
+			{ arg: xml },
 		);
 		expect(result).toEqual({
 			selectedByMouse: true,
@@ -122,7 +122,7 @@ describe('editing', () => {
 				session.selectElements([next]);
 				return { focusMoved: session.getFocus() === next.getSources()[0] };
 			},
-			xml,
+			{ arg: xml },
 		);
 		expect(result.focusMoved).toBe(true);
 		expect(image).toMatchScreenshot('editing_focus_off_rest.png');
@@ -159,7 +159,7 @@ describe('editing', () => {
 					resolved: session.getSelectedElements(index).length,
 				};
 			},
-			xml,
+			{ arg: xml },
 		);
 		expect(result.hasNotes).toBe(true);
 		expect(result.hasFrets).toBe(true);
@@ -233,7 +233,7 @@ describe('editing', () => {
 					gapsDetached: intro.index === -1 && solo.index === -1,
 				};
 			},
-			xml,
+			{ arg: xml },
 		);
 		expect(result).toEqual({
 			insideRepeat:
@@ -285,7 +285,7 @@ describe('editing', () => {
 					sameContainer: context.container.innerHTML === markup,
 				};
 			},
-			xml,
+			{ arg: xml },
 		);
 		expect(result).toEqual({
 			positioned:

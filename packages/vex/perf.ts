@@ -1,6 +1,6 @@
 import type { Image } from '@vexml/renderer';
-import type { Logger } from 'webappwiz/log';
-import type { Fs } from 'webappwiz/system';
+import type { Logger } from 'core/log';
+import type { Fs } from 'core/system';
 import { type Bench, DATA_DIR } from './perf-bench';
 import { type Cell, ENGINES, type Engine } from './perf-events';
 
@@ -29,6 +29,7 @@ export interface PerfOptions {
 	bench: Bench;
 	log: Logger;
 	fs: Fs;
+	// vet-ignore noop-objects-over-null: an absent value is part of this public shape, and a Noop stand-in would change what callers and tests see
 	listener?: PerfListener;
 }
 

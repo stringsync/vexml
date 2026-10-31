@@ -4,6 +4,7 @@ import type {
 	Barline as MBarline,
 	Note as MNote,
 } from '@stringsync/mdom';
+import { Rect } from 'core/geometry';
 import {
 	type Element,
 	Modifier,
@@ -13,7 +14,6 @@ import {
 	type TabNote,
 	type TabStave,
 } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
 import { FRET_HALF_H, FRET_HALF_W, NOTEHEAD_HALF_H } from './constants';
 import type { TextOutline } from './text-outline';

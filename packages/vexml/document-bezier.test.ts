@@ -14,8 +14,10 @@ const controls = { start: { x: 12, y: 30 }, end: { x: -24, y: -10 } };
 describe('document Bézier controls', () => {
 	let list: PaintList;
 	let context: CanvasContext;
+	let parser: DefaultScoreParser;
 
 	beforeEach(() => {
+		parser = new DefaultScoreParser();
 		list = new PaintList();
 		const canvas = new PaintContext(list, new FakePaintProbe(), null);
 		context = new CanvasContext(canvas as unknown as CanvasRenderingContext2D);
@@ -45,7 +47,7 @@ describe('document Bézier controls', () => {
 					`<note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><type>quarter</type><notations>${mark}</notations></note>`,
 			)
 			.join('');
-		const doc = await new DefaultScoreParser().parse(
+		const doc = await parser.parse(
 			`<score-partwise version="4.0"><part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list><part id="P1"><measure number="1"><attributes><divisions>1</divisions></attributes>${notes}</measure></part></score-partwise>`,
 		);
 		const marks =
@@ -75,7 +77,7 @@ describe('document Bézier controls', () => {
 					`<note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>${voice}</voice><type>quarter</type><notations><slur number="1" type="${type}"/></notations></note>`,
 			)
 			.join('');
-		const doc = await new DefaultScoreParser().parse(
+		const doc = await parser.parse(
 			`<score-partwise version="4.0"><part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list><part id="P1"><measure number="1"><attributes><divisions>1</divisions></attributes>${marks}</measure></part></score-partwise>`,
 		);
 		const slurs =

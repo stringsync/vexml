@@ -1,5 +1,5 @@
-import { disposables, type Resource } from 'webappwiz/disposable';
-import { Dispatcher, type Eventful } from 'webappwiz/events';
+import { disposables, type Resource } from 'core/disposable';
+import { Dispatcher, type Eventful } from 'core/events';
 import { INSTRUMENT_KEY } from './constants';
 import type { Instrument } from './instrument';
 import { INSTRUMENTS, OPENING_INSTRUMENT } from './instruments';

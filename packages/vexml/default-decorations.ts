@@ -1,4 +1,4 @@
-import { Disposer, type Resource } from 'webappwiz/disposable';
+import { Disposer, type Resource } from 'core/disposable';
 import { ColorStyle } from './color-style';
 import type { Decorations } from './decoration';
 import { DefaultDecoration } from './default-decoration';

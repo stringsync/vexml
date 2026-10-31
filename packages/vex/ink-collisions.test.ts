@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { InkMask } from '@vexml/renderer';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { InkCollisions } from './ink-collisions';
 
 const first: InkMask = {
@@ -141,15 +141,16 @@ describe('InkCollisions', () => {
 		);
 	});
 
-	it.each(
-		Array.from({ length: 100 }, (_, seed) => seed),
-	)('matches a pixel oracle for cropped, multirow runs (case %i)', (seed) => {
-		const a = generatedMask(seed, 0),
-			b = generatedMask(seed, 1);
-		expect(new InkCollisions([a, b]).findings().map((f) => f.box)).toEqual(
-			pixelIntersection(a, b),
-		);
-	});
+	it.each(Array.from({ length: 100 }, (_, seed) => seed))(
+		'matches a pixel oracle for cropped, multirow runs (case %i)',
+		(seed) => {
+			const a = generatedMask(seed, 0),
+				b = generatedMask(seed, 1);
+			expect(new InkCollisions([a, b]).findings().map((f) => f.box)).toEqual(
+				pixelIntersection(a, b),
+			);
+		},
+	);
 });
 
 function generatedMask(seed: number, id: number): InkMask {

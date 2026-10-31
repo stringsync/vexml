@@ -107,7 +107,7 @@ describe('EditingSession', () => {
 		]);
 	});
 
-	// scry-ignore simple-test-setup: the extra voice, empty measure and second staff are written only for this test; the session must be built after them because it takes over the document's history
+	// vet-ignore simple-test-setup: the extra voice, empty measure and second staff are written only for this test; the session must be built after them because it takes over the document's history
 	it('crosses empty measures and staves within its voice without entering another voice', () => {
 		const document = createDocument(['C']);
 		const part = required(document.score.parts[0], 'part');
@@ -147,7 +147,7 @@ describe('EditingSession', () => {
 		]);
 	});
 
-	// scry-ignore simple-test-setup: the two three-note chords are written only for this test; no other test shares them, and the session must be built after they exist because it takes over the document's history
+	// vet-ignore simple-test-setup: the two three-note chords are written only for this test; no other test shares them, and the session must be built after they exist because it takes over the document's history
 	it.each([0, 1, 2])('moves horizontally past chord member %i', (member) => {
 		const first = voice.addChord(
 			[

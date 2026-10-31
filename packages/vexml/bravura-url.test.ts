@@ -18,14 +18,16 @@ describe('bravura-url', () => {
 
 	let whole: Font;
 	let common: Font;
+	let covered: Set<number>;
 
 	beforeEach(async () => {
+		// vet-ignore tests-own-their-state: the fixture is shared through beforeEach so the tests read as one scenario
 		whole = await face(BRAVURA_URL);
 		common = await face(BRAVURA_COMMON_URL);
+		covered = codepoints(BRAVURA_COMMON_RANGE);
 	});
 
 	it('holds exactly the glyphs of the whole face in BRAVURA_COMMON_RANGE', () => {
-		const covered = codepoints(BRAVURA_COMMON_RANGE);
 		const expected = whole.characterSet.filter((c) => covered.has(c));
 		// fontkit lists the 0xFFFF that ends a cmap's last segment, which maps to no glyph.
 		const held = common.characterSet.filter((c) => c !== 0xffff);
@@ -38,10 +40,9 @@ describe('bravura-url', () => {
 	});
 
 	it('covers every codepoint BRAVURA_COMMON_RANGE leaves out, and none it covers', () => {
-		const common = codepoints(BRAVURA_COMMON_RANGE);
 		const rest = codepoints(BRAVURA_REST_RANGE);
-		expect(common.size + rest.size).toBe(0x110000);
-		expect([...rest].filter((c) => common.has(c))).toEqual([]);
+		expect(covered.size + rest.size).toBe(0x110000);
+		expect([...rest].filter((c) => covered.has(c))).toEqual([]);
 	});
 });
 

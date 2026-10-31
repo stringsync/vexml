@@ -188,7 +188,7 @@ export class VoiceBuilder {
 	 * measures, so the caller resolves them once over the whole score (this only
 	 * records each chord's StaveNote in the shared `byLead` map).
 	 */
-	// scry-ignore named-options-last: stave, row, voices and clef are required inputs with no
+	// vet-ignore named-options-last: stave, row, voices and clef are required inputs with no
 	// default; the settings a caller can leave out are already in opts, last.
 	buildNotes(
 		stave: Stave,

@@ -1,3 +1,4 @@
+// vet-ignore-file compact-files: one corpus of render cases, one test per fixture; splitting it is a refactor of its own
 import { describe, expect, it } from 'bun:test';
 import * as path from 'node:path';
 import { fileUrl } from '@vexml/renderer';

@@ -83,16 +83,18 @@ describe('snapshot', () => {
 	it.concurrent('paints its ink in the colors it is rendered with', async () => {
 		const plain = { showPartLabels: true, fonts: FONTS };
 		const { image } = await testing.eval('colors.musicxml', plain, recolor, {
-			config: {
-				...plain,
-				backgroundColor: '#fce4ec',
-				fonts: {
-					notation: { family: 'Bravura', color: '#1d4ed8' },
-					text: { family: 'Source Sans 3', color: '#c2410c' },
+			arg: {
+				config: {
+					...plain,
+					backgroundColor: '#fce4ec',
+					fonts: {
+						notation: { family: 'Bravura', color: '#1d4ed8' },
+						text: { family: 'Source Sans 3', color: '#c2410c' },
+					},
 				},
-			},
-			scroll: 0,
-		} satisfies Replay);
+				scroll: 0,
+			} satisfies Replay,
+		});
 		expect(image).toMatchScreenshot('colors.png');
 	});
 
@@ -101,7 +103,7 @@ describe('snapshot', () => {
 			'score_amazing_grace.musicxml',
 			{},
 			mismatch,
-			{ config: { fonts: FONTS }, scroll: 0 } satisfies Replay,
+			{ arg: { config: { fonts: FONTS }, scroll: 0 } satisfies Replay },
 		);
 		expect(result).toEqual({
 			version: 'version',
@@ -116,19 +118,23 @@ describe('snapshot', () => {
 function replay(file: string, config: ConfigInput = {}, scroll = 0) {
 	const withFonts = { ...config, fonts: FONTS };
 	return testing.eval(file, withFonts, roundTrip, {
-		config: withFonts,
-		scroll,
-	} satisfies Replay);
+		arg: {
+			config: withFonts,
+			scroll,
+		} satisfies Replay,
+	});
 }
 
 async function gapped(replay: boolean) {
 	const file = 'score_amazing_grace.musicxml';
 	const config = { fonts: FONTS };
 	return testing.eval(file, config, roundTrip, {
-		config,
-		scroll: 0,
-		gapped: { xml: await testing.fixture(file), replay },
-	} satisfies Replay);
+		arg: {
+			config,
+			scroll: 0,
+			gapped: { xml: await testing.fixture(file), replay },
+		} satisfies Replay,
+	});
 }
 
 // Runs in the page, so it's self-contained: eval serializes it, and nothing outside it exists there.

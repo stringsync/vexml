@@ -1,4 +1,4 @@
-import { Dispatcher, type Events } from 'webappwiz/events';
+import { Dispatcher, type Events } from 'core/events';
 import type { Drawing, DrawingEventMap } from './drawing';
 
 /* The drawing of a score engraved whole before its Score existed: complete from the start, with

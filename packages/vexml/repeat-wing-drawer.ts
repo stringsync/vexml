@@ -1,10 +1,10 @@
+import { Rect } from 'core/geometry';
 import {
 	Barline,
 	type RenderContext,
 	type Stave,
 	StaveModifierPosition,
 } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import type { Winged } from './score-reader';
 
 /** Which way a repeat sign's dots face from its thick line: +1 right (an opening repeat),

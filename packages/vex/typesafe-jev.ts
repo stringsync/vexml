@@ -1,4 +1,4 @@
-import { Credentials, SystemSecretStore } from 'webappwiz/creds';
+import { Credentials, SystemSecretStore } from 'core/creds';
 import { z } from 'zod';
 import { JEV_MODEL, type JevClient, type JevRequest } from './jev-client';
 

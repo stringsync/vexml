@@ -17,7 +17,7 @@ describe('EditingNavigator', () => {
 		document = MDocument.empty();
 	});
 
-	// scry-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
+	// vet-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
 	it('crosses into the next system first voice and reverses into the previous system last note', () => {
 		const part = document.score.addPart();
 		const first = part.addMeasure();
@@ -51,7 +51,7 @@ describe('EditingNavigator', () => {
 		expect(editor.getFocus()).toBe(nextBottom);
 	});
 
-	// scry-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
+	// vet-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
 	it('ignores voices absent from the current system and uses the new system layout', () => {
 		const part = document.score.addPart();
 		const first = part.addMeasure();
@@ -103,7 +103,7 @@ describe('EditingNavigator', () => {
 		expect(editor.getFocus()).toBe(target);
 	});
 
-	// scry-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
+	// vet-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
 	it('jumps measures in the active voice, skips empty measures, and lands on chord leads', () => {
 		const part = document.score.addPart();
 		const first = part.addMeasure();
@@ -144,7 +144,7 @@ describe('EditingNavigator', () => {
 		expect(navigation.move({ unit: 'voice', direction: 1 })).toBe(false);
 	});
 
-	// scry-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
+	// vet-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
 	it('switches to a nearby onset, remembers the voice after clearing, and clamps', () => {
 		const measure = document.score.addPart().addMeasure();
 		const first = measure
@@ -170,7 +170,7 @@ describe('EditingNavigator', () => {
 		expect(editor.getFocus()).toBe(closest);
 	});
 
-	// scry-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
+	// vet-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
 	it('uses the nearest populated measure when switching voice explicitly', () => {
 		const part = document.score.addPart();
 		const closest = part
@@ -213,65 +213,65 @@ describe('EditingNavigator', () => {
 		expect(editor.getSelection()).toEqual([first]);
 	});
 
-	it.each([
-		false,
-		true,
-		// scry-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
-	])('visits every middle-voice chord tone in both directions (layout=%s)', (withLayout) => {
-		const measure = document.score.addPart().addMeasure();
-		const upper = measure
-			.getOrCreateVoice('1')
-			.addNote({ step: 'A', octave: 5, type: 'whole' });
-		const chord = measure.getOrCreateVoice('2').addChord(
-			[
-				{ step: 'E', octave: 4 },
-				{ step: 'B', octave: 4 },
-				{ step: 'G', octave: 4 },
-			],
-			{ type: 'whole' },
-		);
-		const lower = measure
-			.getOrCreateVoice('3')
-			.addNote({ step: 'C', octave: 4, type: 'whole' });
-		const editor = new EditingSession(document);
-		const navigator = new EditingNavigator(
-			editor,
-			withLayout ? { getSystems: () => [[measure]] } : undefined,
-		);
-		const expected = [
-			upper,
-			required(chord.notes[1]),
-			required(chord.notes[2]),
-			required(chord.notes[0]),
-			lower,
-		];
-		const moveVertically = (direction: 1 | -1) => {
-			navigator.move({ unit: 'vertical', direction });
-			return editor.getFocus();
-		};
-		editor.select(upper);
-		expect([
-			moveVertically(1),
-			moveVertically(1),
-			moveVertically(1),
-			moveVertically(1),
-		]).toEqual(expected.slice(1));
-		expect(navigator.move({ unit: 'vertical', direction: 1 })).toBe(false);
-		expect([
-			moveVertically(-1),
-			moveVertically(-1),
-			moveVertically(-1),
-			moveVertically(-1),
-		]).toEqual(expected.slice(0, -1).reverse());
-		expect(navigator.move({ unit: 'vertical', direction: -1 })).toBe(false);
-		expect(chord.notes.map((note) => note.pitch?.step)).toEqual([
-			'E',
-			'B',
-			'G',
-		]);
-	});
+	// vet-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
+	it.each([false, true])(
+		'visits every middle-voice chord tone in both directions (layout=%s)',
+		(withLayout) => {
+			const measure = document.score.addPart().addMeasure();
+			const upper = measure
+				.getOrCreateVoice('1')
+				.addNote({ step: 'A', octave: 5, type: 'whole' });
+			const chord = measure.getOrCreateVoice('2').addChord(
+				[
+					{ step: 'E', octave: 4 },
+					{ step: 'B', octave: 4 },
+					{ step: 'G', octave: 4 },
+				],
+				{ type: 'whole' },
+			);
+			const lower = measure
+				.getOrCreateVoice('3')
+				.addNote({ step: 'C', octave: 4, type: 'whole' });
+			const editor = new EditingSession(document);
+			const navigator = new EditingNavigator(
+				editor,
+				withLayout ? { getSystems: () => [[measure]] } : undefined,
+			);
+			const expected = [
+				upper,
+				required(chord.notes[1]),
+				required(chord.notes[2]),
+				required(chord.notes[0]),
+				lower,
+			];
+			const moveVertically = (direction: 1 | -1) => {
+				navigator.move({ unit: 'vertical', direction });
+				return editor.getFocus();
+			};
+			editor.select(upper);
+			expect([
+				moveVertically(1),
+				moveVertically(1),
+				moveVertically(1),
+				moveVertically(1),
+			]).toEqual(expected.slice(1));
+			expect(navigator.move({ unit: 'vertical', direction: 1 })).toBe(false);
+			expect([
+				moveVertically(-1),
+				moveVertically(-1),
+				moveVertically(-1),
+				moveVertically(-1),
+			]).toEqual(expected.slice(0, -1).reverse());
+			expect(navigator.move({ unit: 'vertical', direction: -1 })).toBe(false);
+			expect(chord.notes.map((note) => note.pitch?.step)).toEqual([
+				'E',
+				'B',
+				'G',
+			]);
+		},
+	);
 
-	// scry-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
+	// vet-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
 	it('enters the correct edge of a chord when crossing a system boundary', () => {
 		const part = document.score.addPart();
 		const first = part.addMeasure();
@@ -344,6 +344,7 @@ describe('EditingNavigator', () => {
 		expect(editor.getFocus()).toBe(chord.lead);
 	});
 
+	// vet-ignore simple-test-setup: the score is written note by note before EditingSession exists, because a session takes over the document's history and later direct edits throw
 	it('steps and extends a measure focus over empty bars, changing part only without extending', () => {
 		const upper = document.score.addPart();
 		const start = upper.addMeasure();

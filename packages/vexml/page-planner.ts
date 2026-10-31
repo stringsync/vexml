@@ -20,8 +20,7 @@ export interface DocumentPages {
 	systems: readonly DocumentSystem[];
 }
 
-/* One system as following the document places it: its staff-line span and what the document
- * says of it. */
+/* Pairs the staff-line span a system is laid out at with what the document says of it. */
 export interface DocumentPlacement {
 	lines: SystemExtent;
 	system: DocumentSystem;

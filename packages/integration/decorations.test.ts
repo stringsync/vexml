@@ -18,7 +18,7 @@ describe('decorations', () => {
 			'note.musicxml',
 			{},
 			decorateAllTargets,
-			'color',
+			{ arg: 'color' },
 		);
 		expect(count).toBeGreaterThan(0);
 		expect(image).toMatchScreenshot('decoration_color.png');
@@ -29,7 +29,7 @@ describe('decorations', () => {
 			'note.musicxml',
 			{},
 			decorateAllTargets,
-			'halo',
+			{ arg: 'halo' },
 		);
 		expect(count).toBeGreaterThan(0);
 		expect(image).toMatchScreenshot('decoration_halo.png');
@@ -43,7 +43,7 @@ describe('decorations', () => {
 			'chord.musicxml',
 			{},
 			decorateAllTargets,
-			'color',
+			{ arg: 'color' },
 		);
 		expect(count).toBeGreaterThan(0);
 		expect(image).toMatchScreenshot('decoration_chord_color.png');
@@ -57,7 +57,7 @@ describe('decorations', () => {
 			'structure_notation_and_tab_parts.musicxml',
 			{},
 			decorateAllTargets,
-			'color',
+			{ arg: 'color' },
 		);
 		expect(count).toBeGreaterThan(0);
 		expect(image).toMatchScreenshot('decoration_tab_color.png');
@@ -68,7 +68,7 @@ describe('decorations', () => {
 			'structure_notation_and_tab_parts.musicxml',
 			{},
 			decorateAllTargets,
-			'halo',
+			{ arg: 'halo' },
 		);
 		expect(count).toBeGreaterThan(0);
 		expect(image).toMatchScreenshot('decoration_tab_halo.png');
@@ -82,7 +82,7 @@ describe('decorations', () => {
 			'rest.musicxml',
 			{},
 			decorateAllTargets,
-			'color',
+			{ arg: 'color' },
 		);
 		expect(count).toBeGreaterThan(0);
 		expect(image).toMatchScreenshot('decoration_rest_color.png');

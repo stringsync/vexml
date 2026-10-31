@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { FakeClock } from 'webappwiz/time/testing';
+import { FakeClock } from 'core/time/testing';
 import { EVENTS_PATH, imagePath, retryPath } from './perf-events';
 import { perfMiddleware } from './perf-middleware';
 import type { RetryQueue } from './perf-retrier';

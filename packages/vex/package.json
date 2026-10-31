@@ -1,6 +1,6 @@
 {
 	"name": "@vexml/vex",
-	"version": "1.13.2",
+	"version": "1.13.3",
 	"private": true,
 	"type": "module",
 	"module": "index.ts",
@@ -8,14 +8,25 @@
 		"vex": "./index.ts"
 	},
 	"dependencies": {
-		"@stringsync/mdom": "0.8.1",
+		"@stringsync/mdom": "^0.8.3",
 		"@vexml/renderer": "workspace:*",
+		"core": "workspace:*",
 		"pngjs": "^7.0.0",
 		"vite": "^8.1.0",
-		"webappwiz": "0.0.54",
-		"zod": "^4.6.5"
+		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@types/pngjs": "^6.0.5"
+	},
+	"exports": {
+		"./finding-markup": "./finding-markup.ts",
+		"./ink-collisions": "./ink-collisions.ts",
+		"./ink-map": "./ink-map.ts",
+		"./measure-locator": "./measure-locator.ts",
+		"./measure-map": "./measure-map.ts",
+		"./measure-slicer": "./measure-slicer.ts",
+		"./mirror": "./mirror.ts",
+		"./render-lint": "./render-lint.ts",
+		"./ship": "./ship.ts"
 	}
 }

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
+import { Rect } from 'core/geometry';
 import { PNG } from 'pngjs';
-import { Rect } from 'webappwiz/geometry';
 import { FakeJev } from './fake-jev';
 import type { Engine } from './lint';
 import { SemanticLint } from './semantic-lint';

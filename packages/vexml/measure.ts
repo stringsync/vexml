@@ -1,5 +1,5 @@
 import type { Measure as MMeasure } from '@stringsync/mdom';
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import { Element } from './element';
 import type { StaveModel } from './element-model';
 import type { MeasureBox } from './measure-box';

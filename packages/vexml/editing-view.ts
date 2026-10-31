@@ -1,4 +1,4 @@
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import type { Barline } from './barline';
 import type { Measure } from './measure';
 import type { Note } from './note';

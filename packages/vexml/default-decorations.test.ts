@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { DefaultDecorations } from './default-decorations';
 import { FakeDecoratable, NOTEHEAD } from './fake-decoratable';
 import { FakeLayerHost } from './fake-layer-host';

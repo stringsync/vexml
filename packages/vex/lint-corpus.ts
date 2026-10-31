@@ -1,3 +1,4 @@
+// vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
@@ -10,8 +11,8 @@ import {
 import { basename, extname, join } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 import type { InkMask } from '@vexml/renderer';
+import { Rect } from 'core/geometry';
 import { PNG } from 'pngjs';
-import { Rect } from 'webappwiz/geometry';
 import { InkMap } from './ink-map';
 import { FINDING_KINDS, type FindingKind, RenderLint } from './render-lint';
 import { StaffDetector } from './staff-detector';

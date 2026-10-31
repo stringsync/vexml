@@ -1,4 +1,4 @@
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import { Affine } from '../vexml/affine';
 import type { PaintElement, PaintOp } from '../vexml/paint-op';
 import { PaintReplayer } from '../vexml/paint-replayer';

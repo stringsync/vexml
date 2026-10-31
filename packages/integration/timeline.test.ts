@@ -14,11 +14,11 @@ const FIXTURES = readdirSync(path.resolve(import.meta.dir, '__data__')).filter(
 );
 
 describe('readTimeline', () => {
-	// scry-ignore simple-test-setup: the point is every fixture, 184 and growing; one case each, written out, would drift from the corpus
+	// vet-ignore simple-test-setup: the point is every fixture, 184 and growing; one case each, written out, would drift from the corpus
 	for (const file of FIXTURES) {
 		it.concurrent(`times ${file} as the render does`, async () => {
 			const xml = await testing.fixture(file);
-			const { result } = await testing.eval(file, {}, compare, xml);
+			const { result } = await testing.eval(file, {}, compare, { arg: xml });
 			expect(result.plain.timeline).toEqual(result.plain.score);
 			expect(result.plain.mismatches).toEqual([]);
 			expect(result.gapped.timeline).toEqual(result.gapped.score);
@@ -30,7 +30,7 @@ describe('readTimeline', () => {
 	it.concurrent('splits a measure repeated back to back into two bars', async () => {
 		const file = 'repeats_single_measure.musicxml';
 		const xml = await testing.fixture(file);
-		const { result } = await testing.eval(file, {}, compare, xml);
+		const { result } = await testing.eval(file, {}, compare, { arg: xml });
 		// 90 bpm: a 4/4 bar is 2667 ms, and the middle measure plays twice.
 		expect(
 			result.plain.bars.map((bar) => [
@@ -49,7 +49,7 @@ describe('readTimeline', () => {
 	it.concurrent('follows D.S. al Coda: back to the segno, then on to the coda', async () => {
 		const file = 'navigation.musicxml';
 		const xml = await testing.fixture(file);
-		const { result } = await testing.eval(file, {}, compare, xml);
+		const { result } = await testing.eval(file, {}, compare, { arg: xml });
 		expect(result.plain.bars.map((bar) => bar.measureIndex)).toEqual([
 			0, 1, 2, 0, 1, 3, 4,
 		]);
@@ -102,7 +102,7 @@ describe('readTimeline', () => {
 					added: Math.round(timeline.getDurationMs() - plain.getDurationMs()),
 				};
 			},
-			xml,
+			{ arg: xml },
 		);
 		expect(result.unedited).toBe(true);
 		expect(result.timeline).toEqual(result.score);
@@ -138,7 +138,7 @@ describe('readTimeline', () => {
 						: 'no measure',
 				};
 			},
-			xml,
+			{ arg: xml },
 		);
 		expect(result).toEqual({
 			positioned:

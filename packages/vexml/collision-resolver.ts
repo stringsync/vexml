@@ -1,4 +1,4 @@
-import { QuadTree, type QuadTreeOptions, Rect } from 'webappwiz/geometry';
+import { QuadTree, type QuadTreeOptions, Rect } from 'core/geometry';
 import { FAR } from './constants';
 
 /*

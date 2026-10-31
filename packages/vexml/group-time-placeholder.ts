@@ -8,6 +8,7 @@ export class GroupTimePlaceholder extends TimeSignature {
 		width: number,
 	) {
 		super('4/4');
+		// vet-ignore parameters-declare-fields: width is an accessor on TimeSignature, so a parameter property cannot declare it
 		this.width = width;
 	}
 

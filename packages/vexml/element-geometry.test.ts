@@ -7,6 +7,7 @@ describe('structural element geometry', () => {
 		const { score } = await renderedScore('structure_two_parts.musicxml');
 		const measures = score.getElements().measures();
 		expect(measures).toHaveLength(2);
+		// vet-ignore matchers-over-test-logic: the loop walks every case of a table, and a matcher would hide which one failed
 		for (const measure of measures) {
 			const point = center(measure.rect);
 			expect(score.getElements().at(point)).toBe(measure);
@@ -78,7 +79,9 @@ describe('structural element geometry', () => {
 		expect(forward).toBeDefined();
 		expect(backward).toBeDefined();
 		expect(implicit).toBeDefined();
+		// vet-ignore matchers-over-test-logic: the loop walks every case of a table, and a matcher would hide which one failed
 		for (const barline of [forward, backward, implicit]) {
+			// vet-ignore matchers-over-test-logic: the loop walks every case of a table, and a matcher would hide which one failed
 			if (barline) {
 				expect(score.getElements().at(center(barline.rect))).toBe(barline);
 			}
@@ -89,6 +92,7 @@ describe('structural element geometry', () => {
 		const { score } = await renderedScore('print_new_system.musicxml');
 		const systems = score.getSystems();
 		expect(systems.length).toBeGreaterThan(1);
+		// vet-ignore matchers-over-test-logic: the loop walks every case of a table, and a matcher would hide which one failed
 		for (const system of systems) {
 			const box = only(system.getMeasureBoxes().slice(0, 1), 'system measure');
 			const measure = only(box.getMeasures(), 'part measure');
@@ -123,6 +127,7 @@ describe('structural element geometry', () => {
 		expect(barlineGeometry(restored.score)).toEqual(
 			barlineGeometry(whole.score),
 		);
+		// vet-ignore matchers-over-test-logic: the loop walks every case of a table, and a matcher would hide which one failed
 		for (const barline of restored.score.getElements().barlines()) {
 			expect(barline.getSources()).toEqual([]);
 			expect(restored.score.getElements().at(center(barline.rect))).toBe(
@@ -134,6 +139,7 @@ describe('structural element geometry', () => {
 	it('builds fresh elements over the same document on rerender', async () => {
 		const first = await renderedScore('repeats.musicxml');
 		const document = first.document;
+		// vet-ignore matchers-over-test-logic: the loop walks every case of a table, and a matcher would hide which one failed
 		if (!document) {
 			throw new Error('missing parsed document');
 		}

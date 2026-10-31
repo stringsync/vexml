@@ -1,4 +1,4 @@
-import { type QuadTree, Rect } from 'webappwiz/geometry';
+import { type QuadTree, Rect } from 'core/geometry';
 import { Barline } from './barline';
 import { ChordDiagram } from './chord-diagram';
 import type { Decorations } from './decoration';

@@ -1,5 +1,6 @@
-import type { Logger } from 'webappwiz/log';
-import type { Fs, Ps } from 'webappwiz/system';
+import type { Logger } from 'core/log';
+import { ManifestWorkspace } from 'core/ship';
+import type { Fs, Ps } from 'core/system';
 
 export interface TestOptions {
 	/* Rewrite the screenshot baselines from this run instead of diffing against them. */
@@ -36,7 +37,7 @@ export async function test(opts: TestOptions) {
 		'-e',
 		'I_AM_RUNNING_TESTS_USING_VEX_TEST=1',
 		'-v',
-		`${opts.ps.cwd()}/packages/integration:/app/packages/integration`,
+		`${opts.ps.cwd()}/packages/integration:/app/vexml/packages/integration`,
 	];
 	if (opts.update) {
 		args.push('-e', 'UPDATE_SCREENSHOTS=1');
@@ -77,6 +78,9 @@ async function buildSilently(opts: TestOptions): Promise<string> {
 		return SHARED_TAG;
 	}
 	const tag = `${SHARED_TAG}:run-${opts.ps.pid}`;
+	// The Dockerfile is built from its workspace's root: mono's, where core and mdom are
+	// siblings, or the mirror's, which `vexmlMirrorRewrite` rewrites it for.
+	const { root } = await ManifestWorkspace.at(opts.ps.cwd(), opts);
 	opts.log.info('Building...');
 	const start = Date.now();
 	// Captured, not inherited: a successful build says nothing worth the scroll,
@@ -90,7 +94,9 @@ async function buildSilently(opts: TestOptions): Promise<string> {
 		SHARED_TAG,
 		'-t',
 		tag,
-		'.',
+		'-f',
+		'Dockerfile',
+		root,
 	]);
 	if (exitCode !== 0) {
 		opts.log.error(stdout + stderr);

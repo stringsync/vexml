@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { MDocument, type Note } from '@stringsync/mdom';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { editingCaretRect } from './editing-caret';
 import { ElementFactory } from './element-factory';
 import { FakeDecorations } from './fake-decorations';

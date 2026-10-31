@@ -1,4 +1,4 @@
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import type { InkMap } from './ink-map';
 
 /** A horizontal ink line long enough to be a staff line: its vertical center and x span. */

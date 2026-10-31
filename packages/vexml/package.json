@@ -1,47 +1,34 @@
 {
 	"name": "@stringsync/vexml",
-	"version": "1.13.2",
+	"version": "1.13.3",
 	"type": "module",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/stringsync/vexml.git",
+		"directory": "packages/vexml"
+	},
 	"sideEffects": false,
 	"main": "./index.ts",
 	"module": "./index.ts",
 	"types": "./index.ts",
 	"exports": {
-		".": {
-			"types": "./index.ts",
-			"import": "./index.ts"
-		},
-		"./headless": {
-			"types": "./headless.ts",
-			"import": "./headless.ts"
-		},
-		"./paint": {
-			"types": "./paint.ts",
-			"import": "./paint.ts"
-		},
+		".": "./index.ts",
+		"./headless": "./headless.ts",
+		"./paint": "./paint.ts",
 		"./css": "./css/vexml.css",
 		"./fonts/bravura.woff2": "./assets/fonts/Bravura.woff2",
 		"./fonts/bravura-common.woff2": "./assets/fonts/BravuraCommon.woff2"
 	},
 	"files": [
-		"*.ts",
-		"assets",
-		"css",
-		"!*.test.ts",
-		"!measure-fixture.ts",
-		"!fake-*.ts",
-		"!recording-*.ts",
-		"!*-harness.ts"
+		"assets/**",
+		"css/**"
 	],
 	"dependencies": {
-		"@stringsync/mdom": "0.8.1",
+		"@stringsync/mdom": "^0.8.3",
 		"@types/fontkit": "2.0.9",
+		"core": "workspace:*",
 		"fontkit": "2.0.4",
-		"vexflow": "5.0.0",
-		"webappwiz": "0.0.54"
-	},
-	"peerDependencies": {
-		"typescript": "^5"
+		"vexflow": "5.0.0"
 	}
 }

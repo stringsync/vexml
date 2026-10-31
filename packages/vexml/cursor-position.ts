@@ -1,4 +1,4 @@
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import type { CursorHost } from './cursor-host';
 import type { Bounded } from './decoration';
 

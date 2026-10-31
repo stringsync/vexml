@@ -24,6 +24,7 @@ import type { ScoreSession } from '@/lib/score-session';
 export interface PlayerProps {
 	playerRef: RefObject<HTMLDivElement | null>;
 	/* What the transport drives. Null before the first render lands, which the caller guards. */
+	// vet-ignore noop-objects-over-null: an absent value is part of this public shape, and a Noop stand-in would change what callers and tests see
 	session: ScoreSession | null;
 	instrument: InstrumentController;
 	/* Read off the two objects above by the caller's projection, so a change re-renders this. */

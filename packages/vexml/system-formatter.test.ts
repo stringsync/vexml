@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
+import { Rect } from 'core/geometry';
 import {
 	Barline,
 	type BarlineType,
@@ -10,7 +11,6 @@ import {
 	TimeSignature,
 	type Voice,
 } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import type { ChordTranslator } from './chord-translator';
 import { CollisionResolver } from './collision-resolver';
 import { DEFAULT_CONFIG, DEFAULT_STANDARD_LAYOUT } from './config';
@@ -150,8 +150,10 @@ describe('SystemFormatter', () => {
 		).closeGraceGaps(voices as Voice[]);
 
 	let leading: ReturnType<typeof graceGroup>;
+	let formatter: SystemFormatter;
 
 	beforeEach(() => {
+		formatter = makeFormatter();
 		leading = graceGroup(Modifier.Position.LEFT, 4);
 	});
 
@@ -211,7 +213,7 @@ describe('SystemFormatter', () => {
 			_repeat(25, Barline.type.REPEAT_BEGIN),
 		];
 		const sigs = [timeSig(30), timeSig(22)];
-		const x = makeFormatter().alignBegModifiers([
+		const x = formatter.alignBegModifiers([
 			fakeStave([repeats[0], sigs[0]]),
 			fakeStave([repeats[1], sigs[1]]),
 		]);
@@ -223,7 +225,7 @@ describe('SystemFormatter', () => {
 	it('returns null and leaves a lone time signature alone without an opening repeat', () => {
 		const sig = timeSig(30);
 		// A plain barline is not an opening repeat, so it grouped nothing.
-		const x = makeFormatter().alignBegModifiers([
+		const x = formatter.alignBegModifiers([
 			fakeStave([_repeat(10, Barline.type.SINGLE), sig]),
 		]);
 		expect(x).toBeNull();
@@ -232,18 +234,18 @@ describe('SystemFormatter', () => {
 
 	// Exercise the real parse/layout/draw pipeline: these positions must reach the hit
 	// geometry too.
-	it.each([
-		'follow',
-		'strict',
-	] as const)('keeps supplied measure widths and note x in %s', async (mode) => {
-		const geometry = await horizontalGeometry(mode, 320);
-		const box = geometry.measures[0]?.rect;
-		expect(box?.w).toBe(320);
-		expect(geometry.notes.map((n) => n.rect.x)).toEqual([
-			expect.closeTo((box?.x ?? 0) + 110),
-			expect.closeTo((box?.x ?? 0) + 240),
-		]);
-	});
+	it.each(['follow', 'strict'] as const)(
+		'keeps supplied measure widths and note x in %s',
+		async (mode) => {
+			const geometry = await horizontalGeometry(mode, 320);
+			const box = geometry.measures[0]?.rect;
+			expect(box?.w).toBe(320);
+			expect(geometry.notes.map((n) => n.rect.x)).toEqual([
+				expect.closeTo((box?.x ?? 0) + 110),
+				expect.closeTo((box?.x ?? 0) + 240),
+			]);
+		},
+	);
 
 	it('ignores supplied measure widths and note x by default', async () => {
 		const geometry = await horizontalGeometry('ignore', 320);
@@ -320,7 +322,7 @@ describe('SystemFormatter', () => {
 async function horizontalGeometry(
 	mode: 'ignore' | 'follow' | 'strict',
 	width: number,
-	opts: { body?: string; following?: string } = {},
+	opts: HorizontalGeometryOptions = {},
 ) {
 	const { body, following = '' } = opts;
 	const config = {
@@ -353,4 +355,9 @@ async function horizontalGeometry(
 		new DetachedViewport(),
 		{ color: new InertDecoration(), halo: new InertDecoration() },
 	).drawn.geometry;
+}
+
+interface HorizontalGeometryOptions {
+	body?: string;
+	following?: string;
 }

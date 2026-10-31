@@ -1,4 +1,4 @@
-import ts from 'typescript';
+import ts from '@typescript/typescript6';
 
 /** Use instrument() on an alphaTab script before injecting it to capture glyph ink
  * separately within each beat. */

@@ -1,4 +1,4 @@
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import type { ElementModel } from './element-model';
 import type { Fold } from './fold';
 import type { Note } from './note';
@@ -23,6 +23,7 @@ import type { SnapshotSource } from './snapshot-source';
 export interface ScoreRecordingParts {
 	config: SnapshotConfig;
 	engraving: Engraving | null;
+	// vet-ignore noop-objects-over-null: a score without a fold has none; absence is a fact of the score recorded as data
 	fold: Fold | null;
 	pages: readonly Rect[];
 	elements: ElementModel;

@@ -1,9 +1,11 @@
+// vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
 import type {
 	BeamRun,
 	Chord,
 	Barline as MBarline,
 	Note,
 } from '@stringsync/mdom';
+import { Rect } from 'core/geometry';
 import {
 	Barline,
 	BarNote,
@@ -30,7 +32,6 @@ import {
 	Vibrato,
 	type Voice,
 } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import { BAR_STYLE_TYPES } from './barline-translator';
 import type { ChordTranslator } from './chord-translator';
 import { CollisionResolver } from './collision-resolver';
@@ -1165,9 +1166,6 @@ export class SystemFormatter {
 		return x;
 	}
 
-	/*
-	 * The GraceNoteGroup attached to a note (the small notes drawn just left of it), if any.
-	 */
 	private graceGroupOf(
 		translator: VoiceTranslator,
 		note: { getModifiers(): { getCategory(): string }[] },

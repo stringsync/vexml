@@ -1,4 +1,4 @@
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { LOUPE_ENTER_MS, LOUPE_EXIT_MS, LOUPE_MIN_SCALE } from './constants';
 import { type Loupe, type LoupeOptions, resolveLoupeOptions } from './loupe';
 import { placeLoupe } from './loupe-placement';

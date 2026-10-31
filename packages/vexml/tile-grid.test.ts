@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { Affine } from './affine';
 import type { PaintOp } from './paint-op';
 import { PaintState } from './paint-state';
@@ -50,7 +50,7 @@ describe('TileGrid', () => {
 		expect(grid.isEmpty(0)).toBe(true);
 	});
 
-	// scry-ignore simple-test-setup: covered/outside/partial are this test's own ops, each placed to exercise one clear; no other test shares them.
+	// vet-ignore simple-test-setup: covered/outside/partial are this test's own ops, each placed to exercise one clear; no other test shares them.
 	it('keeps a partial clear and the ops it does not cover', () => {
 		const covered = fill(10, 10, 10, 10);
 		const outside = fill(30, 30, 10, 10);

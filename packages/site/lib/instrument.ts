@@ -1,4 +1,4 @@
-import type { Resource } from 'webappwiz/disposable';
+import type { Resource } from 'core/disposable';
 
 // A pitched instrument the player drives. Pitches are vexflow keys ("C#/4", "Bb/3").
 // Swap SmplrInstrument for another implementation by satisfying this interface.

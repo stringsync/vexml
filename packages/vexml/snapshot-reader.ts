@@ -1,5 +1,5 @@
 import { MDocument } from '@stringsync/mdom';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import type { Config } from './config';
 import type { ElementModel } from './element-model';
 import type { Fold } from './fold';

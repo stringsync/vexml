@@ -11,12 +11,14 @@ describe('pages', () => {
 			{},
 			exportPages,
 			{
-				musicXML,
-				config: {
-					layout: LETTER,
-					pixelRatio: 1,
-					backgroundColor: '#ffffff',
-					fonts: FONTS,
+				arg: {
+					musicXML,
+					config: {
+						layout: LETTER,
+						pixelRatio: 1,
+						backgroundColor: '#ffffff',
+						fonts: FONTS,
+					},
 				},
 			},
 		);
@@ -56,11 +58,13 @@ describe('pages', () => {
 			{},
 			exportPages,
 			{
-				musicXML,
-				config: {
-					layout: { ...LETTER, pageWidth: 794, pageHeight: 1123 },
-					pixelRatio: 3,
-					fonts: FONTS,
+				arg: {
+					musicXML,
+					config: {
+						layout: { ...LETTER, pageWidth: 794, pageHeight: 1123 },
+						pixelRatio: 3,
+						fonts: FONTS,
+					},
 				},
 			},
 		);

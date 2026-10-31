@@ -1,12 +1,12 @@
 {
 	"name": "@vexml/integration",
-	"version": "1.13.2",
+	"version": "1.13.3",
 	"private": true,
 	"type": "module",
 	"dependencies": {
 		"@stringsync/vexml": "workspace:*",
 		"@vexml/renderer": "workspace:*",
-		"webappwiz": "0.0.54"
+		"core": "workspace:*"
 	},
 	"devDependencies": {
 		"@napi-rs/canvas": "^1.0.10",

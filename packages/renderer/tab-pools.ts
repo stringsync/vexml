@@ -1,4 +1,4 @@
-import type { AsyncResource } from 'webappwiz/disposable';
+import type { AsyncResource } from 'core/disposable';
 import type { Browser } from './browser';
 import { PlaywrightBrowser } from './playwright-browser';
 import { type PageSpec, TabPool } from './pool';

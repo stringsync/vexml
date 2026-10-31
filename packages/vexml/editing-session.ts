@@ -6,8 +6,8 @@ import {
 	Note as MNote,
 	type Part as MPart,
 } from '@stringsync/mdom';
-import { Disposer, type Resource } from 'webappwiz/disposable';
-import { Dispatcher, type Eventful } from 'webappwiz/events';
+import { Disposer, type Resource } from 'core/disposable';
+import { Dispatcher, type Eventful } from 'core/events';
 import type { EditingCaret } from './editing-caret';
 import { EditingNavigator } from './editing-navigator';
 import type { Element } from './element';

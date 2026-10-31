@@ -1,4 +1,4 @@
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import type { JevClient } from './jev-client';
 import { prepareJevImage } from './jev-image';
 import type { Engine, LocatedFinding } from './lint';

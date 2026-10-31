@@ -1,5 +1,5 @@
 import type { InkMask } from '@vexml/renderer';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { InkCollisions } from './ink-collisions';
 import type { InkMap } from './ink-map';
 import { type LineGroup, StaffDetector } from './staff-detector';

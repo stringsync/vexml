@@ -1,4 +1,4 @@
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 
 /*
  * A 2D affine transform in the canvas's own (a, b, c, d, e, f) order: x' = ax + cy + e,

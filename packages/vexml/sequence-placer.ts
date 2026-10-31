@@ -1,4 +1,4 @@
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import type { Note, NoteKey } from './note';
 import type { RawGeometry } from './score-drawer';
 import {

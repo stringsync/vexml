@@ -1,4 +1,4 @@
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import type { ConfigInput } from './config';
 import { TILE_BUDGET, TILE_SIZE } from './constants';
 import { Ink } from './ink';

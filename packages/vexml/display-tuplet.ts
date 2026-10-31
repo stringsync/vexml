@@ -19,18 +19,18 @@ export type DisplayTupletOptions = TupletOptions & {
 
 /* SMuFL metNote*Up glyphs, as metronome-glyph.ts draws them, and metAugmentationDot. */
 const NOTE_GLYPHS: Record<string, string> = {
-	breve: '',
-	whole: '',
-	half: '',
-	quarter: '',
-	eighth: '',
-	'16th': '',
-	'32nd': '',
-	'64th': '',
-	'128th': '',
+	breve: '\uECA0',
+	whole: '\uECA2',
+	half: '\uECA3',
+	quarter: '\uECA5',
+	eighth: '\uECA7',
+	'16th': '\uECA9',
+	'32nd': '\uECAB',
+	'64th': '\uECAD',
+	'128th': '\uECAF',
 };
-const DOT_GLYPH = '';
-const COLON_GLYPH = '';
+const DOT_GLYPH = '\uECB7';
+const COLON_GLYPH = '\uE88A';
 const DIGIT_BASE = 0xe880;
 
 /* How far from the bracket's end the arc starts, away from the notes, as a fraction of a leg. */

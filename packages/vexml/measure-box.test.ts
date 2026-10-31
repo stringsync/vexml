@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { MDocument } from '@stringsync/mdom';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { isHighlightable, isPlayable } from './element';
 import { FakeViewport } from './fake-viewport';
 import type { Measure } from './measure';

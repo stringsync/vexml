@@ -38,6 +38,7 @@ export class SignatureTranslator {
 	 * "beats/beat-type". null when there's nothing drawable. Doubles as the equality
 	 * key for detecting a mid-piece meter change.
 	 */
+	// vet-ignore noop-objects-over-null: a measure can lack a time signature; absence is score data
 	timeSignatureSpec(time: Time | null): string | null {
 		if (time?.symbol === 'common') {
 			return 'C';
@@ -65,6 +66,7 @@ export class SignatureTranslator {
 	 * (symbol="note"/"dotted-note"), several beats/beat-type pairs and an <interchangeable> second meter. Null for a plain
 	 * signature, which timeSignatureSpec hands to vexflow as before.
 	 */
+	// vet-ignore noop-objects-over-null: a measure can lack a time signature; absence is score data
 	extendedTimeSpec(time: Time | null): ExtendedTimeSpec | null {
 		if (!time?.beats || !time.beatType) {
 			return null;
@@ -123,6 +125,7 @@ export class SignatureTranslator {
 	 * the new key: the spec says that always happens on a change to C major or A minor, and it
 	 * is how vexml has drawn every other change too.
 	 */
+	// vet-ignore noop-objects-over-null: a measure can lack a key signature; absence is score data
 	keyCancel(key: Key | null, prevKey: Key | null): KeyCancel | null {
 		const cancel = key?.child('cancel');
 		const spec = FIFTHS_KEYS[Number(cancel?.text?.trim()) + 7];
@@ -228,6 +231,7 @@ export class SignatureTranslator {
 	 * change after the system opening, full for the opening itself. size="cue" and "grace-cue"
 	 * draw small, "full" at full size even mid-system, and "large" a fifth larger than full.
 	 */
+	// vet-ignore noop-objects-over-null: a measure can lack a clef; absence is score data
 	clefSize(clef: Clef | null, change: boolean): ClefSize {
 		switch (clef?.getAttribute('size')) {
 			case 'cue':
@@ -248,6 +252,7 @@ export class SignatureTranslator {
 	 * (C/3 and C/5 are both 'alto'), so comparing signatures across measures spots a clef
 	 * change that is actually visible instead of redrawing an identical glyph.
 	 */
+	// vet-ignore noop-objects-over-null: a measure can lack a clef; absence is score data
 	vexflowClefSpec(clef: Clef | null): string | null {
 		return clef
 			? `${this.clefName(clef)}|${this.vexflowClefAnnotation(clef.octaveChange) ?? ''}`

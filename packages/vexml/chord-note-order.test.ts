@@ -29,7 +29,7 @@ describe('ChordNoteOrder', () => {
 		expect(chord.notes[0]).toBe(chord.lead);
 	});
 
-	// scry-ignore simple-test-setup: each test builds a different chord (pitches differ per case), so the addChord call is the input under test, not shared setup; the shared voice is already in beforeEach.
+	// vet-ignore simple-test-setup: each test builds a different chord (pitches differ per case), so the addChord call is the input under test, not shared setup; the shared voice is already in beforeEach.
 	it('orders cross-staff chord members by staff before pitch', () => {
 		const chord = voice.addChord(
 			[

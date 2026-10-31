@@ -224,7 +224,7 @@ async function run(
 	return (await shoot(config, w, h, extra)).result;
 }
 
-// scry-ignore named-options-last: config, w and h are the case's identity, read positionally at every call site; the optional extras already trail as a named object.
+// vet-ignore named-options-last: config, w and h are the case's identity, read positionally at every call site; the optional extras already trail as a named object.
 async function shoot(
 	config: ConfigInput,
 	w: number,
@@ -233,13 +233,15 @@ async function shoot(
 ) {
 	const xml = await testing.fixture(FIXTURE);
 	return testing.eval(FIXTURE, config, probe, {
-		xml,
-		config,
-		w,
-		h,
-		at: 0.5,
-		...extra,
-	} satisfies Case);
+		arg: {
+			xml,
+			config,
+			w,
+			h,
+			at: 0.5,
+			...extra,
+		} satisfies Case,
+	});
 }
 
 // The halo sits on the note under the bar, and pointing at that note hovers it.

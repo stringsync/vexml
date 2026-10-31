@@ -1,5 +1,5 @@
 import type { Chord, Note as MNote, Score } from '@stringsync/mdom';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import {
 	FRET_HALF_H,
 	FRET_HALF_W,

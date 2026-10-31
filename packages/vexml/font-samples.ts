@@ -15,7 +15,6 @@ export class FontSamples {
 		}
 	}
 
-	/* One sample per font, its characters each once. */
 	list(): FontSample[] {
 		return Array.from(this.chars, ([font, chars]) => ({
 			font,

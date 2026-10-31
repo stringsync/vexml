@@ -1,6 +1,6 @@
 import { expect, it } from 'bun:test';
+import { Rect } from 'core/geometry';
 import { PNG } from 'pngjs';
-import { Rect } from 'webappwiz/geometry';
 import { prepareJevImage } from './jev-image';
 
 it('upscales small transparent images onto white', () => {

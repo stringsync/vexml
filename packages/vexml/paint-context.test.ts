@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { FakePaintProbe } from './fake-paint-probe';
 import { PaintContext } from './paint-context';
 import { PaintList } from './paint-list';

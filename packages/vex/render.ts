@@ -1,8 +1,8 @@
 import { writeFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { dimensions, type Renderer, renderers } from '@vexml/renderer';
-import type { Logger } from 'webappwiz/log';
-import type { Fs } from 'webappwiz/system';
+import type { Logger } from 'core/log';
+import type { Fs } from 'core/system';
 
 export interface RenderOptions {
 	input: string;

@@ -1,11 +1,13 @@
+import { Rect } from 'core/geometry';
 import type { RenderContext, Stave, StaveNote } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import type { CollisionResolver } from './collision-resolver';
 import { LYRIC_LINE_HEIGHT, LYRIC_PADDING } from './constants';
 import { isLyricMark, type LyricMark } from './lyric-mark';
 import type { VoiceTranslator } from './voice-translator';
 
 export interface LyricPlacerOptions {
+	/** The color lyrics, hyphens and melisma lines are drawn in. */
+	notationColor: string;
 	/* Per lyric row (keyed `<systemIndex>:<staveRow>`), how far to drop it so it clears the
 	 * notes above it, measured on the previous pass and reserved on this one; empty on the
 	 * first pass. */
@@ -44,6 +46,7 @@ export class LyricPlacer {
 	// Measured on the previous pass and reserved on this one; empty on the first pass.
 	private readonly lyricDrops: Map<string, number>;
 	private readonly extendWidth: number;
+	private readonly notationColor: string;
 	private readonly hyphenDistance: number | null;
 	private readonly documentPositions: 'follow' | 'strict' | undefined;
 	// Verse baseline feedback, keyed by `<systemIndex>:<staveRow>`: how far below the bottom
@@ -57,9 +60,9 @@ export class LyricPlacer {
 		private readonly translator: VoiceTranslator,
 		private readonly context: RenderContext,
 		private readonly collisionResolver: CollisionResolver,
-		private readonly notationColor: string,
 		opts: LyricPlacerOptions,
 	) {
+		this.notationColor = opts.notationColor;
 		this.lyricDrops = opts.lyricDrops ?? new Map();
 		this.documentPositions = opts.documentPositions;
 		this.extendWidth = opts.extendWidth ?? 1;

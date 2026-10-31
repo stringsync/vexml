@@ -1,4 +1,5 @@
-import { Rect } from 'webappwiz/geometry';
+// vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
+import { Rect } from 'core/geometry';
 import { Affine } from './affine';
 import { Ink } from './ink';
 import type { PaintCall, PaintOp, PathKind, PathSegment } from './paint-op';
@@ -220,7 +221,7 @@ export class PaintContext {
 		}
 	}
 
-	// scry-ignore named-options-last: mirrors the CanvasRenderingContext2D signature.
+	// vet-ignore named-options-last: mirrors the CanvasRenderingContext2D signature.
 	arc(
 		x: number,
 		y: number,
@@ -283,7 +284,7 @@ export class PaintContext {
 		}
 	}
 
-	// scry-ignore named-options-last: mirrors the CanvasRenderingContext2D signature.
+	// vet-ignore named-options-last: mirrors the CanvasRenderingContext2D signature.
 	roundRect(
 		x: number,
 		y: number,
@@ -311,6 +312,7 @@ export class PaintContext {
 		}
 	}
 
+	// vet-ignore noop-objects-over-null: mirrors CanvasRenderingContext2D.stroke, whose path is optional by the platform's own convention
 	stroke(path?: Path2D): void {
 		if (isPath2D(path)) {
 			this.emit(null, { kind: 'stroke', path2d: path }, null);

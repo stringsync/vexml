@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { MDocument } from '@stringsync/mdom';
-import { disposables } from 'webappwiz/disposable';
-import { Rect } from 'webappwiz/geometry';
+import { disposables } from 'core/disposable';
+import { Rect } from 'core/geometry';
 import { DefaultEditingBindings } from './default-editing-bindings';
 import type { EditingControllerOptions } from './editing-controller';
 import { EditingSession } from './editing-session';
@@ -47,19 +47,22 @@ describe('EditingController', () => {
 	it.each([
 		['ctrl', { ctrlKey: true }],
 		['meta', { metaKey: true }],
-	])('adds to the starting selection with the %s modifier and removes departed preview hits', (_, modifier) => {
-		const { host, controller } = f.create();
-		f.editor.select(f.other);
-		host.dom.dispatchEvent(
-			new FakePointerEvent('pointerdown', 10, 30, modifier),
-		);
-		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 60, 60));
-		expect(controller.getPresentation().selected).toHaveLength(3);
-		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 30, 60));
-		expect(controller.getPresentation().selected).toHaveLength(2);
-		host.dom.dispatchEvent(new FakePointerEvent('pointerup', 30, 60));
-		expect(f.editor.getSelection()).toEqual([f.other, f.first]);
-	});
+	])(
+		'adds to the starting selection with the %s modifier and removes departed preview hits',
+		(_, modifier) => {
+			const { host, controller } = f.create();
+			f.editor.select(f.other);
+			host.dom.dispatchEvent(
+				new FakePointerEvent('pointerdown', 10, 30, modifier),
+			);
+			host.dom.dispatchEvent(new FakePointerEvent('pointermove', 60, 60));
+			expect(controller.getPresentation().selected).toHaveLength(3);
+			host.dom.dispatchEvent(new FakePointerEvent('pointermove', 30, 60));
+			expect(controller.getPresentation().selected).toHaveLength(2);
+			host.dom.dispatchEvent(new FakePointerEvent('pointerup', 30, 60));
+			expect(f.editor.getSelection()).toEqual([f.other, f.first]);
+		},
+	);
 
 	it('clears the selection on an empty-space drag when deselecting is allowed, keeping tiny drags as clicks', () => {
 		const { host, controller } = f.create(0, { allowDeselect: true });
@@ -126,19 +129,19 @@ describe('EditingController', () => {
 		expect(f.editor.getSelection()).toEqual([f.other]);
 	});
 
-	it.each([
-		'pointercancel',
-		'lostpointercapture',
-	])('cancels the preview on %s', (type) => {
-		const { host, view } = f.create();
-		f.editor.select(f.other);
-		host.dom.dispatchEvent(new FakePointerEvent('pointerdown', 10, 30));
-		host.dom.dispatchEvent(new FakePointerEvent('pointermove', 60, 60));
-		host.dom.dispatchEvent(new FakePointerEvent(type, 60, 60));
-		expect(view.renders.at(-1)?.marquee).toBeUndefined();
-		host.dom.dispatchEvent(new FakePointerEvent('pointerup', 60, 60));
-		expect(f.editor.getSelection()).toEqual([f.other]);
-	});
+	it.each(['pointercancel', 'lostpointercapture'])(
+		'cancels the preview on %s',
+		(type) => {
+			const { host, view } = f.create();
+			f.editor.select(f.other);
+			host.dom.dispatchEvent(new FakePointerEvent('pointerdown', 10, 30));
+			host.dom.dispatchEvent(new FakePointerEvent('pointermove', 60, 60));
+			host.dom.dispatchEvent(new FakePointerEvent(type, 60, 60));
+			expect(view.renders.at(-1)?.marquee).toBeUndefined();
+			host.dom.dispatchEvent(new FakePointerEvent('pointerup', 60, 60));
+			expect(f.editor.getSelection()).toEqual([f.other]);
+		},
+	);
 
 	it('cancels the preview when the controller is suspended', () => {
 		const { host, controller, view } = f.create();
@@ -308,38 +311,44 @@ describe('EditingController', () => {
 		['Escape', () => new FakeKeyEvent('Escape')],
 		['an empty-space click', () => new FakeClickEvent(150, 80)],
 		['a click on the third note', () => new FakeClickEvent(82, 42)],
-	])('dismisses a range of notes to its focus on %s without moving focus or scrolling', (_, dismissal) => {
-		const { host, controller } = f.create(0, { allowDeselect: false });
-		f.editor.select(f.first);
-		f.editor.select(f.second, { extend: true });
-		const position = controller.getPresentation().position;
-		const scrolls = host.scroller.calls.length;
-		host.dom.dispatchEvent(dismissal());
-		expect(f.editor.getSelection()).toEqual([f.second]);
-		expect(f.editor.getFocus()).toBe(f.second);
-		expect(controller.getPresentation().position).toBe(position);
-		expect(host.scroller.calls).toHaveLength(scrolls);
-		host.dom.dispatchEvent(new FakeKeyEvent('ArrowLeft', { shiftKey: true }));
-		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
-	});
+	])(
+		'dismisses a range of notes to its focus on %s without moving focus or scrolling',
+		(_, dismissal) => {
+			const { host, controller } = f.create(0, { allowDeselect: false });
+			f.editor.select(f.first);
+			f.editor.select(f.second, { extend: true });
+			const position = controller.getPresentation().position;
+			const scrolls = host.scroller.calls.length;
+			host.dom.dispatchEvent(dismissal());
+			expect(f.editor.getSelection()).toEqual([f.second]);
+			expect(f.editor.getFocus()).toBe(f.second);
+			expect(controller.getPresentation().position).toBe(position);
+			expect(host.scroller.calls).toHaveLength(scrolls);
+			host.dom.dispatchEvent(new FakeKeyEvent('ArrowLeft', { shiftKey: true }));
+			expect(f.editor.getSelection()).toEqual([f.first, f.second]);
+		},
+	);
 
 	it.each([
 		['Escape', () => new FakeKeyEvent('Escape')],
 		['an empty-space click', () => new FakeClickEvent(150, 80)],
 		['a click on the third note', () => new FakeClickEvent(82, 42)],
-	])('dismisses an explicit set of notes to its focus on %s without moving focus or scrolling', (_, dismissal) => {
-		const { host, controller } = f.create(0, { allowDeselect: false });
-		f.editor.selectNotes([f.first, f.second]);
-		const position = controller.getPresentation().position;
-		const scrolls = host.scroller.calls.length;
-		host.dom.dispatchEvent(dismissal());
-		expect(f.editor.getSelection()).toEqual([f.second]);
-		expect(f.editor.getFocus()).toBe(f.second);
-		expect(controller.getPresentation().position).toBe(position);
-		expect(host.scroller.calls).toHaveLength(scrolls);
-		host.dom.dispatchEvent(new FakeKeyEvent('ArrowLeft', { shiftKey: true }));
-		expect(f.editor.getSelection()).toEqual([f.first, f.second]);
-	});
+	])(
+		'dismisses an explicit set of notes to its focus on %s without moving focus or scrolling',
+		(_, dismissal) => {
+			const { host, controller } = f.create(0, { allowDeselect: false });
+			f.editor.selectNotes([f.first, f.second]);
+			const position = controller.getPresentation().position;
+			const scrolls = host.scroller.calls.length;
+			host.dom.dispatchEvent(dismissal());
+			expect(f.editor.getSelection()).toEqual([f.second]);
+			expect(f.editor.getFocus()).toBe(f.second);
+			expect(controller.getPresentation().position).toBe(position);
+			expect(host.scroller.calls).toHaveLength(scrolls);
+			host.dom.dispatchEvent(new FakeKeyEvent('ArrowLeft', { shiftKey: true }));
+			expect(f.editor.getSelection()).toEqual([f.first, f.second]);
+		},
+	);
 
 	it('suspends input and visuals while keeping selection without scrolling on reactivation', () => {
 		const { host, controller, view } = f.create(0, { enabled: false });
@@ -495,7 +504,7 @@ describe('EditingController', () => {
 		]);
 	});
 
-	// scry-ignore simple-test-setup: the controller options (view, selection colors) are the input this test checks, so they stay beside its assertions rather than in a beforeEach other tests do not share
+	// vet-ignore simple-test-setup: the controller options (view, selection colors) are the input this test checks, so they stay beside its assertions rather than in a beforeEach other tests do not share
 	it('colors selected notes, with a region and cursor-only halo and outline', () => {
 		const { host, decorations, score } = f.create(0, {
 			view: undefined,

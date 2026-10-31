@@ -13,7 +13,7 @@ import {
 import { TextOutliner } from './text-outliner';
 
 const BRAVURA = new URL('./assets/fonts/Bravura.woff2', import.meta.url);
-const CLEF = '';
+const CLEF = '\uE050';
 const FONT = "30pt 'Bravura', serif";
 
 describe('TextOutliner', () => {

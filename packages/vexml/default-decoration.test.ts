@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { ColorStyle } from './color-style';
 import { DefaultDecoration } from './default-decoration';
 import { FakeDecoratable, NOTEHEAD } from './fake-decoratable';

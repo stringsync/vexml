@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { Rect } from 'core/geometry';
 import { PNG } from 'pngjs';
-import { Rect } from 'webappwiz/geometry';
 import { JEV_MODEL, JEV_QUESTIONS, type JevClient } from './jev-client';
 import { prepareJevImage } from './jev-image';
 import type { CorpusPaths, DefectLabel } from './lint-corpus';

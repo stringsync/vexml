@@ -1,10 +1,16 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { groupBeamRuns, type Measure as MMeasure } from '@stringsync/mdom';
 import { DefaultScoreParser } from './default-score-parser';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { ScoreReader } from './score-reader';
 
 describe('ScoreReader', () => {
+	let reader: ScoreReader;
+
+	beforeEach(() => {
+		reader = new ScoreReader(new DynamicGlyphs());
+	});
+
 	it('reads harmony and frame positions separately, preserving zero default-x', async () => {
 		const measure = await measureOf(
 			'<harmony default-x="90"><root><root-step>C</root-step></root><kind>major</kind><frame default-x="0" default-y="130"><frame-strings>6</frame-strings><frame-frets>4</frame-frets><frame-note><string>2</string><fret>1</fret></frame-note></frame></harmony>',
@@ -20,7 +26,6 @@ describe('ScoreReader', () => {
 	it('reads hot note children once per render reader', async () => {
 		const measure = await measureOf(QUARTER);
 		const note = required(measure.notes[0], 'fixture note');
-		const cache = new ScoreReader(new DynamicGlyphs());
 		let dotReads = 0;
 		let accidentalReads = 0;
 		let chordReads = 0;
@@ -43,18 +48,18 @@ describe('ScoreReader', () => {
 			},
 		});
 
-		expect(cache.notesOf(measure)).toBe(cache.notesOf(measure));
-		expect(cache.beamsOf(note)).toBe(cache.beamsOf(note));
-		expect(cache.technicalsOf(note)).toBe(cache.technicalsOf(note));
-		expect(cache.lyricsOf(note)).toBe(cache.lyricsOf(note));
-		expect(cache.ornamentsOf(note)).toBe(cache.ornamentsOf(note));
-		expect(cache.tiesOf(note)).toBe(cache.tiesOf(note));
-		expect(cache.dotsOf(note)).toBe(2);
-		expect(cache.dotsOf(note)).toBe(2);
-		expect(cache.accidentalOf(note)).toBeNull();
-		expect(cache.accidentalOf(note)).toBeNull();
-		expect(cache.isChordMember(note)).toBe(false);
-		expect(cache.isChordMember(note)).toBe(false);
+		expect(reader.notesOf(measure)).toBe(reader.notesOf(measure));
+		expect(reader.beamsOf(note)).toBe(reader.beamsOf(note));
+		expect(reader.technicalsOf(note)).toBe(reader.technicalsOf(note));
+		expect(reader.lyricsOf(note)).toBe(reader.lyricsOf(note));
+		expect(reader.ornamentsOf(note)).toBe(reader.ornamentsOf(note));
+		expect(reader.tiesOf(note)).toBe(reader.tiesOf(note));
+		expect(reader.dotsOf(note)).toBe(2);
+		expect(reader.dotsOf(note)).toBe(2);
+		expect(reader.accidentalOf(note)).toBeNull();
+		expect(reader.accidentalOf(note)).toBeNull();
+		expect(reader.isChordMember(note)).toBe(false);
+		expect(reader.isChordMember(note)).toBe(false);
 		expect(dotReads).toBe(1);
 		expect(accidentalReads).toBe(1);
 		expect(chordReads).toBe(1);
@@ -74,9 +79,8 @@ describe('ScoreReader', () => {
 				'<note><rest/><duration>1</duration><type>quarter</type></note>' +
 				note('<beam number="1">end</beam>'),
 		);
-		const cache = new ScoreReader(new DynamicGlyphs());
-		const notes = cache.notesOf(measure);
-		const actual = cache.beamRuns(notes);
+		const notes = reader.notesOf(measure);
+		const actual = reader.beamRuns(notes);
 		const expected = groupBeamRuns(notes);
 		const shape = (runs: typeof expected) =>
 			runs.map((run) => ({
@@ -92,7 +96,6 @@ describe('ScoreReader', () => {
 	 * it modifies, not a child, so "dotted quarter = half" and "quarter = dotted half" differ
 	 * only in where the <beat-unit-dot/> sits in document order.
 	 */
-	const reader = new ScoreReader(new DynamicGlyphs());
 	const metronome = (inner: string, attrs = '') =>
 		`<direction><direction-type><metronome ${attrs}>${inner}</metronome></direction-type></direction>`;
 	const markOf = async (inner: string, attrs = '') =>
@@ -451,7 +454,6 @@ describe('ScoreReader', () => {
 	});
 
 	it('closes the bar with words written after its last note, binding them to no note', async () => {
-		const reader = new ScoreReader(new DynamicGlyphs());
 		const words = (text: string) =>
 			`<direction><direction-type><words>${text}</words></direction-type></direction>`;
 		const measure = await measureOf(words('Andante'), words('D.S. al Coda'));
@@ -470,29 +472,29 @@ describe('ScoreReader', () => {
 		});
 	});
 
-	it.each([
-		'',
-		'<offset>0</offset>',
-	])('does not scan part history for absent or zero offset %j', async (offset) => {
-		const measure = await measureOf(
-			`<direction><direction-type><words>Andante</words></direction-type>${offset}</direction>`,
-		);
-		const part = measure.part;
-		const measures = part.measures;
-		let historyReads = 0;
-		Object.defineProperty(part, 'measures', {
-			get: () => {
-				historyReads++;
-				return measures;
-			},
-		});
+	it.each(['', '<offset>0</offset>'])(
+		'does not scan part history for absent or zero offset %j',
+		async (offset) => {
+			const measure = await measureOf(
+				`<direction><direction-type><words>Andante</words></direction-type>${offset}</direction>`,
+			);
+			const part = measure.part;
+			const measures = part.measures;
+			let historyReads = 0;
+			Object.defineProperty(part, 'measures', {
+				get: () => {
+					historyReads++;
+					return measures;
+				},
+			});
 
-		expect(reader.wordsOf(measure)[0]).toMatchObject({
-			text: 'Andante',
-			lead: measure.notes[0],
-		});
-		expect(historyReads).toBe(0);
-	});
+			expect(reader.wordsOf(measure)[0]).toMatchObject({
+				text: 'Andante',
+				lead: measure.notes[0],
+			});
+			expect(historyReads).toBe(0);
+		},
+	);
 
 	it('caches divisions for nonzero word and harmony offsets', async () => {
 		const measure = await measureOf(
@@ -527,7 +529,6 @@ describe('ScoreReader', () => {
 	</part>
 </score-partwise>`);
 		const measures = mdoc.score.parts[0]?.measures ?? [];
-		const reader = new ScoreReader(new DynamicGlyphs());
 
 		expect(reader.wordsOf(measures[0] as MMeasure)[0]?.lead).toBe(
 			measures[0]?.notes[0],
@@ -559,7 +560,6 @@ describe('ScoreReader', () => {
 	});
 
 	it('reads an other-direction as its smufl glyph, else its text', async () => {
-		const reader = new ScoreReader(new DynamicGlyphs());
 		const other = (attrs: string, text: string) =>
 			`<direction><direction-type><other-direction${attrs}>${text}</other-direction></direction-type></direction>`;
 		const measure = await measureOf(
@@ -569,13 +569,12 @@ describe('ScoreReader', () => {
 		expect(
 			reader.wordsOf(measure).map(({ text, glyph }) => ({ text, glyph })),
 		).toEqual([
-			{ text: '', glyph: true },
+			{ text: '\uE650', glyph: true },
 			{ text: 'con sord.', glyph: false },
 		]);
 	});
 
 	it('reads the formatting a words direction asks for', async () => {
-		const reader = new ScoreReader(new DynamicGlyphs());
 		const measure = await measureOf(
 			'<direction><direction-type>' +
 				'<words>plain</words>' +
@@ -624,7 +623,6 @@ describe('ScoreReader', () => {
 	});
 
 	it('reads a rehearsal mark with no enclosure as asking for none', async () => {
-		const reader = new ScoreReader(new DynamicGlyphs());
 		const measure = await measureOf(
 			'<direction><direction-type><rehearsal enclosure="none">A</rehearsal>' +
 				'<rehearsal>B</rehearsal></direction-type></direction>',
@@ -653,10 +651,10 @@ describe('ScoreReader', () => {
 		);
 		const read = reader.pictogramsOf(measure);
 		expect(read.map((s) => s.symbol)).toEqual([
-			{ kind: 'glyph', glyph: '' },
-			{ kind: 'glyph', glyph: '' },
-			{ kind: 'glyph', glyph: '' },
-			{ kind: 'glyph', glyph: '' },
+			{ kind: 'glyph', glyph: '\uE6D1' },
+			{ kind: 'glyph', glyph: '\uE6D0' },
+			{ kind: 'glyph', glyph: '\uE7D2' },
+			{ kind: 'glyph', glyph: '\uE7AD' },
 			{ kind: 'text', text: 'x wound' },
 			{ kind: 'text', text: 'washboard' },
 			{ kind: 'text', text: 'spoons' },
@@ -1095,7 +1093,6 @@ describe('ScoreReader', () => {
 			'',
 			STYLE('<measure-repeat type="stop"/>'),
 		]);
-		const reader = new ScoreReader(new DynamicGlyphs());
 		expect(measures.map((m) => reader.measureStyleOf(m, '1'))).toEqual([
 			{ kind: 'measure-repeat', count: 2, slashes: 1, bar: 0 },
 			{ kind: 'measure-repeat', count: 2, slashes: 1, bar: 1 },
@@ -1110,7 +1107,6 @@ describe('ScoreReader', () => {
 			`${QUARTER.repeat(2)}${STYLE('<beat-repeat type="start"/>')}`,
 			'',
 		]);
-		const reader = new ScoreReader(new DynamicGlyphs());
 		expect(reader.measureStyleOf(measures[0] as never, '1')).toBeNull();
 		expect(reader.measureStyleOf(measures[1] as never, '1')).toMatchObject({
 			kind: 'beat-repeat',
@@ -1124,7 +1120,6 @@ describe('ScoreReader', () => {
 			'<beats>6</beats><beat-type>8</beat-type>',
 			'<note><pitch><step>C</step><octave>4</octave></pitch><duration>6</duration><type>half</type><dot/></note>',
 		);
-		const reader = new ScoreReader(new DynamicGlyphs());
 		expect(reader.measureStyleOf(measures[0] as never, '1')).toMatchObject({
 			kind: 'beat-slash',
 			unit: 1.5,
@@ -1136,7 +1131,6 @@ describe('ScoreReader', () => {
 		const [measure] = await styledMeasures([
 			`${QUARTER.repeat(2)}${STYLE('<beat-repeat type="start"/>')}`,
 		]);
-		const reader = new ScoreReader(new DynamicGlyphs());
 		expect(
 			measure?.notes.map((note) => {
 				const { hidden, sign } = reader.noteStyleOf(note);
@@ -1154,7 +1148,6 @@ describe('ScoreReader', () => {
 		const [measure] = await styledMeasures([
 			STYLE('<slash type="start"><except-voice>2</except-voice></slash>'),
 		]);
-		const reader = new ScoreReader(new DynamicGlyphs());
 		const [first] = measure?.notes ?? [];
 		expect(reader.measureStyleOf(measure as never, '1')).toBeNull();
 		expect(reader.noteStyleOf(first as never).hidden).toBe(true);
@@ -1206,7 +1199,6 @@ describe('ScoreReader', () => {
 		const [measure] = await styledMeasures([
 			`${QUARTER.repeat(2)}${STYLE('<slash type="start" use-stems="yes"/>')}`,
 		]);
-		const reader = new ScoreReader(new DynamicGlyphs());
 		expect(measure?.notes.map((note) => reader.isRhythmSlashed(note))).toEqual([
 			false,
 			false,

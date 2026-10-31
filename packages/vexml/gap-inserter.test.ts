@@ -76,13 +76,14 @@ describe('GapInserter', () => {
 		expect(playback(reader, doc)).toEqual([0, 1, 0, 2, 3, 4]);
 	});
 
-	it.each([
-		1, 2, 3, 4, 6,
-	])('refuses a bar inside an inner repeat, and inside its outer one (bar %i)', (index) => {
-		// |: 1 |: 2 :| 3 :| plays 1 2 2 3 1 2 2 3.
-		const doc = score([[FORWARD], [FORWARD, BACKWARD], [BACKWARD]]);
-		expect(() => inserter.insert(doc, [bar(index)])).toThrow(RangeError);
-	});
+	it.each([1, 2, 3, 4, 6])(
+		'refuses a bar inside an inner repeat, and inside its outer one (bar %i)',
+		(index) => {
+			// |: 1 |: 2 :| 3 :| plays 1 2 2 3 1 2 2 3.
+			const doc = score([[FORWARD], [FORWARD, BACKWARD], [BACKWARD]]);
+			expect(() => inserter.insert(doc, [bar(index)])).toThrow(RangeError);
+		},
+	);
 
 	it('accepts the bar after an outer repeat that holds an inner one', () => {
 		const doc = score([[FORWARD], [FORWARD, BACKWARD], [BACKWARD]]);

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { MemoryLogger } from 'webappwiz/log';
-import { FakeClock } from 'webappwiz/time/testing';
+import { MemoryLogger } from 'core/log';
+import { FakeClock } from 'core/time/testing';
 import type { Bench, Measurement } from './perf-bench';
 import type { Engine, PerfEvent } from './perf-events';
 import { Retrier } from './perf-retrier';

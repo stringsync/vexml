@@ -1,5 +1,5 @@
 import type { MDocument } from '@stringsync/mdom';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { BarlineTranslator } from './barline-translator';
 import { ChordTranslator } from './chord-translator';
 import type { Config } from './config';

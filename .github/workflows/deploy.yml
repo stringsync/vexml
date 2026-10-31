@@ -1,4 +1,5 @@
-# Builds the packages/site playground and deploys it to GitHub Pages (vexml.dev).
+# Builds the packages/site playground and deploys it to GitHub Pages (vexml.dev). It lives in
+# vexml/ so the mirror carries it to the public repo, where it runs on every push.
 # Pages source must be set to "GitHub Actions" in repo settings.
 name: deploy
 
@@ -27,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
+      - run: bun install
       - run: bunx vite build packages/site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

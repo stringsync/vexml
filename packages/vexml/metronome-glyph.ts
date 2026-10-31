@@ -334,10 +334,10 @@ const NOTE_GLYPHS: Record<string, string> = {
  * its beams stroked in: an eighth's own flag would otherwise print inside the beam. It doubles
  * as the fallback for an unrecognized <metronome-type>.
  */
-const BEAMED_GLYPH = '';
+const BEAMED_GLYPH = '\uECA5';
 
 /** metAugmentationDot: the dot StaveTempo trails a dotted unit with. */
-const DOT_GLYPH = '';
+const DOT_GLYPH = '\uECB7';
 
 /** Gap between adjacent pieces, matching the 3px StaveTempo advances each of its own pieces by. */
 const GAP = 3;

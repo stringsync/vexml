@@ -16,7 +16,7 @@ describe('PitchEdit', () => {
 		voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
 	});
 
-	// scry-ignore simple-test-setup: this score is bespoke (dotted sharp note, slur, accidental child); the C4 quarter the other tests share would shift its beat expectations.
+	// vet-ignore simple-test-setup: this score is bespoke (dotted sharp note, slur, accidental child); the C4 quarter the other tests share would shift its beat expectations.
 	it('restores exact XML, pitch and accidental identity through repeated undo/redo', () => {
 		const note = voice.addNote({
 			step: 'C',
@@ -80,14 +80,15 @@ describe('PitchEdit', () => {
 		{ spec: { step: 'D', octave: 10 } },
 		{ spec: { step: 'D', octave: 4.5 } },
 		{ spec: { step: 'D', octave: 4, alter: Number.NaN } },
-	])('rejects the invalid pitch $spec before changing the document', ({
-		spec,
-	}) => {
-		const note = voice.addNote({ step: 'C', octave: 4, type: 'quarter' });
-		const pitch = note.pitch;
-		expect(() => new PitchEdit([note]).apply(spec)).toThrow('invalid pitch');
-		expect(note.pitch).toBe(pitch);
-	});
+	])(
+		'rejects the invalid pitch $spec before changing the document',
+		({ spec }) => {
+			const note = voice.addNote({ step: 'C', octave: 4, type: 'quarter' });
+			const pitch = note.pitch;
+			expect(() => new PitchEdit([note]).apply(spec)).toThrow('invalid pitch');
+			expect(note.pitch).toBe(pitch);
+		},
+	);
 
 	it('does not silently break a tie when repitching one endpoint', () => {
 		const first = voice.addNote({ step: 'C', octave: 4, type: 'quarter' });

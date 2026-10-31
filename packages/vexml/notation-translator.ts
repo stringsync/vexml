@@ -1,3 +1,4 @@
+// vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
 import {
 	type Chord,
 	type Lyric,

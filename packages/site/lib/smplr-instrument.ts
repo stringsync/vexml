@@ -1,5 +1,5 @@
+import { disposables, type Resource } from 'core/disposable';
 import { type Smplr, Soundfont } from 'smplr';
-import { disposables, type Resource } from 'webappwiz/disposable';
 import type { Instrument } from './instrument';
 
 // smplr's volume scale is MIDI-style (0–127). 100 is a comfortable default.

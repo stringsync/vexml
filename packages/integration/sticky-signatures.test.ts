@@ -79,7 +79,7 @@ function scrolled(file: string, fraction: number) {
 			await new Promise((resolve) => requestAnimationFrame(resolve));
 			await new Promise((resolve) => requestAnimationFrame(resolve));
 		},
-		{ fraction } satisfies Scroll,
+		{ arg: { fraction } satisfies Scroll },
 	);
 }
 

@@ -1,4 +1,4 @@
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { HALO_MARGIN } from './constants';
 import type { Decoratable } from './decoration';
 import type { DecorationStyle } from './decoration-style';

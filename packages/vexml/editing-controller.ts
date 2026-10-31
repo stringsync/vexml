@@ -1,7 +1,8 @@
+// vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
 import { type Measure as MMeasure, Note as MNote } from '@stringsync/mdom';
-import { Disposer, type Resource } from 'webappwiz/disposable';
-import { Dispatcher, type Eventful, type Events } from 'webappwiz/events';
-import { Rect } from 'webappwiz/geometry';
+import { Disposer, type Resource } from 'core/disposable';
+import { Dispatcher, type Eventful, type Events } from 'core/events';
+import { Rect } from 'core/geometry';
 import { Barline } from './barline';
 import { DefaultEditingBindings } from './default-editing-bindings';
 import type {
@@ -40,6 +41,7 @@ export interface EditingControllerOptions {
 	/** Default overlay appearance, or false for no built-in view. */
 	selection?: SelectionOverlayOptions | false;
 	/** A custom view, owned and disposed by the controller. */
+	// vet-ignore noop-objects-over-null: the caller may omit a custom view; Score resolves that to the built-in overlay or a NoopEditingView before the controller sees it
 	view?: EditingView;
 }
 
@@ -49,7 +51,7 @@ export interface EditingControllerDeps {
 	events: Events<ScoreEventMap>;
 	dom: EventTarget;
 	scroller: Scroller;
-	view: EditingView | null;
+	view: EditingView;
 }
 
 export type EditingControllerEvents = {
@@ -88,9 +90,7 @@ export class EditingController
 		this.enabled = opts.enabled ?? true;
 		this.bindings = opts.bindings ?? new DefaultEditingBindings();
 		this.presentation = this.resolve();
-		if (deps.view) {
-			this.disposer.use(deps.view);
-		}
+		this.disposer.use(deps.view);
 		this.disposer.defer(
 			editor.events.on('selectionchange', () => this.refresh()),
 		);
@@ -180,7 +180,7 @@ export class EditingController
 	}
 
 	private renderView(): void {
-		this.deps.view?.render(
+		this.deps.view.render(
 			this.enabled
 				? this.presentation
 				: {
@@ -598,6 +598,7 @@ export class EditingController
 		barline: Barline | null;
 		focus: Measure | Barline | null;
 		/* The focus's measure, which places an undrawn barline. */
+		// vet-ignore noop-objects-over-null: a focus may have no measure; absence is selection data
 		measure: Measure | null;
 	} | null {
 		const target = this.editor.getStructuralFocus();

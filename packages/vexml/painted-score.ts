@@ -11,6 +11,7 @@ export class PaintedScore {
 
 	constructor(
 		private readonly box: ScoreBox,
+		// vet-ignore noop-objects-over-null: an absent value is part of this public shape, and a Noop stand-in would change what callers and tests see
 		private readonly surface: TiledSurface | null,
 	) {}
 

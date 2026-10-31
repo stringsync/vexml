@@ -1,5 +1,5 @@
 import { isAbsolute, resolve } from 'node:path';
-import type { Ps } from 'webappwiz/system';
+import type { Ps } from 'core/system';
 
 export interface ValidateOptions {
 	input: string;

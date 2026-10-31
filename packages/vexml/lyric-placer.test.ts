@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
+import { Rect } from 'core/geometry';
 import type { RenderContext, Stave, StaveNote } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import { CollisionResolver } from './collision-resolver';
 import { LYRIC_FONT_SIZE, LYRIC_LINE_HEIGHT } from './constants';
 import { FakeLyricMark } from './fake-lyric-mark';
@@ -22,7 +22,7 @@ describe('LyricPlacer', () => {
 			checkStave: () => stave,
 		}) as unknown as StaveNote;
 
-	const makePlacer = (opts: LyricPlacerOptions = {}) => {
+	const makePlacer = (opts: Partial<LyricPlacerOptions> = {}) => {
 		// Captures each stroked segment so a melisma line's endpoints are assertable.
 		const lines: Array<{ x1: number; x2: number; y: number }> = [];
 		let pen = { x: 0, y: 0 };
@@ -45,7 +45,8 @@ describe('LyricPlacer', () => {
 		const translator = {
 			noteheadHalfWidth: () => 6,
 		} as unknown as VoiceTranslator;
-		const placer = new LyricPlacer(translator, context, resolver, '#123456', {
+		const placer = new LyricPlacer(translator, context, resolver, {
+			notationColor: '#123456',
 			...opts,
 		});
 		const obstacles = () => resolver.query(new Rect(0, 0, 2000, 2000));

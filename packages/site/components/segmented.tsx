@@ -15,7 +15,7 @@ export interface SegmentedOption<T extends string> {
 	hint?: string;
 }
 
-// scry-ignore objects-over-callbacks: these are the props of the Segmented component, and
+// vet-ignore objects-over-callbacks: these are the props of the Segmented component, and
 // onChange is how React passes its event.
 export interface SegmentedProps<T extends string> {
 	value: T;

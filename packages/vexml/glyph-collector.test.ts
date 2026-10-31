@@ -16,12 +16,12 @@ describe('GlyphCollector', () => {
 		const collector = new GlyphCollector(new FakePaintProbe());
 		const bravura = PaintState.INITIAL.with('font', '30pt Bravura');
 		const text = PaintState.INITIAL.with('font', '12px Inter');
-		collector.measureText(bravura, '');
-		collector.measureText(bravura, '');
+		collector.measureText(bravura, '\uE050\uE0A4');
+		collector.measureText(bravura, '\uE0A4\uE566');
 		collector.measureText(text, 'élan');
 
 		expect(collector.samples()).toEqual([
-			{ font: '30pt Bravura', text: '' },
+			{ font: '30pt Bravura', text: '\uE050\uE0A4\uE566' },
 			{ font: '12px Inter', text: 'élan' },
 		]);
 	});

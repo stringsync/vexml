@@ -1,4 +1,4 @@
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import { MAX_CANVAS_AREA } from './constants';
 import type { PagePainter } from './page-painter';
 import type { System } from './system';

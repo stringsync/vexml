@@ -1,6 +1,6 @@
 import { basename, extname, isAbsolute, resolve } from 'node:path';
-import type { Logger } from 'webappwiz/log';
-import type { Fs } from 'webappwiz/system';
+import type { Logger } from 'core/log';
+import type { Fs } from 'core/system';
 import {
 	MeasureSlicer,
 	type SliceCoordinate,

@@ -1,23 +1,17 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.5.1/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.5.7/schema.json",
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": [
-			"**",
-			"!dist",
-			"!**/*.musicxml",
-			"!.agents",
-			"!.wiz",
-			"!skills-lock.json"
-		]
+		"includes": ["**", "!**/*.musicxml", "!packages/core"]
 	},
-	"formatter": {
-		"enabled": true,
-		"indentStyle": "tab"
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
 	},
 	"linter": {
 		"enabled": true,
@@ -25,27 +19,27 @@
 			"preset": "recommended",
 			"style": {
 				"useBlockStatements": "error",
+				"useNamingConvention": "off",
+				"noRestrictedImports": {
+					"level": "error",
+					"options": {
+						"patterns": [
+							{
+								"group": ["**/packages/**"],
+								"message": "Import the package's public API (its name and an exports subpath) instead of reaching into packages/."
+							}
+						]
+					}
+				},
 				"noNestedTernary": "error"
+			},
+			"correctness": {
+				"noUndeclaredDependencies": "error"
 			}
 		}
 	},
-	"css": {
-		"parser": {
-			"tailwindDirectives": true
-		}
-	},
-	"javascript": {
-		"formatter": {
-			"quoteStyle": "single"
-		}
-	},
-	"assist": {
-		"enabled": true,
-		"actions": {
-			"source": {
-				"organizeImports": "on"
-			}
-		}
+	"formatter": {
+		"enabled": true
 	},
 	"overrides": [
 		{
@@ -64,5 +58,10 @@
 				}
 			}
 		}
-	]
+	],
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "single"
+		}
+	}
 }

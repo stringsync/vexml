@@ -82,7 +82,7 @@ export class TabVoiceTranslator {
 	tickables(
 		chords: Chord[],
 		tuning: number[] | null,
-		// scry-ignore objects-over-callbacks: the notation path's `record` and this one are the
+		// vet-ignore objects-over-callbacks: the notation path's `record` and this one are the
 		// same collector, scoped to the one call for the same reason: see
 		// VoiceTickablesOptions.record.
 		record?: (lead: Note, tickable: StemmableNote) => void,

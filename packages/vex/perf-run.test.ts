@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { Duration } from 'webappwiz/time';
-import { FakeClock } from 'webappwiz/time/testing';
+import { Duration } from 'core/time';
+import { FakeClock } from 'core/time/testing';
 import type { PerfEvent } from './perf-events';
 import { PerfRun } from './perf-run';
 

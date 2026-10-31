@@ -1,4 +1,4 @@
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 
 /* What a Page draws itself with: the engraving, replayed from its recording into any context, the
  * paper it goes on, and the resolution it prints at. The Stage implements it; tests use a fake. */

@@ -1,5 +1,5 @@
 import type { Image } from '@vexml/renderer';
-import type { Clock, Duration } from 'webappwiz/time';
+import type { Clock, Duration } from 'core/time';
 import type { PerfListener } from './perf';
 import type { Cell, Engine, PerfEvent } from './perf-events';
 

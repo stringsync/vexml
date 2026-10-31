@@ -1,5 +1,5 @@
-import type { Resource } from 'webappwiz/disposable';
-import { Rect } from 'webappwiz/geometry';
+import type { Resource } from 'core/disposable';
+import { Rect } from 'core/geometry';
 import { Affine } from './affine';
 import type { Ink } from './ink';
 import type { PaintOp } from './paint-op';
@@ -85,7 +85,6 @@ export class TiledSurface implements PaintSink, Resource {
 		return this.grid.height;
 	}
 
-	/* How many tiles hold a painted canvas right now. */
 	get painted(): number {
 		return this.tiles.size;
 	}

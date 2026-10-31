@@ -19,51 +19,55 @@ function required<T>(value: T | null | undefined, name: string): T {
 describe('TabPositionEdit', () => {
 	let document: MDocument;
 	let voice: Voice;
+	let note: Note;
 
 	beforeEach(() => {
 		document = MDocument.empty();
 		voice = document.score.addPart().addMeasure().getOrCreateVoice('1');
+		note = voice.addNote({ step: 'E', octave: 2, type: 'quarter' });
 	});
 
 	it('sets pitch, string and fret while preserving timing and unrelated notation', () => {
-		const note = voice.addNote({
+		// This test needs a dotted note as the measure's only note.
+		note.remove();
+		const dotted = voice.addNote({
 			step: 'E',
 			octave: 2,
 			type: 'quarter',
 			dots: 1,
 		});
-		note.addArticulation('staccato');
+		dotted.addArticulation('staccato');
 		const accidental = new MElement('accidental');
 		accidental.setText('sharp');
-		note.insertBefore(accidental, note.child('staff'));
+		dotted.insertBefore(accidental, dotted.child('staff'));
 		const before = {
-			duration: note.duration,
-			onset: note.measureBeat,
-			voice: note.voice,
-			staff: note.staff,
+			duration: dotted.duration,
+			onset: dotted.measureBeat,
+			voice: dotted.voice,
+			staff: dotted.staff,
 		};
 
 		expect(
-			new TabPositionEdit([note]).apply({
+			new TabPositionEdit([dotted]).apply({
 				string: 5,
 				fret: 3,
 				pitch: { step: 'C', octave: 3 },
 			}),
 		).toBe(true);
-		expect([note.pitch?.step, note.pitch?.octave, note.pitch?.alter]).toEqual([
-			'C',
-			3,
-			0,
-		]);
-		expect(note.string).toBe(5);
-		expect(note.fret).toBe(3);
-		expect(note.accidental).toBeNull();
-		expect(note.articulations).toEqual(['staccato']);
+		expect([
+			dotted.pitch?.step,
+			dotted.pitch?.octave,
+			dotted.pitch?.alter,
+		]).toEqual(['C', 3, 0]);
+		expect(dotted.string).toBe(5);
+		expect(dotted.fret).toBe(3);
+		expect(dotted.accidental).toBeNull();
+		expect(dotted.articulations).toEqual(['staccato']);
 		expect({
-			duration: note.duration,
-			onset: note.measureBeat,
-			voice: note.voice,
-			staff: note.staff,
+			duration: dotted.duration,
+			onset: dotted.measureBeat,
+			voice: dotted.voice,
+			staff: dotted.staff,
 		}).toEqual(before);
 
 		const copy = new MDOMParser().parseFromString(
@@ -71,7 +75,7 @@ describe('TabPositionEdit', () => {
 		);
 		const restored: Note = required(
 			copy.score.parts[0]?.measures[0]?.notes[0],
-			'round-trip note',
+			'round-trip dotted',
 		);
 		expect([
 			restored.pitch?.step,
@@ -84,7 +88,6 @@ describe('TabPositionEdit', () => {
 	});
 
 	it('rejects a mixed pitched/rest group before changing any member', () => {
-		const note = voice.addNote({ step: 'E', octave: 2, type: 'quarter' });
 		const rest = voice.addRest({ type: 'quarter' });
 		const pitch = note.pitch;
 		expect(() =>
@@ -113,19 +116,18 @@ describe('TabPositionEdit', () => {
 	});
 
 	it('rejects a tied group before changing its first member', () => {
-		const first = voice.addNote({ step: 'E', octave: 2, type: 'quarter' });
 		const tied = voice.addNote({ step: 'D', octave: 3, type: 'quarter' });
 		const next = voice.addNote({ step: 'D', octave: 3, type: 'quarter' });
 		tied.addTie(next);
 		expect(() =>
-			new TabPositionEdit([first, tied]).apply({
+			new TabPositionEdit([note, tied]).apply({
 				string: 5,
 				fret: 3,
 				pitch: { step: 'C', octave: 3 },
 			}),
 		).toThrow('tie-aware');
-		expect(first.pitch?.step).toBe('E');
-		expect(first.string).toBeNull();
+		expect(note.pitch?.step).toBe('E');
+		expect(note.string).toBeNull();
 		expect(tied.ties[0]?.partner?.note).toBe(next);
 	});
 
@@ -135,7 +137,6 @@ describe('TabPositionEdit', () => {
 		{ string: 5, fret: -1 },
 		{ string: 5, fret: 1.5 },
 	])('rejects invalid string/fret input $string/$fret', ({ string, fret }) => {
-		const note = voice.addNote({ step: 'E', octave: 2, type: 'quarter' });
 		expect(() =>
 			new TabPositionEdit([note]).apply({
 				string,
@@ -148,7 +149,6 @@ describe('TabPositionEdit', () => {
 	});
 
 	it('rejects an invalid pitch before changing string or fret', () => {
-		const note = voice.addNote({ step: 'E', octave: 2, type: 'quarter' });
 		expect(() =>
 			new TabPositionEdit([note]).apply({
 				string: 5,
@@ -167,7 +167,6 @@ describe('TabPositionEdit', () => {
 			pitch: { step: 'C', octave: 3 },
 		};
 		expect(new TabPositionEdit([]).apply(spec)).toBe(false);
-		const note = voice.addNote({ step: 'E', octave: 2, type: 'quarter' });
 		expect(new TabPositionEdit([note]).apply(spec)).toBe(true);
 		const accidental = new MElement('accidental');
 		accidental.setText('natural');

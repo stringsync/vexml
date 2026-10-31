@@ -5,7 +5,7 @@ import {
 	type Renderer,
 	renderers,
 } from '@vexml/renderer';
-import type { Fs } from 'webappwiz/system';
+import type { Fs } from 'core/system';
 import type { Cell, Engine } from './perf-events';
 
 export const DATA_DIR = path.resolve(

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import type { Chord, Note } from '@stringsync/mdom';
+import { Rect } from 'core/geometry';
 import type { RenderContext, Stave, StaveNote, TabNote } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import { Appearance } from './appearance';
 import { HAIRPIN_CHAIN_GAP, WORDS_NOTE_CLEARANCE } from './constants';
 import type { DirectionLineTask, DirectionPlacer } from './direction-placer';

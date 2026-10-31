@@ -1,4 +1,4 @@
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 
 /*
  * One stave of one part's measure, as engraved: where its lines sit, in score space (the space

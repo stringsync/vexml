@@ -1,0 +1,5 @@
+[test]
+# Preloaded so matcher's afterAll cleanup scopes to the whole run, not one file.
+# Bun reads bunfig.toml from the folder it runs in, so this holds when the tests
+# run from the package; the root bunfig.toml names the same file for runs from the root.
+preload = ["./setup.ts"]

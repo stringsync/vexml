@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { MemoryLogger } from 'webappwiz/log';
-import { FakeFs } from 'webappwiz/system/testing';
+import { MemoryLogger } from 'core/log';
+import { FakeFs } from 'core/system/testing';
 import { perf, type Row, table } from './perf';
 
 it('selects an optional corpus without reading the integration fixtures', async () => {

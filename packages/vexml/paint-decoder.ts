@@ -1,4 +1,4 @@
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { Affine } from './affine';
 import { GlyphOutline } from './glyph-outline';
 import {
@@ -36,6 +36,7 @@ export class PaintDecoder {
 
 	constructor(
 		private readonly tables: EncodedPaint,
+		// vet-ignore noop-objects-over-null: recordings made before outlines existed carry none; absence is recorded data the decoder falls back from
 		outlines: SnapshotOutlines | null = null,
 	) {
 		if (outlines) {

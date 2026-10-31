@@ -1,6 +1,6 @@
-import { Disposer, disposables, type Resource } from 'webappwiz/disposable';
-import { Dispatcher, type Eventful } from 'webappwiz/events';
-import { Rect } from 'webappwiz/geometry';
+import { Disposer, disposables, type Resource } from 'core/disposable';
+import { Dispatcher, type Eventful } from 'core/events';
+import { Rect } from 'core/geometry';
 import type { CursorHost } from './cursor-host';
 import { CursorPosition } from './cursor-position';
 import type { CursorView } from './cursor-view';
@@ -176,7 +176,6 @@ export class CursorController implements Eventful<CursorEventMap>, Resource {
 		return unfollow;
 	}
 
-	/* Scroll the bar into view once, via the score's scroller. */
 	scrollIntoView(opts?: ScrollerOptions): void {
 		this.scroller.scrollIntoView(this.barRect(), opts);
 	}

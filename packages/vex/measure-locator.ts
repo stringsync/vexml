@@ -6,7 +6,7 @@ import {
 	renderers,
 	type VexmlContext,
 } from '@vexml/renderer';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import type { Engine } from './lint';
 import type { PlacedMeasure } from './measure-map';
 

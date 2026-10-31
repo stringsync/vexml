@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import type { CursorChangeEvent } from './events';
 import { FakeMarker } from './fake-marker';
 import { Playhead } from './playhead';

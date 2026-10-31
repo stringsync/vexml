@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import {
 	MDOMParser,
 	MDocument,
@@ -8,45 +8,62 @@ import {
 import { MeasureSlicer, parseMeasureSpec } from './measure-slicer';
 
 describe('MeasureSlicer', () => {
-	it.each([
-		'standalone',
-		'raw',
-	] as const)('selects exactly three source columns across movement resets with %s policy', (policy) => {
-		const xml = new MeasureSlicer('8,6-7,6', policy, 'position').slice(
-			twoMovements(),
-		);
-		const parts = new MDOMParser().parseFromString(xml).score.parts;
-		expect(
-			parts.map((p) =>
-				p.measures.map((m) => [
-					m.number,
-					m.notes[0]?.pitch?.step,
-					m.notes[0]?.pitch?.octave,
-				]),
-			),
-		).toEqual([
-			[
-				['X1', 'F', 4],
-				['77', 'G', 4],
-				['78', 'A', 4],
-			],
-			[
-				['X1', 'F', 3],
-				['77', 'G', 3],
-				['78', 'A', 3],
-			],
-		]);
-		expect(
-			parts.map((part) => [
-				part.measures[0]?.getKey()?.fifths,
-				part.measures[0]?.getTime()?.beats,
-				part.measures[0]?.getClef()?.sign,
-			]),
-		).toEqual([
-			[-2, '3', 'G'],
-			[-2, '3', 'F'],
-		]);
+	let twoPartScore: string;
+
+	beforeEach(() => {
+		twoPartScore = `<score-partwise version="4.0">
+<part-list><score-part id="P1"><part-name>One</part-name></score-part><score-part id="P2"><part-name>Two</part-name></score-part></part-list>
+<part id="P1">
+<measure number="1"><attributes>${DIVISIONS}</attributes>${NOTE}</measure>
+<measure number="2"><note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>half</type></note><barline><repeat direction="backward"/></barline></measure>
+<measure number="3"><note><rest/><duration>4</duration><type>whole</type></note></measure>
+</part>
+<part id="P2">
+<measure number="1"><attributes>${DIVISIONS}</attributes>${NOTE}</measure>
+<measure number="2"><note><pitch><step>F</step><octave>3</octave></pitch><duration>1</duration><type>quarter</type></note><sound dacapo="yes"/></measure>
+<measure number="3">${NOTE}</measure>
+</part></score-partwise>`;
 	});
+
+	it.each(['standalone', 'raw'] as const)(
+		'selects exactly three source columns across movement resets with %s policy',
+		(policy) => {
+			const xml = new MeasureSlicer('8,6-7,6', policy, 'position').slice(
+				twoMovements(),
+			);
+			const parts = new MDOMParser().parseFromString(xml).score.parts;
+			expect(
+				parts.map((p) =>
+					p.measures.map((m) => [
+						m.number,
+						m.notes[0]?.pitch?.step,
+						m.notes[0]?.pitch?.octave,
+					]),
+				),
+			).toEqual([
+				[
+					['X1', 'F', 4],
+					['77', 'G', 4],
+					['78', 'A', 4],
+				],
+				[
+					['X1', 'F', 3],
+					['77', 'G', 3],
+					['78', 'A', 3],
+				],
+			]);
+			expect(
+				parts.map((part) => [
+					part.measures[0]?.getKey()?.fifths,
+					part.measures[0]?.getTime()?.beats,
+					part.measures[0]?.getClef()?.sign,
+				]),
+			).toEqual([
+				[-2, '3', 'G'],
+				[-2, '3', 'F'],
+			]);
+		},
+	);
 
 	it('counts pickups and nonnumeric labels without renumbering them', () => {
 		const xml = new MeasureSlicer('05-6', 'standalone', 'position').slice(
@@ -97,48 +114,42 @@ describe('MeasureSlicer', () => {
 		).toThrow('same measure count');
 	});
 
-	it.each([
-		'1',
-		'2',
-		'3',
-		'1,3',
-		'1-3',
-	])('linearizes open, closed, and nested repeats for selection %s', (spec) => {
-		const source = rawScoreOf(
-			'<attributes><divisions>1</divisions></attributes><barline location="left"><repeat direction="forward"/></barline>',
-			'<barline location="left"><repeat direction="forward"/></barline><barline><repeat direction="backward" times="3"/></barline>',
-			'<barline><repeat direction="backward"/></barline>',
-		);
-		const xml = slice(source, spec);
-		expect(countOf(xml, 'repeat')).toBe(0);
-		expect(
-			measuresOf(xml).flatMap((m) =>
-				m.notes.map((n) => [n.pitch?.step, n.duration]),
-			),
-		).toEqual(
-			measuresOf(source)
-				.filter((m) => parseMeasureSpec(spec).has(m.number))
-				.flatMap((m) => m.notes.map((n) => [n.pitch?.step, n.duration])),
-		);
-	});
+	it.each(['1', '2', '3', '1,3', '1-3'])(
+		'linearizes open, closed, and nested repeats for selection %s',
+		(spec) => {
+			const source = rawScoreOf(
+				'<attributes><divisions>1</divisions></attributes><barline location="left"><repeat direction="forward"/></barline>',
+				'<barline location="left"><repeat direction="forward"/></barline><barline><repeat direction="backward" times="3"/></barline>',
+				'<barline><repeat direction="backward"/></barline>',
+			);
+			const xml = slice(source, spec);
+			expect(countOf(xml, 'repeat')).toBe(0);
+			expect(
+				measuresOf(xml).flatMap((m) =>
+					m.notes.map((n) => [n.pitch?.step, n.duration]),
+				),
+			).toEqual(
+				measuresOf(source)
+					.filter((m) => parseMeasureSpec(spec).has(m.number))
+					.flatMap((m) => m.notes.map((n) => [n.pitch?.step, n.duration])),
+			);
+		},
+	);
 
-	it.each([
-		'1',
-		'2',
-		'3',
-		'1,3',
-		'1-3',
-	])('removes first and second endings without dropping their notes for %s', (spec) => {
-		const source = rawScoreOf(
-			'<barline location="left"><repeat direction="forward"/></barline>',
-			'<barline location="left"><ending number="1" type="start"/></barline><barline><ending number="1" type="stop"/><repeat direction="backward"/></barline>',
-			'<barline location="left"><ending number="2" type="start"/></barline><barline><ending number="2" type="discontinue"/></barline>',
-		);
-		const xml = slice(source, spec);
-		expect(countOf(xml, 'ending')).toBe(0);
-		expect(countOf(xml, 'repeat')).toBe(0);
-		expect(countOf(xml, 'note')).toBe(parseMeasureSpec(spec).size);
-	});
+	it.each(['1', '2', '3', '1,3', '1-3'])(
+		'removes first and second endings without dropping their notes for %s',
+		(spec) => {
+			const source = rawScoreOf(
+				'<barline location="left"><repeat direction="forward"/></barline>',
+				'<barline location="left"><ending number="1" type="start"/></barline><barline><ending number="1" type="stop"/><repeat direction="backward"/></barline>',
+				'<barline location="left"><ending number="2" type="start"/></barline><barline><ending number="2" type="discontinue"/></barline>',
+			);
+			const xml = slice(source, spec);
+			expect(countOf(xml, 'ending')).toBe(0);
+			expect(countOf(xml, 'repeat')).toBe(0);
+			expect(countOf(xml, 'note')).toBe(parseMeasureSpec(spec).size);
+		},
+	);
 
 	it.each([
 		['D.C. al Fine', 'dacapo="yes"', '2'],
@@ -199,19 +210,7 @@ describe('MeasureSlicer', () => {
 	});
 
 	it('preserves distinct pitches, rests and durations in every retained part', () => {
-		const source = `<score-partwise version="4.0">
-<part-list><score-part id="P1"><part-name>One</part-name></score-part><score-part id="P2"><part-name>Two</part-name></score-part></part-list>
-<part id="P1">
-<measure number="1"><attributes>${DIVISIONS}</attributes>${NOTE}</measure>
-<measure number="2"><note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>half</type></note><barline><repeat direction="backward"/></barline></measure>
-<measure number="3"><note><rest/><duration>4</duration><type>whole</type></note></measure>
-</part>
-<part id="P2">
-<measure number="1"><attributes>${DIVISIONS}</attributes>${NOTE}</measure>
-<measure number="2"><note><pitch><step>F</step><octave>3</octave></pitch><duration>1</duration><type>quarter</type></note><sound dacapo="yes"/></measure>
-<measure number="3">${NOTE}</measure>
-</part></score-partwise>`;
-		const xml = slice(source, '2-3');
+		const xml = slice(twoPartScore, '2-3');
 		const doc = new MDOMParser().parseFromString(xml);
 		expect(
 			doc.score.parts.map((p) =>

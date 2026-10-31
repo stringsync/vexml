@@ -1,8 +1,8 @@
 import { resolve } from 'node:path';
-import { cli, type Deps, type Next } from 'webappwiz/cmd';
-import { color } from 'webappwiz/log';
-import type { Fs } from 'webappwiz/system';
-import { SystemClock } from 'webappwiz/time';
+import { cli, type Deps, type Next } from 'core/cmd';
+import { color } from 'core/log';
+import type { Fs } from 'core/system';
+import { SystemClock } from 'core/time';
 import { z } from 'zod';
 import { coverage } from './coverage';
 import { dev } from './dev';
@@ -16,7 +16,7 @@ import { servePerfUi } from './perf-ui';
 import { readme } from './readme';
 import { render } from './render';
 import { FINDING_KINDS } from './render-lint';
-import { ship } from './ship';
+import { publish, ship, trust } from './ship';
 import { slice } from './slice';
 import { test } from './test';
 import { validate } from './validate';
@@ -284,7 +284,27 @@ vex
 	.command('ship')
 	.description('bump version (patch|minor|major), commit, tag, and publish')
 	.arg('type', z.enum(['patch', 'minor', 'major'] as const))
-	.action((opts, { log, ps }) => ship({ bump: opts.type, log, ps }));
+	.option('dry-run', z.boolean(), {
+		default: false,
+		description: 'rehearse the release, publishing and pushing nothing',
+	})
+	.action((opts, { log, ps }) =>
+		ship({ bump: opts.type, log, ps, dryRun: opts['dry-run'] }),
+	);
+
+vex
+	.command('publish')
+	.description(
+		"build @stringsync/vexml and publish it at this checkout's version: what stringsync/vexml's publish workflow runs, from a job npm trusts",
+	)
+	.action((_opts, { log, ps }) => publish({ log, ps }));
+
+vex
+	.command('trust')
+	.description(
+		"have npm trust stringsync/vexml's publish workflow to publish @stringsync/vexml; once, signing in in a browser",
+	)
+	.action((_opts, { log, ps }) => trust({ log, ps }));
 
 /** Reports how long the command took once it is done. */
 async function timing(ctx: VexDeps, next: Next<VexDeps>): Promise<void> {

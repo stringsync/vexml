@@ -1,4 +1,4 @@
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import type { Affine } from './affine';
 import type { PaintState } from './paint-state';
 import type { TextOutline } from './text-outline';

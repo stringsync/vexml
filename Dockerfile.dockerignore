@@ -1,0 +1,3 @@
+**/node_modules
+**/.git
+packages/integration/__artifacts__

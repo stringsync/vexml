@@ -272,8 +272,7 @@ export const HARMONY_Y_OFFSET = 14;
  * sits over, so the symbol lifts clear instead of colliding with the notehead. */
 export const HARMONY_NOTE_CLEARANCE = 8;
 
-/** Padding added below a chord symbol's collision box, so the symbol lifts off a notehead in
- * the top stave space with a little breathing room instead of touching it. */
+/** Padding added below a chord symbol's collision box, so the symbol lifts off a notehead. */
 export const HARMONY_PADDING =
 	// The box then reaches down to the top staff line, past its text baseline (HARMONY_Y_OFFSET
 	// above that line), so the lift-clear probe reaches a notehead just under the baseline. A
@@ -590,8 +589,7 @@ export const HARMONY_STACK_FONT_SIZE = 9;
 /** Baseline-to-baseline step between a chord symbol's stacked degrees. */
 export const HARMONY_STACK_LINE = 10;
 
-/** How many px vexflow's GraceNoteGroup.format spaces a stave grace group off its note; tab
- * groups get 0. */
+/** How many px a stave grace group sits off its note; tab groups get 0. */
 export const GRACE_GROUP_SPACING_STAVE =
 	// Private to vexflow, so mirrored here.
 	4;
@@ -603,7 +601,7 @@ export const NOTEHEAD_HALF_H = 5;
 export const FRET_HALF_W = 6;
 export const FRET_HALF_H = 7;
 
-// scry-ignore doc-comments-address-users: the doc says only what a caller sees, how long a scroll takes; the tweening note is already in the initializer
+// vet-ignore doc-comments-address-users: the doc says only what a caller sees, how long a scroll takes; the tweening note is already in the initializer
 /** How long every smooth scroll takes, regardless of distance. */
 export const SCROLL_DURATION_MS =
 	// vexml tweens the scroll box itself because native smooth scroll's duration is UA-defined

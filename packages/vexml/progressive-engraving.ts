@@ -1,6 +1,6 @@
 import type { Part } from '@stringsync/mdom';
-import type { Resource } from 'webappwiz/disposable';
-import { Dispatcher, type Events } from 'webappwiz/events';
+import type { Resource } from 'core/disposable';
+import { Dispatcher, type Events } from 'core/events';
 import type { Config } from './config';
 import type { Drawing, DrawingEventMap } from './drawing';
 import type { ElementFactory } from './element-factory';

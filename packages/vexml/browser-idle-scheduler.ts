@@ -1,4 +1,4 @@
-import { disposables, type Resource } from 'webappwiz/disposable';
+import { disposables, type Resource } from 'core/disposable';
 import type { IdleScheduler, IdleSlice } from './idle-scheduler';
 
 // A slice runs within this long of being asked for even when the thread never goes idle, so a

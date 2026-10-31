@@ -24,7 +24,6 @@ export class Appearance {
 		return this.lineWidths.get(type) ?? null;
 	}
 
-	/* A standard distance ("beam", "hyphen"). */
 	distance(type: DistanceType): number | null {
 		return this.distances.get(type) ?? null;
 	}

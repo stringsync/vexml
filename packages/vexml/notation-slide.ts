@@ -2,6 +2,8 @@ import { Modifier, type RenderContext, type StaveNote } from 'vexflow/core';
 import { SLIDE_MIN_SLANT, SLIDE_PADDING } from './constants';
 
 export type NotationSlideOptions = {
+	fromIndex: number;
+	toIndex: number;
 	dash?: number[] | null;
 };
 
@@ -18,13 +20,15 @@ export type NotationSlideOptions = {
 export class NotationSlide {
 	private context?: RenderContext;
 	private readonly dash: number[] | null;
+	private readonly fromIndex: number;
+	private readonly toIndex: number;
 	constructor(
 		private readonly from: StaveNote,
-		private readonly fromIndex: number,
 		private readonly to: StaveNote,
-		private readonly toIndex: number,
-		opts: NotationSlideOptions = {},
+		opts: NotationSlideOptions,
 	) {
+		this.fromIndex = opts.fromIndex;
+		this.toIndex = opts.toIndex;
 		this.dash = opts.dash ?? null;
 	}
 	setContext(context: RenderContext): this {

@@ -1,0 +1,37 @@
+{
+	"name": "core",
+	"version": "1.13.3",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./assert": "./assert/index.ts",
+		"./browser": "./browser/index.ts",
+		"./cmd": "./cmd/index.ts",
+		"./creds": "./creds/index.ts",
+		"./creds/testing": "./creds/testing.ts",
+		"./disposable": "./disposable/index.ts",
+		"./events": "./events/index.ts",
+		"./geometry": "./geometry/index.ts",
+		"./log": "./log/index.ts",
+		"./react": "./react/index.ts",
+		"./ship": "./ship/index.ts",
+		"./system": "./system/index.ts",
+		"./system/testing": "./system/testing.ts",
+		"./time": "./time/index.ts",
+		"./time/testing": "./time/testing.ts"
+	},
+	"dependencies": {
+		"@standard-schema/spec": "^1.1.0"
+	},
+	"peerDependencies": {
+		"react": "^19.2.4"
+	},
+	"peerDependenciesMeta": {
+		"react": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@types/react": "^19.1.13"
+	}
+}

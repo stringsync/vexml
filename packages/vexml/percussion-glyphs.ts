@@ -1,4 +1,4 @@
-// scry-ignore-file comments-say-why-not-what: each glyph is an invisible private-use character, so the trailing SMuFL name is the only readable key to the table
+// vet-ignore-file comments-say-why-not-what: each glyph is an invisible private-use character, so the trailing SMuFL name is the only readable key to the table
 /*
  * MusicXML <percussion> pictograms -> their SMuFL glyphs. Keyed by the child's tag and then
  * its text, the schema's own spelling (the glass-value, metal-value, ... enumerations), so a
@@ -7,127 +7,127 @@
  */
 export const PERCUSSION_GLYPHS: Record<string, Record<string, string>> = {
 	glass: {
-		'glass harmonica': '', // pictGlassHarmonica
-		'glass harp': '', // pictGlassHarp
-		'wind chimes': '', // pictWindChimesGlass
+		'glass harmonica': '\uE765', // pictGlassHarmonica
+		'glass harp': '\uE764', // pictGlassHarp
+		'wind chimes': '\uE6C1', // pictWindChimesGlass
 	},
 	metal: {
-		agogo: '', // pictAgogo
-		almglocken: '', // pictAlmglocken
-		bell: '', // pictBell
-		'bell plate': '', // pictBellPlate
-		'bell tree': '', // pictBellTree
-		'brake drum': '', // pictBrakeDrum
-		cencerro: '', // pictCencerro
-		'chain rattle': '', // pictChainRattle
-		'Chinese cymbal': '', // pictChineseCymbal
-		cowbell: '', // pictCowBell
-		'crash cymbals': '', // pictCrashCymbals
-		crotale: '', // pictCrotales
-		'cymbal tongs': '', // pictCymbalTongs
-		'domed gong': '', // pictGongWithButton
-		'finger cymbals': '', // pictFingerCymbals
-		flexatone: '', // pictFlexatone
-		gong: '', // pictGong
-		'hi-hat': '', // pictHiHat
-		'high-hat cymbals': '', // pictHiHatOnStand
-		handbell: '', // pictHandbell
-		'jaw harp': '', // pictJawHarp
-		'jingle bells': '', // pictJingleBells
-		'musical saw': '', // pictMusicalSaw
-		'shell bells': '', // pictShellBells
-		sistrum: '', // pictSistrum
-		'sizzle cymbal': '', // pictSizzleCymbal
-		'sleigh bells': '', // pictSleighBell
-		'suspended cymbal': '', // pictSuspendedCymbal
-		'tam tam': '', // pictTamTam
-		'tam tam with beater': '', // pictTamTamWithBeater
-		triangle: '', // pictTriangle
-		'Vietnamese hat': '', // pictVietnameseHat
+		agogo: '\uE717', // pictAgogo
+		almglocken: '\uE712', // pictAlmglocken
+		bell: '\uE714', // pictBell
+		'bell plate': '\uE713', // pictBellPlate
+		'bell tree': '\uE71A', // pictBellTree
+		'brake drum': '\uE6E1', // pictBrakeDrum
+		cencerro: '\uE716', // pictCencerro
+		'chain rattle': '\uE748', // pictChainRattle
+		'Chinese cymbal': '\uE726', // pictChineseCymbal
+		cowbell: '\uE711', // pictCowBell
+		'crash cymbals': '\uE720', // pictCrashCymbals
+		crotale: '\uE6AE', // pictCrotales
+		'cymbal tongs': '\uE728', // pictCymbalTongs
+		'domed gong': '\uE733', // pictGongWithButton
+		'finger cymbals': '\uE727', // pictFingerCymbals
+		flexatone: '\uE740', // pictFlexatone
+		gong: '\uE732', // pictGong
+		'hi-hat': '\uE722', // pictHiHat
+		'high-hat cymbals': '\uE723', // pictHiHatOnStand
+		handbell: '\uE715', // pictHandbell
+		'jaw harp': '\uE767', // pictJawHarp
+		'jingle bells': '\uE719', // pictJingleBells
+		'musical saw': '\uE766', // pictMusicalSaw
+		'shell bells': '\uE718', // pictShellBells
+		sistrum: '\uE746', // pictSistrum
+		'sizzle cymbal': '\uE724', // pictSizzleCymbal
+		'sleigh bells': '\uE710', // pictSleighBell
+		'suspended cymbal': '\uE721', // pictSuspendedCymbal
+		'tam tam': '\uE730', // pictTamTam
+		'tam tam with beater': '\uE731', // pictTamTamWithBeater
+		triangle: '\uE700', // pictTriangle
+		'Vietnamese hat': '\uE725', // pictVietnameseHat
 	},
 	wood: {
-		'bamboo scraper': '', // pictBambooScraper
-		'board clapper': '', // pictBoardClapper
-		cabasa: '', // pictCabasa
-		castanets: '', // pictCastanets
-		'castanets with handle': '', // pictCastanetsWithHandle
-		claves: '', // pictClaves
-		'football rattle': '', // pictFootballRatchet
-		guiro: '', // pictGuiro
-		'log drum': '', // pictLogDrum
-		maraca: '', // pictMaraca
-		maracas: '', // pictMaracas
-		quijada: '', // pictQuijada
-		rainstick: '', // pictRainstick
-		ratchet: '', // pictRatchet
-		'reco-reco': '', // pictRecoReco
-		'sandpaper blocks': '', // pictSandpaperBlocks
-		'slit drum': '', // pictSlitDrum
-		'temple block': '', // pictTempleBlocks
-		vibraslap: '', // pictVibraslap
-		whip: '', // pictWhip
-		'wood block': '', // pictWoodBlock
+		'bamboo scraper': '\uE6FB', // pictBambooScraper
+		'board clapper': '\uE6F7', // pictBoardClapper
+		cabasa: '\uE743', // pictCabasa
+		castanets: '\uE6F8', // pictCastanets
+		'castanets with handle': '\uE6F9', // pictCastanetsWithHandle
+		claves: '\uE6F2', // pictClaves
+		'football rattle': '\uE6F5', // pictFootballRatchet
+		guiro: '\uE6F3', // pictGuiro
+		'log drum': '\uE6DF', // pictLogDrum
+		maraca: '\uE741', // pictMaraca
+		maracas: '\uE742', // pictMaracas
+		quijada: '\uE6FA', // pictQuijada
+		rainstick: '\uE747', // pictRainstick
+		ratchet: '\uE6F4', // pictRatchet
+		'reco-reco': '\uE6FC', // pictRecoReco
+		'sandpaper blocks': '\uE762', // pictSandpaperBlocks
+		'slit drum': '\uE6E0', // pictSlitDrum
+		'temple block': '\uE6F1', // pictTempleBlocks
+		vibraslap: '\uE745', // pictVibraslap
+		whip: '\uE6F6', // pictWhip
+		'wood block': '\uE6F0', // pictWoodBlock
 	},
 	pitched: {
-		celesta: '', // pictCelesta
-		chimes: '', // pictChimes
-		glockenspiel: '', // pictGlsp
-		lithophone: '', // pictLithophone
-		mallet: '', // pictBeaterMallet
-		marimba: '', // pictMar
-		'steel drums': '', // pictSteelDrums
-		tubaphone: '', // pictTubaphone
-		'tubular chimes': '', // pictTubularBells
-		vibraphone: '', // pictVib
-		xylophone: '', // pictXyl
+		celesta: '\uE6B0', // pictCelesta
+		chimes: '\uE6C2', // pictChimes
+		glockenspiel: '\uE6A0', // pictGlsp
+		lithophone: '\uE6B1', // pictLithophone
+		mallet: '\uE7DF', // pictBeaterMallet
+		marimba: '\uE6A6', // pictMar
+		'steel drums': '\uE6AF', // pictSteelDrums
+		tubaphone: '\uE6B2', // pictTubaphone
+		'tubular chimes': '\uE6C0', // pictTubularBells
+		vibraphone: '\uE6A7', // pictVib
+		xylophone: '\uE6A1', // pictXyl
 	},
 	membrane: {
-		'bass drum': '', // pictBassDrum
-		'bass drum on side': '', // pictBassDrumOnSide
-		bongos: '', // pictBongos
-		'Chinese tomtom': '', // pictTomTomChinese
-		'conga drum': '', // pictConga
-		cuica: '', // pictCuica
-		'goblet drum': '', // pictGobletDrum
-		'Indo-American tomtom': '', // pictTomTomIndoAmerican
-		'Japanese tomtom': '', // pictTomTomJapanese
-		'military drum': '', // pictSnareDrumMilitary
-		'snare drum': '', // pictSnareDrum
-		'snare drum snares off': '', // pictSnareDrumSnaresOff
-		tabla: '', // pictTabla
-		tambourine: '', // pictTambourine
-		'tenor drum': '', // pictTenorDrum
-		timbales: '', // pictTimbales
-		tomtom: '', // pictTomTom
+		'bass drum': '\uE6D4', // pictBassDrum
+		'bass drum on side': '\uE6D5', // pictBassDrumOnSide
+		bongos: '\uE6DD', // pictBongos
+		'Chinese tomtom': '\uE6D8', // pictTomTomChinese
+		'conga drum': '\uE6DE', // pictConga
+		cuica: '\uE6E4', // pictCuica
+		'goblet drum': '\uE6E2', // pictGobletDrum
+		'Indo-American tomtom': '\uE6DA', // pictTomTomIndoAmerican
+		'Japanese tomtom': '\uE6D9', // pictTomTomJapanese
+		'military drum': '\uE6D3', // pictSnareDrumMilitary
+		'snare drum': '\uE6D1', // pictSnareDrum
+		'snare drum snares off': '\uE6D2', // pictSnareDrumSnaresOff
+		tabla: '\uE6E3', // pictTabla
+		tambourine: '\uE6DB', // pictTambourine
+		'tenor drum': '\uE6D6', // pictTenorDrum
+		timbales: '\uE6DC', // pictTimbales
+		tomtom: '\uE6D7', // pictTomTom
 	},
 	effect: {
-		anvil: '', // pictAnvil
-		'auto horn': '', // pictCarHorn
-		'bird whistle': '', // pictBirdWhistle
-		cannon: '', // pictCannon
-		'duck call': '', // pictDuckCall
-		'gun shot': '', // pictPistolShot
-		'klaxon horn': '', // pictKlaxonHorn
-		'lions roar': '', // pictLionsRoar
-		'lotus flute': '', // pictLotusFlute
-		megaphone: '', // pictMegaphone
-		'police whistle': '', // pictPoliceWhistle
-		siren: '', // pictSiren
-		'slide whistle': '', // pictSlideWhistle
-		'thunder sheet': '', // pictThundersheet
-		'wind machine': '', // pictWindMachine
-		'wind whistle': '', // pictWindWhistle
+		anvil: '\uE701', // pictAnvil
+		'auto horn': '\uE755', // pictCarHorn
+		'bird whistle': '\uE751', // pictBirdWhistle
+		cannon: '\uE761', // pictCannon
+		'duck call': '\uE757', // pictDuckCall
+		'gun shot': '\uE760', // pictPistolShot
+		'klaxon horn': '\uE756', // pictKlaxonHorn
+		'lions roar': '\uE763', // pictLionsRoar
+		'lotus flute': '\uE75A', // pictLotusFlute
+		megaphone: '\uE759', // pictMegaphone
+		'police whistle': '\uE752', // pictPoliceWhistle
+		siren: '\uE753', // pictSiren
+		'slide whistle': '\uE750', // pictSlideWhistle
+		'thunder sheet': '\uE744', // pictThundersheet
+		'wind machine': '\uE754', // pictWindMachine
+		'wind whistle': '\uE758', // pictWindWhistle
 	},
 	'stick-location': {
-		center: '', // pictCenter1
-		rim: '', // pictRim1
-		'cymbal bell': '', // pictBellOfCymbal
-		'cymbal edge': '', // pictEdgeOfCymbal
+		center: '\uE7FE', // pictCenter1
+		rim: '\uE801', // pictRim1
+		'cymbal bell': '\uE72A', // pictBellOfCymbal
+		'cymbal edge': '\uE729', // pictEdgeOfCymbal
 	},
 };
 
 /* <timpani/> is empty: the one pictogram it can mean. */
-export const TIMPANI_GLYPH = ''; // pictTimpani
+export const TIMPANI_GLYPH = '\uE6D0'; // pictTimpani
 
 /*
  * <beater> values -> their glyphs: one glyph for a beater with no tip, or [up, down] for one
@@ -137,26 +137,26 @@ export const BEATER_GLYPHS: Record<
 	string,
 	string | [up: string, down: string]
 > = {
-	bow: '', // pictBeaterBow
-	'chime hammer': '', // pictBeaterHammer
-	coin: '', // pictCoins
-	'drum stick': '', // pictDrumStick
-	finger: '', // pictBeaterFinger
-	fingernail: '', // pictBeaterFingernails
-	fist: '', // pictBeaterFist
-	'guiro scraper': '', // pictBeaterGuiroScraper
-	hammer: '', // pictBeaterHammer
-	hand: '', // pictBeaterHand
-	'jazz stick': ['', ''], // pictBeaterJazzSticksUp/Down
-	'knitting needle': '', // pictBeaterKnittingNeedle
-	'metal hammer': '', // pictBeaterMetalHammer
-	'slide brush on gong': '', // pictSlideBrushOnGong
-	'snare stick': ['', ''], // pictBeaterSnareSticksUp/Down
-	'spoon mallet': '', // pictBeaterSpoonWoodenMallet
-	superball: '', // pictSuperball
-	'triangle beater': ['', ''], // pictBeaterTriangleUp/Down
-	'triangle beater plain': '', // pictBeaterTrianglePlain
-	'wire brush': ['', ''], // pictBeaterWireBrushesUp/Down
+	bow: '\uE7DE', // pictBeaterBow
+	'chime hammer': '\uE7E1', // pictBeaterHammer
+	coin: '\uE7E7', // pictCoins
+	'drum stick': '\uE7E8', // pictDrumStick
+	finger: '\uE7E4', // pictBeaterFinger
+	fingernail: '\uE7E6', // pictBeaterFingernails
+	fist: '\uE7E5', // pictBeaterFist
+	'guiro scraper': '\uE7DD', // pictBeaterGuiroScraper
+	hammer: '\uE7E1', // pictBeaterHammer
+	hand: '\uE7E3', // pictBeaterHand
+	'jazz stick': ['\uE7D3', '\uE7D4'], // pictBeaterJazzSticksUp/Down
+	'knitting needle': '\uE7E2', // pictBeaterKnittingNeedle
+	'metal hammer': '\uE7E0', // pictBeaterMetalHammer
+	'slide brush on gong': '\uE734', // pictSlideBrushOnGong
+	'snare stick': ['\uE7D1', '\uE7D2'], // pictBeaterSnareSticksUp/Down
+	'spoon mallet': '\uE7DC', // pictBeaterSpoonWoodenMallet
+	superball: '\uE7B2', // pictSuperball
+	'triangle beater': ['\uE7D5', '\uE7D6'], // pictBeaterTriangleUp/Down
+	'triangle beater plain': '\uE7EF', // pictBeaterTrianglePlain
+	'wire brush': ['\uE7D7', '\uE7D8'], // pictBeaterWireBrushesUp/Down
 };
 
 /*
@@ -168,57 +168,57 @@ export const BEATER_GLYPHS: Record<
  */
 export const STICK_GLYPHS: Record<string, Record<string, string[]>> = {
 	'bass drum': {
-		soft: ['', ''], // pictBeaterSoftBassDrumUp/Down
-		medium: ['', ''], // pictBeaterMediumBassDrumUp/Down
-		hard: ['', ''], // pictBeaterHardBassDrumUp/Down
-		x: ['', ''], // pictBeaterMetalBassDrumUp/Down
+		soft: ['\uE798', '\uE799'], // pictBeaterSoftBassDrumUp/Down
+		medium: ['\uE79A', '\uE79B'], // pictBeaterMediumBassDrumUp/Down
+		hard: ['\uE79C', '\uE79D'], // pictBeaterHardBassDrumUp/Down
+		x: ['\uE79E', '\uE79F'], // pictBeaterMetalBassDrumUp/Down
 	},
 	'double bass drum': {
-		soft: ['', ''], // pictBeaterDoubleBassDrumUp/Down
-		medium: ['', ''],
-		hard: ['', ''],
+		soft: ['\uE7A0', '\uE7A1'], // pictBeaterDoubleBassDrumUp/Down
+		medium: ['\uE7A0', '\uE7A1'],
+		hard: ['\uE7A0', '\uE7A1'],
 	},
 	glockenspiel: {
-		soft: ['', '', '', ''], // pictBeaterSoftGlockenspiel*
-		hard: ['', '', '', ''], // pictBeaterHardGlockenspiel*
+		soft: ['\uE780', '\uE781', '\uE783', '\uE782'], // pictBeaterSoftGlockenspiel*
+		hard: ['\uE784', '\uE785', '\uE787', '\uE786'], // pictBeaterHardGlockenspiel*
 	},
 	gum: {
-		soft: ['', '', '', ''], // pictGumSoft*
-		medium: ['', '', '', ''], // pictGumMedium*
-		hard: ['', '', '', ''], // pictGumHard*
+		soft: ['\uE7BB', '\uE7BC', '\uE7BE', '\uE7BD'], // pictGumSoft*
+		medium: ['\uE7BF', '\uE7C0', '\uE7C2', '\uE7C1'], // pictGumMedium*
+		hard: ['\uE7C3', '\uE7C4', '\uE7C6', '\uE7C5'], // pictGumHard*
 	},
 	hammer: {
-		soft: ['', ''], // pictBeaterHammerPlasticUp/Down
-		medium: ['', ''],
-		hard: ['', ''],
-		shaded: ['', ''], // pictBeaterHammerWoodUp/Down
-		x: ['', ''], // pictBeaterHammerMetalUp/Down
+		soft: ['\uE7CD', '\uE7CE'], // pictBeaterHammerPlasticUp/Down
+		medium: ['\uE7CD', '\uE7CE'],
+		hard: ['\uE7CD', '\uE7CE'],
+		shaded: ['\uE7CB', '\uE7CC'], // pictBeaterHammerWoodUp/Down
+		x: ['\uE7CF', '\uE7D0'], // pictBeaterHammerMetalUp/Down
 	},
 	superball: {
-		soft: ['', '', '', ''], // pictBeaterSuperball*
-		medium: ['', '', '', ''],
-		hard: ['', '', '', ''],
+		soft: ['\uE7AE', '\uE7AF', '\uE7B1', '\uE7B0'], // pictBeaterSuperball*
+		medium: ['\uE7AE', '\uE7AF', '\uE7B1', '\uE7B0'],
+		hard: ['\uE7AE', '\uE7AF', '\uE7B1', '\uE7B0'],
 	},
 	timpani: {
-		soft: ['', '', '', ''], // pictBeaterSoftTimpani*
-		medium: ['', '', '', ''], // pictBeaterMediumTimpani*
-		hard: ['', '', '', ''], // pictBeaterHardTimpani*
-		shaded: ['', '', '', ''], // pictBeaterWoodTimpani*
+		soft: ['\uE788', '\uE789', '\uE78B', '\uE78A'], // pictBeaterSoftTimpani*
+		medium: ['\uE78C', '\uE78D', '\uE78F', '\uE78E'], // pictBeaterMediumTimpani*
+		hard: ['\uE790', '\uE791', '\uE793', '\uE792'], // pictBeaterHardTimpani*
+		shaded: ['\uE794', '\uE795', '\uE797', '\uE796'], // pictBeaterWoodTimpani*
 	},
 	wound: {
-		soft: ['', '', '', ''], // pictWoundSoft*
-		hard: ['', '', '', ''], // pictWoundHard*
+		soft: ['\uE7B7', '\uE7B8', '\uE7BA', '\uE7B9'], // pictWoundSoft*
+		hard: ['\uE7B3', '\uE7B4', '\uE7B6', '\uE7B5'], // pictWoundHard*
 	},
 	xylophone: {
-		soft: ['', '', '', ''], // pictBeaterSoftXylophone*
-		medium: ['', '', '', ''], // pictBeaterMediumXylophone*
-		hard: ['', '', '', ''], // pictBeaterHardXylophone*
-		shaded: ['', '', '', ''], // pictBeaterWoodXylophone*
+		soft: ['\uE770', '\uE771', '\uE773', '\uE772'], // pictBeaterSoftXylophone*
+		medium: ['\uE774', '\uE775', '\uE777', '\uE776'], // pictBeaterMediumXylophone*
+		hard: ['\uE778', '\uE779', '\uE77B', '\uE77A'], // pictBeaterHardXylophone*
+		shaded: ['\uE77C', '\uE77D', '\uE77F', '\uE77E'], // pictBeaterWoodXylophone*
 	},
 	yarn: {
-		soft: ['', '', '', ''], // pictBeaterSoftYarn*
-		medium: ['', '', '', ''], // pictBeaterMediumYarn*
-		hard: ['', '', '', ''], // pictBeaterHardYarn*
+		soft: ['\uE7A2', '\uE7A3', '\uE7A5', '\uE7A4'], // pictBeaterSoftYarn*
+		medium: ['\uE7A6', '\uE7A7', '\uE7A9', '\uE7A8'], // pictBeaterMediumYarn*
+		hard: ['\uE7AA', '\uE7AB', '\uE7AD', '\uE7AC'], // pictBeaterHardYarn*
 	},
 };
 

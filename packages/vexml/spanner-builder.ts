@@ -1,3 +1,4 @@
+// vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
 import type { BeamRun, Chord, Tuplet as MTuplet, Note } from '@stringsync/mdom';
 import {
 	Articulation,
@@ -708,13 +709,11 @@ export class SpannerBuilder {
 							continue;
 						}
 						lines.push(
-							new NotationSlide(
-								from.staveNote,
-								from.index,
-								at.staveNote,
-								at.index,
-								{ dash: from.dash ?? marker.dash },
-							),
+							new NotationSlide(from.staveNote, at.staveNote, {
+								fromIndex: from.index,
+								toIndex: at.index,
+								dash: from.dash ?? marker.dash,
+							}),
 						);
 					}
 				}
@@ -774,7 +773,9 @@ export class SpannerBuilder {
 				(spread): spread is number => spread !== null,
 			);
 			wedges.push(
-				new Hairpin(firstNote, lastNote, from.crescendo, from.placement, {
+				new Hairpin(firstNote, lastNote, {
+					crescendo: from.crescendo,
+					placement: from.placement,
 					dash: from.dash ?? marker.dash,
 					niente: from.niente || marker.niente,
 					spread: spreads.length > 0 ? Math.max(...spreads) : null,
@@ -815,7 +816,7 @@ export class SpannerBuilder {
 				}
 				const from = open.get(wavy.number);
 				open.delete(wavy.number);
-				// A stop with no open start, or a zero-width span, has no line to draw.
+				// No line to draw without an open start, and a zero-width span would be invisible.
 				if (from && from !== staveNote && scope.owns(from, staveNote)) {
 					brackets.push(new VibratoBracket({ start: from, stop: staveNote }));
 				}
@@ -1343,7 +1344,9 @@ export class SpannerBuilder {
 				};
 
 				const pushCurve = (
+					// vet-ignore noop-objects-over-null: a tie end can lack a note; absence is score data, and a stand-in VexFlow note would curve to nothing
 					curveFrom: StaveNote | undefined,
+					// vet-ignore noop-objects-over-null: a tie end can lack a note; absence is score data, and a stand-in VexFlow note would curve to nothing
 					curveTo: StaveNote | undefined,
 					position: number,
 					positionEnd: number,

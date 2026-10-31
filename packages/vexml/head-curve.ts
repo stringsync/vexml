@@ -20,6 +20,7 @@ import type { DocumentBezier } from './score-reader';
 export class HeadCurve extends CrispCurve {
 	constructor(
 		from: StaveNote | undefined,
+		// vet-ignore noop-objects-over-null: a curve end can lack a note; absence is score data, and the other end decides the stave
 		to: StaveNote | undefined,
 		private readonly fromY: number,
 		private readonly toY: number,

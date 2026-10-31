@@ -1,6 +1,6 @@
-import type { Resource } from 'webappwiz/disposable';
-import type { Rect } from 'webappwiz/geometry';
-import { Duration, SystemTimer } from 'webappwiz/time';
+import type { Resource } from 'core/disposable';
+import type { Rect } from 'core/geometry';
+import { Duration, SystemTimer } from 'core/time';
 import {
 	MAX_SCROLL_SPEED_PX_PER_MS,
 	RESIZE_SETTLE_MS,

@@ -1,4 +1,4 @@
-import { Dispatcher, type Events } from 'webappwiz/events';
+import { Dispatcher, type Events } from 'core/events';
 import type { Drawing, DrawingEventMap } from './drawing';
 
 /* Fake fulfilling the Drawing seam (preferred over mocks): records the measures it was asked to

@@ -1,5 +1,6 @@
+// vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
 import type { Note as MNote, Part } from '@stringsync/mdom';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { DEFAULT_TEMPO_BPM } from './constants';
 import { isCueNote } from './cue-note';
 import type { Gaps } from './gaps';

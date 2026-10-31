@@ -1,6 +1,6 @@
+import ts from '@typescript/typescript6';
 import type { BunPlugin } from 'bun';
-import ts from 'typescript';
-import type { Fs } from 'webappwiz/system';
+import type { Fs } from 'core/system';
 import { fileUrl } from './bundle';
 
 /** @internal Diagnostic bundler hook for archived renderers in the lint corpus. */

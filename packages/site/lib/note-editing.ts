@@ -1,7 +1,7 @@
 import { MusicXMLSerializer } from '@stringsync/mdom';
 import type { EditingSession, PitchInput } from '@stringsync/vexml';
-import { Disposer, type Resource } from 'webappwiz/disposable';
-import { Dispatcher, type Eventful } from 'webappwiz/events';
+import { Disposer, type Resource } from 'core/disposable';
+import { Dispatcher, type Eventful } from 'core/events';
 
 /** Edit selected notes' pitch and staccato markings through the demo's form. */
 export class NoteEditing implements Eventful<{ changed: undefined }>, Resource {

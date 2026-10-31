@@ -1,5 +1,5 @@
+import { Stopwatch, SystemClock } from 'core/time';
 import type { CDPSession, Page } from 'playwright';
-import { Stopwatch, SystemClock } from 'webappwiz/time';
 import type { Tab } from './tab';
 
 // Bound both the PNG and the enlarged viewport to 128 MiB of raw RGBA pixels each.

@@ -1,6 +1,6 @@
 import type { Score } from '@stringsync/mdom';
+import { Rect } from 'core/geometry';
 import { CanvasContext } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import type { BarlineTranslator } from './barline-translator';
 import type { ChordTranslator } from './chord-translator';
 import type { Config } from './config';

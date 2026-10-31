@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { MDocument, type Note as MNote } from '@stringsync/mdom';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import type { Note } from './note';
 import { Sequence, type Step } from './sequence';
 import { TempoMap } from './tempo-map';
@@ -12,18 +12,22 @@ describe('Sequence', () => {
 	let preferred: { part: typeof part; voice: string };
 
 	beforeEach(() => {
+		// vet-ignore tests-own-their-state: the fixture is shared through beforeEach so the tests read as one scenario
 		part = MDocument.empty().score.addPart();
 		const measure = part.addMeasure();
+		// vet-ignore tests-own-their-state: the fixture is shared through beforeEach so the tests read as one scenario
 		upper = fakeNote('upper', [
 			measure
 				.getOrCreateVoice('1')
 				.addNote({ step: 'C', octave: 5, type: 'quarter' }),
 		]);
+		// vet-ignore tests-own-their-state: the fixture is shared through beforeEach so the tests read as one scenario
 		lower = fakeNote('lower', [
 			measure
 				.getOrCreateVoice('2')
 				.addNote({ step: 'C', octave: 3, type: 'quarter' }),
 		]);
+		// vet-ignore tests-own-their-state: the fixture is shared through beforeEach so the tests read as one scenario
 		preferred = { part, voice: '2' };
 	});
 

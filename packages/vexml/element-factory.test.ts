@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { MDOMParser } from '@stringsync/mdom';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { ElementFactory } from './element-factory';
 import { FakeDecorations } from './fake-decorations';
 import { FakeViewport } from './fake-viewport';

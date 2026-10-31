@@ -1,3 +1,15 @@
+[install]
+# A package imports only what its package.json declares: hoisting would let
+# sound2score reach vexml without saying so.
+linker = "isolated"
+
 [test]
 # Preloaded so matcher's afterAll cleanup scopes to the whole run, not one file.
-preload = ["./packages/integration/setup.ts"]
+# Bun reads bunfig.toml from the folder it runs in: this one holds for runs from
+# vexml/ (vex test runs there in Docker), packages/integration/bunfig.toml for runs
+# from that package. The mono root's bunfig.toml names no preload, since one for
+# vexml would run before every other project's tests too.
+preload = [
+	"./packages/integration/setup.ts",
+	"./packages/vexml/blank-text-canvas-preload.ts",
+]

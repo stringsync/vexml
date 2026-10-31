@@ -1,6 +1,6 @@
-import { Disposer, type Resource } from 'webappwiz/disposable';
-import { Dispatcher } from 'webappwiz/events';
-import type { Rect } from 'webappwiz/geometry';
+import { Disposer, type Resource } from 'core/disposable';
+import { Dispatcher } from 'core/events';
+import type { Rect } from 'core/geometry';
 import type { CursorHost, CursorHostEventMap } from './cursor-host';
 import type { Host } from './host';
 

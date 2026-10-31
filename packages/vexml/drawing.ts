@@ -1,5 +1,5 @@
-import type { Resource } from 'webappwiz/disposable';
-import type { Events } from 'webappwiz/events';
+import type { Resource } from 'core/disposable';
+import type { Events } from 'core/events';
 
 /* The systems a progressive render drew since the last such event, by index, top to bottom. */
 export interface DrawEvent {

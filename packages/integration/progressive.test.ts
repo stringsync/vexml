@@ -42,10 +42,12 @@ describe('progressive', () => {
 			{},
 			timeRenders,
 			{
-				musicXML: await testing.fixture('score_schubert_gute_nacht.musicxml'),
-				runs: FIRST_SCREEN_RUNS,
+				arg: {
+					musicXML: await testing.fixture('score_schubert_gute_nacht.musicxml'),
+					runs: FIRST_SCREEN_RUNS,
+				},
+				cpuThrottle: 4,
 			},
-			{ cpuThrottle: 4 },
 		);
 		console.log(
 			`progressive at 4x CPU, after parse: whole render ${result.wholeMs} ms, first screen ${result.firstScreenMs} ms, best of ${result.firstScreenRuns.join('/')} (${result.systemsAtResolve} of ${result.systems} systems), longest later task ${result.longestLaterTaskMs} ms`,

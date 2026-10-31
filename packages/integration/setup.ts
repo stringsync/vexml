@@ -21,10 +21,10 @@ if (process.env.I_AM_RUNNING_TESTS_USING_VEX_TEST !== '1') {
 	process.exit(1);
 }
 
-/** The run's one Testing. Assigned in beforeAll below. An ESM binding is live, so
- * tests importing `testing` see the instance by the time any of them runs. */
+/** The run's one Testing, ready by the time any test runs. */
 export let testing: Testing;
 
+// An ESM binding is live, so importing tests see this assignment.
 beforeAll(async () => {
 	testing = new Testing();
 	// One throwaway render to warm the shared machinery (browser launch, page bundle,

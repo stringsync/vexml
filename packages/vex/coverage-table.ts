@@ -119,8 +119,7 @@ export class CoverageTable {
 		return problems;
 	}
 
-	/** The element and attribute totals. Kept out of the file, where every
-	 * parallel change to a row would conflict on them. */
+	/** The element and attribute totals, to print beside the table. */
 	summary(): string[] {
 		const elements = this.rows.filter((r) => r.attribute === undefined);
 		const attributes = this.rows.filter((r) => r.attribute !== undefined);

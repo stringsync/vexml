@@ -1,4 +1,4 @@
-import { Disposer, type Resource } from 'webappwiz/disposable';
+import { Disposer, type Resource } from 'core/disposable';
 import type { Ink } from './ink';
 import { SNAPSHOT_VERSION } from './score-snapshot';
 

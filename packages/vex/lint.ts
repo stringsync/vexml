@@ -1,10 +1,10 @@
 import { writeFileSync } from 'node:fs';
 import { basename, extname, isAbsolute, resolve } from 'node:path';
 import { renderers } from '@vexml/renderer';
+import { Rect } from 'core/geometry';
+import type { Logger } from 'core/log';
+import type { Fs } from 'core/system';
 import { PNG } from 'pngjs';
-import { Rect } from 'webappwiz/geometry';
-import type { Logger } from 'webappwiz/log';
-import type { Fs } from 'webappwiz/system';
 import { markFindings } from './finding-markup';
 import { InkMap } from './ink-map';
 import type { JevClient } from './jev-client';
@@ -205,6 +205,7 @@ export interface LintCorpusOptions {
 	kind: string;
 	log: Logger;
 	semantic?: boolean;
+	// vet-ignore noop-objects-over-null: an absent fs means the lint reads nothing from disk, an input the caller opts into, not a collaborator
 	fs?: Fs;
 	output?: string;
 	cwd?: string;

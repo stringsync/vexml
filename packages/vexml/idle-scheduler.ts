@@ -1,4 +1,4 @@
-import type { Resource } from 'webappwiz/disposable';
+import type { Resource } from 'core/disposable';
 
 /* How long a slice of idle work may go on: the browser's IdleDeadline, or a fake's budget. */
 export interface IdleSlice {

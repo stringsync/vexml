@@ -1,13 +1,12 @@
-import type { AsyncResource } from 'webappwiz/disposable';
+import type { AsyncResource } from 'core/disposable';
 import type { Tab } from './tab';
 
 export interface OpenOptions {
 	/** The complete HTML document the tab starts from. */
 	html: string;
 	/** JavaScript sources (text, not URLs) injected in order once the html has parsed.
-	 * Each script registers what it offers on globalThis; Tab.call reaches it by name.
-	 * Sources must be classic scripts (bundle() emits IIFEs), so their registrations are
-	 * visible the moment open() returns. */
+	 * Each script registers what it offers on globalThis, which Tab.call reaches by name.
+	 * Sources must be classic scripts, as bundle() emits. */
 	scripts?: string[];
 	width: number;
 	height: number;

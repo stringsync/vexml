@@ -1,5 +1,5 @@
 import type { Harmony } from '@stringsync/mdom';
-import type { Rect } from 'webappwiz/geometry';
+import type { Rect } from 'core/geometry';
 import type { ChordFrame } from './chord-diagram-glyph';
 import type { Decorations } from './decoration';
 import { Element, type Highlightable } from './element';

@@ -1,5 +1,5 @@
+import { Rect } from 'core/geometry';
 import { StaveTie, type TieNotes } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import type { DocumentBezier } from './score-reader';
 
 export type DashedTieOptions = {

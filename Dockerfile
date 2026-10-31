@@ -1,3 +1,4 @@
+# Built from the mono root as its context: `docker build -f vexml/Dockerfile .`.
 # Pinned to the installed playwright version so the bundled Chromium matches.
 # This image is the source of pixel determinism: same OS, fonts, and browser build as CI.
 FROM mcr.microsoft.com/playwright:v1.61.1-jammy
@@ -17,20 +18,28 @@ RUN fc-cache -f
 # Bun, copied from its official image (no curl install needed).
 COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 
-WORKDIR /app
-# bun resolves `workspace:*` from the manifests, so every package's package.json
-# has to land before the install — listed one by one to keep this layer cached
-# until a manifest actually changes.
-COPY package.json bun.lock ./
-COPY packages/vexml/package.json packages/vexml/
+WORKDIR /app/vexml
+# bun resolves `workspace:*` from the manifests, so every workspace package's
+# package.json has to land before the install, whichever project it is in; they are
+# listed one by one to keep this layer cached until a manifest actually changes.
+# --filter then installs only vexml's packages and what they depend on.
+COPY package.json bunfig.toml ./
+COPY packages/core/package.json packages/core/
+COPY packages/benchmarks/package.json packages/benchmarks/
+COPY packages/integration/package.json packages/integration/
 COPY packages/renderer/package.json packages/renderer/
 COPY packages/site/package.json packages/site/
-COPY packages/integration/package.json packages/integration/
 COPY packages/vex/package.json packages/vex/
-RUN bun install --frozen-lockfile
+COPY packages/vexml/package.json packages/vexml/
+RUN bun install
 
+# The workspace packages vexml imports, then vexml itself.
+COPY tsconfig.base.json ./
+COPY packages/core packages/core
 COPY . .
 
+# Tests run from vexml/, where bunfig.toml preloads the integration setup.
 # No dir: bun discovers all *.test.ts (unit + integration), skipping node_modules.
 # ENTRYPOINT (not CMD) so `docker run vexml-tests <args>` appends to bun test.
+WORKDIR /app/vexml
 ENTRYPOINT ["bun", "test"]

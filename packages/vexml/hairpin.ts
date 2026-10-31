@@ -1,5 +1,5 @@
+import { Rect } from 'core/geometry';
 import type { RenderContext, Stave, StaveNote } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import {
 	HAIRPIN_HEIGHT,
 	HAIRPIN_NIENTE_RADIUS,
@@ -10,6 +10,8 @@ import {
 const DEFAULT_SPREAD = 15;
 
 export type HairpinOptions = {
+	crescendo: boolean;
+	placement: 'above' | 'below';
 	dash?: number[] | null;
 	niente?: boolean;
 	spread?: number | null;
@@ -30,14 +32,16 @@ export class Hairpin {
 	private context?: RenderContext;
 	private readonly dash: number[] | null;
 	private readonly niente: boolean;
+	private readonly crescendo: boolean;
+	private readonly placement: 'above' | 'below';
 	private readonly spread: number | null;
 	constructor(
 		private readonly from: StaveNote,
 		private readonly to: StaveNote,
-		private readonly crescendo: boolean,
-		private readonly placement: 'above' | 'below',
-		opts: HairpinOptions = {},
+		opts: HairpinOptions,
 	) {
+		this.crescendo = opts.crescendo;
+		this.placement = opts.placement;
 		this.dash = opts.dash ?? null;
 		this.niente = opts.niente ?? false;
 		this.spread = opts.spread ?? null;

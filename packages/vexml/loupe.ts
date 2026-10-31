@@ -1,4 +1,4 @@
-import type { Resource } from 'webappwiz/disposable';
+import type { Resource } from 'core/disposable';
 import type { MarkerRect } from './marker';
 
 /** A loupe's size, magnification and placement. Sizes are CSS px; anything omitted keeps its
@@ -43,7 +43,7 @@ export interface LoupeHost {
  * and a paper that isn't a string or null, so a bad value fails where it was passed. */
 export function resolveLoupeOptions(
 	base: Required<LoupeOptions>,
-	// scry-ignore named-options-last: `patch` is the data being merged, not settings for the
+	// vet-ignore named-options-last: `patch` is the data being merged, not settings for the
 	// merge; it is the same type as `base`, and naming it opts would misname what it is.
 	patch: LoupeOptions,
 ): Required<LoupeOptions> {

@@ -1,0 +1,11 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		// DOM for the browser subpaths and core/react; the rest runs anywhere and
+		// simply does not use it.
+		"lib": ["ESNext", "DOM"],
+		"types": ["bun"],
+		"jsx": "react-jsx"
+	},
+	"exclude": ["node_modules"]
+}

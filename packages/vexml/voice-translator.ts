@@ -1,4 +1,5 @@
 import type { Chord, Note } from '@stringsync/mdom';
+import { Rect } from 'core/geometry';
 import {
 	type BarNote,
 	type ClefNote,
@@ -12,7 +13,6 @@ import {
 	type Tuplet,
 	Voice,
 } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import type { Appearance } from './appearance';
 import { AttributedClefNote } from './attributed-clef-note';
 import type { BarlineTranslator } from './barline-translator';
@@ -468,7 +468,7 @@ export interface VoiceTickablesOptions {
 	endBeat?: number;
 	/* Called with each lead note and the StaveNote built for it, as they are built, so a
 	 * caller can index them. */
-	// scry-ignore objects-over-callbacks: this fires DURING the call, handing back what the
+	// vet-ignore objects-over-callbacks: this fires DURING the call, handing back what the
 	// call is building, and one VoiceTranslator is shared by the layout pass and the draw pass
 	// (their measured and drawn widths have to match). An Events surface on it would deliver
 	// the layout pass's notes to the draw pass's listener and back, which is the bug this
@@ -485,7 +485,7 @@ export interface VoiceTickablesOptions {
 	run?: readonly Chord[];
 	/* Called with each stand-in ghost and the lead it holds the place of, so a caller can
 	 * put it under the same tuplet as that note. */
-	// scry-ignore objects-over-callbacks: per-call, for the reason `record` is.
+	// vet-ignore objects-over-callbacks: per-call, for the reason `record` is.
 	recordStandIn?: (lead: Note, ghost: GhostNote) => void;
 	/* Stem direction for notes without an explicit <stem>. */
 	defaultStem?: 'up' | 'down';

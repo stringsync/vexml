@@ -570,32 +570,32 @@ export const ACCIDENTAL_CODES: Record<string, string> = {
 	'quarter-flat': 'd',
 	'three-quarters-sharp': '++',
 	'three-quarters-flat': 'db',
-	'sharp-down': '', // accidentalQuarterToneSharpArrowDown
-	'sharp-up': '', // accidentalThreeQuarterTonesSharpArrowUp
-	'natural-down': '', // accidentalQuarterToneFlatNaturalArrowDown
-	'natural-up': '', // accidentalQuarterToneSharpNaturalArrowUp
-	'flat-down': '', // accidentalThreeQuarterTonesFlatArrowDown
-	'flat-up': '', // accidentalQuarterToneFlatArrowUp
-	'double-sharp-down': '', // accidentalThreeQuarterTonesSharpArrowDown
-	'double-sharp-up': '', // accidentalFiveQuarterTonesSharpArrowUp
-	'flat-flat-down': '', // accidentalFiveQuarterTonesFlatArrowDown
-	'flat-flat-up': '', // accidentalThreeQuarterTonesFlatArrowUp
-	'arrow-down': '', // accidentalArrowDown
-	'arrow-up': '', // accidentalArrowUp
-	'triple-sharp': '', // accidentalTripleSharp
-	'triple-flat': '', // accidentalTripleFlat
+	'sharp-down': '\uE275', // accidentalQuarterToneSharpArrowDown
+	'sharp-up': '\uE274', // accidentalThreeQuarterTonesSharpArrowUp
+	'natural-down': '\uE273', // accidentalQuarterToneFlatNaturalArrowDown
+	'natural-up': '\uE272', // accidentalQuarterToneSharpNaturalArrowUp
+	'flat-down': '\uE271', // accidentalThreeQuarterTonesFlatArrowDown
+	'flat-up': '\uE270', // accidentalQuarterToneFlatArrowUp
+	'double-sharp-down': '\uE277', // accidentalThreeQuarterTonesSharpArrowDown
+	'double-sharp-up': '\uE276', // accidentalFiveQuarterTonesSharpArrowUp
+	'flat-flat-down': '\uE279', // accidentalFiveQuarterTonesFlatArrowDown
+	'flat-flat-up': '\uE278', // accidentalThreeQuarterTonesFlatArrowUp
+	'arrow-down': '\uE27B', // accidentalArrowDown
+	'arrow-up': '\uE27A', // accidentalArrowUp
+	'triple-sharp': '\uE265', // accidentalTripleSharp
+	'triple-flat': '\uE266', // accidentalTripleFlat
 	'slash-quarter-sharp': '+-', // accidentalKucukMucennebSharp
 	'slash-sharp': '++-', // accidentalBuyukMucennebSharp
 	'slash-flat': 'bs', // accidentalBakiyeFlat
 	'double-slash-flat': 'bss', // accidentalBuyukMucennebFlat
-	'sharp-1': '', // accidental1CommaSharp
-	'sharp-2': '', // accidental2CommaSharp
-	'sharp-3': '', // accidental3CommaSharp
-	'sharp-5': '', // accidental5CommaSharp
-	'flat-1': '', // accidental1CommaFlat
-	'flat-2': '', // accidental2CommaFlat
-	'flat-3': '', // accidental3CommaFlat
-	'flat-4': '', // accidental4CommaFlat
+	'sharp-1': '\uE450', // accidental1CommaSharp
+	'sharp-2': '\uE451', // accidental2CommaSharp
+	'sharp-3': '\uE452',
+	'sharp-5': '\uE453', // accidental5CommaSharp
+	'flat-1': '\uE454',
+	'flat-2': '\uE455', // accidental2CommaFlat
+	'flat-3': '\uE456', // accidental3CommaFlat
+	'flat-4': '\uE457', // accidental4CommaFlat
 	sori: 'o',
 	koron: 'k',
 };

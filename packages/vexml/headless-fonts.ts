@@ -32,6 +32,7 @@ export class HeadlessFonts {
 	private readonly loaded: LoadedFont[] = [];
 
 	constructor(
+		// vet-ignore noop-objects-over-null: an absent value is part of this public shape, and a Noop stand-in would change what callers and tests see
 		private readonly registry: FontRegistry | null,
 		private readonly fonts: readonly HeadlessFont[],
 	) {}

@@ -1,4 +1,4 @@
-import type { Resource } from 'webappwiz/disposable';
+import type { Resource } from 'core/disposable';
 
 /* Where a custom drawing layer sits. A `content` layer covers the whole engraved score (score
  * space, scrolls with the content): what decorations draw on. A `background` layer is a content

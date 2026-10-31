@@ -1,4 +1,4 @@
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import type { Barline } from './barline';
 import { ColorStyle } from './color-style';
 import type { EditingPresentation, EditingView } from './editing-view';
@@ -31,7 +31,7 @@ export class SelectionOverlay implements EditingView {
 	private readonly color = new ColorStyle();
 	constructor(
 		private readonly layer: Layer,
-		// scry-ignore named-options-last: SelectionOverlay is published, and callers pass focusLayer
+		// vet-ignore named-options-last: SelectionOverlay is published, and callers pass focusLayer
 		// third; moving it into opts would break `new SelectionOverlay(layer, opts, focusLayer)`.
 		private readonly opts: SelectionOverlayOptions = {},
 		private readonly focusLayer: Layer = layer,

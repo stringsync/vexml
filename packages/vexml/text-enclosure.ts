@@ -1,5 +1,5 @@
+import { Rect } from 'core/geometry';
 import type { RenderContext } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 
 /** The shapes MusicXML's `enclosure` attribute draws around text, `none` aside. */
 export const ENCLOSURE_SHAPES = [

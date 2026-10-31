@@ -1,5 +1,5 @@
-import { Dispatcher, type Events } from 'webappwiz/events';
-import type { Rect } from 'webappwiz/geometry';
+import { Dispatcher, type Events } from 'core/events';
+import type { Rect } from 'core/geometry';
 import { FakeLayer } from './fake-layer';
 import { FakeLoupe } from './fake-loupe';
 import { FakeMarker } from './fake-marker';

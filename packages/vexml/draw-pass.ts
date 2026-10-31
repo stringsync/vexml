@@ -1,4 +1,6 @@
+// vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
 import type { Measure, Note, Part, Score } from '@stringsync/mdom';
+import { Rect } from 'core/geometry';
 import {
 	Metrics,
 	MetricsDefaults,
@@ -8,7 +10,6 @@ import {
 	type TabNote,
 	type TabStave,
 } from 'vexflow/core';
-import { Rect } from 'webappwiz/geometry';
 import {
 	type BarlineDecoration,
 	type BarlineTranslator,
@@ -426,8 +427,8 @@ export class DrawPass {
 			translator,
 			context,
 			this.collisionResolver,
-			this.notationColor,
 			{
+				notationColor: this.notationColor,
 				lyricDrops: opts.lyricDrops,
 				documentPositions:
 					config.layout.type !== 'panoramic' &&
@@ -1258,8 +1259,7 @@ export class DrawPass {
 		};
 	}
 
-	/* The measure loop's locals the stave builder reads, snapshotted at the call:
-	 * see StaveColumn for what each field means. */
+	/* Snapshotted at the call, since the measure loop keeps mutating these locals. */
 	private staveColumn(m: number): StaveColumn {
 		const nextBox = this.boxes[m + 1];
 		return {

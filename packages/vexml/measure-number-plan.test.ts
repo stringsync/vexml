@@ -136,11 +136,7 @@ describe('MeasureNumberPlan', () => {
 function part(
 	id: string,
 	count: number,
-	opts: {
-		prints?: Record<number, string>;
-		staves?: number;
-		pickup?: boolean;
-	} = {},
+	opts: PartOptions = {},
 ): { id: string; xml: string } {
 	const { prints = {}, staves = 1, pickup = false } = opts;
 	const measures = Array.from({ length: count }, (_, m) => {
@@ -151,6 +147,12 @@ function part(
 		return `<measure number="${m + 1}"${implicit}>${print}${attributes}</measure>`;
 	});
 	return { id, xml: `<part id="${id}">${measures.join('')}</part>` };
+}
+
+interface PartOptions {
+	prints?: Record<number, string>;
+	staves?: number;
+	pickup?: boolean;
 }
 
 async function planOf(

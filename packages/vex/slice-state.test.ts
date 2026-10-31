@@ -1,9 +1,17 @@
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { MDOMParser, MElement } from '@stringsync/mdom';
-import { NodeFs } from 'webappwiz/system';
+import { NodeFs } from 'core/system';
 import { MeasureSlicer } from './measure-slicer';
 
 describe('standalone slice state', () => {
+	let slicer: MeasureSlicer;
+	let slicerAt2And4: MeasureSlicer;
+
+	beforeEach(() => {
+		slicer = new MeasureSlicer('2');
+		slicerAt2And4 = new MeasureSlicer('2,4');
+	});
+
 	it.each([
 		['wedge', 'crescendo', 'spread="0" line-type="dashed"'],
 		['wedge', 'diminuendo', 'spread="14"'],
@@ -23,7 +31,7 @@ describe('standalone slice state', () => {
 				`<${tag} type="stop" number="2"${tag === 'bracket' ? ' line-end="none"' : ''}/>`,
 			) + NOTE,
 		);
-		const xml = new MeasureSlicer('2').slice(source);
+		const xml = slicer.slice(source);
 		const bar = firstMeasure(xml);
 		expect(types(bar, tag)).toEqual([start, 'stop']);
 		expect(marks(bar, tag).map((mark) => mark.getAttribute('number'))).toEqual([
@@ -77,7 +85,7 @@ describe('standalone slice state', () => {
 	});
 
 	it('restores each disconnected run from its own source state', () => {
-		const xml = new MeasureSlicer('2,4').slice(
+		const xml = slicerAt2And4.slice(
 			score(
 				direction('<octave-shift type="down" size="8"/>') + NOTE,
 				NOTE,
@@ -99,7 +107,7 @@ describe('standalone slice state', () => {
 	});
 
 	it('closes at the longest voice before the right barline', () => {
-		const xml = new MeasureSlicer('2').slice(
+		const xml = slicer.slice(
 			score(
 				direction('<pedal type="start" line="yes"/>') + NOTE,
 				NOTE +
@@ -112,28 +120,27 @@ describe('standalone slice state', () => {
 		expect(xml.indexOf('type="stop"')).toBeLessThan(xml.indexOf('<barline'));
 	});
 
-	it.each([
-		'slash',
-		'beat-repeat',
-		'measure-repeat',
-	])('reopens %s and resets it across omitted source stops', (tag) => {
-		const mark = `<${tag} type="start"${tag === 'slash' ? ' use-stems="yes"' : ''}>${tag === 'measure-repeat' ? '2' : ''}</${tag}>`;
-		const xml = new MeasureSlicer('2,4').slice(
-			score(
-				style(mark) + NOTE,
-				NOTE,
-				style(`<${tag} type="stop"/>`) + NOTE,
-				NOTE,
-			),
-		);
-		const bars = measures(xml);
-		expect(bars.map((bar) => types(bar, tag))).toEqual([['start'], ['stop']]);
-		expect(xml).toContain('color="#123456"');
-		expect(xml).toContain('number="1"');
-	});
+	it.each(['slash', 'beat-repeat', 'measure-repeat'])(
+		'reopens %s and resets it across omitted source stops',
+		(tag) => {
+			const mark = `<${tag} type="start"${tag === 'slash' ? ' use-stems="yes"' : ''}>${tag === 'measure-repeat' ? '2' : ''}</${tag}>`;
+			const xml = slicerAt2And4.slice(
+				score(
+					style(mark) + NOTE,
+					NOTE,
+					style(`<${tag} type="stop"/>`) + NOTE,
+					NOTE,
+				),
+			);
+			const bars = measures(xml);
+			expect(bars.map((bar) => types(bar, tag))).toEqual([['start'], ['stop']]);
+			expect(xml).toContain('color="#123456"');
+			expect(xml).toContain('number="1"');
+		},
+	);
 
 	it('applies opening source style changes after inherited state', () => {
-		const xml = new MeasureSlicer('2').slice(
+		const xml = slicer.slice(
 			score(
 				style('<slash type="start" use-stems="yes"/>') + NOTE,
 				style('<slash type="stop"/>') + NOTE,
@@ -201,7 +208,7 @@ describe('standalone slice state', () => {
 			'<type>whole</type>',
 			'<tie type="stop"/><type>whole</type><notations><tied type="stop"/><slur type="stop" number="2" placement="above"/></notations>',
 		);
-		const xml = new MeasureSlicer('2').slice(score(NOTE, tied));
+		const xml = slicer.slice(score(NOTE, tied));
 		expect(xml).toContain('<tie type="stop"/>');
 		expect(xml).toContain('<tied type="stop"/>');
 		expect(xml).toContain('<slur type="stop" number="2" placement="above"/>');

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { type Harmony, MDOMParser } from '@stringsync/mdom';
-import { Rect } from 'webappwiz/geometry';
+import { Rect } from 'core/geometry';
 import { ChordDiagram } from './chord-diagram';
 import type { ChordFrame } from './chord-diagram-glyph';
 import { isHighlightable, isPlayable } from './element';
