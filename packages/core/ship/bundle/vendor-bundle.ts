@@ -82,7 +82,7 @@ export class VendorBundle implements Bundle {
 		const published = await manifestAt(this.fs, out);
 		for (const pkg of vendored) {
 			delete published.dependencies?.[pkg.name];
-			await this.vendor(pkg, out, published, catalog);
+			await this.vendor(pkg, out, published, catalog, source);
 		}
 		await this.fs.write(
 			`${out}/package.json`,
@@ -100,6 +100,7 @@ export class VendorBundle implements Bundle {
 		out: string,
 		published: Manifest,
 		catalog: Record<string, string>,
+		source: Manifest,
 	): Promise<void> {
 		const manifest = await manifestAt(this.fs, pkg.dir);
 		const exported = entries(manifest.exports ?? {});
@@ -120,6 +121,7 @@ export class VendorBundle implements Bundle {
 		}
 		const sources = [...reached].map((key) => exported.get(key) as string);
 		await this.bundle.compile(pkg.dir, sources, root);
+		await this.bundle.point(root);
 
 		const where = new Map(
 			[...reached].map((key) => [
@@ -159,7 +161,14 @@ export class VendorBundle implements Bundle {
 				}
 			}
 		}
-		this.declare(pkg.name, manifest, published, catalog, needed);
+		this.declare(
+			pkg.name,
+			manifest,
+			published,
+			catalog,
+			needed,
+			source.name as string,
+		);
 		for (const doc of ["LICENSE", "LICENSE.md"]) {
 			if (await this.fs.exists(`${pkg.dir}/${doc}`)) {
 				await this.fs.write(
@@ -193,9 +202,11 @@ export class VendorBundle implements Bundle {
 		published: Manifest & { peerDependenciesMeta?: Record<string, object> },
 		catalog: Record<string, string>,
 		needed: Set<string>,
+		host: string,
 	): void {
 		for (const name of [...needed].toSorted()) {
 			if (
+				name === host ||
 				published.dependencies?.[name] !== undefined ||
 				published.peerDependencies?.[name] !== undefined
 			) {

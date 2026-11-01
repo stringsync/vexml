@@ -33,13 +33,6 @@ export interface Registry {
 	 * before it tags.
 	 */
 	readonly staged?: boolean;
-	/**
-	 * Whether the registry checks each version it accepts before serving it,
-	 * as npm scans every publish for malware. A release then waits for
-	 * `published` to turn true before it tags. A registry with no scan serves
-	 * what it accepts at once.
-	 */
-	readonly scans?: boolean;
 	/** Whether `version` of `name` is live: installable, not merely accepted. */
 	published(name: string, version: string): Promise<boolean>;
 	/** The version an install of `name` gets now, or `undefined` before any is out. */

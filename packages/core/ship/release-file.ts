@@ -10,21 +10,38 @@ export interface ReleaseState {
 
 /** What a `ReleaseFile` reads and writes through; the real filesystem by default. */
 export interface ReleaseFileOptions {
+	/**
+	 * The project the release is of, in a workspace root that holds several. Its
+	 * file is `RELEASE.<project>`, so one project's release that died is never
+	 * finished by another's; with none, the file is `RELEASE`.
+	 */
+	project?: string;
 	fs?: Fs;
 }
 
 /** Tracks the version and completed steps of an in-flight release in RELEASE. */
 export class ReleaseFile {
 	private readonly path: string;
+	private readonly unscoped: string | null;
 	private readonly fs: Fs;
 
 	constructor(root: string, opts: ReleaseFileOptions = {}) {
-		this.path = `${root}/RELEASE`;
+		const bare = `${root}/RELEASE`;
+		this.path = opts.project === undefined ? bare : `${bare}.${opts.project}`;
+		this.unscoped = opts.project === undefined ? null : bare;
 		this.fs = opts.fs ?? new NodeFs();
 	}
 
 	/** The release under way, or null when the previous one finished. */
 	async read(): Promise<ReleaseState | null> {
+		// A bare RELEASE beside project files is from before they were scoped, or
+		// from a release of the whole workspace: whose it is cannot be known, and
+		// guessing is how one project came to finish another's version.
+		if (this.unscoped !== null && (await this.fs.exists(this.unscoped))) {
+			throw new Error(
+				`${this.unscoped} belongs to no project: finish the release it was tracking, or delete it, before releasing ${this.path.slice(this.unscoped.length + 1)}`,
+			);
+		}
 		if (!(await this.fs.exists(this.path))) {
 			return null;
 		}

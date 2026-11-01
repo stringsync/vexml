@@ -65,13 +65,14 @@ export class RegistryArtifact implements Artifact {
 			dryRun: (at) => this.pack(at),
 			...this.watching(),
 		};
-		if (this.registry.staged !== true && this.registry.scans !== true) {
+		if (this.registry.staged !== true) {
 			return [publish];
 		}
-		// Every package goes out before any waits, so a person approves them in
-		// one sitting and the scans run side by side, and the tag follows only
-		// once each is live. The wait never gives up: a version npm holds for
-		// review goes live once it passes, and a rerun would only wait again.
+		// Every package stages before any waits, so a person approves them in
+		// one sitting, and the tag follows only once each is live. The wait
+		// never gives up: an approval can come hours later. A registry that
+		// does not stage is done once it accepts a version, even if it is
+		// still scanning it.
 		return [
 			publish,
 			{
@@ -142,7 +143,7 @@ export class RegistryArtifact implements Artifact {
 		if (waited.isEqual(Duration.zero())) {
 			this.saidHeld = false;
 			log.info(
-				`${this.name}@${version} ${color.yellow("not live yet")}: waiting for ${this.registry.staged === true ? "approval and " : ""}the registry's checks`,
+				`${this.name}@${version} ${color.yellow("not live yet")}: waiting for approval and the registry's checks`,
 			);
 		} else if (status === "held" && !this.saidHeld) {
 			this.saidHeld = true;

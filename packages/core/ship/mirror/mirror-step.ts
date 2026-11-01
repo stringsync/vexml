@@ -280,6 +280,7 @@ export class MirrorStep implements Step {
 
 		await this.tooling.tsconfigs(mirror, await this.files(mirror));
 		await this.rootFiles(root, mirror, own, project, cut.version, catalog);
+		await this.lockfile(root, mirror);
 		return root;
 	}
 
@@ -323,16 +324,27 @@ export class MirrorStep implements Step {
 		return published;
 	}
 
-	/** Puts each `config.replace` file at the path it stands in for. */
+	/**
+	 * Puts each `config.replace` file at the path it stands in for. Several paths may share one
+	 * source, so the sources are removed only once every replacement is in place.
+	 */
 	private async replace(mirror: string): Promise<void> {
-		for (const [to, from] of Object.entries(this.opts.config?.replace ?? {})) {
+		const entries = Object.entries(this.opts.config?.replace ?? {});
+		for (const [to, from] of entries) {
 			if (!(await this.fs.exists(`${mirror}/${from}`))) {
 				throw new Error(
 					`${this.opts.project} replaces ${to} with ${from}, which the mirror does not hold`,
 				);
 			}
+		}
+		for (const [to, from] of entries) {
 			await this.copyFile(`${mirror}/${from}`, `${mirror}/${to}`);
-			await this.fs.rm(`${mirror}/${from}`);
+		}
+		const targets = new Set(entries.map(([to]) => to));
+		for (const from of new Set(entries.map(([, from]) => from))) {
+			if (!targets.has(from)) {
+				await this.fs.rm(`${mirror}/${from}`);
+			}
 		}
 	}
 
@@ -505,6 +517,36 @@ export class MirrorStep implements Step {
 			`${SOURCE_DIR}/${this.opts.source ?? "core"}`,
 		);
 		await this.tooling.gitignore(root, mirror);
+	}
+
+	/**
+	 * Seeds the mirror with the workspace's `bun.lock` and lets bun fit it to
+	 * the mirror's layout, so a range keeps the version the workspace locks
+	 * rather than whatever was published last. The lockfile is kept out of the
+	 * ignore patterns, as it is committed with the mirror.
+	 */
+	private async lockfile(root: string, mirror: string): Promise<void> {
+		if (!(await this.fs.exists(`${root}/bun.lock`))) {
+			return;
+		}
+		await this.copyFile(`${root}/bun.lock`, `${mirror}/bun.lock`);
+		const result = await this.ps.spawnCapture(
+			["bun", "install", "--lockfile-only"],
+			{ cwd: mirror },
+		);
+		if (result.exitCode !== 0) {
+			throw new Error(
+				`bun install --lockfile-only failed in ${mirror}: ${result.stderr.trim() || result.stdout.trim()}`,
+			);
+		}
+		const ignore = `${mirror}/.gitignore`;
+		if (await this.fs.exists(ignore)) {
+			const lines = (await this.fs.read(ignore)).split("\n");
+			await this.fs.write(
+				ignore,
+				lines.filter((line) => !/^\/?bun\.lock$/.test(line.trim())).join("\n"),
+			);
+		}
 	}
 
 	/** Every file under `dir`, dotfiles included. */

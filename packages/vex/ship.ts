@@ -11,6 +11,34 @@ import { Duration } from 'core/time';
 import { fix } from './fix';
 import { MIRROR } from './mirror';
 
+/** Where `splates ship` passes the release type the person picked. */
+const SHIP_BUMP = 'SPLATES_SHIP_BUMP';
+
+const BUMPS: readonly Bump[] = ['patch', 'minor', 'major'];
+
+/**
+ * The release type to ship: the argument when given, else the one
+ * `SPLATES_SHIP_BUMP` names. Throws on any other env value, and when neither
+ * is given.
+ */
+export function bumpOf(arg: Bump | undefined, env: string | undefined): Bump {
+	if (arg !== undefined) {
+		return arg;
+	}
+	if (env === undefined || env === '') {
+		throw new Error(
+			`ship needs patch, minor or major, as an argument or in ${SHIP_BUMP}`,
+		);
+	}
+	const bump = BUMPS.find((each) => each === env);
+	if (bump === undefined) {
+		throw new Error(
+			`${SHIP_BUMP} must be patch, minor or major, not ${JSON.stringify(env)}`,
+		);
+	}
+	return bump;
+}
+
 export interface ShipOptions {
 	bump: Bump;
 	log: Logger;

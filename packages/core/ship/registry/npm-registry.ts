@@ -31,7 +31,6 @@ export interface NpmRegistryOptions {
 // Staging needs no 2FA, which is what lets a stage-only token publish.
 export class NpmRegistry implements Registry {
 	readonly staged: boolean;
-	readonly scans = true;
 	readonly publishDeadline?: Duration;
 	/** Set only for a `via` publish, whose run it follows. */
 	readonly watch?: (name: string, version: string) => Promise<CheckReport>;

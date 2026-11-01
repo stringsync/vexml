@@ -84,7 +84,7 @@ export class BunBundle implements Bundle {
 		// Before pointing, since a package that exports nothing built nothing, and
 		// walking a directory that is not there is an error rather than a no-op.
 		await this.fs.mkdir(out);
-		await this.point(dir);
+		await this.point(`${dir}/dist`);
 		await this.fs.write(
 			`${out}/package.json`,
 			`${JSON.stringify(published(manifest, await this.resolving(dir, manifest)), null, "\t")}\n`,
@@ -241,7 +241,7 @@ export class BunBundle implements Bundle {
 	}
 
 	/**
-	 * Points every relative specifier in the emitted declarations at a `.js`
+	 * Points every relative specifier in the declarations under `root` at a `.js`
 	 * file. tsc writes them bare, which a consumer resolving as node16 rejects
 	 * outright, and which with `skipLibCheck` on it does not report at all: the
 	 * references quietly fail and every export becomes `any`, so the types are
@@ -253,21 +253,49 @@ export class BunBundle implements Bundle {
 	 * building itself does not have to remember. A specifier that already names
 	 * a file is left alone, which is what makes running it twice harmless.
 	 */
-	private async point(dir: string): Promise<void> {
-		for await (const path of walk(`${dir}/dist`, { fs: this.fs })) {
+	async point(root: string): Promise<void> {
+		for await (const path of walk(root, { fs: this.fs })) {
 			if (!path.endsWith(".d.ts")) {
 				continue;
 			}
 			const before = await this.fs.read(path);
+			const pending: Promise<void>[] = [];
+			const edits = new Map<string, string>();
+			for (const match of before.matchAll(SPECIFIER)) {
+				const specifier = match[2] as string;
+				if (EXTENSION.test(specifier) || edits.has(specifier)) {
+					continue;
+				}
+				pending.push(
+					this.target(path, specifier).then((next) => {
+						edits.set(specifier, next);
+					}),
+				);
+			}
+			await Promise.all(pending);
 			const after = before.replace(
 				SPECIFIER,
 				(match, head: string, specifier: string, tail: string) =>
-					EXTENSION.test(specifier) ? match : `${head}${specifier}.js${tail}`,
+					EXTENSION.test(specifier)
+						? match
+						: `${head}${edits.get(specifier)}${tail}`,
 			);
 			if (after !== before) {
 				await this.fs.write(path, after);
 			}
 		}
+	}
+
+	/** `specifier` as a `.js` file, or as the `index.js` of the directory it names. */
+	private async target(from: string, specifier: string): Promise<string> {
+		const base = `${from.replace(/\/[^/]*$/, "")}/${specifier}`;
+		if (
+			!(await this.fs.exists(`${base}.d.ts`)) &&
+			(await this.fs.exists(`${base}/index.d.ts`))
+		) {
+			return `${specifier}/index.js`;
+		}
+		return `${specifier}.js`;
 	}
 
 	private async run(argv: string[], cwd: string): Promise<void> {

@@ -25,6 +25,10 @@ export const vexmlMirrorRewrite: NonNullable<MirrorConfig['rewrite']> = {
 		[/- "main"/, '- "master"'],
 		[/bun install --frozen-lockfile/, 'bun install'],
 	],
+	'.github/workflows/test.yml': [
+		[/- "main"/, '- "master"'],
+		[/bun install --frozen-lockfile/, 'bun install'],
+	],
 };
 
 /** Where and how vexml is mirrored to its public repository. */
@@ -47,6 +51,11 @@ export const MIRROR = {
 			'**/.claude/**',
 			'**/.agents/**',
 		],
+		// The mirror's own agent guide stands in for mono's, which names mono, vet and bin/mono.
+		replace: {
+			'AGENTS.md': 'AGENTS.mirror.md',
+			'CLAUDE.md': 'AGENTS.mirror.md',
+		},
 		rewrite: vexmlMirrorRewrite,
 	},
 } satisfies MirrorOptions;

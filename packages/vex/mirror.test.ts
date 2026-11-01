@@ -37,4 +37,13 @@ describe('vexmlMirrorRewrite', () => {
 		expect(text).not.toContain('"main"');
 		expect(text).not.toContain('--frozen-lockfile');
 	});
+
+	it('leaves a test workflow for the master branch without a lockfile', async () => {
+		const text = await rewritten('.github/workflows/test.yml');
+		expect(text).toContain('- "master"');
+		expect(text).not.toContain('"main"');
+		expect(text).not.toContain('--frozen-lockfile');
+		expect(text).toContain('bin/vex fix --check');
+		expect(text).toContain('bin/vex test');
+	});
 });

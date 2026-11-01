@@ -1,0 +1,20 @@
+# Checks and tests vexml. It lives in vexml/ so the mirror carries it to the public repo, where it
+# runs on every pull request and push. The integration tests render in Docker, which the runner has.
+name: test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - "master"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bin/vex fix --check
+      - run: bin/vex test

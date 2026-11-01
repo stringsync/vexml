@@ -16,7 +16,7 @@ import { servePerfUi } from './perf-ui';
 import { readme } from './readme';
 import { render } from './render';
 import { FINDING_KINDS } from './render-lint';
-import { publish, ship, trust } from './ship';
+import { bumpOf, publish, ship, trust } from './ship';
 import { slice } from './slice';
 import { test } from './test';
 import { validate } from './validate';
@@ -282,14 +282,21 @@ vex
 
 vex
 	.command('ship')
-	.description('bump version (patch|minor|major), commit, tag, and publish')
-	.arg('type', z.enum(['patch', 'minor', 'major'] as const))
+	.description(
+		'bump version (patch|minor|major, or SPLATES_SHIP_BUMP), commit, tag, and publish',
+	)
+	.arg('type', z.optional(z.enum(['patch', 'minor', 'major'] as const)))
 	.option('dry-run', z.boolean(), {
 		default: false,
 		description: 'rehearse the release, publishing and pushing nothing',
 	})
 	.action((opts, { log, ps }) =>
-		ship({ bump: opts.type, log, ps, dryRun: opts['dry-run'] }),
+		ship({
+			bump: bumpOf(opts.type, ps.env('SPLATES_SHIP_BUMP')),
+			log,
+			ps,
+			dryRun: opts['dry-run'],
+		}),
 	);
 
 vex
