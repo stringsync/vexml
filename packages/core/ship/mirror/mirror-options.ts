@@ -65,8 +65,8 @@ export interface MirrorOptions {
 	tag?: boolean;
 	/** What the mirror leaves out and how; nothing is excluded by default. */
 	config?: MirrorConfig;
-	/** The workspace package folded in as source; `core` by default. */
-	source?: string;
+	/** The workspace package, or packages, folded in as source; `core` by default. */
+	source?: string | readonly string[];
 	/** Where the mirror is checked out while it is built; a temporary directory by default. */
 	scratch?: string;
 	/** Where the workspace is found; the manifest workspace around the working directory by default. */

@@ -10,22 +10,16 @@ import {
 	type Ps,
 } from "core/system";
 import { Duration } from "core/time";
-import {
-	catalogAt,
-	entries,
-	isPackage,
-	keyOf,
-	manifestAt,
-	reach,
-	specifiers,
-} from "../bundle/reach";
+import { catalogAt, manifestAt } from "../bundle/reach";
 import type { Cut } from "../cut";
 import type { Step } from "../step";
 import { ManifestWorkspace } from "../workspace/manifest-workspace";
 import type { Package } from "../workspace/workspace";
 import { AGENT_FILES } from "./agent-files";
+import { checkDependencies, NEVER } from "./mirror-dependencies";
 import { guard, TRAILER } from "./mirror-guard";
 import type { MirrorOptions } from "./mirror-options";
+import { type Reached, reachedAll } from "./mirror-reach";
 import { MirrorTooling } from "./mirror-tooling";
 import { FIELDS, type Json, sourceManifest } from "./source-manifest";
 
@@ -51,7 +45,6 @@ export interface PreparedMirror {
 }
 
 /** Packages that stay in the repository however something depends on them. */
-const NEVER = ["scry", "vet"];
 
 /** Never copied, whatever the exclude globs say. */
 const SKIPPED = new Set([".git", "node_modules", "dist"]);
@@ -218,7 +211,7 @@ export class MirrorStep implements Step {
 	 */
 	private async build(cut: Cut, mirror: string): Promise<string> {
 		const { project } = this.opts;
-		const source = this.opts.source ?? "core";
+		const sources = this.sources();
 		const workspace =
 			this.opts.workspace ??
 			(await ManifestWorkspace.at(cut.root, { fs: this.fs, ps: this.ps }));
@@ -231,14 +224,18 @@ export class MirrorStep implements Step {
 				pkg.dir === `${root}/${project}` ||
 				pkg.dir.startsWith(`${root}/${project}/`),
 		);
-		const core = packages.find((pkg) => pkg.name === source);
 		if (own.length === 0) {
 			throw new Error(`${project} holds no workspace packages to mirror`);
 		}
-		if (core === undefined) {
-			throw new Error(`the workspace has no ${source} package to mirror`);
+		const folded: Package[] = [];
+		for (const source of sources) {
+			const found = packages.find((pkg) => pkg.name === source);
+			if (found === undefined) {
+				throw new Error(`the workspace has no ${source} package to mirror`);
+			}
+			folded.push(found);
 		}
-		const published = await this.checkDependencies(own, core.name, packages);
+		const published = await checkDependencies(this.fs, own, sources, packages);
 
 		const copied = await this.copy(
 			`${root}/${project}`,
@@ -252,76 +249,40 @@ export class MirrorStep implements Step {
 		await this.rewrite(mirror);
 
 		const catalog = await catalogAt(this.fs, root);
-		const used = await this.reached(copied, core);
-		const coreOut = `${mirror}/${SOURCE_DIR}/${core.name}`;
-		for (const file of used.files) {
-			const rel = relative(core.dir, file);
-			if (this.excluded(excludes, relative(root, file))) {
-				throw new Error(
-					`${project} reaches ${relative(root, file)}, which the exclude globs leave out of the mirror`,
-				);
+		const reached = await reachedAll(this.fs, copied, folded);
+		for (const core of folded) {
+			const used = reached.get(core.name) as Reached;
+			const coreOut = `${mirror}/${SOURCE_DIR}/${core.name}`;
+			for (const file of used.files) {
+				const rel = relative(core.dir, file);
+				if (this.excluded(excludes, relative(root, file))) {
+					throw new Error(
+						`${project} reaches ${relative(root, file)}, which the exclude globs leave out of the mirror`,
+					);
+				}
+				await this.copyFile(file, `${coreOut}/${rel}`);
 			}
-			await this.copyFile(file, `${coreOut}/${rel}`);
-		}
-		for (const extra of ["tsconfig.json", "LICENSE"]) {
-			if (await this.fs.exists(`${core.dir}/${extra}`)) {
-				await this.copyFile(`${core.dir}/${extra}`, `${coreOut}/${extra}`);
+			for (const extra of ["tsconfig.json", "LICENSE"]) {
+				if (await this.fs.exists(`${core.dir}/${extra}`)) {
+					await this.copyFile(`${core.dir}/${extra}`, `${coreOut}/${extra}`);
+				}
 			}
+			await this.write(
+				`${coreOut}/package.json`,
+				await sourceManifest(this.fs, core, {
+					keys: used.keys,
+					files: used.files,
+					catalog,
+					version: cut.version,
+					siblings: sources,
+				}),
+			);
 		}
-		await this.write(
-			`${coreOut}/package.json`,
-			await sourceManifest(this.fs, core, {
-				keys: used.keys,
-				files: used.files,
-				catalog,
-				version: cut.version,
-			}),
-		);
 
 		await this.tooling.tsconfigs(mirror, await this.files(mirror));
 		await this.rootFiles(root, mirror, own, project, cut.version, catalog);
 		await this.lockfile(root, mirror);
 		return root;
-	}
-
-	/**
-	 * Refuses a package that needs what the mirror cannot hold. A public
-	 * package of another project is no obstacle: the mirror depends on its
-	 * published build instead, and its name is returned.
-	 */
-	private async checkDependencies(
-		own: readonly Package[],
-		source: string,
-		all: readonly Package[],
-	): Promise<Map<string, string>> {
-		const names = new Set(own.map((pkg) => pkg.name));
-		const published = new Map<string, string>();
-		for (const pkg of own) {
-			const manifest = (await manifestAt(this.fs, pkg.dir)) as Json;
-			for (const field of FIELDS) {
-				for (const [name, range] of Object.entries(manifest[field] ?? {})) {
-					if (NEVER.includes(name)) {
-						throw new Error(
-							`${pkg.name} depends on ${name}, which is never copied out of the repository`,
-						);
-					}
-					if (
-						range.startsWith("workspace:") &&
-						name !== source &&
-						!names.has(name)
-					) {
-						const other = all.find((one) => one.name === name);
-						if (other === undefined || other.private) {
-							throw new Error(
-								`${pkg.name} depends on ${name}, which the mirror would not hold`,
-							);
-						}
-						published.set(name, other.dir);
-					}
-				}
-			}
-		}
-		return published;
 	}
 
 	/**
@@ -408,25 +369,14 @@ export class MirrorStep implements Step {
 		}
 	}
 
-	/** The `core` entry points the copied source names, and the files they lead to. */
-	private async reached(
-		copied: readonly string[],
-		core: Package,
-	): Promise<{ keys: Set<string>; files: Set<string> }> {
-		const manifest = await manifestAt(this.fs, core.dir);
-		const exported = entries(manifest.exports ?? {});
-		const wanted = new Set<string>();
-		for (const path of copied) {
-			if (!/\.tsx?$/.test(path)) {
-				continue;
-			}
-			for (const specifier of await specifiers(path, this.fs)) {
-				if (isPackage(specifier, core.name)) {
-					wanted.add(keyOf(core, exported, specifier));
-				}
-			}
-		}
-		return reach(this.fs, core, [...wanted]);
+	/** The source packages to fold in, in the order given; `core` by default. */
+	private sources(): string[] {
+		const { source } = this.opts;
+		return source === undefined
+			? ["core"]
+			: typeof source === "string"
+				? [source]
+				: [...source];
 	}
 
 	/**
@@ -475,7 +425,7 @@ export class MirrorStep implements Step {
 		const workspaces = {
 			packages: [
 				...dirs.filter((one) => one !== "").toSorted(),
-				`${SOURCE_DIR}/${this.opts.source ?? "core"}`,
+				...this.sources().map((name) => `${SOURCE_DIR}/${name}`),
 			],
 			catalog: used,
 		};
@@ -514,7 +464,7 @@ export class MirrorStep implements Step {
 		await this.tooling.lint(
 			root,
 			mirror,
-			`${SOURCE_DIR}/${this.opts.source ?? "core"}`,
+			this.sources().map((name) => `${SOURCE_DIR}/${name}`),
 		);
 		await this.tooling.gitignore(root, mirror);
 	}

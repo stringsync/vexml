@@ -7,7 +7,7 @@ import { type AnyMiddleware, compose, type Middleware } from "./middleware";
 // `parsed` is the whole command line: the positionals `arg()` declares and the
 // flags `option()` does, in one object. Not a settings bag the caller can drop,
 // so it leads, and the context the middleware built follows it.
-// scry-ignore objects-over-callbacks: a command has one action, written as a
+// vet-ignore objects-over-callbacks: a command has one action, written as a
 // closure at the call site, so an interface would only wrap that closure
 type Action<O, C> = (parsed: O, ctx: C) => unknown;
 

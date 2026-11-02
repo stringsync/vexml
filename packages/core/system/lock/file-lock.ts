@@ -107,7 +107,7 @@ export class FileLock implements Lock {
 		this.registerCleanup();
 	}
 
-	// scry-ignore resources-are-disposable: the lock outlives each hold, so release is the other half of acquire and leaves it ready to acquire again, not a teardown
+	// vet-ignore resources-are-disposable: the lock outlives each hold, so release is the other half of acquire and leaves it ready to acquire again, not a teardown
 	async release(): Promise<void> {
 		this.listeners?.dispose();
 		this.listeners = null;

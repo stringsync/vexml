@@ -113,7 +113,11 @@ export class MirrorTooling {
 	 * it. The copied source is left out of it, since the project's style (its
 	 * quotes, say) is not the one that source is written and checked in.
 	 */
-	async lint(root: string, mirror: string, source: string): Promise<void> {
+	async lint(
+		root: string,
+		mirror: string,
+		sources: readonly string[],
+	): Promise<void> {
 		if (!(await this.fs.exists(`${root}/biome.json`))) {
 			return;
 		}
@@ -133,7 +137,10 @@ export class MirrorTooling {
 		}
 		config.files = {
 			...config.files,
-			includes: [...(config.files?.includes ?? ["**"]), `!${source}`],
+			includes: [
+				...(config.files?.includes ?? ["**"]),
+				...sources.map((source) => `!${source}`),
+			],
 		};
 		await this.fs.write(own, `${JSON.stringify(config, null, "\t")}\n`);
 		await this.format(root, mirror, ["biome.json"]);

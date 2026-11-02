@@ -44,7 +44,8 @@ export interface VendorBundleOptions {
  * into `dist/vendor/<name>`, and every import of the package is rewritten to
  * the copy beside it. What the copy needs from outside the workspace joins the
  * published manifest under the range the vendored package declared, optional
- * peers staying optional peers: they are never bundled.
+ * peers staying optional peers: they are never bundled. A vendored package's
+ * own private workspace dependencies are vendored the same way, however deep.
  */
 export class VendorBundle implements Bundle {
 	private readonly fs: Fs;
@@ -63,26 +64,52 @@ export class VendorBundle implements Bundle {
 			this.opts.workspace ??
 			(await ManifestWorkspace.at(dir, { fs: this.fs, ps: this.ps }));
 		const private_ = (await workspace.packages()).filter((pkg) => pkg.private);
-		const vendored = private_.filter((pkg) =>
+		const wanted = private_.filter((pkg) =>
 			source.dependencies?.[pkg.name]?.startsWith("workspace:"),
 		);
 		const never = this.opts.never ?? NEVER;
-		for (const pkg of vendored) {
+		for (const pkg of wanted) {
 			if (never.includes(pkg.name)) {
 				throw new Error(
 					`${source.name} depends on ${pkg.name}, which stays in the repository and cannot be vendored`,
 				);
 			}
 		}
+		const vendored = await this.dependentsFirst(wanted);
 		const out = await this.bundle.build(dir);
 		if (vendored.length === 0) {
 			return out;
 		}
 		const catalog = await catalogAt(this.fs, workspace.root);
 		const published = await manifestAt(this.fs, out);
-		for (const pkg of vendored) {
+		const queue = [...vendored];
+		const done = new Set<string>();
+		for (const pkg of queue) {
+			if (done.has(pkg.name)) {
+				continue;
+			}
+			done.add(pkg.name);
 			delete published.dependencies?.[pkg.name];
-			await this.vendor(pkg, out, published, catalog, source);
+			const nested = await this.vendor(
+				pkg,
+				out,
+				published,
+				catalog,
+				source,
+				new Set(private_.map((other) => other.name)),
+			);
+			for (const name of nested) {
+				const dep = private_.find((other) => other.name === name);
+				if (dep === undefined || done.has(name)) {
+					continue;
+				}
+				if (never.includes(name)) {
+					throw new Error(
+						`${pkg.name} depends on ${name}, which stays in the repository and cannot be vendored`,
+					);
+				}
+				queue.push(dep);
+			}
 		}
 		await this.fs.write(
 			`${out}/package.json`,
@@ -95,13 +122,49 @@ export class VendorBundle implements Bundle {
 		await this.bundle.clean(dir);
 	}
 
+	/**
+	 * The packages with any that depends on another before it, so the
+	 * dependent's copy exists to have its import of the other rewritten.
+	 */
+	private async dependentsFirst<T extends { name: string; dir: string }>(
+		packages: readonly T[],
+	): Promise<T[]> {
+		const needs = new Map<string, Set<string>>();
+		for (const pkg of packages) {
+			const manifest = await manifestAt(this.fs, pkg.dir);
+			needs.set(
+				pkg.name,
+				new Set(
+					packages
+						.filter(
+							(other) =>
+								other.name !== pkg.name &&
+								manifest.dependencies?.[other.name] !== undefined,
+						)
+						.map((other) => other.name),
+				),
+			);
+		}
+		const ordered: T[] = [];
+		const rest = [...packages];
+		while (rest.length > 0) {
+			// Next is a package no remaining one depends on; a cycle keeps its order.
+			const index = rest.findIndex((pkg) =>
+				rest.every((other) => !needs.get(other.name)?.has(pkg.name)),
+			);
+			ordered.push(...rest.splice(index === -1 ? 0 : index, 1));
+		}
+		return ordered;
+	}
+
 	private async vendor(
 		pkg: { name: string; dir: string },
 		out: string,
 		published: Manifest,
 		catalog: Record<string, string>,
 		source: Manifest,
-	): Promise<void> {
+		privates: Set<string>,
+	): Promise<string[]> {
 		const manifest = await manifestAt(this.fs, pkg.dir);
 		const exported = entries(manifest.exports ?? {});
 		const root = `${out}/vendor/${pkg.name}`;
@@ -117,7 +180,7 @@ export class VendorBundle implements Bundle {
 		}
 		const reached = (await reach(this.fs, pkg, [...wanted])).keys;
 		if (reached.size === 0) {
-			return;
+			return [];
 		}
 		const sources = [...reached].map((key) => exported.get(key) as string);
 		await this.bundle.compile(pkg.dir, sources, root);
@@ -150,13 +213,19 @@ export class VendorBundle implements Bundle {
 		}
 
 		const needed = new Set<string>();
+		const nested = new Set<string>();
 		for await (const path of walk(root, { fs: this.fs })) {
 			if (!/\.(js|d\.ts)$/.test(path)) {
 				continue;
 			}
 			for (const specifier of await names(path)) {
 				const outside = outsider(specifier);
-				if (outside !== undefined) {
+				if (outside === undefined) {
+					continue;
+				}
+				if (privates.has(outside) && outside !== pkg.name) {
+					nested.add(outside);
+				} else {
 					needed.add(outside);
 				}
 			}
@@ -177,6 +246,7 @@ export class VendorBundle implements Bundle {
 				);
 			}
 		}
+		return [...nested].toSorted();
 	}
 
 	/** Every JavaScript and declaration file the build left, vendored copies included. */

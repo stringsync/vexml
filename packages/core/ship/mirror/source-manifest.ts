@@ -26,6 +26,8 @@ export interface SourceManifestOptions {
 	catalog: Record<string, string>;
 	/** The version the release goes out at. */
 	version: string;
+	/** Every source package the mirror folds in; one may depend on another. */
+	siblings?: readonly string[];
 }
 
 /**
@@ -36,7 +38,7 @@ export interface SourceManifestOptions {
 export async function sourceManifest(
 	fs: Fs,
 	core: Package,
-	{ keys, files, catalog, version }: SourceManifestOptions,
+	{ keys, files, catalog, version, siblings = [] }: SourceManifestOptions,
 ): Promise<Json> {
 	const manifest = (await manifestAt(fs, core.dir)) as Json;
 	const exported = entries(manifest.exports ?? {});
@@ -69,6 +71,10 @@ export async function sourceManifest(
 			);
 		}
 		const range = manifest[field]?.[name] as string;
+		if (siblings.includes(name)) {
+			out[field] = { ...out[field], [name]: "workspace:*" };
+			continue;
+		}
 		const resolved = range.startsWith("catalog:") ? catalog[name] : range;
 		if (resolved === undefined || resolved.startsWith("workspace:")) {
 			throw new Error(

@@ -432,6 +432,48 @@ export class SpannerBuilder {
 			}
 		}
 
+		// The sounding notes on each stave row, by the voice they belong to, read once for the
+		// ties that ask whether another voice sits under them.
+		let voicesByRow:
+			| Map<number, { note: StaveNote; voice: string }[]>
+			| undefined;
+		const otherVoiceUnder = (
+			chord: Chord,
+			first: StaveNote,
+			last: StaveNote,
+		) => {
+			const row = first.getStave()?.getY();
+			if (row === undefined || last.getStave()?.getY() !== row) {
+				return false;
+			}
+			if (!voicesByRow) {
+				const index = new Map<number, { note: StaveNote; voice: string }[]>();
+				voicesByRow = index;
+				for (const c of chords) {
+					const note = byLead.get(c.lead);
+					const y = note?.getStave()?.getY();
+					if (note && y !== undefined && !note.isRest()) {
+						const entry = { note, voice: `${c.lead.staff}/${c.lead.voice}` };
+						const notes = index.get(y);
+						if (notes) {
+							notes.push(entry);
+						} else {
+							index.set(y, [entry]);
+						}
+					}
+				}
+			}
+			const voice = `${chord.lead.staff}/${chord.lead.voice}`;
+			const left = first.getAbsoluteX();
+			const right = last.getAbsoluteX();
+			return (voicesByRow.get(row) ?? []).some(
+				({ note, voice: other }) =>
+					other !== voice &&
+					note.getAbsoluteX() > left &&
+					note.getAbsoluteX() < right,
+			);
+		};
+
 		const ties: StaveTie[] = [];
 		for (const chord of chords) {
 			const heads = chord.notes.length;
@@ -458,10 +500,14 @@ export class SpannerBuilder {
 					// notes arc over the top (direction -1), the lower half under the bottom
 					// (+1). Otherwise vexflow defaults every tie to the stem direction, so a
 					// stem-up chord's top notes would tuck underneath instead of over. Single
-					// notes keep that default (a tie opposite the lone stem).
+					// notes keep that default (a tie opposite the lone stem), unless another
+					// voice sounds under the tie: then it bows on the stem side, away from that
+					// voice, rather than through it (Gould).
 					let direction: number | null = null;
 					if (heads > 1) {
 						direction = from.index >= (heads - 1) / 2 ? -1 : 1;
+					} else if (otherVoiceUnder(chord, from.staveNote, to.staveNote)) {
+						direction = from.staveNote.getStemDirection() === 1 ? -1 : 1;
 					}
 					// An explicit orientation overrides both defaults.
 					if (tie.orientation === 'over') {
@@ -736,14 +782,17 @@ export class SpannerBuilder {
 	 * staff the direction's placement names (below by default). Paired by `number` and
 	 * resolved over the whole score (a hairpin can span barlines) like the other spanners;
 	 * the markers arrive in document order, so each stop closes the matching open start.
-	 * ponytail: a hairpin whose stop wraps onto a later system isn't split into two partial
-	 * hairpins the way buildTies splits a wrapped tie; it would draw right-to-left across
-	 * the page. Add the split if a fixture needs one.
+	 * A hairpin whose stop wraps onto a later system is split in two, like a wrapped tie: one
+	 * running off the right edge of the start's stave and one in from the left edge of the stop's.
+	 * `wraps` tells a later system from another stave of the same one (a hairpin from the right
+	 * hand to the left sits lower on the page without wrapping); without it, a lower stave wraps.
 	 */
 	buildWedges(
 		markers: WedgeMark[],
 		byLead: Map<Note, StaveNote>,
 		scope: SpanScope = WHOLE_SCORE,
+		wraps: (from: StaveNote, to: StaveNote) => boolean = (from, to) =>
+			(to.getStave()?.getY() ?? 0) > (from.getStave()?.getY() ?? 0),
 	): Hairpin[] {
 		const wedges: Hairpin[] = [];
 		const open = new Map<string, WedgeMark>();
@@ -772,15 +821,22 @@ export class SpannerBuilder {
 			const spreads = [from.spread, marker.spread].filter(
 				(spread): spread is number => spread !== null,
 			);
-			wedges.push(
-				new Hairpin(firstNote, lastNote, {
-					crescendo: from.crescendo,
-					placement: from.placement,
-					dash: from.dash ?? marker.dash,
-					niente: from.niente || marker.niente,
-					spread: spreads.length > 0 ? Math.max(...spreads) : null,
-				}).setLineWidth(this.appearance.lineWidth('wedge')),
-			);
+			const opts = {
+				crescendo: from.crescendo,
+				placement: from.placement,
+				dash: from.dash ?? marker.dash,
+				niente: from.niente || marker.niente,
+				spread: spreads.length > 0 ? Math.max(...spreads) : null,
+			};
+			const halves = wraps(firstNote, lastNote)
+				? [
+						new Hairpin(firstNote, firstNote, { ...opts, runsOff: 'right' }),
+						new Hairpin(lastNote, lastNote, { ...opts, runsOff: 'left' }),
+					]
+				: [new Hairpin(firstNote, lastNote, opts)];
+			for (const half of halves) {
+				wedges.push(half.setLineWidth(this.appearance.lineWidth('wedge')));
+			}
 		}
 		return wedges;
 	}
@@ -1044,7 +1100,8 @@ export class SpannerBuilder {
 				} else if (slur.placement === 'below') {
 					bulgeUp = false;
 				} else if (
-					from.getStemDirection() === to.getStemDirection() &&
+					(from.getStemDirection() === to.getStemDirection() ||
+						voiceOf.get(from) !== voiceOf.get(to)) &&
 					span.some(
 						(n) =>
 							!n.isRest() &&

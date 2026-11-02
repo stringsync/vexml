@@ -15,6 +15,12 @@ export type HairpinOptions = {
 	dash?: number[] | null;
 	niente?: boolean;
 	spread?: number | null;
+	/*
+	 * Which end runs off the stave when the wedge wraps onto another system: 'right' draws
+	 * from `from` to its stave's right edge, 'left' from its stave's first note position to
+	 * `to`. Unset spans the two notes.
+	 */
+	runsOff?: 'left' | 'right';
 };
 
 /*
@@ -35,6 +41,7 @@ export class Hairpin {
 	private readonly crescendo: boolean;
 	private readonly placement: 'above' | 'below';
 	private readonly spread: number | null;
+	private readonly runsOff: 'left' | 'right' | null;
 	constructor(
 		private readonly from: StaveNote,
 		private readonly to: StaveNote,
@@ -45,6 +52,7 @@ export class Hairpin {
 		this.dash = opts.dash ?? null;
 		this.niente = opts.niente ?? false;
 		this.spread = opts.spread ?? null;
+		this.runsOff = opts.runsOff ?? null;
 	}
 	/*
 	 * Extra distance from the staff, set by the caller when the fixed gap would put the wedge
@@ -85,6 +93,19 @@ export class Hairpin {
 	get opens(): boolean {
 		return this.crescendo;
 	}
+	/* The wedge's left and right ends: a wrapped half runs to or from its stave's edge. */
+	private span(): [number, number] {
+		const stave = this.stave;
+		const x1 =
+			this.runsOff === 'left'
+				? stave.getNoteStartX()
+				: this.from.getAbsoluteX();
+		const x2 =
+			this.runsOff === 'right'
+				? stave.getX() + stave.getWidth()
+				: this.to.getAbsoluteX();
+		return [x1 + this.startInset, x2 - this.endInset];
+	}
 	/** The band the wedge occupies, for the caller's page crop and clearance check. */
 	get bounds(): { top: number; bottom: number } {
 		const stave = this.stave;
@@ -109,8 +130,7 @@ export class Hairpin {
 	/** The box the wedge is drawn in: the band above, over the notes it spans. */
 	get rect(): Rect {
 		const { top, bottom } = this.bounds;
-		const x1 = this.from.getAbsoluteX() + this.startInset;
-		const x2 = this.to.getAbsoluteX() - this.endInset;
+		const [x1, x2] = this.span();
 		return new Rect(Math.min(x1, x2), top, Math.abs(x2 - x1), bottom - top);
 	}
 	draw(): void {
@@ -122,8 +142,7 @@ export class Hairpin {
 		const mid = (top + bottom) / 2;
 		// The wedge spans notehead to notehead. A crescendo opens rightward (its point sits
 		// at the first note), a diminuendo closes rightward (its point sits at the last).
-		const x1 = this.from.getAbsoluteX() + this.startInset;
-		const x2 = this.to.getAbsoluteX() - this.endInset;
+		const [x1, x2] = this.span();
 		const [pointX, mouthX] = this.crescendo ? [x1, x2] : [x2, x1];
 		// A niente point is a small circle the two arms run up to, not a shared vertex.
 		const radius = this.niente ? HAIRPIN_NIENTE_RADIUS : 0;

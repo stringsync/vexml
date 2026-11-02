@@ -170,7 +170,7 @@ export interface TerminalChild {
 	exited: Promise<number>;
 	/** Sends it `signal`, SIGTERM by default; nothing once it has exited. */
 	kill(signal?: NodeJS.Signals): void;
-	// scry-ignore resources-are-disposable: named as `Bun.Terminal` names it, and the page's terminals call it
+	// vet-ignore resources-are-disposable: named as `Bun.Terminal` names it, and the page's terminals call it
 	/** Closes the terminal, after which writes and resizes do nothing. */
 	close(): void;
 }

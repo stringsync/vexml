@@ -176,6 +176,12 @@ export class SpannerResolver {
 		this.staveRows.set(stave, { row, system });
 	}
 
+	/* The system a drawn note's stave belongs to, -1 for one not registered. */
+	private systemOfNote(note: StaveNote): number {
+		const stave = note.getStave();
+		return (stave && this.systemOf(stave)) ?? -1;
+	}
+
 	/* Which system a registered stave belongs to, or undefined before its part is built. */
 	systemOf(stave: Stave): number | undefined {
 		return this.staveRows.get(stave)?.system;
@@ -507,6 +513,7 @@ export class SpannerResolver {
 			pool.wedges,
 			anchors.byLead,
 			wedgeScope,
+			(from, to) => this.systemOfNote(to) > this.systemOfNote(from),
 		);
 		for (const wedge of wedges) {
 			this.clearWedge(wedge, anchors.byLead.values());
@@ -544,7 +551,7 @@ export class SpannerResolver {
 			pool.chords,
 			scope,
 		)) {
-			this.dropPedalClear(marking, notes);
+			this.dropPedalClear(marking, notes, wedges);
 			this.context.openGroup('vexml-pedal');
 			marking.setContext(this.context).draw();
 			this.context.closeGroup();
@@ -567,9 +574,14 @@ export class SpannerResolver {
 	 *
 	 * The shared collision index is per-system (cleared at each system boundary) and pedals
 	 * resolve after the last system, so this scopes a resolver to the pedal's own notes
-	 * rather than reading a stale obstacle from an unrelated system at the same x.
+	 * rather than reading a stale obstacle from an unrelated system at the same x. The
+	 * below-stave hairpins on its stave count as obstacles too.
 	 */
-	private dropPedalClear(marking: PedalMarking, notes: StaveNote[]): void {
+	private dropPedalClear(
+		marking: PedalMarking,
+		notes: StaveNote[],
+		wedges: readonly Hairpin[],
+	): void {
 		const stave = notes[0]?.getStave();
 		if (!stave) {
 			return;
@@ -587,6 +599,12 @@ export class SpannerResolver {
 		const scoped = new CollisionResolver(this.scratchViewport, {});
 		for (const note of notes) {
 			scoped.add({ rect: this.reporter.noteObstacle(note), kind: 'note' });
+		}
+		// A below hairpin on the stave fills the same band, so the pedal drops under it.
+		for (const wedge of wedges) {
+			if (wedge.stave === stave && !wedge.above) {
+				scoped.add({ rect: wedge.rect, kind: 'note' });
+			}
 		}
 		const placed = scoped.dropClear(natural, WORDS_NOTE_CLEARANCE, {});
 		marking.setLine((placed.y - natural.y) / stave.getSpacingBetweenLines());

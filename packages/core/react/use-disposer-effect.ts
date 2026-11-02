@@ -13,7 +13,7 @@ export type DisposerEffectCallback = (disposer: AppendOnlyDisposer) => void;
  * Runs an effect that acquires resources, disposing everything it registered
  * when the effect is torn down.
  */
-// scry-ignore objects-over-callbacks: `useEffect` with a disposer threaded through, so the effect function is React's contract rather than one this package invented
+// vet-ignore objects-over-callbacks: `useEffect` with a disposer threaded through, so the effect function is React's contract rather than one this package invented
 export function useDisposerEffect(
 	effect: DisposerEffectCallback,
 	deps: DependencyList,

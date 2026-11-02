@@ -1,6 +1,6 @@
 {
 	"name": "@stringsync/vexml",
-	"version": "1.13.6",
+	"version": "1.13.7",
 	"type": "module",
 	"license": "MIT",
 	"repository": {
@@ -25,7 +25,7 @@
 		"css/**"
 	],
 	"dependencies": {
-		"@stringsync/mdom": "^0.8.6",
+		"@stringsync/mdom": "^0.8.7",
 		"@types/fontkit": "2.0.9",
 		"core": "workspace:*",
 		"fontkit": "2.0.4",

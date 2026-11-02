@@ -186,7 +186,9 @@ function follow(
 					return;
 				}
 				try {
-					input.write(bytes);
+					// A write the pipe cannot take at once returns a promise,
+					// which rejects with EPIPE once the child exits unread.
+					await Promise.race([input.write(bytes), stopped]);
 					await Promise.race([input.flush(), stopped]);
 				} catch (error) {
 					ignoreClosedInput(error);
@@ -355,6 +357,7 @@ class FifoOutput implements Disposable {
 		}
 	}
 
+	// vet-ignore resources-are-disposable: ends the stream at end of file; dispose() releases the fd
 	private end(): void {
 		if (!this.closed) {
 			this.closed = true;

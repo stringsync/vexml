@@ -1222,8 +1222,6 @@ describe('render', () => {
 	// - M12: Clara Schumann's Liebst du um Schönheit, m.12 (five flats): a below
 	//   diminuendo from Db5 to Ab4 closes under the syllables "Ju-gend," without crossing
 	//   their ink, followed by a half rest.
-	// ponytail: a hairpin that wraps across a system break isn't split into two partials the
-	// way a tie or slur is; no fixture reaches that yet.
 	it.concurrent('renders wedges.png', async () => {
 		expect(await testing.render('wedges.musicxml')).toMatchScreenshot(
 			'wedges.png',
@@ -1272,6 +1270,16 @@ describe('render', () => {
 		expect(await testing.render('octave_shift.musicxml')).toMatchScreenshot(
 			'octave_shift.png',
 		);
+	});
+
+	// Grand staff, 4/4: an <octave-shift> written on the treble staff leaves the bass staff alone.
+	// - M1: an A5 whole note under a size-8 type="down" shift on staff 1: "8va" above it, the
+	//   note drawn an octave lower on the 2nd space. The C2 whole note under it on staff 2 sits
+	//   at its sounding pitch, on the second ledger line below the bass staff, not an octave lower.
+	it.concurrent('renders octave_shift_grand_staff.png', async () => {
+		expect(
+			await testing.render('octave_shift_grand_staff.musicxml'),
+		).toMatchScreenshot('octave_shift_grand_staff.png');
 	});
 
 	// Treble stave, 3/4 (lilypond_33a-Spanners M10-15): the direction-type LINE spanners:

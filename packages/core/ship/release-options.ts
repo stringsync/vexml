@@ -28,7 +28,7 @@ export interface ReleaseOptions {
 	ps?: Ps;
 	timer?: Timer;
 	wallClock?: WallClock;
-	// scry-ignore objects-over-callbacks: the platform's own prompt() is the
+	// vet-ignore objects-over-callbacks: the platform's own prompt() is the
 	// dependency here, and it is a bare function
 	prompt?: (message: string) => string | null;
 	/** Go ahead without asking, for a run whose caller has already approved it. */

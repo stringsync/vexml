@@ -1560,7 +1560,8 @@ export class ScoreReader {
 	 * note builder.
 	 *
 	 * A start binds to the note that follows it and a stop to the note before it, and everything
-	 * between them in document order is shifted. Paired by `number` across the part, so a span
+	 * between them in document order on the start direction's staff is shifted: a grand staff's
+	 * other hand prints at its sounding pitch. Paired by `number` across the part, so a span
 	 * can cross barlines.
 	 * ponytail: a start with no note after it in its own measure (or a stop with none before it)
 	 * is dropped rather than reaching into the neighbouring measure, and a span that wraps onto a
@@ -1570,7 +1571,10 @@ export class ScoreReader {
 		const notes = part.measures.flatMap((measure) => this.notesOf(measure));
 		const indexOf = new Map(notes.map((note, index) => [note, index]));
 		const spans: OctaveShiftSpan[] = [];
-		const open = new Map<string, { from: Note; size: number; down: boolean }>();
+		const open = new Map<
+			string,
+			{ from: Note; size: number; down: boolean; staff: string }
+		>();
 		for (const measure of part.measures) {
 			for (const direction of measure.directions) {
 				for (const marker of direction.octaveShifts) {
@@ -1582,6 +1586,7 @@ export class ScoreReader {
 								from,
 								size: marker.size,
 								down: type === 'down',
+								staff: direction.staff,
 							});
 						}
 						continue;
@@ -1610,7 +1615,9 @@ export class ScoreReader {
 						suffix = opened.down ? 'ma' : 'mb';
 					}
 					spans.push({
-						notes: notes.slice(first, last + 1),
+						notes: notes
+							.slice(first, last + 1)
+							.filter((note) => note.staff === opened.staff),
 						octaves: opened.down ? octaves : -octaves,
 						label: String(opened.size),
 						suffix,

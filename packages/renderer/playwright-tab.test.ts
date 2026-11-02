@@ -3,6 +3,17 @@ import { type Browser, chromium } from 'playwright';
 import { InkMap } from '../vex/ink-map';
 import { PlaywrightTab } from './playwright-tab';
 
+// Awaiting `expect(promise).rejects` on a Playwright call costs seconds in bun, so settle
+// the promise first and assert on the error it left.
+const rejection = async (promise: Promise<unknown>) => {
+	const error = await promise.then(
+		() => undefined,
+		(e: unknown) => e,
+	);
+	expect(error).toBeInstanceOf(Error);
+	return (error as Error).message;
+};
+
 let browser: Browser;
 beforeAll(async () => {
 	browser = await chromium.launch();
@@ -13,11 +24,13 @@ it('profiles an operation and releases the sampler after an error', async () => 
 	const page = await browser.newPage();
 	try {
 		const tab = new PlaywrightTab(page);
-		await expect(
-			tab.profile(async () => {
-				throw new Error('failed mount');
-			}),
-		).rejects.toThrow('failed mount');
+		expect(
+			await rejection(
+				tab.profile(async () => {
+					throw new Error('failed mount');
+				}),
+			),
+		).toContain('failed mount');
 		const measured = await tab.profile(() => page.evaluate(() => 42));
 		expect(measured.result).toBe(42);
 		expect(measured.ms).toBeGreaterThanOrEqual(0);
@@ -71,9 +84,9 @@ it.each([
 			await page.setContent(
 				`<div id="score" style="width:${width}px;height:${height}px"></div>`,
 			);
-			await expect(
-				new PlaywrightTab(page).screenshot('#score'),
-			).rejects.toThrow('Unsupported capture size:');
+			expect(
+				await rejection(new PlaywrightTab(page).screenshot('#score')),
+			).toContain('Unsupported capture size:');
 			expect(page.viewportSize()).toEqual({ width, height: 200 });
 		} finally {
 			await page.close();
@@ -87,9 +100,9 @@ it('bounds the expanded viewport even when the capture itself is narrow', async 
 		await page.setContent(
 			'<div id="score" style="width:32px;height:150022px"></div>',
 		);
-		await expect(new PlaywrightTab(page).screenshot('#score')).rejects.toThrow(
-			'expanded viewport exceeds',
-		);
+		expect(
+			await rejection(new PlaywrightTab(page).screenshot('#score')),
+		).toContain('expanded viewport exceeds');
 		expect(page.viewportSize()).toEqual({ width: 932, height: 200 });
 	} finally {
 		await page.close();
@@ -104,9 +117,9 @@ it('restores the viewport when the screenshot times out', async () => {
 #score { width:20px; height:1000px; animation:move 1s linear infinite alternate }
 </style><div id="score"></div>`);
 		page.setDefaultTimeout(500);
-		await expect(new PlaywrightTab(page).screenshot('#score')).rejects.toThrow(
-			'Timeout',
-		);
+		expect(
+			await rejection(new PlaywrightTab(page).screenshot('#score')),
+		).toContain('Timeout');
 		expect(page.viewportSize()).toEqual({ width: 64, height: 200 });
 	} finally {
 		await page.close();
