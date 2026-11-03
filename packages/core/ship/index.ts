@@ -21,6 +21,11 @@ export {
 	type PublishWorkflowOptions,
 } from "./publish-workflow";
 export {
+	AwsStackRegistry,
+	type AwsStackRegistryOptions,
+} from "./registry/aws-stack-registry";
+export { CdkDeployer, type CdkDeployerOptions } from "./registry/cdk-deployer";
+export {
 	GithubActions,
 	type GithubActionsOptions,
 	githubActions,
@@ -31,6 +36,7 @@ export type {
 	Registry,
 	StagedPackage,
 } from "./registry/registry";
+export type { StackDeployer } from "./registry/stack-deployer";
 export {
 	type DeployedArtifact,
 	type PlannedStep,
@@ -42,7 +48,10 @@ export {
 	type ReleaseStatus,
 	type StatusOptions,
 } from "./release";
-export { releases, type WorkspaceReleaseOptions } from "./releases";
+export {
+	releases,
+	type WorkspaceReleaseOptions,
+} from "./releases";
 export {
 	ShippedCheck,
 	type ShippedOptions,

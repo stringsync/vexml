@@ -16,6 +16,10 @@ import {
 	PublishWorkflow,
 	type PublishWorkflowOptions,
 } from "./publish-workflow";
+import {
+	AwsStackRegistry,
+	type AwsStackRegistryOptions,
+} from "./registry/aws-stack-registry";
 import type { GithubActions } from "./registry/github-actions";
 import { NpmRegistry, type NpmRegistryOptions } from "./registry/npm-registry";
 import type { Registry } from "./registry/registry";
@@ -60,6 +64,15 @@ export class releases {
 	/** A package `registry` carries, for wherever npm is not the answer. */
 	static custom(name: string, registry: Registry): Release {
 		return new Release([new RegistryArtifact(name, registry)]);
+	}
+
+	/**
+	 * An AWS (CDK) stack, the package `name` in the workspace: its stages deploy
+	 * in order, stopping at the first failure, and the live version is the stamp
+	 * on the deployed stack. A dry run only synthesizes.
+	 */
+	static awsStack(name: string, opts: AwsStackRegistryOptions): Release {
+		return releases.custom(name, new AwsStackRegistry(opts));
 	}
 
 	/** A caller-defined step, composed beside artifacts and other releases. */
