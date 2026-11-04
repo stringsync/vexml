@@ -106,6 +106,25 @@ export class FakeFs implements Fs {
 		this.changed(normalize(path));
 	}
 
+	async appendBytes(path: string, data: Uint8Array): Promise<void> {
+		const target = normalize(path);
+		const content = this.store.get(target);
+		if (content === DIRECTORY) {
+			throw new Error(`Path is a directory: ${path}`);
+		}
+		const head =
+			content === undefined
+				? new Uint8Array()
+				: typeof content === "string"
+					? new TextEncoder().encode(content)
+					: content;
+		const joined = new Uint8Array(head.length + data.length);
+		joined.set(head);
+		joined.set(data, head.length);
+		this.store.set(target, joined);
+		this.changed(target);
+	}
+
 	async chmod(path: string, mode: number): Promise<void> {
 		if (!(await this.exists(path))) {
 			throw new Error(`Path does not exist: ${path}`);

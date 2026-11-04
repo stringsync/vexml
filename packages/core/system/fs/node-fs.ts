@@ -45,6 +45,10 @@ export class NodeFs implements Fs {
 		return fs.writeFile(normalize(path), data);
 	}
 
+	appendBytes(path: string, data: Uint8Array): Promise<void> {
+		return fs.appendFile(normalize(path), data);
+	}
+
 	rename(from: string, to: string): Promise<void> {
 		return fs.rename(normalize(from), normalize(to));
 	}

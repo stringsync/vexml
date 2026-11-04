@@ -14,6 +14,11 @@ export interface Fs {
 	append(path: string, data: string): Promise<void>;
 	readBytes(path: string): Promise<Uint8Array>;
 	writeBytes(path: string, data: Uint8Array): Promise<void>;
+	/**
+	 * Adds `data` to the end of the file, making it when it is missing, so a file
+	 * that grows by binary chunks is not rewritten whole.
+	 */
+	appendBytes(path: string, data: Uint8Array): Promise<void>;
 	rename(from: string, to: string): Promise<void>;
 	readdir(path: string): Promise<string[]>;
 	stat(path: string): Promise<StatResult>;
