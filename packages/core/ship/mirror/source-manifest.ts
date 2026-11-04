@@ -56,6 +56,9 @@ export async function sourceManifest(
 	}
 	const needed = new Set<string>();
 	for (const file of files) {
+		if (!/\.(tsx?|css)$/.test(file)) {
+			continue;
+		}
 		for (const specifier of await specifiers(file, fs)) {
 			const outside = outsider(specifier);
 			if (outside !== undefined && outside !== core.name) {

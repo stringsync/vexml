@@ -67,6 +67,17 @@ export interface MirrorOptions {
 	config?: MirrorConfig;
 	/** The workspace package, or packages, folded in as source; `core` by default. */
 	source?: string | readonly string[];
+	/**
+	 * What of a source package the mirror holds beyond the files its own files
+	 * import, by the package's name: globs matched against paths relative to
+	 * the package's folder. `files` are copied as they are, for assets a
+	 * package reads at run time; `entries` are copied too and followed for the
+	 * source files and dependencies they import, as for a file built by a
+	 * script. A glob that matches nothing is refused.
+	 */
+	sourceExtra?: Readonly<
+		Record<string, { files?: readonly string[]; entries?: readonly string[] }>
+	>;
 	/** Where the mirror is checked out while it is built; a temporary directory by default. */
 	scratch?: string;
 	/** Where the workspace is found; the manifest workspace around the working directory by default. */

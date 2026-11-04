@@ -19,7 +19,7 @@ import { AGENT_FILES } from "./agent-files";
 import { checkDependencies, NEVER } from "./mirror-dependencies";
 import { guard, TRAILER } from "./mirror-guard";
 import type { MirrorOptions } from "./mirror-options";
-import { type Reached, reachedAll } from "./mirror-reach";
+import { extrasOf, type Reached, reachedAll } from "./mirror-reach";
 import { MirrorTooling } from "./mirror-tooling";
 import { FIELDS, type Json, sourceManifest } from "./source-manifest";
 
@@ -249,7 +249,13 @@ export class MirrorStep implements Step {
 		await this.rewrite(mirror);
 
 		const catalog = await catalogAt(this.fs, root);
-		const reached = await reachedAll(this.fs, copied, folded);
+		const extra = await extrasOf(
+			this.opts.sourceExtra ?? {},
+			folded,
+			this.glob,
+			(dir) => this.files(dir),
+		);
+		const reached = await reachedAll(this.fs, copied, folded, extra);
 		for (const core of folded) {
 			const used = reached.get(core.name) as Reached;
 			const coreOut = `${mirror}/${SOURCE_DIR}/${core.name}`;

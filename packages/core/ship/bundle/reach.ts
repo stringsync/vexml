@@ -51,25 +51,21 @@ export function keyOf(
 /**
  * The entry points `keys` need, themselves included, with the package's own
  * source followed through relative imports and through the entry points it
- * names by its own name, as the platform test walks it.
+ * names by its own name, as the platform test walks it. `starts` are extra
+ * files followed the same way, whose imports may name entry points too.
  */
 export async function reach(
 	fs: Fs,
 	pkg: Reached,
 	keys: readonly string[],
+	starts: readonly string[] = [],
 ): Promise<Reach> {
 	const manifest = await manifestAt(fs, pkg.dir);
 	const exported = entries(manifest.exports ?? {});
 	const found = new Set<string>();
 	const seen = new Set<string>();
 	const queue = [...keys];
-	while (queue.length > 0) {
-		const key = queue.pop() as string;
-		if (found.has(key)) {
-			continue;
-		}
-		found.add(key);
-		const files = [`${pkg.dir}/${(exported.get(key) as string).slice(2)}`];
+	const walk = async (files: string[]): Promise<void> => {
 		while (files.length > 0) {
 			const file = files.pop() as string;
 			if (seen.has(file) || file.endsWith(".test.ts")) {
@@ -87,6 +83,15 @@ export async function reach(
 				}
 			}
 		}
+	};
+	await walk([...starts]);
+	while (queue.length > 0) {
+		const key = queue.pop() as string;
+		if (found.has(key)) {
+			continue;
+		}
+		found.add(key);
+		await walk([`${pkg.dir}/${(exported.get(key) as string).slice(2)}`]);
 	}
 	return { keys: found, files: seen };
 }
