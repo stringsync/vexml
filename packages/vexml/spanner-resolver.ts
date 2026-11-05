@@ -64,6 +64,14 @@ export interface SpannerReporter {
 	noteObstacle(note: StaveNote): Rect;
 	/** The lyric boxes pinned on `stave`, for hairpins resolving after the note pass. */
 	lyricObstacles(stave: Stave): readonly Rect[];
+	/** A slur bows `bottom` below the stave of `row` in `system`, over its lyrics: have the
+	 * verse hang clear of it on the next pass. */
+	dropLyricsBelow(
+		system: number,
+		row: number,
+		stave: Stave,
+		bottom: number,
+	): void;
 	/** Ink that reached `top`: keeps the page crop above it. */
 	growPageTop(top: number): void;
 	/** Ink that reached `bottom`: keeps the page crop below it. */
@@ -315,9 +323,15 @@ export class SpannerResolver {
 	 */
 	private windowStart(system: number): number {
 		let from = system;
-		for (const [earlier, reach] of this.systemReach) {
-			if (earlier < from && reach >= system) {
-				from = earlier;
+		// A system reaching one the window already holds is held too: its own starts pair
+		// with the notes there, and a hairpin it opened closes on a system drawn with them.
+		for (let moved = true; moved; ) {
+			moved = false;
+			for (const [earlier, reach] of this.systemReach) {
+				if (earlier < from && reach >= from) {
+					from = earlier;
+					moved = true;
+				}
 			}
 		}
 		for (const [marks, list] of [
@@ -325,7 +339,10 @@ export class SpannerResolver {
 			[this.allPedals, 'pedals'],
 		] as const) {
 			const open = new Map<string, number>();
-			marks.forEach((mark, index) => {
+			// Only what was recorded before `system` began: a stop `system` itself holds still
+			// leaves its start open, so the window reaches back to the system it sits on.
+			const before = this.systemStarts.get(system)?.[list] ?? marks.length;
+			marks.slice(0, before).forEach((mark, index) => {
 				if (mark.type === 'start') {
 					open.set(mark.number, index);
 				} else {
@@ -399,6 +416,7 @@ export class SpannerResolver {
 			if (slur.stave) {
 				this.reportBow(slur.stave, rect, slur.crossStave);
 				this.addBow(slur.stave, rect);
+				this.clearLyricsOfBow(slur.stave, rect, slur.crossStave);
 			} else {
 				this.reporter.growPageTop(slur.top);
 				this.reporter.growPageBottom(slur.bottom);
@@ -792,6 +810,34 @@ export class SpannerResolver {
 		// And against the system above: a bow over a middle system's top stave has nothing
 		// but the previous system over it, so report it the way an above-placed wedge does.
 		this.spill.growHighestTop(placement.system, rect.top);
+	}
+
+	/*
+	 * A slur bowing under its stave hangs where the verse does, and the formatter only sees
+	 * the bows inside one measure: one running across a barline is built here, once every
+	 * note is placed. When it reaches a syllable's column the verse drops clear of it, as it
+	 * does of a low note (the pass after this one pins it there).
+	 */
+	private clearLyricsOfBow(
+		stave: Stave,
+		rect: Rect,
+		crossStave: boolean,
+	): void {
+		const placement = this.staveRows.get(stave);
+		if (!placement || crossStave || rect.bottom <= stave.getBottomLineY()) {
+			return;
+		}
+		const over = this.reporter
+			.lyricObstacles(stave)
+			.some((lyric) => lyric.left < rect.right && lyric.right > rect.left);
+		if (over) {
+			this.reporter.dropLyricsBelow(
+				placement.system,
+				placement.row,
+				stave,
+				rect.bottom,
+			);
+		}
 	}
 
 	/*

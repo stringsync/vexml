@@ -38,9 +38,7 @@ afterAll(() => {
 			log.info(`removed stale diff ${f}`);
 		}
 	}
-	if (readdirSync(DIFF_DIR).length === 0) {
-		rmSync(DIFF_DIR, { recursive: true });
-	}
+	// vex test bind-mounts this directory; removing the mount point fails with EBUSY.
 });
 
 // Every baseline touched this run; orphans are whatever's left over in SCREENSHOTS_DIR.

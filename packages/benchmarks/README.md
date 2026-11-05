@@ -186,6 +186,36 @@ For rotated translucent layers and high-DPI text, Chromium's clipped rasterizati
 thresholded ink pixels within a one-pixel edge fringe; the synthetic comparison explicitly
 checks that tolerance. Ordinary sampled score masks require exact equality.
 
+## Cold first paint
+
+Time from navigation start to the first canvas holding ink, on a cold load: a fresh browser
+context per sample (empty cache), with the page, its script, the score and the fonts all
+fetched from a local server (network is localhost, so transfer time is near zero; the
+snapshot is served uncompressed, so its size is a worst case).
+
+```sh
+bun packages/benchmarks/cold-first-paint.ts run
+bun packages/benchmarks/cold-first-paint.ts run --score debussy-mandoline --path paint --samples 5
+```
+
+Three paths: `render` (whole score, `progressive: false`), `progressive` (`progressive: true`),
+and `paint` (a stored `Score.snapshot()` painted by a page bundling only
+`@stringsync/vexml/paint`). Results land in `/tmp/vexml-cold-first-paint/results.json`.
+
+Median of 3 samples, headless Chromium, 2026-11-04 (ms):
+
+| Score | render | progressive | paint | snapshot size |
+| --- | --- | --- | --- | --- |
+| Clara Schumann | 385 | 208 | 37 | 750 KiB |
+| Debussy | 856 | 234 | 47 | 1.2 MiB |
+| Schubert | 1970 | 321 | 39 | 2.5 MiB |
+| Dvorak quartet | 6105 | 911 | 120 | 15.8 MiB |
+| Beethoven | 7419 | 775 | 137 | 18.5 MiB |
+
+`render` grows with score size; `progressive` grows far more slowly, and `paint` barely does,
+but a snapshot is two to three times the MusicXML (uncompressed), so over a real network it
+would need compression. Panoramic and paged layouts ignore `progressive`.
+
 ## Follow-up lane
 
 Lane 11, **Complete-score rendering quality**, contains tasks 141-148:

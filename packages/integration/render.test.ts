@@ -1962,6 +1962,14 @@ describe('render', () => {
 		);
 	});
 
+	// Treble stave, 4/4, two voices: a stem-up slur with no placement over eighths, with
+	// the other voice's half rest under its end. The slur bows above, clear of the rest.
+	it.concurrent('renders slur_over_rest.png', async () => {
+		expect(await testing.render('slur_over_rest.musicxml')).toMatchScreenshot(
+			'slur_over_rest.png',
+		);
+	});
+
 	// Treble stave, 4/4: four quarters G5, A5, B5, A5 under one slur with explicit
 	// placement="above": the slur arcs above the noteheads.
 	it.concurrent('renders slur_above.png', async () => {
@@ -2083,6 +2091,40 @@ describe('render', () => {
 		).toMatchScreenshot('slur_system_break.png');
 	});
 
+	// Treble, 4/4, narrowed to 520px so each system holds two measures. A slur starts on M3's
+	// last note (F5, the first measure of system 2) and stops on M5's first (C5, system 3).
+	// - M3-M4 (system 2): the slur leaves F5 and carries across M4 to the system's right edge,
+	//   rather than stopping at M3's barline.
+	// - M5 (system 3): the slur bows in from the left edge of the stave into C5.
+	it.concurrent('renders slur_system_break_long.png', async () => {
+		expect(
+			await testing.render('slur_system_break_long.musicxml', {
+				layout: { type: 'standard', referenceWidth: 520 },
+			}),
+		).toMatchScreenshot('slur_system_break_long.png');
+	});
+
+	// Grand staff, 4/4. A staff-1 sfp and diminuendo open on M1, whose first note in document
+	// order is a staff-2 grace note: the hairpin still draws under the treble staff beside the
+	// sfp, rather than under the bass staff.
+	it.concurrent('renders hairpin_other_staff_first.png', async () => {
+		expect(
+			await testing.render('hairpin_other_staff_first.musicxml'),
+		).toMatchScreenshot('hairpin_other_staff_first.png');
+	});
+
+	// Treble, 4/4, narrowed to 520px so each system holds two measures. A crescendo starts on
+	// M3's last note (system 2) and stops on M5's first (system 3).
+	// - System 2: the wedge leaves F5 and runs to the system's right edge, past M4's barline.
+	// - System 3: the wedge opens in from the stave's start to C5.
+	it.concurrent('renders hairpin_system_break_long.png', async () => {
+		expect(
+			await testing.render('hairpin_system_break_long.musicxml', {
+				layout: { type: 'standard', referenceWidth: 520 },
+			}),
+		).toMatchScreenshot('hairpin_system_break_long.png');
+	});
+
 	// Treble stave, 4/4: <slur line-type>. Every measure is the same four stem-down
 	// quarters C5 D5 E5 F5 under one above-bowing slur, so only the stroke varies. A
 	// dashed or dotted slur is drawn as a single stroked bezier rather than the filled
@@ -2145,6 +2187,16 @@ describe('render', () => {
 	// Reduced from Schumann's "Dichterliebe" measures 4-5, whose piano runs this figure in
 	// nearly every bar; it used to draw as a long S-swoop sagging through the empty gap
 	// between the staves, identical for both placements.
+	// Grand staff, 4/4: cross-stave slurs with ghost fallback.
+	// - M1: the steep slur ends on a ghost on its start's stave, under its stop.
+	// - M2: both real sides and the ghost bow are blocked by other voices; omit the
+	//   slur so it cannot cross the rests or touch the low E2.
+	it.concurrent('renders slur_cross_stave_ghost.png', async () => {
+		expect(
+			await testing.render('slur_cross_stave_ghost.musicxml'),
+		).toMatchScreenshot('slur_cross_stave_ghost.png');
+	});
+
 	it.concurrent('renders slur_cross_stave.png', async () => {
 		expect(await testing.render('slur_cross_stave.musicxml')).toMatchScreenshot(
 			'slur_cross_stave.png',
@@ -3030,7 +3082,7 @@ describe('render', () => {
 	// - M4: a high first note (C6, two ledger lines above the staff) under a "D" symbol:
 	//   the symbol lifts above the notehead/ledger lines instead of colliding with them.
 	// - M5: a flat root (root B with <root-alter>-1</root-alter>) prints "B♭".
-	// - M6: an explicit natural root (root B with <root-alter>0</root-alter>) prints "B♮".
+	// - M6: a zero root alteration (root B with <root-alter>0</root-alter>) prints "B".
 	// - M7: a slash chord (root E♭ with a <bass> of B♭) prints "E♭/B♭".
 	// - M8: a high staccato note under its symbol: a B♭5 quarter (stem down, so the
 	//   staccato dot sits above the notehead) + dotted-half rest, under a "B♭" symbol. The
@@ -3340,7 +3392,8 @@ describe('render', () => {
 
 	// Piano, 6/8: a grace on the bass stave (voice 1) leads a half note of the same voice
 	// on the treble stave, while the bass holds only a measure rest (voice 5). The grace
-	// still draws, slashed on the bass stave, slurred up to the treble G4.
+	// still draws, slashed on the bass stave, with its written above slur bowing
+	// over the grace to a ghost end beneath the treble G4.
 	it.concurrent('renders grace_cross_staff_rest.png', async () => {
 		expect(
 			await testing.render('grace_cross_staff_rest.musicxml'),
@@ -3501,10 +3554,9 @@ describe('render', () => {
 	//   full height of the gap; nothing escapes above the treble staff. A half rest fills
 	//   beats 3-4.
 	// - M5: bass A3, treble E4, bass A3, bass A3, every <stem> written stemming toward the
-	//   other staff (bass up, treble down). The written stems are set aside: the group still
-	//   takes one direction, and with most of its chords on the bass staff that direction is
-	//   UP, so every stem rises (the E4's too) to a beam parked above the TREBLE staff, the
-	//   A3s' stems running the full height of the gap. A half rest fills beats 3-4.
+	//   other staff (bass up, treble down). The written stems stand: the beam sits between the
+	//   staves, the A3s' stems rising to it and the E4's falling to it. A half rest fills
+	//   beats 3-4.
 	// See also cross_stave_16ths_ghost_notes_simple.xml.
 	it.concurrent('renders cross_stave.png', async () => {
 		expect(await testing.render('cross_stave.musicxml')).toMatchScreenshot(
@@ -3699,6 +3751,16 @@ describe('render', () => {
 		expect(await testing.render('document_curves.musicxml')).toMatchScreenshot(
 			'document_curves_ignore.png',
 		);
+	});
+
+	// A 400px document page without page-margins keeps the default side margins.
+	// M1: two empty treble staves in 4/4; the brace and final barline are fully visible.
+	it.concurrent('renders document_layout_no_margins.png', async () => {
+		expect(
+			await testing.render('document_layout_no_margins.musicxml', {
+				layout: { type: 'standard', documentLayout: 'follow' },
+			}),
+		).toMatchScreenshot('document_layout_no_margins.png');
 	});
 
 	// documentLayout 'follow': the document's 1000-tenth page and 50-tenth margins set the line,
@@ -4139,6 +4201,7 @@ describe('render', () => {
 
 	// Debussy, "Mandoline": 12 measures of voice over piano in 6/8, the densest annotation
 	// stack here (lyrics, graces, arpeggios, an octave shift, hairpins, a mid-measure clef).
+	// M1: the bass grace slur bows above, clear of sfp and the piano hairpin.
 	it.concurrent('renders score_debussy_mandoline.png', async () => {
 		expect(
 			await testing.render('score_debussy_mandoline.musicxml'),
@@ -4227,9 +4290,9 @@ describe('render', () => {
 	// the same way. The chord diagrams belong to the guitar, so
 	// they hang in the gap between the two parts (under the Singer's lyrics, over the guitar's
 	// notation stave), one box per chord change.
-	// Note: chord roots print with a natural (A♮5, D♮) because the source writes an explicit
+	// Chord roots remain plain (A5, D) even though the source writes an explicit
 	// <root-alter>0</root-alter> on every harmony; see harmony.musicxml M6.
-	// TODO: in the FINAL measure (four chord changes in one bar) "A♮/C#" sits at its natural
+	// TODO: in the FINAL measure (four chord changes in one bar) "A/C#" sits at its natural
 	// height where the tall chord's stems poke up into it: a stem is not a lift-clear
 	// obstacle, only its notehead is. Pre-existing, affects no other system.
 	it.concurrent('renders score_amazing_grace.png', async () => {

@@ -36,6 +36,19 @@ export abstract class BrowserRenderer<C> implements EvalRenderer<C> {
 		});
 	}
 
+	/** Mount, run `fn` against the live score, and return what it gives back, with no
+	 * screenshot: for checks that read the score itself and must work on scores too large to capture. */
+	async inspect<T>(fn: (ctx: C) => T | Promise<T>): Promise<T> {
+		return this.pool().withTab(async (tab) => {
+			const viewport = this.viewport();
+			if (viewport) {
+				await tab.resize(viewport.width, viewport.height);
+			}
+			await tab.call('mount', await this.mountInput());
+			return tab.call<T>('evaluate', { fnSrc: fn.toString() });
+		});
+	}
+
 	/** @internal Profile mount and PNG capture separately, inspecting the mounted score between them.
 	 * Use this opt-in diagnostic to retain mount evidence when a large capture is rejected. */
 	async profile<T>(inspect: (ctx: C) => T | Promise<T>) {

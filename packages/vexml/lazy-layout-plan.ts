@@ -70,7 +70,6 @@ export class LazyLayoutPlan implements LayoutPlan {
 	// The systems broken so far, complete ones; the open row is the one being filled.
 	private readonly systems: number[][] = [];
 	private row: number[] = [];
-	private rowWidth = 0;
 	private rowMinWidth = 0;
 	// First measure of every system the document forced, which the evening leaves alone.
 	private readonly forcedStarts = new Set<number>();
@@ -86,6 +85,8 @@ export class LazyLayoutPlan implements LayoutPlan {
 	// plan measures it (see estimateRatio).
 	private measuredSum = 0;
 	private estimatedSum = 0;
+	private measuredMinSum = 0;
+	private estimatedMinSum = 0;
 	private ratioThrough = 0;
 
 	constructor(private readonly rules: LayoutRules) {
@@ -155,19 +156,18 @@ export class LazyLayoutPlan implements LayoutPlan {
 		}
 		const { rules } = this;
 		const ratio = this.estimateRatio();
+		const minRatio = this.minRatio();
 		const areaOf = (m: number, systemStart = false): NoteArea => {
 			if (m < this.next) {
 				return rules.areaOf(m, systemStart);
 			}
 			const estimate = rules.estimateOf(m);
-			return {
-				min: estimate.min,
-				ideal: Math.max(estimate.min, estimate.ideal * ratio),
-			};
+			const min = estimate.min * minRatio;
+			return { min, ideal: Math.max(min, estimate.ideal * ratio) };
 		};
 		const rows = this.systems.slice(this.placed).map((row) => [...row]);
 		let row = [...this.row];
-		let rowWidth = this.rowWidth;
+		let rowMinWidth = this.rowMinWidth;
 		for (let m = this.next; m < rules.measureCount; m++) {
 			if (rules.hidden.has(m)) {
 				continue;
@@ -178,7 +178,7 @@ export class LazyLayoutPlan implements LayoutPlan {
 			const usable = rules.usableOf(systemIndex, row[0] ?? m);
 			const overruns =
 				!keepsLine &&
-				rowWidth + LEAD_BARLINE + area.ideal > usable * rules.maxSystemFill;
+				rowMinWidth + LEAD_BARLINE + area.min > usable * rules.maxSystemFill;
 			if (
 				rules.layoutMode === 'standard' &&
 				this.canBreak(row, m) &&
@@ -186,10 +186,10 @@ export class LazyLayoutPlan implements LayoutPlan {
 			) {
 				rows.push(row);
 				row = [];
-				rowWidth = 0;
+				rowMinWidth = 0;
 				area = areaOf(m, true);
 			}
-			rowWidth += rules.leadOf(m, !row.some(rules.isMusic)) + area.ideal;
+			rowMinWidth += rules.leadOf(m, !row.some(rules.isMusic)) + area.min;
 			row.push(m);
 		}
 		if (row.length > 0) {
@@ -218,14 +218,27 @@ export class LazyLayoutPlan implements LayoutPlan {
 			if (rules.hidden.has(m) || !rules.isMusic(m)) {
 				continue;
 			}
-			this.measuredSum += rules.areaOf(m).ideal;
-			this.estimatedSum += rules.estimateOf(m).ideal;
+			const measured = rules.areaOf(m);
+			const estimated = rules.estimateOf(m);
+			this.measuredSum += measured.ideal;
+			this.estimatedSum += estimated.ideal;
+			this.measuredMinSum += measured.min;
+			this.estimatedMinSum += estimated.min;
 		}
 		return this.estimatedSum > 0 ? this.measuredSum / this.estimatedSum : 1;
 	}
 
-	// Pack the next measure: wrap to a new system once its note area would overrun the
-	// reference width (standard), or never (panoramic: one system holding every measure).
+	// The same calibration for the collision-free minimum, which the forecast breaks on.
+	// Valid after estimateRatio has summed the measured measures.
+	private minRatio(): number {
+		return this.estimatedMinSum > 0
+			? this.measuredMinSum / this.estimatedMinSum
+			: 1;
+	}
+
+	// Pack the next measure: wrap to a new system once its note area, at its collision-free
+	// minimum, would overrun the reference width (standard); the system is then justified, so
+	// it squeezes only as far as its measures need (see placeSystem), or never (panoramic: one system holding every measure).
 	// Breaks depend only on the music and width, never on the live container.
 	private consume(): void {
 		const { rules } = this;
@@ -245,7 +258,7 @@ export class LazyLayoutPlan implements LayoutPlan {
 			? !rules.strict &&
 				rules.overflow === 'wrap' &&
 				this.rowMinWidth + LEAD_BARLINE + area.min > usable
-			: this.rowWidth + LEAD_BARLINE + area.ideal >
+			: this.rowMinWidth + LEAD_BARLINE + area.min >
 				usable * rules.maxSystemFill;
 		// ponytail: a lone measure has nowhere to wrap to, so one whose own minimum exceeds the
 		// usable width stays put and spills like overflow: 'allow'. That is the documented hole
@@ -261,13 +274,11 @@ export class LazyLayoutPlan implements LayoutPlan {
 			}
 			this.systems.push(this.row);
 			this.row = [];
-			this.rowWidth = 0;
 			this.rowMinWidth = 0;
 			// Opening a system, the measure's fixed width loses the lead.
 			area = rules.areaOf(m, true);
 		}
 		const lead = rules.leadOf(m, !this.row.some(rules.isMusic));
-		this.rowWidth += lead + area.ideal;
 		this.rowMinWidth += lead + area.min;
 		this.row.push(m);
 		this.next = m + 1;

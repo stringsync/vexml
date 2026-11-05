@@ -152,8 +152,14 @@ function layoutOf(layout: Layout): SnapshotLayout {
  * still matches. */
 function documentLayoutOf(layout: StandardLayout | PagedLayout): {
 	documentLayout?: 'follow' | 'strict';
+	honorPageLayout?: false;
 } {
 	return layout.documentLayout === 'ignore'
 		? {}
-		: { documentLayout: layout.documentLayout };
+		: {
+				documentLayout: layout.documentLayout,
+				...(layout.type === 'standard' && layout.honorPageLayout === false
+					? { honorPageLayout: false as const }
+					: {}),
+			};
 }

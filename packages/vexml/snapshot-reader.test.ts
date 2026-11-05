@@ -68,6 +68,27 @@ describe('SnapshotReader', () => {
 		expect(() => new SnapshotReader(followed).check(snapshot)).toThrow();
 	});
 
+	it('distinguishes application pages from followed document pages in snapshots', () => {
+		const followed: Config = {
+			...DEFAULT_CONFIG,
+			layout: { ...DEFAULT_STANDARD_LAYOUT, documentLayout: 'follow' },
+		};
+		const reflowed: Config = {
+			...followed,
+			layout: {
+				...DEFAULT_STANDARD_LAYOUT,
+				documentLayout: 'follow',
+				honorPageLayout: false,
+			},
+		};
+		expect(() =>
+			new SnapshotReader(reflowed).check(snapshotOf(followed)),
+		).toThrow();
+		expect(() =>
+			new SnapshotReader(reflowed).check(snapshotOf(reflowed)),
+		).not.toThrow();
+	});
+
 	it('ignores gaps, which the snapshot brings', () => {
 		const gapped: Config = {
 			...DEFAULT_CONFIG,

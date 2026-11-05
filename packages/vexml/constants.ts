@@ -167,6 +167,11 @@ export const GAP_LABEL_FONT_SIZE = 16;
  * breathe past vexflow's cramped fret-digit packing. */
 export const TAB_MIN_NOTE_SPACING = 32;
 
+/** Minimum width per outermost tuplet group in a voice: the bracket, its numeral and the gap to
+ * the next bracket. Below about 50px a run of triplet brackets touches. Floors a measure's
+ * note area, since the brackets are built after the widths are measured. */
+export const TUPLET_MIN_GROUP_WIDTH = 64;
+
 /** Bump tab fret digits bolder/larger than vexflow's thin default (1.258 * 9pt ≈ 15px). */
 export const TAB_FRET_SCALE = 1.258;
 
@@ -189,7 +194,7 @@ export const TAB_GRACE_SPACING = 14;
 
 /** Shape of a tab hammer-on/pull-off arc (see TabCurve): how far the ends are lifted off the
  * fret digits, and the bezier control-point rise that sets the bow's depth (the apex stands
- * 0.75 of it above the ends). The slur counterparts are SLUR_Y_SHIFT / SLUR_MIN_CP_Y. */
+ * 0.75 of it above the ends). The slur counterparts are SLUR_Y_SHIFT / SLUR_BOW_MIN. */
 export const TAB_CURVE_Y_SHIFT =
 	// Larger than the slur's lift because a fret digit is taller than a notehead and sits on
 	// its string line. The arc is drawn with the notation slur renderer.
@@ -484,22 +489,33 @@ export const LEDGER_HEADROOM =
 	300;
 
 /** Raises a slur's endpoints off the notes. */
-export const SLUR_Y_SHIFT = 12;
+export const SLUR_Y_SHIFT = 10;
 
 /** Extra clearance the arc keeps above/below the most extreme note it spans. */
 export const SLUR_MARGIN = 14;
+
+/** The gap a slur keeps off an accidental it passes: only one it would cross lifts it. */
+export const SLUR_ACCIDENTAL_GAP = 2;
 /** The air a slur end keeps past an articulation on its own note (a staccato it starts or
  * ends over), in px. Tighter than SLUR_MARGIN: the end is meant to read as attached to the
  * note, just clear of the mark. */
 export const SLUR_MARK_GAP = 3;
 
-/** Minimum control-point rise, so even short slurs bow off the noteheads. */
-export const SLUR_MIN_CP_Y = 16;
+/** How far a slur's bow stands off its chord, in px, before it has notes to clear: this much
+ * up to SLUR_BOW_FLAT_WIDTH, growing by SLUR_BOW_GROWTH per px of width, then level at
+ * SLUR_BOW_MAX. A long slur stays flat, not a deep dome. */
+export const SLUR_BOW_MIN = 9.1;
+export const SLUR_BOW_FLAT_WIDTH = 51;
+export const SLUR_BOW_GROWTH = 0.12;
+export const SLUR_BOW_MAX = 14.5;
 
-/** Arc height grows with slur width so long slurs get a rounder bow. Kept small: a
- * long slur is drawn FLAT, not as a deep dome: the bow over a whole measure should
- * still read as roughly two staff spaces deep, not four. */
-export const SLUR_WIDTH_FACTOR = 0.03;
+/** The most a slur narrower than SLUR_BOW_FLAT_WIDTH bows, as a fraction of its width, so a
+ * tight one doesn't draw as a spike. */
+export const SLUR_BOW_ASPECT = 0.22;
+
+/** Where a slur's control points sit, as a fraction of its width from each end. A quarter
+ * draws a parabola; nearer the ends leaves the note steeper and runs fuller across the top. */
+export const SLUR_SHOULDER = 0.16;
 
 /** Ceiling on a slur's control-point rise, whatever its width: the bow stands at most
  * 0.75 of this (about five staff spaces) off its chord. A long slur that needs more room
@@ -553,6 +569,16 @@ export const SLUR_STEM_TIP_SLANT =
 export const SLUR_GRACE_Y_SHIFT = 4;
 export const SLUR_GRACE_CP_Y = 6;
 export const SLUR_GRACE_MARGIN = 5;
+
+/** A cross-stave slur whose run across is under this fraction of its rise is too steep to
+ * read as a bow: it ends on a ghost note instead, on its start's stave under the stop. */
+export const SLUR_GHOST_STEEPNESS = 2 / 3;
+/** How far, in px, a cross-stave bow may still run into a note it passes before it counts as
+ * blocked. */
+export const SLUR_GHOST_OVERLAP = 4;
+/** A cross-stave slur over more of its own voices' notes than this joins a phrase, and keeps
+ * its real end however it has to bend. */
+export const SLUR_GHOST_MAX_BETWEEN = 2;
 
 /** Which point on a note a grace curve starts and stops at. vexflow's own Curve can
  * only name two spots per note and neither is reliably the right one on a chord, so

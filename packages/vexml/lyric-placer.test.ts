@@ -128,6 +128,16 @@ describe('LyricPlacer', () => {
 		expect(placer.observedDrops().get('1:0')).toBe(5);
 	});
 
+	it('asks for a deeper verse only when a bow hangs below the one drawn', () => {
+		const { placer } = makePlacer();
+		placer.recordDrop(0, 0, 20);
+		placer.requestDrop(0, 0, 20);
+		expect(placer.stepped(0)).toBe(false);
+		placer.requestDrop(0, 0, 45);
+		expect(placer.stepped(0)).toBe(true);
+		expect(placer.observedDrops().get('0:0')).toBe(45);
+	});
+
 	it('lines a syllable up with its notehead per justify', () => {
 		const { placer, obstacles } = makePlacer();
 		placer.pin(
@@ -193,6 +203,7 @@ describe('LyricPlacer', () => {
 		).toEqual([
 			{
 				stave,
+				system: 0,
 				row: 3,
 				left: 96,
 				width: 20,
@@ -202,6 +213,7 @@ describe('LyricPlacer', () => {
 			},
 			{
 				stave,
+				system: 0,
 				row: 3,
 				left: 91,
 				width: 30,

@@ -130,7 +130,8 @@ export class VoiceBuilder {
 						return heads;
 					});
 					const rows = new Set(chords.flatMap((heads) => [...heads.keys()]));
-					if (rows.size <= 1) {
+					// Written stems on every note stand: the beam follows them across the staves.
+					if (rows.size <= 1 || group.notes.every((lead) => lead.stem)) {
 						continue;
 					}
 					const bottom = Math.max(...rows);
@@ -404,12 +405,11 @@ export class VoiceBuilder {
 					const notes = group.notes
 						.flatMap((lead) => notesByLead.get(lead) ?? [this.byLead.get(lead)])
 						.filter((note): note is StaveNote => note !== undefined);
-					// A cross-staff group takes ONE direction like any other beam: the beam
+					// A cross-staff group whose notes all carry a written <stem> keeps them (bass
+					// up, treble down puts the beam between the staves), as the file says. Without
+					// them it takes ONE direction like any other beam: the beam
 					// parked past the group's outermost stem tip, every stem reaching it,
-					// including the ones a stave away. Written <stem>s are set aside: a group's
-					// notes stem toward each other across the gap (bass up, treble down), which asks
-					// for a beam kneed between the staves, and that reads worse than one parked
-					// outside them. Each chord sides with the stave holding most of its noteheads
+					// including the ones a stave away. Each chord sides with the stave holding most of its noteheads
 					// (a split chord included); when most chords side with the bottom stave the
 					// stems rise from it and the beam parks over the top stave, otherwise (a tie
 					// too) the beam parks under the bottom one. That keeps the stems short, and it
@@ -428,7 +428,11 @@ export class VoiceBuilder {
 						)
 							? 'up'
 							: undefined);
-					if (new Set(notes.map((note) => rowOf.get(note))).size > 1) {
+					const written = group.notes.every((lead) => lead.stem);
+					if (
+						!written &&
+						new Set(notes.map((note) => rowOf.get(note))).size > 1
+					) {
 						const bottom = Math.max(
 							...notes.map((note) => rowOf.get(note) ?? 0),
 						);
@@ -455,6 +459,24 @@ export class VoiceBuilder {
 							const row = rowOf.get(note);
 							if (stem === 'up' ? row !== top : row !== bottom) {
 								this.crossStave.add(note);
+							}
+						}
+					}
+					if (written) {
+						// Each written stem pointing at the group's other stave crosses the gap.
+						const rows = notes.map((note) => rowOf.get(note) ?? 0);
+						const top = Math.min(...rows);
+						const bottom = Math.max(...rows);
+						if (top !== bottom) {
+							for (const note of notes) {
+								const row = rowOf.get(note);
+								if (
+									note.getStemDirection() === Stem.UP
+										? row !== top
+										: row !== bottom
+								) {
+									this.crossStave.add(note);
+								}
 							}
 						}
 					}

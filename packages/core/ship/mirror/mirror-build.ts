@@ -34,6 +34,14 @@ export interface MirrorBuildOptions extends MirrorOptions {
 	 * written into the mirror commit.
 	 */
 	publish?: string;
+	/**
+	 * A command run from the mirror's root once the packages are built, such
+	 * as `bin/splates test`, so what a build leaves out of the mirror (a file
+	 * read at run time and missing from `sourceExtra`) fails the release
+	 * before it is published. A non-zero exit fails it. It runs in a shell,
+	 * and a dry run runs it too. Left out, nothing is run.
+	 */
+	test?: string;
 }
 
 /**
@@ -68,25 +76,46 @@ export class MirrorBuild implements Artifact {
 	}
 
 	steps(): readonly Step[] {
-		const build = (cut: Cut) => this.build(cut);
+		const project = this.opts.project;
+		const install = (cut: Cut) => this.install(cut);
+		const bundle = (cut: Cut) => this.bundlePackages(cut);
+		const test = (cut: Cut) => this.runTest(cut);
 		const push = (cut: Cut) => this.push(cut);
 		return [
 			{
-				name: this.name,
-				deadline: Duration.mins(15),
+				name: `Install ${project} in its mirror`,
+				deadline: Duration.mins(5),
 				stage: "build",
-				run: build,
-				dryRun: build,
+				run: install,
+				dryRun: install,
 			},
 			{
-				name: `Mirror ${this.opts.project}`,
+				name: `Build ${project} packages in its mirror`,
+				deadline: Duration.mins(10),
+				stage: "build",
+				run: bundle,
+				dryRun: bundle,
+			},
+			...(this.opts.test === undefined
+				? []
+				: [
+						{
+							name: `Test ${project} in its mirror`,
+							deadline: Duration.mins(15),
+							stage: "build" as const,
+							run: test,
+							dryRun: test,
+						},
+					]),
+			{
+				name: `Mirror ${project}`,
 				deadline: Duration.mins(5),
 				stage: "tag",
 				run: push,
 				dryRun: async (cut) => {
 					await push(cut);
 					cut.log.info(
-						`${this.opts.project} ${color.yellow("would push to")} ${this.opts.remote}`,
+						`${project} ${color.yellow("would push to")} ${this.opts.remote}`,
 					);
 				},
 			},
@@ -94,7 +123,9 @@ export class MirrorBuild implements Artifact {
 	}
 
 	async publish(cut: Cut): Promise<void> {
-		await this.build(cut);
+		await this.install(cut);
+		await this.bundlePackages(cut);
+		await this.runTest(cut);
 		await this.push(cut);
 	}
 
@@ -110,10 +141,9 @@ export class MirrorBuild implements Artifact {
 
 	/**
 	 * Writes the mirror, installs it and commits it with the lockfile that
-	 * install wrote, which is what its publish workflow installs from, then
-	 * builds the packages there.
+	 * install wrote, which is what its publish workflow installs from.
 	 */
-	private async build(cut: Cut): Promise<void> {
+	private async install(cut: Cut): Promise<void> {
 		await this.clean();
 		// A dry run mirrors onto a copy of the remote, which its push then reaches.
 		const step =
@@ -131,6 +161,11 @@ export class MirrorBuild implements Artifact {
 		});
 		this.built = { step, prepared };
 		this.opts.via?.use(new CliGit(prepared.dir, { ps: this.ps }));
+	}
+
+	/** Builds each public package of the project in the installed mirror. */
+	private async bundlePackages(cut: Cut): Promise<void> {
+		const { prepared } = this.installed();
 		const going = cut.packages.filter(
 			(pkg) =>
 				!pkg.private &&
@@ -143,6 +178,29 @@ export class MirrorBuild implements Artifact {
 		cut.log.info(
 			`${going.length} packages ${color.green("built")} in the ${this.opts.project} mirror`,
 		);
+	}
+
+	/** Runs the project's `test` command in the built mirror, when it names one. */
+	private async runTest(cut: Cut): Promise<void> {
+		if (this.opts.test === undefined) {
+			return;
+		}
+		await this.spawn(
+			["sh", "-c", this.opts.test],
+			this.installed().prepared.dir,
+		);
+		cut.log.info(
+			`${this.opts.test} ${color.green("passed")} in the ${this.opts.project} mirror`,
+		);
+	}
+
+	private installed(): { step: MirrorStep; prepared: PreparedMirror } {
+		if (this.built === undefined) {
+			throw new Error(
+				`the ${this.opts.project} mirror was never installed, so there is nothing to build`,
+			);
+		}
+		return this.built;
 	}
 
 	private async push(cut: Cut): Promise<void> {

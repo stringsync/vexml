@@ -1,11 +1,9 @@
 import type { MirrorConfig, MirrorOptions } from 'core/ship';
 
-/**
- * How the mirror reads vexml's Dockerfile, its ignore file and its deploy workflow, so mono's stay the one source
- * of truth. The mirror root is copied to /app/vexml, core sits at packages/core and mdom comes
- * from npm; the mirror holds no bun.lock and no vet.
- */
+/** Pass as a mirror's `rewrite`: adapts vexml's Dockerfile, ignore file and workflows to run from the mirror's root. */
 export const vexmlMirrorRewrite: NonNullable<MirrorConfig['rewrite']> = {
+	// Mono's copies stay the one source of truth. The mirror root is copied to /app/vexml, core sits at packages/core and mdom comes from npm;
+	// the mirror holds no bun.lock and no vet.
 	Dockerfile: [
 		// Manifests and source of projects the mirror does not hold.
 		[/^COPY (?:mdom|vet)\/.*\n/gm, ''],
@@ -50,7 +48,11 @@ export const MIRROR = {
 			'**/scry.config.ts',
 			'**/.claude/**',
 			'**/.agents/**',
+			// Stays in mono, whatever `keep` later lets out of skills/: an exclude wins.
+			'**/skills/soundslice/**',
 		],
+		// The README's `npx skills add stringsync/vexml@vexml` needs this skill in the public repository.
+		keep: ['skills/vexml/**'],
 		// The mirror's own agent guide stands in for mono's, which names mono, vet and bin/mono.
 		replace: {
 			'AGENTS.md': 'AGENTS.mirror.md',

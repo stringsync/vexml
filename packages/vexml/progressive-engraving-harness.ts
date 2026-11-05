@@ -41,8 +41,8 @@ export const TIE_ACROSS_BREAK = 'tie_system_break.musicxml';
 // A rights credit, which prints as the footer under the last system.
 export const FOOTER = 'header_extras.musicxml';
 export const FOOTER_TEXT = 'Copyright 2026 Public Domain';
-// Narrow enough to break the tie fixture's two measures onto two systems.
-export const NARROW = { ...DEFAULT_STANDARD_LAYOUT, referenceWidth: 360 };
+// Narrow enough to break the tie fixture's two measures onto two systems at their minimums.
+export const NARROW = { ...DEFAULT_STANDARD_LAYOUT, referenceWidth: 200 };
 // The ops drawing `text`, as the title's placement: once, centered on the page.
 export function textOpsOf(engraving: Engraving | undefined, text: string) {
 	return (engraving?.ops ?? []).filter(

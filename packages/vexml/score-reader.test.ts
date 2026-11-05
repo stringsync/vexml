@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { groupBeamRuns, type Measure as MMeasure } from '@stringsync/mdom';
+import {
+	PAGE_MARGIN_BOTTOM,
+	PAGE_MARGIN_TOP,
+	PAGE_MARGIN_X,
+} from './constants';
 import { DefaultScoreParser } from './default-score-parser';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { ScoreReader } from './score-reader';
@@ -9,6 +14,19 @@ describe('ScoreReader', () => {
 
 	beforeEach(() => {
 		reader = new ScoreReader(new DynamicGlyphs());
+	});
+
+	it("closes a hairpin stop trailing its staff on that staff, not the next staff's note", async () => {
+		const measure = await measureOf(
+			'<direction><direction-type><wedge type="crescendo" number="1"/></direction-type><staff>1</staff></direction>',
+			'<direction><direction-type><wedge type="stop" number="1"/></direction-type><staff>1</staff></direction><note><pitch><step>C</step><octave>3</octave></pitch><duration>1</duration><type>quarter</type><staff>2</staff></note>',
+		);
+		const [start, stop] = reader.wedgesOf(measure);
+		expect(start?.type).toBe('start');
+		expect(stop?.type).toBe('stop');
+		expect(stop?.lead.staff).toBe('1');
+		expect(stop?.lead).toBe(measure.notes[3]);
+		expect(stop?.trailing).toBe(true);
 	});
 
 	it('reads harmony and frame positions separately, preserving zero default-x', async () => {
@@ -771,16 +789,89 @@ describe('ScoreReader', () => {
 	const degree = (value: number, alter: number, type: string, attrs = '') =>
 		`<degree ${attrs}><degree-value>${value}</degree-value><degree-alter>${alter}</degree-alter><degree-type>${type}</degree-type></degree>`;
 
-	it('prints an added, altered and subtracted degree after the kind', async () => {
+	it.each([
+		[
+			'<root><root-step>A</root-step><root-alter >0</root-alter></root><kind>major</kind>',
+			'A',
+		],
+		[
+			'<root><root-step>A</root-step><root-alter print-object="yes">0</root-alter></root><kind>major</kind>',
+			'A♮',
+		],
+		[
+			'<root><root-step>A</root-step><root-alter print-object="no">0</root-alter></root><kind>major</kind>',
+			'A',
+		],
+		[
+			'<root><root-step>A</root-step><root-alter >1</root-alter></root><kind>major</kind>',
+			'A♯',
+		],
+		[
+			'<root><root-step>A</root-step><root-alter >-1</root-alter></root><kind>major</kind>',
+			'A♭',
+		],
+		[
+			'<root><root-step>A</root-step><root-alter print-object="no">1</root-alter></root><kind>major</kind>',
+			'A',
+		],
+		[
+			'<root><root-step>C</root-step></root><kind>major</kind><bass><bass-step>A</bass-step><bass-alter >0</bass-alter></bass>',
+			'C/A',
+		],
+		[
+			'<root><root-step>C</root-step></root><kind>major</kind><bass><bass-step>A</bass-step><bass-alter print-object="yes">0</bass-alter></bass>',
+			'C/A♮',
+		],
+		[
+			'<root><root-step>C</root-step></root><kind>major</kind><bass><bass-step>A</bass-step><bass-alter print-object="no">0</bass-alter></bass>',
+			'C/A',
+		],
+		[
+			'<root><root-step>C</root-step></root><kind>major</kind><bass><bass-step>A</bass-step><bass-alter >1</bass-alter></bass>',
+			'C/A♯',
+		],
+		[
+			'<root><root-step>C</root-step></root><kind>major</kind><bass><bass-step>A</bass-step><bass-alter >-1</bass-alter></bass>',
+			'C/A♭',
+		],
+		[
+			'<root><root-step>C</root-step></root><kind>major</kind><bass><bass-step>A</bass-step><bass-alter print-object="no">1</bass-alter></bass>',
+			'C/A',
+		],
+	])('prints chord accidentals for %s', async (inner, expected) => {
+		const result = reader.harmoniesOf(
+			await measureOf(`<harmony>${inner}</harmony>`),
+		)[0];
+		expect(result?.text).toBe(expected);
+	});
+
+	it('preserves root and bass display text', async () => {
+		const result = reader.harmoniesOf(
+			await measureOf(
+				'<harmony><root><root-step text="Do♯">C</root-step><root-alter print-object="no">1</root-alter></root><kind>major</kind><bass><bass-step text="Sol">G</bass-step><bass-alter>0</bass-alter></bass></harmony>',
+			),
+		)[0];
+		expect(result?.text).toBe('Do♯/Sol');
+	});
+
+	it('prints an added and an altered degree after the kind', async () => {
 		expect(await textOf(`<kind>major</kind>${degree(9, 0, 'add')}`)).toBe(
 			'Cadd9',
 		);
 		expect(await textOf(`<kind>dominant</kind>${degree(5, -1, 'alter')}`)).toBe(
 			'C7♭5',
 		);
+	});
+
+	it('prints nothing for a subtracted degree unless its type text spells it', async () => {
+		expect(await textOf(`<kind>minor</kind>${degree(5, 0, 'subtract')}`)).toBe(
+			'Cm',
+		);
 		expect(
-			await textOf(`<kind>dominant</kind>${degree(3, 0, 'subtract')}`),
-		).toBe('C7no3');
+			await textOf(
+				'<kind>dominant</kind><degree><degree-value>3</degree-value><degree-alter>0</degree-alter><degree-type text="omit">subtract</degree-type></degree>',
+			),
+		).toBe('C7omit3');
 	});
 
 	it('skips a degree the kind text already spells', async () => {
@@ -1269,6 +1360,36 @@ describe('ScoreReader', () => {
 			margins: { left: 70, right: 50, top: 80, bottom: 90 },
 			evenShift: -69,
 			evenNarrowing: 0,
+		});
+	});
+
+	it('keeps default margins when the document supplies only page dimensions', async () => {
+		const layout = await documentLayoutOf(
+			'<defaults><page-layout><page-width>400</page-width><page-height>600</page-height></page-layout></defaults>',
+			['', ''],
+		);
+		expect(layout.page()).toMatchObject({
+			width: 400,
+			height: 600,
+			margins: {
+				left: PAGE_MARGIN_X,
+				right: PAGE_MARGIN_X,
+				top: PAGE_MARGIN_TOP,
+				bottom: PAGE_MARGIN_BOTTOM,
+			},
+		});
+	});
+
+	it('preserves explicitly zero page margins', async () => {
+		const layout = await documentLayoutOf(
+			'<defaults><page-layout><page-width>400</page-width><page-margins type="both"><left-margin>0</left-margin><right-margin>0</right-margin><top-margin>0</top-margin><bottom-margin>0</bottom-margin></page-margins></page-layout></defaults>',
+			['', ''],
+		);
+		expect(layout.page()?.margins).toEqual({
+			left: 0,
+			right: 0,
+			top: 0,
+			bottom: 0,
 		});
 	});
 

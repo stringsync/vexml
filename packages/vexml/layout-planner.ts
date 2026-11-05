@@ -1,5 +1,5 @@
 // vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
-import type { Measure, Part, Score } from '@stringsync/mdom';
+import type { Chord, Measure, Part, Score } from '@stringsync/mdom';
 import {
 	Formatter,
 	GhostNote,
@@ -35,6 +35,7 @@ import {
 	PAGE_MARGIN_X,
 	QUARTER_NOTE_TICKS,
 	TAB_MIN_NOTE_SPACING,
+	TUPLET_MIN_GROUP_WIDTH,
 	WORDS_CHAR_WIDTH,
 } from './constants';
 import type { DocumentLayout, DocumentPage, PageSize } from './document-layout';
@@ -135,6 +136,13 @@ export class LayoutPlanner {
 				minNotes,
 				this.minNoteWidth(vexVoices, softmaxFactor),
 			);
+			// Brackets are built at draw time, after this measuring, so the formatter's minimum
+			// never sees them: floor the width by the busiest voice's outermost tuplet groups.
+			minNotes = Math.max(
+				minNotes,
+				Math.max(0, ...voices.map((v) => this.tupletGroupCount(v.chords))) *
+					TUPLET_MIN_GROUP_WIDTH,
+			);
 			// Floor a tab measure's width by its note count so dense rhythms stay legible.
 			if (isTab) {
 				const noteCount = Math.max(0, ...perVoice.map((t) => t.length));
@@ -203,6 +211,26 @@ export class LayoutPlanner {
 			}
 		}
 		return { min: floor, ideal: Math.max(floor, logWidth) };
+	}
+
+	// How many outermost tuplet brackets a voice's chords open: one per group, nested
+	// groups sharing their outer bracket's span.
+	private tupletGroupCount(chords: Chord[]): number {
+		let open = 0;
+		let groups = 0;
+		for (const chord of chords) {
+			for (const tuplet of chord.lead.tuplets) {
+				if (tuplet.tupletType === 'start') {
+					if (open === 0) {
+						groups++;
+					}
+					open++;
+				} else if (tuplet.tupletType === 'stop' && open > 0) {
+					open--;
+				}
+			}
+		}
+		return groups;
 	}
 
 	/*
@@ -521,7 +549,11 @@ export class LayoutPlanner {
 				: config.layout.documentLayout;
 		const document =
 			mode === 'ignore' ? null : this.reader.documentLayoutOf(score);
-		const documentPage = document?.page() ?? null;
+		const documentPage =
+			config.layout.type === 'standard' &&
+			config.layout.honorPageLayout === false
+				? null
+				: (document?.page() ?? null);
 		const appearance =
 			mode === 'ignore' ? Appearance.NONE : this.reader.appearanceOf(score);
 		// The glyphs the document swaps in change what the notes and clefs measure, so the

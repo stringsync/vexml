@@ -23,6 +23,7 @@ export interface LyricPlacerOptions {
 /* One pinned lyric syllable, as the spill report needs it (see LyricPlacer.rowDrop). */
 export interface PinnedSyllable {
 	readonly stave: Stave;
+	readonly system: number;
 	readonly row: number;
 	readonly left: number;
 	readonly width: number;
@@ -87,6 +88,24 @@ export class LyricPlacer {
 			this.steppedSystems.add(system);
 		}
 		this.observedLyricDrops.set(key, Math.max(seen ?? 0, drop));
+	}
+
+	/*
+	 * A bow drawn after the verse was pinned hangs `drop` below the bottom staff line: ask for
+	 * the verse to clear it on the next pass. Nothing is asked when the row already hangs at
+	 * least that far (what this pass observed or the last one carried), so a settled verse
+	 * doesn't cost another pass.
+	 */
+	requestDrop(system: number, row: number, drop: number): void {
+		const key = this.rowKey(system, row);
+		const hung = Math.max(
+			this.observedLyricDrops.get(key) ?? 0,
+			this.lyricDrops.get(key) ?? 0,
+		);
+		if (drop > hung) {
+			this.recordDrop(system, row, drop);
+			this.steppedSystems.add(system);
+		}
 	}
 
 	/* The drop the previous pass reserved for this row, 0 when it reserved none. */
@@ -174,6 +193,7 @@ export class LyricPlacer {
 				this.collisionResolver.add({ rect, kind: 'annotation', band: row });
 				this.pinned.push({
 					stave: note.checkStave(),
+					system,
 					row,
 					left: rect.x,
 					width: w,

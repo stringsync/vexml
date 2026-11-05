@@ -24,7 +24,11 @@ export class HeadCurve extends CrispCurve {
 		to: StaveNote | undefined,
 		private readonly fromY: number,
 		private readonly toY: number,
-		opts: CurveOptions & { bezier?: DocumentBezier | null },
+		opts: CurveOptions & {
+			bezier?: DocumentBezier | null;
+			reach?: { start: boolean; end: boolean };
+			openX?: number;
+		},
 	) {
 		super(from, to, opts);
 	}

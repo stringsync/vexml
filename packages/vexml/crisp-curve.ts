@@ -1,11 +1,22 @@
-import { Curve, type CurveOptions, type Note as VexNote } from 'vexflow/core';
+import {
+	Curve,
+	type CurveOptions,
+	StaveNote,
+	type Note as VexNote,
+} from 'vexflow/core';
 
 import type { DocumentBezier } from './score-reader';
 
-/* The offset of the second bezier pass that gives a solid slur its lens shape, so the ink
- * reaches this far past the arc's midpoint. Larger than vexflow's default 2 because CrispCurve
- * drops the stroke that used to widen the shape: the lens alone is only 0.75 of this deep. */
-export const CURVE_THICKNESS = 4;
+/* The offset of the second bezier pass that gives a solid curve its weight, so the ink is
+ * 2.2 px deep at the arc's midpoint (see LENS_DEPTH). */
+export const CURVE_THICKNESS = 2.93;
+
+/* How wide a solid curve is at its ends, in px. The ends are blunt, not points, so the weight
+ * holds along the curve: it thins by under half from the middle to the tips. */
+export const CURVE_TIP = 1.25;
+
+/* How far past its notehead's centre a slur's end reaches, in px. */
+const HEAD_REACH = 0.7;
 
 /* The thickness that makes a solid curve's lens `middle` px deep at its midpoint. */
 export function curveThickness(middle: number): number {
@@ -26,18 +37,28 @@ const LENS_DEPTH = 0.75;
  * own (a document's `<line-width type="slur middle">`, see curveThickness).
  */
 export class CrispCurve extends Curve {
-	/* How wide the lens is at its ends (`<line-width type="slur tip">`); null tapers it to a
-	 * point the way vexflow does. */
+	/* How wide the lens is at its ends (`<line-width type="slur tip">`); null takes CURVE_TIP,
+	 * or the lens's own depth when a document's middle is thinner than that. */
 	private tip: number | null = null;
 
 	private readonly bezier: DocumentBezier | null;
+	private readonly reach: { start: boolean; end: boolean };
+	private readonly openX: number | null;
 	constructor(
 		from: VexNote | undefined,
 		to: VexNote | undefined,
-		opts: CurveOptions & { bezier?: DocumentBezier | null },
+		opts: CurveOptions & {
+			bezier?: DocumentBezier | null;
+			/** Which ends run to their notehead's centre instead of stopping at its edge. */
+			reach?: { start: boolean; end: boolean };
+			/** Where a missing end lands, when it is not its stave's own edge: the system's. */
+			openX?: number;
+		},
 	) {
 		super(from, to, { ...opts, thickness: opts.thickness ?? CURVE_THICKNESS });
+		this.openX = opts.openX ?? null;
 		this.bezier = opts.bezier ?? null;
+		this.reach = opts.reach ?? { start: false, end: false };
 	}
 
 	setTip(tip: number | null): this {
@@ -52,6 +73,7 @@ export class CrispCurve extends Curve {
 		lastY: number;
 		direction: number;
 	}): void {
+		const reached = this.reachedEnds(params);
 		const original = this.renderOptions.cps;
 		const bezier = this.bezier;
 		if (bezier) {
@@ -69,10 +91,29 @@ export class CrispCurve extends Curve {
 			});
 		}
 		try {
-			this.paintCurve(params);
+			this.paintCurve(reached);
 		} finally {
 			this.renderOptions.cps = original;
 		}
+	}
+
+	private reachedEnds<T extends { firstX: number; lastX: number }>(
+		params: T,
+	): T {
+		const centre = (note: VexNote | undefined) =>
+			note instanceof StaveNote
+				? note.getNoteHeadBeginX() + note.getGlyphWidth() / 2
+				: null;
+		const first = this.reach.start ? centre(this.from) : null;
+		const last = this.reach.end ? centre(this.to) : null;
+		const open = this.openX;
+		const openFirst = open !== null && !this.from ? open : params.firstX;
+		const openLast = open !== null && !this.to ? open : params.lastX;
+		return {
+			...params,
+			firstX: first === null ? openFirst : first - HEAD_REACH,
+			lastX: last === null ? openLast : last + HEAD_REACH,
+		};
 	}
 
 	private paintCurve(params: {
@@ -88,19 +129,15 @@ export class CrispCurve extends Curve {
 			super.renderCurve(params);
 			return;
 		}
-		if (this.tip !== null) {
-			this.renderTipped(params, this.tip);
-			return;
-		}
-		const ctx = this.checkContext();
-		ctx.save();
-		ctx.setStrokeStyle('rgba(0,0,0,0)');
-		super.renderCurve(params);
-		ctx.restore();
+		this.renderTipped(
+			params,
+			this.tip ??
+				Math.min(CURVE_TIP, this.renderOptions.thickness * LENS_DEPTH),
+		);
 	}
 
 	/*
-	 * vexflow's lens with its ends cut square, `tip` px across: the far bow starts and ends
+	 * A lens with its ends cut square, `tip` px across: the far bow starts and ends
 	 * that far out from the near one instead of at the note. The far bow's control points come
 	 * in by a third of the tip, which a cubic weighs three quarters at its middle, so the
 	 * lens stays as deep there as its thickness says.

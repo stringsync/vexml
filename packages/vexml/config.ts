@@ -294,6 +294,8 @@ export type StandardLayout = {
 	/** Whether the document's own page, system and staff layout is followed (default:
 	 * 'ignore'). See DocumentLayoutMode. */
 	documentLayout: DocumentLayoutMode;
+	/** False ignores imported page dimensions and margins while still following bar and staff layout. Defaults to true. */
+	honorPageLayout?: boolean;
 	/** What gives when a system's music cannot fit the page at its collision-free minimum
 	 * (default: 'wrap'). See SystemOverflow.
 	 *

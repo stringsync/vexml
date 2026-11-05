@@ -13,6 +13,7 @@ import { RendererBench } from './perf-bench';
 import { Retrier } from './perf-retrier';
 import { PerfRun } from './perf-run';
 import { servePerfUi } from './perf-ui';
+import { reach } from './reach';
 import { readme } from './readme';
 import { render } from './render';
 import { FINDING_KINDS } from './render-lint';
@@ -176,6 +177,25 @@ vex
 		}
 		return lint({ ...opts, input: opts.input, cwd: invocationDir, log, fs });
 	});
+
+vex
+	.command('reach')
+	.description(
+		'render complete musicxml scores and check every slur, tie and hairpin starts at its start note and reaches its stop note, or the system end and resumes after a break; fails when one falls short',
+	)
+	.option('input', z.string(), {
+		description:
+			'complete musicxml files, comma separated (not a vex slice, which restores spans at its cuts)',
+	})
+	.use(timing)
+	.action((opts, { log, fs, invocationDir }) =>
+		reach({
+			inputs: opts.input.split(',').map((p) => p.trim()),
+			cwd: invocationDir,
+			log,
+			fs,
+		}),
+	);
 
 vex
 	.command('perf')

@@ -1501,6 +1501,47 @@ export class ScoreReader {
 	}
 
 	/*
+	 * A wedge belongs to its direction's staff, but the next note in document order can sit on
+	 * another staff of a grand staff (a grace note, a voice in the other hand), which would draw
+	 * the wedge under the wrong staff. Moves on to the first note from `note` on that is on
+	 * `staff`, or keeps `note` when the rest of the measure has none.
+	 */
+	private onStaffOf(
+		measure: Measure,
+		staff: string,
+		note: Note | null,
+	): Note | null {
+		if (!note || note.staff === staff) {
+			return note;
+		}
+		const notes = this.notesOf(measure);
+		const at = notes.indexOf(note);
+		if (at < 0) {
+			return note;
+		}
+		return notes.slice(at).find((n) => n.staff === staff && !n.isGrace) ?? note;
+	}
+
+	/* The last non-grace note at or before `note` on `staff`, or null when there is none. */
+	private lastOnStaff(
+		measure: Measure,
+		staff: string,
+		note: Note | null,
+	): Note | null {
+		const notes = this.notesOf(measure);
+		const at = note ? notes.indexOf(note) : -1;
+		if (at < 0) {
+			return null;
+		}
+		return (
+			notes
+				.slice(0, at + 1)
+				.reverse()
+				.find((n) => n.staff === staff && !n.isGrace) ?? null
+		);
+	}
+
+	/*
 	 * A measure's wedge (hairpin) markers, in document order. A "crescendo"/"diminuendo"
 	 * opens on the note that follows it. A "stop" sits at the moment the wedge finishes, so
 	 * it closes on the note that FOLLOWS it too, unlike a pedal stop, which releases on the
@@ -1522,9 +1563,19 @@ export class ScoreReader {
 					continue;
 				}
 				const type = wedgeType === 'stop' ? 'stop' : 'start';
-				const lead =
+				const next = this.onStaffOf(
+					measure,
+					direction.staff,
 					direction.nextNote ??
-					(type === 'stop' ? direction.previousNote : null);
+						(type === 'stop' ? direction.previousNote : null),
+				);
+				// A stop trailing its staff's last note, with only the other staff's notes
+				// after it, closes on its own staff's last note, not on the other hand's.
+				const last =
+					type === 'stop' && next && next.staff !== direction.staff
+						? this.lastOnStaff(measure, direction.staff, direction.previousNote)
+						: null;
+				const lead = last ?? next;
 				if (!lead) {
 					continue;
 				}
@@ -1544,6 +1595,7 @@ export class ScoreReader {
 					dash: lineDashOf(wedge),
 					niente: wedge.getAttribute('niente') === 'yes',
 					spread: Number.parseFloat(wedge.getAttribute('spread') ?? '') || null,
+					trailing: last !== null,
 				});
 			}
 		}
@@ -2700,8 +2752,8 @@ export class ScoreReader {
 	 */
 	private harmonySymbol(harmony: Harmony): HarmonySymbol {
 		const root = harmony.root;
-		const step = root?.step ?? '';
-		const alter = root ? (HARMONY_ALTER[root.alter ?? ''] ?? '') : '';
+		const step = root?.text ?? root?.step ?? '';
+		const alter = this.harmonyAlter(harmony.child('root')?.child('root-alter'));
 		const kindEl = harmony.child('kind');
 		const kindValue = harmony.kind?.value ?? '';
 		const symbols = kindEl?.getAttribute('use-symbols') === 'yes';
@@ -2841,11 +2893,12 @@ export class ScoreReader {
 
 	/*
 	 * The <degree>s a harmony prints after its kind suffix, in order, each as its type ("add",
-	 * "no", or nothing for an alteration, unless <degree-type text> says otherwise), its
+	 * or nothing for an alteration, unless <degree-type text> says otherwise), its
 	 * <degree-alter> sign (+/- when plus-minus="yes") and its <degree-value> (or that
 	 * value's text), behind the <degree-value symbol> glyph when there is one ("Δ7"). A
 	 * degree with print-object="no" is already spelled by the kind text, which is how most
-	 * exporters write it, so it adds nothing.
+	 * exporters write it, so it adds nothing. A subtracted degree adds nothing either unless
+	 * its <degree-type text> spells it: the chord diagram shows what is left out.
 	 */
 	private degreeTexts(harmony: Harmony): string[] {
 		return harmony
@@ -2856,8 +2909,11 @@ export class ScoreReader {
 				const alterEl = degree.child('degree-alter');
 				const typeEl = degree.child('degree-type');
 				const type = typeEl?.text?.trim() ?? 'alter';
-				const typeText =
-					typeEl?.getAttribute('text') ?? DEGREE_TYPE_TEXT[type] ?? '';
+				const spelled = typeEl?.getAttribute('text') ?? null;
+				if (type === 'subtract' && spelled === null) {
+					return '';
+				}
+				const typeText = spelled ?? DEGREE_TYPE_TEXT[type] ?? '';
 				const semitones = Number(alterEl?.text ?? 0);
 				const plusMinus = alterEl?.getAttribute('plus-minus') === 'yes';
 				const signs = plusMinus ? DEGREE_PLUS_MINUS : DEGREE_SIGNS;
@@ -2873,6 +2929,15 @@ export class ScoreReader {
 			.filter((text) => text !== '');
 	}
 
+	private harmonyAlter(element: MElement | null | undefined): string {
+		const print = element?.getAttribute('print-object');
+		const alter = element?.text ?? '';
+		if (print === 'no' || (Number(alter) === 0 && print !== 'yes')) {
+			return '';
+		}
+		return HARMONY_ALTER[alter] ?? '';
+	}
+
 	/*
 	 * What a harmony prints after its chord for the bass note: a <bass> as its
 	 * <bass-separator> (an empty one prints nothing between them) then the bass note; else
@@ -2886,7 +2951,7 @@ export class ScoreReader {
 		if (bass?.step) {
 			const separatorEl = harmony.child('bass')?.child('bass-separator');
 			const separator = separatorEl ? (separatorEl.text ?? '') : '/';
-			return `${separator}${bass.step}${HARMONY_ALTER[bass.alter ?? ''] ?? ''}`;
+			return `${separator}${bass.text ?? bass.step}${this.harmonyAlter(harmony.child('bass')?.child('bass-alter'))}`;
 		}
 		const inversionEl = harmony.child('inversion');
 		const inversion = Number(inversionEl?.text ?? 0);
@@ -3289,6 +3354,9 @@ export type WedgeMark = {
 	// <wedge spread> in tenths, or null when this end doesn't say. MusicXML puts the mouth's
 	// spread on the crescendo's stop or the diminuendo's start and 0 on the point's end.
 	spread: number | null;
+	// A stop with no note of its staff after it, closed on the staff's last note: the wedge
+	// then runs to the end of its stave.
+	trailing: boolean;
 };
 
 /*
@@ -3356,17 +3424,15 @@ export function lineDashOf(element: {
 	return [dash ?? base[0] ?? 5, space ?? base[1] ?? 5];
 }
 
-// MusicXML <root-alter>/<bass-alter> semitones -> the printed accidental sign, using the
-// real Unicode music symbols (♯ ♭ ♮). 0 prints an explicit natural: rare in a root, but
-// MusicXML carries it when the chart wants the sign drawn. An absent <root-alter> maps to
-// nothing (no sign), so plain roots stay bare.
+// Chord accidentals use real Unicode music symbols. Zero prints a natural only
+// when print-object="yes" is explicit; exporters often write zero for plain roots.
 const HARMONY_ALTER: Record<string, string> = { '1': '♯', '-1': '♭', '0': '♮' };
 
 // <degree-type> value -> the word printed before the degree when <degree-type text> is
-// absent: "Cadd9", "C7no3", and an alteration prints just its sign ("C7♭5").
+// absent: "Cadd9", and an alteration prints just its sign ("C7♭5"). A subtraction has no
+// default word: it prints nothing unless the file spells it.
 const DEGREE_TYPE_TEXT: Record<string, string> = {
 	add: 'add',
-	subtract: 'no',
 	alter: '',
 };
 

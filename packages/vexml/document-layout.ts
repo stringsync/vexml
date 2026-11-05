@@ -11,6 +11,12 @@
  * MusicXML spec has it; everything else falls back to `<defaults>`, and what neither sets
  * falls back to vexml's own spacing (null here).
  */
+import {
+	PAGE_MARGIN_BOTTOM,
+	PAGE_MARGIN_TOP,
+	PAGE_MARGIN_X,
+} from './constants';
+
 export class DocumentLayout {
 	constructor(
 		private readonly defaults: LayoutBlock,
@@ -23,10 +29,15 @@ export class DocumentLayout {
 
 	/* The page `<defaults>` sets, or null without a page width, or with margins that leave
 	 * the page no room. A page height is only needed by a paged layout, and margins left out
-	 * are 0. */
+	 * use vexml's own spacing. */
 	page(): DocumentPage | null {
 		const { pageWidth, pageHeight, pageMargins } = this.defaults;
-		const margins = pageMargins ?? { left: 0, right: 0, top: 0, bottom: 0 };
+		const margins = pageMargins ?? {
+			left: PAGE_MARGIN_X,
+			right: PAGE_MARGIN_X,
+			top: PAGE_MARGIN_TOP,
+			bottom: PAGE_MARGIN_BOTTOM,
+		};
 		if (
 			pageWidth === null ||
 			pageWidth <= margins.left + margins.right ||

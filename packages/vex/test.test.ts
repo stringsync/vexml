@@ -65,4 +65,17 @@ describe('test', () => {
 		expect(calls).toHaveLength(1);
 		expect(calls[0]).toEndWith(' vexml-tests --timeout 30000');
 	});
+
+	it('mounts only the screenshot and diff folders of the integration package', async () => {
+		const { ps, opts } = await setup();
+		await test(opts);
+		const run = ps.getCalls()[1];
+		const base = '/repo/packages/integration';
+		const target = '/app/vexml/packages/integration';
+		expect(run).toContain(
+			`-v ${base}/__screenshots__:${target}/__screenshots__`,
+		);
+		expect(run).toContain(`-v ${base}/__diffs__:${target}/__diffs__`);
+		expect(run).not.toContain(`-v ${base}:`);
+	});
 });

@@ -22,7 +22,16 @@ import { Appearance } from './appearance';
 import { BowedTremolo } from './bowed-tremolo';
 import {
 	SINGLE_SLIDE_GAP,
+	SLUR_ACCIDENTAL_GAP,
+	SLUR_BOW_ASPECT,
+	SLUR_BOW_FLAT_WIDTH,
+	SLUR_BOW_GROWTH,
+	SLUR_BOW_MAX,
+	SLUR_BOW_MIN,
 	SLUR_END_ZONE,
+	SLUR_GHOST_MAX_BETWEEN,
+	SLUR_GHOST_OVERLAP,
+	SLUR_GHOST_STEEPNESS,
 	SLUR_GRACE_ANCHOR,
 	SLUR_GRACE_CP_Y,
 	SLUR_GRACE_MARGIN,
@@ -31,10 +40,9 @@ import {
 	SLUR_MARK_GAP,
 	SLUR_MAX_ASPECT,
 	SLUR_MAX_CP_Y,
-	SLUR_MIN_CP_Y,
 	SLUR_MIN_SHOULDER,
+	SLUR_SHOULDER,
 	SLUR_STEM_TIP_SLANT,
-	SLUR_WIDTH_FACTOR,
 	SLUR_Y_SHIFT,
 	TUPLET_NESTING_EXTRA_GAP,
 } from './constants';
@@ -61,6 +69,9 @@ import { SingleSlide } from './single-slide';
 import { SpacedBeam } from './spaced-beam';
 import { TabCurve } from './tab-curve';
 import { TabSlideLine } from './tab-slide-line';
+
+// A trailing hairpin leaves air before its measure’s barline.
+const HAIRPIN_BARLINE_GAP = 4;
 
 /* A drawn note a spanner can end on: all a scope reads is which stave it landed on. */
 export interface SpanEnd {
@@ -99,6 +110,9 @@ type BeamOptions = {
 	 * supplies the whole set, already ordered the way the beam should run through them. */
 	notesByLead?: Map<Note, StaveNote[]>;
 };
+
+/** How many px cheaper the other side must score before it replaces the rules' side. */
+const PREFERRED_SIDE_BONUS = 8;
 
 export class SpannerBuilder {
 	private readonly connectors = new Map<
@@ -196,7 +210,12 @@ export class SpannerBuilder {
 						this.reorientArticulations(note);
 					});
 				}
-				if (this.isFlatBeam(group, byLead)) {
+				// vexflow's flat beam averages stem tips as if all stemmed one way, which parks a
+				// beam of opposing written stems (across staves) past its outermost tip.
+				const opposed = notes.some(
+					(note) => note.getStemDirection() !== notes[0]?.getStemDirection(),
+				);
+				if (!opposed && this.isFlatBeam(group, byLead)) {
 					beam.renderOptions.flatBeams = true;
 					// vexflow parks a flat beam at the group's *average* stem tip, so a group
 					// spanning a wide range leaves the note closest to the beam with a stub of
@@ -417,6 +436,10 @@ export class SpannerBuilder {
 		byLead: Map<Note, StaveNote>,
 		scope: SpanScope = WHOLE_SCORE,
 	): StaveTie[] {
+		// Nothing to draw, so skip the per-note maps below.
+		if (!chords.some((c) => c.notes.some((n) => this.tiesOf(n).length > 0))) {
+			return [];
+		}
 		// Each chord member can carry its own tie, so map every note (not just the lead)
 		// to its StaveNote and notehead index: the tie must land on the right notehead,
 		// and its partner may itself be a chord member.
@@ -498,14 +521,20 @@ export class SpannerBuilder {
 					}
 					// A chord member's tie bows away from the chord's center: upper-half
 					// notes arc over the top (direction -1), the lower half under the bottom
-					// (+1). Otherwise vexflow defaults every tie to the stem direction, so a
+					// (+1), and an odd chord's middle member bows away from the stem. Otherwise vexflow defaults every tie to the stem direction, so a
 					// stem-up chord's top notes would tuck underneath instead of over. Single
 					// notes keep that default (a tie opposite the lone stem), unless another
 					// voice sounds under the tie: then it bows on the stem side, away from that
 					// voice, rather than through it (Gould).
 					let direction: number | null = null;
 					if (heads > 1) {
-						direction = from.index >= (heads - 1) / 2 ? -1 : 1;
+						const middle = (heads - 1) / 2;
+						if (from.index === middle) {
+							// The middle member of an odd chord bows away from the stem.
+							direction = from.staveNote.getStemDirection() === 1 ? 1 : -1;
+						} else {
+							direction = from.index > middle ? -1 : 1;
+						}
 					} else if (otherVoiceUnder(chord, from.staveNote, to.staveNote)) {
 						direction = from.staveNote.getStemDirection() === 1 ? -1 : 1;
 					}
@@ -526,6 +555,10 @@ export class SpannerBuilder {
 						const staveTie = new DashedTie(spec, {
 							dash: tie.dash,
 							tip: this.appearance.lineWidth('tie tip'),
+							// A document's own tie line widths keep vexflow's bows, sized as it asks.
+							fit:
+								this.appearance.lineWidth('tie tip') === null &&
+								this.appearance.lineWidth('tie middle') === null,
 							bezier: tie.bezier && {
 								start: spec.firstNote ? tie.bezier.start : { x: null, y: null },
 								end: spec.lastNote ? tie.bezier.end : { x: null, y: null },
@@ -696,6 +729,13 @@ export class SpannerBuilder {
 		byLead: Map<Note, StaveNote>,
 		scope: SpanScope = WHOLE_SCORE,
 	): Array<NotationSlide | SingleSlide> {
+		if (
+			!chords.some((c) =>
+				c.notes.some((n) => n.slides.length > 0 || n.glissandos.length > 0),
+			)
+		) {
+			return [];
+		}
 		// A slide can sit on any chord member (a two-note chord may slide both notes,
 		// each with its own <slide number>), so map every note (not just the lead)
 		// to its StaveNote and notehead index. Otherwise only the lead's line draws.
@@ -811,7 +851,7 @@ export class SpannerBuilder {
 				!from ||
 				!firstNote ||
 				!lastNote ||
-				firstNote === lastNote ||
+				(firstNote === lastNote && !marker.trailing) ||
 				!scope.owns(firstNote, lastNote)
 			) {
 				continue;
@@ -828,10 +868,42 @@ export class SpannerBuilder {
 				niente: from.niente || marker.niente,
 				spread: spreads.length > 0 ? Math.max(...spreads) : null,
 			};
-			const halves = wraps(firstNote, lastNote)
+			// A half runs to the system's edge, not just its own measure's: the system's
+			// staves are every one at that height.
+			const rowStaves = (note: StaveNote) => {
+				const y = note.getStave()?.getY();
+				return [...byLead.values()].flatMap((other) => {
+					const stave = other.getStave();
+					return stave && stave.getY() === y ? [stave] : [];
+				});
+			};
+			const rowEnd = Math.max(
+				...rowStaves(firstNote).map((s) => s.getX() + s.getWidth()),
+			);
+			const rowStart = Math.min(
+				...rowStaves(lastNote).map((s) => s.getNoteStartX()),
+			);
+			// A stop trailing its opening note ends at that measure, not the system edge.
+			const wrapped = firstNote === lastNote || wraps(firstNote, lastNote);
+			const halves = wrapped
 				? [
-						new Hairpin(firstNote, firstNote, { ...opts, runsOff: 'right' }),
-						new Hairpin(lastNote, lastNote, { ...opts, runsOff: 'left' }),
+						new Hairpin(firstNote, firstNote, {
+							...opts,
+							runsOff: 'right',
+							edgeX:
+								firstNote === lastNote
+									? firstNote.checkStave().getNoteEndX() - HAIRPIN_BARLINE_GAP
+									: rowEnd,
+						}),
+						...(firstNote === lastNote
+							? []
+							: [
+									new Hairpin(lastNote, lastNote, {
+										...opts,
+										runsOff: 'left',
+										edgeX: rowStart,
+									}),
+								]),
 					]
 				: [new Hairpin(firstNote, lastNote, opts)];
 			for (const half of halves) {
@@ -855,6 +927,9 @@ export class SpannerBuilder {
 		byLead: Map<Note, StaveNote>,
 		scope: SpanScope = WHOLE_SCORE,
 	): VibratoBracket[] {
+		if (!chords.some((c) => c.lead.wavyLines.length > 0)) {
+			return [];
+		}
 		const brackets: VibratoBracket[] = [];
 		const open = new Map<string, StaveNote>();
 		for (const chord of chords) {
@@ -958,6 +1033,17 @@ export class SpannerBuilder {
 		byLead: ReadonlyMap<Note, StaveNote>,
 		scope: SpanScope = WHOLE_SCORE,
 	): SlurCurve[] {
+		// No chord starts a slur or a hammer-on/pull-off, so skip the per-note maps below.
+		if (
+			!chords.some((c) =>
+				c.notes.some((n) => {
+					const { slurs, techniques } = this.connectorsOf(n);
+					return slurs.length > 0 || techniques.length > 0;
+				}),
+			)
+		) {
+			return [];
+		}
 		const slurs: SlurCurve[] = [];
 		const spans = this.slurSpans(chords);
 		const indexOf = new Map(chords.map((chord, i) => [chord.lead, i]));
@@ -1090,9 +1176,39 @@ export class SpannerBuilder {
 				// the beam and then dive most of a stave to reach the far end, which reads as a
 				// spike rather than a slur. The run beams one way (see buildPartBeams), so its
 				// first note's stem says which side the beam is on.
+				// Another voice's rest sounding under the slur is as much in its way as that
+				// voice's notes: the bow on the notehead side would run through the rest, which
+				// the formatter has already parked on that side to clear its own voice.
+				const restedOver =
+					sameRow &&
+					!isGrace &&
+					onRow(fromStave).some(
+						({ note: n }) =>
+							n.isRest() &&
+							voiceOf.get(n) !== voiceOf.get(from) &&
+							n.getAbsoluteX() >= from.getAbsoluteX() &&
+							n.getAbsoluteX() <= to.getAbsoluteX(),
+					);
 				let bulgeUp: boolean;
+				// Only a side the score leaves free is scored: a written placement, a grace and
+				// a cross-stave slur keep theirs.
+				// Nor does one whose stems disagree or that shares the stave with another voice
+				// (a rest included): those have rules of their own (Gould) that the score
+				// cannot see.
+				const sideIsFree =
+					!isGrace &&
+					!crossStave &&
+					!slur.placement &&
+					!restedOver &&
+					from.getStemDirection() === to.getStemDirection() &&
+					span.every(
+						(n) =>
+							voiceOf.get(n) === undefined ||
+							voiceOf.get(n) === voiceOf.get(from),
+					);
 				if (isGrace) {
-					bulgeUp = false;
+					// Cross-staff graces can request an upper bow, including at a ghost end.
+					bulgeUp = crossStave && slur.placement === 'above';
 				} else if (crossStave) {
 					bulgeUp = from.getStemDirection() !== 1;
 				} else if (slur.placement === 'above') {
@@ -1102,12 +1218,13 @@ export class SpannerBuilder {
 				} else if (
 					(from.getStemDirection() === to.getStemDirection() ||
 						voiceOf.get(from) !== voiceOf.get(to)) &&
-					span.some(
-						(n) =>
-							!n.isRest() &&
-							voiceOf.get(n) !== undefined &&
-							voiceOf.get(n) !== voiceOf.get(from),
-					)
+					(restedOver ||
+						span.some(
+							(n) =>
+								!n.isRest() &&
+								voiceOf.get(n) !== undefined &&
+								voiceOf.get(n) !== voiceOf.get(from),
+						))
 				) {
 					// Another voice sharing the stave under the slur puts it on the stem side
 					// (Gould): the notehead side is where the other voice sits, and a bow there
@@ -1121,6 +1238,39 @@ export class SpannerBuilder {
 						from.getStemDirection() !== to.getStemDirection() ||
 						from.getStemDirection() !== 1;
 				}
+				if (sideIsFree) {
+					bulgeUp = this.cheaperSide(from, to, span, bulgeUp);
+				}
+
+				// The last resort for a cross-stave slur that can't read as a bow: it ends on a
+				// ghost note, at its start's own height on its start's stave and directly under
+				// the stop, and draws as a level slur on that stave, bowing away from the gap.
+				// A beamed run, a document's own control points and a slur across a phrase keep
+				// their real end, since their shape is what says where they go.
+				const voicesBetween = span.filter(
+					(n) =>
+						n !== from &&
+						n !== to &&
+						(voiceOf.get(n) === voiceOf.get(from) ||
+							voiceOf.get(n) === voiceOf.get(to)),
+				).length;
+				const mayGhost =
+					crossStave &&
+					!from.hasBeam() &&
+					!to.hasBeam() &&
+					!slur.bezier &&
+					voicesBetween <= SLUR_GHOST_MAX_BETWEEN;
+				let ghost =
+					mayGhost &&
+					Math.abs(to.getAbsoluteX() - from.getAbsoluteX()) <
+						Math.abs(from.getStemExtents().baseY - to.getStemExtents().baseY) *
+							SLUR_GHOST_STEEPNESS;
+				if (ghost && !(isGrace && slur.placement)) {
+					bulgeUp = false;
+				}
+				const ghostOf = (n: StaveNote) => (ghost && n === to ? from : n);
+				const ghostSpan = () =>
+					span.filter((n) => n.getStave()?.getY() === fromStave?.getY());
 
 				// Anchor each endpoint on the bulge side of its own note: NEAR_TOP (the stem
 				// tip) when that stem points toward the bulge, else NEAR_HEAD (the outer
@@ -1208,7 +1358,7 @@ export class SpannerBuilder {
 				// one its endpoints ask for; change SLUR_GRACE_ANCHOR and the depth follows.
 				const extentsOf = (n: StaveNote) => {
 					if (isGrace) {
-						const y = anchorY(n);
+						const y = anchorY(ghostOf(n));
 						return { top: y, bottom: y };
 					}
 					const extents = this.noteExtents(n);
@@ -1223,7 +1373,7 @@ export class SpannerBuilder {
 				// A grace-to-main curve hugs directly under the two noteheads with a small
 				// tight bow instead of the fuller slur arc (see the SLUR_GRACE_* constants).
 				const baseYShift = isGrace ? SLUR_GRACE_Y_SHIFT : SLUR_Y_SHIFT;
-				const dir = bulgeUp ? -1 : 1;
+				let dir = bulgeUp ? -1 : 1;
 
 				// How much further out an end has to start to clear its own note's marks on the
 				// bow's side: a staccato or tenuto sits inside the slur, so the end leaves from
@@ -1253,9 +1403,10 @@ export class SpannerBuilder {
 				// for a grace, and what vexflow reads off getStemExtents() for everything else.
 				const endpointY = (note: StaveNote) => {
 					if (isGrace) {
-						return anchorY(note);
+						return anchorY(ghostOf(note));
 					}
-					return noteEndY(note) + dir * markLift(note);
+					const end = ghostOf(note);
+					return noteEndY(end) + dir * markLift(end);
 				};
 
 				// How far the bow stands off its chord (the straight line joining the two
@@ -1265,7 +1416,7 @@ export class SpannerBuilder {
 				// nothing at either end. But t is not s: the control points sit at `shoulder`
 				// (vexflow's quarter, or nearer the ends for a flattened bow, see shapeFor), so
 				// x runs along the curve unevenly. x(t) only climbs, so solve x(t) = s for t.
-				const riseFactor = (s: number, shoulder = 0.25) => {
+				const riseFactor = (s: number, shoulder = SLUR_SHOULDER) => {
 					const xAt = (t: number) =>
 						3 * t * (1 - t) * ((1 - t) * shoulder + t * (1 - shoulder)) +
 						t ** 3;
@@ -1319,7 +1470,7 @@ export class SpannerBuilder {
 				// bowing under a run beamed above passes below the run's noteheads, which a bow
 				// can clear, so it does.
 				const clearanceOf = (spanNotes: StaveNote[]): StaveNote[] => {
-					if (crossStave && bulgeUp) {
+					if (crossStave && bulgeUp && !mayGhost) {
 						return [];
 					}
 					if (isGrace) {
@@ -1337,9 +1488,13 @@ export class SpannerBuilder {
 					const width = Math.abs(xR - xL);
 					// A grace bow stays tight: it takes the clearance it needs and no more,
 					// where a full slur also widens with its span.
-					const floor = isGrace
-						? SLUR_GRACE_CP_Y
-						: Math.max(SLUR_MIN_CP_Y, width * SLUR_WIDTH_FACTOR);
+					const bow = Math.min(
+						SLUR_BOW_MAX,
+						SLUR_BOW_MIN +
+							SLUR_BOW_GROWTH * Math.max(0, width - SLUR_BOW_FLAT_WIDTH),
+						width * SLUR_BOW_ASPECT,
+					);
+					const floor = isGrace ? SLUR_GRACE_CP_Y : bow / 0.75;
 					const margin = isGrace ? SLUR_GRACE_MARGIN : SLUR_MARGIN;
 					// How far above the base chord (the line joining the two lifted ends) each
 					// note the curve passes over reaches, plus its margin. Only the overshoot
@@ -1348,13 +1503,35 @@ export class SpannerBuilder {
 					// measure's lower neighbour) asks the arc to rise by however far below it
 					// sits, which turns a two-note bow across a barline into a tall narrow
 					// spike.
-					const clearances = clearanceOf(spanNotes).map((n) => {
-						const s = width ? (n.getAbsoluteX() - xL) / (xR - xL) : 0.5;
-						const extents = extentsOf(n);
-						const y = bulgeUp ? extents.top : extents.bottom;
+					const needAt = (x: number, y: number, gap = margin) => {
+						const s = width ? (x - xL) / (xR - xL) : 0.5;
 						const chordY = yL + dir * baseYShift + s * (yR - yL);
-						return { s, need: Math.max(0, dir * (y - chordY) + margin) };
-					});
+						return { s, need: Math.max(0, dir * (y - chordY) + gap) };
+					};
+					const clearances = [
+						...clearanceOf(spanNotes).map((n) => {
+							const extents = extentsOf(n);
+							return needAt(
+								n.getAbsoluteX(),
+								bulgeUp ? extents.top : extents.bottom,
+							);
+						}),
+						// Every accidental the bow passes, the cautionary flat of the note it
+						// arrives at included, sits left of its head where the notes' own extents
+						// don't reach. The slur's own start has none behind it.
+						...(isGrace
+							? []
+							: spanNotes
+									.filter((n) => n !== from)
+									.flatMap((n) => this.accidentalBoxes(n))
+									.map((box) =>
+										needAt(
+											box.getX() + box.getW() / 2,
+											bulgeUp ? box.getY() : box.getY() + box.getH(),
+											SLUR_ACCIDENTAL_GAP,
+										),
+									)),
+					];
 					// Only the notes clear of both ends set the bow's depth. Math.max seeded
 					// with 0, not spread bare: with no mid-span notes an unseeded Math.min
 					// against the cap would return the cap itself.
@@ -1362,7 +1539,9 @@ export class SpannerBuilder {
 						0,
 						...clearances
 							.filter((c) => c.s >= SLUR_END_ZONE && c.s <= 1 - SLUR_END_ZONE)
-							.map((c) => c.need / riseFactor(c.s)),
+							.map(
+								(c) => c.need / riseFactor(c.s, isGrace ? 0.25 : SLUR_SHOULDER),
+							),
 					);
 					// One ceiling for both knobs: how far past its base lift the curve may stand
 					// off the chord at all. Beyond this it stops reading as a bow, whether it
@@ -1381,7 +1560,7 @@ export class SpannerBuilder {
 					const middle = clearances.filter(
 						(c) => c.s >= SLUR_END_ZONE && c.s <= 1 - SLUR_END_ZONE,
 					);
-					let shoulder = 0.25;
+					let shoulder = isGrace ? 0.25 : SLUR_SHOULDER;
 					while (
 						capped &&
 						shoulder > SLUR_MIN_SHOULDER &&
@@ -1397,7 +1576,12 @@ export class SpannerBuilder {
 					);
 					const yShift =
 						baseYShift + Math.min(shortfall, Math.max(0, reach - 0.75 * cpY));
-					return { cpY, yShift, shoulder, width };
+					const blocked = clearances.some(
+						(c) =>
+							c.need - riseFactor(c.s, shoulder) * cpY - (yShift - baseYShift) >
+							SLUR_GHOST_OVERLAP,
+					);
+					return { cpY, yShift, shoulder, width, blocked };
 				};
 
 				const pushCurve = (
@@ -1407,6 +1591,8 @@ export class SpannerBuilder {
 					curveTo: StaveNote | undefined,
 					position: number,
 					positionEnd: number,
+					// vet-ignore noop-objects-over-null: absent means the stave's own edge; a stand-in X would move the end
+					openX: number | undefined,
 					{
 						cpY,
 						yShift,
@@ -1464,13 +1650,29 @@ export class SpannerBuilder {
 					const lifted = [curveFrom, curveTo].some(
 						(n) => n !== undefined && markLift(n) > 0,
 					);
+					// A body end runs to its notehead's centre, on the side away from its stem. A stem
+					// on the bow's side stands in the way, whichever anchor the end took,
+					// and a document's control points are offsets from the ends it knows.
+					const reachesHead = (note: StaveNote | undefined) =>
+						!isGrace && !bezier && note !== undefined && !towardBulge(note);
+					const reach = {
+						start: reachesHead(curveFrom),
+						end: reachesHead(curveTo),
+					};
 					const curve =
-						isGrace || lifted
+						isGrace || lifted || ghost
 							? new HeadCurve(curveFrom, curveTo, y0, y1, {
 									...options,
 									bezier,
+									reach,
+									openX,
 								})
-							: new CrispCurve(curveFrom, curveTo, { ...options, bezier });
+							: new CrispCurve(curveFrom, curveTo, {
+									...options,
+									bezier,
+									reach,
+									openX,
+								});
 					curve.setTip(this.appearance.lineWidth('slur tip'));
 					// Where the bow will actually reach. vexflow shifts both endpoints by
 					// `yShift` and lands both control points at `depth`, so the cubic's midpoint
@@ -1483,10 +1685,10 @@ export class SpannerBuilder {
 					const apex = (y0 + y1) / 2 + dir * (yShift + 0.75 * cpY + thickness);
 					const stave = only.checkStave();
 					const firstX =
-						(curveFrom?.getTieRightX() ?? stave.getTieStartX()) +
+						(curveFrom?.getTieRightX() ?? openX ?? stave.getTieStartX()) +
 						curve.renderOptions.xShift;
 					const lastX =
-						(curveTo?.getTieLeftX() ?? stave.getTieEndX()) -
+						(curveTo?.getTieLeftX() ?? openX ?? stave.getTieEndX()) -
 						curve.renderOptions.xShift;
 					const spacing = (lastX - firstX) / 4;
 					const controlXs = bezier
@@ -1528,14 +1730,17 @@ export class SpannerBuilder {
 							...controlYs.map((y) => y + thickness),
 						),
 						left: Math.min(
-							curveFrom?.getAbsoluteX() ?? curveStave?.getTieStartX() ?? 0,
+							curveFrom?.getAbsoluteX() ??
+								openX ??
+								curveStave?.getTieStartX() ??
+								0,
 							...controlXs,
 						),
 						right: Math.max(
-							curveTo?.getAbsoluteX() ?? curveStave?.getTieEndX() ?? 0,
+							curveTo?.getAbsoluteX() ?? openX ?? curveStave?.getTieEndX() ?? 0,
 							...controlXs,
 						),
-						crossStave,
+						crossStave: crossStave && !ghost,
 					});
 				};
 
@@ -1552,15 +1757,34 @@ export class SpannerBuilder {
 					// does have, so both its ends sit at that one Y.
 					const fromY = endpointY(from);
 					const toY = endpointY(to);
+					// The halves run to the system's edge, not just their own measure's: the row's
+					// staves are every measure the system holds at that height.
+					const fromRow = onRow(fromStave).flatMap(({ note }) => {
+						const stave = note.getStave();
+						return stave ? [stave] : [];
+					});
+					const toRow = onRow(toStave).flatMap(({ note }) => {
+						const stave = note.getStave();
+						return stave ? [stave] : [];
+					});
+					const rowEndX = Math.max(
+						fromStave.getTieEndX(),
+						...fromRow.map((stave) => stave.getTieEndX()),
+					);
+					const rowStartX = Math.min(
+						toStave.getTieStartX(),
+						...toRow.map((stave) => stave.getTieStartX()),
+					);
 					pushCurve(
 						from,
 						undefined,
 						metric(from),
 						metric(from),
+						rowEndX,
 						shapeFor(
 							span.filter((n) => n.getStave() === fromStave),
 							from.getAbsoluteX(),
-							fromStave.getTieEndX(),
+							rowEndX,
 							fromY,
 							fromY,
 						),
@@ -1570,9 +1794,10 @@ export class SpannerBuilder {
 						to,
 						metric(to),
 						metric(to),
+						rowStartX,
 						shapeFor(
 							span.filter((n) => n.getStave() === toStave),
-							toStave.getTieStartX(),
+							rowStartX,
 							to.getAbsoluteX(),
 							toY,
 							toY,
@@ -1581,19 +1806,35 @@ export class SpannerBuilder {
 					continue;
 				}
 
-				pushCurve(
-					from,
-					to,
-					metric(from),
-					metric(to),
+				const solve = () =>
 					shapeFor(
-						span,
+						ghost ? ghostSpan() : span,
 						from.getAbsoluteX(),
 						to.getAbsoluteX(),
 						endpointY(from),
 						endpointY(to),
-					),
-				);
+					);
+				const takeSide = (up: boolean) => {
+					bulgeUp = up;
+					dir = up ? -1 : 1;
+				};
+				let shape = solve();
+				if (mayGhost && !ghost && !isGrace && shape.blocked) {
+					const side = bulgeUp;
+					takeSide(!side);
+					shape = solve();
+					if (shape.blocked) {
+						ghost = true;
+						takeSide(false);
+						shape = solve();
+					}
+				}
+				// A ghost end is only useful if it clears the intervening ink. When it
+				// cannot, omit the slur rather than draw a detached bow through the notes.
+				if (ghost && shape.blocked) {
+					continue;
+				}
+				pushCurve(from, to, metric(from), metric(to), undefined, shape);
 			}
 		});
 		return slurs;
@@ -1882,6 +2123,58 @@ export class SpannerBuilder {
 			}
 		}
 		return top === Infinity ? null : { top, bottom };
+	}
+
+	/*
+	 * Scores the slur bowing up and bowing down and returns the cheaper side. A side costs
+	 * what the notes under the bow stand past the chord joining its two ends on that side
+	 * (so a side another voice or a high note sits in costs more), plus half of each stem
+	 * that points into the bow, which the bow has to leave through. The side the rules
+	 * chose carries `PREFERRED_SIDE_BONUS` px off, so only a clear win moves it.
+	 */
+	private cheaperSide(
+		from: StaveNote,
+		to: StaveNote,
+		span: StaveNote[],
+		preferUp: boolean,
+	): boolean {
+		const xL = from.getAbsoluteX();
+		const width = to.getAbsoluteX() - xL;
+		const costOf = (up: boolean) => {
+			const dir = up ? -1 : 1;
+			const headY = (n: StaveNote) => {
+				const { yTop, yBottom } = n.getNoteHeadBounds();
+				return up ? yTop : yBottom;
+			};
+			const yL = headY(from);
+			const yR = headY(to);
+			let cost = 0;
+			for (const n of span) {
+				if (n === from || n === to) {
+					continue;
+				}
+				const s = width ? (n.getAbsoluteX() - xL) / width : 0.5;
+				const extents = this.noteExtents(n);
+				const y = up ? extents.top : extents.bottom;
+				cost += Math.max(0, dir * (y - (yL + s * (yR - yL))));
+			}
+			for (const n of [from, to]) {
+				if (n.hasStem() && (n.getStemDirection() === 1) === up) {
+					const { topY, baseY } = n.getStemExtents();
+					cost += Math.abs(topY - baseY) / 2;
+				}
+			}
+			return cost - (up === preferUp ? PREFERRED_SIDE_BONUS : 0);
+		};
+		return costOf(true) <= costOf(false);
+	}
+
+	/* The drawn boxes of a note's accidentals. */
+	private accidentalBoxes(note: StaveNote) {
+		return note
+			.getModifiers()
+			.filter((mod) => mod.getCategory() === 'Accidental')
+			.map((mod) => mod.getBoundingBox());
 	}
 
 	private noteExtents(note: StaveNote): { top: number; bottom: number } {

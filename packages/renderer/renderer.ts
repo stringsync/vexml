@@ -43,4 +43,6 @@ export interface EvalRenderer<C> extends Renderer {
 		fn: (ctx: C, arg: A) => T | Promise<T>,
 		arg?: A,
 	): Promise<RenderResult<T>>;
+	/** Like eval with no arg, but takes no screenshot, so it works on scores too large to capture. */
+	inspect<T>(fn: (ctx: C) => T | Promise<T>): Promise<T>;
 }

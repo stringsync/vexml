@@ -26,6 +26,7 @@ import {
 	HEADER_GAP,
 	LABEL_FONT_SIZE,
 	LABEL_GAP,
+	LYRIC_NOTE_CLEARANCE,
 	STAVE_CLEARANCE,
 	VOLTA_NOTE_CLEARANCE,
 } from './constants';
@@ -523,6 +524,16 @@ export class DrawPass {
 						.pinnedSyllables()
 						.filter((syllable) => syllable.stave === stave)
 						.map((syllable) => syllable.rect),
+				dropLyricsBelow: (system, row, stave, bottom) => {
+					this.lyricPlacer.requestDrop(
+						system,
+						row,
+						bottom + LYRIC_NOTE_CLEARANCE - stave.getBottomLineY(),
+					);
+					// This system's verse spill was reported before a bow wrapping into a
+					// later system landed: report it again at the deeper drop.
+					this.reportVerseSpill(system, 0);
+				},
 				growPageTop: (top) => {
 					this.pageTop = Math.min(this.pageTop, top);
 				},
@@ -1337,9 +1348,15 @@ export class DrawPass {
 		// hangs at, rather than as each column pinned it: on the first draw a column's
 		// syllables can sit higher than the line they join, and the gap sized to that would
 		// come up short once the line drops.
+		this.reportVerseSpill(system, this.systemLyricStart);
+	}
+
+	/* Report the verses of `system` pinned since `from` as spill, at the drop their row hangs at. */
+	private reportVerseSpill(system: number, from: number): void {
 		for (const syllable of this.lyricPlacer
 			.pinnedSyllables()
-			.slice(this.systemLyricStart)) {
+			.slice(from)
+			.filter((s) => s.system === system)) {
 			const baseline = this.lyricPlacer.baselineOf(
 				syllable.lyric,
 				syllable.stave,

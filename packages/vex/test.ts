@@ -36,9 +36,17 @@ export async function test(opts: TestOptions) {
 		'FORCE_COLOR=1',
 		'-e',
 		'I_AM_RUNNING_TESTS_USING_VEX_TEST=1',
-		'-v',
-		`${opts.ps.cwd()}/packages/integration:/app/vexml/packages/integration`,
 	];
+	// Only what the tests write or read as baselines is mounted: mounting the whole integration
+	// folder would hide the node_modules the image installed there. The folder is made first so
+	// Docker doesn't create it root-owned.
+	for (const dir of MOUNTED_DIRS) {
+		await opts.fs.mkdir(`${opts.ps.cwd()}/packages/integration/${dir}`);
+		args.push(
+			'-v',
+			`${opts.ps.cwd()}/packages/integration/${dir}:/app/vexml/packages/integration/${dir}`,
+		);
+	}
 	if (opts.update) {
 		args.push('-e', 'UPDATE_SCREENSHOTS=1');
 	}
@@ -61,6 +69,9 @@ export async function test(opts: TestOptions) {
 		}
 	}
 }
+
+/** Integration folders the tests write (new baselines, diffs), shared with the host. */
+const MOUNTED_DIRS = ['__screenshots__', '__diffs__'];
 
 const SHARED_TAG = 'vexml-tests';
 

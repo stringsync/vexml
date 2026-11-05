@@ -1,6 +1,6 @@
 {
 	"name": "@vexml/benchmarks",
-	"version": "1.13.13",
+	"version": "1.14.0",
 	"private": true,
 	"type": "module",
 	"exports": {
@@ -8,10 +8,12 @@
 	},
 	"dependencies": {
 		"@coderline/alphatab": "^1.8.4",
+		"@stringsync/vexml": "workspace:*",
 		"@vexml/renderer": "workspace:*",
 		"@vexml/vex": "workspace:*",
 		"core": "workspace:*",
 		"opensheetmusicdisplay": "^2.2.1",
+		"playwright": "1.61.1",
 		"zod": "catalog:"
 	}
 }

@@ -1,16 +1,17 @@
 {
 	"name": "@vexml/renderer",
-	"version": "1.13.13",
+	"version": "1.14.0",
 	"private": true,
 	"type": "module",
 	"exports": {
 		".": "./index.ts",
 		"./alphatab-renderer": "./alphatab-renderer.ts",
+		"./bundle": "./bundle.ts",
 		"./osmd-renderer": "./osmd-renderer.ts",
 		"./vexml-renderer": "./vexml-renderer.ts"
 	},
 	"dependencies": {
-		"@stringsync/mdom": "^0.8.13",
+		"@stringsync/mdom": "^0.8.14",
 		"@stringsync/vexml": "workspace:*",
 		"@typescript/typescript6": "^6.0.2",
 		"core": "workspace:*",

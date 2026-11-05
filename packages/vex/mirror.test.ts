@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { vexmlMirrorRewrite } from './mirror';
+import { NodeGlob } from 'core/system';
+import { MIRROR, vexmlMirrorRewrite } from './mirror';
 
 async function rewritten(file: keyof typeof vexmlMirrorRewrite) {
 	let text = await Bun.file(`${import.meta.dir}/../../${file}`).text();
@@ -9,7 +10,23 @@ async function rewritten(file: keyof typeof vexmlMirrorRewrite) {
 	return text;
 }
 
-describe('vexmlMirrorRewrite', () => {
+describe('the vexml mirror', () => {
+	const excluded = (path: string) =>
+		MIRROR.config.exclude.some((glob) => new NodeGlob().matches(glob, path));
+
+	it('leaves the soundslice skill out', () => {
+		expect(excluded('vexml/skills/soundslice/SKILL.md')).toBe(true);
+	});
+
+	it('keeps the vexml skill and no other', () => {
+		const kept = (path: string) =>
+			MIRROR.config.keep.some((glob) => new NodeGlob().matches(glob, path));
+		expect(kept('skills/vexml/SKILL.md')).toBe(true);
+		expect(kept('skills/soundslice/SKILL.md')).toBe(false);
+		expect(kept('skills/test-musicxml/SKILL.md')).toBe(false);
+		expect(excluded('vexml/skills/vexml/SKILL.md')).toBe(false);
+	});
+
 	it('leaves a Dockerfile that builds from the mirror root', async () => {
 		const text = await rewritten('Dockerfile');
 		const copies = text.split('\n').filter((line) => line.startsWith('COPY'));

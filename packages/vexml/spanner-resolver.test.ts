@@ -147,6 +147,7 @@ describe('SpannerResolver', () => {
 				noteObstacle: (note: StaveNote) =>
 					obstacles.get(note) ?? new Rect(0, 0, 0, 0),
 				lyricObstacles: () => lyrics,
+				dropLyricsBelow: () => {},
 				growPageTop: (top: number) => {
 					page.top = Math.min(page.top, top);
 				},
@@ -483,6 +484,29 @@ describe('SpannerResolver', () => {
 		// neither draws it again nor looks back for it.
 		expect(drawn).toEqual(['tie']);
 		expect(pools).toEqual([[a], [a, b], []]);
+	});
+
+	it('reaches back through a chain of systems, so a start two systems back stays in the window', () => {
+		const pools: Note[][] = [];
+		const { resolver } = resolverOf(
+			{
+				// a wraps onto system 1, and b wraps on onto system 2.
+				reach: (note: Note) => (note === a ? 1 : 2),
+				buildTies: (chords: Chord[]) => {
+					pools.push(chords.map((chord) => chord.lead));
+					return [];
+				},
+			} as unknown as Partial<SpannerBuilder>,
+			{ systemOfMeasure: (m: number) => m },
+		);
+
+		drawSystem(resolver, 0);
+		drawSystem(resolver, 1);
+		drawSystem(resolver, 2);
+
+		// System 2 draws what system 1 settles, and system 1 holds what system 0 opened
+		// (a hairpin from a closing on b), so system 2's window starts at system 0.
+		expect(pools[2]).toEqual([a, b]);
 	});
 
 	// A below-stave hairpin parked at y=210..220 on `on`, logging its draw and its offset.

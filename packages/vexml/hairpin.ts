@@ -21,6 +21,8 @@ export type HairpinOptions = {
 	 * `to`. Unset spans the two notes.
 	 */
 	runsOff?: 'left' | 'right';
+	/* Where a wrapped half ends: its system's edge, when that lies past its own stave's. */
+	edgeX?: number;
 };
 
 /*
@@ -42,6 +44,7 @@ export class Hairpin {
 	private readonly placement: 'above' | 'below';
 	private readonly spread: number | null;
 	private readonly runsOff: 'left' | 'right' | null;
+	private readonly edgeX: number | null;
 	constructor(
 		private readonly from: StaveNote,
 		private readonly to: StaveNote,
@@ -53,6 +56,7 @@ export class Hairpin {
 		this.niente = opts.niente ?? false;
 		this.spread = opts.spread ?? null;
 		this.runsOff = opts.runsOff ?? null;
+		this.edgeX = opts.edgeX ?? null;
 	}
 	/*
 	 * Extra distance from the staff, set by the caller when the fixed gap would put the wedge
@@ -98,11 +102,11 @@ export class Hairpin {
 		const stave = this.stave;
 		const x1 =
 			this.runsOff === 'left'
-				? stave.getNoteStartX()
+				? (this.edgeX ?? stave.getNoteStartX())
 				: this.from.getAbsoluteX();
 		const x2 =
 			this.runsOff === 'right'
-				? stave.getX() + stave.getWidth()
+				? (this.edgeX ?? stave.getX() + stave.getWidth())
 				: this.to.getAbsoluteX();
 		return [x1 + this.startInset, x2 - this.endInset];
 	}

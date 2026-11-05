@@ -34,6 +34,37 @@ const FIXTURES = fs
 const LONG = 'score_schubert_gute_nacht.musicxml';
 
 describe('LazyLayoutPlan', () => {
+	it('ignores the document page without losing bar layout or mutating the document', async () => {
+		const xml = await Bun.file(
+			path.join(DATA_DIR, 'document_layout.musicxml'),
+		).text();
+		const document = await new DefaultScoreParser().parse(xml);
+		const page = document.score.pageLayout;
+		const copy = await new DefaultScoreParser().parse(xml);
+		copy.score.pageLayout?.remove();
+		const layout = {
+			...DEFAULT_STANDARD_LAYOUT,
+			documentLayout: 'follow' as const,
+		};
+		const expected = planner().plan(copy.score, { ...DEFAULT_CONFIG, layout });
+		const actual = planner().plan(document.score, {
+			...DEFAULT_CONFIG,
+			layout: { ...layout, honorPageLayout: false },
+		});
+		expect(actual).toEqual(expected);
+		expect(document.score.pageLayout).toBe(page);
+		expect(page).not.toBeNull();
+		expect(
+			planner().plan(document.score, { ...DEFAULT_CONFIG, layout }),
+		).not.toEqual(actual);
+		expect(
+			planner().plan(document.score, {
+				...DEFAULT_CONFIG,
+				layout: { ...layout, documentLayout: 'ignore' },
+			}),
+		).not.toEqual(actual);
+	});
+
 	// The incremental plan's boxes are the whole plan's, placed a system at a time: every
 	// fixture, since the systems' breaking, evening and placement are the same code in another
 	// order.
