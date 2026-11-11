@@ -2181,7 +2181,7 @@ describe('render', () => {
 	// from the first bass notehead up to the treble one, and BOTH measures bow above it: a
 	// cross-stave slur overrides <slur placement> the way a grace slur does, because a
 	// "below" bow would have to duck under the beam and then dive most of a stave to reach
-	// its far end (see crossStave in packages/vexml/spanner-builder.ts).
+	// its far end (see crossStave in packages/vexml/slur-builder.ts).
 	// - M1: placement="above" over C#3, B3, C#4 (bass) into E#4 (treble).
 	// - M2: placement="below" over D3, B3, D4 (bass) into F#4 (treble), drawn like M1.
 	// Reduced from Schumann's "Dichterliebe" measures 4-5, whose piano runs this figure in

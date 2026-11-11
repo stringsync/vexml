@@ -18,19 +18,24 @@ import type { DocumentBezier } from './score-reader';
  * the fill still come from vexflow.
  */
 export class HeadCurve extends CrispCurve {
+	private readonly fromY: number;
+	private readonly toY: number;
+
 	constructor(
-		from: StaveNote | undefined,
-		// vet-ignore noop-objects-over-null: a curve end can lack a note; absence is score data, and the other end decides the stave
-		to: StaveNote | undefined,
-		private readonly fromY: number,
-		private readonly toY: number,
 		opts: CurveOptions & {
+			from: StaveNote | undefined;
+			// vet-ignore noop-objects-over-null: a curve end can lack a note; absence is score data, and the other end decides the stave
+			to: StaveNote | undefined;
+			fromY: number;
+			toY: number;
 			bezier?: DocumentBezier | null;
 			reach?: { start: boolean; end: boolean };
 			openX?: number;
 		},
 	) {
-		super(from, to, opts);
+		super(opts.from, opts.to, opts);
+		this.fromY = opts.fromY;
+		this.toY = opts.toY;
 	}
 
 	override draw(): boolean {

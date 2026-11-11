@@ -100,6 +100,7 @@ export class CrispCurve extends Curve {
 	private reachedEnds<T extends { firstX: number; lastX: number }>(
 		params: T,
 	): T {
+		// vet-ignore noop-objects-over-null: vexflow's Curve takes an undefined end to mean an open one, and a stand-in note would draw as a real end
 		const centre = (note: VexNote | undefined) =>
 			note instanceof StaveNote
 				? note.getNoteHeadBeginX() + note.getGlyphWidth() / 2

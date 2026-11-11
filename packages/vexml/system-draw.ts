@@ -158,33 +158,31 @@ export class SystemDraw {
 		// and the boxes of each system as the plan places it.
 		this.layout = layout;
 		this.pageWidth = layout.width;
-		this.drawing = new DrawPass(
-			deps.translator,
-			deps.chords,
-			deps.tab,
-			deps.signatures,
-			deps.staves,
-			deps.barlines,
-			deps.reader,
-			deps.spanners,
+		this.drawing = new DrawPass({
+			translator: deps.translator,
+			chords: deps.chords,
+			tab: deps.tab,
+			signatures: deps.signatures,
+			staves: deps.staves,
+			barlines: deps.barlines,
+			reader: deps.reader,
+			spanners: deps.spanners,
 			config,
-			deps.gaps,
+			configuredGaps: deps.gaps,
 			context,
 			score,
-			this.layout,
-			families.textStack,
-			families.notationStack,
-			this.topSlack,
-			pageHeight,
-			this.topOverflow,
-			this.list,
+			layout: this.layout,
+			labelFont: families.textStack,
+			notationFont: families.notationStack,
+			topSlack: this.topSlack,
+			scratchHeight: pageHeight,
+			topOverflow: this.topOverflow,
+			list: this.list,
 			paint,
-			{
-				lyricDrops: this.lyricDrops,
-				voltaLifts: this.voltaLifts,
-				hairpinBands: this.hairpinBands,
-			},
-		);
+			lyricDrops: this.lyricDrops,
+			voltaLifts: this.voltaLifts,
+			hairpinBands: this.hairpinBands,
+		});
 		const { page } = layout;
 		this.walk = page
 			? new PagePlanner(page.height, page.marginTop, page.marginBottom).walk()

@@ -167,9 +167,8 @@ export const GAP_LABEL_FONT_SIZE = 16;
  * breathe past vexflow's cramped fret-digit packing. */
 export const TAB_MIN_NOTE_SPACING = 32;
 
-/** Minimum width per outermost tuplet group in a voice: the bracket, its numeral and the gap to
- * the next bracket. Below about 50px a run of triplet brackets touches. Floors a measure's
- * note area, since the brackets are built after the widths are measured. */
+/** Minimum width, in px, a measure gives each outermost tuplet group in a voice, so runs of
+ * triplet brackets and their numerals do not touch. */
 export const TUPLET_MIN_GROUP_WIDTH = 64;
 
 /** Bump tab fret digits bolder/larger than vexflow's thin default (1.258 * 9pt ≈ 15px). */
@@ -501,9 +500,7 @@ export const SLUR_ACCIDENTAL_GAP = 2;
  * note, just clear of the mark. */
 export const SLUR_MARK_GAP = 3;
 
-/** How far a slur's bow stands off its chord, in px, before it has notes to clear: this much
- * up to SLUR_BOW_FLAT_WIDTH, growing by SLUR_BOW_GROWTH per px of width, then level at
- * SLUR_BOW_MAX. A long slur stays flat, not a deep dome. */
+/** Depth of a slur's bow, in px, which grows with the slur's width up to SLUR_BOW_MAX. */
 export const SLUR_BOW_MIN = 9.1;
 export const SLUR_BOW_FLAT_WIDTH = 51;
 export const SLUR_BOW_GROWTH = 0.12;

@@ -252,6 +252,7 @@ export class PaintContext {
 		}
 	}
 
+	// vet-ignore named-options-last: the signature is CanvasRenderingContext2D.ellipse's, which callers drive this context through
 	ellipse(
 		x: number,
 		y: number,
@@ -345,6 +346,7 @@ export class PaintContext {
 		this.state = this.state.withClip(clip);
 	}
 
+	// vet-ignore named-options-last: the overloads are CanvasRenderingContext2D.isPointInPath's, which callers drive this context through
 	isPointInPath(
 		a: Path2D | number,
 		b: number,

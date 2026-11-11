@@ -16,18 +16,15 @@ describe('bravura-url', () => {
 		expect(Buffer.from(shipped).equals(await vexflowBravura())).toBe(true);
 	});
 
-	let whole: Font;
-	let common: Font;
 	let covered: Set<number>;
 
-	beforeEach(async () => {
-		// vet-ignore tests-own-their-state: the fixture is shared through beforeEach so the tests read as one scenario
-		whole = await face(BRAVURA_URL);
-		common = await face(BRAVURA_COMMON_URL);
+	beforeEach(() => {
 		covered = codepoints(BRAVURA_COMMON_RANGE);
 	});
 
-	it('holds exactly the glyphs of the whole face in BRAVURA_COMMON_RANGE', () => {
+	it('holds exactly the glyphs of the whole face in BRAVURA_COMMON_RANGE', async () => {
+		const whole = await face(BRAVURA_URL);
+		const common = await face(BRAVURA_COMMON_URL);
 		const expected = whole.characterSet.filter((c) => covered.has(c));
 		// fontkit lists the 0xFFFF that ends a cmap's last segment, which maps to no glyph.
 		const held = common.characterSet.filter((c) => c !== 0xffff);

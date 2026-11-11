@@ -7,11 +7,9 @@ import { HAIRPIN_CHAIN_GAP, WORDS_NOTE_CLEARANCE } from './constants';
 import type { DirectionLineTask, DirectionPlacer } from './direction-placer';
 import type { Hairpin } from './hairpin';
 import type { DirectionLineSpan, PedalMark, WedgeMark } from './score-reader';
-import type {
-	SlideOptions,
-	SpannerBuilder,
-	SpanScope,
-} from './spanner-builder';
+import type { SlideOptions } from './slide-builder';
+import type { SpanScope } from './span-scope';
+import type { SpannerBuilder } from './spanner-builder';
 import {
 	SpannerResolver,
 	type SpannerResolverOptions,
@@ -133,17 +131,17 @@ describe('SpannerResolver', () => {
 		const page = { top: Infinity, bottom: 0 };
 		const obstacles = new Map<StaveNote, Rect>();
 		const lyrics: Rect[] = [];
-		const resolver = new SpannerResolver(
-			{ openGroup() {}, closeGroup() {} } as unknown as RenderContext,
-			builder(spanners),
-			{ noteheadHalfWidth: () => 5 } as unknown as VoiceTranslator,
+		const resolver = new SpannerResolver({
+			context: { openGroup() {}, closeGroup() {} } as unknown as RenderContext,
+			spanners: builder(spanners),
+			translator: { noteheadHalfWidth: () => 5 } as unknown as VoiceTranslator,
 			spill,
-			{
+			directionPlacer: {
 				drawDirectionLines: (tasks: readonly DirectionLineTask[]) =>
 					directionLines.push(...tasks),
 				belowWordsOn: () => [],
 			} as unknown as DirectionPlacer,
-			{
+			reporter: {
 				noteObstacle: (note: StaveNote) =>
 					obstacles.get(note) ?? new Rect(0, 0, 0, 0),
 				lyricObstacles: () => lyrics,
@@ -155,17 +153,15 @@ describe('SpannerResolver', () => {
 					page.bottom = Math.max(page.bottom, bottom);
 				},
 			},
-			{
-				octaveShiftSpans: [],
-				directionLineSpans: [],
-				showTabSlideText: true,
-				scratchViewport: new Rect(0, 0, 1000, 1000),
-				systemOfMeasure: () => 0,
-				appearance: Appearance.NONE,
-				notationFont: 'Bravura',
-				...opts,
-			},
-		);
+			octaveShiftSpans: [],
+			directionLineSpans: [],
+			showTabSlideText: true,
+			scratchViewport: new Rect(0, 0, 1000, 1000),
+			systemOfMeasure: () => 0,
+			appearance: Appearance.NONE,
+			notationFont: 'Bravura',
+			...opts,
+		});
 		return { resolver, spill, directionLines, page, obstacles, lyrics };
 	};
 
@@ -548,7 +544,7 @@ describe('SpannerResolver', () => {
 				buildWedges: (
 					_marks: WedgeMark[],
 					map: Map<Note, StaveNote>,
-					scope: SpanScope,
+					{ scope }: { scope: SpanScope },
 				) => {
 					const at = map.get(a);
 					return at && scope.owns(at, at) ? [wedge] : [];

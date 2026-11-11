@@ -35,25 +35,23 @@ import type { VoiceTranslator } from './voice-translator';
 
 describe('SystemFormatter', () => {
 	const makeFormatter = () =>
-		new SystemFormatter(
-			{} as unknown as RenderContext,
-			{ noteheadHalfWidth: () => 5 } as unknown as VoiceTranslator,
-			{} as unknown as ChordTranslator,
-			{} as unknown as SpannerBuilder,
-			{} as unknown as ConnectorDrawer,
-			{} as unknown as LyricPlacer,
-			new CollisionResolver(new Rect(0, 0, 2000, 2000), {}),
-			new SpillTracker(),
-			{ systemOf: () => 0 },
-			{
-				reader: new ScoreReader(new DynamicGlyphs()),
-				documentPositions: false,
-				softmaxFactor: 100,
-				notationColor: '#000000',
-				byLead: new Map(),
-				crossStaveNotes: new Set(),
-			},
-		);
+		new SystemFormatter({
+			context: {} as unknown as RenderContext,
+			translator: { noteheadHalfWidth: () => 5 } as unknown as VoiceTranslator,
+			chords: {} as unknown as ChordTranslator,
+			spanners: {} as unknown as SpannerBuilder,
+			connectorDrawer: {} as unknown as ConnectorDrawer,
+			lyricPlacer: {} as unknown as LyricPlacer,
+			collisionResolver: new CollisionResolver(new Rect(0, 0, 2000, 2000), {}),
+			spill: new SpillTracker(),
+			reporter: { systemOf: () => 0 },
+			reader: new ScoreReader(new DynamicGlyphs()),
+			documentPositions: false,
+			softmaxFactor: 100,
+			notationColor: '#000000',
+			byLead: new Map(),
+			crossStaveNotes: new Set(),
+		});
 
 	// The note surface noteRect reads: notehead bounds, stem extents, and modifiers.
 	const note = (opts: NoteOptions = {}) =>

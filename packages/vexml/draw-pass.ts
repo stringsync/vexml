@@ -290,33 +290,55 @@ export class DrawPass {
 	// recorded into during the measure loop and resolved once after the last measure, when
 	// every note is placed.
 	private readonly spannerResolver: SpannerResolver;
+	readonly translator: VoiceTranslator;
+	private readonly signatures: SignatureTranslator;
+	private readonly staves: StavePlan;
+	private readonly reader: ScoreReader;
+	readonly spanners: SpannerBuilder;
+	private readonly context: RenderContext;
+	private readonly score: Score;
+	private readonly labelFont: string;
+	readonly notationFont: string;
+	private readonly topOverflow: Map<number, number>;
+	private readonly list: PaintList;
+	private readonly paint: PaintContext;
 	// Measured on the previous pass and reserved on this one; empty on the first pass.
 	private readonly voltaLifts: Map<number, number>;
 	private readonly hairpinBands: Map<number, HairpinBand[]>;
 
-	constructor(
-		readonly translator: VoiceTranslator,
-		chords: ChordTranslator,
-		tab: TabVoiceTranslator,
-		private readonly signatures: SignatureTranslator,
-		private readonly staves: StavePlan,
-		barlines: BarlineTranslator,
-		private readonly reader: ScoreReader,
-		readonly spanners: SpannerBuilder,
-		config: Config,
-		configuredGaps: Gaps,
-		private readonly context: RenderContext,
-		private readonly score: Score,
-		layout: ScoreLayout,
-		private readonly labelFont: string,
-		readonly notationFont: string,
-		topSlack: number,
-		scratchHeight: number,
-		private readonly topOverflow: Map<number, number>,
-		private readonly list: PaintList,
-		private readonly paint: PaintContext,
-		opts: DrawPassOptions,
-	) {
+	constructor(opts: DrawPassOptions) {
+		const {
+			chords,
+			tab,
+			barlines,
+			config,
+			configuredGaps,
+			layout,
+			topSlack,
+			scratchHeight,
+			signatures,
+			staves,
+			reader,
+			context,
+			score,
+			labelFont,
+			topOverflow,
+			list,
+			paint,
+		} = opts;
+		this.translator = opts.translator;
+		this.signatures = signatures;
+		this.staves = staves;
+		this.reader = reader;
+		this.spanners = opts.spanners;
+		this.context = context;
+		this.score = score;
+		this.labelFont = labelFont;
+		this.notationFont = opts.notationFont;
+		this.topOverflow = topOverflow;
+		this.list = list;
+		this.paint = paint;
+		const { translator, spanners, notationFont } = this;
 		// CanvasContext discards VexFlow's notation groups. Keep them on the recording
 		// sink, where diagnostic mask replays can separate elements without changing paint.
 		this.context.openGroup = (kind) => this.list.openGroup(kind ?? 'element');
@@ -403,27 +425,25 @@ export class DrawPass {
 		);
 		this.measureStyleDrawer = new MeasureStyleDrawer(this.context);
 		this.repeatWingDrawer = new RepeatWingDrawer(this.context);
-		this.staveBuilder = new StaveBuilder(
-			this.signatures,
+		this.staveBuilder = new StaveBuilder({
+			signatures: this.signatures,
 			reader,
-			this.staves,
+			staves: this.staves,
 			context,
-			this.collisionResolver,
-			this.spill,
-			configuredGaps,
-			{
-				parts: this.parts,
-				partGroups: this.partGroups,
-				groupTimeSpans: this.groupTimeSpans,
-				totalStaves: this.totalStaves,
-				measureNumbering,
-				textColor: this.textColor,
-				staveOffsets,
-				systemStaveOffsets,
-				voltaLifts: this.voltaLifts,
-				appearance: layout.appearance,
-			},
-		);
+			collisionResolver: this.collisionResolver,
+			spill: this.spill,
+			gaps: configuredGaps,
+			parts: this.parts,
+			partGroups: this.partGroups,
+			groupTimeSpans: this.groupTimeSpans,
+			totalStaves: this.totalStaves,
+			measureNumbering,
+			textColor: this.textColor,
+			staveOffsets,
+			systemStaveOffsets,
+			voltaLifts: this.voltaLifts,
+			appearance: layout.appearance,
+		});
 		this.lyricPlacer = new LyricPlacer(
 			translator,
 			context,
@@ -446,29 +466,27 @@ export class DrawPass {
 			byLead: this.byLead,
 			byTabLead: this.byTabLead,
 		});
-		this.systemFormatter = new SystemFormatter(
+		this.systemFormatter = new SystemFormatter({
 			context,
 			translator,
 			chords,
 			spanners,
-			this.connectorDrawer,
-			this.lyricPlacer,
-			this.collisionResolver,
-			this.spill,
+			connectorDrawer: this.connectorDrawer,
+			lyricPlacer: this.lyricPlacer,
+			collisionResolver: this.collisionResolver,
+			spill: this.spill,
 			// The pass's own bookkeeping, handed over as a narrow view: the spill a note
 			// measurement records is banded under the system its stave was registered on.
-			{ systemOf: (stave) => this.systemOf(stave) },
-			{
-				reader,
-				documentPositions:
-					config.layout.type !== 'panoramic' &&
-					config.layout.documentLayout !== 'ignore',
-				softmaxFactor: this.softmaxFactor,
-				notationColor: this.notationColor,
-				byLead: this.byLead,
-				crossStaveNotes: this.voiceBuilder.crossStaveNotes(),
-			},
-		);
+			reporter: { systemOf: (stave) => this.systemOf(stave) },
+			reader,
+			documentPositions:
+				config.layout.type !== 'panoramic' &&
+				config.layout.documentLayout !== 'ignore',
+			softmaxFactor: this.softmaxFactor,
+			notationColor: this.notationColor,
+			byLead: this.byLead,
+			crossStaveNotes: this.voiceBuilder.crossStaveNotes(),
+		});
 		this.scratchViewport = new Rect(0, 0, width, scratchHeight);
 		this.directionPlacer = new DirectionPlacer(
 			context,
@@ -508,16 +526,16 @@ export class DrawPass {
 				appearance: layout.appearance,
 			},
 		);
-		this.spannerResolver = new SpannerResolver(
+		this.spannerResolver = new SpannerResolver({
 			context,
 			spanners,
 			translator,
-			this.spill,
-			this.directionPlacer,
+			spill: this.spill,
+			directionPlacer: this.directionPlacer,
 			// The pass's own bookkeeping again, as a narrow view: the note obstacles come
 			// from the note measurements the system formatter takes, and the crop bounds
 			// live here with the rest of the page state.
-			{
+			reporter: {
 				noteObstacle: (note) => this.systemFormatter.noteRect(note),
 				lyricObstacles: (stave) =>
 					this.lyricPlacer
@@ -541,16 +559,14 @@ export class DrawPass {
 					this.pageBottom = Math.max(this.pageBottom, bottom);
 				},
 			},
-			{
-				octaveShiftSpans,
-				directionLineSpans,
-				showTabSlideText,
-				scratchViewport: this.scratchViewport,
-				systemOfMeasure: (m) => this.systemOfMeasure(m),
-				appearance: layout.appearance,
-				notationFont,
-			},
-		);
+			octaveShiftSpans,
+			directionLineSpans,
+			showTabSlideText,
+			scratchViewport: this.scratchViewport,
+			systemOfMeasure: (m) => this.systemOfMeasure(m),
+			appearance: layout.appearance,
+			notationFont,
+		});
 		// The context's default ink: every vexflow glyph with no explicit style inherits it, and it
 		// survives the save()/restore() pairs below since it's set before any of them. Text vexml
 		// types itself overrides to textColor inline.
@@ -1993,6 +2009,26 @@ export class DrawPass {
 /* What a redraw carries over from the pass before it. Both are empty on a first pass, which
  * is what measures them. */
 export interface DrawPassOptions {
+	translator: VoiceTranslator;
+	chords: ChordTranslator;
+	tab: TabVoiceTranslator;
+	signatures: SignatureTranslator;
+	staves: StavePlan;
+	barlines: BarlineTranslator;
+	reader: ScoreReader;
+	spanners: SpannerBuilder;
+	config: Config;
+	configuredGaps: Gaps;
+	context: RenderContext;
+	score: Score;
+	layout: ScoreLayout;
+	labelFont: string;
+	notationFont: string;
+	topSlack: number;
+	scratchHeight: number;
+	topOverflow: Map<number, number>;
+	list: PaintList;
+	paint: PaintContext;
 	/* Per lyric row, how far to drop it so it clears the lyrics of the system above. */
 	lyricDrops?: Map<string, number>;
 	/* Per system, how far to lift its volta bracket so it clears the notes under it. */

@@ -1,6 +1,12 @@
 import { NodePs, type Ps } from "core/system";
 import type { StackDeployer } from "./stack-deployer";
 
+/** What one `cdk` invocation adds to its command line. */
+interface CdkOptions {
+	/** Arguments placed after the stack name. */
+	extra: string[];
+}
+
 export interface CdkDeployerOptions {
 	/** The stack's name for a stage, as CDK and CloudFormation know it. */
 	stackName: (stage: string) => string;
@@ -72,7 +78,7 @@ export class CdkDeployer implements StackDeployer {
 		verb: string,
 		dir: string,
 		stage: string,
-		opts: { extra: string[] },
+		opts: CdkOptions,
 	): Promise<void> {
 		const argv = [
 			"bunx",

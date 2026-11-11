@@ -32,12 +32,8 @@ import type {
 	PedalMark,
 	WedgeMark,
 } from './score-reader';
-import {
-	type SpanEnd,
-	type SpannerBuilder,
-	type SpanScope,
-	WHOLE_SCORE,
-} from './spanner-builder';
+import { type SpanEnd, type SpanScope, WHOLE_SCORE } from './span-scope';
+import type { SpannerBuilder } from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
 import type { VoiceTranslator } from './voice-translator';
 
@@ -116,6 +112,12 @@ export class SpannerResolver {
 	private readonly systemOfMeasure: (measureIndex: number) => number;
 	// Where each system's chords and markers start in the lists above (see beginSystem).
 	private readonly systemStarts = new Map<number, SystemStart>();
+	private readonly context: RenderContext;
+	private readonly spanners: SpannerBuilder;
+	private readonly translator: VoiceTranslator;
+	private readonly spill: SpillTracker;
+	private readonly directionPlacer: DirectionPlacer;
+	private readonly reporter: SpannerReporter;
 	// Per system, the furthest system any spanner starting on it reaches: it stays in the
 	// window until that system is drawn.
 	private readonly systemReach = new Map<number, number>();
@@ -125,15 +127,13 @@ export class SpannerResolver {
 	// Per system, the below-stave hairpins a words direction ran into (see observeStackedWords).
 	private readonly stackedHairpins = new Map<number, HairpinBand[]>();
 
-	constructor(
-		private readonly context: RenderContext,
-		private readonly spanners: SpannerBuilder,
-		private readonly translator: VoiceTranslator,
-		private readonly spill: SpillTracker,
-		private readonly directionPlacer: DirectionPlacer,
-		private readonly reporter: SpannerReporter,
-		opts: SpannerResolverOptions,
-	) {
+	constructor(opts: SpannerResolverOptions) {
+		this.context = opts.context;
+		this.spanners = opts.spanners;
+		this.translator = opts.translator;
+		this.spill = opts.spill;
+		this.directionPlacer = opts.directionPlacer;
+		this.reporter = opts.reporter;
 		this.octaveShiftSpans = opts.octaveShiftSpans;
 		this.directionLineSpans = opts.directionLineSpans;
 		this.showTabSlideText = opts.showTabSlideText;
@@ -527,12 +527,10 @@ export class SpannerResolver {
 		// Hairpins, like the pedals below them, are resolved over the whole score so a wedge
 		// can open in one measure and close in another. A below-stave one reaches under the
 		// staff, so grow the bottom crop to its drawn extent.
-		const wedges = this.spanners.buildWedges(
-			pool.wedges,
-			anchors.byLead,
-			wedgeScope,
-			(from, to) => this.systemOfNote(to) > this.systemOfNote(from),
-		);
+		const wedges = this.spanners.buildWedges(pool.wedges, anchors.byLead, {
+			scope: wedgeScope,
+			wraps: (from, to) => this.systemOfNote(to) > this.systemOfNote(from),
+		});
 		for (const wedge of wedges) {
 			this.clearWedge(wedge, anchors.byLead.values());
 		}
@@ -567,7 +565,7 @@ export class SpannerResolver {
 			pool.pedals,
 			anchors.byLead,
 			pool.chords,
-			scope,
+			{ scope },
 		)) {
 			this.dropPedalClear(marking, notes, wedges);
 			this.context.openGroup('vexml-pedal');
@@ -948,6 +946,13 @@ interface SystemStart {
 }
 
 export interface SpannerResolverOptions {
+	context: RenderContext;
+	spanners: SpannerBuilder;
+	translator: VoiceTranslator;
+	spill: SpillTracker;
+	directionPlacer: DirectionPlacer;
+	/** The driver's bookkeeping the resolver reports back through. */
+	reporter: SpannerReporter;
 	/** The score's <octave-shift> spans; the notes were drawn at the shifted position, and
 	 * resolve() draws the bracket that says so over them. */
 	octaveShiftSpans: readonly OctaveShiftSpan[];

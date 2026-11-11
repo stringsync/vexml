@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import {
 	MDOMParser,
 	MDocument,
@@ -8,23 +8,6 @@ import {
 import { MeasureSlicer, parseMeasureSpec } from './measure-slicer';
 
 describe('MeasureSlicer', () => {
-	let twoPartScore: string;
-
-	beforeEach(() => {
-		twoPartScore = `<score-partwise version="4.0">
-<part-list><score-part id="P1"><part-name>One</part-name></score-part><score-part id="P2"><part-name>Two</part-name></score-part></part-list>
-<part id="P1">
-<measure number="1"><attributes>${DIVISIONS}</attributes>${NOTE}</measure>
-<measure number="2"><note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>half</type></note><barline><repeat direction="backward"/></barline></measure>
-<measure number="3"><note><rest/><duration>4</duration><type>whole</type></note></measure>
-</part>
-<part id="P2">
-<measure number="1"><attributes>${DIVISIONS}</attributes>${NOTE}</measure>
-<measure number="2"><note><pitch><step>F</step><octave>3</octave></pitch><duration>1</duration><type>quarter</type></note><sound dacapo="yes"/></measure>
-<measure number="3">${NOTE}</measure>
-</part></score-partwise>`;
-	});
-
 	it.each(['standalone', 'raw'] as const)(
 		'selects exactly three source columns across movement resets with %s policy',
 		(policy) => {
@@ -210,6 +193,18 @@ describe('MeasureSlicer', () => {
 	});
 
 	it('preserves distinct pitches, rests and durations in every retained part', () => {
+		const twoPartScore = `<score-partwise version="4.0">
+<part-list><score-part id="P1"><part-name>One</part-name></score-part><score-part id="P2"><part-name>Two</part-name></score-part></part-list>
+<part id="P1">
+<measure number="1"><attributes>${DIVISIONS}</attributes>${NOTE}</measure>
+<measure number="2"><note><pitch><step>D</step><alter>1</alter><octave>5</octave></pitch><duration>2</duration><type>half</type></note><barline><repeat direction="backward"/></barline></measure>
+<measure number="3"><note><rest/><duration>4</duration><type>whole</type></note></measure>
+</part>
+<part id="P2">
+<measure number="1"><attributes>${DIVISIONS}</attributes>${NOTE}</measure>
+<measure number="2"><note><pitch><step>F</step><octave>3</octave></pitch><duration>1</duration><type>quarter</type></note><sound dacapo="yes"/></measure>
+<measure number="3">${NOTE}</measure>
+</part></score-partwise>`;
 		const xml = slice(twoPartScore, '2-3');
 		const doc = new MDOMParser().parseFromString(xml);
 		expect(

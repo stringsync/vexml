@@ -48,8 +48,8 @@ export interface StaveColumn {
 	/** Whether this is the score's first measure of music, which prints the time signature.
 	 * Not measure 0 when leading gaps sit before it. */
 	opensScore: boolean;
-	/** The large time signatures of the `<group-time>` groups, by span index, filled by the
-	 * group's first stave and shared by the rest. */
+	// The large time signatures of the `<group-time>` groups, by span index, filled by the
+	// group's first stave and shared by the rest.
 	groupTimes: Map<number, GroupTimeSignature>;
 	/** Whether this is the last measure DRAWN (it closes with the thin-thick end line). */
 	isLastMeasure: boolean;
@@ -63,8 +63,8 @@ export interface StaveColumn {
 	/** Whether the previous measure's backward repeat already closed this boundary, so
 	 * this measure skips its own opening dots. */
 	suppressBegRepeat: boolean;
-	/** The next measure's box when it carries a volta on this same system, or null;
-	 * see the early obstacle registration in build. */
+	// The next measure's box when it carries a volta on this same system, or null;
+	// see the early obstacle registration in build.
 	nextVolta: { x: number; width: number } | null;
 }
 
@@ -92,6 +92,12 @@ export class StaveBuilder {
 		| undefined;
 	private readonly voltaLifts: ReadonlyMap<number, number>;
 	private readonly appearance: Appearance;
+	private readonly signatures: SignatureTranslator;
+	private readonly reader: ScoreReader;
+	private readonly staves: StavePlan;
+	private readonly context: RenderContext;
+	private readonly collisionResolver: CollisionResolver;
+	private readonly spill: SpillTracker;
 	// Document measure index -> the gap spec rendered there (empty when config has none).
 	private readonly gaps: ReadonlyMap<number, Gap>;
 	// Lead measure index -> the number of measures its <multiple-rest> consolidates.
@@ -101,16 +107,14 @@ export class StaveBuilder {
 	// The stave itself and the clef/key a system opens with, shared with the sticky fold.
 	private readonly factory: StaveFactory;
 
-	constructor(
-		private readonly signatures: SignatureTranslator,
-		private readonly reader: ScoreReader,
-		private readonly staves: StavePlan,
-		private readonly context: RenderContext,
-		private readonly collisionResolver: CollisionResolver,
-		private readonly spill: SpillTracker,
-		gaps: Gaps,
-		opts: StaveBuilderOptions,
-	) {
+	constructor(opts: StaveBuilderOptions) {
+		const { reader, staves } = opts;
+		this.signatures = opts.signatures;
+		this.reader = reader;
+		this.staves = staves;
+		this.context = opts.context;
+		this.collisionResolver = opts.collisionResolver;
+		this.spill = opts.spill;
 		this.parts = opts.parts;
 		this.partGroups = opts.partGroups;
 		this.groupTimeSpans = opts.groupTimeSpans;
@@ -123,14 +127,14 @@ export class StaveBuilder {
 		this.systemStaveOffsets = opts.systemStaveOffsets;
 		this.voltaLifts = opts.voltaLifts;
 		this.appearance = opts.appearance;
-		this.gaps = gaps.byMeasureIndex();
+		this.gaps = opts.gaps.byMeasureIndex();
 		// <multiple-rest> runs: the lead measure draws the consolidated bar instead of its own
 		// notes, and the measures it swallows have no box (the layout planner dropped them), so
 		// the measure loop skips them without any extra guard here.
 		const multiRests = this.reader.multiRestsOf(this.parts);
 		this.multiRests = multiRests.leads;
 		this.multiRestSymbols = multiRests.symbols;
-		this.factory = new StaveFactory(signatures, staves, reader);
+		this.factory = new StaveFactory(this.signatures, staves, reader);
 	}
 
 	/*
@@ -573,10 +577,10 @@ export interface BuiltStave {
 	stave: Stave;
 	/** Whether the stave is a TabStave (fret numbers; no clef, key or time). */
 	isTab: boolean;
-	/** The column's volta box when this stave carries the bracket (the system's top
-	 * stave under an ending), or null: `box` is the bracket (line plus its label drop) at
-	 * its unlifted height, what the lift observations measure against; `top` is where the
-	 * bracket actually sits. */
+	// The column's volta box when this stave carries the bracket (the system's top
+	// stave under an ending), or null: `box` is the bracket (line plus its label drop) at
+	// its unlifted height, what the lift observations measure against; `top` is where the
+	// bracket actually sits.
 	volta: { box: Rect; top: number } | null;
 	/** How many measures the stave's <multiple-rest> consolidates, or null when the
 	 * measure draws its own notes. */
@@ -589,6 +593,14 @@ export interface BuiltStave {
 }
 
 export interface StaveBuilderOptions {
+	signatures: SignatureTranslator;
+	reader: ScoreReader;
+	staves: StavePlan;
+	context: RenderContext;
+	collisionResolver: CollisionResolver;
+	spill: SpillTracker;
+	/** The configured gap measures, by document measure index. */
+	gaps: Gaps;
 	/** The score's parts, in render order. */
 	parts: Part[];
 	/** The <part-group> spans from the <part-list>, outermost first. Fixed for the score. */
@@ -601,11 +613,11 @@ export interface StaveBuilderOptions {
 	textColor: string;
 	/** Stave-row y offsets from the system top (see ScoreLayout.staveOffsets). */
 	staveOffsets: number[];
-	/** Per-system offset overrides once a first pass has measured spill; undefined on
-	 * a first pass. */
+	// Per-system offset overrides once a first pass has measured spill; undefined on
+	// a first pass.
 	systemStaveOffsets: ReadonlyMap<number, number[]> | undefined;
-	/** How far each system's volta brackets rise to clear the notes under them, measured
-	 * on the previous pass and reserved on this one; empty on the first pass. */
+	// How far each system's volta brackets rise to clear the notes under them, measured
+	// on the previous pass and reserved on this one; empty on the first pass.
 	voltaLifts: ReadonlyMap<number, number>;
 	/** The document's line widths (staff, leger, ending), or Appearance.NONE. */
 	appearance: Appearance;

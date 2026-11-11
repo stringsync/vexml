@@ -75,6 +75,16 @@ describe('StavePlan', () => {
 		);
 	});
 
+	it('counts a second staff from its numbered clefs when <staves> is absent', () => {
+		const document = score([null]);
+		const part = required(document.score.parts[0], 'part');
+		const measure = required(part.measures[0], 'measure');
+		measure.setClef({ sign: 'G', line: 2, staff: '1' });
+		measure.setClef({ sign: 'F', line: 4, staff: '2' });
+
+		expect(plan().visibleNumbers(part)).toEqual(['1', '2']);
+	});
+
 	it('reads staff counts afresh for a new render after a source edit', () => {
 		const document = score([null]);
 		const part = required(document.score.parts[0], 'part');

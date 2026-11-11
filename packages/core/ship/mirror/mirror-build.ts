@@ -12,6 +12,7 @@ import type { GithubActions } from "../registry/github-actions";
 import type { Step } from "../step";
 import type { MirrorOptions } from "./mirror-options";
 import { MirrorStep, type PreparedMirror } from "./mirror-step";
+import { NoopVia, type Via } from "./noop-via";
 
 /** What `MirrorBuild` mirrors, and how it builds the packages there. */
 export interface MirrorBuildOptions extends MirrorOptions {
@@ -64,6 +65,7 @@ export class MirrorBuild implements Artifact {
 	private readonly ps: Ps;
 	private readonly mirror: MirrorStep;
 	private readonly bundle: Bundle;
+	private readonly via: Via;
 	/** The mirror the build made and the step that pushes it, once built. */
 	private built?: { step: MirrorStep; prepared: PreparedMirror };
 
@@ -72,6 +74,7 @@ export class MirrorBuild implements Artifact {
 		this.fs = opts.fs ?? new NodeFs();
 		this.ps = opts.ps ?? new NodePs();
 		this.mirror = new MirrorStep(opts);
+		this.via = opts.via ?? new NoopVia();
 		this.bundle = opts.bundle ?? new VendorBundle({ fs: this.fs, ps: this.ps });
 	}
 
@@ -160,7 +163,7 @@ export class MirrorBuild implements Artifact {
 			},
 		});
 		this.built = { step, prepared };
-		this.opts.via?.use(new CliGit(prepared.dir, { ps: this.ps }));
+		this.via.use(new CliGit(prepared.dir, { ps: this.ps }));
 	}
 
 	/** Builds each public package of the project in the installed mirror. */

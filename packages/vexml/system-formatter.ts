@@ -109,6 +109,15 @@ export type PendingStave = {
  * instance lives and dies with its DrawPass.
  */
 export class SystemFormatter {
+	private readonly context: RenderContext;
+	private readonly translator: VoiceTranslator;
+	private readonly chords: ChordTranslator;
+	private readonly spanners: SpannerBuilder;
+	private readonly connectorDrawer: ConnectorDrawer;
+	private readonly lyricPlacer: LyricPlacer;
+	private readonly collisionResolver: CollisionResolver;
+	private readonly spill: SpillTracker;
+	private readonly reporter: SystemReporter;
 	private readonly softmaxFactor: number;
 	private readonly notationColor: string;
 	private readonly byLead: ReadonlyMap<Note, StaveNote>;
@@ -116,18 +125,16 @@ export class SystemFormatter {
 	private readonly shrunk = new WeakSet<object>();
 	private readonly articulationPlacer = new VoiceArticulationPlacer();
 
-	constructor(
-		private readonly context: RenderContext,
-		private readonly translator: VoiceTranslator,
-		private readonly chords: ChordTranslator,
-		private readonly spanners: SpannerBuilder,
-		private readonly connectorDrawer: ConnectorDrawer,
-		private readonly lyricPlacer: LyricPlacer,
-		private readonly collisionResolver: CollisionResolver,
-		private readonly spill: SpillTracker,
-		private readonly reporter: SystemReporter,
-		private readonly opts: SystemFormatterOptions,
-	) {
+	constructor(private readonly opts: SystemFormatterOptions) {
+		this.context = opts.context;
+		this.translator = opts.translator;
+		this.chords = opts.chords;
+		this.spanners = opts.spanners;
+		this.connectorDrawer = opts.connectorDrawer;
+		this.lyricPlacer = opts.lyricPlacer;
+		this.collisionResolver = opts.collisionResolver;
+		this.spill = opts.spill;
+		this.reporter = opts.reporter;
 		this.softmaxFactor = opts.softmaxFactor;
 		this.notationColor = opts.notationColor;
 		this.byLead = opts.byLead;
@@ -1201,18 +1208,28 @@ export interface SystemReporter {
 }
 
 export interface SystemFormatterOptions {
+	context: RenderContext;
+	translator: VoiceTranslator;
+	chords: ChordTranslator;
+	spanners: SpannerBuilder;
+	connectorDrawer: ConnectorDrawer;
+	lyricPlacer: LyricPlacer;
+	collisionResolver: CollisionResolver;
+	spill: SpillTracker;
+	/** The pass's bookkeeping, handed over as a narrow view. */
+	reporter: SystemReporter;
 	reader: ScoreReader;
 	documentPositions: boolean;
 	/** The formatter's proportional-spacing exponent, shared with the layout's width
 	 * planning so measures format at the width they were planned for. */
 	softmaxFactor: number;
-	/** The context's default ink (see DrawPass.notationColor): stems and ledger lines
-	 * override vexflow's hardcoded styles to match it. */
+	// The context's default ink (see DrawPass.notationColor): stems and ledger lines
+	// override vexflow's hardcoded styles to match it.
 	notationColor: string;
-	/** The pass-wide lead-note registry, read to rebuild this stave's slurs for the
-	 * collision measurement. The voice builder keeps filling it; the reference is stable. */
+	// The pass-wide lead-note registry, read to rebuild this stave's slurs for the
+	// collision measurement. The voice builder keeps filling it; the reference is stable.
 	byLead: ReadonlyMap<Note, StaveNote>;
-	/** Notes whose beam group spans two staves (see VoiceBuilder.buildPartBeams): their
-	 * cross-gap stems are kept out of the stave spill that sizes that gap. */
+	// Notes whose beam group spans two staves (see VoiceBuilder.buildPartBeams): their
+	// cross-gap stems are kept out of the stave spill that sizes that gap.
 	crossStaveNotes: ReadonlySet<StaveNote>;
 }

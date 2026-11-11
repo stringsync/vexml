@@ -89,6 +89,18 @@ export class StavePlan {
 		return false;
 	}
 
+	/** The part's `<staves>` count, raised to the highest numbered `<clef>` it declares: some
+	 * exporters (Partitura's piano scores) omit `<staves>` but still number two clefs and
+	 * write notes on staff 2, which would otherwise collapse onto one staff. */
+	private staveCountOf(part: Part): number {
+		let count = Math.max(part.staveCount, 1);
+		const first = part.measures[0];
+		while (first?.getClef(String(count + 1))) {
+			count++;
+		}
+		return count;
+	}
+
 	/** The staff numbers ('1', '2', …) a part renders, in order. All of them normally; with
 	 * showTabs off its tablature staves are dropped, with showNotation off its notation staves
 	 * are. A notation+tab part then shows only the kept kind, and a part of the dropped kind
@@ -98,7 +110,7 @@ export class StavePlan {
 		let visible = this.visible.get(part);
 		if (!visible) {
 			const { showTabs, showNotation } = this.visibility;
-			const all = Array.from({ length: Math.max(part.staveCount, 1) }, (_, s) =>
+			const all = Array.from({ length: this.staveCountOf(part) }, (_, s) =>
 				String(s + 1),
 			);
 			visible = all.filter((n) =>

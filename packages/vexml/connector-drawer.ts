@@ -147,7 +147,11 @@ export class ConnectorDrawer {
 				type = 'boldDoubleRight';
 			}
 			for (const run of this.barlineRuns(column)) {
-				drawBarConnector(this.context, run.top, run.bottom, type);
+				drawBarConnector(this.context, {
+					top: run.top,
+					bottom: run.bottom,
+					type,
+				});
 			}
 		}
 	}
@@ -180,7 +184,11 @@ export class ConnectorDrawer {
 		// Every multi-stave system gets a plain left line closing the staves' left
 		// edge. A notation+tab pair split across separate parts also gets a bracket
 		// (the cross-part analog of the single-part bracket), drawn just outside it.
-		drawBarConnector(this.context, systemTop, systemBottom, 'singleLeft');
+		drawBarConnector(this.context, {
+			top: systemTop,
+			bottom: systemBottom,
+			type: 'singleLeft',
+		});
 		if (this.staves.partsPairTabWithNotation(this.parts)) {
 			// The bracket's x comes entirely from its top stave; nudge that 4px left
 			// so the bracket sits just outside the system line with a small gap, then
@@ -449,13 +457,12 @@ export class ConnectorDrawer {
 		if (!column.systemTop || !column.systemBottom) {
 			return;
 		}
-		drawBarConnector(
-			this.context,
-			column.systemTop,
-			column.systemBottom,
+		drawBarConnector(this.context, {
+			top: column.systemTop,
+			bottom: column.systemBottom,
 			type,
 			xShift,
-		);
+		});
 	}
 }
 

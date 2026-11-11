@@ -4,11 +4,9 @@ import { StaffDetector } from './staff-detector';
 
 describe('StaffDetector', () => {
 	let wideStaff: Stroke[];
-	let spacedStaff: Stroke[];
 
 	beforeEach(() => {
 		wideStaff = staff(2, 0, 100, 4);
-		spacedStaff = staff(10, 2, 98, 10);
 	});
 
 	it('finds five evenly spaced lines as one staff', () => {
@@ -99,6 +97,7 @@ describe('StaffDetector', () => {
 			const beam = [top - 1, top + 1, top + 2, top + 3, top + 4].map(
 				(y, i) => [y, 5, 62 + Number(i >= 3)] as Stroke,
 			);
+			const spacedStaff = staff(10, 2, 98, 10);
 			const rows = canvas(100, 70, [...spacedStaff, ...beam]);
 			expect(
 				new StaffDetector(InkMap.fromRows(rows))

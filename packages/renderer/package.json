@@ -1,6 +1,6 @@
 {
 	"name": "@vexml/renderer",
-	"version": "1.14.1",
+	"version": "1.14.2",
 	"private": true,
 	"type": "module",
 	"exports": {
@@ -11,7 +11,7 @@
 		"./vexml-renderer": "./vexml-renderer.ts"
 	},
 	"dependencies": {
-		"@stringsync/mdom": "^0.8.14",
+		"@stringsync/mdom": "^0.8.15",
 		"@stringsync/vexml": "workspace:*",
 		"@typescript/typescript6": "^6.0.2",
 		"core": "workspace:*",

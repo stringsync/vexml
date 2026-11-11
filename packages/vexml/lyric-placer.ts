@@ -258,8 +258,8 @@ export class LyricPlacer {
 	 * where every syllable's row and every note's x are final.
 	 *
 	 * ponytail: the line stops at the end of the stave, so a melisma that runs past a barline
-	 * or a system break draws only its first segment. Make it a real spanner (buildTies'
-	 * pairing in spanner-builder.ts is the model) if a fixture needs the continuation.
+	 * or a system break draws only its first segment. Make it a real spanner (the
+	 * pairing in tie-builder.ts is the model) if a fixture needs the continuation.
 	 */
 	private drawMelismas(
 		notes: StaveNote[],

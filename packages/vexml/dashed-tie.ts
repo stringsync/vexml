@@ -4,11 +4,10 @@ import type { DocumentBezier } from './score-reader';
 
 export type DashedTieOptions = {
 	dash?: number[] | null;
-	/** How wide a solid tie is at its ends (`<line-width type="tie tip">`); null tapers it
-	 * to a point the way vexflow does. */
+	/** Width of a solid tie at its ends, from `<line-width type="tie tip">`; null tapers it to a point. */
 	tip?: number | null;
 	bezier?: DocumentBezier | null;
-	/** Draw a solid tie to the engraved shape below rather than vexflow's two parabolas. */
+	/** Draw a solid tie in the engraved shape rather than vexflow's two parabolas. */
 	fit?: boolean;
 };
 

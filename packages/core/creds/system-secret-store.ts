@@ -13,6 +13,13 @@ export interface ForProjectOptions {
 	ps?: Ps;
 }
 
+/** What `SystemSecretStore` does with the system's store: `Bun.secrets` by default. */
+export interface SecretBackend {
+	get(opts: { service: string; name: string }): Promise<string | null>;
+	set(opts: { service: string; name: string; value: string }): Promise<void>;
+	delete(opts: { service: string; name: string }): Promise<boolean>;
+}
+
 /**
  * The operating system's own store, through `Bun.secrets`: the Keychain on
  * macOS, Credential Manager on Windows, and on Linux whatever secret service
@@ -30,6 +37,7 @@ export class SystemSecretStore implements SecretStore {
 	private constructor(
 		/** The service its values are kept under. */
 		readonly service: string,
+		private readonly secrets: SecretBackend = Bun.secrets,
 	) {
 		const system =
 			process.platform === "darwin"
@@ -41,8 +49,8 @@ export class SystemSecretStore implements SecretStore {
 	}
 
 	/** The store of the project named `project`, kept as `mono:<project>`. */
-	static project(project: string): SystemSecretStore {
-		return new SystemSecretStore(`mono:${project}`);
+	static project(project: string, secrets?: SecretBackend): SystemSecretStore {
+		return new SystemSecretStore(`mono:${project}`, secrets);
 	}
 
 	/**
@@ -59,17 +67,17 @@ export class SystemSecretStore implements SecretStore {
 	}
 
 	/** The device's store, kept as `mono`, shared by every project. */
-	static device(): SystemSecretStore {
-		return new SystemSecretStore("mono");
+	static device(secrets?: SecretBackend): SystemSecretStore {
+		return new SystemSecretStore("mono", secrets);
 	}
 
 	async get(name: string): Promise<string | undefined> {
-		const value = await Bun.secrets.get({ service: this.service, name });
+		const value = await this.secrets.get({ service: this.service, name });
 		return value ?? undefined;
 	}
 
 	async set(name: string, value: string): Promise<void> {
-		await Bun.secrets.set({
+		await this.secrets.set({
 			service: this.service,
 			name: credentialName(name),
 			value,
@@ -81,7 +89,7 @@ export class SystemSecretStore implements SecretStore {
 	}
 
 	async delete(name: string): Promise<boolean> {
-		const deleted = await Bun.secrets.delete({
+		const deleted = await this.secrets.delete({
 			service: this.service,
 			name: credentialName(name),
 		});
@@ -93,16 +101,16 @@ export class SystemSecretStore implements SecretStore {
 	}
 
 	async names(): Promise<string[]> {
-		const list = await Bun.secrets.get({ service: this.service, name: NAMES });
+		const list = await this.secrets.get({ service: this.service, name: NAMES });
 		return (list ?? "").split("\n").filter((name) => name !== "");
 	}
 
 	/** Keeps `names` as its list, sorted, or none when empty. */
 	private async list(names: string[]): Promise<void> {
 		if (names.length === 0) {
-			await Bun.secrets.delete({ service: this.service, name: NAMES });
+			await this.secrets.delete({ service: this.service, name: NAMES });
 		} else {
-			await Bun.secrets.set({
+			await this.secrets.set({
 				service: this.service,
 				name: NAMES,
 				value: names.toSorted().join("\n"),

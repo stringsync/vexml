@@ -95,6 +95,13 @@ export function barRects(
 	return rects;
 }
 
+interface BarConnectorOptions {
+	top: Stave;
+	bottom: Stave;
+	type: StaveConnectorType;
+	xShift?: number;
+}
+
 /*
  * Join `top` to `bottom` with the barline a connector of `type` draws, at the current widths.
  * vexflow's StaveConnector hardcodes its bar widths like Barline does, so while a document's
@@ -103,11 +110,10 @@ export function barRects(
  */
 export function drawBarConnector(
 	ctx: RenderContext,
-	top: Stave,
-	bottom: Stave,
-	type: StaveConnectorType,
-	xShift = 0,
+	opts: BarConnectorOptions,
 ): void {
+	const { top, bottom, type } = opts;
+	const xShift = opts.xShift ?? 0;
 	ctx.openGroup('vexml-staveconnector');
 	try {
 		const kinds = CONNECTOR_BARS[type];
@@ -131,7 +137,7 @@ export function drawBarConnector(
 	}
 }
 
-/* The bars of each connector type that draws a barline, left to right. */
+/* Types vexflow would draw at its hardcoded widths, so each lists its bars here to draw at ours. */
 const CONNECTOR_BARS: Partial<Record<StaveConnectorType, BarKind[]>> = {
 	singleLeft: ['light'],
 	singleRight: ['light'],

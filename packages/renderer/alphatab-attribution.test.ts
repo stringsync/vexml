@@ -1,24 +1,10 @@
-import { beforeEach, describe, expect, it } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import { AlphatabAttribution } from './alphatab-attribution';
 
 describe('AlphatabAttribution', () => {
-	let calls: string[];
-	let canvas: {
-		beginGroup: (kind: string) => number;
-		endGroup: () => number;
-		fillText: (text: string) => number;
-	};
-
-	beforeEach(() => {
-		calls = [];
-		canvas = {
-			beginGroup: (kind: string) => calls.push(kind),
-			endGroup: () => calls.push('close'),
-			fillText: (text: string) => calls.push(text),
-		};
-	});
-
 	it('labels distinct glyph draws inside beat groups and closes after early returns', () => {
+		const calls: string[] = [];
+		const canvas = recordingCanvas(calls);
 		const source = `class NoteHeadGlyph {paint(x,y,canvas) {canvas.fillText('head',x,y);return 3;}} class TempoGlyph {paint(x,y,canvas) {canvas.fillText('tempo',x,y);}}`;
 		expect(
 			new Function(
@@ -41,3 +27,11 @@ describe('AlphatabAttribution', () => {
 		expect(AlphatabAttribution.instrument(source)).toBe(source);
 	});
 });
+
+function recordingCanvas(calls: string[]) {
+	return {
+		beginGroup: (kind: string) => calls.push(kind),
+		endGroup: () => calls.push('close'),
+		fillText: (text: string) => calls.push(text),
+	};
+}

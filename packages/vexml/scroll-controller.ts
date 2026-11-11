@@ -188,24 +188,16 @@ export class ScrollController implements Scroller {
 			bottom: scroll.top + size.height,
 		};
 		const left =
-			this.pageOffset(
-				target.left,
-				target.right,
-				view.left,
-				view.right,
-				SCROLL_SIDE_PADDING_PX,
-				'nearest',
-			) - inset;
+			this.pageOffset(target.left, target.right, view.left, view.right, {
+				padding: SCROLL_SIDE_PADDING_PX,
+				align: 'nearest',
+			}) - inset;
 		return {
 			left: Math.max(0, left),
-			top: this.pageOffset(
-				target.top,
-				target.bottom,
-				view.top,
-				view.bottom,
-				SCROLL_TOP_PADDING_PX,
-				block,
-			),
+			top: this.pageOffset(target.top, target.bottom, view.top, view.bottom, {
+				padding: SCROLL_TOP_PADDING_PX,
+				align: block,
+			}),
 		};
 	}
 
@@ -214,9 +206,9 @@ export class ScrollController implements Scroller {
 		end: number,
 		viewStart: number,
 		viewEnd: number,
-		padding: number,
-		align: 'nearest' | 'start',
+		opts: PageOffsetOptions,
 	): number {
+		const { padding, align } = opts;
 		if (start >= viewStart && end <= viewEnd) {
 			return viewStart;
 		}
@@ -228,6 +220,11 @@ export class ScrollController implements Scroller {
 		const inset = Math.min(padding, size - (end - start));
 		return start < viewStart ? end + inset - size : start - inset;
 	}
+}
+
+interface PageOffsetOptions {
+	padding: number;
+	align: 'nearest' | 'start';
 }
 
 type Box = { left: number; top: number; right: number; bottom: number };

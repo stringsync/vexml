@@ -2,6 +2,7 @@ import { color, type Logger } from "core/log";
 import { Duration } from "core/time";
 import type { Artifact, Stage } from "../artifact/artifact";
 import type { Cut } from "../cut";
+import { NoopStepReport } from "../noop-step-report";
 import type { CheckReport, Step, StepReport } from "../step";
 import type { Registry } from "./registry";
 
@@ -154,7 +155,10 @@ export class RegistryArtifact implements Artifact {
 		return { passed: false, status, ...(url === undefined ? {} : { url }) };
 	}
 
-	async publish(cut: Cut, report?: StepReport): Promise<void> {
+	async publish(
+		cut: Cut,
+		report: StepReport = new NoopStepReport(),
+	): Promise<void> {
 		const { version, log } = cut;
 		if (await this.registry.published(this.name, version)) {
 			log.info(`${this.name}@${version} ${color.green("already published")}`);
@@ -183,6 +187,6 @@ export class RegistryArtifact implements Artifact {
 		log.info(
 			`${this.name}@${version} ${color.green("staged")}: approve ${staged.stageId} at ${staged.url}`,
 		);
-		await report?.staged({ package: this.name, version, ...staged });
+		await report.staged({ package: this.name, version, ...staged });
 	}
 }

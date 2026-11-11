@@ -1,5 +1,6 @@
 import { disposables, type Resource } from "core/disposable";
-import { FakeChild, FakeTerminalChild } from "./fake-child";
+import { FakeChild } from "./fake-child";
+import { FakeTerminalChild } from "./fake-terminal-child";
 import type {
 	ListeningEntry,
 	ProcessEntry,
