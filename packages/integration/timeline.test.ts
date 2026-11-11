@@ -21,8 +21,10 @@ describe('readTimeline', () => {
 			const { result } = await testing.eval(file, {}, compare, { arg: xml });
 			expect(result.plain.timeline).toEqual(result.plain.score);
 			expect(result.plain.mismatches).toEqual([]);
+			expect(result.plain.steps.timeline).toEqual(result.plain.steps.score);
 			expect(result.gapped.timeline).toEqual(result.gapped.score);
 			expect(result.gapped.mismatches).toEqual([]);
+			expect(result.gapped.steps.timeline).toEqual(result.gapped.steps.score);
 			expect(result.gapped.score.gaps).toHaveLength(3);
 		});
 	}
@@ -220,10 +222,51 @@ async function compare(context: VexmlContext, xml: string) {
 			gaps: timeline.getGaps(),
 		};
 	};
+	// Every step with the pitched notes it starts and sustains, as the Score's sequence classifies
+	// them: classify(previous step, this step) on the Score's sequence.
+	// Notes sharing a step have no order, so each list is compared sorted.
+	const ordered = <T extends { pitch: string; partId: string }>(
+		list: readonly T[],
+	) =>
+		[...list].sort((a, b) =>
+			`${a.partId}${a.pitch}`.localeCompare(`${b.partId}${b.pitch}`),
+		);
+	const stepsOf = (steps: ReturnType<Timeline['getSteps']>) =>
+		steps.map((step) => ({
+			...step,
+			started: ordered(step.started),
+			sustained: ordered(step.sustained),
+		}));
+	const scoreSteps = (score: typeof context.score) => {
+		const sequence = score.getSequence();
+		const notes = (list: ReturnType<typeof sequence.classify>['started']) =>
+			list.flatMap((note) => {
+				const pitch = note.getPitch();
+				return pitch === null
+					? []
+					: [{ pitch, partId: note.getMeasure().getPart().getId() }];
+			});
+		return sequence.getSteps().map((step) => {
+			const { started, sustained } = sequence.classify(
+				step.index === 0 ? null : step.index - 1,
+				step.index,
+			);
+			return {
+				startMs: step.startMs,
+				endMs: step.endMs,
+				started: notes(started),
+				sustained: notes(sustained),
+			};
+		});
+	};
 	const timed = async (score: typeof context.score, timeline: Timeline) => ({
 		score: scoreTiming(score),
 		timeline: timelineTiming(timeline),
 		bars: timeline.getBars(),
+		steps: {
+			score: stepsOf(scoreSteps(score)),
+			timeline: stepsOf(timeline.getSteps()),
+		},
 		mismatches: barMismatches(timeline, score),
 	});
 

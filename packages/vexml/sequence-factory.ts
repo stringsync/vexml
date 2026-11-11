@@ -4,6 +4,7 @@ import { Rect } from 'core/geometry';
 import { DEFAULT_TEMPO_BPM } from './constants';
 import { isCueNote } from './cue-note';
 import type { Gaps } from './gaps';
+import type { RawNote } from './geometry-collector';
 import { MeasureSequenceIterator } from './measure-sequence-iterator';
 import { MNoteFacts } from './mnote-facts';
 import type { Note, NoteKey } from './note';
@@ -22,9 +23,11 @@ import {
 	type SequenceSkeleton,
 	type StepSkeleton,
 } from './sequence-placer';
+import { SoundingNotes } from './sounding-notes';
+import { StavePlan } from './stave-plan';
 import { SwingWarp } from './swing-warp';
 import { TempoMap, type TempoSegment } from './tempo-map';
-import { Timeline } from './timeline';
+import { Timeline, type TimelineNote, type TimelineStep } from './timeline';
 
 // MusicXML <beat-unit> (a note type) -> quarter notes, so a metronome mark normalizes to quarter BPM.
 const QUARTERS_PER_UNIT: Record<string, number> = {
@@ -313,12 +316,42 @@ export class SequenceFactory {
 	 * sounds and reads its swing exemption off the document, which is what the rendered notes
 	 * report, so the numbers equal create()'s for the same parts and gaps. */
 	timeline(parts: Part[]): Timeline {
-		const { measures } = this.buildInput(
+		// No note is drawn, so each mdom note gets a stand-in that is only an identity: the
+		// sequence reads nothing off a Note but who it is, and which ones tie.
+		const notesByMnote = new Map<NoteKey, Note>();
+		const sources = new Map<Note, MNote>();
+		const rawNotes: RawNote[] = [];
+		// The notes the render would draw, not every note in the document: a tab stave prints
+		// no rest or tied-into fret and a multi-measure rest or measure repeat no notes, and
+		// the render's steps follow only what is drawn.
+		const sounding = new SoundingNotes(
+			this.reader,
+			new StavePlan({ showTabs: true, showNotation: true }),
 			parts,
-			EMPTY_GEOMETRY,
-			new Map(),
+		);
+		for (const [measureIndex] of (parts[0]?.measures ?? []).entries()) {
+			for (const { mnote } of sounding.of(measureIndex)) {
+				const stand = {} as Note;
+				notesByMnote.set(mnote, stand);
+				sources.set(stand, mnote);
+				rawNotes.push({
+					mnote,
+					rect: new Rect(0, 0, 0, 0),
+					ink: new Rect(0, 0, 0, 0),
+					chord: [],
+					measureIndex,
+					tab: null,
+					glyph: null,
+				});
+			}
+		}
+		const input = this.buildInput(
+			parts,
+			{ ...EMPTY_GEOMETRY, notes: rawNotes },
+			notesByMnote,
 			(mnote) => new MNoteFacts(mnote, []).swingExempt,
 		);
+		const { measures } = input;
 		const { passes, segments, totalBeats } = this.unroll(measures);
 		const tempo = new TempoMap(segments);
 		const bars = passes.map(({ measure, startBeat, endBeat }) => ({
@@ -336,7 +369,27 @@ export class SequenceFactory {
 				endMs: bar?.endMs ?? 0,
 			};
 		});
-		return new Timeline(tempo, totalBeats, bars, gaps);
+		const { steps: skeleton, tiedFrom } = this.skeletonOf(input);
+		const noteOf = (stand: Note): TimelineNote[] => {
+			const mnote = sources.get(stand);
+			const pitch = mnote ? new MNoteFacts(mnote, []).pitch : null;
+			return mnote && pitch !== null ? [{ pitch, partId: mnote.part.id }] : [];
+		};
+		// Each step as the rendered sequence's classify(previous step, this step) sees it.
+		const steps = skeleton.map((step, i): TimelineStep => {
+			const { started, sustained } = Sequence.classifyTransition(
+				i === 0 ? null : (skeleton[i - 1]?.active ?? null),
+				step.active,
+				tiedFrom,
+			);
+			return {
+				startMs: tempo.msAt(step.startBeat),
+				endMs: tempo.msAt(step.endBeat),
+				started: started.flatMap(noteOf),
+				sustained: sustained.flatMap(noteOf),
+			};
+		});
+		return new Timeline(tempo, totalBeats, bars, gaps, steps);
 	}
 
 	/*

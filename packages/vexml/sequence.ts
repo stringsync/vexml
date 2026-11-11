@@ -249,7 +249,7 @@ export class Sequence {
 	classify(from: number | null, to: number): CursorTransition {
 		const prev = from === null ? null : (this.steps[from]?.active ?? null);
 		const next = this.steps[to]?.active ?? [];
-		return this.classifyTransition(prev, next, this.tiedFrom);
+		return Sequence.classifyTransition(prev, next, this.tiedFrom);
 	}
 
 	/* Notes to visually highlight at a step: its active set expanded across ties in both directions,
@@ -307,7 +307,7 @@ export class Sequence {
 	 * already ringing (same identity) or is tied in from a note that was; otherwise it's a (re)attack.
 	 * A source note is released unless it's tied into a destination note (then it keeps ringing).
 	 */
-	private classifyTransition<T>(
+	static classifyTransition<T>(
 		prevActive: readonly T[] | null,
 		nextActive: readonly T[],
 		tiedFrom: ReadonlyMap<T, T>,

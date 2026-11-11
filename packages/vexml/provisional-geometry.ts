@@ -1,4 +1,4 @@
-import type { Chord, Note as MNote, Score } from '@stringsync/mdom';
+import type { Score } from '@stringsync/mdom';
 import { Rect } from 'core/geometry';
 import {
 	FRET_HALF_H,
@@ -11,6 +11,7 @@ import type { LayoutForecast } from './layout-plan';
 import type { ScoreLayout } from './layout-planner';
 import type { RawGeometry } from './score-drawer';
 import type { ScoreReader } from './score-reader';
+import { SoundingNotes } from './sounding-notes';
 import type { StavePlan } from './stave-plan';
 
 /*
@@ -30,20 +31,18 @@ export class ProvisionalGeometry {
 	private readonly pitch: number;
 	// Each part's staves' rows in the system's stave stack, by part index then staff number.
 	private readonly rows: Map<string, number>[];
-	// Each measure's placeholders, read off the document once: a progressive render asks again
-	// for every undrawn measure as the forecast moves.
-	private readonly placeholders = new Map<number, Placeholder[]>();
-	private multiRestLeads: ReadonlyMap<number, number> | null = null;
+	private readonly sounding: SoundingNotes;
 
 	constructor(
-		private readonly reader: ScoreReader,
-		private readonly staves: StavePlan,
+		readonly reader: ScoreReader,
+		readonly staves: StavePlan,
 		private readonly score: Score,
 		private readonly layout: Pick<
 			ScoreLayout,
 			'top' | 'floorHeight' | 'systemGap' | 'staveOffsets' | 'width'
 		>,
 	) {
+		this.sounding = new SoundingNotes(reader, staves, score.parts);
 		this.stack = layout.floorHeight - PAGE_MARGIN_BOTTOM - layout.top;
 		this.pitch = this.stack + layout.systemGap;
 		let row = 0;
@@ -85,9 +84,10 @@ export class ProvisionalGeometry {
 				staves: [],
 				barlines: [],
 			});
-			for (const p of this.placeholdersOf(m)) {
+			for (const p of this.sounding.of(m)) {
 				const x = box.x + (box.width * p.beat) / p.span;
-				const y = top + (this.layout.staveOffsets[p.row] ?? 0);
+				const row = this.rows[p.part]?.get(p.staffNumber) ?? 0;
+				const y = top + (this.layout.staveOffsets[row] ?? 0);
 				const rect = p.tab
 					? new Rect(
 							x - FRET_HALF_W,
@@ -124,93 +124,4 @@ export class ProvisionalGeometry {
 			chordDiagrams: [],
 		};
 	}
-
-	// The notes the draw will collect in measure `m`, each on its stave at its share of the box.
-	private placeholdersOf(m: number): Placeholder[] {
-		let placeholders = this.placeholders.get(m);
-		if (placeholders) {
-			return placeholders;
-		}
-		placeholders = [];
-		const { parts } = this.score;
-		// A multirest lead draws the consolidated bar in place of its notes, and a stave under a
-		// measure style (a measure repeat, or beat repeats or slashes across the whole measure)
-		// draws its sign instead (see DrawPass.buildStave).
-		this.multiRestLeads ??= this.reader.multiRestsOf(parts).leads;
-		for (const [p, part] of parts.entries()) {
-			const measure = part.measures[m];
-			if (!measure) {
-				continue;
-			}
-			for (const staffNumber of this.staves.visibleNumbers(part)) {
-				if (
-					this.multiRestLeads.has(m) ||
-					this.reader.measureStyleOf(measure, staffNumber)
-				) {
-					continue;
-				}
-				const voices = this.reader.staffVoices(measure, staffNumber);
-				const chords = voices.flatMap((voice) => voice.chords);
-				const row = this.rows[p]?.get(staffNumber) ?? 0;
-				placeholders.push(
-					...this.staveOf(chords, row, this.staves.isTab(part, staffNumber)),
-				);
-			}
-		}
-		this.placeholders.set(m, placeholders);
-		return placeholders;
-	}
-
-	// The notes of one stave's chords, spread across the box by beat: a placeholder each, its
-	// box the size of a notehead or fret.
-	private staveOf(chords: Chord[], row: number, isTab: boolean): Placeholder[] {
-		const beats = chords.map((chord) => chord.measureBeat ?? 0);
-		const span = Math.max(1, ...beats) + 1;
-		const placeholders: Placeholder[] = [];
-		for (const [i, chord] of chords.entries()) {
-			// A tab stave reserves a rest's time with nothing drawn, and a wholly tied-into chord
-			// re-strikes no string, so it prints no fret either (see TabVoiceTranslator.tickables).
-			if (
-				isTab &&
-				(chord.lead.isRest ||
-					(!chord.lead.isGrace &&
-						chord.notes.every((note) =>
-							this.reader.tiesOf(note).some((tie) => tie.tieType === 'stop'),
-						)))
-			) {
-				continue;
-			}
-			const beat = beats[i] ?? 0;
-			for (const mnote of chord.notes) {
-				let tab: RawNote['tab'] = null;
-				if (isTab) {
-					const { string, fret } = mnote;
-					if (string === null || fret === null) {
-						continue;
-					}
-					tab = { string, fret };
-				}
-				placeholders.push({
-					mnote,
-					chord: chord.notes,
-					beat,
-					span,
-					row,
-					tab,
-				});
-			}
-		}
-		return placeholders;
-	}
-}
-
-/* One note of the forecast geometry before it has a box: its beat of the `span` its stave's
- * chords spread across the measure's width, and its stave's row in the system's stack. */
-interface Placeholder {
-	mnote: MNote;
-	chord: MNote[];
-	beat: number;
-	span: number;
-	row: number;
-	tab: RawNote['tab'];
 }

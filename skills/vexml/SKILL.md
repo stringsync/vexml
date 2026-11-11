@@ -352,6 +352,11 @@ await render(document, element, {
 A timeline also has `getDurationMs()`, `getDurationBeats()`, `beatsToMs(beats)` and
 `getGaps()`, matching the rendered score for the same document and gaps.
 
+`getSteps()` lists every step in playback order, repeats unrolled, as
+`{ startMs, endMs, started, sustained }`: the pitched notes (`{ pitch: "E/4", partId }`) each
+attacks at its start or holds through it (a tied-in note is held, not struck). That is
+enough to synthesize a score on a server with no DOM.
+
 ## Canvas layers
 
 A layer is a surface you draw on freely with a 2D context; vexml controls its size

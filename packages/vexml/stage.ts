@@ -502,6 +502,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 			x: Math.round(origin.x * dpr) / dpr,
 			y: -Math.round(-origin.y * dpr) / dpr,
 		});
+		this.growLayers();
 		this.fitEngraving();
 		this.updateView();
 		painted?.plane.remove();
@@ -527,6 +528,7 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 			shown.height = height;
 			this.box.size(width, height, scale);
 			this.engraving.grow(height);
+			this.growLayers();
 		}
 		for (let i = from; i < ops.length; i++) {
 			const op = ops[i];
@@ -930,6 +932,17 @@ export class Stage implements Viewport, Host, ScrollHost, PagePainter {
 		for (const layer of this.layers) {
 			if (layer instanceof TiledLayer) {
 				layer.surface.show(this.view);
+			}
+		}
+	}
+
+	// A content layer made while the base was shorter (a progressive render) is grown to the
+	// base's height, else fit would stretch its short bitmap over the grown box.
+	private growLayers(): void {
+		const { height } = this.intrinsicSize();
+		for (const layer of this.layers) {
+			if (layer instanceof TiledLayer && layer.kind !== 'viewport') {
+				layer.surface.grow(height);
 			}
 		}
 	}
