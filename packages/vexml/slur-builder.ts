@@ -57,6 +57,18 @@ export class SlurBuilder {
 		const leadOf = new Map(
 			chords.flatMap((chord) => chord.notes.map((note) => [note, chord.lead])),
 		);
+		// The chords a tie starts or ends on: a slur ending on one stands off the tie.
+		const tiedLeads = new Set<Note>();
+		for (const chord of chords) {
+			for (const note of chord.notes) {
+				for (const tie of this.connectors.tiesOf(note)) {
+					tiedLeads.add(chord.lead);
+					if (tie.partner) {
+						tiedLeads.add(leadOf.get(tie.partner) ?? tie.partner);
+					}
+				}
+			}
+		}
 		const voiceOf = new Map<StaveNote, string>();
 		for (const chord of chords) {
 			const note = byLead.get(chord.lead);
@@ -279,6 +291,8 @@ export class SlurBuilder {
 					mayGhost,
 					bulgeUp,
 					ghost,
+					tiedFrom: tiedLeads.has(chord.lead),
+					tiedTo: tiedLeads.has(partner),
 				});
 
 				// When the stop note wraps onto a later system its stave sits lower on the

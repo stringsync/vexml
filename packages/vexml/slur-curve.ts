@@ -91,11 +91,11 @@ export class SlurCurveFactory {
 			start: curveFrom ? slur.bezier.start : { x: null, y: null },
 			end: curveTo ? slur.bezier.end : { x: null, y: null },
 		};
-		// An end lifted off its marks is pinned at its own Y, which vexflow's Curve
+		// An end lifted off its marks or its tie is pinned at its own Y, which vexflow's Curve
 		// can't take (it reads the end off the note), so it draws as a HeadCurve
 		// too.
 		const lifted = [curveFrom, curveTo].some(
-			(n) => n !== undefined && bow.markLift(n) > 0,
+			(n) => n !== undefined && (bow.markLift(n) > 0 || bow.tieLift(n) > 0),
 		);
 		// A body end runs to its notehead's centre, on the side away from its stem. A stem
 		// on the bow's side stands in the way, whichever anchor the end took,

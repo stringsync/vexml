@@ -81,13 +81,17 @@ export class CurveConnectors {
 						(this.documentCurves && s.slurType === 'continue'),
 				)
 				.map((s) => {
-					const segment = this.documentCurves ? curveSegmentOf(s) : null;
+					const found = curveSegmentOf(s);
+					const segment = this.documentCurves ? found : null;
 					const partner = segment?.end.note ?? s.partner?.note ?? null;
 					return {
 						slurType: 'start',
 						bezier: segment?.bezier ?? null,
 						partner: partner && { note: partner },
-						placement: s.placement ?? placementOfOrientation(s),
+						placement:
+							s.placement ??
+							placementOfOrientation(s) ??
+							placementOfBezier(found?.bezier ?? null),
 						dash: lineDashOf(s),
 					};
 				}),
@@ -228,4 +232,22 @@ function placementOfOrientation(slur: {
 		return 'above';
 	}
 	return orientation === 'under' ? 'below' : null;
+}
+
+/* A slur with no placement or orientation still says its side by where its control
+ * points sit: positive bezier-y is above, negative below. Ends that disagree say nothing. */
+function placementOfBezier(
+	bezier: DocumentBezier | null,
+): 'above' | 'below' | null {
+	const ys = [bezier?.start.y, bezier?.end.y].filter(
+		(y): y is number => typeof y === 'number' && y !== 0,
+	);
+	const first = ys[0];
+	if (
+		first === undefined ||
+		ys.some((y) => Math.sign(y) !== Math.sign(first))
+	) {
+		return null;
+	}
+	return first > 0 ? 'above' : 'below';
 }

@@ -4,6 +4,7 @@ import {
 	SLUR_GRACE_Y_SHIFT,
 	SLUR_MARK_GAP,
 	SLUR_STEM_TIP_SLANT,
+	SLUR_TIE_GAP,
 	SLUR_Y_SHIFT,
 } from './constants';
 import type { SlurObstacles } from './slur-obstacles';
@@ -19,6 +20,9 @@ export type SlurBowOptions = {
 	mayGhost: boolean;
 	bulgeUp: boolean;
 	ghost: boolean;
+	/* Whether a tie starts or ends on each end's chord. */
+	tiedFrom: boolean;
+	tiedTo: boolean;
 };
 
 /*
@@ -36,6 +40,8 @@ export class SlurBow {
 	/* The bulge as a sign on Y: -1 up the page, 1 down. */
 	dir: number;
 	ghost: boolean;
+	private readonly tiedFrom: boolean;
+	private readonly tiedTo: boolean;
 	// Chosen once, for the side the slur starts on: only a cross-stave slur changes side
 	// afterwards, and it never takes the stem tips.
 	private readonly useStemTips: boolean;
@@ -52,6 +58,8 @@ export class SlurBow {
 		this.bulgeUp = opts.bulgeUp;
 		this.dir = opts.bulgeUp ? -1 : 1;
 		this.ghost = opts.ghost;
+		this.tiedFrom = opts.tiedFrom;
+		this.tiedTo = opts.tiedTo;
 		this.useStemTips = this.stemTipsAreLevel();
 	}
 
@@ -166,6 +174,18 @@ export class SlurBow {
 		return Math.max(0, this.dir * (edge - end) + SLUR_MARK_GAP);
 	}
 
+	// How much further an end has to start to clear a tie on its own note. A tie bows away from
+	// the stem, so it shares the notehead side with a slur there and the two would lie on top of
+	// each other: the slur's end leaves past it instead.
+	tieLift(note: StaveNote): number {
+		const tied = note === this.from ? this.tiedFrom : this.tiedTo;
+		if (!tied || this.isGrace || this.ghost || note.getStemDirection() === 0) {
+			return 0;
+		}
+		const tieDir = note.getStemDirection() === 1 ? 1 : -1;
+		return tieDir === this.dir ? SLUR_TIE_GAP : 0;
+	}
+
 	// The exact Y each end of the curve will be drawn at: what HeadCurve was handed
 	// for a grace, and what vexflow reads off getStemExtents() for everything else.
 	endpointY(note: StaveNote): number {
@@ -173,7 +193,9 @@ export class SlurBow {
 			return this.anchorY(this.ghostOf(note));
 		}
 		const end = this.ghostOf(note);
-		return this.noteEndY(end) + this.dir * this.markLift(end);
+		return (
+			this.noteEndY(end) + this.dir * (this.markLift(end) + this.tieLift(end))
+		);
 	}
 
 	private stemTipsAreLevel(): boolean {

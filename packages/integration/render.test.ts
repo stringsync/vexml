@@ -2154,6 +2154,18 @@ describe('render', () => {
 		).toMatchScreenshot('spanner_line_types.png');
 	});
 
+	// Treble stave, 4/4: a slur with no placement or orientation takes its side from the
+	// sign of its bezier-y. Each measure is four stem-up quarters C4-F4, which bow below
+	// on the stems alone.
+	// - M1: bezier-y +40 on both ends, so the slur arcs over the notes.
+	// - M2: bezier-y -40, so it stays under them.
+	// - M3: bezier-y +40 with placement="below": the written placement wins, under.
+	it.concurrent('renders slur_bezier_side.png', async () => {
+		expect(await testing.render('slur_bezier_side.musicxml')).toMatchScreenshot(
+			'slur_bezier_side.png',
+		);
+	});
+
 	// Treble stave, 4/4, two voices: slurs paired across a <backup>, which makes document
 	// order disagree with playing order. Every slur here is number 1, the way exporters
 	// (Finale especially) actually write them.

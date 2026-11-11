@@ -15,6 +15,7 @@ import type { Appearance, GlyphType } from './appearance';
 import { CollisionResolver } from './collision-resolver';
 import {
 	HAIRPIN_CHAIN_GAP,
+	HAIRPIN_DYNAMIC_GAP,
 	OTTAVA_TEXT_LINE,
 	PEDAL_BOTTOM_MARGIN,
 	PEDAL_BOTTOM_TEXT_LINE,
@@ -533,6 +534,7 @@ export class SpannerResolver {
 		});
 		for (const wedge of wedges) {
 			this.clearWedge(wedge, anchors.byLead.values());
+			this.startPastDynamic(wedge);
 		}
 		this.alignWedgeChains(wedges);
 		for (const wedge of wedges) {
@@ -640,7 +642,7 @@ export class SpannerResolver {
 	private clearWedge(wedge: Hairpin, notes: Iterable<StaveNote>): void {
 		const natural = wedge.rect;
 		const scoped = new CollisionResolver(this.scratchViewport, {});
-		for (const rect of this.bows.get(wedge.stave) ?? []) {
+		for (const rect of this.bowsOnRowOf(wedge.stave)) {
 			scoped.add({ rect, kind: 'tie' });
 		}
 		const tuplets = new Set<Tuplet>();
@@ -668,6 +670,27 @@ export class SpannerResolver {
 			? scoped.liftClear(natural, WORDS_NOTE_CLEARANCE, {})
 			: scoped.dropClear(natural, WORDS_NOTE_CLEARANCE, {});
 		wedge.setOffset(wedge.above ? natural.y - placed.y : placed.y - natural.y);
+	}
+
+	/*
+	 * A dynamic sits centered on its note and shares its hairpin's line, so a hairpin that
+	 * starts on that note (p with a diminuendo, f with a crescendo) opens through the glyph.
+	 * Begin the wedge just past the dynamic instead.
+	 */
+	private startPastDynamic(wedge: Hairpin): void {
+		const { top, bottom } = wedge.bounds;
+		const { left, right } = wedge.rect;
+		for (const dynamic of this.directionPlacer.dynamicsOn(wedge.stave)) {
+			const onLine = dynamic.top < bottom && dynamic.bottom > top;
+			if (!onLine || dynamic.left > left || dynamic.right <= left) {
+				continue;
+			}
+			const inset = dynamic.right + HAIRPIN_DYNAMIC_GAP - left;
+			if (left + inset < right) {
+				wedge.setHorizontalInsets(inset, 0);
+			}
+			return;
+		}
 	}
 
 	/*
@@ -765,6 +788,24 @@ export class SpannerResolver {
 				chained.add(wedge);
 			}
 		}
+	}
+
+	/* Every bow drawn over the stave row `stave` sits on: a bow keeps the stave of the measure
+	 * its note is in, so one running in from an earlier measure of the row is filed under that
+	 * measure's stave, and a hairpin in a later measure has to clear it too. */
+	private bowsOnRowOf(stave: Stave): Rect[] {
+		const placement = this.staveRows.get(stave);
+		if (!placement) {
+			return this.bows.get(stave) ?? [];
+		}
+		const rects: Rect[] = [];
+		for (const [other, bows] of this.bows) {
+			const at = this.staveRows.get(other);
+			if (at?.system === placement.system && at.row === placement.row) {
+				rects.push(...bows);
+			}
+		}
+		return rects;
 	}
 
 	/* Keep a drawn bow for the hairpins on its stave to clear: a wedge parks at a fixed gap

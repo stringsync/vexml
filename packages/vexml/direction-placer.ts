@@ -115,6 +115,10 @@ export class DirectionPlacer {
 	// lines resolved later under the same stave clear them (see SpannerResolver).
 	private readonly belowWords = new Map<Stave, Rect[]>();
 
+	// Every dynamic placed so far, by its stave: a hairpin resolved later that starts under
+	// one begins past it instead of running through its glyph (see SpannerResolver).
+	private readonly placedDynamics = new Map<Stave, Rect[]>();
+
 	// The one dependency this builds rather than takes: it is a pure spelling table with no
 	// state, and nothing about a render varies it.
 	private readonly dynamics = new DynamicGlyphs();
@@ -171,6 +175,11 @@ export class DirectionPlacer {
 			measureIndex - sounding.measure <= DYNAMIC_RESTATE_GAP;
 		this.soundingDynamic.set(key, { text, measure: measureIndex });
 		return redundant;
+	}
+
+	/* The dynamics placed on a stave, for the hairpins that start beside them. */
+	dynamicsOn(stave: Stave): readonly Rect[] {
+		return this.placedDynamics.get(stave) ?? [];
 	}
 
 	/* A hairpin resolves after the words beside it were placed, so it asks which it ran
@@ -290,6 +299,12 @@ export class DirectionPlacer {
 							...this.decorationOf(d.format),
 						},
 			);
+			const onStave = this.placedDynamics.get(d.stave);
+			if (onStave) {
+				onStave.push(placed);
+			} else {
+				this.placedDynamics.set(d.stave, [placed]);
+			}
 			if (placement !== 'below') {
 				this.reporter.growPageTop(placed.y);
 				this.spill.growDecorationTop(column.systemIndex, placed.y);

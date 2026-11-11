@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Music</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- Four stem-up quarters C4-F4 under one slur per measure, which would bow below on
+         the stems alone; the slur's bezier-y says its side when it names none. -->
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations><slur number="1" type="start" bezier-y="40" /></notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <stem>up</stem>
+        
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <stem>up</stem>
+        
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations><slur number="1" type="stop" bezier-y="40"/></notations>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations><slur number="1" type="start" bezier-y="-40" /></notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <stem>up</stem>
+        
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <stem>up</stem>
+        
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations><slur number="1" type="stop" bezier-y="-40"/></notations>
+      </note>
+    </measure>
+    <measure number="3">
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations><slur number="1" type="start" bezier-y="40" placement="below" /></notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <stem>up</stem>
+        
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <stem>up</stem>
+        
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <stem>up</stem>
+        <notations><slur number="1" type="stop" bezier-y="40"/></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

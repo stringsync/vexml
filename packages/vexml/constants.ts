@@ -362,6 +362,9 @@ export const HAIRPIN_HEIGHT = 10;
 /** Horizontal air between a crescendo and the diminuendo immediately following it. */
 export const HAIRPIN_CHAIN_GAP = 4;
 
+/** Air between a dynamic and the hairpin that starts past it. */
+export const HAIRPIN_DYNAMIC_GAP = 3;
+
 /** Radius of the circle at a niente hairpin's point. */
 export const HAIRPIN_NIENTE_RADIUS = 3;
 
@@ -489,6 +492,10 @@ export const LEDGER_HEADROOM =
 
 /** Raises a slur's endpoints off the notes. */
 export const SLUR_Y_SHIFT = 10;
+
+/** How much further a slur end lifts to clear a tie on its own note, in px: a slur ending on a
+ * tied note bows past the tie rather than lying on it. */
+export const SLUR_TIE_GAP = 7;
 
 /** Extra clearance the arc keeps above/below the most extreme note it spans. */
 export const SLUR_MARGIN = 14;

@@ -140,6 +140,7 @@ describe('SpannerResolver', () => {
 				drawDirectionLines: (tasks: readonly DirectionLineTask[]) =>
 					directionLines.push(...tasks),
 				belowWordsOn: () => [],
+				dynamicsOn: () => [],
 			} as unknown as DirectionPlacer,
 			reporter: {
 				noteObstacle: (note: StaveNote) =>
