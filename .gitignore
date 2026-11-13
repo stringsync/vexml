@@ -28,8 +28,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 *.tsbuildinfo
 
 # a release under way; the last part to land deletes it (wiz dev ship)
-RELEASE
-RELEASE.*
 
 # IntelliJ based IDEs
 .idea

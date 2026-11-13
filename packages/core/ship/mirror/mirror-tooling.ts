@@ -70,6 +70,11 @@ export class MirrorTooling {
 
 	/** A root `.gitignore` line as the mirror holds it, or nothing for another folder's path. */
 	private rooted(line: string): string[] {
+		// A release under way is the monorepo's own file; in a mirror its
+		// RELEASE.* pattern also hides release.ts where git ignores case.
+		if (/^\/?RELEASE(\.\*)?$/.test(line.trim())) {
+			return [];
+		}
 		const negated = line.startsWith("!");
 		const pattern = (negated ? line.slice(1) : line).replace(/^\//, "");
 		const prefix = `${this.opts.project}/`;

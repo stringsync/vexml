@@ -130,7 +130,12 @@ export class GithubActions {
 	 * all that passes a release that never started a run.
 	 */
 	async watch(name: string, live: boolean): Promise<CheckReport> {
-		const [run] = await this.workflows.runs(this.file, await this.git.head());
+		// A package the registry already serves never started a run, so the
+		// workflow may never have reached the repository, and listing its runs
+		// would 404.
+		const [run] = (await this.workflows.registered(this.file))
+			? await this.workflows.runs(this.file, await this.git.head())
+			: [];
 		if (run === undefined) {
 			return live ? { passed: true } : { passed: false, status: "waiting" };
 		}
