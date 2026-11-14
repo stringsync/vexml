@@ -24,7 +24,6 @@ export {
 	AwsStackRegistry,
 	type AwsStackRegistryOptions,
 } from "./registry/aws-stack-registry";
-export { CdkDeployer, type CdkDeployerOptions } from "./registry/cdk-deployer";
 export {
 	GithubActions,
 	type GithubActionsOptions,

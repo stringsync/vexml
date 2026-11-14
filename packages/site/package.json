@@ -1,13 +1,13 @@
 {
 	"name": "@vexml/site",
-	"version": "1.14.4",
+	"version": "1.14.5",
 	"private": true,
 	"type": "module",
 	"dependencies": {
 		"@fontsource-variable/anybody": "^5.3.0",
 		"@fontsource/ibm-plex-mono": "^5.3.0",
 		"@fontsource/ibm-plex-sans": "^5.3.0",
-		"@stringsync/mdom": "^0.8.16",
+		"@stringsync/mdom": "^0.8.17",
 		"@stringsync/vexml": "workspace:*",
 		"@vexml/benchmarks": "workspace:*",
 		"class-variance-authority": "^0.7.1",
