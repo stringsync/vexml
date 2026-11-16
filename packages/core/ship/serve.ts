@@ -102,7 +102,7 @@ export async function serve(
 		.option("target", z.string().optional())
 		.repeated("upstream", z.string())
 		.action(async (opts, { log }) => {
-			const found = find(list, opts);
+			const found = find(list, { ...opts, lenient: true });
 			const ctx = ctxs.stream(
 				{ send: (line) => log.error(JSON.stringify(line)) },
 				noPrompts,
@@ -123,7 +123,9 @@ export async function serve(
 			};
 			const prompts = new PromptChannel(stream, deps.input ?? stdin);
 			try {
-				await find(list, opts).run(ctxs.stream(stream, prompts));
+				await find(list, { ...opts, lenient: "planning" }).run(
+					ctxs.stream(stream, prompts),
+				);
 			} catch (error) {
 				stream.send({
 					type: "error",
@@ -176,12 +178,28 @@ function pick(list: readonly Target[], name: string | undefined): Target {
 }
 
 /** The step a `done` or `run` request names, from the plan it would see. */
-function find(list: readonly Target[], opts: StepRequest): Step {
+function find(
+	list: readonly Target[],
+	opts: StepRequest & { lenient?: boolean | "planning" },
+): Step {
 	const chosen = pick(list, opts.target);
+	// A `done` or `run` request may come before any upstream has released (a
+	// step like `test` reads none), so it plans with a placeholder version, as
+	// `plan` does, rather than refusing. A step that pins one fails loudly on it.
+	// With "planning" the placeholder is only for building the plan: a step
+	// that reads an upstream as it runs still refuses without the version.
+	let planning = true;
+	const strict = parseUpstream(opts.upstream);
 	const planned = steps(chosen, {
 		bump: opts.bump,
-		upstream: parseUpstream(opts.upstream),
+		upstream: (name) =>
+			opts.lenient && (opts.lenient !== "planning" || planning)
+				? parseUpstream(opts.upstream, (each) => ({
+						version: `the version ${each} releases`,
+					}))(name)
+				: strict(name),
 	});
+	planning = false;
 	const found = planned.find((each) => each.id === opts.step);
 	if (!found) {
 		throw new Error(

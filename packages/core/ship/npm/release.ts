@@ -84,9 +84,11 @@ export function release(opts: ReleaseOptions): Step[] {
 	 * web sign-in and one-time-password flow instead of failing over pipes.
 	 * Python's `pty` makes one without needing a terminal on stdin, which
 	 * `script` does (it fails when stdin is a socket), and keeps the exit code.
+	 * `npm_config_browser=false` keeps npm from asking to press ENTER to open a
+	 * browser on this machine, where nobody is: it prints the link instead.
 	 */
 	const tty = (command: string) =>
-		`python3 -I -c ${quote("import os,pty,sys; sys.exit(os.waitstatus_to_exitcode(pty.spawn(['sh','-c',sys.argv[1]])))")} ${quote(command)}`;
+		`python3 -I -c ${quote("import os,pty,sys; sys.exit(os.waitstatus_to_exitcode(pty.spawn(['sh','-c',sys.argv[1]])))")} ${quote(`export npm_config_browser=false; ${command}`)}`;
 	const publishedVersions = async (ctx: Ctx) =>
 		(
 			await ctx.sh(
@@ -204,7 +206,18 @@ export function release(opts: ReleaseOptions): Step[] {
 			run: (ctx) =>
 				ctx.sh(
 					tty(
-						`npm trust github ${quote(opts.package)} --repo ${quote(opts.repository)} --file ${quote(WORKFLOW_FILE)} --allow-publish --yes`,
+						// npm trust is not idempotent: a second `npm trust github` is
+						// refused with E409 once any config exists, and a 409 names the
+						// config that is the goal, so it counts as trusted. npm asks for
+						// its one-time password only when its stdout is a terminal, so
+						// stdout stays on the pseudo-terminal and only stderr, where the
+						// E409 is written, goes through `tee` (by a fifo, as sh has no
+						// process substitution) to be read after.
+						`dir=$(mktemp -d); mkfifo "$dir/err"; tee "$dir/log" < "$dir/err" >&2 & ` +
+							`npm trust github ${quote(opts.package)} --repo ${quote(opts.repository)} --file ${quote(WORKFLOW_FILE)} --allow-publish --yes 2> "$dir/err"; ` +
+							`code=$?; wait; ` +
+							`if [ "$code" = 0 ] || grep -q E409 "$dir/log"; then code=0; fi; ` +
+							`rm -rf "$dir"; exit "$code"`,
 					),
 					{ prompts: true },
 				),
