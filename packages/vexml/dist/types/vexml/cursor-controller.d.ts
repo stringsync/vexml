@@ -1,0 +1,47 @@
+import { type Resource } from '../core/disposable/index.js';
+import { type Eventful } from '../core/events/index.js';
+import type { CursorHost } from './cursor-host.js';
+import type { CursorView } from './cursor-view.js';
+import type { DrawnThrough } from './drawing.js';
+import type { CursorEventMap } from './events.js';
+import type { Note } from './note.js';
+import type { Scroller, ScrollerOptions } from './scroller.js';
+import type { Sequence } from './sequence.js';
+export declare class CursorController implements Eventful<CursorEventMap>, Resource {
+    private readonly sequence;
+    private readonly host;
+    private readonly scroller;
+    private readonly drawing;
+    private readonly dispatcher;
+    readonly events: import("../core/events/index.js").Events<CursorEventMap>;
+    private readonly subscriptions;
+    private readonly views;
+    private index;
+    private ms;
+    private disposed;
+    private lastVisible;
+    constructor(sequence: Sequence, host: CursorHost, scroller: Scroller & {
+        cancel(): void;
+    }, drawing: DrawnThrough);
+    next(): void;
+    previous(): void;
+    seekMs(timeMs: number): void;
+    seekBeats(beats: number): void;
+    getTimeMs(): number;
+    getTimeBeats(): number;
+    getIndex(): number;
+    getActiveElements(): readonly Note[];
+    getHighlightedElements(): readonly Note[];
+    isDone(): boolean;
+    isFullyVisible(): boolean;
+    sync(view: CursorView): Resource;
+    follow(scroller?: Scroller, opts?: ScrollerOptions): Resource;
+    scrollIntoView(opts?: ScrollerOptions): void;
+    cancelScroll(): void;
+    dispose(): void;
+    private barRect;
+    private drawThrough;
+    private snapshot;
+    private emit;
+    private checkVisibility;
+}

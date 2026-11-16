@@ -1,0 +1,39 @@
+import type { BeamRun, Chord, Note } from '@stringsync/mdom';
+import type { Beam, PedalMarking, StaveNote, StaveTie, StemmableNote, TabNote, Tuplet, VibratoBracket } from 'vexflow/core';
+import { Appearance } from './appearance.js';
+import { type BeamOptions } from './beam-builder.js';
+import type { BowedTremolo } from './bowed-tremolo.js';
+import type { Hairpin } from './hairpin.js';
+import type { NotationSlide } from './notation-slide.js';
+import { type PedalOptions } from './pedal-builder.js';
+import type { PedalMark, ScoreReader, WedgeMark } from './score-reader.js';
+import type { SingleSlide } from './single-slide.js';
+import { type SlideOptions } from './slide-builder.js';
+import type { SlurCurve } from './slur-curve.js';
+import { type SpanScope } from './span-scope.js';
+import type { TabCurve } from './tab-curve.js';
+import type { TabSlideLine } from './tab-slide-line.js';
+import { type WedgeOptions } from './wedge-builder.js';
+export declare class SpannerBuilder {
+    private readonly reader;
+    private readonly connectors;
+    private appearance;
+    constructor(reader: ScoreReader);
+    useDocumentCurves(enabled: boolean): void;
+    useAppearance(appearance: Appearance): void;
+    buildTremolos(chords: Chord[], byLead: Map<Note, StaveNote>): BowedTremolo[];
+    buildBeams(groups: BeamRun[], byLead: Map<Note, StaveNote>, opts?: BeamOptions): Beam[];
+    buildTuplets<T extends StemmableNote>(chords: Chord[], byLead: Map<Note, T>): Tuplet[];
+    buildTies(chords: Chord[], byLead: Map<Note, StaveNote>, scope?: SpanScope): StaveTie[];
+    buildHammerPulls(chords: Chord[], byTabLead: Map<Note, TabNote>, scope?: SpanScope): TabCurve[];
+    buildSlides(chords: Chord[], byTabLead: Map<Note, TabNote>, opts: SlideOptions): Array<TabSlideLine | SingleSlide>;
+    buildGlissandos(chords: Chord[], byLead: Map<Note, StaveNote>, scope?: SpanScope): Array<NotationSlide | SingleSlide>;
+    buildWedges(markers: WedgeMark[], byLead: Map<Note, StaveNote>, opts?: WedgeOptions): Hairpin[];
+    buildWavyLines(chords: Chord[], byLead: Map<Note, StaveNote>, scope?: SpanScope): VibratoBracket[];
+    buildPedals(markers: PedalMark[], byLead: Map<Note, StaveNote>, chords: Chord[], opts?: PedalOptions): {
+        marking: PedalMarking;
+        notes: StaveNote[];
+    }[];
+    buildSlurs(chords: Chord[], byLead: ReadonlyMap<Note, StaveNote>, scope?: SpanScope): SlurCurve[];
+    reach(note: Note): number;
+}

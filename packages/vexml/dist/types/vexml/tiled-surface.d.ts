@@ -1,0 +1,52 @@
+import type { Resource } from '../core/disposable/index.js';
+import { Rect } from '../core/geometry/index.js';
+import type { Ink } from './ink.js';
+import type { PaintOp } from './paint-op.js';
+import type { PaintSink } from './paint-sink.js';
+import { type GridOrigin } from './tile-grid.js';
+export interface TiledSurfaceOptions {
+    scale: number;
+    tileSize: number;
+    budget: number;
+    ink?: Ink;
+}
+export declare class TiledSurface implements PaintSink, Resource {
+    readonly host: HTMLElement;
+    private readonly opts;
+    private readonly plane;
+    private readonly tiles;
+    private readonly budget;
+    private grid;
+    private view;
+    private whole;
+    private shown;
+    private density;
+    private adoptable;
+    constructor(host: HTMLElement, opts: TiledSurfaceOptions);
+    get scale(): number;
+    rescale(scale: number): void;
+    get width(): number;
+    get height(): number;
+    get painted(): number;
+    resize(width: number, height: number, origin?: GridOrigin): void;
+    grow(height: number): void;
+    load(ops: readonly PaintOp[], width: number, height: number, origin: GridOrigin): void;
+    fit(width: number, height: number): void;
+    show(view: Rect): void;
+    adopt(plane: HTMLElement): void;
+    paint(op: PaintOp): void;
+    read(sx: number, sy: number, sw: number, sh: number): ImageData;
+    reset(): void;
+    paintInto(ctx: CanvasRenderingContext2D, region: Rect, scale?: number): void;
+    dispose(): void;
+    private composite;
+    private replay;
+    private refresh;
+    private wants;
+    private open;
+    private placePlane;
+    private place;
+    private close;
+    private discard;
+    private areaOf;
+}

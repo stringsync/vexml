@@ -1,0 +1,53 @@
+import { type Chord } from '@stringsync/mdom';
+import { StaveNote } from 'vexflow/core';
+import { Appearance } from './appearance.js';
+import type { DurationTranslator } from './duration-translator.js';
+import type { NotationTranslator } from './notation-translator.js';
+import type { NoteStyle, ScoreReader } from './score-reader.js';
+export declare class ChordTranslator {
+    private readonly durations;
+    private readonly notations;
+    private readonly reader;
+    private readonly keys;
+    private readonly middleKeys;
+    private appearance;
+    constructor(durations: DurationTranslator, notations: NotationTranslator, reader: ScoreReader);
+    useAppearance(appearance: Appearance): void;
+    private isHeld;
+    staveNote(chord: Chord, clef: string, opts: VexflowChordOptions): StaveNote;
+    private attachSign;
+    private dressRest;
+    private hideSpacing;
+    keyLines(chord: Chord, clef: string, opts: VexflowChordOptions): number[];
+    private struct;
+    private stemOf;
+    applyNoteColors(staveNote: StaveNote, chord: Chord): void;
+    private vexflowKey;
+    private spellKey;
+    private displayKey;
+    private pitchedRestKey;
+    private addAccidentals;
+    private addParentheses;
+    private addLevel;
+    private hideLedgerLines;
+    private addNoteheadText;
+    private noteheadRun;
+    private addDots;
+    private applyStemNone;
+    private slashGlyph;
+    private middleKey;
+    private addSlashNoteheads;
+}
+export declare const ACCIDENTAL_CODES: Record<string, string>;
+export declare function smuflGlyph(name: string | null): string | undefined;
+interface VexflowChordOptions {
+    alignCenter?: boolean;
+    octaveShift?: number;
+    defaultStem?: 'up' | 'down';
+    stem?: 'up' | 'down';
+    slashed?: boolean;
+    styled?: NoteStyle;
+}
+export declare const SLASH_GLYPHS: Record<string, string>;
+export declare const SLASH_GLYPH_FILLED = "\uE100";
+export {};

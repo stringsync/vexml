@@ -1,0 +1,37 @@
+{
+	"name": "@stringsync/vexml",
+	"version": "1.14.6",
+	"type": "module",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/stringsync/vexml.git",
+		"directory": "packages/vexml"
+	},
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./types/vexml/index.d.ts",
+			"default": "./index.js"
+		},
+		"./headless": {
+			"types": "./types/vexml/headless.d.ts",
+			"default": "./headless.js"
+		},
+		"./paint": {
+			"types": "./types/vexml/paint.d.ts",
+			"default": "./paint.js"
+		},
+		"./css": "./css/vexml.css",
+		"./fonts/bravura.woff2": "./assets/fonts/Bravura.woff2",
+		"./fonts/bravura-common.woff2": "./assets/fonts/BravuraCommon.woff2"
+	},
+	"main": "./index.js",
+	"types": "./types/vexml/index.d.ts",
+	"dependencies": {
+		"@stringsync/mdom": "^0.8.18",
+		"@types/fontkit": "2.0.9",
+		"fontkit": "2.0.4",
+		"vexflow": "5.0.0"
+	}
+}

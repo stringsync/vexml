@@ -1,8 +1,3 @@
-[install]
-# A package imports only what its package.json declares: hoisting would let
-# sound2score reach vexml without saying so.
-linker = "isolated"
-
 [test]
 # Preloaded so matcher's afterAll cleanup scopes to the whole run, not one file.
 # Bun reads bunfig.toml from the folder it runs in: this one holds for runs from

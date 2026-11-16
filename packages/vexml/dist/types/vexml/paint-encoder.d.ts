@@ -1,0 +1,51 @@
+import type { Affine } from './affine.js';
+import type { PaintCall, PaintOp, PathKind, PathSegment } from './paint-op.js';
+export declare class PaintEncoder {
+    private readonly strings;
+    private readonly stringIndex;
+    private readonly matrices;
+    private readonly matrixIndex;
+    private readonly matrixByValue;
+    private readonly props;
+    private readonly propsIndex;
+    private readonly propsByValue;
+    private readonly clips;
+    private readonly clipsIndex;
+    private readonly clipsByValue;
+    private readonly dashes;
+    private readonly dashIndex;
+    private readonly dashByValue;
+    private readonly states;
+    private readonly stateIndex;
+    private readonly stateByValue;
+    encode(ops: readonly PaintOp[]): PaintStream;
+    tables(): EncodedPaint;
+    private call;
+    private path;
+    private arg;
+    private state;
+    private propsOf;
+    private matrix;
+    private clipsOf;
+    private dash;
+    private string;
+}
+export interface EncodedPaint {
+    strings: string[];
+    matrices: number[];
+    props: Array<Record<string, string | number | boolean>>;
+    clips: Array<Array<[PaintStream, number, number, number[] | null]>>;
+    dashes: number[][];
+    states: number[];
+}
+export type PaintStream = Array<number | string | boolean | null | number[]>;
+export declare const PAINT_CALLS: readonly ['fill', 'stroke', 'fillRect', 'strokeRect', 'clearRect', 'fillText', 'strokeText'];
+export declare const PATH_KINDS: readonly PathKind[];
+export declare const FILL_RULES: readonly [undefined, 'nonzero', 'evenodd'];
+export declare const PATH_ARGS: Partial<Record<PathKind, number>>;
+export declare const CALL_FLAGS = 4;
+export declare const HAS_BOUNDS = 1;
+export declare const NO_MAX_WIDTH = 2;
+export declare const SEGMENT_MATRIX = 16;
+export declare const SEGMENT_COUNT = 32;
+export declare function anchorOf(stateMatrix: Affine, path: readonly PathSegment[] | null, call: PaintCall): [number, number];

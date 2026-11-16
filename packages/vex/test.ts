@@ -1,5 +1,5 @@
+import { ManifestWorkspace } from 'core/legacy-ship';
 import type { Logger } from 'core/log';
-import { ManifestWorkspace } from 'core/ship';
 import type { Fs, Ps } from 'core/system';
 
 export interface TestOptions {

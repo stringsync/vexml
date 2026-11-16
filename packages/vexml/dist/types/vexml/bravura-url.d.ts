@@ -1,0 +1,15 @@
+/** The URL of vexml's own Bravura woff2, the whole face. With no notation url the font
+ * loader injects it behind BRAVURA_COMMON_URL, on BRAVURA_REST_RANGE. Callers who want to
+ * preload or cache it import the same file as `@stringsync/vexml/fonts/bravura.woff2`
+ * instead. */
+export declare const BRAVURA_URL: string;
+/** The URL of the common Bravura subset, BRAVURA_COMMON_RANGE cut from BRAVURA_URL.
+ * Exported as `@stringsync/vexml/fonts/bravura-common.woff2`. */
+export declare const BRAVURA_COMMON_URL: string;
+/** The CSS unicode-range of the SMuFL glyphs most scores draw, plus Latin-1 so typed text
+ * never reaches the rest of the face. */
+export declare const BRAVURA_COMMON_RANGE = "U+0000-00FF, U+E000-E00F, U+E040-E06F, U+E080-E08F, U+E0A0-E0DF, U+E1E7, U+E240-E26F, U+E4A0-E4FF, U+E510-E54F, U+E870-E88F, U+ECA0-ECBF";
+/** Every codepoint BRAVURA_COMMON_RANGE leaves out, the range of the whole face behind the
+ * common one: a face also covering the common glyphs would be fetched for them, since the
+ * browser takes a glyph from the face defined last. */
+export declare const BRAVURA_REST_RANGE = "U+0100-DFFF, U+E010-E03F, U+E070-E07F, U+E090-E09F, U+E0E0-E1E6, U+E1E8-E23F, U+E270-E49F, U+E500-E50F, U+E550-E86F, U+E890-EC9F, U+ECC0-10FFFF";

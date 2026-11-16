@@ -1,22 +1,28 @@
-import { describe, expect, it } from 'bun:test';
-import { bumpOf } from './ship';
+import { expect, test } from 'bun:test';
+import { view } from 'core/ship';
+import { vexmlShip } from './ship';
 
-describe('bumpOf', () => {
-	it('takes the argument over the environment', () => {
-		expect(bumpOf('minor', 'major')).toBe('minor');
+test('vexml ships to npm through its mirror after mdom, at the bump asked for', () => {
+	const plan = view(vexmlShip, {
+		bump: 'minor',
+		upstream: () => ({ version: '2.3.4' }),
 	});
+	expect(plan.name).toBe('@stringsync/vexml');
+	expect(plan.bump).toBe('minor');
+	expect(plan.dependencies).toEqual(['@stringsync/mdom']);
+	expect(plan.steps.map((each) => each.id)).toEqual([
+		'test',
+		'version',
+		'workflow',
+		'mirror',
+		'login',
+		'first-publish',
+		'trust',
+		'publish',
+		'tag',
+	]);
+});
 
-	it('reads SPLATES_SHIP_BUMP when no argument is given', () => {
-		expect(bumpOf(undefined, 'patch')).toBe('patch');
-		expect(bumpOf(undefined, 'major')).toBe('major');
-	});
-
-	it('refuses an unknown value', () => {
-		expect(() => bumpOf(undefined, 'prerelease')).toThrow('SPLATES_SHIP_BUMP');
-	});
-
-	it('refuses when neither is given', () => {
-		expect(() => bumpOf(undefined, undefined)).toThrow('patch, minor or major');
-		expect(() => bumpOf(undefined, '')).toThrow('patch, minor or major');
-	});
+test("vexml's plan reads the version mdom released", () => {
+	expect(() => view(vexmlShip)).toThrow('nothing upstream was given');
 });

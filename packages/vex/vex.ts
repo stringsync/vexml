@@ -1,12 +1,14 @@
 import { resolve } from 'node:path';
 import { cli, type Deps, type Next } from 'core/cmd';
 import { color } from 'core/log';
+import { serve } from 'core/ship';
 import type { Fs } from 'core/system';
 import { SystemClock } from 'core/time';
 import { z } from 'zod';
 import { coverage } from './coverage';
 import { dev } from './dev';
 import { fix } from './fix';
+import { publish, ship, trust } from './legacy-ship';
 import { lint, lintCorpus } from './lint';
 import { perf } from './perf';
 import { RendererBench } from './perf-bench';
@@ -17,7 +19,7 @@ import { reach } from './reach';
 import { readme } from './readme';
 import { render } from './render';
 import { FINDING_KINDS } from './render-lint';
-import { bumpOf, publish, ship, trust } from './ship';
+import { vexmlShip } from './ship';
 import { slice } from './slice';
 import { test } from './test';
 import { validate } from './validate';
@@ -303,21 +305,27 @@ vex
 vex
 	.command('ship')
 	.description(
-		'bump version (patch|minor|major, or SPLATES_SHIP_BUMP), commit, tag, and publish',
+		"ship @stringsync/vexml to npm: answers splates's plan, done and run, or ships it all at a terminal",
 	)
-	.arg('type', z.optional(z.enum(['patch', 'minor', 'major'] as const)))
-	.option('dry-run', z.boolean(), {
-		default: false,
-		description: 'rehearse the release, publishing and pushing nothing',
+	.rest('args', z.string(), {
+		description:
+			'[plan | done <step> | run <step>] [--bump patch|minor|major] [--upstream @stringsync/mdom=<version>]',
 	})
-	.action((opts, { log, ps }) =>
-		ship({
-			bump: bumpOf(opts.type, ps.env('SPLATES_SHIP_BUMP')),
-			log,
-			ps,
-			dryRun: opts['dry-run'],
-		}),
-	);
+	.allowUnknownOption()
+	.action((opts, { ps }) => {
+		// The release's commands run from mono's root, one above vexml's.
+		ps.cd(`${ps.cwd()}/..`);
+		return serve(vexmlShip, opts.args, { ps });
+	});
+
+vex
+	.command('legacy-ship')
+	.description(
+		'the legacy ship: plan, inspect status, or run a release (--input bump=patch|minor|major)',
+	)
+	.allowUnknownOption()
+	.rest('args', z.string())
+	.action((opts, { log, ps }) => ship({ log, ps, argv: opts.args }));
 
 vex
 	.command('publish')

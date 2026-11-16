@@ -1,0 +1,40 @@
+import type { RenderContext } from 'vexflow/core';
+import type { DocumentPosition } from './score-reader.js';
+/** Which edge of its note a syllable lines up with: `<lyric justify>`. */
+export type LyricJustify = 'left' | 'center' | 'right';
+export interface LyricMark {
+    /** Tells a lyric apart from the other modifiers a note carries. */
+    readonly kind: 'lyric';
+    readonly documentPosition?: DocumentPosition | null;
+    setPositionX(x: number): void;
+    /** 0-based verse index: which row under the stave this syllable sits on. */
+    readonly verseIndex: number;
+    /** Which edge of its note the syllable lines up with. */
+    readonly justify: LyricJustify;
+    /** Where the syllable's box starts, given its note's notehead span. */
+    boxLeft(noteheadBeginX: number, noteheadEndX: number): number;
+    /** Whether a melisma `<extend/>` line trails this syllable. */
+    readonly extend: boolean;
+    /** Whether the syllable ends in the hyphen joining it to the next ('begin'/'middle'). */
+    readonly hyphenated: boolean;
+    /** Draw one more of the syllable's hyphens centered at `x` on its baseline, where a wide
+     * gap to the next syllable wants several (`<distance type="hyphen">`). */
+    drawHyphen(ctx: RenderContext, x: number): void;
+    /** The syllable's font size in px. */
+    readonly textSize: number;
+    /** The syllable's drawn width, including the gap it keeps from its neighbors. */
+    getWidth(): number;
+    /** Draw the syllable's text with its baseline at `y`, rather than under its own note. */
+    setBaselineY(y: number): void;
+    /** The ink to draw the syllable in. */
+    setStyle(style: {
+        fillStyle?: string;
+    }): void;
+    /** Push this syllable `rows` rows further from the stave. Offset each voice sharing a
+     * stave this way: every voice numbers its verses from 1, so their first verses would
+     * otherwise share a row and overprint. */
+    shiftVerses(rows: number): void;
+}
+/** Whether `modifier` is a lyric syllable. Narrows in place, so filtering a note's
+ * modifiers keeps whatever else the caller knows about them. */
+export declare function isLyricMark<T>(modifier: T): modifier is T & LyricMark;

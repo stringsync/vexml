@@ -6,7 +6,10 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!**/*.musicxml", "!packages/core"]
+		"includes": [
+			"**",
+			"!**/*.musicxml"
+		]
 	},
 	"css": {
 		"parser": {
@@ -25,7 +28,9 @@
 					"options": {
 						"patterns": [
 							{
-								"group": ["**/packages/**"],
+								"group": [
+									"**/packages/**"
+								],
 								"message": "Import the package's public API (its name and an exports subpath) instead of reaching into packages/."
 							}
 						]
@@ -43,7 +48,9 @@
 	},
 	"overrides": [
 		{
-			"includes": ["packages/site/components/ui/**"],
+			"includes": [
+				"packages/site/components/ui/**"
+			],
 			"linter": {
 				"rules": {
 					"a11y": {
