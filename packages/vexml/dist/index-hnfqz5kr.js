@@ -162,7 +162,7 @@ import {
   SNAPSHOT_VERSION2,
   SNAPSHOT_FORMAT,
   PaintReplayer
-} from "./index-dvpcyvz3.js";
+} from "./index-nvqbmbbp.js";
 
 // element.ts
 function isHighlightable2(el) {
@@ -353,12 +353,14 @@ class Stave2 {
   left;
   right;
   noteStartX;
-  constructor(number, lines, left, right, noteStartX) {
+  keyAccidentals;
+  constructor(number, lines, left, right, noteStartX, keyAccidentals) {
     this.number = number;
     this.lines = lines;
     this.left = left;
     this.right = right;
     this.noteStartX = noteStartX;
+    this.keyAccidentals = keyAccidentals;
   }
   getNumber() {
     return this.number;
@@ -373,6 +375,13 @@ class Stave2 {
   }
   getNoteStartX() {
     return this.noteStartX;
+  }
+  getKeyAccidentals() {
+    return this.keyAccidentals.map(({ step, alter, x, y, w, h }) => ({
+      step,
+      alter,
+      rect: new Rect2(x, y, w, h)
+    }));
   }
 }
 
@@ -415,7 +424,7 @@ class Measure2 extends Element2 {
     return [...this.voiceList];
   }
   getStaves() {
-    return this.staveList.map((s) => new Stave2(s.staff, s.lines, s.left, s.right, s.noteStartX));
+    return this.staveList.map((s) => new Stave2(s.staff, s.lines, s.left, s.right, s.noteStartX, s.keyAccidentals));
   }
   drawn(staves, rect) {
     this.staveList = staves;
@@ -5153,12 +5162,13 @@ class ElementIndex {
 
 // element-model.ts
 function staveModelsOf(staves, part) {
-  return staves.filter((s) => s.part === part).map(({ staff, lines, left, right, noteStartX }) => ({
+  return staves.filter((s) => s.part === part).map(({ staff, lines, left, right, noteStartX, keyAccidentals }) => ({
     staff,
     lines,
     left,
     right,
-    noteStartX
+    noteStartX,
+    keyAccidentals
   }));
 }
 
@@ -6961,13 +6971,14 @@ class LazyLayoutPlan {
 
 // stave-factory.ts
 import {
-  StaveModifierPosition,
+  StaveModifierPosition as StaveModifierPosition2,
   TabStave
 } from "vexflow/core";
 
 // staff-scaled-signatures.ts
 import {
-  KeySignature
+  KeySignature,
+  StaveModifierPosition
 } from "vexflow/core";
 var STAVE_LINE_DISTANCE = 10;
 function staveRatio(stave) {
@@ -6975,6 +6986,24 @@ function staveRatio(stave) {
 }
 
 class StaffKeySignature extends KeySignature {
+  getAccidentals() {
+    if (!this.formatted) {
+      this.format();
+    }
+    return this.children.map((glyph, i) => {
+      const box = glyph.getBoundingBox();
+      return {
+        ...this.pitchOf(this.accList[i] ?? { type: "n", line: 0 }, i),
+        x: this.x + box.getX(),
+        y: box.getY(),
+        w: box.getW(),
+        h: box.getH()
+      };
+    });
+  }
+  opensStave() {
+    return this.getPosition() === StaveModifierPosition.BEGIN;
+  }
   convertToGlyph(acc, nextAcc, stave) {
     const before = this.width;
     super.convertToGlyph(acc, nextAcc, stave);
@@ -7002,6 +7031,15 @@ function scaleTimeSignature(sig, stave) {
 }
 
 // cancelling-key-signature.ts
+var STEPS2 = ["C", "D", "E", "F", "G", "A", "B"];
+var TOP_LINE_STEPS = {
+  treble: 5 * 7 + 3,
+  bass: 3 * 7 + 5,
+  alto: 4 * 7 + 4,
+  tenor: 4 * 7 + 2
+};
+var ALTERS = { "#": 1, "##": 2, b: -1, bb: -2, n: 0 };
+
 class CancellingKeySignature extends StaffKeySignature {
   keyClef;
   naturalsAfter;
@@ -7009,6 +7047,14 @@ class CancellingKeySignature extends StaffKeySignature {
     super(keySpec, cancelKeySpec);
     this.keyClef = keyClef;
     this.naturalsAfter = naturalsAfter;
+  }
+  pitchOf(acc) {
+    const top = TOP_LINE_STEPS[this.keyClef] ?? TOP_LINE_STEPS.treble ?? 0;
+    const steps = top - Math.round(acc.line * 2);
+    return {
+      step: STEPS2[(steps % 7 + 7) % 7] ?? "C",
+      alter: ALTERS[acc.type] ?? 0
+    };
   }
   convertAccLines(_clef, type, accList) {
     super.convertAccLines(this.keyClef, type, accList);
@@ -7032,6 +7078,10 @@ class CustomKeySignature extends StaffKeySignature {
   constructor(accidentals) {
     super("C");
     this.accidentals = accidentals;
+  }
+  pitchOf(_acc, index) {
+    const { step, alter } = this.accidentals[index] ?? { step: "C", alter: 0 };
+    return { step, alter };
   }
   format() {
     let stave = this.getStave();
@@ -7195,7 +7245,9 @@ class SignatureTranslator {
       }
       out.push({
         type,
-        line: this.keySignatureLine(alteration.step, alteration.octave, clef)
+        line: this.keySignatureLine(alteration.step, alteration.octave, clef),
+        step: alteration.step,
+        alter: alteration.alter
       });
     }
     return out;
@@ -7422,7 +7474,7 @@ class StaveFactory {
     this.dressClef(stave, scale, this.signatures.clefGlyph(name, annotation));
   }
   addEndCancel(stave, cancel, clef) {
-    stave.addModifier(new CancellingKeySignature("C", cancel.spec, clef ? this.signatures.clefName(clef) : "treble", false).setPosition(StaveModifierPosition.END), StaveModifierPosition.END);
+    stave.addModifier(new CancellingKeySignature("C", cancel.spec, clef ? this.signatures.clefName(clef) : "treble", false).setPosition(StaveModifierPosition2.END), StaveModifierPosition2.END);
   }
   addKey(stave, measure, staffNumber, cancel) {
     const key = measure.getKey(staffNumber);
@@ -7431,9 +7483,9 @@ class StaveFactory {
     }
     const customKey = this.customKey(measure, staffNumber);
     if (customKey.length > 0) {
-      stave.addModifier(new CustomKeySignature(customKey).setPosition(StaveModifierPosition.BEGIN), StaveModifierPosition.BEGIN);
+      stave.addModifier(new CustomKeySignature(customKey).setPosition(StaveModifierPosition2.BEGIN), StaveModifierPosition2.BEGIN);
     } else if (key?.rootNote) {
-      stave.addModifier(new CancellingKeySignature(this.signatures.vexflowKeySpec(key), cancel?.spec, this.clefName(measure, staffNumber), cancel?.location === "right").setPosition(StaveModifierPosition.BEGIN), StaveModifierPosition.BEGIN);
+      stave.addModifier(new CancellingKeySignature(this.signatures.vexflowKeySpec(key), cancel?.spec, this.clefName(measure, staffNumber), cancel?.location === "right").setPosition(StaveModifierPosition2.BEGIN), StaveModifierPosition2.BEGIN);
     }
   }
   customKey(measure, staffNumber) {
@@ -9461,7 +9513,8 @@ class ScoreRecording {
             })),
             staves: measure.staves.map((stave) => ({
               ...stave,
-              lines: [...stave.lines]
+              lines: [...stave.lines],
+              keyAccidentals: stave.keyAccidentals.map((a) => ({ ...a }))
             }))
           }))
         })),
@@ -9917,8 +9970,10 @@ import { CanvasContext as CanvasContext2 } from "vexflow/core";
 
 // draw-pass.ts
 import {
+  KeySignature as KeySignature2,
   Metrics as Metrics4,
-  MetricsDefaults
+  MetricsDefaults,
+  StaveModifierPosition as StaveModifierPosition5
 } from "vexflow/core";
 
 // barline-width.ts
@@ -12195,7 +12250,7 @@ class LyricPlacer {
 // repeat-wing-drawer.ts
 import {
   Barline as Barline4,
-  StaveModifierPosition as StaveModifierPosition2
+  StaveModifierPosition as StaveModifierPosition3
 } from "vexflow/core";
 var WING_RISE = 1.5;
 var WING_REACH = 1.1;
@@ -12208,10 +12263,10 @@ class RepeatWingDrawer {
   draw(top, bottom, wings) {
     this.context.openGroup("vexml-repeat-wing");
     try {
-      const begin = this.repeatX(top, StaveModifierPosition2.BEGIN, [
+      const begin = this.repeatX(top, StaveModifierPosition3.BEGIN, [
         Barline4.type.REPEAT_BEGIN
       ]);
-      const end = this.repeatX(top, StaveModifierPosition2.END, [
+      const end = this.repeatX(top, StaveModifierPosition3.END, [
         Barline4.type.REPEAT_END,
         Barline4.type.REPEAT_BOTH
       ]);
@@ -13871,7 +13926,7 @@ import {
   GraceNoteGroup as GraceNoteGroup2,
   Modifier as Modifier8,
   Stave as Stave4,
-  StaveModifierPosition as StaveModifierPosition3,
+  StaveModifierPosition as StaveModifierPosition4,
   StaveNote as StaveNote7,
   Stem as Stem6,
   TickContext,
@@ -13968,7 +14023,7 @@ class SystemFormatter {
     const timeSignatures = [];
     for (const stave of staves) {
       stave.format();
-      for (const modifier of stave.getModifiers(StaveModifierPosition3.BEGIN)) {
+      for (const modifier of stave.getModifiers(StaveModifierPosition4.BEGIN)) {
         if (modifier instanceof Barline6 && modifier.getType() === Barline6.type.REPEAT_BEGIN) {
           repeats.push(modifier);
         } else if (modifier.getCategory() === TimeSignature5.CATEGORY) {
@@ -15863,7 +15918,8 @@ class DrawPass {
         lines,
         left: stave.getX(),
         right: stave.getX() + stave.getWidth(),
-        noteStartX: stave.getNoteStartX()
+        noteStartX: stave.getNoteStartX(),
+        keyAccidentals: stave.getModifiers(StaveModifierPosition5.BEGIN, KeySignature2.CATEGORY).flatMap((sig) => sig instanceof StaffKeySignature && sig.opensStave() ? sig.getAccidentals() : [])
       };
     });
   }
@@ -16636,7 +16692,12 @@ class SystemDraw {
             lines: s.lines.map((y) => y - cropTop),
             left: s.left + dxOf,
             right: s.right + dxOf,
-            noteStartX: s.noteStartX + dxOf
+            noteStartX: s.noteStartX + dxOf,
+            keyAccidentals: s.keyAccidentals.map((a) => ({
+              ...a,
+              x: a.x + dxOf,
+              y: a.y - cropTop
+            }))
           })),
           barlines: mm.barlines.map((barline) => ({
             ...barline,

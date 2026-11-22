@@ -1,11 +1,12 @@
 import type { StepCtxs, Terminal } from "./process-ctx";
 import { runSteps } from "./runner";
-import { type Bump, steps, type Target, type Upstream } from "./target";
+import { type Bump, steps, type Target, type Upstream, view } from "./target";
 
 /** One ship of a target run in a terminal. */
 export interface TerminalShip {
 	target: Target;
 	bump?: Bump;
+	version?: string;
 	upstream: (name: string) => Upstream;
 }
 
@@ -20,12 +21,25 @@ export async function shipInTerminal(
 	terminal: Terminal,
 	ctxs: StepCtxs,
 ): Promise<boolean> {
-	const planned = steps(ship.target, {
+	const reviewed = view(ship.target, {
 		bump: ship.bump,
+		version: ship.version,
 		upstream: ship.upstream,
 	});
-	const at = ship.bump ?? ship.target.bump;
-	terminal.print(`${ship.target.name}${at ? ` at the next ${at}` : ""}:`);
+	if (ship.target.version && reviewed.version === undefined) {
+		throw new Error(
+			`The target "${ship.target.name}" needs --version or --bump`,
+		);
+	}
+	const planned = steps(ship.target, {
+		version: reviewed.version,
+		bump: reviewed.bump,
+		upstream: ship.upstream,
+	});
+	const at = reviewed.bump;
+	terminal.print(
+		`${ship.target.name}${reviewed.version ? ` at ${reviewed.version}` : at ? ` at the next ${at}` : ""}:`,
+	);
 	for (const each of planned) {
 		terminal.print(`  ${each.id}: ${each.does}`);
 	}

@@ -396,8 +396,19 @@ export interface RawBarline {
 	source: MBarline | null;
 }
 
-/* One part's stave in a measure column: its line ys top to bottom, its left and right x, and the
- * x its notes start at. */
+/* One accidental of the key signature a stave opens with: the step and alter it marks, and its
+ * glyph's box. */
+export interface RawKeyAccidental {
+	step: string;
+	alter: number;
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+}
+
+/* One part's stave in a measure column: its line ys top to bottom, its left and right x, the
+ * x its notes start at, and the accidentals of the key signature it opens with. */
 export interface RawStave {
 	/* The part's id. */
 	part: string;
@@ -407,6 +418,7 @@ export interface RawStave {
 	left: number;
 	right: number;
 	noteStartX: number;
+	keyAccidentals: RawKeyAccidental[];
 }
 
 /* A chord diagram (fret box) the draw pass placed, in score space. The rect spans the whole

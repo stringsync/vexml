@@ -61,7 +61,15 @@ export class Measure extends Element {
 	 * render until its system is drawn. */
 	getStaves(): Stave[] {
 		return this.staveList.map(
-			(s) => new Stave(s.staff, s.lines, s.left, s.right, s.noteStartX),
+			(s) =>
+				new Stave(
+					s.staff,
+					s.lines,
+					s.left,
+					s.right,
+					s.noteStartX,
+					s.keyAccidentals,
+				),
 		);
 	}
 

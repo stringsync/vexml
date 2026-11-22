@@ -2,7 +2,7 @@
 // runs to build: the work that reads and writes many files.
 //
 //   bun cli.ts locate <package name>
-//   bun cli.ts mirror <package folder> <checkout> <version> [keep glob...] [--pins <json>]
+//   bun cli.ts mirror <package folder> <checkout> <version> [keep glob...] [--pins <json>] [--fold <json>] [--package-only]
 //   bun cli.ts build <package folder>
 //
 // Folders are relative to the working directory, mono's root or the mirror's.
@@ -17,10 +17,18 @@ const root = process.cwd();
 if (command === "locate" && args[0]) {
 	console.log(JSON.stringify(await locate(root, args[0])));
 } else if (command === "mirror" && args.length >= 3) {
-	const flag = args.indexOf("--pins");
-	const pins = flag < 0 ? undefined : JSON.parse(args[flag + 1] as string);
-	const rest =
-		flag < 0 ? args : args.filter((_, i) => i !== flag && i !== flag + 1);
+	const flagged = (name: string) => {
+		const at = args.indexOf(name);
+		return at < 0 ? undefined : JSON.parse(args[at + 1] as string);
+	};
+	const pins = flagged("--pins");
+	const fold = flagged("--fold");
+	const alone = args.includes("--package-only");
+	const rest = args.filter(
+		(arg, i) =>
+			!["--pins", "--fold", "--package-only"].includes(arg) &&
+			!["--pins", "--fold"].includes(args[i - 1] as string),
+	);
 	const [pkg, into, version, ...keep] = rest as [string, string, string];
 	console.log(
 		await writeMirror({
@@ -30,6 +38,8 @@ if (command === "locate" && args[0]) {
 			version,
 			keep,
 			...(pins && { pins }),
+			...(fold && { fold }),
+			...(alone && { scope: "package" as const }),
 		}),
 	);
 } else if (command === "build" && args[0]) {

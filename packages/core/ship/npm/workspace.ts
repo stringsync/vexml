@@ -99,3 +99,30 @@ export type Member = { dir: string; manifest: Manifest };
 
 /** A TypeScript source file. */
 export const SOURCE = /\.tsx?$/;
+
+/**
+ * Private workspace packages of other projects that a release folds in, by
+ * package name: each is copied into the mirror and bundled into the build,
+ * with what its code reads from disk beside the built code.
+ */
+export type Fold = Record<string, FoldedPackage>;
+
+export interface FoldedPackage {
+	/**
+	 * Globs, relative to the package, of files its code reads from disk
+	 * beside `import.meta.dir`, which in a build is the folder the built code
+	 * sits in. A glob with a `*` keeps its path under `dist/` (`extension/**`
+	 * lands at `dist/extension/...`); a literal path lands at its file name
+	 * (`control/index.html` at `dist/index.html`), as its reader looks beside
+	 * itself.
+	 */
+	files?: string[];
+	/**
+	 * Files, relative to the package, its code builds itself for the browser:
+	 * each is built beside the files, as `control/main.tsx` into `main.js`.
+	 */
+	entries?: string[];
+}
+
+/** The file in a mirror's root that carries its fold to the build. */
+export const FOLD_FILE = "ship-fold.json";

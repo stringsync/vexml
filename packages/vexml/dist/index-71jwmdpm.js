@@ -3,7 +3,7 @@ import {
   Affine,
   SNAPSHOT_VERSION2,
   PaintReplayer
-} from "./index-dvpcyvz3.js";
+} from "./index-nvqbmbbp.js";
 // ../core/disposable/disposables.ts
 class disposables {
   constructor() {}

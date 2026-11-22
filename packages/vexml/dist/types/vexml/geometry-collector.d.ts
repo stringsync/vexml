@@ -67,6 +67,14 @@ export interface RawBarline {
     location: BarlineLocation;
     source: MBarline | null;
 }
+export interface RawKeyAccidental {
+    step: string;
+    alter: number;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
 export interface RawStave {
     part: string;
     staff: number;
@@ -74,6 +82,7 @@ export interface RawStave {
     left: number;
     right: number;
     noteStartX: number;
+    keyAccidentals: RawKeyAccidental[];
 }
 export interface RawChordDiagram {
     rect: Rect;

@@ -1,5 +1,11 @@
 import { Stave } from 'vexflow/core';
-import { StaffKeySignature } from './staff-scaled-signatures';
+import { type KeyPitch, StaffKeySignature } from './staff-scaled-signatures';
+
+/* One accidental a custom key draws: its glyph type and line, and the pitch it marks. */
+export interface CustomKeyAccidental extends KeyPitch {
+	type: string;
+	line: number;
+}
 
 /*
  * A key signature spelled out accidental by accidental, for a <key> written with
@@ -12,11 +18,17 @@ import { StaffKeySignature } from './staff-scaled-signatures';
  * so a custom signature places, measures and draws exactly like a normal one.
  */
 export class CustomKeySignature extends StaffKeySignature {
-	constructor(
-		private readonly accidentals: ReadonlyArray<{ type: string; line: number }>,
-	) {
+	constructor(private readonly accidentals: readonly CustomKeyAccidental[]) {
 		// Any valid spec: format() below never reads it.
 		super('C');
+	}
+
+	protected override pitchOf(
+		_acc: { type: string; line: number },
+		index: number,
+	): KeyPitch {
+		const { step, alter } = this.accidentals[index] ?? { step: 'C', alter: 0 };
+		return { step, alter };
 	}
 
 	override format(): void {

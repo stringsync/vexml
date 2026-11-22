@@ -131,6 +131,7 @@ export function wholeLong() {
 	return wholeLongRender;
 }
 
+// A fixture's file name under DATA_DIR, its MusicXML itself, or a snapshot.
 export async function render(
 	fixture: string | ScoreSnapshot,
 	overrides: Partial<Config> = {},
@@ -186,9 +187,9 @@ export async function render(
 		scheduler,
 	);
 	const score = await renderer.render(
-		typeof fixture === 'string'
-			? await Bun.file(path.join(DATA_DIR, fixture)).text()
-			: fixture,
+		typeof fixture !== 'string' || fixture.startsWith('<')
+			? fixture
+			: await Bun.file(path.join(DATA_DIR, fixture)).text(),
 	);
 	return { score, stage, scheduler };
 }

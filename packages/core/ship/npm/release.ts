@@ -6,6 +6,7 @@ import { type Step, step } from "../step";
 import type { Bump } from "../target";
 import { next } from "./version";
 import { WORKFLOW_FILE, WORKFLOW_PATH, workflow } from "./workflow";
+import type { Fold } from "./workspace";
 
 export interface ReleaseOptions {
 	/** The package's name on npm, as `@stringsync/mdom`. */
@@ -23,6 +24,32 @@ export interface ReleaseOptions {
 	keep?: readonly string[];
 	/** Versions the mirror depends on in place of npm's latest, by package name. */
 	pins?: Record<string, string>;
+	/**
+	 * A command run from the mirror's root after it is written and installed
+	 * and before it is built and committed, so what it changes is in the
+	 * release commit. The release's version is in `SHIP_VERSION`. The publish
+	 * workflow runs it too, before its build.
+	 */
+	prepare?: string;
+	/**
+	 * A command run from the mirror's root after the build, with
+	 * `SHIP_VERSION` set; the mirror step fails when it does, before anything
+	 * is committed.
+	 */
+	check?: string;
+	mirrorTest?: string; // Tests the built mirror from its root, before the commit.
+	/**
+	 * Private packages of other projects to fold into the mirror and the
+	 * build, by package name, with the files each reads from disk.
+	 */
+	fold?: Fold;
+	/**
+	 * What the mirror holds of the project: `project` (the default) its whole
+	 * folder, `package` only the published package's folder, at the mirror's
+	 * root, for a project that keeps the rest private. `keep` globs and the
+	 * `mirror/` folder are then relative to the package's folder.
+	 */
+	scope?: "project" | "package";
 	/** Steps of the same target that finish before the first of these. */
 	dependencies?: readonly string[];
 }
@@ -56,7 +83,8 @@ export function release(opts: ReleaseOptions): Step[] {
 		}
 	};
 	/** Where the package sits in the mirror, whose root is the project folder. */
-	const inMirror = (dir: string) => dir.split("/").slice(1).join("/");
+	const inMirror = (dir: string) =>
+		opts.scope === "package" ? "." : dir.split("/").slice(1).join("/");
 	const write = (state: State) => writeFile(statePath, JSON.stringify(state));
 	/** Whether a command succeeds, with its output ignored. */
 	const ok = async (ctx: Ctx, command: string) =>
@@ -86,9 +114,15 @@ export function release(opts: ReleaseOptions): Step[] {
 	 * `script` does (it fails when stdin is a socket), and keeps the exit code.
 	 * `npm_config_browser=false` keeps npm from asking to press ENTER to open a
 	 * browser on this machine, where nobody is: it prints the link instead.
+	 *
+	 * On macOS a pseudo-terminal reads as end of file once the command exits,
+	 * where Linux raises EIO. Python 3.9's `pty.spawn` (macOS's own
+	 * `/usr/bin/python3`) waits forever on that end of file once stdin has
+	 * ended too, so the read raises at end of file, which every version takes
+	 * as the command being done.
 	 */
 	const tty = (command: string) =>
-		`python3 -I -c ${quote("import os,pty,sys; sys.exit(os.waitstatus_to_exitcode(pty.spawn(['sh','-c',sys.argv[1]])))")} ${quote(`export npm_config_browser=false; ${command}`)}`;
+		`python3 -I -c ${quote(PTY)} ${quote(`export npm_config_browser=false; ${command}`)}`;
 	const publishedVersions = async (ctx: Ctx) =>
 		(
 			await ctx.sh(
@@ -96,11 +130,33 @@ export function release(opts: ReleaseOptions): Step[] {
 			)
 		).trim();
 
+	/**
+	 * Whether npm's latest version was published by the GitHub workflow, which
+	 * only happens once npm trusts it: `npm trust list` needs a one-time
+	 * password even to read, so this is how a release avoids asking for a login
+	 * it will not use.
+	 */
+	const publishedByWorkflow = (ctx: Ctx) =>
+		ok(
+			ctx,
+			`npm view --prefer-online ${quote(opts.package)} _npmUser | grep -q npm-oidc-no-reply`,
+		);
+
+	// First, so the one step that needs the user comes while they are still
+	// at the screen, not after the tests and the mirror have run.
 	return [
+		step({
+			id: "login",
+			does: "Sign in to npm, unless this machine already is",
+			dependencies: opts.dependencies,
+			done: async (ctx) =>
+				(await publishedByWorkflow(ctx)) || ok(ctx, "npm whoami"),
+			run: (ctx) => ctx.sh(tty("npm login --auth-type=web"), { prompts: true }),
+		}),
 		step({
 			id: "test",
 			does: `Test ${opts.package}`,
-			dependencies: opts.dependencies,
+			dependencies: ["login"],
 			run: (ctx) => ctx.sh(opts.test),
 		}),
 		step({
@@ -127,14 +183,14 @@ export function release(opts: ReleaseOptions): Step[] {
 				const text = await ctx.sh(
 					`gh api -H 'Accept: application/vnd.github.raw' repos/${opts.repository}/contents/${WORKFLOW_PATH} 2>/dev/null || true`,
 				);
-				return text.trim() === workflow(dir).trim();
+				return text.trim() === workflow(dir, opts.prepare).trim();
 			},
 			run: async (ctx) => {
 				const dir = inMirror((await read()).dir);
 				await sync(ctx);
 				const path = join(checkout, WORKFLOW_PATH);
 				await mkdir(join(checkout, ".github/workflows"), { recursive: true });
-				await writeFile(path, workflow(dir));
+				await writeFile(path, workflow(dir, opts.prepare));
 				await ctx.sh(
 					`cd ${quote(checkout)} && git add ${quote(WORKFLOW_PATH)} && git commit -m 'Add the publish workflow' && git push origin HEAD`,
 				);
@@ -153,14 +209,31 @@ export function release(opts: ReleaseOptions): Step[] {
 				const dir = inMirror(state.dir);
 				await sync(ctx);
 				await ctx.sh(
-					`bun core/packages/core/ship/npm/cli.ts mirror ${quote(state.dir)} ${quote(checkout)} ${quote(state.version)}${(opts.keep ?? []).map((glob) => ` ${quote(glob)}`).join("")}${opts.pins ? ` --pins ${quote(JSON.stringify(opts.pins))}` : ""}`,
+					`bun core/packages/core/ship/npm/cli.ts mirror ${quote(state.dir)} ${quote(checkout)} ${quote(state.version)}${(opts.keep ?? []).map((glob) => ` ${quote(glob)}`).join("")}${opts.pins ? ` --pins ${quote(JSON.stringify(opts.pins))}` : ""}${opts.fold ? ` --fold ${quote(JSON.stringify(opts.fold))}` : ""}${opts.scope === "package" ? " --package-only" : ""}`,
 				);
+				const env = `export SHIP_VERSION=${quote(state.version)}`;
+				const hook = (command: string) =>
+					ctx.sh(`cd ${quote(checkout)} && ${env} && ${command}`);
+				await ctx.sh(`cd ${quote(checkout)} && bun install`);
+				if (opts.prepare) {
+					await hook(opts.prepare);
+				}
 				const built = `cd ${quote(checkout)} && bun install && bun packages/core/ship/npm/cli.ts build ${quote(dir)}`;
 				await ctx.sh(
 					`${built} 2>&1 || (cd ${quote(checkout)} && bun install && bun core/packages/core/ship/npm/cli.ts build ${quote(dir)})`,
 				);
+				if (opts.check) {
+					await hook(opts.check);
+				}
+				if (opts.mirrorTest) {
+					await hook(opts.mirrorTest);
+				}
+				const monoSha = (await ctx.sh("git rev-parse HEAD"))
+					.trim()
+					.split("\n")
+					.pop();
 				await ctx.sh(
-					`cd ${quote(checkout)} && git add -A && (git diff --cached --quiet || git commit -m ${quote(`Release v${state.version}`)}) && git push origin HEAD`,
+					`cd ${quote(checkout)} && git add -A && (git diff --cached --quiet || git commit -m ${quote(`Release v${state.version}`)} -m ${quote(`Mirrored-from: ${monoSha}`)}) && git push origin HEAD`,
 				);
 				const sha = (await ctx.sh(`git -C ${quote(checkout)} rev-parse HEAD`))
 					.trim()
@@ -169,13 +242,6 @@ export function release(opts: ReleaseOptions): Step[] {
 				await write({ ...state, sha });
 				ctx.update(`Mirror at ${sha.slice(0, 7)}`);
 			},
-		}),
-		step({
-			id: "login",
-			does: "Sign in to npm, unless this machine already is",
-			dependencies: ["mirror"],
-			done: (ctx) => ok(ctx, "npm whoami"),
-			run: (ctx) => ctx.sh(tty("npm login --auth-type=web"), { prompts: true }),
 		}),
 		step({
 			id: "first-publish",
@@ -198,7 +264,8 @@ export function release(opts: ReleaseOptions): Step[] {
 			id: "trust",
 			does: `Have npm trust ${WORKFLOW_FILE} of ${opts.repository} to publish ${opts.package}`,
 			dependencies: ["first-publish", "login"],
-			done: (ctx) =>
+			done: async (ctx) =>
+				(await publishedByWorkflow(ctx)) ||
 				ok(
 					ctx,
 					`npm trust list ${quote(opts.package)} | grep -q ${quote(WORKFLOW_FILE)}`,
@@ -247,12 +314,14 @@ export function release(opts: ReleaseOptions): Step[] {
 						`sleep 5 && id=$(gh run list -R ${quote(opts.repository)} --workflow ${quote(WORKFLOW_FILE)} --limit 1 --json databaseId --jq '.[0].databaseId') && gh run watch "$id" -R ${quote(opts.repository)} --exit-status`,
 					);
 				} catch (error) {
-					// An earlier run may have published this version already
-					// (npm's view can lag), which makes this one fail with
-					// "cannot publish over"; the version being out is the goal.
+					// An earlier run may have published this version already,
+					// which makes this one fail with "cannot publish over"; the
+					// version being out is the goal. npm says a new version "may
+					// take a few minutes to become available", so wait for its
+					// view to catch up before calling the run a failure.
 					const out = await ok(
 						ctx,
-						`npm view --prefer-online ${quote(`${opts.package}@${version}`)} version | grep -q .`,
+						`for i in $(seq 1 24); do npm view --prefer-online ${quote(`${opts.package}@${version}`)} version | grep -q . && exit 0; sleep 5; done; exit 1`,
 					);
 					if (!out) {
 						throw error;
@@ -293,3 +362,15 @@ function quote(word: string): string {
 		? word
 		: `'${word.replaceAll("'", `'\\''`)}'`;
 }
+
+/** Runs `sys.argv[1]` under a pseudo-terminal and exits with its exit code. */
+const PTY = `import os, pty, sys
+
+def read(fd):
+    data = os.read(fd, 1024)
+    if not data:
+        raise OSError("end of file")
+    return data
+
+sys.exit(os.waitstatus_to_exitcode(pty.spawn(["sh", "-c", sys.argv[1]], read)))
+`;

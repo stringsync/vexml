@@ -1,3 +1,5 @@
+import type { Duration } from "core/time";
+
 /** What a prompt can be told while it waits. */
 export interface PromptOptions {
 	/**
@@ -16,6 +18,12 @@ export interface ShOptions {
 	 * asks the user instead, and types the answer into the command.
 	 */
 	prompts?: boolean;
+	/**
+	 * Fails the call, killing the command, once it has run this long, even
+	 * when a child it left behind still holds its output open. Without it,
+	 * the step's own timeout is the only limit.
+	 */
+	timeout?: Duration;
 }
 
 /**

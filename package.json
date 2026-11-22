@@ -1,6 +1,6 @@
 {
 	"name": "vexml",
-	"version": "1.14.6",
+	"version": "1.14.7",
 	"private": true,
 	"type": "module",
 	"workspaces": {
@@ -17,8 +17,6 @@
 			"@standard-schema/spec": "^1.1.0",
 			"@types/bun": "^1.4",
 			"@types/react": "^19.1.13",
-			"@aws-cdk/toolkit-lib": "^1.45.0",
-			"aws-cdk-lib": "^2.250.0",
 			"react": "^19.2.4",
 			"react-dom": "^19.2.4",
 			"zod": "^4.4.3"

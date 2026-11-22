@@ -12,11 +12,11 @@ import {
   CssFont,
   ScoreEngraver,
   CanvasPaintProbe
-} from "./index-vvzfy7vv.js";
+} from "./index-hnfqz5kr.js";
 import {
   SNAPSHOT_VERSION2,
   PaintDecoder
-} from "./index-dvpcyvz3.js";
+} from "./index-nvqbmbbp.js";
 
 // detached-viewport.ts
 class DetachedViewport {

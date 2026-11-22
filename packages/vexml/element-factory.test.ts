@@ -246,6 +246,7 @@ function build() {
 						left: 0,
 						right: 200,
 						noteStartX: 20,
+						keyAccidentals: [],
 					},
 				],
 				barlines: [

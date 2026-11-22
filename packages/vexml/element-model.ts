@@ -10,6 +10,7 @@ import type { ChordFrame } from './chord-diagram-glyph';
 import type {
 	BarlineLocation,
 	NoteGlyph,
+	RawKeyAccidental,
 	RawStave,
 } from './geometry-collector';
 import type { NoteFacts, NoteKey } from './note';
@@ -76,6 +77,7 @@ export interface StaveModel {
 	left: number;
 	right: number;
 	noteStartX: number;
+	keyAccidentals: RawKeyAccidental[];
 }
 
 export interface VoiceModel {
@@ -122,11 +124,12 @@ export function staveModelsOf(
 ): StaveModel[] {
 	return staves
 		.filter((s) => s.part === part)
-		.map(({ staff, lines, left, right, noteStartX }) => ({
+		.map(({ staff, lines, left, right, noteStartX, keyAccidentals }) => ({
 			staff,
 			lines,
 			left,
 			right,
 			noteStartX,
+			keyAccidentals,
 		}));
 }

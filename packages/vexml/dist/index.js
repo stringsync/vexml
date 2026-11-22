@@ -30,7 +30,7 @@ import {
   snapshotConfig,
   ScoreEngraver,
   CanvasPaintProbe
-} from "./index-vvzfy7vv.js";
+} from "./index-hnfqz5kr.js";
 import {
   disposables,
   Disposer,
@@ -38,7 +38,7 @@ import {
   SnapshotMismatchError2,
   ScoreBox,
   TiledSurface
-} from "./index-yhpzdgqp.js";
+} from "./index-71jwmdpm.js";
 import {
   Rect2,
   MAX_CANVAS_AREA,
@@ -65,7 +65,7 @@ import {
   SNAPSHOT_FORMAT,
   PaintDecoder,
   PaintReplayer
-} from "./index-dvpcyvz3.js";
+} from "./index-nvqbmbbp.js";
 // bravura-url.ts
 var BRAVURA_URL = new URL("./assets/fonts/Bravura.woff2", import.meta.url).href;
 var BRAVURA_COMMON_URL = new URL("./assets/fonts/BravuraCommon.woff2", import.meta.url).href;
@@ -2995,6 +2995,13 @@ class Duration {
     return `${mins}m ${String(Math.round(this.secs - mins * 60)).padStart(2, "0")}s`;
   }
 }
+
+// ../core/time/clock/system-clock.ts
+class SystemClock {
+  now() {
+    return Duration.ms(performance.now());
+  }
+}
 // ../core/time/timer/system-timer.ts
 class SystemTimer {
   setTimeout(callback, delay) {
@@ -3009,12 +3016,15 @@ class SystemTimer {
 // scroll-controller.ts
 class ScrollController {
   host;
+  timer;
+  clock;
   tween = null;
   frameTimer = null;
   resizeSettleTimer = null;
-  timer = new SystemTimer;
-  constructor(host) {
+  constructor(host, timer = new SystemTimer, clock = new SystemClock) {
     this.host = host;
+    this.timer = timer;
+    this.clock = clock;
   }
   suspendForResize() {
     if (!this.resizeSettleTimer) {
@@ -3071,7 +3081,7 @@ class ScrollController {
       this.host.scrollTo({ ...offset, behavior: "instant" });
       return;
     }
-    this.tween = { from, to: offset, start: performance.now() };
+    this.tween = { from, to: offset, start: this.clock.now().ms };
     if (!this.frameTimer) {
       this.step();
     }
@@ -3082,7 +3092,7 @@ class ScrollController {
       return;
     }
     const { from, to, start } = this.tween;
-    const t = Math.min(1, (performance.now() - start) / SCROLL_DURATION_MS);
+    const t = Math.min(1, (this.clock.now().ms - start) / SCROLL_DURATION_MS);
     this.host.scrollTo({
       left: from.left + (to.left - from.left) * t,
       top: from.top + (to.top - from.top) * t,

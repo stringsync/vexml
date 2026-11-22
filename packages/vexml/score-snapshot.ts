@@ -7,9 +7,9 @@ import type { GapInfo } from './score';
 import type { SnapshotConfig } from './snapshot-config';
 import type { TempoSegment } from './tempo-map';
 
-/** Bumped whenever a snapshot's shape or meaning changes: a snapshot from another version
- * throws SnapshotMismatchError rather than render wrong. */
-export const SNAPSHOT_VERSION = 6;
+/** The snapshot version this vexml renders: a cached snapshot with any other `version` is stale,
+ * and `render` throws SnapshotMismatchError on it. */
+export const SNAPSHOT_VERSION = 7;
 
 /** Marks a ScoreSnapshot among render's other inputs. */
 export const SNAPSHOT_FORMAT = 'vexml-score-snapshot';
@@ -18,10 +18,10 @@ export const SNAPSHOT_FORMAT = 'vexml-score-snapshot';
 export type SnapshotRect = [number, number, number, number];
 
 /**
- * A recording of a rendered score (Score.snapshot) that `render` turns back into the same Score
- * without parsing, laying out or drawing: cache it as JSON and render it on a later visit.
- * Plain data, safe to `JSON.stringify` and `structuredClone`; treat everything but `format`
- * and `version` as opaque, since its shape changes with the version.
+ * A rendered score to cache: take one from Score.snapshot() or createSnapshot, store it as JSON
+ * (`JSON.stringify` and `structuredClone` are safe), and pass it to `render` on a later visit
+ * for the same Score without parsing, laying out or drawing. Read only `format` and `version`;
+ * the rest changes shape between versions.
  */
 export interface ScoreSnapshot {
 	readonly format: typeof SNAPSHOT_FORMAT;
@@ -35,8 +35,8 @@ export interface ScoreSnapshot {
 	readonly elements: SnapshotElements;
 	readonly sequence: SnapshotSequence;
 	readonly gaps: GapInfo[];
-	/** Outlines of the text it draws, so `paint` need not wait on fonts: from createSnapshot,
-	 * null from Score.snapshot(). */
+	/** Outlines of the text it draws, which let `paint` draw it before any font loads: present
+	 * in a snapshot from createSnapshot, null in one from Score.snapshot(). */
 	readonly outlines: SnapshotOutlines | null;
 }
 
@@ -55,7 +55,7 @@ export interface SnapshotOutlines {
 
 export interface SnapshotEngraving {
 	ops: PaintStream;
-	/** Optional diagnostic identities, in op order. They never affect a replay. */
+	/* Which element each op paints, in op order; a replay ignores them. */
 	elements?: Array<PaintElement | null>;
 	width: number;
 	height: number;

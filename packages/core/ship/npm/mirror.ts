@@ -1,5 +1,6 @@
 import { dirname, join, relative } from "node:path";
 import { type Fs, NodeFs, NodePs, type Ps } from "core/system";
+import { FOLD_FILE, type Fold } from "./workspace";
 
 /** What a mirror is written from and to. */
 export interface MirrorOptions {
@@ -16,16 +17,29 @@ export interface MirrorOptions {
 	 * leaves out and should carry, as `skills/vexml/**`.
 	 */
 	keep?: readonly string[];
+	/**
+	 * What the mirror holds of the project: `project` (the default) puts the
+	 * project folder at its root, `package` only the published package's
+	 * folder, for a project that keeps the rest private. In `package` mode
+	 * `keep` and the `mirror/` folder are relative to the package's folder.
+	 */
+	scope?: "project" | "package";
 	/** The version npm has of a package; asks npm by default. */
 	published?: (name: string) => Promise<string>;
 	/** Versions to depend on in place of npm's, by package name. */
 	pins?: Record<string, string>;
+	/**
+	 * Private packages of other projects to carry in the mirror's workspace
+	 * (at `packages/<folder>`) and bundle into the build, by package name.
+	 */
+	fold?: Fold;
 	fs?: Fs;
 	ps?: Ps;
 }
 
 /**
- * Writes a project's public repository: the project folder at the root, the
+ * Writes a project's public repository: the project folder (or, with
+ * `scope: "package"`, the package's folder alone) at the root, the
  * `core` folders it reaches under `packages/core`, and the root tooling it
  * would otherwise inherit from mono, at `version`. Imports stay as they are:
  * `core/...` resolves to the copy in the mirror's workspace. A `workspace:`
@@ -41,17 +55,16 @@ export async function writeMirror(opts: MirrorOptions): Promise<string> {
 	const publishedVersion = async (name: string) =>
 		opts.pins?.[name] ?? (await lookup(name));
 	const project = opts.package.split("/")[0] as string;
-	const tracked = await gitFiles(ps, opts.root, [
-		project,
-		"core/packages/core",
-	]);
+	const alone = opts.scope === "package";
+	const base = alone ? opts.package : project;
+	const tracked = await gitFiles(ps, opts.root, [base, "core/packages/core"]);
 
 	await clear(fs, opts.into);
 
 	const keeps = (opts.keep ?? []).map((glob) => new Bun.Glob(glob));
 	const own = tracked
-		.filter((path) => path.startsWith(`${project}/`))
-		.map((path) => path.slice(project.length + 1));
+		.filter((path) => path.startsWith(`${base}/`))
+		.map((path) => path.slice(base.length + 1));
 	const overlay = own
 		.filter((path) => path.startsWith(`${OVERLAY}/`))
 		.map((path) => path.slice(OVERLAY.length + 1));
@@ -71,12 +84,14 @@ export async function writeMirror(opts: MirrorOptions): Promise<string> {
 			fs,
 			join(
 				opts.root,
-				project,
+				base,
 				overlay.includes(path) ? `${OVERLAY}/${path}` : path,
 			),
 			join(opts.into, path),
 		);
 	}
+
+	const folded = await foldPackages(fs, ps, projectFiles, opts);
 
 	const coreRoot = "core/packages/core";
 	const coreFiles = tracked
@@ -86,7 +101,7 @@ export async function writeMirror(opts: MirrorOptions): Promise<string> {
 		fs,
 		join(opts.root, coreRoot),
 		coreFiles,
-		projectFiles
+		[...projectFiles, ...folded.files]
 			.filter((path) => /\.tsx?$/.test(path))
 			.map((path) => join(opts.into, path)),
 	);
@@ -147,11 +162,15 @@ export async function writeMirror(opts: MirrorOptions): Promise<string> {
 
 	const packages: string[] = [];
 	for (const path of projectFiles) {
-		if (/^packages\/[^/]+\/package\.json$/.test(path)) {
+		if (/^(packages\/[^/]+|skills\/[^/]+\/evals)\/package\.json$/.test(path)) {
 			packages.push(dirname(path));
 		}
 	}
-	packages.push("packages/core");
+	packages.push(...folded.dirs, "packages/core");
+	const pkgDir = alone ? "." : relative(project, opts.package);
+	if (alone) {
+		packages.unshift(".");
+	}
 	const catalog = rootManifest.workspaces?.catalog ?? {};
 	const used = new Set<string>();
 	for (const dir of packages) {
@@ -175,7 +194,7 @@ export async function writeMirror(opts: MirrorOptions): Promise<string> {
 				}
 			}
 		}
-		if (dir === relative(project, opts.package)) {
+		if (dir === pkgDir) {
 			manifest.version = opts.version;
 		}
 		await writeJson(fs, path, manifest);
@@ -191,20 +210,34 @@ export async function writeMirror(opts: MirrorOptions): Promise<string> {
 			}
 		}
 	}
-	await writeJson(fs, join(opts.into, "package.json"), {
-		name: project,
-		version: opts.version,
-		private: true,
-		type: "module",
-		workspaces: {
-			packages,
-			catalog: Object.fromEntries(
-				Object.entries(catalog).filter(([name]) => used.has(name)),
-			),
-		},
-		devDependencies: tools,
-	});
+	const workspaces = {
+		packages: packages.filter((dir) => dir !== "."),
+		catalog: Object.fromEntries(
+			Object.entries(catalog).filter(([name]) => used.has(name)),
+		),
+	};
+	if (alone) {
+		// The package's own manifest is the root's, with the workspace added.
+		const manifest = await readJson(fs, join(opts.into, "package.json"));
+		await writeJson(fs, join(opts.into, "package.json"), {
+			...manifest,
+			workspaces,
+			devDependencies: { ...tools, ...manifest.devDependencies },
+		});
+	} else {
+		await writeJson(fs, join(opts.into, "package.json"), {
+			name: project,
+			version: opts.version,
+			private: true,
+			type: "module",
+			workspaces,
+			devDependencies: tools,
+		});
+	}
 
+	if (Object.keys(opts.fold ?? {}).length > 0) {
+		await writeJson(fs, join(opts.into, FOLD_FILE), opts.fold);
+	}
 	for (const file of ROOT_FILES) {
 		const from = join(opts.root, file);
 		if ((await fs.exists(from)) && !(await fs.exists(join(opts.into, file)))) {
@@ -212,7 +245,58 @@ export async function writeMirror(opts: MirrorOptions): Promise<string> {
 		}
 	}
 	await writeBiome(fs, opts.root, opts.into);
-	return relative(project, opts.package);
+	return pkgDir;
+}
+
+/**
+ * Copies each folded package's tracked files into the mirror's workspace,
+ * at `packages/<folder>` (or `packages/<project>-<folder>` when that is
+ * taken), and returns the folders and the files copied,
+ * relative to the mirror's root.
+ */
+async function foldPackages(
+	fs: Fs,
+	ps: Ps,
+	projectFiles: string[],
+	opts: MirrorOptions,
+): Promise<{ dirs: string[]; files: string[] }> {
+	const names = Object.keys(opts.fold ?? {});
+	const dirs: string[] = [];
+	const files: string[] = [];
+	if (names.length === 0) {
+		return { dirs, files };
+	}
+	const manifests = await gitFiles(ps, opts.root, [
+		":(glob)*/packages/*/package.json",
+	]);
+	for (const name of names) {
+		let from: string | undefined;
+		for (const path of manifests) {
+			if ((await readJson(fs, join(opts.root, path))).name === name) {
+				from = dirname(path);
+			}
+		}
+		if (from === undefined) {
+			throw new Error(`No package of mono is named ${name}, to fold in`);
+		}
+		const taken = (dir: string) =>
+			dirs.includes(dir) ||
+			projectFiles.some((path) => path.startsWith(`${dir}/`));
+		const [project, , folder] = from.split("/") as [string, string, string];
+		const dir = [`packages/${folder}`, `packages/${project}-${folder}`].find(
+			(candidate) => !taken(candidate),
+		);
+		if (dir === undefined) {
+			throw new Error(`${name} cannot be folded in: its folders are taken`);
+		}
+		for (const path of await gitFiles(ps, opts.root, [from])) {
+			const to = join(dir, path.slice(from.length + 1));
+			await copy(fs, join(opts.root, path), join(opts.into, to));
+			files.push(to);
+		}
+		dirs.push(dir);
+	}
+	return { dirs, files };
 }
 
 /**
@@ -314,11 +398,11 @@ async function rebase(fs: Fs, into: string, dir: string): Promise<void> {
 	if (!(await fs.exists(path))) {
 		return;
 	}
-	const depth = dir.split("/").length;
+	const depth = dir === "." ? 0 : dir.split("/").length;
 	const text = await fs.read(path);
 	const rebased = text.replace(
 		/"extends":\s*"(?:\.\.\/)+tsconfig\.base\.json"/,
-		`"extends": "${"../".repeat(depth)}tsconfig.base.json"`,
+		`"extends": "${depth === 0 ? "./" : "../".repeat(depth)}tsconfig.base.json"`,
 	);
 	if (rebased !== text) {
 		await fs.write(path, rebased);
@@ -433,7 +517,7 @@ const ROOT_TOOLS = ["@biomejs/biome", "@types/bun", "typescript"];
 
 /** Specifiers a file imports or re-exports, static or dynamic. */
 const SPECIFIER =
-	/(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)["']([^"'\s]+)["']/g;
+	/(?:(?<=[\s}*])from\s*|\bimport\s*\(\s*|\bimport\s+)["']([^"'\s]+)["']/g;
 
 /**
  * The core folders the mirror always carries, beside those the project

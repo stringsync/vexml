@@ -757,7 +757,7 @@ function exact(value) {
 }
 
 // score-snapshot.ts
-var SNAPSHOT_VERSION2 = 6;
+var SNAPSHOT_VERSION2 = 7;
 var SNAPSHOT_FORMAT = "vexml-score-snapshot";
 
 // glyph-outline.ts

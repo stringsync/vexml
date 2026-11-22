@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import * as path from 'node:path';
 import { BarlineTranslator } from './barline-translator';
 import { ChordTranslator } from './chord-translator';
@@ -31,13 +31,6 @@ import { WholeLayoutPlan } from './whole-layout-plan';
 const DATA_DIR = path.resolve(import.meta.dir, '../integration/__data__');
 
 describe('ProvisionalGeometry', () => {
-	let plan: Awaited<ReturnType<typeof begin>>['plan'];
-	let geometry: Awaited<ReturnType<typeof begin>>['geometry'];
-
-	beforeEach(async () => {
-		({ plan, geometry } = await begin('score_schubert_gute_nacht.musicxml'));
-	});
-
 	// The drawn geometry of each fixture against the layout's forecast of it: the same notes by
 	// mdom identity (and whether each is a fret), and the same measure columns on the same
 	// systems, so a progressive render's elements and timeline need no additions once drawn. The
@@ -115,6 +108,9 @@ describe('ProvisionalGeometry', () => {
 	// A progressive render asks one ProvisionalGeometry again after each system as the forecast
 	// moves: what it read off the document once still lands each note in the box it moved to.
 	it('follows a forecast that moved as a fresh one would', async () => {
+		const { plan, geometry } = await begin(
+			'score_schubert_gute_nacht.musicxml',
+		);
 		const reused = geometry();
 		plan.placeThrough(1);
 		reused.geometryOf(plan.forecast());

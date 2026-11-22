@@ -1,6 +1,7 @@
 import type { Clef, Key, Time } from '@stringsync/mdom';
 import { type Clef as ClefGlyph } from 'vexflow/core';
 import { Appearance } from './appearance.js';
+import type { CustomKeyAccidental } from './custom-key-signature.js';
 import type { ExtendedTimeSpec } from './extended-time-signature.js';
 export declare class SignatureTranslator {
     private appearance;
@@ -11,10 +12,7 @@ export declare class SignatureTranslator {
     private timeSeparator;
     keyCancel(key: Key | null, prevKey: Key | null): KeyCancel | null;
     private timeFace;
-    customKeyAccidentals(key: Key, clef: string): Array<{
-        type: string;
-        line: number;
-    }>;
+    customKeyAccidentals(key: Key, clef: string): CustomKeyAccidental[];
     vexflowClef(sign: string, line: number | null): string;
     clefName(clef: Clef): string;
     clefSize(clef: Clef | null, change: boolean): ClefSize;

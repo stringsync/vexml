@@ -1,4 +1,4 @@
-import { ManifestWorkspace } from 'core/legacy-ship';
+import { dirname } from 'node:path';
 import type { Logger } from 'core/log';
 import type { Fs, Ps } from 'core/system';
 
@@ -91,7 +91,7 @@ async function buildSilently(opts: TestOptions): Promise<string> {
 	const tag = `${SHARED_TAG}:run-${opts.ps.pid}`;
 	// The Dockerfile is built from its workspace's root: mono's, where core and mdom are
 	// siblings, or the mirror's, which `vexmlMirrorRewrite` rewrites it for.
-	const { root } = await ManifestWorkspace.at(opts.ps.cwd(), opts);
+	const root = await workspaceRoot(opts.fs, opts.ps.cwd());
 	opts.log.info('Building...');
 	const start = Date.now();
 	// Captured, not inherited: a successful build says nothing worth the scroll,
@@ -115,4 +115,21 @@ async function buildSilently(opts: TestOptions): Promise<string> {
 	}
 	opts.log.info(`Built in ${((Date.now() - start) / 1000).toFixed(1)}s`);
 	return tag;
+}
+
+/** The nearest directory at or above `from` whose package.json declares workspaces. */
+async function workspaceRoot(fs: Fs, from: string): Promise<string> {
+	for (let dir = from; ; dir = dirname(dir)) {
+		try {
+			const manifest = JSON.parse(await fs.read(`${dir}/package.json`));
+			if (manifest.workspaces !== undefined) {
+				return dir;
+			}
+		} catch {
+			// No readable manifest here: keep climbing.
+		}
+		if (dirname(dir) === dir) {
+			throw new Error(`no workspace above ${from}`);
+		}
+	}
 }

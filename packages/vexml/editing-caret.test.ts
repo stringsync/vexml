@@ -69,6 +69,7 @@ function fixture() {
 			left: 0,
 			right: 200,
 			noteStartX,
+			keyAccidentals: [],
 		},
 		{
 			part: part.id,
@@ -77,6 +78,7 @@ function fixture() {
 			left: 0,
 			right: 200,
 			noteStartX,
+			keyAccidentals: [],
 		},
 	];
 	const note = (mnote: Note, x: number) => ({

@@ -559,6 +559,11 @@ export class SystemDraw {
 						left: s.left + dxOf,
 						right: s.right + dxOf,
 						noteStartX: s.noteStartX + dxOf,
+						keyAccidentals: s.keyAccidentals.map((a) => ({
+							...a,
+							x: a.x + dxOf,
+							y: a.y - cropTop,
+						})),
 					})),
 					barlines: mm.barlines.map((barline) => ({
 						...barline,

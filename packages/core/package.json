@@ -12,13 +12,8 @@
 		"./disposable": "./disposable/index.ts",
 		"./events": "./events/index.ts",
 		"./geometry": "./geometry/index.ts",
-		"./id": "./id/index.ts",
 		"./log": "./log/index.ts",
 		"./react": "./react/index.ts",
-		"./legacy-ship": "./legacy-ship/index.ts",
-		"./legacy-ship/contract": "./legacy-ship/contract.ts",
-		"./legacy-ship/aws": "./legacy-ship/aws/index.ts",
-		"./legacy-ship/testing": "./legacy-ship/testing.ts",
 		"./ship": "./ship/index.ts",
 		"./system": "./system/index.ts",
 		"./system/testing": "./system/testing.ts",
@@ -29,26 +24,16 @@
 		"@standard-schema/spec": "catalog:"
 	},
 	"peerDependencies": {
-		"@aws-cdk/toolkit-lib": "catalog:",
-		"aws-cdk-lib": "catalog:",
 		"react": "catalog:"
 	},
 	"peerDependenciesMeta": {
-		"@aws-cdk/toolkit-lib": {
-			"optional": true
-		},
-		"aws-cdk-lib": {
-			"optional": true
-		},
 		"react": {
 			"optional": true
 		}
 	},
 	"devDependencies": {
-		"@aws-cdk/toolkit-lib": "catalog:",
-		"aws-cdk-lib": "catalog:",
 		"react": "catalog:",
 		"zod": "catalog:"
 	},
-	"version": "1.14.6"
+	"version": "1.14.7"
 }

@@ -1,5 +1,5 @@
 import { builtinModules } from "node:module";
-import { join, relative } from "node:path";
+import { basename, join, relative } from "node:path";
 import {
 	type Fs,
 	type Glob,
@@ -12,6 +12,8 @@ import { emitDeclarations, SPECIFIER } from "./declarations";
 import {
 	bundledOf,
 	type Exports,
+	FOLD_FILE,
+	type Fold,
 	type Manifest,
 	type Member,
 	PackageFiles,
@@ -24,6 +26,8 @@ export interface BuildOptions {
 	root: string;
 	/** The package's folder, relative to `root`, as `packages/mdom`. */
 	package: string;
+	/** Folded packages' disk files and entries; the mirror's `ship-fold.json` by default. */
+	fold?: Fold;
 	fs?: Fs;
 	ps?: Ps;
 	glob?: Glob;
@@ -43,6 +47,8 @@ export async function build(opts: BuildOptions): Promise<string> {
 	const glob = opts.glob ?? new NodeGlob();
 	const dir = join(opts.root, opts.package);
 	const out = join(dir, "dist");
+	// Declarations mirror `packages`, or the root when the package sits there.
+	const base = opts.package === "." ? "." : "packages";
 	const files = new PackageFiles(fs);
 	const rootManifest = await files.manifest(join(opts.root, "package.json"));
 	const members = await files.members(opts.root, rootManifest);
@@ -88,6 +94,7 @@ export async function build(opts: BuildOptions): Promise<string> {
 			fs,
 			root: opts.root,
 			package: opts.package,
+			base,
 			files: [...entries.map((entry) => join(opts.package, entry)), ...ambient],
 			bundled,
 			members,
@@ -95,7 +102,7 @@ export async function build(opts: BuildOptions): Promise<string> {
 		});
 	}
 
-	const folder = relative(join(opts.root, "packages"), dir);
+	const folder = relative(join(opts.root, base), dir);
 	const published: Manifest = { name: own.name };
 	for (const [field, value] of Object.entries(own)) {
 		if (!LOCAL.has(field)) {
@@ -128,6 +135,41 @@ export async function build(opts: BuildOptions): Promise<string> {
 			if (glob.matches(pattern, path)) {
 				await files.copy(join(dir, path), join(out, path));
 			}
+		}
+	}
+	const fold: Fold =
+		opts.fold ??
+		((await fs.exists(join(opts.root, FOLD_FILE)))
+			? JSON.parse(await fs.read(join(opts.root, FOLD_FILE)))
+			: {});
+	for (const [name, folded] of Object.entries(fold)) {
+		const member = members.get(name);
+		if (member === undefined) {
+			throw new Error(
+				`${own.name} folds in ${name}, which the workspace lacks`,
+			);
+		}
+		for (const path of await files.list(member.dir)) {
+			for (const pattern of folded.files ?? []) {
+				if (glob.matches(pattern, path)) {
+					await files.copy(
+						join(member.dir, path),
+						join(out, pattern.includes("*") ? path : basename(path)),
+					);
+				}
+			}
+		}
+		for (const entry of folded.entries ?? []) {
+			await run(ps, member.dir, [
+				"bun",
+				"build",
+				entry,
+				"--outfile",
+				join(out, `${basename(entry).replace(SOURCE, "")}.js`),
+				"--target",
+				"browser",
+				"--minify",
+			]);
 		}
 	}
 	for (const doc of DOCS) {

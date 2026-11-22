@@ -1,7 +1,7 @@
 import type { Harmony, Barline as MBarline, Measure as MMeasure, Note as MNote, Part as MPart } from '@stringsync/mdom';
 import type { Rect } from '../core/geometry/index.js';
 import type { ChordFrame } from './chord-diagram-glyph.js';
-import type { BarlineLocation, NoteGlyph, RawStave } from './geometry-collector.js';
+import type { BarlineLocation, NoteGlyph, RawKeyAccidental, RawStave } from './geometry-collector.js';
 import type { NoteFacts, NoteKey } from './note.js';
 export interface ElementModel {
     bounds: Rect;
@@ -47,6 +47,7 @@ export interface StaveModel {
     left: number;
     right: number;
     noteStartX: number;
+    keyAccidentals: RawKeyAccidental[];
 }
 export interface VoiceModel {
     id: string;

@@ -856,6 +856,7 @@ function fixture() {
 									left: 0,
 									right: 200,
 									noteStartX: 10,
+									keyAccidentals: [],
 								},
 							],
 							barlines: [],

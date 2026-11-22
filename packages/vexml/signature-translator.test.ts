@@ -96,7 +96,7 @@ describe('SignatureTranslator', () => {
 				}),
 				'treble',
 			),
-		).toEqual([{ type: '#', line: 0 }]);
+		).toEqual([{ type: '#', line: 0, step: 'F', alter: 1 }]);
 	});
 
 	it('floats an unpinned accidental to the highest on-stave position', () => {
@@ -113,8 +113,8 @@ describe('SignatureTranslator', () => {
 				'treble',
 			),
 		).toEqual([
-			{ type: '#', line: 0 },
-			{ type: 'b', line: 2 },
+			{ type: '#', line: 0, step: 'F', alter: 1 },
+			{ type: 'b', line: 2, step: 'B', alter: -1 },
 		]);
 	});
 
@@ -129,7 +129,7 @@ describe('SignatureTranslator', () => {
 				}),
 				'bass',
 			),
-		).toEqual([{ type: '#', line: 1 }]);
+		).toEqual([{ type: '#', line: 1, step: 'F', alter: 1 }]);
 	});
 
 	it('lets a named key-accidental outrank the alter fallback', () => {
@@ -142,7 +142,7 @@ describe('SignatureTranslator', () => {
 				}),
 				'treble',
 			),
-		).toEqual([{ type: 'd', line: 2 }]);
+		).toEqual([{ type: 'd', line: 2, step: 'B', alter: -1 }]);
 	});
 
 	it('spells alter semitones through the fallback table', () => {

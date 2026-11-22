@@ -8,7 +8,6 @@ import { z } from 'zod';
 import { coverage } from './coverage';
 import { dev } from './dev';
 import { fix } from './fix';
-import { publish, ship, trust } from './legacy-ship';
 import { lint, lintCorpus } from './lint';
 import { perf } from './perf';
 import { RendererBench } from './perf-bench';
@@ -317,29 +316,6 @@ vex
 		ps.cd(`${ps.cwd()}/..`);
 		return serve(vexmlShip, opts.args, { ps });
 	});
-
-vex
-	.command('legacy-ship')
-	.description(
-		'the legacy ship: plan, inspect status, or run a release (--input bump=patch|minor|major)',
-	)
-	.allowUnknownOption()
-	.rest('args', z.string())
-	.action((opts, { log, ps }) => ship({ log, ps, argv: opts.args }));
-
-vex
-	.command('publish')
-	.description(
-		"build @stringsync/vexml and publish it at this checkout's version: what stringsync/vexml's publish workflow runs, from a job npm trusts",
-	)
-	.action((_opts, { log, ps }) => publish({ log, ps }));
-
-vex
-	.command('trust')
-	.description(
-		"have npm trust stringsync/vexml's publish workflow to publish @stringsync/vexml; once, signing in in a browser",
-	)
-	.action((_opts, { log, ps }) => trust({ log, ps }));
 
 /** Reports how long the command took once it is done. */
 async function timing(ctx: VexDeps, next: Next<VexDeps>): Promise<void> {

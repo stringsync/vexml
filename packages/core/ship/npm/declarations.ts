@@ -9,6 +9,11 @@ export interface DeclarationsOptions {
 	root: string;
 	/** The package's folder, relative to `root`. */
 	package: string;
+	/**
+	 * The folder `types` mirrors, relative to `root`: `packages` (the default),
+	 * or `.` when the package sits at the root.
+	 */
+	base?: string;
 	/** The files to compile, relative to `root`. */
 	files: string[];
 	/** The private packages the build carries, by name. */
@@ -38,7 +43,7 @@ export async function emitDeclarations(
 				declaration: true,
 				emitDeclarationOnly: true,
 				outDir: join(opts.package, "dist/types"),
-				rootDir: "packages",
+				rootDir: opts.base ?? "packages",
 				module: "preserve",
 				moduleResolution: "bundler",
 				target: "esnext",
@@ -62,7 +67,7 @@ export async function emitDeclarations(
 	await pointDeclarations(
 		fs,
 		join(opts.root, opts.package, "dist/types"),
-		opts.root,
+		join(opts.root, opts.base ?? "packages"),
 		bundled,
 		members,
 	);
@@ -75,7 +80,7 @@ export async function emitDeclarations(
 // Only a statement opening a line counts, or an `import("…")`, so a comment
 // or a string quoting an import is passed over.
 export const SPECIFIER =
-	/(^[ \t]*(?:import|export)\b[^;]*?\bfrom\s*["']|^[ \t]*import\s*["']|\bimport\(\s*["'])([^"']+)(["'])/gm;
+	/(^[ \t]*(?:import|export)\b[^;]*?(?<=[\s}*])from\s*["']|^[ \t]*import\s*["']|\bimport\(\s*["'])([^"']+)(["'])/gm;
 
 /** tsc's `paths` for each export of each bundled package, at its source. */
 function pathsOf(
@@ -110,11 +115,10 @@ function pathsOf(
 async function pointDeclarations(
 	fs: Fs,
 	types: string,
-	root: string,
+	packagesDir: string,
 	bundled: Set<string>,
 	members: Map<string, Member>,
 ): Promise<void> {
-	const packagesDir = join(root, "packages");
 	for (const path of await new PackageFiles(fs).list(types)) {
 		if (!path.endsWith(".d.ts")) {
 			continue;

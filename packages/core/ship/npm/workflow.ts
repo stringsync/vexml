@@ -8,9 +8,16 @@ export const WORKFLOW_PATH = `.github/workflows/${WORKFLOW_FILE}`;
  * The GitHub Actions workflow that publishes the package in `dir` (relative
  * to the mirror's root) from a job npm trusts: it checks out the release
  * commit it is given, builds the package there as anyone cloning the mirror
- * would, and publishes the build.
+ * would, and publishes the build. A `prepare` command runs before the build
+ * with `SHIP_VERSION` read from the package's own version.
  */
-export function workflow(dir: string): string {
+export function workflow(dir: string, prepare?: string): string {
+	const prepared = prepare
+		? `      - run: |
+          export SHIP_VERSION=$(node -p "require('./${dir}/package.json').version")
+          ${prepare}
+`
+		: "";
 	return `# Written by mono's ship; a release rewrites it when it differs.
 # npm's trusted publisher entry names this file, so keep its path.
 name: publish
@@ -40,7 +47,7 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: npm install -g npm@latest
       - run: bun install --frozen-lockfile
-      - run: bun packages/core/ship/npm/cli.ts build ${dir}
+${prepared}      - run: bun packages/core/ship/npm/cli.ts build ${dir}
       - run: npm publish ./${dir}/dist --access public
 `;
 }

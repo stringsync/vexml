@@ -27,6 +27,7 @@ export type ServeDeps = Deps & {
 interface StepRequest {
 	step: string;
 	bump?: Bump;
+	version?: string;
 	target?: string;
 	upstream: string[];
 }
@@ -39,12 +40,16 @@ const bump = z.enum(["patch", "minor", "major"]).optional();
  *
  * - `plan` prints the checked plan as JSON: one object, or an array when the
  *   command serves several targets and `--target` names none.
+ * - `unshipped` prints each target's unshipped commit count as JSON, an
+ *   object keyed by target name, leaving out targets that cannot tell.
+ * - `current` prints each target's current version as JSON, an object keyed
+ *   by target name, leaving out targets that cannot tell.
  * - `done <step>` prints `true` or `false`: whether the step already happened.
  * - `run <step>` runs one step, writing JSON lines as it goes, and on failure
  *   an error line last and exit 1.
  * - With none of them, it runs the whole target for someone at a terminal.
  *
- * Each takes `--bump`, `--target <name>` (needed by all but `plan` when there
+ * Each takes `--version` or `--bump`, `--target <name>` (needed by all but `plan` when there
  * are several targets) and `--upstream <name>=<version>`, once per target
  * the target depends on.
  */
@@ -71,27 +76,95 @@ export async function serve(
 		.command("plan")
 		.description("print the plan as JSON")
 		.option("bump", bump)
+		.option("version", z.string().optional())
 		.option("target", z.string().optional())
 		.repeated("upstream", z.string())
 		.action(async (opts, { log }) => {
 			const upstream = parseUpstream(opts.upstream, (name) => ({
 				version: `the version ${name} releases`,
 			}));
-			const input = { bump: opts.bump, upstream };
+			const input = { bump: opts.bump, version: opts.version, upstream };
+			const _ctx = ctxs.stream(
+				{ send: (line) => log.error(JSON.stringify(line)) },
+				noPrompts,
+			);
+			const out =
+				opts.target || list.length === 1
+					? view(pick(list, opts.target), input)
+					: list.map((each) => view(each, input));
+			log.info(JSON.stringify(out));
+		});
+
+	ship
+		.command("unshipped")
+		.description("print each target's unshipped commit count as JSON")
+		.option("target", z.string().optional())
+		.action(async (opts, { log }) => {
 			const ctx = ctxs.stream(
 				{ send: (line) => log.error(JSON.stringify(line)) },
 				noPrompts,
 			);
-			const show = async (each: Target) =>
-				view(each, {
-					...input,
-					...(each.unshipped && { unshipped: await each.unshipped(ctx) }),
-				});
-			const out =
-				opts.target || list.length === 1
-					? await show(pick(list, opts.target))
-					: await Promise.all(list.map(show));
-			log.info(JSON.stringify(out));
+			const chosen = opts.target ? [pick(list, opts.target)] : list;
+			const counts = await Promise.all(
+				chosen.map(async (each): Promise<[string, number] | undefined> => {
+					if (!each.unshipped) {
+						return undefined;
+					}
+					try {
+						return [each.name, await each.unshipped(ctx)];
+					} catch (error) {
+						log.error(
+							JSON.stringify({
+								type: "error",
+								target: each.name,
+								message: error instanceof Error ? error.message : String(error),
+							}),
+						);
+						return undefined;
+					}
+				}),
+			);
+			log.info(
+				JSON.stringify(
+					Object.fromEntries(counts.filter((each) => each !== undefined)),
+				),
+			);
+		});
+
+	ship
+		.command("current")
+		.description("print each target's current version as JSON")
+		.option("target", z.string().optional())
+		.action(async (opts, { log }) => {
+			const ctx = ctxs.stream(
+				{ send: (line) => log.error(JSON.stringify(line)) },
+				noPrompts,
+			);
+			const chosen = opts.target ? [pick(list, opts.target)] : list;
+			const versions = await Promise.all(
+				chosen.map(async (each): Promise<[string, string] | undefined> => {
+					if (!each.current) {
+						return undefined;
+					}
+					try {
+						return [each.name, await each.current(ctx)];
+					} catch (error) {
+						log.error(
+							JSON.stringify({
+								type: "error",
+								target: each.name,
+								message: error instanceof Error ? error.message : String(error),
+							}),
+						);
+						return undefined;
+					}
+				}),
+			);
+			log.info(
+				JSON.stringify(
+					Object.fromEntries(versions.filter((each) => each !== undefined)),
+				),
+			);
 		});
 
 	ship
@@ -99,6 +172,7 @@ export async function serve(
 		.description("print whether a step already happened")
 		.arg("step", z.string())
 		.option("bump", bump)
+		.option("version", z.string().optional())
 		.option("target", z.string().optional())
 		.repeated("upstream", z.string())
 		.action(async (opts, { log }) => {
@@ -115,6 +189,7 @@ export async function serve(
 		.description("run one step, writing JSON lines")
 		.arg("step", z.string())
 		.option("bump", bump)
+		.option("version", z.string().optional())
 		.option("target", z.string().optional())
 		.repeated("upstream", z.string())
 		.action(async (opts, { log }) => {
@@ -141,6 +216,7 @@ export async function serve(
 		.command("all")
 		.description("ship the whole target here, asking first")
 		.option("bump", bump)
+		.option("version", z.string().optional())
 		.option("target", z.string().optional())
 		.repeated("upstream", z.string())
 		.action(async (opts, { log }) => {
@@ -148,6 +224,7 @@ export async function serve(
 				{
 					target: pick(list, opts.target),
 					bump: opts.bump,
+					version: opts.version,
 					upstream: parseUpstream(opts.upstream),
 				},
 				deps.terminal ?? new StdTerminal(log),
@@ -183,6 +260,13 @@ function find(
 	opts: StepRequest & { lenient?: boolean | "planning" },
 ): Step {
 	const chosen = pick(list, opts.target);
+	if (
+		chosen.version &&
+		opts.version === undefined &&
+		!(opts.bump ?? chosen.bump)
+	) {
+		throw new Error(`The target "${chosen.name}" needs --version or --bump`);
+	}
 	// A `done` or `run` request may come before any upstream has released (a
 	// step like `test` reads none), so it plans with a placeholder version, as
 	// `plan` does, rather than refusing. A step that pins one fails loudly on it.
@@ -192,6 +276,7 @@ function find(
 	const strict = parseUpstream(opts.upstream);
 	const planned = steps(chosen, {
 		bump: opts.bump,
+		version: opts.version,
 		upstream: (name) =>
 			opts.lenient && (opts.lenient !== "planning" || planning)
 				? parseUpstream(opts.upstream, (each) => ({

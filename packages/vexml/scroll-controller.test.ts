@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { Rect } from 'core/geometry';
+import { Duration } from 'core/time';
+import { FakeClock, FakeTimer } from 'core/time/testing';
+import { SCROLL_FRAME_MS } from './constants';
 import { FakeScrollHost } from './fake-scroll-host';
 import { ScrollController } from './scroll-controller';
-
-// Longer than SCROLL_DURATION_MS (200) so an in-flight tween has fully landed.
-const settle = () => new Promise((r) => setTimeout(r, 500));
 
 // Unless a test says otherwise, the target is a narrow rect at x=0, always visible horizontally
 // (left stays 0), so the offsets are all vertical: top lands at the rect's y minus the 16px of
@@ -12,10 +12,22 @@ const settle = () => new Promise((r) => setTimeout(r, 500));
 describe('ScrollController', () => {
 	let host: FakeScrollHost;
 	let scroller: ScrollController;
+	let timer: FakeTimer;
+	let clock: FakeClock;
+
+	// Runs frames until no timer is pending, so an in-flight tween has fully landed.
+	const settle = async () => {
+		for (let i = 0; i < 100 && timer.timeouts.some((t) => !t.disposed); i++) {
+			clock.advance(Duration.ms(SCROLL_FRAME_MS));
+			timer.fireTimeouts();
+		}
+	};
 
 	beforeEach(() => {
 		host = new FakeScrollHost();
-		scroller = new ScrollController(host);
+		timer = new FakeTimer();
+		clock = new FakeClock();
+		scroller = new ScrollController(host, timer, clock);
 	});
 
 	it('passes the axis-resolved offset straight through on an instant scroll', () => {

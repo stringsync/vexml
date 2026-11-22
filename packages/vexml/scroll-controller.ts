@@ -1,6 +1,12 @@
 import type { Resource } from 'core/disposable';
 import type { Rect } from 'core/geometry';
-import { Duration, SystemTimer } from 'core/time';
+import {
+	type Clock,
+	Duration,
+	SystemClock,
+	SystemTimer,
+	type Timer,
+} from 'core/time';
 import {
 	MAX_SCROLL_SPEED_PX_PER_MS,
 	RESIZE_SETTLE_MS,
@@ -35,9 +41,11 @@ export class ScrollController implements Scroller {
 	// no-op until the size holds still for RESIZE_SETTLE_MS. This timer is the debounce.
 	private resizeSettleTimer: Resource | null = null;
 
-	private readonly timer = new SystemTimer();
-
-	constructor(private readonly host: ScrollHost) {}
+	constructor(
+		private readonly host: ScrollHost,
+		private readonly timer: Timer = new SystemTimer(),
+		private readonly clock: Clock = new SystemClock(),
+	) {}
 
 	/* Suspend scrolling for a resize: cancel any in-flight scroll and drop new scrollIntoView calls
 	 * until the container size stops changing. Call once per ResizeObserver callback: each call
@@ -112,7 +120,7 @@ export class ScrollController implements Scroller {
 			this.host.scrollTo({ ...offset, behavior: 'instant' });
 			return;
 		}
-		this.tween = { from, to: offset, start: performance.now() };
+		this.tween = { from, to: offset, start: this.clock.now().ms };
 		if (!this.frameTimer) {
 			this.step();
 		}
@@ -126,7 +134,7 @@ export class ScrollController implements Scroller {
 			return;
 		}
 		const { from, to, start } = this.tween;
-		const t = Math.min(1, (performance.now() - start) / SCROLL_DURATION_MS);
+		const t = Math.min(1, (this.clock.now().ms - start) / SCROLL_DURATION_MS);
 		this.host.scrollTo({
 			left: from.left + (to.left - from.left) * t,
 			top: from.top + (to.top - from.top) * t,

@@ -7,6 +7,7 @@ import {
 } from 'vexflow/core';
 import { Appearance, type GlyphType } from './appearance';
 import { ACCIDENTAL_CODES } from './chord-translator';
+import type { CustomKeyAccidental } from './custom-key-signature';
 import type {
 	ExtendedTimeSpec,
 	TimeFace,
@@ -177,11 +178,8 @@ export class SignatureTranslator {
 	 * in the order given rather than in circle-of-fifths order. Empty when the key is an ordinary
 	 * <fifths> one (or carries nothing at all), which is the signal to use the plain key spec.
 	 */
-	customKeyAccidentals(
-		key: Key,
-		clef: string,
-	): Array<{ type: string; line: number }> {
-		const out: Array<{ type: string; line: number }> = [];
+	customKeyAccidentals(key: Key, clef: string): CustomKeyAccidental[] {
+		const out: CustomKeyAccidental[] = [];
 		for (const alteration of key.alterations) {
 			const named = alteration.accidental;
 			const type =
@@ -193,6 +191,8 @@ export class SignatureTranslator {
 			out.push({
 				type,
 				line: this.keySignatureLine(alteration.step, alteration.octave, clef),
+				step: alteration.step,
+				alter: alteration.alter,
 			});
 		}
 		return out;

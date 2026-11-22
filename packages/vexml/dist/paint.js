@@ -3,7 +3,7 @@ import {
   SnapshotMismatchError2,
   ScoreBox,
   TiledSurface
-} from "./index-yhpzdgqp.js";
+} from "./index-71jwmdpm.js";
 import {
   Rect2,
   TILE_BUDGET,
@@ -12,7 +12,7 @@ import {
   SNAPSHOT_VERSION2,
   SNAPSHOT_FORMAT,
   PaintDecoder
-} from "./index-dvpcyvz3.js";
+} from "./index-nvqbmbbp.js";
 
 // painted-score.ts
 class PaintedScore {

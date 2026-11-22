@@ -40,7 +40,7 @@ export type { Scroller, ScrollerOptions } from './scroller.js';
 export { SelectionOverlay, type SelectionOverlayOptions, } from './selection-overlay.js';
 export { Sequence, type Step } from './sequence.js';
 export { SnapshotMismatchError, type SnapshotMismatchReason, } from './snapshot-mismatch-error.js';
-export { Stave } from './stave.js';
+export { type KeyAccidental, Stave } from './stave.js';
 export { System } from './system.js';
 export { TabPosition } from './tab-position.js';
 export type { TabPositionInput } from './tab-position-edit.js';

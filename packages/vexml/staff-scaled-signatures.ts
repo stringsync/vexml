@@ -2,8 +2,23 @@ import {
 	type Element,
 	KeySignature,
 	type Stave,
+	StaveModifierPosition,
 	type TimeSignature,
 } from 'vexflow/core';
+
+/* The step (C..B) and alter (1 sharp, -1 flat, 0 a natural) a key accidental marks. */
+export interface KeyPitch {
+	step: string;
+	alter: number;
+}
+
+/* A key accidental as drawn: its pitch and its glyph's box. */
+export interface DrawnKeyAccidental extends KeyPitch {
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+}
 
 /** vexflow's default space between staff lines, in px. */
 const STAVE_LINE_DISTANCE = 10;
@@ -18,7 +33,37 @@ export function staveRatio(stave: Stave): number {
  * at a fixed font size, so on a staff-size staff the accidentals stay full size beside shrunk
  * lines; this lays them out the way vexflow does, at the stave's share of that size.
  */
-export class StaffKeySignature extends KeySignature {
+export abstract class StaffKeySignature extends KeySignature {
+	/* Each accidental this signature drew, left to right: the step and alter it marks and its
+	 * glyph's box, in the stave's drawing space. Read after the stave is formatted, which
+	 * places the signature. */
+	getAccidentals(): DrawnKeyAccidental[] {
+		if (!this.formatted) {
+			this.format();
+		}
+		return this.children.map((glyph, i) => {
+			const box = glyph.getBoundingBox();
+			return {
+				...this.pitchOf(this.accList[i] ?? { type: 'n', line: 0 }, i),
+				x: this.x + box.getX(),
+				y: box.getY(),
+				w: box.getW(),
+				h: box.getH(),
+			};
+		});
+	}
+
+	/* Whether it opens the stave (rather than hanging naturals at its end). */
+	opensStave(): boolean {
+		return this.getPosition() === StaveModifierPosition.BEGIN;
+	}
+
+	/* The step and alter the accidental at `index` of the drawn list marks. */
+	protected abstract pitchOf(
+		acc: { type: string; line: number },
+		index: number,
+	): KeyPitch;
+
 	protected override convertToGlyph(
 		acc: { type: string; line: number },
 		nextAcc: { type: string; line: number },

@@ -31,7 +31,6 @@ the rest unread.
 | [`core/id`](./id) | A source of identifiers behind an interface, so tests can make them predictable |
 | [`core/log`](./log) | Logging behind a `Logger` interface, with decorators and an in-memory double |
 | [`core/md`](./md) | A markdown document as a data source: frontmatter fields, sections and code blocks |
-| [`core/legacy-ship`](./legacy-ship) | Legacy and frozen: deployment steps for any target, shipped together. New ships use `core/ship` |
 | [`core/ship`](./ship) | Ship targets and their steps declared as plain objects, a plan turned into data for a review screen, and `serve`, which answers plan, done and run from a project's CLI |
 | [`core/skills`](./skills) | The agent skills a project installs from a repository's release tags, through the `skills` CLI |
 | [`core/system`](./system) | Interfaces for the things that touch the machine, so code under test doesn't |
@@ -48,15 +47,14 @@ main entry point, so importing a task queue on a server does not reach for
 - Needs a browser: `core/browser`, `core/dictate/browser`,
   `core/task/browser`, `core/worker/web`
 - Needs a server: `core/cmd`, `core/dictate/server`,
-  `core/legacy-ship`, `core/ship`, `core/skills`, `core/system`
+  `core/ship`, `core/skills`, `core/system`
 
 `platform.test.ts` holds that line, failing if an entry point that runs
 anywhere starts reaching one that does not.
 
 The fakes live beside what they replace, under `/testing`:
 `core/dictate/testing`, `core/time/testing`,
-`core/system/testing`, `core/legacy-ship/testing`,
-`core/worker/testing`.
+`core/system/testing`, `core/worker/testing`.
 
 ## Optional peers
 

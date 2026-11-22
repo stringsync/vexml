@@ -106,7 +106,7 @@ export {
 	SnapshotMismatchError,
 	type SnapshotMismatchReason,
 } from './snapshot-mismatch-error';
-export { Stave } from './stave';
+export { type KeyAccidental, Stave } from './stave';
 export { System } from './system';
 export { TabPosition } from './tab-position';
 export type { TabPositionInput } from './tab-position-edit';

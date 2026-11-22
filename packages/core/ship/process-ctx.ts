@@ -4,6 +4,7 @@ import { type Asker, answeringSh, type Quiet } from "./answering-sh";
 import type { Ctx, PromptOptions, ShOptions } from "./ctx";
 import { LineOutput } from "./line-output";
 import type { Prompt, PromptLine, Prompts, WithdrawnLine } from "./prompts";
+import { withTimeout } from "./step";
 
 /** How many lines of a failed command's output its error carries. */
 const TAIL_LINES = 20;
@@ -71,14 +72,27 @@ export class StepCtxs {
 		asker: Asker,
 		opts: ShOptions = {},
 	): Promise<string> {
-		const result = opts.prompts
-			? await answeringSh(this.ps, command, out, asker, this.quiet)
-			: await this.ps.spawnCapture(["sh", "-c", command], {
+		const abort = new AbortController();
+		const running = opts.prompts
+			? answeringSh(this.ps, command, out, asker, this.quiet)
+			: this.ps.spawnCapture(["sh", "-c", command], {
+					signal: abort.signal,
 					watcher: {
 						stdout: (text) => out.write(text),
 						stderr: (text) => out.write(text),
 					},
 				});
+		const result = opts.timeout
+			? await withTimeout(
+					running,
+					opts.timeout,
+					`\`${command}\` timed out`,
+				).catch((error: unknown) => {
+					abort.abort();
+					running.catch(() => {});
+					throw error;
+				})
+			: await running;
 		if (result.exitCode !== 0) {
 			const tail = `${result.stdout}${result.stderr}`
 				.trimEnd()

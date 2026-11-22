@@ -2,10 +2,12 @@
 import type { Measure, Note, Part, Score } from '@stringsync/mdom';
 import { Rect } from 'core/geometry';
 import {
+	KeySignature,
 	Metrics,
 	MetricsDefaults,
 	type RenderContext,
 	type Stave,
+	StaveModifierPosition,
 	type StaveNote,
 	type TabNote,
 	type TabStave,
@@ -73,6 +75,7 @@ import type { SignatureTranslator } from './signature-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import { type HairpinBand, SpannerResolver } from './spanner-resolver';
 import { SpillTracker, type StaveSpill } from './spill-tracker';
+import { StaffKeySignature } from './staff-scaled-signatures';
 import { StaveBuilder, type StaveColumn } from './stave-builder';
 import type { StavePlan } from './stave-plan';
 import { StemWidth } from './stem-width';
@@ -1660,6 +1663,13 @@ export class DrawPass {
 				left: stave.getX(),
 				right: stave.getX() + stave.getWidth(),
 				noteStartX: stave.getNoteStartX(),
+				keyAccidentals: stave
+					.getModifiers(StaveModifierPosition.BEGIN, KeySignature.CATEGORY)
+					.flatMap((sig) =>
+						sig instanceof StaffKeySignature && sig.opensStave()
+							? sig.getAccidentals()
+							: [],
+					),
 			};
 		});
 	}

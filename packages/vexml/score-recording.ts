@@ -115,6 +115,7 @@ export class ScoreRecording implements SnapshotSource {
 						staves: measure.staves.map((stave) => ({
 							...stave,
 							lines: [...stave.lines],
+							keyAccidentals: stave.keyAccidentals.map((a) => ({ ...a })),
 						})),
 					})),
 				})),
