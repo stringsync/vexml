@@ -1,10 +1,12 @@
 import * as path from 'node:path';
 import type { ConfigInput } from '@stringsync/vexml';
 import {
+	captureLayout,
 	type EvalRenderer,
 	type Image,
 	type RenderResult,
 	renderers,
+	type ScoreLayout,
 	type VexmlContext,
 } from '@vexml/renderer';
 
@@ -18,6 +20,16 @@ export interface EvalOptions<A = undefined> {
 
 const DATA_DIR = path.resolve(import.meta.dir, './__data__');
 
+// Each image render() made, by its very buffer, with where its notation landed: the
+// screenshot matcher writes it beside a diff, so a review can name what a mark covers.
+// vet-ignore tests-own-their-state: the matcher is handed only the image, so its layout rides beside it by identity
+const layouts = new WeakMap<Image, ScoreLayout>();
+
+/** The layout of an image render() made, or undefined for any other image. */
+export function layoutOf(image: Image): ScoreLayout | undefined {
+	return layouts.get(image);
+}
+
 /**
  * Renders corpus fixtures with vexml. Fixture paths resolve against the suite's data
  * directory, and both fonts default to the families the Docker image installs, so a
@@ -29,7 +41,11 @@ export class Testing {
 
 	/** Render a corpus file and return its pixels. */
 	async render(file: string, config: ConfigInput = {}): Promise<Image> {
-		return (await this.vexml(file, config)).render();
+		const { image, result } = await (await this.vexml(file, config)).eval(
+			captureLayout,
+		);
+		layouts.set(image, result);
+		return image;
 	}
 
 	/** Render a corpus file and run fn against the live render (see EvalRenderer for

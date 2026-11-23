@@ -19,13 +19,34 @@ export type PlanInput = {
 	readonly upstream: (name: string) => Upstream;
 };
 
+/**
+ * A version a target may ship, as a version picker lists it: one it can
+ * fetch again, such as one an upstream stage verified.
+ */
+export type VersionChoice = {
+	readonly version: string;
+	/** A short note beside it, such as "staging now" or a date. */
+	readonly note?: string;
+};
+
+/** A target's artifact versions: what it runs now, and what it may follow. */
+export type VersionSpec = {
+	/** The version it runs now, which enables resolving a bump. */
+	readonly current?: string;
+	/**
+	 * A dependency whose release this target can take: shipped together
+	 * with no version picked, it ships the version that dependency releases.
+	 */
+	readonly follows?: string;
+};
+
 /** Something a project ships: an npm package, a deployment. */
 export type Target = {
 	readonly name: string;
 	/** The bump it takes by default, or absent when it has no default bump. */
 	readonly bump?: Bump;
 	/** Opt into artifact versions; current enables resolving a bump without running steps. */
-	readonly version?: { readonly current?: string };
+	readonly version?: VersionSpec;
 	/** Targets that ship before it, by name. */
 	readonly dependencies: readonly string[];
 	/** The steps of one ship. Returns them, and runs nothing. */
@@ -34,17 +55,22 @@ export type Target = {
 	readonly unshipped?: (ctx: Pick<Ctx, "sh">) => Promise<number>;
 	/** The version it is at now, when the target can tell. */
 	readonly current?: (ctx: Pick<Ctx, "sh">) => Promise<string>;
+	/** The versions it may ship, newest first, when the target can tell. */
+	readonly versions?: (
+		ctx: Pick<Ctx, "sh">,
+	) => Promise<readonly VersionChoice[]>;
 };
 
 /** Declares a target. It only returns the target: nothing runs. */
 export function target(spec: {
 	name: string;
 	bump?: Bump;
-	version?: { readonly current?: string };
+	version?: VersionSpec;
 	dependencies?: readonly string[];
 	plan(input: PlanInput): readonly Step[];
 	unshipped?: (ctx: Pick<Ctx, "sh">) => Promise<number>;
 	current?: (ctx: Pick<Ctx, "sh">) => Promise<string>;
+	versions?: (ctx: Pick<Ctx, "sh">) => Promise<readonly VersionChoice[]>;
 }): Target {
 	if (!spec.name.trim()) {
 		throw new Error("A target needs a name");
@@ -62,6 +88,12 @@ export function target(spec: {
 		}
 		seen.add(dependency);
 	}
+	const follows = spec.version?.follows;
+	if (follows !== undefined && !seen.has(follows)) {
+		throw new Error(
+			`The target "${spec.name}" follows "${follows}", which is not one of its dependencies`,
+		);
+	}
 	return Object.freeze({
 		name: spec.name,
 		...(spec.bump && { bump: spec.bump }),
@@ -70,6 +102,7 @@ export function target(spec: {
 		plan: spec.plan,
 		...(spec.unshipped && { unshipped: spec.unshipped }),
 		...(spec.current && { current: spec.current }),
+		...(spec.versions && { versions: spec.versions }),
 	});
 }
 
@@ -85,6 +118,8 @@ export type PlanView = {
 	name: string;
 	/** Present for targets that accept artifact versions. */
 	versioned?: boolean;
+	/** The dependency whose release it ships when no version is picked. */
+	follows?: string;
 	version?: string;
 	bump?: Bump;
 	dependencies: string[];
@@ -148,6 +183,9 @@ export function view(
 	return {
 		name: target.name,
 		...(target.version && { versioned: true }),
+		...(target.version?.follows !== undefined && {
+			follows: target.version.follows,
+		}),
 		...(version !== undefined && { version }),
 		...(bump && { bump }),
 		dependencies: [...target.dependencies],

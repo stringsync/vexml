@@ -49,8 +49,10 @@ export class PedalLine extends PedalMarking {
 	override draw(): void {
 		const ctx = this.checkContext();
 		this.setRendered();
-		ctx.setStrokeStyle(this.renderOptions.color);
-		ctx.setFillStyle(this.renderOptions.color);
+		if (this.renderOptions.color !== undefined) {
+			ctx.setStrokeStyle(this.renderOptions.color);
+			ctx.setFillStyle(this.renderOptions.color);
+		}
 		ctx.setFont(this.font);
 		ctx.setLineWidth(this.renderOptions.bracketLineWidth);
 		const y = this.down.checkStave().getYForBottomText(this.line + 3);
@@ -83,7 +85,7 @@ export class PedalLine extends PedalMarking {
 			ctx.lineTo(cx, top);
 			ctx.lineTo(cx + NOTCH, y);
 		}
-		const end = this.releaseX(this.up) - NOTCH;
+		const end = this.liftX(this.up) - NOTCH;
 		ctx.lineTo(end, y);
 		if (!this.pedal.discontinued) {
 			ctx.lineTo(end, top);
@@ -105,7 +107,7 @@ export class PedalLine extends PedalMarking {
 			ctx.fillText(depress, cx, y);
 		}
 		if (!this.pedal.discontinued) {
-			ctx.fillText(release, this.releaseX(this.up) - releaseWidth, y);
+			ctx.fillText(release, this.liftX(this.up) - releaseWidth, y);
 		}
 	}
 
@@ -119,7 +121,7 @@ export class PedalLine extends PedalMarking {
 
 	/* The pedal lifts as the last held note ends: at the next note in its voice, or at the
 	 * end of its stave when it is the last. */
-	private releaseX(note: StaveNote): number {
+	private liftX(note: StaveNote): number {
 		const tickables = note.getVoice().getTickables();
 		const next = tickables[tickables.indexOf(note) + 1] as
 			| StaveNote

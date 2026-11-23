@@ -72,7 +72,6 @@ export declare class SystemFormatter {
     };
     private tabArcApexRect;
     private tabBendRect;
-    private closeGraceGaps;
     private closeHiddenGaps;
     private pushAfterGraces;
     private noteTop;

@@ -177,8 +177,8 @@ export class TabVoiceTranslator {
 
 	/*
 	 * A grace TabNote (small fret numbers) for one grace chord, grouped onto the real
-	 * note it precedes by tickables. Frets are scaled to TAB_GRACE_SCALE of the
-	 * (already enlarged) main-note size so graces stay proportionally smaller.
+	 * note it precedes by tickables. GraceTabNote already applies vexflow's grace fontScale
+	 * (2/3), so divide it out to land cleanly on TAB_GRACE_SCALE of the main fret size.
 	 */
 	private tabGrace(chord: Chord, tuning: number[] | null): GraceTabNote {
 		const duration = this.durations.code(chord.lead);
@@ -186,7 +186,10 @@ export class TabVoiceTranslator {
 			positions: this.positions(chord, tuning),
 			duration,
 		});
-		this.styleFrets(grace, TAB_FRET_SCALE * TAB_GRACE_SCALE);
+		this.styleFrets(
+			grace,
+			TAB_FRET_SCALE * (TAB_GRACE_SCALE / grace.getFontScale()),
+		);
 		return grace;
 	}
 
@@ -353,10 +356,11 @@ export class TabVoiceTranslator {
 	 * drawPositions centers on the note x and clears the staff line behind.
 	 */
 	private styleHarmonicFret(el: FretElement, scale: number): void {
-		const open = this.harmonicBracket('<', scale);
-		const close = this.harmonicBracket('>', scale);
 		el.setText(el.getText().replace(/[<>]/g, ''));
 		this.boldFret(el, scale);
+		const fontSize = el.fontSizeInPoints;
+		const open = this.harmonicBracket('<', fontSize);
+		const close = this.harmonicBracket('>', fontSize);
 		const openWidth = open.getWidth();
 		const digitsWidth = el.getWidth();
 		open.setX(0);
@@ -375,10 +379,10 @@ export class TabVoiceTranslator {
 	 * drops the bracket a pixel below dead-center so it sits optically level with the heavier
 	 * bold digits (the thin glyph otherwise reads as floating high).
 	 */
-	private harmonicBracket(glyph: '<' | '>', scale: number): Element {
+	private harmonicBracket(glyph: '<' | '>', fontSizeInPoints: number): Element {
 		const el = new Element('TabNote.text');
 		el.setText(glyph);
-		el.setFontSize(el.fontSizeInPoints * scale);
+		el.setFontSize(fontSizeInPoints);
 		el.setYShift(el.getHeight() / 2 + 1);
 		return el;
 	}

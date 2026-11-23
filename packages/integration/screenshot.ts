@@ -12,10 +12,12 @@ import { createCanvas, createImageData } from 'canvas';
 import { ConsoleLogger, color } from 'core/log';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
+import { layoutOf } from './testing';
 
 // The screenshot half of the tests: a `toMatchScreenshot` matcher that pixel-diffs a PNG
 // against its committed baseline in `__screenshots__/`, writes a side-by-side composite to
-// `__diffs__/` on mismatch, regenerates baselines under UPDATE_SCREENSHOTS=1, and prints an
+// `__diffs__/` on mismatch (and beside it a `.json` naming the test that asked and, for a
+// Testing.render image, where its notation landed, which `vex review` reads), regenerates baselines under UPDATE_SCREENSHOTS=1, and prints an
 // added/updated/deleted report at the end of the run. Imported once by setup.ts (the
 // preload), so its afterAll cleanups scope to the whole run.
 
@@ -33,9 +35,12 @@ afterAll(() => {
 		return;
 	}
 	for (const f of readdirSync(DIFF_DIR)) {
-		if (f.endsWith('.png') && !seenDiffs.has(f)) {
+		const png = f.replace(/\.json$/, '.png');
+		if ((f.endsWith('.png') || f.endsWith('.json')) && !seenDiffs.has(png)) {
 			rmSync(path.join(DIFF_DIR, f));
-			log.info(`removed stale diff ${f}`);
+			if (f.endsWith('.png')) {
+				log.info(`removed stale diff ${f}`);
+			}
 		}
 	}
 	// vex test bind-mounts this directory; removing the mount point fails with EBUSY.
@@ -111,38 +116,56 @@ expect.extend({
 			return { pass: true, message: () => `wrote baseline ${filename}` };
 		}
 
-		const expected = PNG.sync.read(readFileSync(baseline));
-		const got = PNG.sync.read(buf);
+		const baselinePng = PNG.sync.read(readFileSync(baseline));
+		const gotPng = PNG.sync.read(buf);
 
-		if (got.width !== expected.width || got.height !== expected.height) {
-			return {
-				pass: false,
-				message: () =>
-					`${filename}: size ${got.width}x${got.height} != baseline ${expected.width}x${expected.height}`,
-			};
-		}
+		// A size mismatch is diffed on both images padded (transparent) to the larger size, so
+		// it lands in __diffs__ and `vex review` like any other mismatch.
+		const sizeMismatch =
+			gotPng.width !== baselinePng.width ||
+			gotPng.height !== baselinePng.height;
+		const width = Math.max(baselinePng.width, gotPng.width);
+		const height = Math.max(baselinePng.height, gotPng.height);
+		const expected = sizeMismatch
+			? pad(baselinePng, width, height)
+			: baselinePng;
+		const got = sizeMismatch ? pad(gotPng, width, height) : gotPng;
 
-		const diff = new PNG({ width: expected.width, height: expected.height });
+		const diff = new PNG({ width, height });
 		const mismatch = pixelmatch(
 			expected.data,
 			got.data,
 			diff.data,
-			expected.width,
-			expected.height,
+			width,
+			height,
 			{ threshold: 0.01 },
 		);
 
-		if (mismatch > 0) {
+		if (mismatch > 0 || sizeMismatch) {
 			seenDiffs.add(filename);
 			mkdirSync(DIFF_DIR, { recursive: true });
 			writeFileSync(
 				path.join(DIFF_DIR, filename),
-				composite(expected, diff, got, expected.width, expected.height),
+				composite(expected, diff, got, width, height),
+			);
+			writeFileSync(
+				path.join(DIFF_DIR, filename.replace(/\.png$/, '.json')),
+				JSON.stringify({
+					...caller(),
+					mismatch,
+					width,
+					height,
+					layout: layoutOf(buf),
+				}),
 			);
 			return {
 				pass: false,
 				message: () =>
-					`${filename}: ${mismatch} pixels differ. Read this image to inspect: ${path.relative(ROOT, path.join(DIFF_DIR, filename))} (3 panels left-to-right: old, diff, new)`,
+					`${filename}: ${
+						sizeMismatch
+							? `size ${gotPng.width}x${gotPng.height} != baseline ${baselinePng.width}x${baselinePng.height}, ${mismatch} pixels differ`
+							: `${mismatch} pixels differ`
+					}. Read this image to inspect: ${path.relative(ROOT, path.join(DIFF_DIR, filename))} (3 panels left-to-right: old, diff, new)`,
 			};
 		}
 
@@ -154,6 +177,18 @@ declare module 'bun:test' {
 	interface Matchers {
 		toMatchScreenshot(filename: string): void;
 	}
+}
+
+// The test file and line that called the matcher, from the stack: the first frame in a
+// *.test.ts file. Null when none is found (a matcher called from a helper elsewhere).
+function caller(): { test: string | null; line: number | null } {
+	for (const frame of new Error().stack?.split('\n') ?? []) {
+		const match = /([^/\s(]+\.test\.ts):(\d+)/.exec(frame);
+		if (match) {
+			return { test: match[1] ?? null, line: Number(match[2]) };
+		}
+	}
+	return { test: null, line: null };
 }
 
 // [old][diff][new] side by side, each captioned, returned as a PNG buffer.
@@ -190,4 +225,14 @@ function composite(
 		ctx.putImageData(img, i * w, header);
 	});
 	return canvas.toBuffer('image/png');
+}
+
+// The image on a transparent w x h canvas, anchored top-left.
+function pad(png: PNG, w: number, h: number): PNG {
+	if (png.width === w && png.height === h) {
+		return png;
+	}
+	const out = new PNG({ width: w, height: h });
+	PNG.bitblt(png, out, 0, 0, png.width, png.height, 0, 0);
+	return out;
 }

@@ -1,6 +1,7 @@
 import { dirname } from 'node:path';
 import type { Logger } from 'core/log';
 import type { Fs, Ps } from 'core/system';
+import { ensureDocker } from './docker';
 
 export interface TestOptions {
 	/* Rewrite the screenshot baselines from this run instead of diffing against them. */
@@ -53,6 +54,8 @@ export async function test(opts: TestOptions) {
 	if (opts.clean) {
 		args.push('-e', 'CLEANUP_ORPHANED_SCREENSHOTS=1');
 	}
+	// A ship's mirror runs this with nobody there to start Docker Desktop.
+	await ensureDocker(opts);
 	const image = await buildSilently(opts);
 	// Anything after the image is forwarded to the container's test command.
 	args.push(image, ...testArgs);
@@ -70,8 +73,8 @@ export async function test(opts: TestOptions) {
 	}
 }
 
-/** Integration folders the tests write (new baselines, diffs), shared with the host. */
-const MOUNTED_DIRS = ['__screenshots__', '__diffs__'];
+/** Integration folders the tests write (new baselines, diffs, marks), shared with the host. */
+const MOUNTED_DIRS = ['__screenshots__', '__diffs__', '__marks__'];
 
 const SHARED_TAG = 'vexml-tests';
 

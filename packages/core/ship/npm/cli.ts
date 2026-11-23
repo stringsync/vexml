@@ -2,7 +2,7 @@
 // runs to build: the work that reads and writes many files.
 //
 //   bun cli.ts locate <package name>
-//   bun cli.ts mirror <package folder> <checkout> <version> [keep glob...] [--pins <json>] [--fold <json>] [--package-only]
+//   bun cli.ts mirror <package folder> <checkout> <version> [keep glob...] [--omit <json>] [--pins <json>] [--fold <json>] [--package-only]
 //   bun cli.ts build <package folder>
 //
 // Folders are relative to the working directory, mono's root or the mirror's.
@@ -23,11 +23,12 @@ if (command === "locate" && args[0]) {
 	};
 	const pins = flagged("--pins");
 	const fold = flagged("--fold");
+	const omit = flagged("--omit");
 	const alone = args.includes("--package-only");
 	const rest = args.filter(
 		(arg, i) =>
-			!["--pins", "--fold", "--package-only"].includes(arg) &&
-			!["--pins", "--fold"].includes(args[i - 1] as string),
+			!["--omit", "--pins", "--fold", "--package-only"].includes(arg) &&
+			!["--omit", "--pins", "--fold"].includes(args[i - 1] as string),
 	);
 	const [pkg, into, version, ...keep] = rest as [string, string, string];
 	console.log(
@@ -37,6 +38,7 @@ if (command === "locate" && args[0]) {
 			into,
 			version,
 			keep,
+			...(omit && { omit }),
 			...(pins && { pins }),
 			...(fold && { fold }),
 			...(alone && { scope: "package" as const }),

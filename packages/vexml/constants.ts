@@ -46,26 +46,30 @@ export const PAGE_MARGIN_TOP_WITH_TEMPO = 70;
 /** Bottom whitespace kept below the lowest drawn content. */
 export const PAGE_MARGIN_BOTTOM = 40;
 
-/** The stave bottom-text line a pedal mark ("Ped…*" text or bracket) draws on, and the
- * glyph descent below it. Grow the crop to that line plus the margin so the mark isn't
- * clipped. */
+/** Stave bottom-text line a pedal mark draws on. */
 export const PEDAL_BOTTOM_TEXT_LINE =
+	// The stave bottom-text line a pedal mark ("Ped…*" text or bracket) draws on, and the
+	// glyph descent below it. Grow the crop to that line plus the margin so the mark isn't
+	// clipped.
 	// vexflow's PedalMarking adds 3 to its line=0.
 	3;
 export const PEDAL_BOTTOM_MARGIN = 12;
 
-/** How far the pedal's ink rises above that baseline: the "Ped."/"*" glyphs measure ~23px
- * tall and the bracket only 10, so this is the taller of the two. The band it defines is
- * what gets dropped clear of notes hanging below the staff. */
-export const PEDAL_INK_RISE = 24;
+/** How far a pedal mark's ink rises above its baseline. */
+export const PEDAL_INK_RISE =
+	// How far the pedal's ink rises above that baseline: the "Ped."/"*" glyphs measure ~23px
+	// tall and the bracket only 10, so this is the taller of the two. The band it defines is
+	// what gets dropped clear of notes hanging below the staff.
+	24;
 
 /** Vertical gap between stacked systems, plus room for the next system's notes that
  * rise above its top staff. The default for `Config.systemSpacing`. */
 export const SYSTEM_GAP = 30;
 
-/** The smallest vertical gap between staves within one part; the music can open it further.
- * It exceeds INTER_PART_SPACING so a brace-joined group reads as one instrument. */
+/** The smallest vertical gap between staves within one part; the music can open it further. */
 export const INTRA_PART_SPACING =
+	// The smallest vertical gap between staves within one part; the music can open it further.
+	// It exceeds INTER_PART_SPACING so a brace-joined group reads as one instrument.
 	// The draw pass opens it wherever the music needs it (see SpillResolver.spacedOffsets).
 	// Keep it a different number from INTER_PART_SPACING: the re-spacing pass tells a
 	// within-part gap from a between-part one by its planned size. 100 leaves 6 staff spaces
@@ -77,18 +81,20 @@ export const INTRA_PART_SPACING =
 /** Vertical gap between adjacent parts. */
 export const INTER_PART_SPACING = 80;
 
-/** The air always kept between what one stave's music reaches down to and what the next
- * stave's reaches up to, however far the notes spill past their staff lines (see
- * SpillResolver.spacedOffsets). */
+/** Minimum air between one stave's music and the next stave's. */
 export const STAVE_CLEARANCE =
+	// The air always kept between what one stave's music reaches down to and what the next
+	// stave's reaches up to, however far the notes spill past their staff lines (see
+	// SpillResolver.spacedOffsets).
 	// Both gaps above are the *planned* spacing, sized for ordinary music; when the drawn
 	// notes spill far enough to close that gap, the draw pass widens it by what this needs.
 	12;
 
-/** Width of one x column in a stave's spill profile. Spill is measured per column, and two
- * staves only push each other apart where their profiles overlap, so a deep stem hanging
- * over an empty patch of the stave below costs nothing. */
+/** Width (px) of one column when measuring how far notes spill past a stave. */
 export const SPILL_COLUMN =
+	// Width of one x column in a stave's spill profile. Spill is measured per column, and two
+	// staves only push each other apart where their profiles overlap, so a deep stem hanging
+	// over an empty patch of the stave below costs nothing.
 	// Per-column spill keeps a gap sized for the one bar that needs it rather than for the
 	// worst drop plus the worst rise in the system. 8 is coarse enough that a notehead and a
 	// stem a few px apart share a column (they'd read as colliding anyway), fine enough that
@@ -102,21 +108,25 @@ export const BASE_VOICE_WIDTH = 80;
  * note (RESOLUTION / 4). A quarter note gets exactly one `noteSpacing` of width. */
 export const QUARTER_NOTE_TICKS = 4096;
 
-/** Logarithmic spacing curve shape: extra note width per *doubling* of duration, as a
- * fraction of `noteSpacing` (and that much less per halving). ~0.17 reproduces the
- * ~+50px-per-8-notes-per-doubling that engravers use. The shape is fixed here; `noteSpacing`
- * scales the whole curve. */
-export const LOG_SPACING_RATIO = 0.17;
+// vet-ignore doc-comments-address-users: the doc says what a caller sees; the maintainer notes are in the initializer
+/** Extra note width per doubling of duration, as a fraction of `noteSpacing`. */
+export const LOG_SPACING_RATIO =
+	// Logarithmic spacing curve shape: extra note width per *doubling* of duration, as a
+	// fraction of `noteSpacing` (and that much less per halving). ~0.17 reproduces the ~+50px-
+	// per-8-notes-per-doubling that engravers use. The shape is fixed here; `noteSpacing`
+	// scales the whole curve.
+	0.17;
 
 /** Floor on the curve's per-note multiplier, so very short notes (32nds and below) keep
  * a sane share before the collision-free minimum takes over. */
 export const MIN_LOG_FACTOR = 0.4;
 
-/** Lead glyph width estimate (px a stave prints before its notes): a continuation
- * measure carries only a barline. Lead estimates are deliberately generous so notes
- * never collide with the glyphs; measure stave.getNoteStartX() if exact alignment is
- * ever needed. */
-export const LEAD_BARLINE = 12;
+/** Estimated width (px) of the lead glyphs of a continuation measure, which carries only a barline. */
+export const LEAD_BARLINE =
+	// Lead glyph width estimate (px a stave prints before its notes): a continuation measure
+	// carries only a barline. Lead estimates are deliberately generous so notes never collide
+	// with the glyphs; measure stave.getNoteStartX() if exact alignment is ever needed.
+	12;
 
 /** Lead glyph width for a clef, re-stated at every system start. */
 export const LEAD_CLEF = 32;
@@ -131,10 +141,12 @@ export const LEAD_KEY = 40;
 /** Lead glyph width for a time signature, printed once at the piece start. */
 export const LEAD_TIME = 32;
 
-/** Horizontal gap between a right-aligned part label and the stave it sits beside.
- * Wide enough to clear the brace drawn on multi-stave parts. Shared by layout (reserved
- * indent) and draw (drawn position) so they agree. */
-export const LABEL_GAP = 28;
+/** Horizontal gap (px) between a right-aligned part label and its stave. */
+export const LABEL_GAP =
+	// Horizontal gap between a right-aligned part label and the stave it sits beside. Wide
+	// enough to clear the brace drawn on multi-stave parts. Shared by layout (reserved indent)
+	// and draw (drawn position) so they agree.
+	28;
 
 /** Estimated label width per char for 13px Arial, for sizing a part label where there is
  * nothing to measure it with. */
@@ -171,13 +183,18 @@ export const TAB_MIN_NOTE_SPACING = 32;
  * triplet brackets and their numerals do not touch. */
 export const TUPLET_MIN_GROUP_WIDTH = 64;
 
-/** Bump tab fret digits bolder/larger than vexflow's thin default (1.258 * 9pt ≈ 15px). */
-export const TAB_FRET_SCALE = 1.258;
+/** Space between tablature string lines, in px. Wider than a notation staff's 10px so stacked
+ * fret digits and inner-string hammer-on arcs have vertical breathing room. */
+export const TAB_LINE_DISTANCE = 15;
 
-/** Lead clearance (px) before a notation grace cluster. Pad it onto the RIGHT of the note
- * that precedes the grace's host, and grow the measure's width allocation by it too (see
- * graceWidthOf), unless that preceding note carries augmentation dots. */
+/** Bump tab fret digits bolder/larger than vexflow's default (1.022 * 11pt ≈ 15px). */
+export const TAB_FRET_SCALE = 1.022;
+
+/** Lead clearance (px) before a notation grace cluster. */
 export const GRACE_SPACING =
+	// Lead clearance (px) before a notation grace cluster. Pad it onto the RIGHT of the note
+	// that precedes the grace's host, and grow the measure's width allocation by it too (see
+	// graceWidthOf), unless that preceding note carries augmentation dots.
 	// Padding the preceding note shifts the host and its attached grace right together, so the
 	// grace gets breathing room from that note while staying snug to its host. Growing the
 	// measure makes the clearance real space, not stolen from the bar's other notes. Dotted
@@ -185,16 +202,19 @@ export const GRACE_SPACING =
 	// it would fling the dots out to the right.
 	16;
 
-/** Grace tab frets, as a fraction of the (enlarged) main-note size. */
-export const TAB_GRACE_SCALE = 2 / 3;
+/** Grace tab frets, as a fraction of the main-note fret size (matches Soundslice's ~80%). */
+export const TAB_GRACE_SCALE = 0.8;
 
 /** Padding added to a tab grace group's width (vexflow's groupSpacingTab is 0). */
 export const TAB_GRACE_SPACING = 14;
 
-/** Shape of a tab hammer-on/pull-off arc (see TabCurve): how far the ends are lifted off the
- * fret digits, and the bezier control-point rise that sets the bow's depth (the apex stands
- * 0.75 of it above the ends). The slur counterparts are SLUR_Y_SHIFT / SLUR_BOW_MIN. */
+// vet-ignore doc-comments-address-users: the doc says what a caller sees; the maintainer notes are in the initializer
+/** How high a tab hammer-on/pull-off arc sits above its fret digits. */
 export const TAB_CURVE_Y_SHIFT =
+	// Shape of a tab hammer-on/pull-off arc (see TabCurve): how far the ends are lifted off
+	// the fret digits, and the bezier control-point rise that sets the bow's depth (the apex
+	// stands 0.75 of it above the ends). The slur counterparts are SLUR_Y_SHIFT /
+	// SLUR_BOW_MIN.
 	// Larger than the slur's lift because a fret digit is taller than a notehead and sits on
 	// its string line. The arc is drawn with the notation slur renderer.
 	12;
@@ -202,16 +222,20 @@ export const TAB_CURVE_CP_Y =
 	// Shallower than a slur's bow because the arc spans two frets rather than a whole phrase.
 	12;
 
-/** How far a full-height tab arc bows above the fret digits it springs from: the ends' lift
- * plus the apex's share of the control-point rise. Used both to scale the arc down under the
- * string line above it and to reserve the band it occupies as a collision obstacle. */
-export const TAB_CURVE_RISE = TAB_CURVE_Y_SHIFT + 0.75 * TAB_CURVE_CP_Y;
+/** How far a full-height tab arc bows above the fret digits it springs from. */
+export const TAB_CURVE_RISE =
+	// How far a full-height tab arc bows above the fret digits it springs from: the ends' lift
+	// plus the apex's share of the control-point rise. Used both to scale the arc down under
+	// the string line above it and to reserve the band it occupies as a collision obstacle.
+	TAB_CURVE_Y_SHIFT + 0.75 * TAB_CURVE_CP_Y;
 
-/** The span (px, notehead edge to notehead edge) at which a tab arc gets its full height.
- * Below it the arc scales down in proportion, so a short one (a grace note hammering into
- * the note beside it, or the stub half of an arc split across a system break) shrinks
- * instead of drawing as a tall narrow spike. */
+// vet-ignore doc-comments-address-users: the doc says what a caller sees; the maintainer notes are in the initializer
+/** How wide a tab arc must be to reach full height. */
 export const TAB_CURVE_FULL_WIDTH =
+	// The span (px, notehead edge to notehead edge) at which a tab arc gets its full height.
+	// Below it the arc scales down in proportion, so a short one (a grace note hammering into
+	// the note beside it, or the stub half of an arc split across a system break) shrinks
+	// instead of drawing as a tall narrow spike.
 	// Just under the span of a normal fret-to-fret arc, so that one keeps its full height.
 	28;
 
@@ -219,21 +243,26 @@ export const TAB_CURVE_FULL_WIDTH =
  * visibly attached to its own fret digits instead of bowing into the string above's. */
 export const TAB_CURVE_LINE_CLEARANCE = 2;
 
-/** A notation slide/glissando line (see NotationSlide) runs between the two notehead centers,
- * tilted by the slide direction. SLIDE_MIN_SLANT is the smallest vertical rise/fall it is
- * allowed (so a near-unison slide still reads instead of going flat, and a chord's near-equal
- * slides stay ~parallel); the tilt is also capped to the horizontal run so a wide interval over
- * a short grace-to-main gap doesn't spike near-vertical. SLIDE_PADDING insets each end: the
- * line starts just past the start notehead's outer edge and ends just into the target head. */
-export const SLIDE_MIN_SLANT = 6;
+/** Smallest vertical rise/fall (SLIDE_MIN_SLANT) and end inset (SLIDE_PADDING), in px, of a notation slide line. */
+export const SLIDE_MIN_SLANT =
+	// A notation slide/glissando line (see NotationSlide) runs between the two notehead
+	// centers, tilted by the slide direction. SLIDE_MIN_SLANT is the smallest vertical
+	// rise/fall it is allowed (so a near-unison slide still reads instead of going flat, and a
+	// chord's near-equal slides stay ~parallel); the tilt is also capped to the horizontal run
+	// so a wide interval over a short grace-to-main gap doesn't spike near-vertical.
+	// SLIDE_PADDING insets each end: the line starts just past the start notehead's outer edge
+	// and ends just into the target head.
+	6;
 export const SLIDE_PADDING = 3;
 
-/** A single-note slide (a slide into or out of a note whose other end is indeterminate: an
- * unpaired <slide> start/stop) has no partner notehead to run to, so instead of a full line it
- * draws a short "/" tick beside the note: SINGLE_SLIDE_LEN long horizontally, rising
- * SINGLE_SLIDE_RISE from the far end up to the notehead. A slide-in sits just left of the head
- * (rising into it); a slide-out just right (rising out of it). */
-export const SINGLE_SLIDE_LEN = 10;
+/** Length and rise (px) of the short tick drawn for a slide with no partner note. */
+export const SINGLE_SLIDE_LEN =
+	// A single-note slide (a slide into or out of a note whose other end is indeterminate: an
+	// unpaired <slide> start/stop) has no partner notehead to run to, so instead of a full
+	// line it draws a short "/" tick beside the note: SINGLE_SLIDE_LEN long horizontally,
+	// rising SINGLE_SLIDE_RISE from the far end up to the notehead. A slide-in sits just left
+	// of the head (rising into it); a slide-out just right (rising out of it).
+	10;
 export const SINGLE_SLIDE_RISE = 7;
 
 /** Extra gap (past SLIDE_PADDING) between a note glyph and the head-touching end of a
@@ -250,6 +279,7 @@ export const BRACKET_X_SHIFT = 3;
  * (a mere gap) because a bracket's curls have real width. */
 export const PART_GROUP_STEP = 10;
 
+// vet-ignore doc-comments-address-users: the doc says what a caller sees; the maintainer notes are in the initializer
 /** How far a bracket's bar and curl glyphs reach left of the (already shifted) stave x.
  * Reserve it so a system-start measure box grows to contain the bracket instead of
  * clipping it. */
@@ -257,13 +287,18 @@ export const BRACKET_GLYPH_OVERHANG =
 	// vexflow insets them ~5px more, plus a hair of glyph overhang.
 	8;
 
-/** How far a bracket's curls overhang past the top/bottom staff lines (vexflow raises the
- * top and drops the bottom ~6px, plus glyph height). Reserved for the measure box. */
-export const CONNECTOR_VERTICAL_OVERHANG = 10;
+/** How far a bracket's curls overhang past the top/bottom staff lines (px). */
+export const CONNECTOR_VERTICAL_OVERHANG =
+	// How far a bracket's curls overhang past the top/bottom staff lines (vexflow raises the
+	// top and drops the bottom ~6px, plus glyph height). Reserved for the measure box.
+	10;
 
-/** How far a brace (grand staff connector) reaches left of the stave x: vexflow draws it
- * ~14px out. Reserved so a braced part's system-start measure box contains it. */
-export const BRACE_LEFT_OVERHANG = 14;
+// vet-ignore doc-comments-address-users: the doc says what a caller sees; the maintainer notes are in the initializer
+/** How far a brace reaches left of the stave x (px). */
+export const BRACE_LEFT_OVERHANG =
+	// How far a brace (grand staff connector) reaches left of the stave x: vexflow draws it
+	// ~14px out. Reserved so a braced part's system-start measure box contains it.
+	14;
 
 /** Chord-symbol (from `<harmony>`) text size, a touch smaller than the part label so it
  * reads as an annotation above the notes. */
@@ -276,23 +311,28 @@ export const HARMONY_Y_OFFSET = 14;
  * sits over, so the symbol lifts clear instead of colliding with the notehead. */
 export const HARMONY_NOTE_CLEARANCE = 8;
 
-/** Padding added below a chord symbol's collision box, so the symbol lifts off a notehead. */
+/** Extra clearance below a chord symbol, so it lifts off a note under it. */
 export const HARMONY_PADDING =
+	// Extra clearance below a chord symbol, so it lifts off a note under it.
 	// The box then reaches down to the top staff line, past its text baseline (HARMONY_Y_OFFSET
 	// above that line), so the lift-clear probe reaches a notehead just under the baseline. A
 	// hair past HARMONY_Y_OFFSET so a note on the top line/space is reliably caught.
 	15;
 
-/** How far a single note's tie ribbon peaks above the notehead center when it bows
- * upward (stem-down note). Vexflow draws the tie as a bezier whose outer edge clears
- * the notehead by its yShift (7) plus the deeper control-point excursion (cp2 12):
- * ~13px. A chord symbol over a tied note lifts past this so it doesn't touch the arc. */
-export const TIE_APEX_RISE = 13;
+/** How far a tie arches above its note. */
+export const TIE_APEX_RISE =
+	// How far a single note's tie ribbon peaks above the notehead center when it bows upward
+	// (stem-down note). Vexflow draws the tie as a bezier whose outer edge clears the notehead
+	// by its yShift (7) plus the deeper control-point excursion (cp2 12): ~13px. A chord
+	// symbol over a tied note lifts past this so it doesn't touch the arc.
+	13;
 
-/** Chord-diagram (fret box from a `<harmony><frame>`) overall width/height, drawn
- * above the stave at the lead note's x. Smaller than vexchords' 100×120 default so the
- * box reads as an inline annotation over the music. */
-export const CHORD_DIAGRAM_WIDTH = 88;
+/** Width and height (px) of a chord diagram drawn above the stave. */
+export const CHORD_DIAGRAM_WIDTH =
+	// Chord-diagram (fret box from a `<harmony><frame>`) overall width/height, drawn above the
+	// stave at the lead note's x. Smaller than vexchords' 100×120 default so the box reads as
+	// an inline annotation over the music.
+	88;
 export const CHORD_DIAGRAM_HEIGHT = 84;
 
 /** Gap kept between the bottom of a chord diagram and the top staff line. */
@@ -313,22 +353,28 @@ export const WORDS_FONT_SIZE = 13;
 /** How far a words-direction baseline sits above the top staff line. */
 export const WORDS_Y_OFFSET = 14;
 
-/** Estimated px per character of a words directive at WORDS_FONT_SIZE, used by the layout
- * planner to reserve room for a directive on a measure's last note (no render context there
- * to measure with). Deliberately over the ~8.0px italic Arial measures, because an
- * under-estimate is what puts the text back over the barline. */
-export const WORDS_CHAR_WIDTH = 8.5;
+/** Estimated px per character of a words directive, for reserving room where text can't be measured. */
+export const WORDS_CHAR_WIDTH =
+	// Estimated px per character of a words directive at WORDS_FONT_SIZE, used by the layout
+	// planner to reserve room for a directive on a measure's last note (no render context
+	// there to measure with). Deliberately over the ~8.0px italic Arial measures, because an
+	// under-estimate is what puts the text back over the barline.
+	8.5;
 
-/** Clearance kept between a words-direction baseline and the top of a high note it sits
- * over, so the directive lifts clear instead of colliding with the notehead. Matched to
- * WORDS_Y_OFFSET so a lifted directive keeps the same air over a notehead that an
- * uncollided one keeps over the top staff line: at 8 the text grazed the noteheads. */
-export const WORDS_NOTE_CLEARANCE = WORDS_Y_OFFSET;
+/** Clearance kept between a words-direction baseline and the top of a high note it sits over. */
+export const WORDS_NOTE_CLEARANCE =
+	// Clearance kept between a words-direction baseline and the top of a high note it sits
+	// over, so the directive lifts clear instead of colliding with the notehead. Matched to
+	// WORDS_Y_OFFSET so a lifted directive keeps the same air over a notehead that an
+	// uncollided one keeps over the top staff line: at 8 the text grazed the noteheads.
+	WORDS_Y_OFFSET;
 
-/** Dynamics-marking glyph size. Larger than the text annotations because SMuFL's dynamic
- * letters are drawn small within their em box: at WORDS_FONT_SIZE a "p" reads as a
- * footnote next to the noteheads. */
-export const DYNAMICS_FONT_SIZE = 24;
+/** Dynamics-marking glyph size. */
+export const DYNAMICS_FONT_SIZE =
+	// Dynamics-marking glyph size. Larger than the text annotations because SMuFL's dynamic
+	// letters are drawn small within their em box: at WORDS_FONT_SIZE a "p" reads as a
+	// footnote next to the noteheads.
+	24;
 
 /** Percussion pictogram glyph size. SMuFL draws a pictogram about two staff spaces tall at
  * the stave's own em, which reads as an instrument picture without crowding the line. */
@@ -346,9 +392,12 @@ export const NAVIGATION_FONT_SIZE = 24;
 /** Barline fermata glyph size: the notation font's own size, so it matches a note's fermata. */
 export const BARLINE_FERMATA_FONT_SIZE = 30;
 
-/** The height of a fermata's ink at BARLINE_FERMATA_FONT_SIZE: SMuFL draws one about a
- * third of its em tall, and the collision box should hug the arc, not the em. */
-export const BARLINE_FERMATA_INK_HEIGHT = 12;
+// vet-ignore doc-comments-address-users: the doc says what a caller sees; the maintainer notes are in the initializer
+/** Height (px) of a barline fermata's ink. */
+export const BARLINE_FERMATA_INK_HEIGHT =
+	// The height of a fermata's ink at BARLINE_FERMATA_FONT_SIZE: SMuFL draws one about a
+	// third of its em tall, and the collision box should hug the arc, not the em.
+	12;
 
 /** Air a segno/coda keeps beside other above-stave text. A sign sharing a baseline with
  * text it only abuts reads as part of it: "D.S. al Coda" ending on the barline runs straight
@@ -379,21 +428,25 @@ export const HAIRPIN_STAVE_GAP = 14;
  * voice sings. */
 export const LYRIC_FONT_SIZE = 11;
 
-/** Air a lyric syllable claims either side of its text, so adjacent syllables read as
- * separate words instead of running together ("lowhighledg") when a measure is formatted
- * at its minimum width. A word gap, not a column: this is doubled between neighbours and
- * paid on every syllable, so it drives the minimum width of a sung line more than any
- * notehead does. */
-export const LYRIC_PADDING = 3;
+/** Air a lyric syllable claims either side of its text, so adjacent syllables stay separate. */
+export const LYRIC_PADDING =
+	// Air a lyric syllable claims either side of its text, so adjacent syllables read as
+	// separate words instead of running together ("lowhighledg") when a measure is formatted
+	// at its minimum width. A word gap, not a column: this is doubled between neighbours and
+	// paid on every syllable, so it drives the minimum width of a sung line more than any
+	// notehead does.
+	3;
 
 /** How far a lyric row's baseline sits below the bottom staff line. */
 export const LYRIC_Y_OFFSET = 18;
 
-/** Clearance kept between a lyric row's baseline and the bottom of a note hanging below
- * the stave on ledger lines. Bigger than LYRIC_Y_OFFSET: the offset is measured from a
- * staff line with the empty bottom space already between it and the text, while this is
- * measured from ink, so it has to cover the syllable's own ascent plus that same air. */
-export const LYRIC_NOTE_CLEARANCE = 26;
+/** Clearance kept between a lyric row's baseline and the bottom of a note hanging below the stave. */
+export const LYRIC_NOTE_CLEARANCE =
+	// Clearance kept between a lyric row's baseline and the bottom of a note hanging below the
+	// stave on ledger lines. Bigger than LYRIC_Y_OFFSET: the offset is measured from a staff
+	// line with the empty bottom space already between it and the text, while this is measured
+	// from ink, so it has to cover the syllable's own ascent plus that same air.
+	26;
 
 /** Vertical pitch between stacked verses: each extra verse drops one row further below
  * the stave. Roomy enough that a descender ("g", "y") clears the row under it. */
@@ -410,9 +463,11 @@ export const STRING_NUMBER_FONT_SIZE = 11;
 export const STRING_NUMBER_RADIUS = 7;
 export const STRING_NUMBER_RING_WIDTH = 1;
 
-/** How far the digit's baseline sits below its ring's center: half the cap height of a
- * STRING_NUMBER_FONT_SIZE digit, which has no descender to allow for. */
-export const STRING_NUMBER_DIGIT_RISE = 4;
+/** Vertical offset of a string-number digit inside its ring. */
+export const STRING_NUMBER_DIGIT_RISE =
+	// How far the digit's baseline sits below its ring's center: half the cap height of a
+	// STRING_NUMBER_FONT_SIZE digit, which has no descender to allow for.
+	4;
 
 /** Air between two stacked <technical> marks in one note's column. */
 export const TECHNICAL_ROW_GAP = 4;
@@ -426,13 +481,17 @@ export const TECHNICAL_EDGE_GAP = 9;
 // on each bracket line, so without this an outer "3" and an inner "5" print through each
 // other.
 
-/** Extra room between the brackets of NESTED tuplets, on top of vexflow's own spacing. */
-export const TUPLET_NESTING_EXTRA_GAP = 10;
+/** Extra room between the brackets of nested tuplets, on top of vexflow's own spacing. */
+export const TUPLET_NESTING_EXTRA_GAP =
+	// Extra room between the brackets of NESTED tuplets, on top of vexflow's own spacing.
+	10;
 
-/** Half the height of the band a tuplet's numeral fills around its bracket line, for
- * anything that has to clear it (a hairpin under a below-placed triplet). The "3" stands
- * about 12px; the rest is air. */
-export const TUPLET_NUMERAL_HALF_HEIGHT = 8;
+/** Half the height (px) of a tuplet numeral's band around its bracket line. */
+export const TUPLET_NUMERAL_HALF_HEIGHT =
+	// Half the height of the band a tuplet's numeral fills around its bracket line, for
+	// anything that has to clear it (a hairpin under a below-placed triplet). The "3" stands
+	// about 12px; the rest is air.
+	8;
 
 /** Rehearsal-mark (section header, e.g. "A" or "Chorus") text size, bigger and bolder than
  * the other above-stave annotations, since it's the label a player navigates the chart by. */
@@ -476,16 +535,17 @@ export const TEMPO_SCALE =
 	// vexflow's StaveTempo defaults (14pt text, 25pt note glyph) render oversized.
 	0.7;
 
-/** Air between a "note = bpm" mark and a note-group metric modulation printed beside it.
- * Wider than the 3px StaveTempo puts between its own pieces, so the two read as two
- * statements rather than one long equation. Pre-scale, like everything else in the mark. */
-export const TEMPO_MARK_GAP = 12;
+/** Air between a "note = bpm" mark and a metric modulation printed beside it. */
+export const TEMPO_MARK_GAP =
+	// Air between a "note = bpm" mark and a note-group metric modulation printed beside it.
+	// Wider than the 3px StaveTempo puts between its own pieces, so the two read as two
+	// statements rather than one long equation. Pre-scale, like everything else in the mark.
+	12;
 
 /** bpm a metronome directive falls back to when it carries no number. */
 export const DEFAULT_TEMPO_BPM = 120;
 
-/** Per-system slack on the scratch canvas for content below the stave (deep ledger
- * lines). */
+/** Extra room (px) per system for content below the stave, such as deep ledger lines. */
 export const LEDGER_HEADROOM =
 	// Bump this if an extreme low tessitura ever clips at the scratch bottom.
 	300;
@@ -493,9 +553,11 @@ export const LEDGER_HEADROOM =
 /** Raises a slur's endpoints off the notes. */
 export const SLUR_Y_SHIFT = 10;
 
-/** How much further a slur end lifts to clear a tie on its own note, in px: a slur ending on a
- * tied note bows past the tie rather than lying on it. */
-export const SLUR_TIE_GAP = 7;
+/** How much further a slur end lifts to clear a tie on its own note (px). */
+export const SLUR_TIE_GAP =
+	// How much further a slur end lifts to clear a tie on its own note, in px: a slur ending
+	// on a tied note bows past the tie rather than lying on it.
+	7;
 
 /** Extra clearance the arc keeps above/below the most extreme note it spans. */
 export const SLUR_MARGIN = 14;
@@ -517,38 +579,44 @@ export const SLUR_BOW_MAX = 14.5;
  * tight one doesn't draw as a spike. */
 export const SLUR_BOW_ASPECT = 0.22;
 
-/** Where a slur's control points sit, as a fraction of its width from each end. A quarter
- * draws a parabola; nearer the ends leaves the note steeper and runs fuller across the top. */
-export const SLUR_SHOULDER = 0.16;
+/** Where a slur's control points sit, as a fraction of its width from each end. */
+export const SLUR_SHOULDER =
+	// Where a slur's control points sit, as a fraction of its width from each end. A quarter
+	// draws a parabola; nearer the ends leaves the note steeper and runs fuller across the
+	// top.
+	0.16;
 
-/** Ceiling on a slur's control-point rise, whatever its width: the bow stands at most
- * 0.75 of this (about five staff spaces) off its chord. A long slur that needs more room
- * flattens its shoulders instead (SLUR_MIN_SHOULDER). */
+// vet-ignore doc-comments-address-users: the doc says what a caller sees; the maintainer notes are in the initializer
+/** The tallest a slur's arch may grow, whatever its width. */
 export const SLUR_MAX_CP_Y =
+	// Ceiling on a slur's control-point rise, whatever its width: the bow stands at most 0.75
+	// of this (about five staff spaces) off its chord. A long slur that needs more room
+	// flattens its shoulders instead (SLUR_MIN_SHOULDER).
 	// SLUR_MAX_ASPECT alone lets a slur across a whole system dome ten spaces high to clear
 	// one beam near its end.
 	64;
 
-/** How close to its ends a capped slur may pull its control points, as a fraction of its
- * width. Nearer the ends, the bow climbs steeply off each notehead and runs level across
- * the middle (the flat-topped long slur an engraver draws), so it clears a beam near one end
- * without growing deeper. */
+/** Closest to its ends a long slur may pull its control points, as a fraction of its width. */
 export const SLUR_MIN_SHOULDER =
+	// How close to its ends a capped slur may pull its control points, as a fraction of its
+	// width. Nearer the ends, the bow climbs steeply off each notehead and runs level across
+	// the middle (the flat-topped long slur an engraver draws), so it clears a beam near one
+	// end without growing deeper.
 	// Well inside vexflow's default of a quarter.
 	0.05;
 
-/** How much of each end of a slur's span is exempt from setting the bow's DEPTH, as a
- * fraction of its width. A note under an end zone is cleared by lifting the endpoints
- * instead (see shapeFor). */
+/** Fraction of a slur's width at each end that does not set the bow's depth. */
 export const SLUR_END_ZONE =
 	// The bow is pinned to its endpoints, so buying clearance for a note lying under one of
 	// them means doming the whole arc far past what the rest of the span needs.
 	0.15;
 
-/** Ceiling on how far past its base lift a slur will stand off its chord to clear
- * things, as a fraction of its width, covering both the bow's depth and the endpoint lift
- * (see shapeFor). Past this the slur stops trying to clear. */
+// vet-ignore doc-comments-address-users: the doc says what a caller sees; the maintainer notes are in the initializer
+/** The most a slur may lift off its notes to clear obstacles, as a fraction of its width. */
 export const SLUR_MAX_ASPECT =
+	// Ceiling on how far past its base lift a slur will stand off its chord to clear things,
+	// as a fraction of its width, covering both the bow's depth and the endpoint lift (see
+	// shapeFor). Past this the slur stops trying to clear.
 	// A span can hold obstacles no slur can get over (a second voice, the stem of a run
 	// beamed into the other hand); giving up keeps it a slur rather than deforming into a
 	// spike or floating off its own noteheads.
@@ -564,13 +632,15 @@ export const SLUR_STEM_TIP_SLANT =
 	// the same drop as a gentle slant, so the test is against the width, not an absolute height.
 	0.5;
 
-/** A grace-to-main curve (an explicit slur or a hammer-on/pull-off) is drawn as a
- * small tight bow hugging directly under the two noteheads, not the fuller slur arc:
- * a subtler endpoint lift, a shallow control-point rise, and a tighter clearance
- * margin. CP_Y is a floor, not a fixed rise: when the two noteheads sit far apart
- * (a grace into a wide chord) the arc still inflates enough to stay concave and clear
- * of what it spans, instead of flattening into a straight diagonal across them. */
-export const SLUR_GRACE_Y_SHIFT = 4;
+/** Endpoint lift, control-point rise and clearance margin (px) of a grace-to-main curve, a small tight bow under the two noteheads. */
+export const SLUR_GRACE_Y_SHIFT =
+	// A grace-to-main curve (an explicit slur or a hammer-on/pull-off) is drawn as a small
+	// tight bow hugging directly under the two noteheads, not the fuller slur arc: a subtler
+	// endpoint lift, a shallow control-point rise, and a tighter clearance margin. CP_Y is a
+	// floor, not a fixed rise: when the two noteheads sit far apart (a grace into a wide
+	// chord) the arc still inflates enough to stay concave and clear of what it spans, instead
+	// of flattening into a straight diagonal across them.
+	4;
 export const SLUR_GRACE_CP_Y = 6;
 export const SLUR_GRACE_MARGIN = 5;
 
@@ -584,18 +654,17 @@ export const SLUR_GHOST_OVERLAP = 4;
  * its real end however it has to bend. */
 export const SLUR_GHOST_MAX_BETWEEN = 2;
 
-/** Which point on a note a grace curve starts and stops at. vexflow's own Curve can
- * only name two spots per note and neither is reliably the right one on a chord, so
- * vexml resolves the Y itself (see HeadCurve) and this picks which one. Change this
- * one value to re-aim every grace curve in the score:
- *
- * - 'stem-base': the far end of the stem (below a stem-down note, above a stem-up one).
- *   On a stem-down chord this is the stem's bottom tip, past every notehead.
- * - 'notehead': the bulge-side notehead itself, ignoring the stem. Tighter, but on a
- *   stem-down chord it stops well short of where the stem ends.
- *
- * Both read the bulge side, so an above-bulging curve mirrors each rule upward. */
-export const SLUR_GRACE_ANCHOR: 'stem-base' | 'notehead' = 'stem-base';
+/** Which point on a note a grace curve starts and stops at: 'stem-base' (the stem's far end) or 'notehead' (the bulge-side notehead). */
+export const SLUR_GRACE_ANCHOR: 'stem-base' | 'notehead' =
+	// Which point on a note a grace curve starts and stops at. vexflow's own Curve can only
+	// name two spots per note and neither is reliably the right one on a chord, so vexml
+	// resolves the Y itself (see HeadCurve) and this picks which one. Change this one value to
+	// re-aim every grace curve in the score:  - 'stem-base': the far end of the stem (below a
+	// stem-down note, above a stem-up one). On a stem-down chord this is the stem's bottom
+	// tip, past every notehead. - 'notehead': the bulge-side notehead itself, ignoring the
+	// stem. Tighter, but on a stem-down chord it stops well short of where the stem ends.
+	// Both read the bulge side, so an above-bulging curve mirrors each rule upward.
+	'stem-base';
 
 /** How far across its notehead, from the left, a grace curve starts. */
 export const GRACE_START = 0.35;
@@ -621,13 +690,17 @@ export const HARMONY_STACK_LINE = 10;
 
 /** How many px a stave grace group sits off its note; tab groups get 0. */
 export const GRACE_GROUP_SPACING_STAVE =
+	// How many px a stave grace group sits off its note; tab groups get 0.
 	// Private to vexflow, so mirrored here.
 	4;
 
-/** Half-heights/half-widths (CSS px) for the note/fret hit-index boxes. A notehead's x-span is
- * measured exactly (getNoteHeadBeginX/EndX); its height and the fret box are approximated to ~one
- * notehead: enough to pick a target and draw a centered color/halo. */
-export const NOTEHEAD_HALF_H = 5;
+// vet-ignore doc-comments-address-users: the doc says what a caller sees; the maintainer notes are in the initializer
+/** Half-size (CSS px) of the boxes that pick a note or fret under a pointer. */
+export const NOTEHEAD_HALF_H =
+	// Half-heights/half-widths (CSS px) for the note/fret hit-index boxes. A notehead's x-span
+	// is measured exactly (getNoteHeadBeginX/EndX); its height and the fret box are
+	// approximated to ~one notehead: enough to pick a target and draw a centered color/halo.
+	5;
 export const FRET_HALF_W = 6;
 export const FRET_HALF_H = 7;
 
@@ -638,13 +711,18 @@ export const SCROLL_DURATION_MS =
 	// and varies with distance. 200 is a feel choice, not a measured one.
 	200;
 
-/** Above this scroll speed (px of travel per ms, i.e. distance / SCROLL_DURATION_MS), the tween
- * would fling too fast to read, so we snap instantly instead. At 200ms this snaps travels beyond
- * ~600px, which is most horizontal page-turns, and they read better as a cut than as a blur. */
-export const MAX_SCROLL_SPEED_PX_PER_MS = 3;
+/** Scroll speed (px/ms) above which a scroll jumps instead of animating. */
+export const MAX_SCROLL_SPEED_PX_PER_MS =
+	// Above this scroll speed (px of travel per ms, i.e. distance / SCROLL_DURATION_MS), the
+	// tween would fling too fast to read, so we snap instantly instead. At 200ms this snaps
+	// travels beyond ~600px, which is most horizontal page-turns, and they read better as a
+	// cut than as a blur.
+	3;
 
-/** Interval between smooth-scroll tween steps (~60fps). */
+// vet-ignore doc-comments-address-users: the doc says what a caller sees; the maintainer notes are in the initializer
+/** How often (ms) a smooth scroll advances. */
 export const SCROLL_FRAME_MS =
+	// Interval between smooth-scroll tween steps (~60fps).
 	// Stepped by setTimeout, not requestAnimationFrame: rAF isn't available in the bun unit-test
 	// runtime, and performance.now() keeps the tween's timing accurate despite setTimeout jitter.
 	16;
@@ -696,9 +774,11 @@ export const FAR =
 	// Finite, because Infinity arithmetic produces NaN.
 	1e6;
 
-/** Playback bar width: the bar is a thin line the view thickens; a nonzero width keeps it a valid,
- * hit-testable box. */
-export const BAR_WIDTH = 1;
+/** Playback bar width (px). */
+export const BAR_WIDTH =
+	// Playback bar width: the bar is a thin line the view thickens; a nonzero width keeps it a
+	// valid, hit-testable box.
+	1;
 
 /** Default guitar string tuning (low to high) for a chord diagram with no explicit tuning. */
 export const DEFAULT_TUNING = ['E', 'A', 'D', 'G', 'B', 'E'];
@@ -707,13 +787,19 @@ export const DEFAULT_TUNING = ['E', 'A', 'D', 'G', 'B', 'E'];
  * roughly three staff spaces, enough to clear a note a couple of ledger lines up. */
 export const VOLTA_STAVE_GAP = 34;
 
-/** Which of vexflow's above/below-stave text lines a <bracket>/<dashes> span rides on. Line 1
- * is where the ottava brackets sit, so these take the next one out and stay clear of them. */
-export const DIRECTION_LINE_TEXT_LINE = 2;
+/** Which of vexflow's above/below-stave text lines a <bracket>/<dashes> span rides on. */
+export const DIRECTION_LINE_TEXT_LINE =
+	// Which of vexflow's above/below-stave text lines a <bracket>/<dashes> span rides on. Line
+	// 1 is where the ottava brackets sit, so these take the next one out and stay clear of
+	// them.
+	2;
 
-/** Where an ottava bracket (<octave-shift>) starts out, matching TextBracket's own default
- * line. It only ever moves further out from there. See DrawPass.clearOctaveBracket. */
-export const OTTAVA_TEXT_LINE = 1;
+// vet-ignore doc-comments-address-users: the doc says what a caller sees; the maintainer notes are in the initializer
+/** Line above the stave an ottava bracket starts on. */
+export const OTTAVA_TEXT_LINE =
+	// Where an ottava bracket (<octave-shift>) starts out, matching TextBracket's own default
+	// line. It only ever moves further out from there. See DrawPass.clearOctaveBracket.
+	1;
 
 /** Length (px) of the vertical hook a <bracket>'s `line-end` terminates in. */
 export const DIRECTION_LINE_HOOK = 8;
@@ -732,14 +818,16 @@ export const MULTI_REST_MIN_WIDTH = 110;
  * VOLTA_STAVE_GAP and the bracket has to be lifted off its default height. */
 export const VOLTA_NOTE_CLEARANCE = 12;
 
-/** How tall a volta bracket's obstacle box is, so above-stave annotations lift clear of the
- * whole bracket rather than just its line. */
+// vet-ignore doc-comments-address-users: the doc says what a caller sees; the maintainer notes are in the initializer
+/** Height (px) of a volta bracket's box for lifting annotations clear of it. */
 export const VOLTA_LABEL_DROP =
 	// vexflow draws the "1." label hanging below the bracket line, so the box has to reach
 	// past the text.
 	20;
 
-/** A CSS unicode-range: comma-separated `U+` codepoints, ranges (`U+E050-E062`) and wildcards
- * (`U+E0??`). FontFile.unicodeRange must match, since it is written into a stylesheet. */
+/** Accepts a CSS unicode-range string. */
 export const UNICODE_RANGE =
+	// A CSS unicode-range: comma-separated `U+` codepoints, ranges (`U+E050-E062`) and
+	// wildcards (`U+E0??`). FontFile.unicodeRange must match, since it is written into a
+	// stylesheet.
 	/^\s*U\+[0-9A-F?]{1,6}(-[0-9A-F]{1,6})?(\s*,\s*U\+[0-9A-F?]{1,6}(-[0-9A-F]{1,6})?)*\s*$/i;

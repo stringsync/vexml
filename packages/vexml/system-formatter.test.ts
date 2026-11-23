@@ -3,13 +3,11 @@ import { Rect } from 'core/geometry';
 import {
 	Barline,
 	type BarlineType,
-	GraceNoteGroup,
 	Modifier,
 	type RenderContext,
 	type Stave,
 	type StaveNote,
 	TimeSignature,
-	type Voice,
 } from 'vexflow/core';
 import type { ChordTranslator } from './chord-translator';
 import { CollisionResolver } from './collision-resolver';
@@ -124,57 +122,10 @@ describe('SystemFormatter', () => {
 		expect(extent).toEqual({ top: Infinity, bottom: 0 });
 	});
 
-	// A grace cluster the way closeGraceGaps sees one: position plus mutable spacing.
-	const graceGroup = (position: number, spacing: number) => {
-		const group = {
-			spacing,
-			getCategory: () => GraceNoteGroup.CATEGORY,
-			getPosition: () => position,
-			getSpacingFromNextModifier: () => group.spacing,
-			setSpacingFromNextModifier: (next: number) => {
-				group.spacing = next;
-			},
-		};
-		return group;
-	};
-
-	// closeGraceGaps runs inside formatAndDraw right after the vexflow format pass; reach
-	// past the private marker to exercise its arithmetic without a full render.
-	const closeGraceGaps = (voices: unknown[]) =>
-		(
-			makeFormatter() as unknown as {
-				closeGraceGaps(voices: Voice[]): void;
-			}
-		).closeGraceGaps(voices as Voice[]);
-
-	let leading: ReturnType<typeof graceGroup>;
 	let formatter: SystemFormatter;
 
 	beforeEach(() => {
 		formatter = makeFormatter();
-		leading = graceGroup(Modifier.Position.LEFT, 4);
-	});
-
-	it('hands a double-graced note reserved right shift back to its leading cluster', () => {
-		const trailing = graceGroup(Modifier.Position.RIGHT, 9);
-		const tickable = {
-			getModifiers: () => [leading, trailing],
-			checkTickContext: () => ({ getMetrics: () => ({ modRightPx: 30 }) }),
-		};
-		closeGraceGaps([{ getTickables: () => [tickable] }]);
-		expect(leading.spacing).toBe(34);
-		expect(trailing.spacing).toBe(9);
-	});
-
-	it('leaves a lone grace cluster where the formatter put it', () => {
-		const tickable = {
-			getModifiers: () => [leading],
-			checkTickContext: () => {
-				throw new Error('single-cluster notes never read the tick context');
-			},
-		};
-		closeGraceGaps([{ getTickables: () => [tickable] }]);
-		expect(leading.spacing).toBe(4);
 	});
 
 	// A real begin modifier: alignBegModifiers groups repeats by instanceof, and the time

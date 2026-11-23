@@ -16,6 +16,11 @@ export interface StackRef {
 export const POLLS = 240;
 /** Seconds between polls. */
 export const POLL_SECONDS = 15;
+/** Consecutive failed `describe-stacks` polls before `awaitChangeSet` gives up. */
+export const POLL_FAILURES = 3;
+
+const FATAL_AWS_ERROR =
+	/ExpiredToken|Token has expired|SSO session.*expired|aws sso login|UnrecognizedClientException|InvalidClientTokenId|AccessDenied|Unable to locate credentials|config profile .* could not be found|does not exist/i;
 
 /** The stack's status, or `undefined` when it does not exist. */
 export async function stackStatus(
@@ -156,6 +161,139 @@ export async function recoverStuck(
 		);
 	}
 	ctx.update(`${ref.name} rolled back`);
+}
+
+/**
+ * Rolls a stack a `--no-rollback` deploy left in `UPDATE_FAILED` back to its
+ * previous template and waits for it to finish. Any other status is left
+ * alone. Fails with the resources still stuck when the rollback does not
+ * reach `UPDATE_ROLLBACK_COMPLETE`.
+ */
+export async function rollbackPaused(
+	ctx: Pick<Ctx, "sh" | "update">,
+	ref: StackRef,
+): Promise<boolean> {
+	if ((await stackStatus(ctx, ref)) !== "UPDATE_FAILED") {
+		return false;
+	}
+	ctx.update(`Rolling back ${ref.name}`);
+	await ctx.sh(
+		`${aws(ref, "cloudformation rollback-stack")} --stack-name ${quoteWord(ref.cfnName)} 2>&1`,
+	);
+	const status = await settle(ctx, ref);
+	if (status !== "UPDATE_ROLLBACK_COMPLETE") {
+		const still = await failedResources(ctx, ref);
+		throw new Error(
+			`${ref.name}'s rollback ended in ${status ?? "an unknown state"}. ${describeStuck(still)} Fix what blocks those resources, then retry this step.`,
+		);
+	}
+	ctx.update(`${ref.name} rolled back`);
+	return true;
+}
+
+async function readStackState(
+	ctx: Pick<Ctx, "sh">,
+	ref: StackRef,
+	wait = 0,
+): Promise<
+	| {
+			readonly ok: true;
+			readonly status: string;
+			readonly changeSetId?: string;
+	  }
+	| { readonly ok: false; readonly raw: string }
+> {
+	const raw = (
+		await ctx.sh(
+			`${wait ? `sleep ${wait}; ` : ""}${aws(ref, "cloudformation describe-stacks")} --stack-name ${quoteWord(ref.cfnName)} --query 'Stacks[0].[StackStatus,ChangeSetId]' --output text 2>&1 || true`,
+		)
+	).trim();
+	const [read, current] = raw.split(/\s+/);
+	const status = read?.match(/^[A-Z]+(?:_[A-Z]+)+$/)?.[0];
+	if (!status) {
+		return { ok: false, raw };
+	}
+	return {
+		ok: true,
+		status,
+		changeSetId: current && current !== "None" ? current : undefined,
+	};
+}
+
+/** The stack's status and last change set ARN, or `undefined` when it has no status. */
+export async function stackState(
+	ctx: Pick<Ctx, "sh">,
+	ref: StackRef,
+	wait = 0,
+): Promise<
+	{ readonly status: string; readonly changeSetId?: string } | undefined
+> {
+	const state = await readStackState(ctx, ref, wait);
+	return state.ok
+		? { status: state.status, changeSetId: state.changeSetId }
+		: undefined;
+}
+
+/**
+ * Waits for the change set `id` to finish running on the stack: until the
+ * stack names it as its last change set and is no longer `*_IN_PROGRESS`,
+ * showing its latest event. Returns the stack's status then, or the last one
+ * read when it is still running after twice the polls a rollback gets.
+ * Throws promptly when `describe-stacks` reports a non-transient auth/SSO or
+ * missing-stack error, or fails `POLL_FAILURES` times in a row.
+ */
+export async function awaitChangeSet(
+	ctx: Pick<Ctx, "sh" | "update">,
+	ref: StackRef,
+	id: string,
+): Promise<string | undefined> {
+	let status: string | undefined;
+	let failures = 0;
+	for (let poll = 0; poll < POLLS * 2; poll++) {
+		const state = await readStackState(ctx, ref, poll ? POLL_SECONDS : 0);
+		if (!state.ok) {
+			const detail = state.raw ? state.raw.slice(0, 400) : "empty output";
+			if (FATAL_AWS_ERROR.test(state.raw)) {
+				throw new Error(
+					`Could not read ${ref.name}'s status while waiting on its change set: ${detail}`,
+				);
+			}
+			failures++;
+			if (failures >= POLL_FAILURES) {
+				throw new Error(
+					`Could not read ${ref.name}'s status after ${failures} attempts while waiting on its change set: ${detail}`,
+				);
+			}
+			continue;
+		}
+		failures = 0;
+		status = state.status;
+		if (state.changeSetId === id && !status.endsWith("_IN_PROGRESS")) {
+			return status;
+		}
+		if (status.endsWith("_IN_PROGRESS")) {
+			ctx.update(
+				`${ref.name} is ${status.toLowerCase().replaceAll("_", " ")}${await latestEvent(ctx, ref)}`,
+			);
+		}
+	}
+	return status;
+}
+
+async function latestEvent(
+	ctx: Pick<Ctx, "sh">,
+	ref: StackRef,
+): Promise<string> {
+	const event = (
+		await ctx.sh(
+			`${aws(ref, "cloudformation describe-stack-events")} --stack-name ${quoteWord(ref.cfnName)} --max-items 1 --query 'StackEvents[0].[LogicalResourceId,ResourceStatus]' --output text 2>&1 || true`,
+		)
+	)
+		.trim()
+		.split(/\s+/)
+		.slice(0, 2)
+		.join(" ");
+	return event ? `: ${event}` : "";
 }
 
 /** Waits until the stack is no longer `*_IN_PROGRESS`, showing its latest event. */

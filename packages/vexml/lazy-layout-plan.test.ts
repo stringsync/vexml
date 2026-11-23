@@ -17,7 +17,6 @@ import { FontShorthandPatch } from './font-shorthand-patch';
 import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
 import { LayoutPlanner } from './layout-planner';
-import { MetricsPatch } from './metrics-patch';
 import { NotationTranslator } from './notation-translator';
 import { ProbeTextCanvas } from './probe-text-canvas';
 import { ScoreReader } from './score-reader';
@@ -187,7 +186,6 @@ function planner(): LayoutPlanner {
 
 // The layout builds vexflow elements, which measure text through the probe.
 new ProbeTextCanvas(new FakePaintProbe()).install();
-new MetricsPatch().install();
 new FontShorthandPatch().install();
 
 // Null for a fixture with no parts, which has no layout.

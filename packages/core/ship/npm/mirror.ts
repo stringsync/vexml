@@ -18,10 +18,15 @@ export interface MirrorOptions {
 	 */
 	keep?: readonly string[];
 	/**
+	 * Globs, relative to the project folder, of tracked paths the mirror leaves
+	 * out, as `packages/book/**`. `keep` wins when both match a path.
+	 */
+	omit?: readonly string[];
+	/**
 	 * What the mirror holds of the project: `project` (the default) puts the
 	 * project folder at its root, `package` only the published package's
 	 * folder, for a project that keeps the rest private. In `package` mode
-	 * `keep` and the `mirror/` folder are relative to the package's folder.
+	 * `keep`, `omit` and the `mirror/` folder are relative to the package's folder.
 	 */
 	scope?: "project" | "package";
 	/** The version npm has of a package; asks npm by default. */
@@ -62,6 +67,7 @@ export async function writeMirror(opts: MirrorOptions): Promise<string> {
 	await clear(fs, opts.into);
 
 	const keeps = (opts.keep ?? []).map((glob) => new Bun.Glob(glob));
+	const omits = (opts.omit ?? []).map((glob) => new Bun.Glob(glob));
 	const own = tracked
 		.filter((path) => path.startsWith(`${base}/`))
 		.map((path) => path.slice(base.length + 1));
@@ -73,8 +79,9 @@ export async function writeMirror(opts: MirrorOptions): Promise<string> {
 			.filter((path) => !path.startsWith(`${OVERLAY}/`))
 			.filter(
 				(path) =>
-					!LEFT_OUT.some((rule) => rule.test(path)) ||
-					keeps.some((glob) => glob.match(path)),
+					keeps.some((glob) => glob.match(path)) ||
+					(!LEFT_OUT.some((rule) => rule.test(path)) &&
+						!omits.some((glob) => glob.match(path))),
 			)
 			.filter((path) => !overlay.includes(path)),
 		...overlay,

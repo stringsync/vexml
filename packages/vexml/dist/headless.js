@@ -12,11 +12,11 @@ import {
   CssFont,
   ScoreEngraver,
   CanvasPaintProbe
-} from "./index-hnfqz5kr.js";
+} from "./index-8zre4znc.js";
 import {
   SNAPSHOT_VERSION2,
   PaintDecoder
-} from "./index-nvqbmbbp.js";
+} from "./index-6pn8cpem.js";
 
 // detached-viewport.ts
 class DetachedViewport {
@@ -57,6 +57,7 @@ class HeadlessFonts {
       this.loaded.push({ family: font.family, data });
     }
     VexFlow.setFonts(`'${families.notation}'`, `'${families.text}'`, "sans-serif");
+    VexFlow.setTextFonts(`'${families.notation}'`, `'${families.text}'`, "sans-serif");
     return families;
   }
   async read(source) {

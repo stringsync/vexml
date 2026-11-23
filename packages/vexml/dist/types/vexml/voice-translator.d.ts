@@ -1,6 +1,6 @@
 import type { Chord, Note } from '@stringsync/mdom';
 import { Rect } from '../core/geometry/index.js';
-import { type BarNote, type ClefNote, GhostNote, Modifier, StaveNote, type StemmableNote, type Tickable, type Tuplet, Voice } from 'vexflow/core';
+import { type BarNote, type ClefNote, GhostNote, type Modifier, StaveNote, type StemmableNote, type Tickable, type Tuplet, Voice } from 'vexflow/core';
 import type { Appearance } from './appearance.js';
 import type { BarlineTranslator } from './barline-translator.js';
 import type { ChordTranslator } from './chord-translator.js';

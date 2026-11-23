@@ -30,7 +30,7 @@ import {
   snapshotConfig,
   ScoreEngraver,
   CanvasPaintProbe
-} from "./index-hnfqz5kr.js";
+} from "./index-8zre4znc.js";
 import {
   disposables,
   Disposer,
@@ -38,7 +38,7 @@ import {
   SnapshotMismatchError2,
   ScoreBox,
   TiledSurface
-} from "./index-71jwmdpm.js";
+} from "./index-kdpqmhaq.js";
 import {
   Rect2,
   MAX_CANVAS_AREA,
@@ -65,7 +65,7 @@ import {
   SNAPSHOT_FORMAT,
   PaintDecoder,
   PaintReplayer
-} from "./index-nvqbmbbp.js";
+} from "./index-6pn8cpem.js";
 // bravura-url.ts
 var BRAVURA_URL = new URL("./assets/fonts/Bravura.woff2", import.meta.url).href;
 var BRAVURA_COMMON_URL = new URL("./assets/fonts/BravuraCommon.woff2", import.meta.url).href;
@@ -1458,6 +1458,7 @@ class DefaultFontLoader {
     this.injectTextFont(config?.text);
     this.applyFontVariables(container, families);
     VexFlow.setFonts(`'${notation}'`, `'${text}'`, "sans-serif");
+    VexFlow.setTextFonts(`'${notation}'`, `'${text}'`, "sans-serif");
     await this.settle(notation, text);
     return { notation, text };
   }

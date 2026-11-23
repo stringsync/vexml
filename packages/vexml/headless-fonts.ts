@@ -68,6 +68,11 @@ export class HeadlessFonts {
 			`'${families.text}'`,
 			'sans-serif',
 		);
+		VexFlow.setTextFonts(
+			`'${families.notation}'`,
+			`'${families.text}'`,
+			'sans-serif',
+		);
 		return families;
 	}
 

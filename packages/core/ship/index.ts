@@ -20,6 +20,8 @@ export {
 	type Target,
 	target,
 	type Upstream,
+	type VersionChoice,
+	type VersionSpec,
 	view,
 } from "./target";
-export { commitsSince } from "./unshipped";
+export { commitsSince, releaseTag } from "./unshipped";

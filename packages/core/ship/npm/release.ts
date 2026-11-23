@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { Ctx } from "../ctx";
 import { type Step, step } from "../step";
 import type { Bump } from "../target";
+import { releaseTag } from "../unshipped";
 import { next } from "./version";
 import { WORKFLOW_FILE, WORKFLOW_PATH, workflow } from "./workflow";
 import type { Fold } from "./workspace";
@@ -17,11 +18,10 @@ export interface ReleaseOptions {
 	repository: string;
 	/** The command that tests the package, run from mono's root. */
 	test: string;
-	/**
-	 * Globs, relative to the project folder, of paths the mirror leaves out
-	 * (`skills/`, `AGENTS.md`) that it carries, as `skills/vexml/**`.
-	 */
+	/** Project-relative globs of otherwise omitted paths to carry, as `skills/vexml/**`. */
 	keep?: readonly string[];
+	/** Project-relative globs of tracked paths to omit; `keep` wins overlaps. */
+	omit?: readonly string[];
 	/** Versions the mirror depends on in place of npm's latest, by package name. */
 	pins?: Record<string, string>;
 	/**
@@ -46,16 +46,15 @@ export interface ReleaseOptions {
 	/**
 	 * What the mirror holds of the project: `project` (the default) its whole
 	 * folder, `package` only the published package's folder, at the mirror's
-	 * root, for a project that keeps the rest private. `keep` globs and the
-	 * `mirror/` folder are then relative to the package's folder.
+	 * root, for a project that keeps the rest private. `keep` and `omit` globs
+	 * and the `mirror/` folder are then relative to the package's folder.
 	 */
 	scope?: "project" | "package";
 	/** Steps of the same target that finish before the first of these. */
 	dependencies?: readonly string[];
+	/** Milliseconds before the first retry of a failed registry query, doubling after (default 2000). */
+	retryDelay?: number;
 }
-
-// What the steps of one release share, kept while it is under way.
-type State = { version: string; dir: string; sha?: string };
 
 /**
  * The steps of releasing `package` to npm through its public mirror, to spread
@@ -96,6 +95,9 @@ export function release(opts: ReleaseOptions): Step[] {
 		ctx.sh(
 			`if [ -d ${quote(checkout)}/.git ]; then git -C ${quote(checkout)} fetch origin && git -C ${quote(checkout)} reset --hard origin/HEAD; else rm -rf ${quote(checkout)} && git clone ${quote(remote)} ${quote(checkout)}; fi`,
 		);
+	/** The mono tag for `version`, as a full ref. */
+	const monoRef = (version: string) =>
+		quote(`refs/tags/${releaseTag(opts.package, version)}`);
 	const locate = async (ctx: Ctx) =>
 		JSON.parse(
 			(
@@ -123,12 +125,49 @@ export function release(opts: ReleaseOptions): Step[] {
 	 */
 	const tty = (command: string) =>
 		`python3 -I -c ${quote(PTY)} ${quote(`export npm_config_browser=false; ${command}`)}`;
+	/**
+	 * What `npm view <spec> <field>` says: its output, or `undefined` when npm
+	 * answers E404, the package never published. Any other failure is retried
+	 * a few times and then thrown, so a network hiccup never reads as
+	 * "unpublished" and sends a release down the path that needs a person.
+	 */
+	const view = async (
+		ctx: Ctx,
+		spec: string,
+		field: string,
+	): Promise<string | undefined> => {
+		const command =
+			`err=$(mktemp); out=$(npm view --prefer-online ${quote(spec)} ${quote(field)} 2>"$err"); code=$?; ` +
+			`if [ "$code" = 0 ]; then echo found; printf '%s' "$out"; ` +
+			`elif grep -q E404 "$err"; then echo missing; ` +
+			`else echo error; cat "$err"; fi; rm -f "$err"`;
+		let failure = "";
+		for (let attempt = 0; attempt < QUERY_ATTEMPTS; attempt++) {
+			if (attempt > 0) {
+				await new Promise((resolve) =>
+					setTimeout(resolve, (opts.retryDelay ?? 2000) * 2 ** (attempt - 1)),
+				);
+			}
+			const out = await ctx.sh(command).catch((error: unknown) => {
+				failure = String(error);
+				return "error";
+			});
+			const [head, ...rest] = out.split("\n");
+			if (head === "found") {
+				return rest.join("\n").trim();
+			}
+			if (head === "missing") {
+				return undefined;
+			}
+			failure = rest.join("\n").trim() || failure;
+		}
+		throw new Error(
+			`npm view ${spec} ${field} failed ${QUERY_ATTEMPTS} times, so whether it is published is unknown: ${failure}`,
+		);
+	};
+	/** npm's latest version, or "" for a package npm never had. */
 	const publishedVersions = async (ctx: Ctx) =>
-		(
-			await ctx.sh(
-				`npm view --prefer-online ${quote(opts.package)} version 2>/dev/null || true`,
-			)
-		).trim();
+		(await view(ctx, opts.package, "version")) ?? "";
 
 	/**
 	 * Whether npm's latest version was published by the GitHub workflow, which
@@ -136,10 +175,9 @@ export function release(opts: ReleaseOptions): Step[] {
 	 * password even to read, so this is how a release avoids asking for a login
 	 * it will not use.
 	 */
-	const publishedByWorkflow = (ctx: Ctx) =>
-		ok(
-			ctx,
-			`npm view --prefer-online ${quote(opts.package)} _npmUser | grep -q npm-oidc-no-reply`,
+	const publishedByWorkflow = async (ctx: Ctx) =>
+		((await view(ctx, opts.package, "_npmUser")) ?? "").includes(
+			"npm-oidc-no-reply",
 		);
 
 	// First, so the one step that needs the user comes while they are still
@@ -209,7 +247,7 @@ export function release(opts: ReleaseOptions): Step[] {
 				const dir = inMirror(state.dir);
 				await sync(ctx);
 				await ctx.sh(
-					`bun core/packages/core/ship/npm/cli.ts mirror ${quote(state.dir)} ${quote(checkout)} ${quote(state.version)}${(opts.keep ?? []).map((glob) => ` ${quote(glob)}`).join("")}${opts.pins ? ` --pins ${quote(JSON.stringify(opts.pins))}` : ""}${opts.fold ? ` --fold ${quote(JSON.stringify(opts.fold))}` : ""}${opts.scope === "package" ? " --package-only" : ""}`,
+					`bun core/packages/core/ship/npm/cli.ts mirror ${quote(state.dir)} ${quote(checkout)} ${quote(state.version)}${(opts.keep ?? []).map((glob) => ` ${quote(glob)}`).join("")}${opts.omit ? ` --omit ${quote(JSON.stringify(opts.omit))}` : ""}${opts.pins ? ` --pins ${quote(JSON.stringify(opts.pins))}` : ""}${opts.fold ? ` --fold ${quote(JSON.stringify(opts.fold))}` : ""}${opts.scope === "package" ? " --package-only" : ""}`,
 				);
 				const env = `export SHIP_VERSION=${quote(state.version)}`;
 				const hook = (command: string) =>
@@ -239,7 +277,7 @@ export function release(opts: ReleaseOptions): Step[] {
 					.trim()
 					.split("\n")
 					.pop() as string;
-				await write({ ...state, sha });
+				await write({ ...state, sha, monoSha });
 				ctx.update(`Mirror at ${sha.slice(0, 7)}`);
 			},
 		}),
@@ -295,9 +333,8 @@ export function release(opts: ReleaseOptions): Step[] {
 			dependencies: ["trust"],
 			done: async (ctx) => {
 				const { version } = await read();
-				const published = await ok(
-					ctx,
-					`npm view --prefer-online ${quote(`${opts.package}@${version}`)} version | grep -q .`,
+				const published = Boolean(
+					await view(ctx, `${opts.package}@${version}`, "version"),
 				);
 				if (published) {
 					ctx.released(version);
@@ -333,29 +370,60 @@ export function release(opts: ReleaseOptions): Step[] {
 		}),
 		step({
 			id: "tag",
-			does: `Tag a GitHub release of ${opts.package} on ${opts.repository}`,
+			does: `Tag a GitHub release of ${opts.package} on ${opts.repository}, and tag mono's commit it was built from`,
 			dependencies: ["publish"],
 			done: async (ctx) => {
 				if (!(await exists())) {
 					return true;
 				}
-				const { version } = await read();
-				return ok(
-					ctx,
-					`gh release view v${version} -R ${quote(opts.repository)}`,
+				const { version, monoSha } = await read();
+				return (
+					(await ok(
+						ctx,
+						`gh release view v${version} -R ${quote(opts.repository)}`,
+					)) &&
+					(!monoSha ||
+						(await ok(
+							ctx,
+							`git ls-remote --exit-code --tags origin ${monoRef(version)}`,
+						)))
 				);
 			},
 			run: async (ctx) => {
-				const { sha, version } = await read();
-				await ctx.sh(
-					`gh release create v${version} -R ${quote(opts.repository)} --target ${quote(sha as string)} --title v${version} --generate-notes`,
-				);
+				const { sha, version, monoSha } = await read();
+				if (
+					!(await ok(
+						ctx,
+						`gh release view v${version} -R ${quote(opts.repository)}`,
+					))
+				) {
+					await ctx.sh(
+						`gh release create v${version} -R ${quote(opts.repository)} --target ${quote(sha as string)} --title v${version} --generate-notes`,
+					);
+				}
+				// The mono tag marks what the release carries, so the target's
+				// unshipped count starts from it; a state from before the mirror
+				// step kept the mono commit has none to tag.
+				if (monoSha) {
+					const ref = monoRef(version);
+					await ctx.sh(
+						`(git rev-parse -q --verify ${ref} >/dev/null || git tag -a ${quote(releaseTag(opts.package, version))} ${quote(monoSha)} -m ${quote(`Release ${opts.package} ${version}`)}) && git push origin ${ref}`,
+					);
+				}
 				await rm(statePath, { force: true });
 				ctx.update(`Released ${opts.package}@${version}`);
 			},
 		}),
 	];
 }
+
+// What the steps of one release share, kept while it is under way: the
+// version, the package's folder, the mirror's release commit, and the mono
+// commit the mirror was written from.
+type State = { version: string; dir: string; sha?: string; monoSha?: string };
+
+/** How many times a registry query that fails other than with E404 is tried. */
+const QUERY_ATTEMPTS = 3;
 
 function quote(word: string): string {
 	return /^[\w@%+=:,./-]+$/.test(word)

@@ -1,10 +1,12 @@
 import { resolve } from 'node:path';
 import { cli, type Deps, type Next } from 'core/cmd';
 import { color } from 'core/log';
+import { serve as serveRigs } from 'core/rig';
 import { serve } from 'core/ship';
 import type { Fs } from 'core/system';
 import { SystemClock } from 'core/time';
 import { z } from 'zod';
+import { checkVexflow } from './check-vexflow';
 import { coverage } from './coverage';
 import { dev } from './dev';
 import { fix } from './fix';
@@ -18,6 +20,14 @@ import { reach } from './reach';
 import { readme } from './readme';
 import { render } from './render';
 import { FINDING_KINDS } from './render-lint';
+import {
+	review,
+	reviewRules,
+	showReview,
+	showRuleInbox,
+} from './review-command';
+import { vexmlRigs } from './rig';
+import { rulesStatus, rulesSync } from './rules-command';
 import { vexmlShip } from './ship';
 import { slice } from './slice';
 import { test } from './test';
@@ -50,9 +60,16 @@ vex
 
 vex
 	.command('fix')
-	.description('format and lint')
+	.description('format, lint, typecheck, and vet')
 	.option('check', bool, { ...flag, description: "don't write changes" })
-	.action((opts, { log, ps }) => fix({ check: opts.check, log, ps }));
+	.option('code-only', bool, {
+		...flag,
+		description:
+			"check only vet's code rules, asking no model and spending no budget",
+	})
+	.action((opts, { fs, log, ps }) =>
+		fix({ check: opts.check, codeOnly: opts['code-only'], fs, log, ps }),
+	);
 
 vex
 	.command('test')
@@ -249,6 +266,148 @@ vex
 		await new Promise(() => {});
 	});
 
+const reviews = vex
+	.group('review')
+	.description(
+		'review the snapshots `vex test` found moved, on a page the person marks up and submits',
+	)
+	.fallback('serve');
+
+reviews
+	.command('serve')
+	.description(
+		'serve the next version of the review page until ctrl-c; the page saves the review for `vex review show`',
+	)
+	.option('name', z.string().optional(), {
+		default: undefined,
+		description: "the review's name (default: the branch, less task/)",
+	})
+	.option('title', z.string().optional(), {
+		default: undefined,
+		description: 'the heading (default: the name)',
+	})
+	.option('tradeoffs', z.string().optional(), {
+		default: undefined,
+		description: 'a markdown file of trade-offs, shown above the snapshots',
+	})
+	.option('claims', z.string().optional(), {
+		default: undefined,
+		description:
+			"a markdown file with a `## <snapshot>` section per snapshot: plain prose or four `###` headings (The rule, The test case, What to look for, What was found), the first three defaulting to a rule's note in packages/integration/rules; naming an unchanged baseline includes it",
+	})
+	.option('replies', z.string().optional(), {
+		default: undefined,
+		description:
+			"a markdown file answering the last version's marks: a `## <snapshot>` section per snapshot, a numbered list by each mark's number in `vex review show`",
+	})
+	.option('port', z.coerce.number().int().optional(), {
+		default: undefined,
+		description: 'the port to serve on (default: the first free from 5173)',
+	})
+	.option('out', z.string().optional(), {
+		default: undefined,
+		description:
+			'write one self-contained HTML file instead of serving, for `splates artifact add`; it copies its review out',
+	})
+	.option('rules', bool, {
+		...flag,
+		description:
+			'serve the Behind Bars rule review inbox across sittings, persisting progress outside any worktree',
+	})
+	.option('fix', z.string().optional(), {
+		default: undefined,
+		description:
+			'serve a fix review for these comma-separated rule IDs plus every rule changed since main',
+	})
+	.option('max-width', z.coerce.number().int().positive(), {
+		default: 1200,
+		description: 'with --out: scale each image down to this width at most',
+	})
+	.action((opts, { log, fs, ps, invocationDir }) =>
+		opts.rules || opts.fix !== undefined
+			? reviewRules({ port: opts.port, fix: opts.fix, fs, ps, log })
+			: review({
+					name: opts.name,
+					title: opts.title,
+					tradeoffs: opts.tradeoffs,
+					claims: opts.claims,
+					replies: opts.replies,
+					port: opts.port,
+					out: opts.out,
+					maxWidth: opts['max-width'],
+					invocationDir,
+					fs,
+					ps,
+					log,
+				}),
+	);
+
+reviews
+	.command('show')
+	.description(
+		"print the review as the person left it: a `[VEX REVIEW ...]` message with each mark's measures, staves and notes, and the same as JSON",
+	)
+	.option('rules', bool, {
+		...flag,
+		description: 'print the Behind Bars rule review inbox pass instead',
+	})
+	.option('fix', z.string().optional(), {
+		default: undefined,
+		description:
+			'read the fix review for these comma-separated rule IDs plus every rule changed since main',
+	})
+	.option('name', z.string().optional(), {
+		default: undefined,
+		description: "the review's name (default: the branch, less task/)",
+	})
+	.option('version', z.coerce.number().int().positive().optional(), {
+		default: undefined,
+		description: 'the version (default: the newest)',
+	})
+	.option('submitted', bool, {
+		...flag,
+		description:
+			'fail until the person submits it, for a `splates signal poll` probe',
+	})
+	.action((opts, { log, fs, ps }) =>
+		opts.rules || opts.fix !== undefined
+			? showRuleInbox({ submitted: opts.submitted, fix: opts.fix, fs, ps, log })
+			: showReview({
+					name: opts.name,
+					version: opts.version,
+					submitted: opts.submitted,
+					fs,
+					ps,
+					log,
+				}),
+	);
+
+const rules = vex
+	.group('rules')
+	.description('inspect Behind Bars rule fingerprints and review verdicts');
+
+rules
+	.command('status')
+	.description(
+		'list every Behind Bars rule as new, changed (naming which part moved), rejected, needs-decision, or approved',
+	)
+	.option('json', bool, {
+		...flag,
+		description: 'print each rule and its fingerprint as JSON',
+	})
+	.action((opts, { log, fs }) => rulesStatus({ json: opts.json, fs, log }));
+
+rules
+	.command('sync')
+	.description(
+		'update the Status column of ENGRAVING.md from the verdict ledger and check results',
+	)
+	.option('check', bool, {
+		...flag,
+		description: "don't write; fail if ENGRAVING.md is out of step",
+	})
+	.action((opts, { log, fs }) => rulesSync({ check: opts.check, fs, log }));
+
 vex
 	.command('slice')
 	.description('extract measures from a musicxml file into a smaller one')
@@ -300,6 +459,45 @@ vex
 		'sync the MusicXML coverage table with the schema and check its fixtures',
 	)
 	.action((_opts, { log, fs }) => coverage({ log, fs }));
+
+vex
+	.command('check-vexflow')
+	.description(
+		'check npm for a newer vexflow release than vexml pins; with --fire, fire vexml.vexflow-updated once per version',
+	)
+	.option('fire', bool, {
+		...flag,
+		description: 'fire vexml.vexflow-updated when an unseen update is found',
+	})
+	.option('force', bool, {
+		...flag,
+		description: 'with --fire, fire even if this version was already signaled',
+	})
+	.option('seed', bool, {
+		...flag,
+		description: 'record the current npm latest version without firing',
+	})
+	.action((opts, { log, fs, ps }) =>
+		checkVexflow({
+			fire: opts.fire,
+			force: opts.force,
+			seed: opts.seed,
+			log,
+			fs,
+			ps,
+		}),
+	);
+
+vex
+	.command('rig')
+	.description(
+		"the playground's dev server for splates's Rigs page: answers describe and start <rig>",
+	)
+	.rest('args', z.string(), {
+		description: '[describe | start <rig> [--<option>=<value>]]',
+	})
+	.allowUnknownOption()
+	.action((opts, { ps }) => serveRigs(vexmlRigs(ps), opts.args));
 
 vex
 	.command('ship')

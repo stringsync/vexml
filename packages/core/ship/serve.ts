@@ -3,6 +3,7 @@ import { cli, type Deps } from "core/cmd";
 import { NodePs } from "core/system";
 import { z } from "zod";
 import type { Quiet } from "./answering-sh";
+import type { Ctx } from "./ctx";
 import { type RunLine, StepCtxs, type Terminal } from "./process-ctx";
 import { type AnswerInput, noPrompts, PromptChannel } from "./prompts";
 import { StdTerminal } from "./std-terminal";
@@ -44,6 +45,8 @@ const bump = z.enum(["patch", "minor", "major"]).optional();
  *   object keyed by target name, leaving out targets that cannot tell.
  * - `current` prints each target's current version as JSON, an object keyed
  *   by target name, leaving out targets that cannot tell.
+ * - `versions` prints the versions each target may ship, newest first, as
+ *   JSON keyed by target name, leaving out targets that cannot tell.
  * - `done <step>` prints `true` or `false`: whether the step already happened.
  * - `run <step>` runs one step, writing JSON lines as it goes, and on failure
  *   an error line last and exit 1.
@@ -95,77 +98,71 @@ export async function serve(
 			log.info(JSON.stringify(out));
 		});
 
-	ship
-		.command("unshipped")
-		.description("print each target's unshipped commit count as JSON")
-		.option("target", z.string().optional())
-		.action(async (opts, { log }) => {
-			const ctx = ctxs.stream(
-				{ send: (line) => log.error(JSON.stringify(line)) },
-				noPrompts,
-			);
-			const chosen = opts.target ? [pick(list, opts.target)] : list;
-			const counts = await Promise.all(
-				chosen.map(async (each): Promise<[string, number] | undefined> => {
-					if (!each.unshipped) {
-						return undefined;
-					}
-					try {
-						return [each.name, await each.unshipped(ctx)];
-					} catch (error) {
-						log.error(
-							JSON.stringify({
-								type: "error",
-								target: each.name,
-								message: error instanceof Error ? error.message : String(error),
-							}),
-						);
-						return undefined;
-					}
-				}),
-			);
-			log.info(
-				JSON.stringify(
-					Object.fromEntries(counts.filter((each) => each !== undefined)),
-				),
-			);
-		});
+	/**
+	 * A command that prints what `read` gives for each chosen target as JSON,
+	 * keyed by target name, leaving out targets it gives nothing for and
+	 * reporting one that throws on stderr.
+	 */
+	const perTarget = <T>(
+		command: string,
+		description: string,
+		read: (
+			target: Target,
+		) => ((ctx: Pick<Ctx, "sh">) => Promise<T>) | undefined,
+	) =>
+		ship
+			.command(command)
+			.description(description)
+			.option("target", z.string().optional())
+			.action(async (opts, { log }) => {
+				const ctx = ctxs.stream(
+					{ send: (line) => log.error(JSON.stringify(line)) },
+					noPrompts,
+				);
+				const chosen = opts.target ? [pick(list, opts.target)] : list;
+				const found = await Promise.all(
+					chosen.map(async (each): Promise<[string, T] | undefined> => {
+						const reader = read(each);
+						if (!reader) {
+							return undefined;
+						}
+						try {
+							return [each.name, await reader(ctx)];
+						} catch (error) {
+							log.error(
+								JSON.stringify({
+									type: "error",
+									target: each.name,
+									message:
+										error instanceof Error ? error.message : String(error),
+								}),
+							);
+							return undefined;
+						}
+					}),
+				);
+				log.info(
+					JSON.stringify(
+						Object.fromEntries(found.filter((each) => each !== undefined)),
+					),
+				);
+			});
 
-	ship
-		.command("current")
-		.description("print each target's current version as JSON")
-		.option("target", z.string().optional())
-		.action(async (opts, { log }) => {
-			const ctx = ctxs.stream(
-				{ send: (line) => log.error(JSON.stringify(line)) },
-				noPrompts,
-			);
-			const chosen = opts.target ? [pick(list, opts.target)] : list;
-			const versions = await Promise.all(
-				chosen.map(async (each): Promise<[string, string] | undefined> => {
-					if (!each.current) {
-						return undefined;
-					}
-					try {
-						return [each.name, await each.current(ctx)];
-					} catch (error) {
-						log.error(
-							JSON.stringify({
-								type: "error",
-								target: each.name,
-								message: error instanceof Error ? error.message : String(error),
-							}),
-						);
-						return undefined;
-					}
-				}),
-			);
-			log.info(
-				JSON.stringify(
-					Object.fromEntries(versions.filter((each) => each !== undefined)),
-				),
-			);
-		});
+	perTarget(
+		"unshipped",
+		"print each target's unshipped commit count as JSON",
+		(each) => each.unshipped,
+	);
+	perTarget(
+		"current",
+		"print each target's current version as JSON",
+		(each) => each.current,
+	);
+	perTarget(
+		"versions",
+		"print the versions each target may ship as JSON",
+		(each) => each.versions,
+	);
 
 	ship
 		.command("done")

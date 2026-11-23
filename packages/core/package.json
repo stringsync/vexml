@@ -14,6 +14,7 @@
 		"./geometry": "./geometry/index.ts",
 		"./log": "./log/index.ts",
 		"./react": "./react/index.ts",
+		"./rig": "./rig/index.ts",
 		"./ship": "./ship/index.ts",
 		"./system": "./system/index.ts",
 		"./system/testing": "./system/testing.ts",
@@ -35,5 +36,5 @@
 		"react": "catalog:",
 		"zod": "catalog:"
 	},
-	"version": "1.14.7"
+	"version": "1.14.8"
 }

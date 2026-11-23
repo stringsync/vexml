@@ -1,7 +1,8 @@
 import { afterAll, beforeAll } from 'bun:test';
 import { renderers } from '@vexml/renderer';
 import { Testing } from './testing';
-// Registers the toMatchScreenshot matcher and its end-of-run report.
+// Registers the toMatchScreenshot and toMatchMeasurements matchers.
+import './engraving-matcher';
 import './screenshot';
 
 // The preload (see bunfig.toml): preloaded once per `bun test` run, so the renderers'

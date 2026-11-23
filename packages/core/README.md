@@ -31,6 +31,7 @@ the rest unread.
 | [`core/id`](./id) | A source of identifiers behind an interface, so tests can make them predictable |
 | [`core/log`](./log) | Logging behind a `Logger` interface, with decorators and an in-memory double |
 | [`core/md`](./md) | A markdown document as a data source: frontmatter fields, sections and code blocks |
+| [`core/rig`](./rig) | A project's dev servers declared as plain objects, and `serve`, which answers the splates Rigs protocol (`describe` and `start`) from its CLI |
 | [`core/ship`](./ship) | Ship targets and their steps declared as plain objects, a plan turned into data for a review screen, and `serve`, which answers plan, done and run from a project's CLI |
 | [`core/skills`](./skills) | The agent skills a project installs from a repository's release tags, through the `skills` CLI |
 | [`core/system`](./system) | Interfaces for the things that touch the machine, so code under test doesn't |
@@ -47,7 +48,7 @@ main entry point, so importing a task queue on a server does not reach for
 - Needs a browser: `core/browser`, `core/dictate/browser`,
   `core/task/browser`, `core/worker/web`
 - Needs a server: `core/cmd`, `core/dictate/server`,
-  `core/ship`, `core/skills`, `core/system`
+  `core/rig`, `core/ship`, `core/skills`, `core/system`
 
 `platform.test.ts` holds that line, failing if an entry point that runs
 anywhere starts reaching one that does not.

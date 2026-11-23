@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import { DEFAULT_STANDARD_LAYOUT } from './config';
 import {
 	boxesOf,
@@ -10,22 +10,14 @@ import {
 	textOpsOf,
 	wholeLong,
 } from './progressive-engraving-harness';
-import type { Score } from './score';
 
 describe('ProgressiveEngraving', () => {
-	let score: Score;
-	let lastMs: number;
-	let stage: Awaited<ReturnType<typeof render>>['stage'];
-	let scheduler: Awaited<ReturnType<typeof render>>['scheduler'];
-	let whole: Awaited<ReturnType<typeof wholeLong>>;
-
-	beforeEach(async () => {
-		whole = await wholeLong();
-		({ score, stage, scheduler } = await render(LONG, { progressive: true }));
-		lastMs = score.getDurationMs() - 1;
-	});
-
 	it('resolves render() with the first screen drawn and the rest pending', async () => {
+		const whole = await wholeLong();
+		const { score, stage, scheduler } = await render(LONG, {
+			progressive: true,
+		});
+
 		expect(score.isComplete()).toBe(false);
 		expect(scheduler.pending).toBe(1);
 		expect(stage.shownSystems()).toBeLessThan(whole.score.getSystems().length);
@@ -35,6 +27,8 @@ describe('ProgressiveEngraving', () => {
 	});
 
 	it("draws the rest in slices, naming each slice's systems in a draw event, then completes", async () => {
+		const { score, scheduler } = await render(LONG, { progressive: true });
+
 		const drawn: number[][] = [];
 		let completes = 0;
 		score.events.on('draw', (e) => drawn.push([...e.systems]));
@@ -65,6 +59,8 @@ describe('ProgressiveEngraving', () => {
 	});
 
 	it('spends an idle slice on as many systems as its budget holds', async () => {
+		const { score, scheduler } = await render(LONG, { progressive: true });
+
 		const drawn: number[][] = [];
 		score.events.on('draw', (e) => drawn.push([...e.systems]));
 
@@ -75,6 +71,11 @@ describe('ProgressiveEngraving', () => {
 	});
 
 	it('matches a whole render once complete: ops, element boxes and step geometry', async () => {
+		const whole = await wholeLong();
+		const { score, stage, scheduler } = await render(LONG, {
+			progressive: true,
+		});
+
 		scheduler.runAll();
 
 		const engraving = stage.engravings.at(-1);
@@ -88,6 +89,8 @@ describe('ProgressiveEngraving', () => {
 	});
 
 	it('shows the stage only the ops each system adds', async () => {
+		const { stage, scheduler } = await render(LONG, { progressive: true });
+
 		scheduler.runAll();
 
 		expect(stage.extensions.slice(1).map((e) => e.from)).toEqual(
@@ -96,6 +99,10 @@ describe('ProgressiveEngraving', () => {
 	});
 
 	it('places a cursor moved onto an undrawn system where a whole render would', async () => {
+		const whole = await wholeLong();
+		const { score, scheduler } = await render(LONG, { progressive: true });
+		const lastMs = score.getDurationMs() - 1;
+
 		const expected = cursorRectAt(whole.score, lastMs);
 
 		const before = score.isComplete();
@@ -110,6 +117,12 @@ describe('ProgressiveEngraving', () => {
 
 	// vet-ignore simple-test-setup: the pause steps are shared with one other test, and a beforeEach would run them for all.
 	it('pauses a system part way through, showing none of it until a cursor moved past finishes it', async () => {
+		const whole = await wholeLong();
+		const { score, stage, scheduler } = await render(LONG, {
+			progressive: true,
+		});
+		const lastMs = score.getDurationMs() - 1;
+
 		const shown = stage.shownSystems();
 		// The plan's piece, then the next system's draw.
 		scheduler.run(0);
@@ -128,6 +141,9 @@ describe('ProgressiveEngraving', () => {
 	});
 
 	it('forecasts the undrawn systems, keeping every column on a system until the count settles', async () => {
+		const whole = await wholeLong();
+		const { score, scheduler } = await render(LONG, { progressive: true });
+
 		const counts = [score.getSystems().length];
 		const strays = straySystemsOf(score);
 		// A zero budget settles one system per event: the systems are checked after each.

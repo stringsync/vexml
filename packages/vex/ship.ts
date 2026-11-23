@@ -5,6 +5,13 @@
 
 import { commitsSince, npm, target } from 'core/ship';
 
+/** Private dev files (`@vexml/book` and the Behind Bars verdict ledger) stay out of the public mirror. */
+export const MIRROR_OMIT = [
+	'packages/book/**',
+	'bin/book',
+	'packages/integration/__reviews__/**',
+];
+
 const MDOM = '@stringsync/mdom';
 
 // What a release carries: the package, and the core folders its build bundles
@@ -22,11 +29,11 @@ export const vexmlShip = target({
 	name: '@stringsync/vexml',
 	bump: 'patch',
 	dependencies: [MDOM],
-	// The mirror holds the release tags; here a release is the commit that
-	// bumped the package's version.
+	// A release leaves a @stringsync/vexml@<version> tag on the mono commit it
+	// was built from; the count starts from the newest.
 	unshipped: (ctx) =>
 		commitsSince(ctx, {
-			version: 'vexml/packages/vexml/package.json',
+			release: '@stringsync/vexml',
 			paths: SHIPPED_PATHS,
 		}),
 	plan: ({ bump = 'patch', upstream }) =>
@@ -44,5 +51,7 @@ export const vexmlShip = target({
 			mirrorTest: 'bin/vex test',
 			// The README's `npx skills add stringsync/vexml@vexml` needs this skill.
 			keep: ['skills/vexml/**'],
+			// The Behind Bars reader is private: its package and launcher stay out.
+			omit: MIRROR_OMIT,
 		}),
 });

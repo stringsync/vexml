@@ -25,6 +25,10 @@
 		"./measure-locator": "./measure-locator.ts",
 		"./measure-map": "./measure-map.ts",
 		"./measure-slicer": "./measure-slicer.ts",
-		"./render-lint": "./render-lint.ts"
+		"./render-lint": "./render-lint.ts",
+		"./review-data": "./review-data.ts",
+		"./review-message": "./review-message.ts",
+		"./review-saver": "./review-saver.ts",
+		"./rule-inbox-data": "./rule-inbox-data.ts"
 	}
 }

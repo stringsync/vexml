@@ -6,13 +6,14 @@ import {
 	GhostNote,
 	type GraceNote,
 	GraceNoteGroup,
-	Modifier,
+	type Modifier,
 	StaveNote,
 	type StemmableNote,
 	type Tickable,
 	type Tuplet,
 	Voice,
 } from 'vexflow/core';
+import { AfterGraceGroup } from './after-grace-group';
 import type { Appearance } from './appearance';
 import { AttributedClefNote } from './attributed-clef-note';
 import type { BarlineTranslator } from './barline-translator';
@@ -157,11 +158,10 @@ export class VoiceTranslator {
 			if (!host || pendingAfter.length === 0) {
 				return;
 			}
-			const group = new GraceNoteGroup(pendingAfter.map((g) => g.note));
+			const group = new AfterGraceGroup(pendingAfter.map((g) => g.note));
 			if (this.beamsGraceGroup(pendingAfter)) {
 				group.beamNotes();
 			}
-			group.setPosition(Modifier.Position.RIGHT);
 			group.preFormat();
 			host.addModifier(group, 0);
 			for (const g of pendingAfter) {

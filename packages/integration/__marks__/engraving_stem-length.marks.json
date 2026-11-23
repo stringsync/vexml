@@ -1,0 +1,141 @@
+{
+	"screenshot": "engraving_stem-length.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 103,
+				"y": 111
+			},
+			"to": {
+				"x": 103,
+				"y": 146
+			},
+			"label": "3½",
+			"note": "C/5 down-stem: 3½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 116
+			},
+			"to": {
+				"x": 901,
+				"y": 116
+			},
+			"label": "middle line",
+			"note": "Middle stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 194,
+				"y": 106
+			},
+			"to": {
+				"x": 194,
+				"y": 141
+			},
+			"label": "3½",
+			"note": "D/5 down-stem: 3½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 285,
+				"y": 101
+			},
+			"to": {
+				"x": 285,
+				"y": 136
+			},
+			"label": "3½",
+			"note": "E/5 down-stem: 3½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 377,
+				"y": 96
+			},
+			"to": {
+				"x": 377,
+				"y": 131
+			},
+			"label": "3½",
+			"note": "F/5 down-stem: 3½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 533,
+				"y": 121
+			},
+			"to": {
+				"x": 533,
+				"y": 86
+			},
+			"label": "3½",
+			"note": "A/4 up-stem: 3½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 624,
+				"y": 126
+			},
+			"to": {
+				"x": 624,
+				"y": 91
+			},
+			"label": "3½",
+			"note": "G/4 up-stem: 3½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 714,
+				"y": 136
+			},
+			"to": {
+				"x": 714,
+				"y": 101
+			},
+			"label": "3½",
+			"note": "E/4 up-stem: 3½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 805,
+				"y": 146
+			},
+			"to": {
+				"x": 805,
+				"y": 111
+			},
+			"label": "3½",
+			"note": "C/4 up-stem: 3½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

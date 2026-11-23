@@ -14,7 +14,6 @@ import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
 import { InertDecoration } from './inert-decoration';
 import { LayoutPlanner } from './layout-planner';
-import { MetricsPatch } from './metrics-patch';
 import { NotationTranslator } from './notation-translator';
 import { ProbeTextCanvas } from './probe-text-canvas';
 import { ProvisionalGeometry } from './provisional-geometry';
@@ -139,7 +138,6 @@ function columnsOf(geometry: RawGeometry): string[] {
 
 // The layout builds vexflow elements, which measure text through the probe.
 new ProbeTextCanvas(new FakePaintProbe()).install();
-new MetricsPatch().install();
 new FontShorthandPatch().install();
 
 async function expectForecastMatchesDraw(fixture: string) {

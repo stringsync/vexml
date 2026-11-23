@@ -16,10 +16,10 @@
 		"@typescript/typescript6": "^6.0.2",
 		"core": "workspace:*",
 		"playwright": "1.61.1",
-		"vexflow": "5.0.0"
+		"vexflow": "5.9.0"
 	},
 	"devDependencies": {
 		"@coderline/alphatab": "^1.8.4",
-		"opensheetmusicdisplay": "^2.2.1"
+		"opensheetmusicdisplay": "^3.0.0"
 	}
 }

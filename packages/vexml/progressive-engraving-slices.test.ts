@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import { DEFAULT_PANORAMIC_LAYOUT } from './config';
 import {
 	FOOTER,
@@ -13,12 +13,6 @@ import {
 } from './progressive-engraving-harness';
 
 describe('ProgressiveEngraving', () => {
-	let whole: Awaited<ReturnType<typeof wholeLong>>;
-
-	beforeEach(async () => {
-		whole = await wholeLong();
-	});
-
 	it('draws the footer under the last system, whole and progressively', async () => {
 		const whole = await render(FOOTER, { showHeader: true });
 		const { stage, scheduler } = await render(FOOTER, {
@@ -34,6 +28,7 @@ describe('ProgressiveEngraving', () => {
 	});
 
 	it('finds nothing under a pointer over an undrawn system', async () => {
+		const whole = await wholeLong();
 		const { score } = await render(LONG, { progressive: true });
 		const box = whole.score.getSystems().at(-1)?.getMeasureBoxes().at(-1);
 		expect(box).toBeDefined();
@@ -78,6 +73,7 @@ describe('ProgressiveEngraving', () => {
 	});
 
 	it('draws whatever is left before taking a snapshot', async () => {
+		const whole = await wholeLong();
 		const { score } = await render(LONG, { progressive: true });
 
 		const snapshot = score.snapshot();
@@ -109,6 +105,7 @@ describe('ProgressiveEngraving', () => {
 	});
 
 	it("places each measure's staves as its system is drawn", async () => {
+		const whole = await wholeLong();
 		const { score, scheduler } = await render(LONG, { progressive: true });
 		const last = score.getParts()[0]?.getMeasures().at(-1);
 
@@ -118,6 +115,7 @@ describe('ProgressiveEngraving', () => {
 	});
 
 	it('keeps the staves in a snapshot', async () => {
+		const whole = await wholeLong();
 		const { score } = await render(
 			JSON.parse(JSON.stringify(whole.score.snapshot())),
 		);

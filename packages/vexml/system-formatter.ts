@@ -1,4 +1,5 @@
 // vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
+
 import type {
 	BeamRun,
 	Chord,
@@ -32,6 +33,7 @@ import {
 	Vibrato,
 	type Voice,
 } from 'vexflow/core';
+import { AfterGraceGroup } from './after-grace-group';
 import { BAR_STYLE_TYPES } from './barline-translator';
 import type { ChordTranslator } from './chord-translator';
 import { CollisionResolver } from './collision-resolver';
@@ -276,7 +278,6 @@ export class SystemFormatter {
 		formatter.format(allVoices, Math.max(1, justifyWidth), {
 			context: this.context,
 		});
-		this.closeGraceGaps(allVoices);
 		this.closeHiddenGaps(allVoices);
 		if (this.opts.documentPositions) {
 			for (const p of pending) {
@@ -612,42 +613,6 @@ export class SystemFormatter {
 	}
 
 	/*
-	 * Pull a note's LEADING grace cluster back onto the note when the same note also carries an
-	 * after-grace cluster.
-	 *
-	 * vexflow sizes both clusters together: GraceNoteGroup.format takes the wider one's width
-	 * and adds it to the tick context's left shift AND its right shift, so a note with a group
-	 * on each side reserves that width twice. Placing a left-side modifier then subtracts the
-	 * whole reserved block (left plus right), which slides the leading graces a cluster's width
-	 * off the note they lead, leaving them stranded between the two notes. Handing that width
-	 * back through the group's own spacing (the one term the left-side placement adds) lands
-	 * them against their note again; the after-graces are placed from the note's x and don't
-	 * move. Run after the format pass, which is what sets the spacing in the first place.
-	 */
-	private closeGraceGaps(voices: Voice[]): void {
-		for (const voice of voices) {
-			for (const note of voice.getTickables()) {
-				const groups = note
-					.getModifiers()
-					.filter(
-						(m): m is GraceNoteGroup =>
-							m.getCategory() === GraceNoteGroup.CATEGORY,
-					);
-				if (groups.length < 2) {
-					continue;
-				}
-				const leading = groups.find(
-					(g) => g.getPosition() !== Modifier.Position.RIGHT,
-				);
-				leading?.setSpacingFromNextModifier(
-					leading.getSpacingFromNextModifier() +
-						note.checkTickContext().getMetrics().modRightPx,
-				);
-			}
-		}
-	}
-
-	/*
 	 * Close the slot of every tick context that only holds print-spacing="no" notes. The
 	 * formatter spaces by tick, so such a note keeps its gap however narrow it is; here the
 	 * context's slot is cut out and the rest are stretched back over the justified width, so
@@ -689,38 +654,24 @@ export class SystemFormatter {
 	}
 
 	/*
-	 * Slide each after-grace cluster right until it ends just short of whatever follows its note
-	 * (the next tickable, or `areaEndX`, the stave's note end, for the measure's last note), where
-	 * an engraver puts it: after-graces close out their note's time, so they sit at
-	 * its end rather than against its head. vexflow places a RIGHT group at the note's x plus its
-	 * spacing once per grace, so the spacing is what moves it. Never pulls a cluster left.
+	 * Let each after-grace cluster slide right until it ends just short of whatever follows its
+	 * note (the next tickable, or `areaEndX`, the stave's note end, for the measure's last note),
+	 * where an engraver puts it: after-graces close out their note's time, so they sit at its end
+	 * rather than against its head. The cluster never moves left of where vexflow put it.
 	 */
 	private pushAfterGraces(voices: Voice[], areaEndX: number): void {
 		for (const voice of voices) {
 			const tickables = voice.getTickables();
 			for (const [i, note] of tickables.entries()) {
 				for (const group of note.getModifiers()) {
-					if (
-						!(group instanceof GraceNoteGroup) ||
-						group.getPosition() !== Modifier.Position.RIGHT
-					) {
+					if (!(group instanceof AfterGraceGroup)) {
 						continue;
 					}
-					const count = group.getGraceNotes().length;
 					const next = tickables[i + 1];
 					const endX = next ? next.getAbsoluteX() : areaEndX;
-					// vexflow's own offset past the note before the per-grace spacing.
-					const lead = 10;
-					const spacing =
-						(endX -
-							GRACE_SPACING -
-							group.getWidth() -
-							lead -
-							note.getAbsoluteX()) /
-						count;
-					if (count > 0 && spacing > group.getSpacingFromNextModifier()) {
-						group.setSpacingFromNextModifier(spacing);
-					}
+					group.setReach(
+						endX - GRACE_SPACING - group.getWidth() - note.getAbsoluteX(),
+					);
 				}
 			}
 		}

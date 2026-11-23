@@ -45,7 +45,10 @@ export class DefaultFontLoader implements FontLoader {
 		// default. Families MUST be quoted: an unquoted multi-word name like Source Sans 3 makes
 		// the whole CSS font string invalid and every glyph falls back to serif. Reset each call
 		// so one render's font choice can't leak into the next.
+		// vexflow 5.1+ gives text its own stack, led by Academico unless told otherwise; the
+		// same stack keeps text falling through the notation font to the text font as before.
 		VexFlow.setFonts(`'${notation}'`, `'${text}'`, 'sans-serif');
+		VexFlow.setTextFonts(`'${notation}'`, `'${text}'`, 'sans-serif');
 		await this.settle(notation, text);
 		return { notation, text };
 	}

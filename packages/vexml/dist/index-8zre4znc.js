@@ -37,6 +37,7 @@ import {
   GAP_LABEL_FONT_SIZE,
   TAB_MIN_NOTE_SPACING,
   TUPLET_MIN_GROUP_WIDTH,
+  TAB_LINE_DISTANCE,
   TAB_FRET_SCALE,
   GRACE_SPACING,
   TAB_GRACE_SCALE,
@@ -162,7 +163,7 @@ import {
   SNAPSHOT_VERSION2,
   SNAPSHOT_FORMAT,
   PaintReplayer
-} from "./index-nvqbmbbp.js";
+} from "./index-6pn8cpem.js";
 
 // element.ts
 function isHighlightable2(el) {
@@ -7396,7 +7397,11 @@ class StaveFactory {
     const centering = 2 * (STAVE_LINE_DISTANCE2 - spacing);
     const details = isTab ? [] : this.lineDetails(measure, staffNumber, staveLines, hiddenAbove);
     const styled = details.flatMap((detail) => detail.style ? [detail.style] : []);
-    const stave = isTab ? new TabStave(x, y, width, { numLines: tabLines }) : new DetailedStave(x, y, width, styled, {
+    const tabSpacing = TAB_LINE_DISTANCE * size / 100;
+    const stave = isTab ? new TabStave(x, y, width, {
+      numLines: tabLines,
+      spacingBetweenLinesPx: tabSpacing
+    }) : new DetailedStave(x, y, width, styled, {
       spaceAboveStaffLn: ((4 + halfNudge) * STAVE_LINE_DISTANCE2 + centering) / spacing,
       spacingBetweenLinesPx: spacing
     });
@@ -8082,48 +8087,6 @@ class LayoutPlanner {
       planned.floorHeight = y + offset + (deepest - lastPlanned) + PAGE_MARGIN_BOTTOM;
     }
     return new WholeLayoutPlan(planned);
-  }
-}
-
-// metrics-patch.ts
-import { Metrics as Metrics2 } from "vexflow/core";
-
-class MetricsPatch {
-  static installed = false;
-  install() {
-    if (MetricsPatch.installed) {
-      return;
-    }
-    MetricsPatch.installed = true;
-    const fonts = new Map;
-    const styles = new Map;
-    const { getFontInfo, getStyle, clear } = Metrics2;
-    Metrics2.getFontInfo = (key) => {
-      let font = fonts.get(key);
-      if (!font) {
-        font = getFontInfo.call(Metrics2, key);
-        fonts.set(key, font);
-      }
-      return { ...font };
-    };
-    Metrics2.getStyle = (key) => {
-      let style = styles.get(key);
-      if (!style) {
-        style = getStyle.call(Metrics2, key);
-        styles.set(key, style);
-      }
-      return { ...style };
-    };
-    Metrics2.clear = (key) => {
-      if (key) {
-        fonts.delete(key);
-        styles.delete(key);
-      } else {
-        fonts.clear();
-        styles.clear();
-      }
-      clear.call(Metrics2, key);
-    };
   }
 }
 
@@ -9971,7 +9934,7 @@ import { CanvasContext as CanvasContext2 } from "vexflow/core";
 // draw-pass.ts
 import {
   KeySignature as KeySignature2,
-  Metrics as Metrics4,
+  Metrics as Metrics3,
   MetricsDefaults,
   StaveModifierPosition as StaveModifierPosition5
 } from "vexflow/core";
@@ -12540,11 +12503,11 @@ class DashedTie extends StaveTie {
 }
 
 // ottava-bracket.ts
-import { Metrics as Metrics3, TextBracket } from "vexflow/core";
+import { Metrics as Metrics2, TextBracket } from "vexflow/core";
 
 class OttavaBracket extends TextBracket {
   useGlyph(glyph, notationFont) {
-    this.textElement.setFont(notationFont, Metrics3.get("fontSize"));
+    this.textElement.setFont(notationFont, Metrics2.get("fontSize"));
     this.textElement.setText(glyph);
     this.superscriptElement.setText("");
     return this;
@@ -13923,8 +13886,8 @@ import {
   Bend,
   ClefNote,
   Formatter as Formatter2,
-  GraceNoteGroup as GraceNoteGroup2,
-  Modifier as Modifier8,
+  GraceNoteGroup as GraceNoteGroup3,
+  Modifier as Modifier9,
   Stave as Stave4,
   StaveModifierPosition as StaveModifierPosition4,
   StaveNote as StaveNote7,
@@ -13933,6 +13896,49 @@ import {
   TimeSignature as TimeSignature5,
   Vibrato
 } from "vexflow/core";
+
+// after-grace-group.ts
+import {
+  GraceNoteGroup as GraceNoteGroup2,
+  Modifier as Modifier8
+} from "vexflow/core";
+
+class AfterGraceGroup extends GraceNoteGroup2 {
+  reach = 0;
+  constructor(...args) {
+    super(...args);
+    this.setPosition(Modifier8.Position.RIGHT);
+  }
+  setReach(px) {
+    this.reach = px;
+  }
+  getLayoutElements() {
+    const elements = super.getLayoutElements();
+    this.slide();
+    return elements;
+  }
+  getBoundingBox() {
+    const box = super.getBoundingBox();
+    const graces = this.getGraceNotes();
+    if (!this.slide()) {
+      return box;
+    }
+    return graces.map((grace) => grace.getBoundingBox()).reduce((merged, next) => merged.mergeWith(next));
+  }
+  slide() {
+    const graces = this.getGraceNotes();
+    const first = graces[0]?.getTickContext().getXOffset();
+    const start = this.checkAttachedNote().getTickContext().getX() + this.reach;
+    if (first === undefined || first >= start) {
+      return false;
+    }
+    for (const grace of graces) {
+      const tick = grace.getTickContext();
+      tick.setXOffset(tick.getXOffset() + start - first);
+    }
+    return true;
+  }
+}
 
 // technical-mark.ts
 function isTechnicalMark(modifier) {
@@ -14088,7 +14094,6 @@ class SystemFormatter {
     formatter.format(allVoices, Math.max(1, justifyWidth), {
       context: this.context
     });
-    this.closeGraceGaps(allVoices);
     this.closeHiddenGaps(allVoices);
     if (this.opts.documentPositions) {
       for (const p of pending) {
@@ -14270,18 +14275,6 @@ class SystemFormatter {
     const bend = this.translator.findModifier(note, Bend.CATEGORY);
     return bend?.inkRect() ?? null;
   }
-  closeGraceGaps(voices) {
-    for (const voice of voices) {
-      for (const note of voice.getTickables()) {
-        const groups = note.getModifiers().filter((m) => m.getCategory() === GraceNoteGroup2.CATEGORY);
-        if (groups.length < 2) {
-          continue;
-        }
-        const leading = groups.find((g) => g.getPosition() !== Modifier8.Position.RIGHT);
-        leading?.setSpacingFromNextModifier(leading.getSpacingFromNextModifier() + note.checkTickContext().getMetrics().modRightPx);
-      }
-    }
-  }
   closeHiddenGaps(voices) {
     const contexts = new Map;
     for (const voice of voices) {
@@ -14321,17 +14314,12 @@ class SystemFormatter {
       const tickables = voice.getTickables();
       for (const [i, note] of tickables.entries()) {
         for (const group of note.getModifiers()) {
-          if (!(group instanceof GraceNoteGroup2) || group.getPosition() !== Modifier8.Position.RIGHT) {
+          if (!(group instanceof AfterGraceGroup)) {
             continue;
           }
-          const count = group.getGraceNotes().length;
           const next = tickables[i + 1];
           const endX = next ? next.getAbsoluteX() : areaEndX;
-          const lead = 10;
-          const spacing = (endX - GRACE_SPACING - group.getWidth() - lead - note.getAbsoluteX()) / count;
-          if (count > 0 && spacing > group.getSpacingFromNextModifier()) {
-            group.setSpacingFromNextModifier(spacing);
-          }
+          group.setReach(endX - GRACE_SPACING - group.getWidth() - note.getAbsoluteX());
         }
       }
     }
@@ -14343,7 +14331,7 @@ class SystemFormatter {
         if (!mod.below) {
           top = Math.min(top, mod.getBoundingBox().getY());
         }
-      } else if (mod.getCategory() === "Articulation" && mod.getPosition() === Modifier8.Position.ABOVE) {
+      } else if (mod.getCategory() === "Articulation" && mod.getPosition() === Modifier9.Position.ABOVE) {
         top = Math.min(top, mod.getBoundingBox().getY());
       }
     }
@@ -14382,7 +14370,7 @@ class SystemFormatter {
         if (mod.below) {
           column += mod.rowHeight();
         }
-      } else if (mod instanceof StaveArticulation && mod.getPosition() === Modifier8.Position.BELOW) {
+      } else if (mod instanceof StaveArticulation && mod.getPosition() === Modifier9.Position.BELOW) {
         bottom = Math.max(bottom ?? -Infinity, mod.belowBottomY());
       }
     }
@@ -14562,7 +14550,7 @@ class SystemFormatter {
     return x;
   }
   graceGroupOf(translator, note) {
-    return translator.findModifier(note, GraceNoteGroup2.CATEGORY);
+    return translator.findModifier(note, GraceNoteGroup3.CATEGORY);
   }
 }
 
@@ -15217,7 +15205,7 @@ class DrawPass {
     this.context.setFillStyle(this.notationColor);
     this.context.setStrokeStyle(this.notationColor);
     MetricsDefaults.Stem.strokeStyle = this.notationColor;
-    Metrics4.clear("Stem");
+    Metrics3.clear("Stem");
     new StemWidth().set(layout.appearance.lineWidth("stem"));
     new BarlineWidths().set(layout.appearance.lineWidth("light barline"), layout.appearance.lineWidth("heavy barline"));
     spanners.useAppearance(layout.appearance);
@@ -17098,7 +17086,7 @@ function placementOfBezier(bezier) {
 }
 
 // notation-slide.ts
-import { Modifier as Modifier9 } from "vexflow/core";
+import { Modifier as Modifier10 } from "vexflow/core";
 class NotationSlide {
   from;
   to;
@@ -17122,8 +17110,8 @@ class NotationSlide {
     if (!ctx) {
       return;
     }
-    const startY = this.from.getModifierStartXY(Modifier9.Position.RIGHT, this.fromIndex).y;
-    const endY = this.to.getModifierStartXY(Modifier9.Position.LEFT, this.toIndex).y;
+    const startY = this.from.getModifierStartXY(Modifier10.Position.RIGHT, this.fromIndex).y;
+    const endY = this.to.getModifierStartXY(Modifier10.Position.LEFT, this.toIndex).y;
     const x1 = this.from.getAbsoluteX() + this.from.getGlyphWidth() / 2 + 2 * SLIDE_PADDING;
     const x2 = this.to.getAbsoluteX() - SLIDE_PADDING;
     const width = Math.max(x2 - x1, 1);
@@ -17144,7 +17132,7 @@ class NotationSlide {
 
 // single-slide.ts
 import {
-  Modifier as Modifier10
+  Modifier as Modifier11
 } from "vexflow/core";
 class SingleSlide {
   note;
@@ -17167,7 +17155,7 @@ class SingleSlide {
     if (!ctx) {
       return;
     }
-    const side = this.kind === "in" ? Modifier10.Position.LEFT : Modifier10.Position.RIGHT;
+    const side = this.kind === "in" ? Modifier11.Position.LEFT : Modifier11.Position.RIGHT;
     const y = this.note.getModifierStartXY(side, this.index).y;
     const half = this.note.getGlyphWidth() / 2;
     const pad = SLIDE_PADDING + this.extraPad;
@@ -17487,8 +17475,10 @@ class PedalLine extends PedalMarking {
   draw() {
     const ctx = this.checkContext();
     this.setRendered();
-    ctx.setStrokeStyle(this.renderOptions.color);
-    ctx.setFillStyle(this.renderOptions.color);
+    if (this.renderOptions.color !== undefined) {
+      ctx.setStrokeStyle(this.renderOptions.color);
+      ctx.setFillStyle(this.renderOptions.color);
+    }
     ctx.setFont(this.font);
     ctx.setLineWidth(this.renderOptions.bracketLineWidth);
     const y = this.down.checkStave().getYForBottomText(this.line + 3);
@@ -17520,7 +17510,7 @@ class PedalLine extends PedalMarking {
       ctx.lineTo(cx, top);
       ctx.lineTo(cx + NOTCH, y);
     }
-    const end = this.releaseX(this.up) - NOTCH;
+    const end = this.liftX(this.up) - NOTCH;
     ctx.lineTo(end, y);
     if (!this.pedal.discontinued) {
       ctx.lineTo(end, top);
@@ -17541,7 +17531,7 @@ class PedalLine extends PedalMarking {
       ctx.fillText(depress, cx, y);
     }
     if (!this.pedal.discontinued) {
-      ctx.fillText(release, this.releaseX(this.up) - releaseWidth, y);
+      ctx.fillText(release, this.liftX(this.up) - releaseWidth, y);
     }
   }
   depressSign() {
@@ -17551,7 +17541,7 @@ class PedalLine extends PedalMarking {
     }
     return sostenuto ? `${GLYPHS2.sost} ${GLYPHS2.ped}` : GLYPHS2.ped;
   }
-  releaseX(note) {
+  liftX(note) {
     const tickables = note.getVoice().getTickables();
     const next = tickables[tickables.indexOf(note) + 1];
     if (next) {
@@ -17975,7 +17965,7 @@ class SlurCurveFactory {
 }
 
 // slur-obstacles.ts
-import { Articulation as Articulation2, Modifier as Modifier11 } from "vexflow/core";
+import { Articulation as Articulation2, Modifier as Modifier12 } from "vexflow/core";
 var PREFERRED_SIDE_BONUS = 8;
 
 class SlurObstacles {
@@ -18022,7 +18012,7 @@ class SlurObstacles {
     return { top, bottom };
   }
   marksOnSide(note, above) {
-    const side = above ? Modifier11.Position.ABOVE : Modifier11.Position.BELOW;
+    const side = above ? Modifier12.Position.ABOVE : Modifier12.Position.BELOW;
     let top = Infinity;
     let bottom = -Infinity;
     for (const mod of note.getModifiers()) {
@@ -19042,7 +19032,7 @@ import {
   Annotation as Annotation4,
   Element as Element10,
   GhostNote as GhostNote4,
-  GraceNoteGroup as GraceNoteGroup3,
+  GraceNoteGroup as GraceNoteGroup4,
   GraceTabNote,
   Stem as Stem10,
   TabNote as TabNote2,
@@ -19050,7 +19040,7 @@ import {
 } from "vexflow/core";
 
 // tab-bend.ts
-import { Bend as Bend2, Element as Element9, Modifier as Modifier12 } from "vexflow/core";
+import { Bend as Bend2, Element as Element9, Modifier as Modifier13 } from "vexflow/core";
 var BAR_GLYPHS = {
   scoop: "",
   dip: ""
@@ -19173,7 +19163,7 @@ class TabBend extends Bend2 {
     ctx.stroke();
   }
   legStartX(note) {
-    return note.getModifierStartXY(Modifier12.Position.RIGHT, this.index ?? 0).x + 3;
+    return note.getModifierStartXY(Modifier13.Position.RIGHT, this.index ?? 0).x + 3;
   }
   legsWidth() {
     return this.phrase.reduce((sum, leg) => sum + (leg.drawWidth ?? 0), 0);
@@ -19191,7 +19181,7 @@ class TabBend extends Bend2 {
   heights(note) {
     const spacing = note.checkStave().getSpacingBetweenLines();
     const lowestY = Math.min(...note.getYs());
-    const baseY = note.getModifierStartXY(Modifier12.Position.RIGHT, this.index ?? 0).y + 0.5;
+    const baseY = note.getModifierStartXY(Modifier13.Position.RIGHT, this.index ?? 0).y + 0.5;
     const tipY = lowestY - (this.textLine + 1) * spacing + 3;
     const { ascent, descent } = this.glyphInk();
     return { baseY, tipY, labelY: tipY - 4 - ascent - descent };
@@ -19251,7 +19241,7 @@ class TabVoiceTranslator {
       }
       const tabNote = this.tabChord(chord, tuning);
       if (pendingGrace.length > 0) {
-        const group = new GraceNoteGroup3(pendingGrace.map((g) => g.note));
+        const group = new GraceNoteGroup4(pendingGrace.map((g) => g.note));
         group.preFormat();
         group.setWidth(group.getWidth() + TAB_GRACE_SPACING);
         tabNote.addModifier(group, 0);
@@ -19284,7 +19274,7 @@ class TabVoiceTranslator {
       positions: this.positions(chord, tuning),
       duration
     });
-    this.styleFrets(grace, TAB_FRET_SCALE * TAB_GRACE_SCALE);
+    this.styleFrets(grace, TAB_FRET_SCALE * (TAB_GRACE_SCALE / grace.getFontScale()));
     return grace;
   }
   positions(chord, tuning) {
@@ -19369,10 +19359,11 @@ class TabVoiceTranslator {
     note.width = width;
   }
   styleHarmonicFret(el, scale) {
-    const open = this.harmonicBracket("<", scale);
-    const close = this.harmonicBracket(">", scale);
     el.setText(el.getText().replace(/[<>]/g, ""));
     this.boldFret(el, scale);
+    const fontSize = el.fontSizeInPoints;
+    const open = this.harmonicBracket("<", fontSize);
+    const close = this.harmonicBracket(">", fontSize);
     const openWidth = open.getWidth();
     const digitsWidth = el.getWidth();
     open.setX(0);
@@ -19382,10 +19373,10 @@ class TabVoiceTranslator {
     el.addChild(close);
     el.setWidth(openWidth + digitsWidth + close.getWidth());
   }
-  harmonicBracket(glyph, scale) {
+  harmonicBracket(glyph, fontSizeInPoints) {
     const el = new Element10("TabNote.text");
     el.setText(glyph);
-    el.setFontSize(el.fontSizeInPoints * scale);
+    el.setFontSize(fontSizeInPoints);
     el.setYShift(el.getHeight() / 2 + 1);
     return el;
   }
@@ -19399,8 +19390,7 @@ class TabVoiceTranslator {
 // voice-translator.ts
 import {
   GhostNote as GhostNote6,
-  GraceNoteGroup as GraceNoteGroup5,
-  Modifier as Modifier13,
+  GraceNoteGroup as GraceNoteGroup6,
   StaveNote as StaveNote9,
   Voice
 } from "vexflow/core";
@@ -19421,7 +19411,7 @@ class AttributedClefNote extends ClefNote2 {
 }
 
 // grace-host-ghost-note.ts
-import { GhostNote as GhostNote5, GraceNoteGroup as GraceNoteGroup4 } from "vexflow/core";
+import { GhostNote as GhostNote5, GraceNoteGroup as GraceNoteGroup5 } from "vexflow/core";
 
 class GraceHostGhostNote extends GhostNote5 {
   addToModifierContext(mc) {
@@ -19436,7 +19426,7 @@ class GraceHostGhostNote extends GhostNote5 {
     super.draw();
     const ctx = this.checkContext();
     for (const modifier of this.getModifiers()) {
-      if (modifier instanceof GraceNoteGroup4) {
+      if (modifier instanceof GraceNoteGroup5) {
         modifier.setContext(ctx).drawWithStyle();
       }
     }
@@ -19515,11 +19505,10 @@ class VoiceTranslator {
       if (!host || pendingAfter.length === 0) {
         return;
       }
-      const group = new GraceNoteGroup5(pendingAfter.map((g) => g.note));
+      const group = new AfterGraceGroup(pendingAfter.map((g) => g.note));
       if (this.beamsGraceGroup(pendingAfter)) {
         group.beamNotes();
       }
-      group.setPosition(Modifier13.Position.RIGHT);
       group.preFormat();
       host.addModifier(group, 0);
       for (const g of pendingAfter) {
@@ -19551,7 +19540,7 @@ class VoiceTranslator {
         styled: this.reader.noteStyleOf(chord.lead)
       });
       if (pendingGrace.length > 0) {
-        const group = new GraceNoteGroup5(pendingGrace.map((g) => g.note));
+        const group = new GraceNoteGroup6(pendingGrace.map((g) => g.note));
         if (this.beamsGraceGroup(pendingGrace)) {
           group.beamNotes();
         }
@@ -19576,7 +19565,7 @@ class VoiceTranslator {
       cursor = endBeat;
       const lead = tickables[0];
       if (lead instanceof GraceHostGhostNote) {
-        const group = new GraceNoteGroup5(pendingGrace.map((g) => g.note));
+        const group = new GraceNoteGroup6(pendingGrace.map((g) => g.note));
         if (this.beamsGraceGroup(pendingGrace)) {
           group.beamNotes();
         }
@@ -19750,7 +19739,6 @@ class ScoreEngraver {
     }
     const parts = document2.score.parts;
     new ProbeTextCanvas(probe).install();
-    new MetricsPatch().install();
     new FontShorthandPatch().install();
     const drawn = parts.length > 0 ? this.scoreDrawer.draw(probe, document2.score, this.layoutPlanner.plan(document2.score, this.config)) : {
       geometry: {
@@ -19787,7 +19775,6 @@ class ScoreEngraver {
     }
     this.configuredGaps.resolve(document2);
     new ProbeTextCanvas(probe).install();
-    new MetricsPatch().install();
     new FontShorthandPatch().install();
     const plan = this.layoutPlanner.begin(document2.score, this.config);
     plan.placeThrough(1);

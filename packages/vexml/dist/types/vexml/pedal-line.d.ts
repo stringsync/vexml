@@ -24,5 +24,5 @@ export declare class PedalLine extends PedalMarking {
     private drawLine;
     private drawSigns;
     private depressSign;
-    private releaseX;
+    private liftX;
 }

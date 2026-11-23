@@ -11,6 +11,7 @@ export type {
 } from './alphatab-renderer';
 export { fileUrl } from './bundle';
 export type { InkMask } from './ink-mask';
+export { captureLayout, type PixelBox, type ScoreLayout } from './layout';
 export type { MusescoreInput } from './musescore-renderer';
 export type { OsmdApi, OsmdContext, OsmdInput } from './osmd-renderer';
 export { ReadmeMedia, type ReadmeSources } from './readme-media';

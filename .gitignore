@@ -2,6 +2,8 @@ node_modules
 packages/site/dist
 .zed
 packages/integration/__diffs__/
+packages/integration/__marks__/*
+!packages/integration/__marks__/engraving_*.marks.json
 .DS_Store
 .playwright-mcp
 
@@ -16,3 +18,6 @@ packages/integration/__artifacts__/
 
 # Optional complete-score audit output
 packages/benchmarks/output/
+
+# vex review pages and the reviews saved on them
+.vex/

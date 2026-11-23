@@ -13,7 +13,6 @@ import { FontShorthandPatch } from './font-shorthand-patch';
 import type { Gaps } from './gaps';
 import type { IdleScheduler } from './idle-scheduler';
 import { LayoutPlanner } from './layout-planner';
-import { MetricsPatch } from './metrics-patch';
 import { NotationTranslator } from './notation-translator';
 import type { PaintProbe } from './paint-probe';
 import { ProbeTextCanvas } from './probe-text-canvas';
@@ -195,10 +194,8 @@ export class ScoreEngraver {
 			this.configuredGaps.resolve(document);
 		}
 		const parts = document.score.parts;
-		// Before the layout, which builds the first vexflow elements: each measures its glyph
-		// and copies its category's font and style.
+		// Before the layout, which builds the first vexflow elements: each measures its glyph.
 		new ProbeTextCanvas(probe).install();
-		new MetricsPatch().install();
 		new FontShorthandPatch().install();
 		const drawn =
 			parts.length > 0
@@ -270,7 +267,6 @@ export class ScoreEngraver {
 		}
 		this.configuredGaps.resolve(document);
 		new ProbeTextCanvas(probe).install();
-		new MetricsPatch().install();
 		new FontShorthandPatch().install();
 		// The first system and the next are planned exactly, which the forecast of the rest is
 		// scaled from; each draw step plans one more.

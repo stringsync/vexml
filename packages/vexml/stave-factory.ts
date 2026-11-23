@@ -6,6 +6,7 @@ import {
 	TabStave,
 } from 'vexflow/core';
 import { CancellingKeySignature } from './cancelling-key-signature';
+import { TAB_LINE_DISTANCE } from './constants';
 import { CustomKeySignature } from './custom-key-signature';
 import { DetailedStave, type LineStyle } from './detailed-stave';
 import type { ScoreReader } from './score-reader';
@@ -83,8 +84,12 @@ export class StaveFactory {
 		const styled = details.flatMap((detail) =>
 			detail.style ? [detail.style] : [],
 		);
+		const tabSpacing = (TAB_LINE_DISTANCE * size) / 100;
 		const stave = isTab
-			? new TabStave(x, y, width, { numLines: tabLines })
+			? new TabStave(x, y, width, {
+					numLines: tabLines,
+					spacingBetweenLinesPx: tabSpacing,
+				})
 			: new DetailedStave(x, y, width, styled, {
 					// A reduced stave keeps the five-line frame and HIDES the lines it doesn't
 					// draw, rather than declaring fewer of them. vexflow anchors a shorter stave
