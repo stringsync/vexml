@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_time-concurrent-barline-space.png",
+	"width": 932,
+	"height": 802,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 326,
+				"y": 96
+			},
+			"to": {
+				"x": 355,
+				"y": 136
+			},
+			"label": "M2 time",
+			"note": "M2 time",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 374.6,
+				"y": 116
+			},
+			"to": {
+				"x": 386.6,
+				"y": 126
+			},
+			"label": "M2 P1 first",
+			"note": "M2 P1 first",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 374.6,
+				"y": 211
+			},
+			"to": {
+				"x": 386.6,
+				"y": 221
+			},
+			"label": "M2 P2 first",
+			"note": "M2 P2 first",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 658,
+				"y": 96
+			},
+			"to": {
+				"x": 673,
+				"y": 136
+			},
+			"label": "M3 time",
+			"note": "M3 time",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 694.4,
+				"y": 121
+			},
+			"to": {
+				"x": 706.4,
+				"y": 131
+			},
+			"label": "M3 P1 first",
+			"note": "M3 P1 first",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 694.4,
+				"y": 211
+			},
+			"to": {
+				"x": 706.4,
+				"y": 221
+			},
+			"label": "M3 P2 first",
+			"note": "M3 P2 first",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

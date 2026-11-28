@@ -12,6 +12,9 @@ import {
 	wholeLong,
 } from './progressive-engraving-harness';
 
+// Enough measures to leave a slice pending in standard layout.
+const CONTROL_SCORE = 'harmony.musicxml';
+
 describe('ProgressiveEngraving', () => {
 	it('draws the footer under the last system, whole and progressively', async () => {
 		const whole = await render(FOOTER, { showHeader: true });
@@ -43,7 +46,9 @@ describe('ProgressiveEngraving', () => {
 	});
 
 	it('cancels the pending slice on dispose, and a late slice does nothing', async () => {
-		const { score, scheduler } = await render(LONG, { progressive: true });
+		const { score, scheduler } = await render(CONTROL_SCORE, {
+			progressive: true,
+		});
 		let completes = 0;
 		score.events.on('complete', () => completes++);
 
@@ -124,7 +129,7 @@ describe('ProgressiveEngraving', () => {
 	});
 
 	it('draws a panoramic layout whole', async () => {
-		const { score, scheduler } = await render(LONG, {
+		const { score, scheduler } = await render(CONTROL_SCORE, {
 			progressive: true,
 			layout: DEFAULT_PANORAMIC_LAYOUT,
 		});

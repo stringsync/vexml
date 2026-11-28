@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_brass-half-stopped.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 404,
+				"y": 79
+			},
+			"to": {
+				"x": 416,
+				"y": 90
+			},
+			"label": "Half-stopped 1",
+			"note": "Half-stopped 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 464,
+				"y": 79
+			},
+			"to": {
+				"x": 476,
+				"y": 90
+			},
+			"label": "Half-stopped 2",
+			"note": "Half-stopped 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 585,
+				"y": 69
+			},
+			"to": {
+				"x": 597,
+				"y": 80
+			},
+			"label": "Half-stopped 3",
+			"note": "Half-stopped 3",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

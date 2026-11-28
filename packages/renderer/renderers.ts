@@ -11,7 +11,7 @@ import {
 	OsmdRenderer,
 } from './osmd-renderer';
 import type { EvalRenderer } from './renderer';
-import { tabPools } from './tab-pools';
+import { type HtmlSnapshotInput, tabPools } from './tab-pools';
 import {
 	type VexmlContext,
 	type VexmlInput,
@@ -44,6 +44,12 @@ export class renderers {
 
 	static musescore(input: MusescoreInput): MusescoreRenderer {
 		return new MusescoreRenderer(input);
+	}
+
+	/** Screenshot an element of a self-contained HTML document, as a PNG, in the same
+	 * browser the renders share. */
+	static snapshot(input: HtmlSnapshotInput): Promise<Buffer> {
+		return tabPools.snapshot(input);
 	}
 
 	/** Close the shared machinery (one browser process serves every render). Call once

@@ -1,0 +1,36 @@
+{
+	"screenshot": "engraving_clef-indent.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 76
+			},
+			"to": {
+				"x": 31,
+				"y": 142
+			},
+			"label": "",
+			"note": "Stave start",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 31,
+				"y": 76
+			},
+			"to": {
+				"x": 36,
+				"y": 76
+			},
+			"label": "½",
+			"note": "opening clef indent: ½ spaces from stave start (expected > ¼ and ≤ 1)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

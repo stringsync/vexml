@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_tuplet-nested-opposite-sides.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 343,
+				"y": 227
+			},
+			"to": {
+				"x": 612,
+				"y": 246
+			},
+			"label": "Outer stem-up (above)",
+			"note": "Outer stem-up (above)",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 343,
+				"y": 307
+			},
+			"to": {
+				"x": 612,
+				"y": 326
+			},
+			"label": "Inner stem-up (below)",
+			"note": "Inner stem-up (below)",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 619,
+				"y": 307
+			},
+			"to": {
+				"x": 889,
+				"y": 326
+			},
+			"label": "Outer stem-down (below)",
+			"note": "Outer stem-down (below)",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 619,
+				"y": 232
+			},
+			"to": {
+				"x": 889,
+				"y": 251
+			},
+			"label": "Inner stem-down (above)",
+			"note": "Inner stem-down (above)",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

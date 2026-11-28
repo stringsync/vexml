@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tuplet-bracket-length.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 120,
+				"y": 67
+			},
+			"to": {
+				"x": 240,
+				"y": 86
+			},
+			"label": "M1 bracket",
+			"note": "M1 bracket",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 273,
+				"y": 72
+			},
+			"to": {
+				"x": 348,
+				"y": 91
+			},
+			"label": "M2 bracket",
+			"note": "M2 bracket",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

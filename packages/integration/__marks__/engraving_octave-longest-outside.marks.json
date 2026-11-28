@@ -1,0 +1,51 @@
+{
+	"screenshot": "engraving_octave-longest-outside.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 233,
+				"y": 241
+			},
+			"to": {
+				"x": 386,
+				"y": 257
+			},
+			"label": "8va",
+			"note": "M7 octave bracket spans y=226..240",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 230,
+				"y": 319
+			},
+			"to": {
+				"x": 300,
+				"y": 344
+			},
+			"label": "inside",
+			"note": "M7 tuplet 1 top y=304 vs octave bottom y=240 (expected inside octave line)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 297,
+				"y": 316
+			},
+			"to": {
+				"x": 367,
+				"y": 341
+			},
+			"label": "inside",
+			"note": "M7 tuplet 2 top y=301 vs octave bottom y=240 (expected inside octave line)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_woodwind-fingering-holes.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 238
+			},
+			"to": {
+				"x": 100,
+				"y": 250
+			},
+			"label": "Hole 1",
+			"note": "Hole 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 133,
+				"y": 238
+			},
+			"to": {
+				"x": 145,
+				"y": 250
+			},
+			"label": "Hole 2",
+			"note": "Hole 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 177,
+				"y": 238
+			},
+			"to": {
+				"x": 189,
+				"y": 250
+			},
+			"label": "Hole 3",
+			"note": "Hole 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 222,
+				"y": 317
+			},
+			"to": {
+				"x": 234,
+				"y": 329
+			},
+			"label": "Hole 4",
+			"note": "Hole 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

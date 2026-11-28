@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_string-bowing-mark-above.png",
+	"width": 932,
+	"height": 1265,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 176,
+				"y": 1099
+			},
+			"to": {
+				"x": 189,
+				"y": 1109
+			},
+			"label": "Accent",
+			"note": "Accent",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 93,
+				"y": 1151
+			},
+			"to": {
+				"x": 139,
+				"y": 1172
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 1091
+			},
+			"to": {
+				"x": 101,
+				"y": 1104
+			},
+			"label": "Bow 1",
+			"note": "Bow 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 178,
+				"y": 1074
+			},
+			"to": {
+				"x": 188,
+				"y": 1094
+			},
+			"label": "Bow 2",
+			"note": "Bow 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 222,
+				"y": 1096
+			},
+			"to": {
+				"x": 235,
+				"y": 1109
+			},
+			"label": "Bow 3",
+			"note": "Bow 3",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

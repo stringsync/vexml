@@ -19,6 +19,23 @@ describe('element ink masks', () => {
 		expect(difference.pixels).toBeGreaterThan(50);
 		expect(difference.outside).toBe(0);
 	}, 30000);
+	it('vexml masks separate accent, strong-accent and tenuto glyphs', async () => {
+		const articulations = readFileSync(
+			join(import.meta.dir, '__data__/engraving/articulation-marks.musicxml'),
+			'utf8',
+		);
+		const { image, result } = await renderers
+			.vexml({ musicXML: articulations })
+			.eval((context) => context.inkMasks({ separateNoteDots: true }));
+		const count = (kind: string) =>
+			result.filter((mask) => mask.kind === kind).length;
+		expect(count('strong-accent')).toBe(4);
+		expect(count('accent')).toBe(10);
+		expect(count('staccato-dot')).toBe(4);
+		expect(count('tenuto')).toBe(8);
+		const difference = compare(result, InkMap.fromPng(image));
+		expect(difference.outside).toBe(0);
+	}, 30000);
 	it('osmd masks line up with a complete note render', async () => {
 		const { image, result } = await renderers
 			.osmd({ musicXML: xml })

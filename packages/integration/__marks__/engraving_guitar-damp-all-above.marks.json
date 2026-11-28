@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_guitar-damp-all-above.png",
+	"width": 932,
+	"height": 419,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 417,
+				"y": 113
+			},
+			"to": {
+				"x": 419,
+				"y": 154
+			},
+			"label": "Damp-all",
+			"note": "Damp-all",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 418,
+				"y": 113
+			},
+			"to": {
+				"x": 564,
+				"y": 154
+			},
+			"label": "Damp-all",
+			"note": "Damp-all",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 435,
+				"y": 148
+			},
+			"to": {
+				"x": 447,
+				"y": 158
+			},
+			"label": "Damp-all",
+			"note": "Damp-all",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 447,
+				"y": 137
+			},
+			"to": {
+				"x": 463,
+				"y": 153
+			},
+			"label": "Damp-all",
+			"note": "Damp-all",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 403,
+				"y": 191
+			},
+			"to": {
+				"x": 414,
+				"y": 202
+			},
+			"label": "Damp-all",
+			"note": "Damp-all",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

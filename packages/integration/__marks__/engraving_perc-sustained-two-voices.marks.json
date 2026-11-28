@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_perc-sustained-two-voices.png",
+	"width": 932,
+	"height": 247,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 105,
+				"y": 121
+			},
+			"to": {
+				"x": 106,
+				"y": 156
+			},
+			"label": "down",
+			"note": "down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 179,
+				"y": 76
+			},
+			"to": {
+				"x": 180,
+				"y": 111
+			},
+			"label": "up",
+			"note": "up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 105,
+				"y": 76
+			},
+			"to": {
+				"x": 116,
+				"y": 106
+			},
+			"label": "rest",
+			"note": "rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 168.3,
+				"y": 106
+			},
+			"to": {
+				"x": 180.3,
+				"y": 116
+			},
+			"label": "rest",
+			"note": "rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 105,
+				"y": 116
+			},
+			"to": {
+				"x": 117,
+				"y": 126
+			},
+			"label": "rest",
+			"note": "rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 236.8,
+				"y": 125
+			},
+			"to": {
+				"x": 247.8,
+				"y": 131
+			},
+			"label": "rest",
+			"note": "rest",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

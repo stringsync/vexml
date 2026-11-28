@@ -1,4 +1,4 @@
-import type { Harmony, Measure } from '@stringsync/mdom';
+import type { Direction, Harmony, Measure } from '@stringsync/mdom';
 import { Rect } from '../core/geometry/index.js';
 import { type RenderContext, type Stave, StaveNote, TabNote } from 'vexflow/core';
 import { Appearance } from './appearance.js';
@@ -26,6 +26,8 @@ export declare class DirectionPlacer {
     private readonly enclosureWidth;
     private readonly soundingDynamic;
     private readonly belowWords;
+    private readonly aboveWords;
+    private readonly aboveMarks;
     private readonly placedDynamics;
     private readonly dynamics;
     constructor(context: RenderContext, reader: ScoreReader, collisionResolver: CollisionResolver, geometry: GeometryCollector, spill: SpillTracker, reporter: DirectionReporter, opts: DirectionPlacerOptions);
@@ -40,25 +42,32 @@ export declare class DirectionPlacer {
     suppressesDynamic(key: string, text: string, measureIndex: number): boolean;
     dynamicsOn(stave: Stave): readonly Rect[];
     belowWordsOn(stave: Stave): readonly Rect[];
+    aboveAnnotationsOn(stave: Stave): readonly Rect[];
+    private recordAboveMark;
     placeColumn(column: DirectionColumn): void;
     private drawBarlineFermata;
     private drawRehearsal;
-    private tempoLayout;
+    private measureTempo;
     private drawTempo;
     private harmonyRun;
     private harmonyLayout;
     private drawHarmony;
     private wordsAnchor;
+    private openingTempoAnchorX;
+    private openingTimeSignatureX;
+    private openingRepeatX;
     private directiveX;
     private wordsAlign;
     private faceOf;
     private decorationOf;
+    private placeWord;
     private drawWords;
     private xOf;
     private followed;
     private pins;
     private baselineOf;
     private sideOf;
+    private drawGlyphsBetween;
     private drawPictogram;
     private placeBeside;
     drawDirectionLines(lines: readonly DirectionLineTask[]): void;
@@ -68,6 +77,8 @@ export declare class DirectionPlacer {
  * relation from a `<metronome-note>` one, or both. At least one is non-null.
  */
 export type TempoTask = {
+    /** The `<direction>` holding this metronome, matched against preceding tempo words. */
+    direction?: Direction;
     tempo: TempoMark | null;
     /** Marks drawn as note glyphs after the bpm mark, left to right. */
     modulations: TempoModulation[];
@@ -93,6 +104,9 @@ export type HarmonyTask = {
 /** A queued words direction, drawn on its stave's `placement` side at the laid-out x of
  * the note it applies to. */
 export type WordsTask = {
+    dynamicDirection?: Direction;
+    /** The `<direction>` holding this word when a `<metronome>` follows it inline. */
+    tempoDirection?: Direction;
     stave: Stave;
     text: string;
     /** The text is a SMuFL glyph (an <other-direction smufl>), drawn in the notation font.
@@ -103,6 +117,8 @@ export type WordsTask = {
     opensBar?: boolean;
     closesBar?: boolean;
     directive?: boolean;
+    tempo?: boolean;
+    explicitSize?: boolean;
     /** The <words> element's formatting. Absent means the document asks for none. */
     format?: TextFormat;
     /** The <words> element's document position (see ScoreReader.positionOf). Absent or null
@@ -120,6 +136,7 @@ export type BarlineFermataTask = {
 /** A queued dynamics marking: a words task plus whether the marking spells out of SMuFL's
  * dynamic letters (and so engraves as glyphs in the notation font). */
 export type DynamicsTask = {
+    direction?: Direction;
     stave: Stave;
     text: string;
     glyph: boolean;
@@ -134,13 +151,20 @@ export type DynamicsTask = {
 /** A queued symbol-style direction: the SMuFL string it engraves, centered on its note. */
 export type SymbolTask = {
     stave: Stave;
+    /** The lower stave of a grand-staff pair when a damping sign sits between the two staves. */
+    lowerStave?: Stave;
     glyph: string;
     anchor: StaveNote | TabNote | undefined;
     placement: Placement;
+    /** The damping sign falls on beat 1 of its measure, so on a centered whole-measure rest
+     * it sits just after the opening barline instead of centered over the rest. */
+    opensBar?: boolean;
 };
 /** A queued <harp-pedals> diagram: the glyph string, divider included. */
 export type HarpPedalTask = {
     stave: Stave;
+    /** The lower stave of a grand-staff pair when the diagram sits between the two staves. */
+    lowerStave?: Stave;
     glyphs: string;
     anchor: StaveNote | TabNote | undefined;
     placement: Placement;
@@ -176,6 +200,8 @@ export type DirectionLineTask = {
 export interface DirectionColumn {
     measureIndex: number;
     systemIndex: number;
+    /** Whether this column opens a system (affecting system-opening repeat-sign tempo alignment). */
+    isSystemStart: boolean;
     /** The system's top stave at this column, where measure-level marks print; undefined
      * until a stave exists. */
     topStave: Stave | undefined;
@@ -212,6 +238,9 @@ export interface DirectionReporter {
     /** The below-stave mirror of recordAnnotationSpill: how far a below-stave annotation
      * reached under its stave (also grows the page and system bottoms). */
     recordAnnotationDrop(stave: Stave, rect: Rect): void;
+    /** A below-stave dynamic (or its inline qualifier) landed at `rect` on `stave` in
+     * `system`: have any lyrics on that stave hang clear of it on the next pass. */
+    dropLyricsBelow(system: number, stave: Stave, rect: Rect): void;
     /** Ink that reached `top`: keeps the page crop above it. */
     growPageTop(top: number): void;
     /** Ink that reached `bottom`: keeps the page crop below it. */

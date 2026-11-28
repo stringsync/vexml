@@ -46,6 +46,7 @@ interface NoteReads {
 	technicals: Note['technicals'];
 	lyrics: Note['lyrics'];
 	ornaments: Note['ornaments'];
+	accidentalMarks: MElement[];
 	dots: number;
 	accidental: Note['accidental'];
 	ties: Note['ties'];
@@ -134,12 +135,117 @@ export class ScoreReader {
 		return this.readNote(note, 'technicals', () => note.technicals);
 	}
 
+	/*
+	 * Whether `part` is a guitar or other fretted plucked-string part, where Behind Bars
+	 * p. 373 places unplaced circled `<string>` numbers on whichever side of the stave is
+	 * closest to the note (unlike bowed strings, p. 394, which default above the stave).
+	 */
+	isPluckedStringPart(part: Part): boolean {
+		const cached = this.pluckedStringParts.get(part);
+		if (cached !== undefined) {
+			return cached;
+		}
+		const result = this.detectPluckedStringPart(part);
+		this.pluckedStringParts.set(part, result);
+		return result;
+	}
+
+	private readonly pluckedStringParts = new WeakMap<Part, boolean>();
+
+	private detectPluckedStringPart(part: Part): boolean {
+		const entry = part.score
+			.child('part-list')
+			?.childrenNamed('score-part')
+			.find((scorePart) => scorePart.getAttribute('id') === part.id);
+		const sounds =
+			entry
+				?.childrenNamed('score-instrument')
+				.map((inst) => inst.child('instrument-sound')?.text?.trim() ?? '')
+				.filter(Boolean) ?? [];
+		if (
+			sounds.some(
+				(sound) =>
+					sound.startsWith('pluck.') && !sound.startsWith('pluck.harp'),
+			)
+		) {
+			return true;
+		}
+		const names = [
+			entry?.child('part-name')?.text ?? '',
+			entry?.child('part-abbreviation')?.text ?? '',
+			...(entry
+				?.childrenNamed('score-instrument')
+				.map((inst) => inst.child('instrument-name')?.text ?? '') ?? []),
+		];
+		if (
+			names.some((name) =>
+				/\b(guitar|lute|banjo|mandolin|ukulele|vihuela|theorbo)\b/i.test(name),
+			)
+		) {
+			return true;
+		}
+		const first = part.measures[0];
+		if (!first) {
+			return false;
+		}
+		let count = Math.max(part.staveCount, 1);
+		while (first.getClef(String(count + 1))) {
+			count++;
+		}
+		for (let s = 1; s <= count; s++) {
+			if (first.getClef(String(s))?.sign === 'TAB') {
+				return true;
+			}
+		}
+		const firstClef = first.getClef('1');
+		const isBowedOrVocal = sounds.some(
+			(sound) => sound.startsWith('strings.') || sound.startsWith('voice.'),
+		);
+		return (
+			!isBowedOrVocal &&
+			firstClef?.sign === 'G' &&
+			firstClef.octaveChange === -1
+		);
+	}
+
+	/*
+	 * Whether `note` sits on the lower stave of a two-stave notation grand staff (piano,
+	 * keyboard, harp): staff 2 of a part with two non-TAB staves. Used for defaults such
+	 * as left-hand fingering below the bass stave (Behind Bars p. 309).
+	 */
+	isLowerGrandStaff(note: Note): boolean {
+		if (note.staff !== '2') {
+			return false;
+		}
+		const part = note.measure.part;
+		const first = part.measures[0];
+		let count = Math.max(part.staveCount, 1);
+		while (first?.getClef(String(count + 1))) {
+			count++;
+		}
+		if (count !== 2) {
+			return false;
+		}
+		return (
+			first?.getClef('1')?.sign !== 'TAB' && first?.getClef('2')?.sign !== 'TAB'
+		);
+	}
+
 	lyricsOf(note: Note): Note['lyrics'] {
 		return this.readNote(note, 'lyrics', () => note.lyrics);
 	}
 
 	ornamentsOf(note: Note): Note['ornaments'] {
 		return this.readNote(note, 'ornaments', () => note.ornaments);
+	}
+
+	/* Standalone <notations><accidental-mark> children outside any <ornaments> block. */
+	accidentalMarksOf(note: Note): MElement[] {
+		return this.readNote(note, 'accidentalMarks', () =>
+			note
+				.childrenNamed('notations')
+				.flatMap((notations) => notations.childrenNamed('accidental-mark')),
+		);
 	}
 
 	dotsOf(note: Note): number {
@@ -300,9 +406,106 @@ export class ScoreReader {
 	 * to the meter would draw a pickup as wide as a full bar.
 	 */
 	meterFloor(measure: Measure, staffNumber?: string): number {
-		return measure.isImplicit
-			? 0
-			: this.meterBeats(measure.getTime(staffNumber));
+		if (measure.isImplicit) {
+			return 0;
+		}
+		const beats = this.meterBeats(measure.getTime(staffNumber));
+		if (beats === 0) {
+			return 0;
+		}
+		const ratio = this.polymetreRatio(measure, staffNumber);
+		return ratio ? (beats * ratio.normal) / ratio.actual : beats;
+	}
+
+	/*
+	 * When every non-tuplet note on a staff carries the same unbracketed <time-modification>
+	 * ratio and none is a tremolo (e.g. a 6/4 part scaled 3:2 against a 2/2 part with
+	 * coinciding barlines, Behind Bars pp. 174–175), return that ratio so the bar's meter floor
+	 * and note ticks scale proportionally. Returns null for ordinary bars, partial tuplets,
+	 * cross-staff tuplets, and tremolo-only subdivisions.
+	 */
+	polymetreRatio(
+		measure: Measure,
+		staffNumber?: string,
+	): { actual: number; normal: number } | null {
+		const notes = this.notesOf(measure);
+		// Pre-scan for unmatched <tuplet type="stop"> per voice: notes before one belong to a
+		// cross-barline tuplet started in an earlier measure, not unbracketed polymetre.
+		const unmatchedStopIndex = new Map<string, number>();
+		const scanOpen = new Map<string, Set<string>>();
+		notes.forEach((note, index) => {
+			if (note.isGrace || this.isChordMember(note)) {
+				return;
+			}
+			let open = scanOpen.get(note.voice);
+			for (const tuplet of note.tuplets) {
+				if (tuplet.tupletType === 'start') {
+					if (!open) {
+						open = new Set();
+						scanOpen.set(note.voice, open);
+					}
+					open.add(tuplet.number);
+				} else if (tuplet.tupletType === 'stop') {
+					if (open?.has(tuplet.number)) {
+						open.delete(tuplet.number);
+					} else if (
+						tuplet.partner &&
+						tuplet.partner.note.measure !== note.measure
+					) {
+						unmatchedStopIndex.set(note.voice, index);
+					}
+				}
+			}
+		});
+		const openTuplets = new Map<string, Set<string>>();
+		let ratio: { actual: number; normal: number } | null = null;
+		for (let index = 0; index < notes.length; index++) {
+			const note = notes[index];
+			if (!note || note.isGrace || this.isChordMember(note)) {
+				continue;
+			}
+			// Track <tuplet> spans across all staves of the voice before filtering by staffNumber,
+			// so a cross-staff tuplet whose start/stop sit on another staff isn't misread as
+			// unbracketed time-modification on this staff.
+			let open = openTuplets.get(note.voice);
+			let inTuplet =
+				(open?.size ?? 0) > 0 ||
+				index <= (unmatchedStopIndex.get(note.voice) ?? -1);
+			for (const tuplet of note.tuplets) {
+				if (tuplet.tupletType === 'start') {
+					if (!open) {
+						open = new Set();
+						openTuplets.set(note.voice, open);
+					}
+					open.add(tuplet.number);
+					inTuplet = true;
+				} else if (tuplet.tupletType === 'stop') {
+					inTuplet = true;
+					open?.delete(tuplet.number);
+				}
+			}
+			if (staffNumber !== undefined && note.staff !== staffNumber) {
+				continue;
+			}
+			if (inTuplet) {
+				continue;
+			}
+			if (this.ornamentsOf(note).some((o) => o.ornamentType === 'tremolo')) {
+				return null;
+			}
+			const tm = note.timeModification;
+			if (!tm || tm.actual <= 0 || tm.normal <= 0) {
+				return null;
+			}
+			if (ratio === null) {
+				ratio = { actual: tm.actual, normal: tm.normal };
+			} else if (
+				Math.abs(ratio.normal / ratio.actual - tm.normal / tm.actual) > EPSILON
+			) {
+				return null;
+			}
+		}
+		return ratio;
 	}
 
 	/*
@@ -333,6 +536,11 @@ export class ScoreReader {
 			}
 		}
 		return total;
+	}
+
+	/* The meter's beat in quarter-note beats (1 in 4/4, 1.5 in 6/8, 2 in 2/2). */
+	beatUnit(time: Time | null): number {
+		return beatUnit(time);
 	}
 
 	/*
@@ -796,6 +1004,7 @@ export class ScoreReader {
 					continue;
 				}
 				return {
+					direction,
 					duration: first.type,
 					dots: first.dots,
 					bpm:
@@ -1005,12 +1214,16 @@ export class ScoreReader {
 	wordsOf(measure: Measure): {
 		text: string;
 		glyph: boolean;
+		dynamicDirection?: Direction;
+		tempoDirection?: Direction;
 		staffNumber: string;
 		lead: Note | null;
 		placement: Placement;
 		opensBar: boolean;
 		closesBar: boolean;
 		directive: boolean;
+		tempo: boolean;
+		explicitSize: boolean;
 		format: TextFormat;
 		position: DocumentPosition | null;
 	}[] {
@@ -1028,6 +1241,19 @@ export class ScoreReader {
 				lead = this.leadAtBeat(measure, beat);
 			}
 			const directive = d.getAttribute('directive') === 'yes';
+			const tempo = d.soundTempo !== null || d.metronomes.length > 0;
+			const types = d.childrenNamed('direction-type');
+			const firstMetronomeIndex = types.findIndex(
+				(type) => type.childrenNamed('metronome').length > 0,
+			);
+			const beforeMetronome =
+				firstMetronomeIndex > 0
+					? new Set(
+							types
+								.slice(0, firstMetronomeIndex)
+								.flatMap((type) => type.childrenNamed('words')),
+						)
+					: null;
 			const at = {
 				staffNumber,
 				lead,
@@ -1042,7 +1268,13 @@ export class ScoreReader {
 					...at,
 					text: words.text,
 					glyph: false,
-					format: this.formatOf(words, wordFont, wordFont),
+					tempo,
+					explicitSize: words.getAttribute('font-size') !== null,
+					dynamicDirection: /^(sub\.|subito)$/i.test(words.text.trim())
+						? d
+						: undefined,
+					tempoDirection: beforeMetronome?.has(words) ? d : undefined,
+					format: this.formatOf(words, tempo ? null : wordFont, wordFont),
 					position: this.positionOf(words, d),
 				}));
 			const others = d
@@ -1057,6 +1289,8 @@ export class ScoreReader {
 									...at,
 									text,
 									glyph: glyph !== undefined,
+									tempo: false,
+									explicitSize: other.getAttribute('font-size') !== null,
 									format: this.formatOf(other, wordFont, wordFont),
 									position: this.positionOf(other, d),
 								},
@@ -1081,6 +1315,8 @@ export class ScoreReader {
 					opensBar: true,
 					closesBar: false,
 					directive: true,
+					tempo: false,
+					explicitSize: el.getAttribute('font-size') !== null,
 					format: this.formatOf(el, wordFont, wordFont),
 					position: this.positionOf(el),
 				})),
@@ -1164,6 +1400,7 @@ export class ScoreReader {
 	dynamicsOf(measure: Measure): {
 		text: string;
 		glyph: boolean;
+		direction: Direction;
 		staffNumber: string;
 		lead: Note | null;
 		placement: Placement;
@@ -1182,6 +1419,7 @@ export class ScoreReader {
 					this.dynamics.canSpell(text) ? musicFont : wordFont;
 				return dynamics.marks.filter(Boolean).map((text) => ({
 					text,
+					direction: d,
 					glyph: this.dynamics.canSpell(text),
 					format: this.formatOf(dynamics, null, base(text)),
 					staffNumber,
@@ -1207,20 +1445,27 @@ export class ScoreReader {
 		glyph: string;
 		staffNumber: string;
 		lead: Note | null;
-		placement: Placement;
+		placement: Placement | null;
+		isDamp: boolean;
+		opensBar: boolean;
 	}[] {
 		return measure.directions.flatMap((d) => {
+			const offset = this.offsetBeatsOf(d, measure);
+			const beat = d.measureBeat === null ? null : d.measureBeat + offset;
+			const opensBar = beat !== null && Math.abs(beat) < EPSILON;
 			const bind = {
 				staffNumber: d.staff,
 				lead: d.nextNote,
-				placement: this.placementOf(d, 'above'),
+				placement: d.placement ?? null,
+				opensBar,
 			};
 			return d.childrenNamed('direction-type').flatMap((type) =>
 				type.children
 					.filter((child): child is MElement => child instanceof MElement)
 					.flatMap((child) => {
 						const glyph = this.directionSymbolOf(child);
-						return glyph ? [{ glyph, ...bind }] : [];
+						const isDamp = child.tag === 'damp' || child.tag === 'damp-all';
+						return glyph ? [{ glyph, isDamp, ...bind }] : [];
 					}),
 			);
 		});
@@ -1286,7 +1531,7 @@ export class ScoreReader {
 		glyphs: string;
 		staffNumber: string;
 		lead: Note | null;
-		placement: Placement;
+		placement: Placement | null;
 		position: DocumentPosition | null;
 	}[] {
 		return measure.directions.flatMap((d) =>
@@ -1315,7 +1560,7 @@ export class ScoreReader {
 							['E', 'F', 'G', 'A'].map(glyph).join(''),
 						staffNumber: d.staff,
 						lead: d.nextNote,
-						placement: this.placementOf(d, 'above'),
+						placement: d.placement ?? null,
 						position: this.positionOf(pedals, d),
 					};
 				}),
@@ -1586,6 +1831,7 @@ export class ScoreReader {
 						? wedgeType
 						: (wedge.members.find((m) => m.wedgeType !== 'stop')?.wedgeType ??
 							'crescendo');
+				const pos = this.positionOf(wedge, direction);
 				out.push({
 					lead,
 					type,
@@ -1596,6 +1842,9 @@ export class ScoreReader {
 					niente: wedge.getAttribute('niente') === 'yes',
 					spread: Number.parseFloat(wedge.getAttribute('spread') ?? '') || null,
 					trailing: last !== null,
+					downbeat:
+						type === 'stop' && last === null && this.measureBeatOf(lead) === 0,
+					positioned: pos !== null && (pos.x !== null || pos.dx !== 0),
 				});
 			}
 		}
@@ -1933,8 +2182,10 @@ export class ScoreReader {
 	 * The `<part-group>` spans that draw a connector, outermost first.
 	 *
 	 * Groups whose `<group-symbol>` is absent or 'none' draw nothing: they exist only to carry
-	 * a name or a barline rule (see barlineBreaks), and one spanning a single part has nothing
-	 * to connect. 'square' falls back to 'bracket' (vexflow draws no squared bracket).
+	 * a name or a barline rule (see barlineBreaks). Single-part groups have nothing to connect
+	 * except a `brace`, which distinguishes a single-stave organ manual from an unbraced pedal
+	 * stave below it (Behind Bars p. 343). 'square' falls back to 'bracket' (vexflow draws no
+	 * squared bracket).
 	 *
 	 * Names resolve through the display override and print-object (see labelOf), and
 	 * the abbreviation is the short name later systems carry.
@@ -1948,7 +2199,8 @@ export class ScoreReader {
 				taken.set(group.fromPartIndex, k + 1);
 				const marker = starts.get(group.fromPartIndex)?.[k] ?? null;
 				const symbol = this.groupSymbol(group.symbol);
-				return symbol && group.toPartIndex > group.fromPartIndex
+				return symbol &&
+					(group.toPartIndex > group.fromPartIndex || symbol === 'brace')
 					? [
 							{
 								fromPart: group.fromPartIndex,
@@ -3201,6 +3453,9 @@ const SYSTEM_RELATIONS = [
 ] as const;
 
 export type TempoMark = {
+	/** The `<direction>` holding this metronome, used to place it inline after preceding
+	 * tempo `<words>` in the same direction. */
+	direction?: Direction;
 	duration: string;
 	bpm: number;
 	dots?: number;
@@ -3357,6 +3612,10 @@ export type WedgeMark = {
 	// A stop with no note of its staff after it, closed on the staff's last note: the wedge
 	// then runs to the end of its stave.
 	trailing: boolean;
+	// A stop anchored on the first beat of its measure.
+	downbeat?: boolean;
+	// True when the wedge sets an explicit horizontal position (default-x or relative-x).
+	positioned?: boolean;
 };
 
 /*

@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tuplet-bracket-align-parts.png",
+	"width": 932,
+	"height": 342,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 112,
+				"y": 62
+			},
+			"to": {
+				"x": 305,
+				"y": 81
+			},
+			"label": "upper bracket",
+			"note": "upper bracket",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 112,
+				"y": 162
+			},
+			"to": {
+				"x": 305,
+				"y": 181
+			},
+			"label": "lower bracket",
+			"note": "lower bracket",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

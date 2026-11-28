@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_microtone-fixed-symbols.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 599.4,
+				"y": 96
+			},
+			"to": {
+				"x": 609.4,
+				"y": 124
+			},
+			"label": "Fixed 1",
+			"note": "Fixed 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 668.6,
+				"y": 89
+			},
+			"to": {
+				"x": 684.6,
+				"y": 118
+			},
+			"label": "Fixed 2",
+			"note": "Fixed 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 747.8,
+				"y": 81
+			},
+			"to": {
+				"x": 759.8,
+				"y": 107
+			},
+			"label": "Fixed 3",
+			"note": "Fixed 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 813,
+				"y": 76
+			},
+			"to": {
+				"x": 835,
+				"y": 101
+			},
+			"label": "Fixed 4",
+			"note": "Fixed 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

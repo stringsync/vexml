@@ -1,0 +1,25 @@
+{
+	"screenshot": "engraving_microtones.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 17, "w": 535.4 },
+		{ "index": 1, "system": 0, "x": 552.4, "w": 334.6 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [79, 89, 99, 109, 119],
+			"x": 17,
+			"w": 535.4
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [79, 89, 99, 109, 119],
+			"x": 552.4,
+			"w": 334.6
+		}
+	]
+}

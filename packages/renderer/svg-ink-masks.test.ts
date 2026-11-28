@@ -43,6 +43,7 @@ svg .paint { fill: black; stroke: black; stroke-width: 3; }
 					content: `globalThis.Masks = ${SvgInkMasks.toString()}`,
 				});
 				const result = await page.evaluate(compareRasterization);
+				expect(result.largest).toBeGreaterThan(0);
 				expect(result.largest).toBeLessThanOrEqual(1024);
 				expect(
 					maskDifferences(
@@ -142,30 +143,30 @@ async function compareRasterization() {
 		throw new Error('missing score');
 	}
 	let largest = 0;
-	const draw = CanvasRenderingContext2D.prototype.drawImage;
-	CanvasRenderingContext2D.prototype.drawImage = function (
-		image: CanvasImageSource,
-		...args: number[]
-	) {
-		if (image instanceof HTMLImageElement) {
+	// Records the size of each image the masks decode before drawing it.
+	class MeasuredMasks extends Masks {
+		protected override async decode(
+			image: HTMLImageElement,
+			svg: SVGSVGElement,
+		): Promise<void> {
+			await super.decode(image, svg);
 			largest = Math.max(largest, image.naturalWidth, image.naturalHeight);
 		}
-		Reflect.apply(draw, this, [image, ...args]);
-	};
-	const masks = await new Masks(container).capture();
-	CanvasRenderingContext2D.prototype.drawImage = draw;
+	}
+	const masks = await new MeasuredMasks(container).capture();
 	// The old path decoded the whole SVG and cropped only at drawImage.
 	// Keep that independent reference here, never as a production fallback.
-	Object.assign(Masks.prototype, {
-		flush: async () => {},
-		enqueue: async (
+	class ReferenceMasks extends Masks {
+		protected override async flush(): Promise<void> {}
+
+		protected override async enqueue(
 			clone: SVGSVGElement,
 			x: number,
 			y: number,
 			mask: InkMask,
 			styles: string,
 			ratio: number,
-		) => {
+		): Promise<void> {
 			const { width, height } = mask;
 			const style = document.createElementNS(
 				'http://www.w3.org/2000/svg',
@@ -205,14 +206,14 @@ async function compareRasterization() {
 			canvas.width = 0;
 			image.removeAttribute('src');
 			mask.runs = runs;
-		},
-	});
+		}
+	}
 	// Very tall SVG decoding was unreliable in the old path. Compare the
 	// ordinary viewport and assert the distant ink separately below.
 	container.querySelectorAll('svg')[1]?.remove();
 	return {
 		masks,
-		reference: await new Masks(container).capture(),
+		reference: await new ReferenceMasks(container).capture(),
 		largest,
 	};
 }

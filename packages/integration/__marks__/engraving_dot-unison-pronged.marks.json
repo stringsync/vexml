@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_dot-unison-pronged.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 357.7,
+				"y": 761
+			},
+			"to": {
+				"x": 369.7,
+				"y": 771
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 369.1,
+				"y": 761
+			},
+			"to": {
+				"x": 381.1,
+				"y": 771
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 383,
+				"y": 769
+			},
+			"to": {
+				"x": 387,
+				"y": 773
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 383,
+				"y": 759
+			},
+			"to": {
+				"x": 387,
+				"y": 763
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 368,
+				"y": 732
+			},
+			"to": {
+				"x": 379,
+				"y": 764
+			},
+			"label": "Flag",
+			"note": "Flag",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

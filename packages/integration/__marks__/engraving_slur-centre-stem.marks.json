@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_slur-centre-stem.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 314,
+				"y": 389
+			},
+			"to": {
+				"x": 517,
+				"y": 411
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

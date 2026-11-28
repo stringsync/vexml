@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_trill-line-after-sign.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 123,
+				"y": 70
+			},
+			"to": {
+				"x": 144,
+				"y": 86
+			},
+			"label": "Trill sign",
+			"note": "Trill sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 147,
+				"y": 77
+			},
+			"to": {
+				"x": 249,
+				"y": 82
+			},
+			"label": "Trill line",
+			"note": "Trill line",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

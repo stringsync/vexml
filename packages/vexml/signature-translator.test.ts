@@ -19,11 +19,12 @@ describe('SignatureTranslator', () => {
 		sign: string,
 		line: number,
 		attributes: Record<string, string> = {},
+		octaveChange = 0,
 	) =>
 		({
 			sign,
 			line,
-			octaveChange: 0,
+			octaveChange,
 			getAttribute: (name: string) => attributes[name] ?? null,
 		}) as unknown as Clef;
 
@@ -285,13 +286,32 @@ describe('SignatureTranslator', () => {
 		).toBeNull();
 	});
 
-	it('cancels the key being replaced when the change names no cancel', () => {
+	it('cancels the key being replaced when changing to an open key with no cancel', () => {
 		expect(
 			translator.keyCancel(
-				key({ rootNote: 'F' }),
-				key({ mode: 'major', rootNote: 'D' }),
+				key({ rootNote: 'C', fifths: 0 }),
+				key({ mode: 'major', rootNote: 'D', fifths: 2 }),
 			),
 		).toEqual({ spec: 'D', location: 'left' });
+	});
+
+	it('omits implicit cancellation when changing to a key with accidentals', () => {
+		expect(
+			translator.keyCancel(
+				key({ rootNote: 'G', fifths: 1 }),
+				key({ mode: 'major', rootNote: 'A', fifths: 3 }),
+			),
+		).toBeNull();
+	});
+
+	it('keeps implicit cancellation for a cautionary key at a system end', () => {
+		expect(
+			translator.keyCancel(
+				key({ rootNote: 'D', fifths: 2 }),
+				key({ mode: 'major', rootNote: 'Eb', fifths: -3 }),
+				true,
+			),
+		).toEqual({ spec: 'Eb', location: 'left' });
 	});
 
 	it('cancels the key a cancel names, where it says', () => {
@@ -300,9 +320,10 @@ describe('SignatureTranslator', () => {
 			translator.keyCancel(
 				key({
 					rootNote: 'F',
+					fifths: -1,
 					child: (tag: string) => (tag === 'cancel' ? cancel : null),
 				} as Partial<Key>),
-				key({ rootNote: 'D' }),
+				key({ rootNote: 'D', fifths: 2 }),
 			),
 		).toEqual({ spec: 'Eb', location: 'right' });
 	});
@@ -364,5 +385,17 @@ describe('SignatureTranslator', () => {
 		expect(glyphs.clefGlyph('bass', '8vb')).toBeNull();
 		expect(glyphs.clefGlyph('percussion', undefined)).toBeNull();
 		expect(translator.clefGlyph('alto', undefined)).toBeNull();
+	});
+
+	it('maps one- and two-octave clef changes to 8va/8vb and 15ma/15mb annotations', () => {
+		expect(translator.vexflowClefAnnotation(1)).toBe('8va');
+		expect(translator.vexflowClefAnnotation(-1)).toBe('8vb');
+		expect(translator.vexflowClefAnnotation(2)).toBe('15ma');
+		expect(translator.vexflowClefAnnotation(-2)).toBe('15mb');
+		expect(translator.vexflowClefAnnotation(0)).toBeUndefined();
+		expect(translator.vexflowClefAnnotation(null)).toBeUndefined();
+		expect(translator.vexflowClefAnnotation(3)).toBeUndefined();
+		expect(translator.vexflowClefSpec(clef('G', 2, {}, 2))).toBe('treble|15ma');
+		expect(translator.vexflowClefSpec(clef('F', 4, {}, -2))).toBe('bass|15mb');
 	});
 });

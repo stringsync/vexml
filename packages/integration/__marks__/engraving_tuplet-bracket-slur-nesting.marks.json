@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_tuplet-bracket-slur-nesting.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 654,
+				"y": 63
+			},
+			"to": {
+				"x": 740,
+				"y": 82
+			},
+			"label": "M5 longer bracket",
+			"note": "M5 longer bracket",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 668,
+				"y": 84
+			},
+			"to": {
+				"x": 704,
+				"y": 95
+			},
+			"label": "M5 shorter slur",
+			"note": "M5 shorter slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 770,
+				"y": 72
+			},
+			"to": {
+				"x": 819,
+				"y": 91
+			},
+			"label": "M6 first bracket",
+			"note": "M6 first bracket",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 833,
+				"y": 67
+			},
+			"to": {
+				"x": 883,
+				"y": 86
+			},
+			"label": "M6 second bracket",
+			"note": "M6 second bracket",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 784,
+				"y": 58
+			},
+			"to": {
+				"x": 878,
+				"y": 76
+			},
+			"label": "M6 longer slur",
+			"note": "M6 longer slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

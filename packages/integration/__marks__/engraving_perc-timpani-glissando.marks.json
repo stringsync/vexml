@@ -1,0 +1,172 @@
+{
+	"screenshot": "engraving_perc-timpani-glissando.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 136,
+				"y": 106
+			},
+			"to": {
+				"x": 232,
+				"y": 126
+			},
+			"label": "gliss",
+			"note": "gliss",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 359,
+				"y": 106
+			},
+			"to": {
+				"x": 455,
+				"y": 126
+			},
+			"label": "gliss",
+			"note": "gliss",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 638,
+				"y": 106
+			},
+			"to": {
+				"x": 742,
+				"y": 126
+			},
+			"label": "gliss",
+			"note": "gliss",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 134,
+				"y": 70
+			},
+			"to": {
+				"x": 242,
+				"y": 95
+			},
+			"label": "slur",
+			"note": "slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 352,
+				"y": 70
+			},
+			"to": {
+				"x": 471,
+				"y": 95
+			},
+			"label": "slur",
+			"note": "slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 631,
+				"y": 103
+			},
+			"to": {
+				"x": 643,
+				"y": 111
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 631,
+				"y": 96
+			},
+			"to": {
+				"x": 643,
+				"y": 104
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 631,
+				"y": 89
+			},
+			"to": {
+				"x": 643,
+				"y": 97
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 740,
+				"y": 121
+			},
+			"to": {
+				"x": 752,
+				"y": 129
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 740,
+				"y": 128
+			},
+			"to": {
+				"x": 752,
+				"y": 136
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 740,
+				"y": 135
+			},
+			"to": {
+				"x": 752,
+				"y": 143
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

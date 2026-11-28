@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_string-thumb-position-symbol.png",
+	"width": 932,
+	"height": 1265,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 522,
+				"y": 589
+			},
+			"to": {
+				"x": 529,
+				"y": 601
+			},
+			"label": "Thumb 1",
+			"note": "Thumb 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 604,
+				"y": 584
+			},
+			"to": {
+				"x": 611,
+				"y": 596
+			},
+			"label": "Thumb 2",
+			"note": "Thumb 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 687,
+				"y": 589
+			},
+			"to": {
+				"x": 694,
+				"y": 601
+			},
+			"label": "Thumb 3",
+			"note": "Thumb 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 769,
+				"y": 589
+			},
+			"to": {
+				"x": 776,
+				"y": 601
+			},
+			"label": "Thumb 4",
+			"note": "Thumb 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

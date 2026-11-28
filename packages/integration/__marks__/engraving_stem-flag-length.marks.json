@@ -1,0 +1,81 @@
+{
+	"screenshot": "engraving_stem-flag-length.png",
+	"width": 932,
+	"height": 417,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 106,
+				"y": 301
+			},
+			"to": {
+				"x": 106,
+				"y": 267
+			},
+			"label": "3½",
+			"note": "G/4 up-stem: 3½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 291
+			},
+			"to": {
+				"x": 901,
+				"y": 291
+			},
+			"label": "middle line",
+			"note": "Middle stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 137,
+				"y": 301
+			},
+			"to": {
+				"x": 137,
+				"y": 266
+			},
+			"label": "3½",
+			"note": "G/4 up-stem: 3½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 164,
+				"y": 301
+			},
+			"to": {
+				"x": 164,
+				"y": 259
+			},
+			"label": "4¼",
+			"note": "G/4 up-stem: 4¼ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 190,
+				"y": 301
+			},
+			"to": {
+				"x": 190,
+				"y": 251
+			},
+			"label": "5",
+			"note": "G/4 up-stem: 5 spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

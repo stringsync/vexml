@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_rest-short.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 670.9,
+				"y": 107
+			},
+			"to": {
+				"x": 682.9,
+				"y": 127
+			},
+			"label": "sp 2",
+			"note": "M5 8th rest starts at 1¼ spaces (space 2, expected space 2)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 696.9,
+				"y": 107
+			},
+			"to": {
+				"x": 711.9,
+				"y": 137
+			},
+			"label": "sp 2",
+			"note": "M5 16th rest starts at 1¼ spaces (space 2, expected space 2)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 719.4,
+				"y": 97
+			},
+			"to": {
+				"x": 736.4,
+				"y": 137
+			},
+			"label": "sp 1",
+			"note": "M5 32nd rest starts at ¼ spaces (space 1, expected space 1)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 740.4,
+				"y": 97
+			},
+			"to": {
+				"x": 759.4,
+				"y": 148
+			},
+			"label": "sp 1",
+			"note": "M5 64th rest starts at ¼ spaces (space 1, expected space 1)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

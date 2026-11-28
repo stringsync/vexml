@@ -1,0 +1,94 @@
+{
+	"screenshot": "engraving_notehead-diamond.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 514.5,
+				"y": 102
+			},
+			"to": {
+				"x": 514.5,
+				"y": 120
+			},
+			"label": "",
+			"note": "C/5 head horizontal centre",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 507,
+				"y": 104
+			},
+			"to": {
+				"x": 513,
+				"y": 118
+			},
+			"label": "edge",
+			"note": "C/5 stem joins at edge (expected edge)",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 550.5,
+				"y": 112
+			},
+			"to": {
+				"x": 550.5,
+				"y": 130
+			},
+			"label": "",
+			"note": "A/4 head horizontal centre",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 552,
+				"y": 114
+			},
+			"to": {
+				"x": 557,
+				"y": 128
+			},
+			"label": "edge",
+			"note": "A/4 stem joins at edge (expected edge)",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 586.4,
+				"y": 102
+			},
+			"to": {
+				"x": 586.4,
+				"y": 120
+			},
+			"label": "",
+			"note": "C/5 head horizontal centre",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 579,
+				"y": 104
+			},
+			"to": {
+				"x": 585,
+				"y": 118
+			},
+			"label": "edge",
+			"note": "C/5 stem joins at edge (expected edge)",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

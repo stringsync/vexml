@@ -1,0 +1,142 @@
+{
+	"screenshot": "engraving_guitar-golpe-crossed-notehead.png",
+	"width": 932,
+	"height": 419,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 206.1,
+				"y": 258
+			},
+			"to": {
+				"x": 218.1,
+				"y": 268
+			},
+			"label": "Crossed head",
+			"note": "Crossed head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 240.8,
+				"y": 258
+			},
+			"to": {
+				"x": 252.8,
+				"y": 268
+			},
+			"label": "Crossed head",
+			"note": "Crossed head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 275.5,
+				"y": 318
+			},
+			"to": {
+				"x": 287.5,
+				"y": 328
+			},
+			"label": "Crossed head",
+			"note": "Crossed head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 310.2,
+				"y": 318
+			},
+			"to": {
+				"x": 322.2,
+				"y": 328
+			},
+			"label": "Crossed head",
+			"note": "Crossed head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 272,
+				"y": 113
+			},
+			"to": {
+				"x": 274,
+				"y": 154
+			},
+			"label": "Golpe",
+			"note": "Golpe",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 272,
+				"y": 113
+			},
+			"to": {
+				"x": 418,
+				"y": 154
+			},
+			"label": "Golpe",
+			"note": "Golpe",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 302,
+				"y": 113
+			},
+			"to": {
+				"x": 327,
+				"y": 124
+			},
+			"label": "Golpe",
+			"note": "Golpe",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 302,
+				"y": 128
+			},
+			"to": {
+				"x": 318,
+				"y": 138
+			},
+			"label": "Golpe",
+			"note": "Golpe",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 207,
+				"y": 218
+			},
+			"to": {
+				"x": 246,
+				"y": 235
+			},
+			"label": "Golpe",
+			"note": "Golpe",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

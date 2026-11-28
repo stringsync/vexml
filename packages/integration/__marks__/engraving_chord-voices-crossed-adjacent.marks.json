@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_chord-voices-crossed-adjacent.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 300.1,
+				"y": 1061
+			},
+			"to": {
+				"x": 312.1,
+				"y": 1071
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 288.4,
+				"y": 1056
+			},
+			"to": {
+				"x": 300.4,
+				"y": 1066
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

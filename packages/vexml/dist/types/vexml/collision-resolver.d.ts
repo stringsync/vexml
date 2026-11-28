@@ -16,7 +16,7 @@ export declare class CollisionResolver {
     }[];
     private mtvOf;
 }
-export type CollisionKind = 'note' | 'stem' | 'tie' | 'annotation' | 'diagram' | 'hairpin';
+export type CollisionKind = 'note' | 'stem' | 'tie' | 'annotation' | 'lyric' | 'diagram' | 'hairpin';
 type Collidable = {
     rect: Rect;
     kind: CollisionKind;

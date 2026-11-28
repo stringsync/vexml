@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_slur-clear-articulation.png",
+	"width": 932,
+	"height": 1202,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 540,
+				"y": 949
+			},
+			"to": {
+				"x": 798,
+				"y": 968
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

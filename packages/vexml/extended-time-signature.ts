@@ -70,6 +70,8 @@ export class ExtendedTimeSignature extends TimeSignature {
 			}
 			place(face);
 			if (close) {
+				// Mirror the gap after the opening glyph so the face sits centred inside the pair.
+				x += GAP;
 				x += this.add(close, x, 'middle');
 			}
 		}

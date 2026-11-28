@@ -5,11 +5,18 @@
 
 import { commitsSince, npm, target } from 'core/ship';
 
-/** Private dev files (`@vexml/book` and the Behind Bars verdict ledger) stay out of the public mirror. */
+/** Private dev files (`@vexml/book`, the Behind Bars verdict ledger, and splates rigs) stay out of the public mirror. */
 export const MIRROR_OMIT = [
 	'packages/book/**',
 	'bin/book',
+	'bin/vex-rig',
+	'packages/vex/rig.ts',
+	'packages/vex/rig-*.ts',
+	'packages/vex/rig.test.ts',
+	'packages/site/conformance.html',
+	'packages/site/conformance/**',
 	'packages/integration/__reviews__/**',
+	'.cache/**',
 ];
 
 const MDOM = '@stringsync/mdom';

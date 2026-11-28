@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+      <score-instrument id="P1-I1">
+        <instrument-name>Cello</instrument-name>
+        <instrument-sound>strings.cello</instrument-sound>
+      </score-instrument>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): string-two-staves-brace (p. 401): single stringed instrument using two staves joined by a curly brace -->
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <staves>2</staves>
+        <clef number="1"><sign>G</sign><line>2</line></clef>
+        <clef number="2"><sign>F</sign><line>4</line></clef>
+      </attributes>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>half</type><staff>1</staff></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>half</type><staff>1</staff></note>
+      <backup><duration>8</duration></backup>
+      <note><pitch><step>C</step><octave>2</octave></pitch><duration>4</duration><voice>2</voice><type>half</type><staff>2</staff></note>
+      <note><pitch><step>G</step><octave>2</octave></pitch><duration>4</duration><voice>2</voice><type>half</type><staff>2</staff></note>
+    </measure>
+  </part>
+</score-partwise>

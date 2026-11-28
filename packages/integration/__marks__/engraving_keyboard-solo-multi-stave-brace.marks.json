@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_keyboard-solo-multi-stave-brace.png",
+	"width": 932,
+	"height": 442,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 16,
+				"y": 96
+			},
+			"to": {
+				"x": 29,
+				"y": 337
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 31,
+				"y": 96
+			},
+			"to": {
+				"x": 32,
+				"y": 337
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 512,
+				"y": 96
+			},
+			"to": {
+				"x": 514,
+				"y": 336
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 890,
+				"y": 96
+			},
+			"to": {
+				"x": 902,
+				"y": 336
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

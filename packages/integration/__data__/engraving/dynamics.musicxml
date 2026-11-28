@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): dyn-below-single-stave (p. 101) — a single-stave part's dynamics sit below the stave -->
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <direction><direction-type><dynamics><p/></dynamics></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><dynamics><f/></dynamics></direction-type></direction>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M2 (index 1): dyn-centre-on-notehead (p. 102) — each dynamic centres on its notehead -->
+    <measure number="2">
+      <direction><direction-type><dynamics><p/></dynamics></direction-type></direction>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><dynamics><mf/></dynamics></direction-type></direction>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><dynamics><f/></dynamics></direction-type></direction>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><dynamics><pp/></dynamics></direction-type></direction>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M3 (index 2): dyn-multi-char-align-last, dyn-left-not-right (p. 103) — ppp then a closely following ff -->
+    <measure number="3">
+      <print new-system="yes"/>
+      <direction><direction-type><dynamics><ppp/></dynamics></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <direction><direction-type><dynamics><ff/></dynamics></direction-type></direction>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><type>eighth</type></note>
+    </measure>
+
+    <!-- M4 (index 3): hairpin-clear-of-lines, hairpin-thickness, hairpin-open-end-max, hairpin-start-end-heads (pp. 102–104) — crescendo over three notes -->
+    <measure number="4">
+      <direction><direction-type><wedge type="crescendo"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><wedge type="stop"/></direction-type></direction>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M5 (index 4): hairpin-complementary-match (p. 103) — a crescendo then a diminuendo of equal span -->
+    <measure number="5">
+      <direction><direction-type><wedge type="crescendo"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><wedge type="stop"/></direction-type></direction>
+      <direction><direction-type><wedge type="diminuendo"/></direction-type></direction>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><wedge type="stop"/></direction-type></direction>
+    </measure>
+
+    <!-- M6 (index 5): hairpin-width-constant (p. 103) — pp to ff crescendo -->
+    <measure number="6">
+      <print new-system="yes"/>
+      <direction><direction-type><dynamics><pp/></dynamics></direction-type></direction>
+      <direction><direction-type><wedge type="crescendo"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><wedge type="stop"/></direction-type></direction>
+      <direction><direction-type><dynamics><ff/></dynamics></direction-type></direction>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M7 (index 6): hairpin-width-constant (p. 103) — p to mf crescendo -->
+    <measure number="7">
+      <direction><direction-type><dynamics><p/></dynamics></direction-type></direction>
+      <direction><direction-type><wedge type="crescendo"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><wedge type="stop"/></direction-type></direction>
+      <direction><direction-type><dynamics><mf/></dynamics></direction-type></direction>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M8 (index 7): hairpin-through-barline (p. 105) — crescendo into the next bar's first beat -->
+    <measure number="8">
+      <print new-system="yes"/>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><wedge type="crescendo"/></direction-type></direction>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <measure number="9">
+      <direction><direction-type><wedge type="stop"/></direction-type></direction>
+      <direction><direction-type><dynamics><f/></dynamics></direction-type></direction>
+      <note><pitch><step>G</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M10 (index 9): dyn-horizontal-alignment (p. 105) — a run of dynamics and hairpins on one line -->
+    <measure number="10">
+      <print new-system="yes"/>
+      <attributes>
+        <time><beats>6</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <direction><direction-type><dynamics><p/></dynamics></direction-type></direction>
+      <direction><direction-type><wedge type="crescendo"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><wedge type="stop"/></direction-type></direction>
+      <direction><direction-type><dynamics><f/></dynamics></direction-type></direction>
+      <direction><direction-type><wedge type="diminuendo"/></direction-type></direction>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><wedge type="stop"/></direction-type></direction>
+      <direction><direction-type><dynamics><mp/></dynamics></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M11 (index 10): dyn-cresc-dashes (p. 106) — cresc. with dashes to a final dynamic -->
+    <measure number="11">
+      <print new-system="yes"/>
+      <attributes>
+        <time><beats>6</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <direction><direction-type><words>cresc.</words></direction-type></direction>
+      <direction><direction-type><dashes type="start"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><dashes type="stop"/></direction-type></direction>
+      <direction><direction-type><dynamics><f/></dynamics></direction-type></direction>
+      <note><pitch><step>G</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>A</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M12 (index 11): dyn-text-outside-hairpin (p. 106) — qualifying words with a crescendo -->
+    <measure number="12">
+      <attributes>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <direction placement="below"><direction-type><words>poco a poco</words></direction-type></direction>
+      <direction placement="below"><direction-type><wedge type="crescendo"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><wedge type="stop"/></direction-type></direction>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M13 (index 12): dyn-interim-hairpin-angle (p. 107) — a crescendo broken by an interim dynamic -->
+    <measure number="13">
+      <print new-system="yes"/>
+      <attributes>
+        <time><beats>6</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <direction><direction-type><dynamics><p/></dynamics></direction-type></direction>
+      <direction><direction-type><wedge type="crescendo"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><wedge type="stop"/></direction-type></direction>
+      <direction><direction-type><dynamics><mp/></dynamics></direction-type></direction>
+      <direction><direction-type><wedge type="crescendo"/></direction-type></direction>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><wedge type="stop"/></direction-type></direction>
+      <direction><direction-type><dynamics><f/></dynamics></direction-type></direction>
+      <note><pitch><step>G</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>A</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M14 (index 13): dyn-subito-placement (p. 107) — sub. beside a sudden piano -->
+    <measure number="14">
+      <attributes>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <direction><direction-type><dynamics><mf/></dynamics></direction-type></direction>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><words>sub.</words></direction-type><direction-type><dynamics><p/></dynamics></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M15 (index 14): hairpin-niente-circle (p. 108) — crescendo from nothing -->
+    <measure number="15">
+      <print new-system="yes"/>
+      <direction><direction-type><wedge type="crescendo" niente="yes"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <direction><direction-type><wedge type="stop"/></direction-type></direction>
+      <direction><direction-type><dynamics><f/></dynamics></direction-type></direction>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+  </part>
+</score-partwise>

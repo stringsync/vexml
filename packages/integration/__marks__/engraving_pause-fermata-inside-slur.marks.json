@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_pause-fermata-inside-slur.png",
+	"width": 932,
+	"height": 412,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 359,
+				"y": 242
+			},
+			"to": {
+				"x": 383,
+				"y": 255
+			},
+			"label": "Fermata",
+			"note": "Fermata",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 345,
+				"y": 230
+			},
+			"to": {
+				"x": 420,
+				"y": 259
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

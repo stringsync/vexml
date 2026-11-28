@@ -114,9 +114,11 @@ export declare class DrawPass {
     private readonly paint;
     private readonly voltaLifts;
     private readonly hairpinBands;
+    private readonly ottavaBands;
     constructor(opts: DrawPassOptions);
     private measuresOf;
     private joinUnbrokenArpeggios;
+    private joinNonArpeggioBrackets;
     systemOfMeasure(m: number): number;
     mark(system: number): SystemMark;
     rewind(mark: SystemMark, through: number): void;
@@ -152,6 +154,7 @@ export declare class DrawPass {
     private rowOf;
     private recordAnnotationSpill;
     private recordAnnotationDrop;
+    private dropLyricsBelow;
     private systemOf;
     private spanLines;
     widenPage(width: number): void;
@@ -184,6 +187,7 @@ export interface DrawPassOptions {
     lyricDrops?: Map<string, number>;
     voltaLifts?: Map<number, number>;
     hairpinBands?: Map<number, HairpinBand[]>;
+    ottavaBands?: Map<number, HairpinBand[]>;
 }
 export interface SystemExtent {
     top: number;
@@ -198,6 +202,8 @@ export interface SystemObservation {
     voltasLifted: boolean;
     hairpinBands: HairpinBand[] | undefined;
     hairpinsStacked: boolean;
+    ottavaBands: HairpinBand[] | undefined;
+    ottavasStacked: boolean;
 }
 export interface DrawPassResult {
     pageTop: number;

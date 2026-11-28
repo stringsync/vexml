@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): gliss-line-straight-thin (p. 140), gliss-line-between-heads (p. 141) — upward and downward glissandos between half notes -->
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>8</duration><type>half</type><notations><glissando type="start" number="1" line-type="solid"/></notations></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>8</duration><type>half</type><notations><glissando type="stop" number="1" line-type="solid"/></notations></note>
+    </measure>
+
+    <!-- M2 (index 1): gliss-line-between-heads (p. 141) — downward glissando -->
+    <measure number="2">
+      <note><pitch><step>A</step><octave>5</octave></pitch><duration>8</duration><type>half</type><notations><glissando type="start" number="1" line-type="solid"/></notations></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>8</duration><type>half</type><notations><glissando type="stop" number="1" line-type="solid"/></notations></note>
+    </measure>
+
+    <!-- M3 (index 2): gliss-line-clear-of-accidental (p. 141) — second note carries an accidental -->
+    <measure number="3">
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>8</duration><type>half</type><notations><glissando type="start" number="1" line-type="solid"/></notations></note>
+      <note><pitch><step>G</step><alter>1</alter><octave>4</octave></pitch><duration>8</duration><type>half</type><accidental>sharp</accidental><notations><glissando type="stop" number="1" line-type="solid"/></notations></note>
+    </measure>
+
+    <!-- M4 (index 3): gliss-same-letter-direction (p. 142) — F to F sharp, then B to B flat -->
+    <measure number="4">
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>8</duration><type>half</type><notations><glissando type="start" number="1" line-type="solid"/></notations></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>8</duration><type>half</type><accidental>sharp</accidental><notations><glissando type="stop" number="1" line-type="solid"/></notations></note>
+    </measure>
+
+    <!-- M5 (index 4): gliss-same-letter-direction (p. 142) — B to B flat -->
+    <measure number="5">
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>8</duration><type>half</type><notations><glissando type="start" number="1" line-type="solid"/></notations></note>
+      <note><pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch><duration>8</duration><type>half</type><accidental>flat</accidental><notations><glissando type="stop" number="1" line-type="solid"/></notations></note>
+    </measure>
+
+    <!-- M6 (index 5): gliss-parallel-lines (p. 143) — two-note chords slide in parallel -->
+    <measure number="6">
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>8</duration><type>half</type><notations><glissando type="start" number="1" line-type="solid"/></notations></note>
+      <note><chord/><pitch><step>E</step><octave>4</octave></pitch><duration>8</duration><type>half</type><notations><glissando type="start" number="2" line-type="solid"/></notations></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>8</duration><type>half</type><notations><glissando type="stop" number="1" line-type="solid"/></notations></note>
+      <note><chord/><pitch><step>B</step><octave>4</octave></pitch><duration>8</duration><type>half</type><notations><glissando type="stop" number="2" line-type="solid"/></notations></note>
+    </measure>
+
+  </part>
+</score-partwise>

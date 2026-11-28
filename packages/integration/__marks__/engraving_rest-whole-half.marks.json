@@ -1,0 +1,65 @@
+{
+	"screenshot": "engraving_rest-whole-half.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 106
+			},
+			"to": {
+				"x": 199.3,
+				"y": 106
+			},
+			"label": "2nd line",
+			"note": "M1 second stave line at y=90",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 140.7,
+				"y": 104
+			},
+			"to": {
+				"x": 155.7,
+				"y": 114
+			},
+			"label": "top 1",
+			"note": "M1 whole rest top is 1 spaces from top line (expected 1)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 199.3,
+				"y": 116
+			},
+			"to": {
+				"x": 308.5,
+				"y": 116
+			},
+			"label": "middle line",
+			"note": "M2 middle stave line at y=100",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 214.3,
+				"y": 108
+			},
+			"to": {
+				"x": 229.3,
+				"y": 118
+			},
+			"label": "bot 2",
+			"note": "M2 half rest bottom is 2 spaces from top line (expected 2)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

@@ -1,0 +1,187 @@
+{
+	"screenshot": "engraving_perc-two-players-single-line.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 116,
+				"y": 76
+			},
+			"to": {
+				"x": 117,
+				"y": 111
+			},
+			"label": "up",
+			"note": "up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 173,
+				"y": 121
+			},
+			"to": {
+				"x": 174,
+				"y": 156
+			},
+			"label": "down",
+			"note": "down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 252,
+				"y": 76
+			},
+			"to": {
+				"x": 253,
+				"y": 111
+			},
+			"label": "up",
+			"note": "up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 309,
+				"y": 121
+			},
+			"to": {
+				"x": 310,
+				"y": 156
+			},
+			"label": "down",
+			"note": "down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 173,
+				"y": 81
+			},
+			"to": {
+				"x": 184,
+				"y": 111
+			},
+			"label": "rest above",
+			"note": "rest above",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 309,
+				"y": 81
+			},
+			"to": {
+				"x": 320,
+				"y": 111
+			},
+			"label": "rest above",
+			"note": "rest above",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 105,
+				"y": 121
+			},
+			"to": {
+				"x": 116,
+				"y": 151
+			},
+			"label": "rest below",
+			"note": "rest below",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 241,
+				"y": 121
+			},
+			"to": {
+				"x": 252,
+				"y": 151
+			},
+			"label": "rest below",
+			"note": "rest below",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 428,
+				"y": 76
+			},
+			"to": {
+				"x": 430,
+				"y": 111
+			},
+			"label": "up",
+			"note": "up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 428,
+				"y": 76
+			},
+			"to": {
+				"x": 430,
+				"y": 111
+			},
+			"label": "up",
+			"note": "up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 472,
+				"y": 121
+			},
+			"to": {
+				"x": 473,
+				"y": 156
+			},
+			"label": "down",
+			"note": "down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 472,
+				"y": 121
+			},
+			"to": {
+				"x": 473,
+				"y": 156
+			},
+			"label": "down",
+			"note": "down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

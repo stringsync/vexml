@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_beam-convex.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 242,
+				"y": 1209
+			},
+			"to": {
+				"x": 320,
+				"y": 1222
+			},
+			"label": "rises",
+			"note": "M17 convex group: rises (-½ spaces, expected rises)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

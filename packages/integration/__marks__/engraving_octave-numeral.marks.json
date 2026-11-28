@@ -1,0 +1,51 @@
+{
+	"screenshot": "engraving_octave-numeral.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 118,
+				"y": 58
+			},
+			"to": {
+				"x": 118,
+				"y": 116
+			},
+			"label": "",
+			"note": "M1 first notehead left edge at x=102",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 110,
+				"y": 62
+			},
+			"to": {
+				"x": 110,
+				"y": 76
+			},
+			"label": "1½",
+			"note": "M1 octave numeral height is 1½ spaces (expected 1½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 115,
+				"y": 61
+			},
+			"to": {
+				"x": 127,
+				"y": 77
+			},
+			"label": "left",
+			"note": "M1 octave numeral starts at x=100 vs first notehead x=102 (expected left of notehead)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

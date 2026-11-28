@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_gliss-line-straight-thin.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 129,
+				"y": 126
+			},
+			"to": {
+				"x": 174,
+				"y": 146
+			},
+			"label": "Glissando",
+			"note": "Glissando",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

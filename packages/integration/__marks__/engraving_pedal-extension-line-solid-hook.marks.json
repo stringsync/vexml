@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_pedal-extension-line-solid-hook.png",
+	"width": 932,
+	"height": 604,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 420,
+				"y": 254
+			},
+			"to": {
+				"x": 472,
+				"y": 277
+			},
+			"label": "Pedal 1",
+			"note": "Pedal 1",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

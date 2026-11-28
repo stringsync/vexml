@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_string-double-stop-adjacent-open.png",
+	"width": 932,
+	"height": 1265,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 521,
+				"y": 996
+			},
+			"to": {
+				"x": 529,
+				"y": 1004
+			},
+			"label": "M12 B1 Open",
+			"note": "M12 B1 Open",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 705,
+				"y": 917
+			},
+			"to": {
+				"x": 713,
+				"y": 925
+			},
+			"label": "M12 B3 Open",
+			"note": "M12 B3 Open",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

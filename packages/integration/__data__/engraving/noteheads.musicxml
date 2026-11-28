@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>16</divisions><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+    <measure number="2">
+      
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>32</duration><voice>1</voice><type>half</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>32</duration><voice>1</voice><type>half</type></note>
+    </measure>
+    <measure number="3">
+      
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>64</duration><voice>1</voice><type>whole</type></note>
+    </measure>
+    <measure number="4">
+      
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type><notehead>diamond</notehead></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type><notehead>diamond</notehead></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>32</duration><voice>1</voice><type>half</type><notehead>diamond</notehead></note>
+    </measure>
+    <measure number="5">
+      
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type><notehead>x</notehead></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type><notehead>x</notehead></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>32</duration><voice>1</voice><type>half</type><notehead>x</notehead></note>
+    </measure>
+    <measure number="6">
+      
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>64</duration><voice>1</voice><type>whole</type><notehead>x</notehead></note>
+    </measure>
+  </part>
+</score-partwise>

@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_barline-heavy-styles.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 234 },
+		{ "index": 1, "system": 0, "x": 265, "w": 159 },
+		{ "index": 2, "system": 0, "x": 424, "w": 159 },
+		{ "index": 3, "system": 0, "x": 583, "w": 159 },
+		{ "index": 4, "system": 0, "x": 742, "w": 159 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 234
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 265,
+			"w": 159
+		},
+		{
+			"part": 0,
+			"measure": 2,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 424,
+			"w": 159
+		},
+		{
+			"part": 0,
+			"measure": 3,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 583,
+			"w": 159
+		},
+		{
+			"part": 0,
+			"measure": 4,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 742,
+			"w": 159
+		}
+	]
+}

@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-ends-centre.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 127,
+				"y": 130
+			},
+			"to": {
+				"x": 185,
+				"y": 137
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

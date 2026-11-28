@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tie-near-heads.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 128,
+				"y": 126
+			},
+			"to": {
+				"x": 128,
+				"y": 130
+			},
+			"label": "½",
+			"note": "Head to tie end: ½ stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 183,
+				"y": 126
+			},
+			"to": {
+				"x": 183,
+				"y": 130
+			},
+			"label": "½",
+			"note": "Head to tie end: ½ stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

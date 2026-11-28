@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tremolo-stroke-design.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 351,
+				"y": 89
+			},
+			"to": {
+				"x": 363,
+				"y": 111
+			},
+			"label": "Tremolo 3",
+			"note": "Tremolo 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 367,
+				"y": 121
+			},
+			"to": {
+				"x": 379,
+				"y": 143
+			},
+			"label": "Tremolo 4",
+			"note": "Tremolo 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

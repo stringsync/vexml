@@ -24,9 +24,18 @@ export abstract class TechnicalAnnotation
 	constructor(
 		text: string,
 		/** Which side of the stave this mark stacks on (<technical placement>). */
-		readonly below: boolean,
+		public below: boolean,
 	) {
 		super(text);
+		this.setVerticalJustification(
+			below
+				? Annotation.VerticalJustify.BOTTOM
+				: Annotation.VerticalJustify.TOP,
+		);
+	}
+
+	protected setBelow(below: boolean): void {
+		this.below = below;
 		this.setVerticalJustification(
 			below
 				? Annotation.VerticalJustify.BOTTOM

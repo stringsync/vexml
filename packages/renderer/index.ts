@@ -23,4 +23,5 @@ export type {
 } from './renderer';
 export { dimensions } from './renderer';
 export { renderers } from './renderers';
+export type { HtmlSnapshotInput } from './tab-pools';
 export type { VexmlContext, VexmlInput } from './vexml-renderer';

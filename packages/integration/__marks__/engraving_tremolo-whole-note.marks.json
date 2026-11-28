@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tremolo-whole-note.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 91,
+				"y": 254
+			},
+			"to": {
+				"x": 103,
+				"y": 276
+			},
+			"label": "Low whole note",
+			"note": "Low whole note",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 247,
+				"y": 281
+			},
+			"to": {
+				"x": 259,
+				"y": 303
+			},
+			"label": "High whole note",
+			"note": "High whole note",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

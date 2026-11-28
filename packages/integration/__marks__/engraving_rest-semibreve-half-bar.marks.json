@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_rest-semibreve-half-bar.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 109,
+				"y": 426
+			},
+			"to": {
+				"x": 120,
+				"y": 432
+			},
+			"label": "Half-bar semibreve rest",
+			"note": "Half-bar semibreve rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 193.8,
+				"y": 436
+			},
+			"to": {
+				"x": 205.8,
+				"y": 446
+			},
+			"label": "First half note",
+			"note": "First half note",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

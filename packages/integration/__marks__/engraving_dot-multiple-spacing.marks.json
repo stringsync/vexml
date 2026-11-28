@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_dot-multiple-spacing.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 602,
+				"y": 99
+			},
+			"to": {
+				"x": 606,
+				"y": 103
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 607,
+				"y": 99
+			},
+			"to": {
+				"x": 611,
+				"y": 103
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 612,
+				"y": 99
+			},
+			"to": {
+				"x": 616,
+				"y": 103
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 518,
+				"y": 1069
+			},
+			"to": {
+				"x": 522,
+				"y": 1073
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 523,
+				"y": 1069
+			},
+			"to": {
+				"x": 527,
+				"y": 1073
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

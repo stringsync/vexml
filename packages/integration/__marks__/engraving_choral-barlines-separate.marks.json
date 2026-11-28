@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_choral-barlines-separate.png",
+	"width": 932,
+	"height": 529,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 487.8,
+				"y": 163
+			},
+			"to": {
+				"x": 495.8,
+				"y": 250
+			},
+			"label": "Gap 1 clear",
+			"note": "Gap 1 clear",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 487.8,
+				"y": 294
+			},
+			"to": {
+				"x": 495.8,
+				"y": 381
+			},
+			"label": "Gap 2 clear",
+			"note": "Gap 2 clear",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

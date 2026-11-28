@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_beam-thickness.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 122,
+				"y": 93
+			},
+			"to": {
+				"x": 122,
+				"y": 99
+			},
+			"label": "½",
+			"note": "Beam thickness ½ spaces (expected ½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 253,
+				"y": 99
+			},
+			"to": {
+				"x": 253,
+				"y": 101
+			},
+			"label": "¼",
+			"note": "Gap between beams ¼ spaces (expected ¼)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 488,
+				"y": 76
+			},
+			"to": {
+				"x": 488,
+				"y": 81
+			},
+			"label": "½",
+			"note": "Beam thickness ½ spaces (expected ½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 621,
+				"y": 81
+			},
+			"to": {
+				"x": 621,
+				"y": 84
+			},
+			"label": "¼",
+			"note": "Gap between beams ¼ spaces (expected ¼)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_acc-ledger-placement.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 355.3,
+				"y": 53
+			},
+			"to": {
+				"x": 368.3,
+				"y": 81
+			},
+			"label": "C#/6 sharp",
+			"note": "C#/6 sharp",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 389.4,
+				"y": 133
+			},
+			"to": {
+				"x": 402.4,
+				"y": 161
+			},
+			"label": "A#/3 sharp",
+			"note": "A#/3 sharp",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

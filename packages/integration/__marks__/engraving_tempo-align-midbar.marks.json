@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tempo-align-midbar.png",
+	"width": 932,
+	"height": 607,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 690,
+				"y": 112
+			},
+			"to": {
+				"x": 747,
+				"y": 127
+			},
+			"label": "Vivace",
+			"note": "Vivace",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

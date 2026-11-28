@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): 7 sharps in treble, alto, tenor, bass clefs -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>7</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <staves>4</staves>
+        <clef number="1"><sign>G</sign><line>2</line></clef>
+        <clef number="2"><sign>C</sign><line>3</line></clef>
+        <clef number="3"><sign>C</sign><line>4</line></clef>
+        <clef number="4"><sign>F</sign><line>4</line></clef>
+      </attributes>
+      <note><pitch><step>C</step><alter>1</alter><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note>
+      <backup><duration>4</duration></backup>
+      <note><pitch><step>C</step><alter>1</alter><octave>4</octave></pitch><duration>4</duration><voice>2</voice><type>whole</type><staff>2</staff></note>
+      <backup><duration>4</duration></backup>
+      <note><pitch><step>C</step><alter>1</alter><octave>4</octave></pitch><duration>4</duration><voice>3</voice><type>whole</type><staff>3</staff></note>
+      <backup><duration>4</duration></backup>
+      <note><pitch><step>C</step><alter>1</alter><octave>3</octave></pitch><duration>4</duration><voice>4</voice><type>whole</type><staff>4</staff></note>
+    </measure>
+    <!-- M2 (index 1): transition to C major so M3 has pure 7 flats -->
+    <measure number="2">
+      <attributes>
+        <key><fifths>0</fifths></key>
+      </attributes>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note>
+      <backup><duration>4</duration></backup>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration><voice>2</voice><type>whole</type><staff>2</staff></note>
+      <backup><duration>4</duration></backup>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration><voice>3</voice><type>whole</type><staff>3</staff></note>
+      <backup><duration>4</duration></backup>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>4</duration><voice>4</voice><type>whole</type><staff>4</staff></note>
+    </measure>
+    <!-- M3 (index 2): 7 flats in treble, alto, tenor, bass clefs -->
+    <measure number="3">
+      <print new-system="yes"/>
+      <attributes>
+        <key><fifths>-7</fifths></key>
+      </attributes>
+      <note><pitch><step>C</step><alter>-1</alter><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note>
+      <backup><duration>4</duration></backup>
+      <note><pitch><step>C</step><alter>-1</alter><octave>4</octave></pitch><duration>4</duration><voice>2</voice><type>whole</type><staff>2</staff></note>
+      <backup><duration>4</duration></backup>
+      <note><pitch><step>C</step><alter>-1</alter><octave>4</octave></pitch><duration>4</duration><voice>3</voice><type>whole</type><staff>3</staff></note>
+      <backup><duration>4</duration></backup>
+      <note><pitch><step>C</step><alter>-1</alter><octave>3</octave></pitch><duration>4</duration><voice>4</voice><type>whole</type><staff>4</staff></note>
+    </measure>
+  </part>
+</score-partwise>

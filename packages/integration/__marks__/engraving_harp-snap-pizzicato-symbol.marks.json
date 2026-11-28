@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_harp-snap-pizzicato-symbol.png",
+	"width": 932,
+	"height": 255,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 794,
+				"y": 87
+			},
+			"to": {
+				"x": 802,
+				"y": 109
+			},
+			"label": "Snap pizzicato 1",
+			"note": "Snap pizzicato 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 847,
+				"y": 92
+			},
+			"to": {
+				"x": 855,
+				"y": 109
+			},
+			"label": "Snap pizzicato 2",
+			"note": "Snap pizzicato 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

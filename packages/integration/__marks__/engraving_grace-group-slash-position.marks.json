@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_grace-group-slash-position.png",
+	"width": 932,
+	"height": 739,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 579.5,
+				"y": 109.3
+			},
+			"to": {
+				"x": 601.2,
+				"y": 149.3
+			},
+			"label": "Slashed beamed grace",
+			"note": "Slashed beamed grace",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 586,
+				"y": 111
+			},
+			"to": {
+				"x": 611,
+				"y": 123
+			},
+			"label": "Grace beam",
+			"note": "Grace beam",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

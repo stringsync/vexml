@@ -1,0 +1,94 @@
+{
+	"screenshot": "engraving_notehead-cross.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 661.3,
+				"y": 102
+			},
+			"to": {
+				"x": 661.3,
+				"y": 120
+			},
+			"label": "",
+			"note": "C/5 head horizontal centre",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 653,
+				"y": 104
+			},
+			"to": {
+				"x": 659,
+				"y": 118
+			},
+			"label": "edge",
+			"note": "C/5 stem joins at edge (expected edge)",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 697.3,
+				"y": 112
+			},
+			"to": {
+				"x": 697.3,
+				"y": 130
+			},
+			"label": "",
+			"note": "A/4 head horizontal centre",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 700,
+				"y": 114
+			},
+			"to": {
+				"x": 705,
+				"y": 128
+			},
+			"label": "edge",
+			"note": "A/4 stem joins at edge (expected edge)",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 732.2,
+				"y": 102
+			},
+			"to": {
+				"x": 732.2,
+				"y": 120
+			},
+			"label": "",
+			"note": "C/5 head horizontal centre",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 725,
+				"y": 104
+			},
+			"to": {
+				"x": 730,
+				"y": 118
+			},
+			"label": "edge",
+			"note": "C/5 stem joins at edge (expected edge)",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

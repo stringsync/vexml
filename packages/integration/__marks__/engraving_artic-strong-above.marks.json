@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_artic-strong-above.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 119,
+				"y": 80
+			},
+			"to": {
+				"x": 128,
+				"y": 90
+			},
+			"label": "Strong 1",
+			"note": "Strong 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 213,
+				"y": 80
+			},
+			"to": {
+				"x": 222,
+				"y": 90
+			},
+			"label": "Strong 2",
+			"note": "Strong 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 307,
+				"y": 75
+			},
+			"to": {
+				"x": 316,
+				"y": 85
+			},
+			"label": "Strong 3",
+			"note": "Strong 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 401,
+				"y": 70
+			},
+			"to": {
+				"x": 410,
+				"y": 80
+			},
+			"label": "Strong 4",
+			"note": "Strong 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -3,6 +3,26 @@ import { MDOMParser } from '@stringsync/mdom';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { ScoreReader } from './score-reader';
 
+describe('a <backup> past the measure start', () => {
+	it('keeps every voice, voice 5 included', () => {
+		const measure = new MDOMParser()
+			.parseFromString(XML)
+			.score.getPart('P1')
+			?.getMeasure('1');
+		expect(measure).toBeDefined();
+		const reader = new ScoreReader(new DynamicGlyphs());
+
+		const bass = reader
+			.staffVoices(measure as NonNullable<typeof measure>, '2')
+			.flatMap((voice) => voice.chords)
+			.flatMap((chord) => chord.notes)
+			.map((note) => `${note.pitch?.step}${note.pitch?.octave}`)
+			.sort();
+
+		expect(bass).toEqual(['B2', 'E2', 'E3', 'G3']);
+	});
+});
+
 // The last measure of the Vienna Etude Op. 10 No. 3 seed (MuseScore: "backup beyond measure start").
 // Voice 4 holds a chord note written after a <backup>, so the <backup> after it rewinds past
 // the measure's start, and mdom places voice 5's note at beat -1. The file is malformed, but
@@ -31,23 +51,3 @@ const XML = `<?xml version="1.0"?>
     </measure>
   </part>
 </score-partwise>`;
-
-describe('a <backup> past the measure start', () => {
-	it('keeps every voice, voice 5 included', () => {
-		const measure = new MDOMParser()
-			.parseFromString(XML)
-			.score.getPart('P1')
-			?.getMeasure('1');
-		expect(measure).toBeDefined();
-		const reader = new ScoreReader(new DynamicGlyphs());
-
-		const bass = reader
-			.staffVoices(measure as NonNullable<typeof measure>, '2')
-			.flatMap((voice) => voice.chords)
-			.flatMap((chord) => chord.notes)
-			.map((note) => `${note.pitch?.step}${note.pitch?.octave}`)
-			.sort();
-
-		expect(bass).toEqual(['B2', 'E2', 'E3', 'G3']);
-	});
-});

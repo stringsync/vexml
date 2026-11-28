@@ -1,4 +1,5 @@
 import { Stave } from 'vexflow/core';
+import { useDocumentBarlines } from './document-barline';
 
 /* One staff line's `<line-detail>` override: its thickness, color and dash style. */
 export interface LineStyle {
@@ -26,6 +27,7 @@ export class DetailedStave extends Stave {
 		options: ConstructorParameters<typeof Stave>[3],
 	) {
 		super(x, y, width, options);
+		useDocumentBarlines(this, this.modifiers);
 	}
 
 	override draw(): void {

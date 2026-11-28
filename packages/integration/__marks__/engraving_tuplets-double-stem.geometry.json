@@ -1,0 +1,14 @@
+{
+	"screenshot": "engraving_tuplets-double-stem.png",
+	"measures": [{ "index": 0, "system": 0, "x": 31, "w": 870 }],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 870
+		}
+	]
+}

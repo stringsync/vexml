@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tempo-equation-arrows.png",
+	"width": 932,
+	"height": 272,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 29,
+				"y": 84
+			},
+			"to": {
+				"x": 540,
+				"y": 119
+			},
+			"label": "Equation with arrows",
+			"note": "Equation with arrows",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

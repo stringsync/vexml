@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_acc-small-above.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 824,
+				"y": 77
+			},
+			"to": {
+				"x": 831,
+				"y": 95
+			},
+			"label": "Mark above",
+			"note": "Mark above",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 868,
+				"y": 74
+			},
+			"to": {
+				"x": 874,
+				"y": 90
+			},
+			"label": "Mark above",
+			"note": "Mark above",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,65 @@
+{
+	"screenshot": "engraving_notehead-cross-white.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 732,
+				"y": 102
+			},
+			"to": {
+				"x": 732,
+				"y": 120
+			},
+			"label": "",
+			"note": "Centre column probed for circle bands",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 727,
+				"y": 106
+			},
+			"to": {
+				"x": 737,
+				"y": 116
+			},
+			"label": "circled",
+			"note": "C/5 half cross head has 3 vertical ink band(s) at centre (circled, expected circled)",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 806,
+				"y": 112
+			},
+			"to": {
+				"x": 806,
+				"y": 130
+			},
+			"label": "",
+			"note": "Centre column probed for circle bands",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 801,
+				"y": 116
+			},
+			"to": {
+				"x": 811,
+				"y": 126
+			},
+			"label": "circled",
+			"note": "A/4 whole cross head has 3 vertical ink band(s) at centre (circled, expected circled)",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

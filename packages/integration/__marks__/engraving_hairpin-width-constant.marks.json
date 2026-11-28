@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_hairpin-width-constant.png",
+	"width": 932,
+	"height": 1373,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 109,
+				"y": 480
+			},
+			"to": {
+				"x": 380,
+				"y": 490
+			},
+			"label": "pp to ff",
+			"note": "pp to ff",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 534,
+				"y": 480
+			},
+			"to": {
+				"x": 787,
+				"y": 490
+			},
+			"label": "p to mf",
+			"note": "p to mf",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

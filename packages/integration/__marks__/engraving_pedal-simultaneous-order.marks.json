@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_pedal-simultaneous-order.png",
+	"width": 932,
+	"height": 604,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 286,
+				"y": 252
+			},
+			"to": {
+				"x": 399,
+				"y": 277
+			},
+			"label": "Pedal",
+			"note": "Pedal",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 286,
+				"y": 254
+			},
+			"to": {
+				"x": 399,
+				"y": 277
+			},
+			"label": "Pedal",
+			"note": "Pedal",
+			"role": "measure",
+			"pass": false
+		}
+	]
+}

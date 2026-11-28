@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_string-pizz-non-arpeggiate-bracket.png",
+	"width": 932,
+	"height": 1050,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 112,
+				"y": 108
+			},
+			"to": {
+				"x": 136,
+				"y": 173
+			},
+			"label": "Chord 1",
+			"note": "Chord 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 229,
+				"y": 88
+			},
+			"to": {
+				"x": 269,
+				"y": 173
+			},
+			"label": "Chord 2",
+			"note": "Chord 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

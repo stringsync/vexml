@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_tie-unison-no-cross.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 292,
+				"y": 437
+			},
+			"to": {
+				"x": 355,
+				"y": 444
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 292,
+				"y": 447
+			},
+			"to": {
+				"x": 355,
+				"y": 454
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 303,
+				"y": 468
+			},
+			"to": {
+				"x": 355,
+				"y": 475
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 300,
+				"y": 478
+			},
+			"to": {
+				"x": 358,
+				"y": 485
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

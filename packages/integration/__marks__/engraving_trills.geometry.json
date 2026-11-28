@@ -1,0 +1,34 @@
+{
+	"screenshot": "engraving_trills.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 465.6 },
+		{ "index": 1, "system": 0, "x": 496.6, "w": 196.7 },
+		{ "index": 2, "system": 0, "x": 693.3, "w": 207.7 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [101, 111, 121, 131, 141],
+			"x": 31,
+			"w": 465.6
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [101, 111, 121, 131, 141],
+			"x": 496.6,
+			"w": 196.7
+		},
+		{
+			"part": 0,
+			"measure": 2,
+			"staff": 1,
+			"lines": [101, 111, 121, 131, 141],
+			"x": 693.3,
+			"w": 207.7
+		}
+	]
+}

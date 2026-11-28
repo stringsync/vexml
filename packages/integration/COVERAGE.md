@@ -46,7 +46,7 @@ are picked by hand.
 | `accidental@parentheses` | drawn | `accidentals.musicxml`: parenthesized sharp and flat |
 | `accidental@size` | missing | task #9; mdom raw only |
 | `accidental@smufl` | drawn | `accidentals.musicxml` M12: `other` drawn by its SMuFL glyph name |
-| `accidental-mark` | drawn | `ornaments.musicxml`: small accidental on the ornament it follows |
+| `accidental-mark` | drawn | `ornaments.musicxml`: small accidental on the ornament it follows; `engraving/accidentals.musicxml` M7: small accidental above its note (below for `placement="below"`) when following no ornament |
 | `accidental-text` | drawn | `notehead_text.musicxml`: inside notehead-text, its text drawn as written |
 | `accord` | drawn | `direction_pictograms.musicxml` M6: each string and its pitch in the scordatura line |
 | `accordion-high` | drawn | `direction_pictograms.musicxml` M5: the dot in the top rank |

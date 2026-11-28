@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+      <score-instrument id="P1-I1">
+        <instrument-name>Violin</instrument-name>
+        <instrument-sound>strings.violin</instrument-sound>
+      </score-instrument>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): string-pizz-non-arpeggiate-bracket (p. 409): simultaneous pizzicato chords with square bracket -->
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <direction placement="above">
+        <direction-type><words>pizz.</words></direction-type>
+      </direction>
+      <note><pitch><step>G</step><octave>3</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><non-arpeggiate type="bottom"/></notations></note>
+      <note><chord/><pitch><step>D</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+      <note><chord/><pitch><step>B</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><non-arpeggiate type="top"/></notations></note>
+      <note><pitch><step>G</step><octave>3</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><non-arpeggiate type="bottom"/></notations></note>
+      <note><chord/><pitch><step>D</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+      <note><chord/><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><accidental>sharp</accidental><notations><non-arpeggiate type="top"/></notations></note>
+    </measure>
+
+    <!-- M2 (index 1): string-snap-pizzicato-symbol (p. 411): Bartok snap pizzicato above single notes and chord -->
+    <measure number="2">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><snap-pizzicato/></technical></notations></note>
+      <note><pitch><step>C</step><alter>1</alter><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><accidental>sharp</accidental><notations><technical><snap-pizzicato/></technical></notations></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><snap-pizzicato/></technical></notations></note>
+      <note><pitch><step>G</step><octave>3</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><snap-pizzicato/></technical></notations></note>
+      <note><chord/><pitch><step>D</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type></note>
+      <note><chord/><pitch><step>B</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+
+    <!-- M3 (index 2): string-pizz-fingernail (p. 411): fingernail pizzicato above notes -->
+    <measure number="3">
+      <print new-system="yes"/>
+      <attributes>
+        <clef><sign>F</sign><line>4</line></clef>
+      </attributes>
+      <note><pitch><step>E</step><octave>3</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><fingernails/></technical></notations></note>
+      <note><pitch><step>A</step><octave>2</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><fingernails/></technical></notations></note>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><fingernails/></technical></notations></note>
+      <note><pitch><step>G</step><octave>3</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><fingernails/></technical></notations></note>
+    </measure>
+
+    <!-- M4 (index 3): string-left-hand-pizzicato-above (p. 412): left-hand pizzicato + above single-voice notes and chord -->
+    <measure number="4">
+      <attributes>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><stopped/></technical></notations></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><stopped/></technical></notations></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><stopped/></technical></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><stopped/></technical></notations></note>
+      <note><chord/><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+
+    <!-- M5 (index 4): string-left-hand-pizzicato-two-voices (p. 412): left-hand pizzicato + on voice stem sides -->
+    <measure number="5">
+      <print new-system="yes"/>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><stopped/></technical></notations></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><stopped/></technical></notations></note>
+      <backup><duration>16</duration></backup>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type><notations><technical><stopped/></technical></notations></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type><notations><technical><stopped/></technical></notations></note>
+    </measure>
+
+    <!-- M6 (index 5): string-harmonic-natural-circle (p. 414): natural harmonics at sounding pitch with circle above -->
+    <measure number="6">
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><harmonic><natural/><sounding-pitch/></harmonic></technical></notations></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><harmonic><natural/><sounding-pitch/></harmonic></technical></notations></note>
+      <note><pitch><step>A</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><harmonic><natural/><sounding-pitch/></harmonic></technical></notations></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><harmonic><natural/><sounding-pitch/></harmonic></technical></notations></note>
+    </measure>
+
+    <!-- M7 (index 6): string-harmonic-lower-chord-below (p. 414): circle below stave when only lower chord note is harmonic -->
+    <measure number="7">
+      <print new-system="yes"/>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><harmonic><natural/><sounding-pitch/></harmonic></technical></notations></note>
+      <note><chord/><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><accidental>sharp</accidental></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><harmonic><natural/><sounding-pitch/></harmonic></technical></notations></note>
+      <note><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+    </measure>
+
+    <!-- M8 (index 7): string-harmonic-double-stop-circles (p. 414): stacked circles above double-stopped natural harmonics -->
+    <measure number="8">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><harmonic><natural/><sounding-pitch/></harmonic></technical></notations></note>
+      <note><chord/><pitch><step>E</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><harmonic><natural/><sounding-pitch/></harmonic></technical></notations></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><harmonic><natural/><sounding-pitch/></harmonic></technical></notations></note>
+      <note><chord/><pitch><step>A</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><harmonic><natural/><sounding-pitch/></harmonic></technical></notations></note>
+    </measure>
+
+    <!-- M9 (index 8): string-harmonic-diamond-hollow (pp. 418-419): touched-pitch diamond stays hollow across durations -->
+    <measure number="9">
+      <print new-system="yes"/>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notehead>diamond</notehead><notations><technical><harmonic><natural/><touching-pitch/></harmonic></technical></notations></note>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>2</duration><voice>1</voice><type>eighth</type><notehead>diamond</notehead><beam number="1">begin</beam><notations><technical><harmonic><natural/><touching-pitch/></harmonic></technical></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><voice>1</voice><type>eighth</type><notehead>diamond</notehead><beam number="1">end</beam><notations><technical><harmonic><natural/><touching-pitch/></harmonic></technical></notations></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notehead>diamond</notehead><notations><technical><harmonic><natural/><touching-pitch/></harmonic></technical></notations></note>
+    </measure>
+
+    <!-- M10 (index 9): string-harmonic-artificial-chord (p. 420): stopped fundamental + hollow diamond on same stem, dots and ties -->
+    <measure number="10">
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><harmonic><artificial/><base-pitch/></harmonic></technical></notations></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notehead>diamond</notehead><notations><technical><harmonic><artificial/><touching-pitch/></harmonic></technical></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>6</duration><tie type="start"/><voice>1</voice><type>quarter</type><dot/><notations><tied type="start"/><technical><harmonic><artificial/><base-pitch/></harmonic></technical></notations></note>
+      <note><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>6</duration><tie type="start"/><voice>1</voice><type>quarter</type><dot/><notehead>diamond</notehead><notations><tied type="start"/><technical><harmonic><artificial/><touching-pitch/></harmonic></technical></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><tie type="stop"/><voice>1</voice><type>eighth</type><notations><tied type="stop"/><technical><harmonic><artificial/><base-pitch/></harmonic></technical></notations></note>
+      <note><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><tie type="stop"/><voice>1</voice><type>eighth</type><notehead>diamond</notehead><notations><tied type="stop"/><technical><harmonic><artificial/><touching-pitch/></harmonic></technical></notations></note>
+      <note><rest/><duration>4</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+
+    <!-- M11 (index 10): string-harmonic-double-stop-align (p. 421): double-stopped artificial harmonics with separate stems -->
+    <measure number="11">
+      <print new-system="yes"/>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><harmonic><artificial/><base-pitch/></harmonic></technical></notations></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notehead>diamond</notehead><notations><technical><harmonic><artificial/><touching-pitch/></harmonic></technical></notations></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><harmonic><artificial/><base-pitch/></harmonic></technical></notations></note>
+      <note><chord/><pitch><step>B</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notehead>diamond</notehead><notations><technical><harmonic><artificial/><touching-pitch/></harmonic></technical></notations></note>
+      <backup><duration>16</duration></backup>
+      <note><pitch><step>B</step><octave>3</octave></pitch><duration>8</duration><voice>2</voice><type>half</type><notations><technical><harmonic><artificial/><base-pitch/></harmonic></technical></notations></note>
+      <note><chord/><pitch><step>E</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type><notehead>diamond</notehead><notations><technical><harmonic><artificial/><touching-pitch/></harmonic></technical></notations></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type><notations><technical><harmonic><artificial/><base-pitch/></harmonic></technical></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type><notehead>diamond</notehead><notations><technical><harmonic><artificial/><touching-pitch/></harmonic></technical></notations></note>
+    </measure>
+  </part>
+</score-partwise>

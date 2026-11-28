@@ -1,0 +1,81 @@
+{
+	"screenshot": "engraving_tail-ledger-clear.png",
+	"width": 932,
+	"height": 252,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 493.1,
+				"y": 126
+			},
+			"to": {
+				"x": 901,
+				"y": 126
+			},
+			"label": "middle line",
+			"note": "Middle stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 504,
+				"y": 86
+			},
+			"to": {
+				"x": 504,
+				"y": 125
+			},
+			"label": "0",
+			"note": "C/6: stem tip 0 spaces past middle line",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 587,
+				"y": 76
+			},
+			"to": {
+				"x": 587,
+				"y": 134
+			},
+			"label": "¾",
+			"note": "E/6: stem tip ¾ spaces past middle line",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 717,
+				"y": 166
+			},
+			"to": {
+				"x": 717,
+				"y": 126
+			},
+			"label": "0",
+			"note": "A/3: stem tip 0 spaces past middle line",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 800,
+				"y": 176
+			},
+			"to": {
+				"x": 800,
+				"y": 119
+			},
+			"label": "¾",
+			"note": "F/3: stem tip ¾ spaces past middle line",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

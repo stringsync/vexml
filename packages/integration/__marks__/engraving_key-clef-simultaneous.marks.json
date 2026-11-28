@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_key-clef-simultaneous.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 586,
+				"y": 419
+			},
+			"to": {
+				"x": 604,
+				"y": 443
+			},
+			"label": "Clef before barline",
+			"note": "Clef before barline",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 619,
+				"y": 412
+			},
+			"to": {
+				"x": 640,
+				"y": 455
+			},
+			"label": "Key after barline",
+			"note": "Key after barline",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

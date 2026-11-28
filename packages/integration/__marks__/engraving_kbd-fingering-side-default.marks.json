@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_kbd-fingering-side-default.png",
+	"width": 932,
+	"height": 386,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 91
+			},
+			"to": {
+				"x": 129,
+				"y": 154
+			},
+			"label": "Upper fingering",
+			"note": "Upper fingering",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 183,
+				"y": 91
+			},
+			"to": {
+				"x": 195,
+				"y": 149
+			},
+			"label": "Upper fingering",
+			"note": "Upper fingering",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 248,
+				"y": 86
+			},
+			"to": {
+				"x": 260,
+				"y": 144
+			},
+			"label": "Upper fingering",
+			"note": "Upper fingering",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 314,
+				"y": 81
+			},
+			"to": {
+				"x": 326,
+				"y": 139
+			},
+			"label": "Upper fingering",
+			"note": "Upper fingering",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 236
+			},
+			"to": {
+				"x": 129,
+				"y": 290
+			},
+			"label": "Lower fingering",
+			"note": "Lower fingering",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 183,
+				"y": 231
+			},
+			"to": {
+				"x": 195,
+				"y": 290
+			},
+			"label": "Lower fingering",
+			"note": "Lower fingering",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 248,
+				"y": 226
+			},
+			"to": {
+				"x": 260,
+				"y": 290
+			},
+			"label": "Lower fingering",
+			"note": "Lower fingering",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 314,
+				"y": 221
+			},
+			"to": {
+				"x": 326,
+				"y": 290
+			},
+			"label": "Lower fingering",
+			"note": "Lower fingering",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

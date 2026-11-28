@@ -1,6 +1,5 @@
 import type { Score } from '@stringsync/mdom';
 import { Rect } from 'core/geometry';
-import { CanvasContext } from 'vexflow/core';
 import type { BarlineTranslator } from './barline-translator';
 import type { ChordTranslator } from './chord-translator';
 import type { Config } from './config';
@@ -22,6 +21,7 @@ import { PaintContext } from './paint-context';
 import { PaintList } from './paint-list';
 import type { PaintOp } from './paint-op';
 import type { PaintProbe } from './paint-probe';
+import { RecordingCanvasContext } from './recording-canvas-context';
 import type { DrawResult, Engraving, RawGeometry } from './score-drawer';
 import type { ScoreReader } from './score-reader';
 import { SignatureFold } from './signature-fold';
@@ -82,6 +82,7 @@ export class SystemDraw {
 	private readonly lyricDrops = new Map<string, number>();
 	private readonly voltaLifts = new Map<number, number>();
 	private readonly hairpinBands = new Map<number, HairpinBand[]>();
+	private readonly ottavaBands = new Map<number, HairpinBand[]>();
 	private readonly marks = new Map<number, SystemMark>();
 	// Grows as systems are re-spaced; the crop reads it.
 	private activeFloorHeight: number;
@@ -144,9 +145,8 @@ export class SystemDraw {
 		// per-side cap (and vexflow crops one at 32767px), so the ops are kept and the stage replays
 		// them into tiles. Recording needs no final height up front, which a canvas did.
 		const paint = new PaintContext(this.list, probe, null);
-		const context = new CanvasContext(
-			paint as unknown as CanvasRenderingContext2D,
-		);
+		// Groups go to the list too, so mask replays can separate elements.
+		const context = new RecordingCanvasContext(paint, this.list);
 
 		// Part labels and words use the text font, and the few glyphs vexml types itself out of
 		// SMuFL codepoints rather than getting from a vexflow element (dynamics markings today)
@@ -182,6 +182,7 @@ export class SystemDraw {
 			lyricDrops: this.lyricDrops,
 			voltaLifts: this.voltaLifts,
 			hairpinBands: this.hairpinBands,
+			ottavaBands: this.ottavaBands,
 		});
 		const { page } = layout;
 		this.walk = page
@@ -431,6 +432,7 @@ export class SystemDraw {
 				lyricsStepped: seen.lyricsStepped,
 				voltasLifted: seen.voltasLifted,
 				hairpinsStacked: seen.hairpinsStacked,
+				ottavasStacked: seen.ottavasStacked,
 			},
 			// Only whether a system has one above it matters: the next is placed by now.
 			this.plan.placedSystems(),
@@ -462,6 +464,9 @@ export class SystemDraw {
 		}
 		if (seen.hairpinBands) {
 			this.hairpinBands.set(system, seen.hairpinBands);
+		}
+		if (seen.ottavaBands) {
+			this.ottavaBands.set(system, seen.ottavaBands);
 		}
 	}
 

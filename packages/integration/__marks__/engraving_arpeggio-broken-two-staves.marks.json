@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_arpeggio-broken-two-staves.png",
+	"width": 932,
+	"height": 387,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 389.7,
+				"y": 112
+			},
+			"to": {
+				"x": 442.7,
+				"y": 146
+			},
+			"label": "Treble beat 1",
+			"note": "Treble beat 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 418.7,
+				"y": 231.5
+			},
+			"to": {
+				"x": 442.7,
+				"y": 271.5
+			},
+			"label": "Bass beat 1",
+			"note": "Bass beat 1",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

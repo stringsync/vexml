@@ -22,6 +22,7 @@ export type TieEnd = {
     partner: Note | null;
     dash: number[] | null;
     orientation: string | null;
+    letRing: boolean;
 };
 export type SlurConnector = {
     bezier: DocumentBezier | null;

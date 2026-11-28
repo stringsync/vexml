@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_guitar-rh-fingering-italic.png",
+	"width": 932,
+	"height": 294,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 525,
+				"y": 132
+			},
+			"to": {
+				"x": 537,
+				"y": 142
+			},
+			"label": "Pluck 1",
+			"note": "Pluck 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 560,
+				"y": 124
+			},
+			"to": {
+				"x": 572,
+				"y": 134
+			},
+			"label": "Pluck 2",
+			"note": "Pluck 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 595,
+				"y": 132
+			},
+			"to": {
+				"x": 607,
+				"y": 139
+			},
+			"label": "Pluck 3",
+			"note": "Pluck 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 630,
+				"y": 132
+			},
+			"to": {
+				"x": 642,
+				"y": 139
+			},
+			"label": "Pluck 4",
+			"note": "Pluck 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

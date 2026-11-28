@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): rest-whole-bar-signatures (p. 160) — clef, 3 flats, 3/4 + whole-bar rest -->
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <key><fifths>-3</fifths></key>
+        <time><beats>3</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note><rest measure="yes"/><duration>12</duration></note>
+    </measure>
+
+    <!-- M2 (index 1): rest-whole-bar-signatures (p. 160) — whole-bar rest with trailing courtesy bass clef -->
+    <measure number="2">
+      <note><rest measure="yes"/><duration>12</duration></note>
+    </measure>
+
+    <!-- M3 (index 2): bass clef anchor for M2's trailing clef -->
+    <measure number="3">
+      <attributes>
+        <clef><sign>F</sign><line>4</line></clef>
+      </attributes>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>3</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>E</step><alter>-1</alter><octave>3</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M4-M8 (indices 3-7): rest-whole-bar-breve (p. 160) — 3/16, 9/8, 3/2 semibreve vs 4/2, 5/2 breve -->
+    <measure number="4">
+      <print new-system="yes"/>
+      <attributes>
+        <key><fifths>0</fifths></key>
+        <time><beats>3</beats><beat-type>16</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note><rest measure="yes"/><duration>3</duration></note>
+    </measure>
+
+    <measure number="5">
+      <attributes>
+        <time><beats>9</beats><beat-type>8</beat-type></time>
+      </attributes>
+      <note><rest measure="yes"/><duration>18</duration></note>
+    </measure>
+
+    <measure number="6">
+      <attributes>
+        <time><beats>3</beats><beat-type>2</beat-type></time>
+      </attributes>
+      <note><rest measure="yes"/><duration>24</duration></note>
+    </measure>
+
+    <measure number="7">
+      <attributes>
+        <time><beats>4</beats><beat-type>2</beat-type></time>
+      </attributes>
+      <note><rest measure="yes"/><duration>32</duration></note>
+    </measure>
+
+    <measure number="8">
+      <attributes>
+        <time><beats>5</beats><beat-type>2</beat-type></time>
+      </attributes>
+      <note><rest measure="yes"/><duration>40</duration></note>
+    </measure>
+
+    <!-- M9 (index 8): rest-semibreve-half-bar (p. 160) — semibreve rest at start of half-bar in 4/2 -->
+    <measure number="9">
+      <print new-system="yes"/>
+      <attributes>
+        <time><beats>4</beats><beat-type>2</beat-type></time>
+      </attributes>
+      <note><rest/><duration>16</duration><type>whole</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
+    </measure>
+  </part>
+</score-partwise>

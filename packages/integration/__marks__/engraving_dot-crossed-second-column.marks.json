@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_dot-crossed-second-column.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 260.8,
+				"y": 596
+			},
+			"to": {
+				"x": 272.8,
+				"y": 606
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 249,
+				"y": 591
+			},
+			"to": {
+				"x": 261,
+				"y": 601
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 275,
+				"y": 599
+			},
+			"to": {
+				"x": 279,
+				"y": 603
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 275,
+				"y": 589
+			},
+			"to": {
+				"x": 279,
+				"y": 593
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 272,
+				"y": 566
+			},
+			"to": {
+				"x": 273,
+				"y": 601
+			},
+			"label": "Stem",
+			"note": "Stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 249,
+				"y": 596
+			},
+			"to": {
+				"x": 250,
+				"y": 631
+			},
+			"label": "Stem",
+			"note": "Stem",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

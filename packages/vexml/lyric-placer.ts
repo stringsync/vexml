@@ -2,6 +2,10 @@ import { Rect } from 'core/geometry';
 import type { RenderContext, Stave, StaveNote } from 'vexflow/core';
 import type { CollisionResolver } from './collision-resolver';
 import { LYRIC_LINE_HEIGHT, LYRIC_PADDING } from './constants';
+import {
+	drawSystemHyphens as drawHyphensForSystem,
+	type RestSpan,
+} from './lyric-hyphens';
 import { isLyricMark, type LyricMark } from './lyric-mark';
 import type { VoiceTranslator } from './voice-translator';
 
@@ -31,6 +35,7 @@ export interface PinnedSyllable {
 	readonly verseIndex: number;
 	readonly textSize: number;
 	readonly lyric: LyricMark;
+	melismaEndX?: number;
 }
 
 type PinOptions = {
@@ -56,6 +61,7 @@ export class LyricPlacer {
 	private observedLyricDrops = new Map<string, number>();
 	private readonly steppedSystems = new Set<number>();
 	private readonly pinned: PinnedSyllable[] = [];
+	private readonly rests = new Map<number, Map<number, RestSpan[]>>();
 
 	constructor(
 		private readonly translator: VoiceTranslator,
@@ -133,6 +139,7 @@ export class LyricPlacer {
 		opts: PinOptions = {},
 	): void {
 		const { system = 0 } = opts;
+		this.recordRests(system, row, notes);
 		const lyricNotes = notes
 			.map((note) => ({ note, lyrics: this.lyricsOf(note) }))
 			.filter(({ lyrics }) => lyrics.length > 0);
@@ -190,7 +197,7 @@ export class LyricPlacer {
 					w,
 					lyric.textSize,
 				);
-				this.collisionResolver.add({ rect, kind: 'annotation', band: row });
+				this.collisionResolver.add({ rect, kind: 'lyric', band: row });
 				this.pinned.push({
 					stave: note.checkStave(),
 					system,
@@ -205,7 +212,28 @@ export class LyricPlacer {
 			}
 		}
 		this.drawMelismas(notes, row, baseline, system);
-		this.drawHyphens(notes);
+	}
+
+	private recordRests(system: number, row: number, notes: StaveNote[]): void {
+		let byRow = this.rests.get(system);
+		for (const note of notes) {
+			if (typeof note.isRest === 'function' && note.isRest()) {
+				if (!byRow) {
+					byRow = new Map();
+					this.rests.set(system, byRow);
+				}
+				let spans = byRow.get(row);
+				if (!spans) {
+					spans = [];
+					byRow.set(row, spans);
+				}
+				const beginX = note.getNoteHeadBeginX();
+				const endX = note.getNoteHeadEndX();
+				const ticks =
+					typeof note.getTicks === 'function' ? note.getTicks().value() : 0;
+				spans.push({ x: (beginX + endX) / 2, ticks });
+			}
+		}
 	}
 
 	/** Resolve a verse baseline, then apply only this syllable's relative-y. */
@@ -314,66 +342,27 @@ export class LyricPlacer {
 						x2 - x1,
 						Math.max(2, this.extendWidth),
 					),
-					kind: 'annotation',
+					kind: 'lyric',
 					band: row,
 				});
+				const pinned = this.pinned.find((p) => p.lyric === lyric);
+				if (pinned) {
+					pinned.melismaEndX = x2;
+				}
 			}
 		}
 	}
 
-	/*
-	 * The hyphens a document's hyphen distance asks for between a word's syllables: a syllable
-	 * already ends in one, and a gap to the next syllable of its verse wider than the distance
-	 * gets as many more as keep every stretch between them within it, spread evenly from the
-	 * syllable's hyphen to the next syllable's ink.
-	 *
-	 * ponytail: like the melisma line, only a next syllable on the same stave counts; a word
-	 * broken across a barline or a system keeps its one hyphen.
-	 */
-	private drawHyphens(notes: StaveNote[]): void {
-		const distance = this.hyphenDistance;
-		if (distance === null) {
-			return;
-		}
-		for (const [i, note] of notes.entries()) {
-			for (const lyric of this.lyricsOf(note)) {
-				if (!lyric.hyphenated) {
-					continue;
-				}
-				const nextNote = notes.find(
-					(n, j) =>
-						j > i &&
-						this.lyricsOf(n).some((l) => l.verseIndex === lyric.verseIndex),
-				);
-				const next = nextNote
-					? this.lyricsOf(nextNote).find(
-							(l) => l.verseIndex === lyric.verseIndex,
-						)
-					: undefined;
-				if (!nextNote || !next) {
-					continue;
-				}
-				const from =
-					lyric.boxLeft(note.getNoteHeadBeginX(), note.getNoteHeadEndX()) +
-					lyric.getWidth() -
-					LYRIC_PADDING;
-				const to =
-					next.boxLeft(
-						nextNote.getNoteHeadBeginX(),
-						nextNote.getNoteHeadEndX(),
-					) + LYRIC_PADDING;
-				const extra = Math.floor((to - from) / distance);
-				this.context.save();
-				this.context.setFillStyle(this.notationColor);
-				for (let k = 1; k <= extra; k++) {
-					lyric.drawHyphen(
-						this.context,
-						from + ((to - from) * k) / (extra + 1),
-					);
-				}
-				this.context.restore();
-			}
-		}
+	/* Draw centred and rest-aware hyphens for all verses of `system`. */
+	drawSystemHyphens(system: number): void {
+		drawHyphensForSystem({
+			system,
+			pinned: this.pinned,
+			restsByRow: this.rests.get(system),
+			hyphenDistance: this.hyphenDistance,
+			notationColor: this.notationColor,
+			context: this.context,
+		});
 	}
 
 	/* Modifiers come back in the order they were attached, which is verse order. */
@@ -417,6 +406,7 @@ export class LyricPlacer {
 	/* Forget what `system` observed, as its redraw observes it afresh. */
 	forgetSystem(system: number): void {
 		this.steppedSystems.delete(system);
+		this.rests.delete(system);
 		for (const key of this.observedDropsOf(system).keys()) {
 			this.observedLyricDrops.delete(key);
 		}

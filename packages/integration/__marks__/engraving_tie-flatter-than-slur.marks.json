@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tie-flatter-than-slur.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 300,
+				"y": 130
+			},
+			"to": {
+				"x": 356,
+				"y": 137
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 433,
+				"y": 132
+			},
+			"to": {
+				"x": 498,
+				"y": 144
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

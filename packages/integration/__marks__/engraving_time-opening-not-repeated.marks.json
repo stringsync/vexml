@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_time-opening-not-repeated.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 36,
+				"y": 82
+			},
+			"to": {
+				"x": 63,
+				"y": 152
+			},
+			"label": "Clef",
+			"note": "Clef",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 73,
+				"y": 82
+			},
+			"to": {
+				"x": 94,
+				"y": 125
+			},
+			"label": "Key",
+			"note": "Key",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 110,
+				"y": 96
+			},
+			"to": {
+				"x": 127,
+				"y": 136
+			},
+			"label": "Time",
+			"note": "Time",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

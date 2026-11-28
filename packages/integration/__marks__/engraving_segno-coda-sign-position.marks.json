@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_segno-coda-sign-position.png",
+	"width": 958,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 430,
+				"y": 378
+			},
+			"to": {
+				"x": 447,
+				"y": 403
+			},
+			"label": "Segno m16",
+			"note": "Segno m16",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 539,
+				"y": 373
+			},
+			"to": {
+				"x": 569,
+				"y": 407
+			},
+			"label": "Coda m17",
+			"note": "Coda m17",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

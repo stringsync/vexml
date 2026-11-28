@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_chord-stem-majority.png",
+	"width": 932,
+	"height": 882,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 515,
+				"y": 121
+			},
+			"to": {
+				"x": 527,
+				"y": 131
+			},
+			"label": "M3 G/4",
+			"note": "M3 G/4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 526.4,
+				"y": 116
+			},
+			"to": {
+				"x": 538.4,
+				"y": 126
+			},
+			"label": "M3 A/4",
+			"note": "M3 A/4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 515,
+				"y": 101
+			},
+			"to": {
+				"x": 527,
+				"y": 111
+			},
+			"label": "M3 D/5",
+			"note": "M3 D/5",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 526,
+				"y": 71
+			},
+			"to": {
+				"x": 527,
+				"y": 126
+			},
+			"label": "M3 stem",
+			"note": "M3 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 728.5,
+				"y": 121
+			},
+			"to": {
+				"x": 740.5,
+				"y": 131
+			},
+			"label": "M4 G/4",
+			"note": "M4 G/4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 717.1,
+				"y": 106
+			},
+			"to": {
+				"x": 729.1,
+				"y": 116
+			},
+			"label": "M4 C/5",
+			"note": "M4 C/5",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 728.5,
+				"y": 101
+			},
+			"to": {
+				"x": 740.5,
+				"y": 111
+			},
+			"label": "M4 D/5",
+			"note": "M4 D/5",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 728,
+				"y": 106
+			},
+			"to": {
+				"x": 730,
+				"y": 161
+			},
+			"label": "M4 stem",
+			"note": "M4 stem",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

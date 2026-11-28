@@ -2,10 +2,10 @@ import {
 	type CurveOptions,
 	GraceNote,
 	type Note,
-	type StaveNote,
+	StaveNote,
 } from 'vexflow/core';
-import { GRACE_START } from './constants';
-import { CrispCurve } from './crisp-curve';
+import { GRACE_END_STEM_GAP, GRACE_START } from './constants';
+import { CrispCurve, type CurveReach } from './crisp-curve';
 import type { DocumentBezier } from './score-reader';
 
 /*
@@ -29,7 +29,7 @@ export class HeadCurve extends CrispCurve {
 			fromY: number;
 			toY: number;
 			bezier?: DocumentBezier | null;
-			reach?: { start: boolean; end: boolean };
+			reach?: { start: CurveReach; end: CurveReach };
 			openX?: number;
 		},
 	) {
@@ -48,12 +48,13 @@ export class HeadCurve extends CrispCurve {
 		if (!stave) {
 			return false;
 		}
+		const above = this.renderOptions.openingDirection === 'down';
 		this.renderCurve({
 			firstX: from ? startX(from) : stave.getTieStartX(),
-			lastX: to ? to.getTieLeftX() : stave.getTieEndX(),
+			lastX: to ? endX(to, from, above) : stave.getTieEndX(),
 			firstY: this.fromY,
 			lastY: this.toY,
-			direction: this.renderOptions.openingDirection === 'down' ? -1 : 1,
+			direction: above ? -1 : 1,
 		});
 		return true;
 	}
@@ -70,4 +71,22 @@ function startX(note: Note): number {
 	}
 	const left = note.getNoteHeadBeginX();
 	return left + (note.getNoteHeadEndX() - left) * GRACE_START;
+}
+
+/*
+ * Where the curve lands on its target note. An above-curving grace slur centres on the
+ * target notehead so it clears any accidental to the note's left and reads as landing on
+ * the resolving pitch (Behind Bars p. 130). A below-curving grace slur into a down-stem
+ * note stops short of the left-edge stem so the tip keeps clear space before the anchor.
+ */
+function endX(note: Note, from: Note | undefined, above: boolean): number {
+	if (from instanceof GraceNote && note instanceof StaveNote) {
+		if (above) {
+			return (note.getNoteHeadBeginX() + note.getNoteHeadEndX()) / 2;
+		}
+		if (note.hasStem() && note.getStemDirection() === -1) {
+			return note.getTieLeftX() - GRACE_END_STEM_GAP;
+		}
+	}
+	return note.getTieLeftX();
 }

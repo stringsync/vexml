@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_dot-ledger-position.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 427.4,
+				"y": 81
+			},
+			"to": {
+				"x": 439.4,
+				"y": 91
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 444,
+				"y": 79
+			},
+			"to": {
+				"x": 448,
+				"y": 83
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

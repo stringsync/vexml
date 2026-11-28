@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tuplet-bracket-outside-stave.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 83,
+				"y": 327
+			},
+			"to": {
+				"x": 199,
+				"y": 346
+			},
+			"label": "low up-stem",
+			"note": "low up-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 223,
+				"y": 207
+			},
+			"to": {
+				"x": 339,
+				"y": 226
+			},
+			"label": "high down-stem",
+			"note": "high down-stem",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

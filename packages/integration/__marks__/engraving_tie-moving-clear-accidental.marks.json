@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-moving-clear-accidental.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 229,
+				"y": 768
+			},
+			"to": {
+				"x": 262,
+				"y": 774
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

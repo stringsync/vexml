@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_string-scordatura-pitches.png",
+	"width": 932,
+	"height": 472,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 439,
+				"y": 56
+			},
+			"to": {
+				"x": 629,
+				"y": 72
+			},
+			"label": "Scordatura",
+			"note": "Scordatura",
+			"role": "measure",
+			"pass": false
+		}
+	]
+}

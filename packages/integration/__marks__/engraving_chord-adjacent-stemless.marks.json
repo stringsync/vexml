@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_chord-adjacent-stemless.png",
+	"width": 932,
+	"height": 882,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 264.2,
+				"y": 436
+			},
+			"to": {
+				"x": 281.2,
+				"y": 446
+			},
+			"label": "M10 A/4: left",
+			"note": "M10 A/4: left",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 280.6,
+				"y": 431
+			},
+			"to": {
+				"x": 297.6,
+				"y": 441
+			},
+			"label": "M10 B/4: right",
+			"note": "M10 B/4: right",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): key-placement-order (p. 91) — clef, key, time at start of system -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>3</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+
+    <!-- M2 (index 1): key-spacing-sharps (p. 92) — 4 sharps (no cancelling naturals from 3 sharps) -->
+    <measure number="2">
+      <attributes>
+        <key><fifths>4</fifths></key>
+      </attributes>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+
+    <!-- M3 (index 2): key-change-after-barline & key-change-cancel-to-open (pp. 92-93) — 4 sharps -> C major -->
+    <measure number="3">
+      <attributes>
+        <key><fifths>0</fifths></key>
+      </attributes>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+
+    <!-- M4 (index 3): key-spacing-flats (p. 92) — 4 flats (no cancelling naturals from C major) -->
+    <measure number="4">
+      <attributes>
+        <key><fifths>-4</fifths></key>
+      </attributes>
+      <note><pitch><step>A</step><alter>-1</alter><octave>4</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+
+    <!-- M5-M6 (indices 4-5): key-change-cancel-order (pp. 92-93) — 4 flats -> 3 sharps -> 1 sharp -->
+    <measure number="5">
+      <print new-system="yes"/>
+      <attributes>
+        <key><fifths>3</fifths></key>
+      </attributes>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+    <measure number="6">
+      <attributes>
+        <key><fifths>1</fifths></key>
+      </attributes>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+
+    <!-- M7-M8 (indices 6-7): key-change-system-break (p. 93) — 3 flats -> 2 sharps across system break -->
+    <measure number="7">
+      <attributes>
+        <key><fifths>-3</fifths></key>
+      </attributes>
+      <note><pitch><step>E</step><alter>-1</alter><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+    <measure number="8">
+      <print new-system="yes"/>
+      <attributes>
+        <key><fifths>2</fifths></key>
+      </attributes>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+
+    <!-- M9-M10 (indices 8-9): key-clef-simultaneous (p. 93) — simultaneous bass clef + 2 sharps change -->
+    <measure number="9">
+      <attributes>
+        <key><fifths>-2</fifths></key>
+      </attributes>
+      <note><pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+    <measure number="10">
+      <attributes>
+        <key><fifths>2</fifths></key>
+        <clef><sign>F</sign><line>4</line></clef>
+      </attributes>
+      <note><pitch><step>D</step><octave>3</octave></pitch><duration>4</duration><type>whole</type></note>
+    </measure>
+
+    <!-- M11 (index 10): key-unconventional (p. 94) — custom key signature (F# and Bb) -->
+    <measure number="11">
+      <print new-system="yes"/>
+      <attributes>
+        <key>
+          <key-step>F</key-step><key-alter>1</key-alter>
+          <key-step>B</key-step><key-alter>-1</key-alter>
+        </key>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>2</duration><type>half</type></note>
+      <note><pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch><duration>2</duration><type>half</type></note>
+    </measure>
+  </part>
+</score-partwise>

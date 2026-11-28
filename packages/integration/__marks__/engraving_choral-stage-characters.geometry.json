@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_choral-stage-characters.png",
+	"measures": [{ "index": 0, "system": 0, "x": 31, "w": 870 }],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [125, 135, 145, 155, 165],
+			"x": 31,
+			"w": 870
+		},
+		{
+			"part": 1,
+			"measure": 0,
+			"staff": 1,
+			"lines": [252, 262, 272, 282, 292],
+			"x": 31,
+			"w": 870
+		}
+	]
+}

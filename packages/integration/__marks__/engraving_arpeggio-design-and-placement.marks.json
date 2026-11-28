@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_arpeggio-design-and-placement.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 112,
+				"y": 101
+			},
+			"to": {
+				"x": 165,
+				"y": 145
+			},
+			"label": "Arpeggiated chord",
+			"note": "Arpeggiated chord",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

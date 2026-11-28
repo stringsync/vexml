@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_kbd-tie-cross-staff.png",
+	"width": 932,
+	"height": 344,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 667,
+				"y": 141
+			},
+			"to": {
+				"x": 679,
+				"y": 151
+			},
+			"label": "Downward start",
+			"note": "Downward start",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 723.8,
+				"y": 183
+			},
+			"to": {
+				"x": 735.8,
+				"y": 193
+			},
+			"label": "Downward stop",
+			"note": "Downward stop",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 677,
+				"y": 155
+			},
+			"to": {
+				"x": 726,
+				"y": 199
+			},
+			"label": "Downward tie",
+			"note": "Downward tie",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 787,
+				"y": 183
+			},
+			"to": {
+				"x": 799,
+				"y": 193
+			},
+			"label": "Upward start",
+			"note": "Upward start",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 843.8,
+				"y": 141
+			},
+			"to": {
+				"x": 855.8,
+				"y": 151
+			},
+			"label": "Upward stop",
+			"note": "Upward stop",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 801,
+				"y": 135
+			},
+			"to": {
+				"x": 846,
+				"y": 179
+			},
+			"label": "Upward tie",
+			"note": "Upward tie",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

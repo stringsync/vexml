@@ -1,6 +1,7 @@
 // vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
 import type { DocumentLayoutMode, SystemOverflow } from '@stringsync/vexml';
 import completeScores from '@vexml/benchmarks/manifest.json';
+import { cn } from 'cn';
 import { useDisposerEffect, useReactive, useResource } from 'core/react';
 import {
 	ChevronRightIcon,
@@ -103,6 +104,7 @@ const OVERFLOWS: ReadonlyArray<SegmentedOption<SystemOverflow>> = [
 
 export default function App() {
 	const containerRef = useRef<HTMLDivElement>(null);
+	const scrollRef = useRef<HTMLDivElement>(null);
 	const playerRef = useRef<HTMLDivElement>(null);
 	const model = useResource(() => new SiteModel(fixtures, localStorage), []);
 	const {
@@ -138,7 +140,7 @@ export default function App() {
 
 	const layoutType = config.layout?.type ?? 'standard';
 	// Panoramic draws one endless system, so the knobs that decide where a line breaks belong to
-	// the stacked view alone. Both views still fit the same scroll box above the player.
+	// the stacked view alone.
 	const panoramic = layoutType === 'panoramic';
 	const layout = config.layout?.type === 'standard' ? config.layout : undefined;
 	const noteSpacing = config.noteSpacing ?? DEFAULT_NOTE_SPACING;
@@ -190,23 +192,28 @@ export default function App() {
 	useEffect(() => {
 		const container = containerRef.current;
 		if (container) {
-			model.renderInto(container, { input, format, config: applied });
+			model.renderInto(container, {
+				input,
+				format,
+				config: applied,
+				scrollContainer: isMobile ? scrollRef.current : null,
+			});
 		}
-	}, [model, input, format, applied]);
+	}, [model, input, format, applied, isMobile]);
 
-	// Size the score's scroll box to the gap above the player controls, once both exist.
+	// Fit the desktop score card above the transport. On phones the outer area scrolls.
 	// A disposer effect, not useResource: this really does acquire a ResizeObserver and a window
 	// listener, which must not happen during render.
 	useDisposerEffect(
 		(disposer) => {
 			const container = containerRef.current;
 			const player = playerRef.current;
-			if (!initialized || !container || !player) {
+			if (isMobile || !initialized || !container || !player) {
 				return;
 			}
 			disposer.use(new ScoreFit(container, player, model.config));
 		},
-		[model, initialized],
+		[model, initialized, isMobile],
 	);
 
 	// Spacebar toggles playback, except while typing in the editor.
@@ -811,10 +818,16 @@ export default function App() {
 							onDragOver={onDragOver}
 							onDragLeave={onDragLeave}
 							onDrop={onDrop}
-							className={`h-full overflow-auto border-2 border-dashed px-4 pt-3 md:px-10 md:py-5 ${dragging ? 'border-brand bg-brand/5' : 'border-transparent'}`}
+							ref={scrollRef}
+							className={cn(
+								'h-full overflow-auto md:border-2 md:border-dashed md:px-10 md:py-5',
+								dragging
+									? 'bg-brand/5 max-md:ring-2 max-md:ring-brand max-md:ring-inset md:border-brand'
+									: 'max-md:bg-card md:border-transparent',
+							)}
 						>
 							{held && (
-								<Card className="mx-auto mt-10 max-w-md gap-3 px-6 py-5">
+								<Card className="mx-4 mt-10 max-w-md gap-3 px-6 py-5 sm:mx-auto">
 									<p className="font-medium">
 										Your saved score wasn't rendered
 									</p>
@@ -854,20 +867,18 @@ export default function App() {
 									aria-label="Score"
 									// invisible (not hidden) until initialized so the container keeps its
 									// width: the canvas fits against it and would fit against 0 if removed.
-									// Panoramic is the horizontal scroll box itself: vexml's ScrollController
-									// scrolls this container either way, and the measured cap already ends it
-									// above the player, so the scrollbar lands somewhere reachable. The card
-									// wraps the panorama rather than filling the space: w-fit hugs the music
-									// (the height cap does the same vertically) and max-w-full stops a long one
-									// from pushing past the space, leaving it to scroll. It also drops the
-									// page-width cap: a panorama has no page to be as wide as.
-									className={`relative mx-auto rounded-t-2xl border border-border bg-card px-6 py-8 shadow-score focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-4 focus-visible:ring-offset-background md:rounded-2xl md:px-12 md:py-14 ${panoramic ? 'w-fit max-w-full overflow-x-auto' : 'w-full max-w-237.5'} ${initialized ? '' : 'invisible'}`}
+									// A phone's outer score area scrolls either layout. On desktop the
+									// panorama has its own horizontal scrollbar, inside the paper.
+									className={cn(
+										'relative mx-auto bg-card px-3 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 max-md:focus-visible:ring-inset md:rounded-2xl md:border md:border-border md:px-12 md:py-14 md:shadow-score md:focus-visible:ring-offset-4 md:focus-visible:ring-offset-background',
+										panoramic
+											? 'w-max min-w-full md:w-fit md:min-w-0 md:max-w-full md:overflow-x-auto'
+											: 'w-full md:max-w-237.5',
+										!initialized && 'invisible',
+									)}
 								/>
 							)}
 						</div>
-						{/* Below md the score card runs into the player rather than ending above
-						    it, so the music fades out instead of being cut off mid-staff. */}
-						<div className="pointer-events-none absolute inset-x-0 bottom-0 h-15 bg-linear-to-b from-transparent to-background md:hidden" />
 					</div>
 
 					{input != null && initialized && (

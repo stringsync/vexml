@@ -122,12 +122,17 @@ export class SignatureTranslator {
 	/*
 	 * The key a change from `prevKey` to `key` cancels with naturals, or null when it cancels
 	 * none. A <cancel> names the cancelled key by its fifths and may move the naturals after the
-	 * new key or before the barline. Without one, the key being replaced is cancelled, left of
-	 * the new key: the spec says that always happens on a change to C major or A minor, and it
-	 * is how vexml has drawn every other change too.
+	 * new key or before the barline. Without one, a change to C major or A minor (0 fifths)
+	 * cancels the previous key with naturals, and a cautionary key at a system end does too
+	 * (`cautionary`); a mid-system change between two keys that both carry accidentals prints
+	 * the new key alone (contemporary practice).
 	 */
 	// vet-ignore noop-objects-over-null: a measure can lack a key signature; absence is score data
-	keyCancel(key: Key | null, prevKey: Key | null): KeyCancel | null {
+	keyCancel(
+		key: Key | null,
+		prevKey: Key | null,
+		cautionary = false,
+	): KeyCancel | null {
 		const cancel = key?.child('cancel');
 		const spec = FIFTHS_KEYS[Number(cancel?.text?.trim()) + 7];
 		if (cancel && spec) {
@@ -140,9 +145,13 @@ export class SignatureTranslator {
 						: 'left',
 			};
 		}
-		return prevKey?.rootNote
-			? { spec: this.vexflowKeySpec(prevKey), location: 'left' }
-			: null;
+		if (!prevKey?.rootNote) {
+			return null;
+		}
+		if (!cautionary && (key?.fifths ?? 0) !== 0) {
+			return null;
+		}
+		return { spec: this.vexflowKeySpec(prevKey), location: 'left' };
 	}
 
 	// A dotted-note denominator is the beat of a compound meter: 6/8 reads as 2 over a dotted
@@ -196,6 +205,40 @@ export class SignatureTranslator {
 			});
 		}
 		return out;
+	}
+
+	/*
+	 * Each pitch step's alteration in `key` (1 sharp, -1 flat, 0 natural, ...), omitting
+	 * unaltered steps. Empty for C major / A minor or a missing key.
+	 */
+	keyAlters(key: Key | null): ReadonlyMap<string, number> {
+		const alters = new Map<string, number>();
+		if (!key) {
+			return alters;
+		}
+		if (key.alterations.length > 0) {
+			for (const alteration of key.alterations) {
+				alters.set(alteration.step, alteration.alter);
+			}
+			return alters;
+		}
+		const fifths = key.fifths ?? 0;
+		if (fifths > 0) {
+			for (let i = 0; i < Math.min(fifths, SHARP_STEPS.length); i++) {
+				const step = SHARP_STEPS[i];
+				if (step) {
+					alters.set(step, 1);
+				}
+			}
+		} else if (fifths < 0) {
+			for (let i = 0; i < Math.min(-fifths, FLAT_STEPS.length); i++) {
+				const step = FLAT_STEPS[i];
+				if (step) {
+					alters.set(step, -1);
+				}
+			}
+		}
+		return alters;
 	}
 
 	/*
@@ -300,10 +343,9 @@ export class SignatureTranslator {
 	}
 
 	/*
-	 * MusicXML <clef-octave-change> -> vexflow clef annotation ('8va'/'8vb'), drawn as
-	 * the small octave numeral above/below the clef glyph. vexflow only carries an octave
-	 * annotation on G/F clefs, so ±2 (15ma/mb) and other clefs fall back to no annotation.
-	 * ponytail: octave only; add 15ma/mb if a fixture ever needs it.
+	 * MusicXML <clef-octave-change> -> vexflow clef annotation ('8va'/'8vb'/'15ma'/'15mb'),
+	 * drawn as the small octave numeral above/below the clef glyph. vexflow only carries an
+	 * octave annotation on G/F clefs, so other clefs and larger shifts fall back to no annotation.
 	 */
 	vexflowClefAnnotation(octaveChange: number | null): string | undefined {
 		if (octaveChange === 1) {
@@ -311,6 +353,12 @@ export class SignatureTranslator {
 		}
 		if (octaveChange === -1) {
 			return '8vb';
+		}
+		if (octaveChange === 2) {
+			return '15ma';
+		}
+		if (octaveChange === -2) {
+			return '15mb';
 		}
 		return undefined;
 	}
@@ -382,6 +430,9 @@ const FIFTHS_KEYS = [
 	'F#',
 	'C#',
 ];
+
+const SHARP_STEPS = ['F', 'C', 'G', 'D', 'A', 'E', 'B'] as const;
+const FLAT_STEPS = ['B', 'E', 'A', 'D', 'G', 'C', 'F'] as const;
 
 const SEPARATORS: ReadonlySet<string> = new Set([
 	'horizontal',

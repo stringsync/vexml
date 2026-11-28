@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tremolo-two-note-stems.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 327,
+				"y": 134
+			},
+			"to": {
+				"x": 341,
+				"y": 158
+			},
+			"label": "Tremolo 1",
+			"note": "Tremolo 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 378,
+				"y": 129
+			},
+			"to": {
+				"x": 391,
+				"y": 154
+			},
+			"label": "Tremolo 2",
+			"note": "Tremolo 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

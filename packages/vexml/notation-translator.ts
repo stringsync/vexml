@@ -9,25 +9,30 @@ import {
 	type Technical,
 } from '@stringsync/mdom';
 import {
+	Accidental,
+	Metrics,
 	Modifier,
 	Ornament,
 	type StaveNote,
 	Stroke,
-	Tremolo,
 } from 'vexflow/core';
 import { ACCIDENTAL_CODES } from './chord-translator';
-import { FERMATA_GLYPHS } from './fermata-glyphs';
+import { FERMATA_GLYPHS, NORMAL_FERMATA_GLYPHS } from './fermata-glyphs';
 import { FingeringAnnotation } from './fingering-annotation';
 import { FontFamilies } from './font-families';
 import { fontScaleOf } from './font-scale';
 import { FootnoteAnnotation } from './footnote-annotation';
+import { harmonicPitchOf } from './harmonic-kind';
 import { LyricAnnotation } from './lyric-annotation';
 import type { LyricJustify } from './lyric-mark';
 import { NonArpeggioBracket } from './non-arpeggio-bracket';
 import { NoteheadArticulation } from './notehead-articulation';
+import { PauseMark } from './pause-mark';
 import type { ScoreReader } from './score-reader';
 import { smuflGlyph } from './smufl';
-import { StaveArticulation } from './stave-articulation';
+import { StaveArticulation, type TieClearance } from './stave-articulation';
+import { StaveOrnament } from './stave-ornament';
+import { StaveTremolo } from './stave-tremolo';
 import { StringNumberAnnotation } from './string-number-annotation';
 import { UnbrokenArpeggio } from './unbroken-arpeggio';
 
@@ -54,9 +59,10 @@ export class NotationTranslator {
 		const lead = chord.lead;
 		// <notations print-object="no"> hides every mark it holds; the lyrics are a sibling.
 		if (!this.hidesNotations(lead)) {
-			this.addArticulations(staveNote, lead);
+			this.addArticulations(staveNote, chord);
 			this.addTechnicals(staveNote, chord);
-			this.addOrnaments(staveNote, lead);
+			this.addOrnaments(staveNote, chord);
+			this.addAccidentalMarks(staveNote, lead);
 			this.addFermata(staveNote, lead);
 			this.addArpeggio(staveNote, lead);
 			this.addNonArpeggiate(staveNote, chord);
@@ -78,6 +84,13 @@ export class NotationTranslator {
 		}
 	}
 
+	/* Grace notes carry scaled-down articulations placed outside the stave (Behind Bars p. 130). */
+	attachGrace(graceNote: StaveNote, chord: Chord): void {
+		if (!this.hidesNotations(chord.lead)) {
+			this.addArticulations(graceNote, chord);
+		}
+	}
+
 	private hidesNotations(note: Note): boolean {
 		const groups = note.childrenNamed('notations');
 		return (
@@ -86,8 +99,19 @@ export class NotationTranslator {
 		);
 	}
 
-	private addArticulations(staveNote: StaveNote, note: Note): void {
-		for (const name of note.articulations) {
+	private addArticulations(staveNote: StaveNote, chord: Chord): void {
+		const note = chord.lead;
+		const isGrace = note.isGrace;
+		const tieSides = this.tieClearanceOf(chord);
+		let slurSides: TieClearance | undefined;
+		const slurClearance = (): TieClearance => {
+			if (slurSides === undefined) {
+				slurSides = this.slurClearanceOf(chord);
+			}
+			return slurSides;
+		};
+		for (const mark of note.articulationMarks) {
+			const name = mark.articulationType;
 			const brush = BRUSH_ORNAMENTS[name];
 			if (brush) {
 				const ornament = new Ornament(brush.type);
@@ -97,20 +121,88 @@ export class NotationTranslator {
 				staveNote.addModifier(ornament);
 				continue;
 			}
-			const measureMark = MEASURE_MARK_GLYPHS[name];
-			if (measureMark) {
+			if (name === 'breath-mark' || name === 'caesura') {
+				// <breath-mark>tick</breath-mark> draws the tick; anything else the comma.
+				const kind =
+					name === 'breath-mark' && mark.text?.trim() === 'tick'
+						? 'breath-tick'
+						: name;
 				staveNote.addModifier(
-					new StaveArticulation(measureMark).setPosition(
-						Modifier.Position.ABOVE,
+					new PauseMark(kind, mark.placement === 'below' ? 'below' : 'above'),
+				);
+				continue;
+			}
+			if (name === 'strong-accent') {
+				// Behind Bars p. 117 (artic-strong-above): strong accents sit upright above
+				// the stave regardless of stem direction unless MusicXML asks for below.
+				const position =
+					mark.placement === 'below'
+						? Modifier.Position.BELOW
+						: Modifier.Position.ABOVE;
+				staveNote.addModifier(
+					this.styleGraceArticulation(
+						new StaveArticulation('a^')
+							.setPosition(position)
+							.clearTie(tieSides)
+							.clearSlur(slurClearance()),
+						staveNote,
+						isGrace,
+					),
+				);
+				continue;
+			}
+			if (
+				name === 'tenuto' &&
+				(mark.placement === 'above' || mark.placement === 'below')
+			) {
+				// Behind Bars p. 122 (slur-tenuto-centre-head): honour explicit
+				// tenuto placement so stem-side tenutos sit between stem and slur.
+				const position =
+					mark.placement === 'above'
+						? Modifier.Position.ABOVE
+						: Modifier.Position.BELOW;
+				staveNote.addModifier(
+					this.styleGraceArticulation(
+						new StaveArticulation('a-')
+							.setPosition(position)
+							.clearTie(tieSides),
+						staveNote,
+						isGrace,
 					),
 				);
 				continue;
 			}
 			const code = ARTICULATION_CODES[name];
 			if (code) {
-				staveNote.addModifier(
-					new NoteheadArticulation(code).setSide(staveNote),
-				);
+				const articulation = new NoteheadArticulation(code)
+					.setSide(staveNote)
+					.clearTie(tieSides);
+				if (isGrace) {
+					if (mark.placement === 'above' || mark.placement === 'below') {
+						articulation.setPosition(
+							mark.placement === 'above'
+								? Modifier.Position.ABOVE
+								: Modifier.Position.BELOW,
+						);
+						if (Array.isArray(code)) {
+							articulation.setText(
+								mark.placement === 'above' ? code[0] : code[1],
+							);
+						}
+					}
+					this.styleGraceArticulation(articulation, staveNote, true);
+				} else if (name === 'staccato') {
+					articulation.setBetweenLines();
+				} else if (name === 'accent') {
+					// Behind Bars p. 120 (artic-accent-outside-stave): accents sit outside the
+					// stave, and pp. 121–122 (slur-artic-accent-outside): outside slur endpoints.
+					articulation.setBetweenLines(false).clearSlur(slurClearance());
+				} else if (name === 'staccatissimo') {
+					// Behind Bars p. 120 (artic-accent-outside-stave): staccato wedges sit
+					// outside the stave rather than colliding with stave lines.
+					articulation.setBetweenLines(false);
+				}
+				staveNote.addModifier(articulation);
 			}
 		}
 		// <other-articulation>: its smufl glyph on the notehead side like any articulation,
@@ -123,14 +215,116 @@ export class NotationTranslator {
 			const glyph = smuflGlyph(other.getAttribute('smufl'));
 			if (glyph) {
 				staveNote.addModifier(
-					new NoteheadArticulation(
-						mirroredPair(other.getAttribute('smufl') ?? '') ?? glyph,
-					).setSide(staveNote),
+					this.styleGraceArticulation(
+						new NoteheadArticulation(
+							mirroredPair(other.getAttribute('smufl') ?? '') ?? glyph,
+						)
+							.setSide(staveNote)
+							.clearTie(tieSides),
+						staveNote,
+						isGrace,
+					),
 				);
 				continue;
 			}
 			this.addTextMark(staveNote, other);
 		}
+	}
+
+	/*
+	 * Behind Bars p. 130 (grace-articulation-outside): grace-note articulations draw
+	 * scaled down to the grace note's font scale and sit outside the stave so small marks
+	 * stay conspicuous.
+	 */
+	private styleGraceArticulation(
+		articulation: StaveArticulation,
+		staveNote: StaveNote,
+		isGrace: boolean,
+	): StaveArticulation {
+		if (!isGrace) {
+			return articulation;
+		}
+		articulation.setBetweenLines(false);
+		articulation.setFontSize(
+			articulation.fontSizeInPoints * staveNote.getFontScale(),
+		);
+		return articulation;
+	}
+
+	/* Which sides of `chord` carry a tie that a notehead-side articulation must clear. */
+	private tieClearanceOf(chord: Chord): TieClearance {
+		let above = false;
+		let below = false;
+		let notehead = false;
+		const heads = chord.notes.length;
+		const middle = (heads - 1) / 2;
+		chord.notes.forEach((member, index) => {
+			for (const tie of this.reader.tiesOf(member)) {
+				const orientation = tie.getAttribute('orientation');
+				if (orientation === 'over') {
+					above = true;
+				} else if (orientation === 'under') {
+					below = true;
+				} else if (heads === 1 || index === middle) {
+					notehead = true;
+				} else if (index > middle) {
+					above = true;
+				} else {
+					below = true;
+				}
+			}
+		});
+		if (above && below) {
+			return 'both';
+		}
+		if (notehead) {
+			return above || below ? 'both' : 'notehead';
+		}
+		if (above) {
+			return 'above';
+		}
+		return below ? 'below' : 'none';
+	}
+
+	/* Which sides of `chord` carry a slur endpoint that an accent must sit outside. */
+	private slurClearanceOf(chord: Chord): TieClearance {
+		if (chord.lead.isGrace) {
+			return 'none';
+		}
+		let above = false;
+		let below = false;
+		let notehead = false;
+		for (const member of chord.notes) {
+			for (const slur of member.slurs) {
+				if (slur.slurType !== 'start' && slur.slurType !== 'stop') {
+					continue;
+				}
+				// A stop marker rarely repeats placement or orientation; read them from its start.
+				const source =
+					slur.placement || slur.orientation || slur.slurType === 'start'
+						? slur
+						: (slur.partner ?? slur);
+				const placement = source.placement;
+				const orientation = source.orientation;
+				if (placement === 'above' || orientation === 'over') {
+					above = true;
+				} else if (placement === 'below' || orientation === 'under') {
+					below = true;
+				} else {
+					notehead = true;
+				}
+			}
+		}
+		if (above && below) {
+			return 'both';
+		}
+		if (notehead) {
+			return above || below ? 'both' : 'notehead';
+		}
+		if (above) {
+			return 'above';
+		}
+		return below ? 'below' : 'none';
 	}
 
 	/*
@@ -183,59 +377,118 @@ export class NotationTranslator {
 	 * slashes of a single-note <tremolo>.
 	 *
 	 * An <accidental-mark> is not an ornament of its own: it is the small sharp/flat drawn with
-	 * the ornament it follows (an F# turn), so it attaches to the last one built. MusicXML gives
-	 * each a placement, but the pair on a turn conventionally reads one above and one below, so
-	 * the first goes over the glyph and the second under it.
+	 * the ornament it follows (an F# turn), so it attaches to the last one built. An explicit
+	 * placement wins (above or below); with none, a mordent's lower-neighbour mark sits below
+	 * the sign and every other ornament's first mark sits above (Behind Bars p. 84), with a
+	 * second mark taking the remaining slot.
 	 * ponytail: <wavy-line> is left to the tab path (it becomes a Vibrato there). On a notation
 	 * stave a trill's extension line needs a start..stop spanner like buildWedges; add one when
 	 * a fixture needs the line rather than the "tr" alone.
 	 */
-	private addOrnaments(staveNote: StaveNote, note: Note): void {
-		let last: Ornament | undefined;
-		let accidentalMarks = 0;
-		for (const ornament of this.reader.ornamentsOf(note)) {
-			if (ornament.ornamentType === 'accidental-mark') {
-				const code = ACCIDENTAL_CODES[ornament.accidentalMark ?? ''];
-				if (last && code) {
-					if (accidentalMarks === 0) {
-						last.setUpperAccidental(code);
+	private addOrnaments(staveNote: StaveNote, chord: Chord): void {
+		// Ornaments are read from every chord member so a double trill on a single-stemmed
+		// chord renders two distinct `tr` signs (Behind Bars p. 135). Single-note tremolo
+		// slashes belong to the chord's shared stem, so they are read from the lead only.
+		for (const note of chord.notes) {
+			let last: Ornament | undefined;
+			let lastType: MOrnament['ornamentType'] | undefined;
+			let hasUpper = false;
+			let hasLower = false;
+			for (const ornament of this.reader.ornamentsOf(note)) {
+				if (ornament.ornamentType === 'accidental-mark') {
+					if (last) {
+						const code = ACCIDENTAL_CODES[ornament.accidentalMark ?? ''];
+						if (code) {
+							const preferredBelow =
+								ornament.placement === 'below' ||
+								(ornament.placement === null && lastType === 'mordent');
+							const below = preferredBelow ? !hasLower : hasUpper;
+							if (below) {
+								last.setLowerAccidental(code);
+								hasLower = true;
+							} else {
+								last.setUpperAccidental(code);
+								hasUpper = true;
+							}
+						}
 					} else {
-						last.setLowerAccidental(code);
+						this.addStandaloneAccidentalMark(staveNote, ornament);
 					}
-					accidentalMarks++;
-				}
-				continue;
-			}
-			if (ornament.ornamentType === 'tremolo') {
-				// <tremolo type="single">N</tremolo>: N slashes through the stem. The
-				// start/stop pair draws between its notes instead (SpannerBuilder.buildTremolos).
-				if (
-					ornament.tremoloType === 'start' ||
-					ornament.tremoloType === 'stop'
-				) {
 					continue;
 				}
-				staveNote.addModifier(new Tremolo(ornament.tremoloMarks || 1));
-				continue;
+				if (ornament.ornamentType === 'tremolo') {
+					// <tremolo type="single">N</tremolo>: N slashes through the stem. The
+					// start/stop pair draws between its notes instead (SpannerBuilder.buildTremolos).
+					if (
+						note !== chord.lead ||
+						ornament.tremoloType === 'start' ||
+						ornament.tremoloType === 'stop'
+					) {
+						continue;
+					}
+					const marks = ornament.tremoloMarks || 1;
+					staveNote.addModifier(new StaveTremolo(marks));
+					if (note.beams.length === 0) {
+						StaveTremolo.extendStem(staveNote, marks);
+					}
+					continue;
+				}
+				if (
+					ornament.ornamentType === 'other-ornament' &&
+					!smuflGlyph(ornament.getAttribute('smufl'))
+				) {
+					this.addTextMark(staveNote, ornament);
+					continue;
+				}
+				const type = ornamentGlyph(ornament);
+				if (!type) {
+					continue;
+				}
+				const placement =
+					ornament.placement === 'above' || ornament.placement === 'below'
+						? ornament.placement
+						: null;
+				last = new StaveOrnament(type, placement);
+				lastType = ornament.ornamentType;
+				hasUpper = false;
+				hasLower = false;
+				if (ornament.ornamentType.startsWith('delayed-')) {
+					last.setDelayed(true);
+				}
+				staveNote.addModifier(last);
 			}
-			if (
-				ornament.ornamentType === 'other-ornament' &&
-				!smuflGlyph(ornament.getAttribute('smufl'))
-			) {
-				this.addTextMark(staveNote, ornament);
-				continue;
-			}
-			const type = ornamentGlyph(ornament);
-			if (!type) {
-				continue;
-			}
-			last = new Ornament(type);
-			accidentalMarks = 0;
-			if (ornament.ornamentType.startsWith('delayed-')) {
-				last.setDelayed(true);
-			}
-			staveNote.addModifier(last);
 		}
+	}
+
+	/*
+	 * Standalone <notations><accidental-mark> elements (not inside <ornaments>): cautionary or
+	 * editorial accidentals placed small above (or below when placement="below") their note
+	 * (Behind Bars p. 83).
+	 */
+	private addAccidentalMarks(staveNote: StaveNote, note: Note): void {
+		for (const mark of this.reader.accidentalMarksOf(note)) {
+			this.addStandaloneAccidentalMark(staveNote, mark);
+		}
+	}
+
+	private addStandaloneAccidentalMark(
+		staveNote: StaveNote,
+		mark: MElement,
+	): void {
+		const value = mark.text?.trim() ?? '';
+		const code =
+			value === 'other'
+				? smuflGlyph(mark.getAttribute('smufl'))
+				: ACCIDENTAL_CODES[value];
+		if (!code) {
+			return;
+		}
+		const ornament = new Ornament(new Accidental(code).getText());
+		ornament.setFontSize(Metrics.get('Accidental.grace.fontSize'));
+		if (mark.getAttribute('placement') === 'below') {
+			ornament.setPosition(Modifier.Position.BELOW);
+		}
+		staveNote.addModifier(ornament);
 	}
 
 	/*
@@ -280,40 +533,101 @@ export class NotationTranslator {
 	 * needs its own glyph and a way to know the instrument family. Add it if a fixture asks.
 	 */
 	private addTechnicals(staveNote: StaveNote, chord: Chord): void {
-		const strings: { index: number; number: string; below: boolean }[] = [];
+		const lowerOnlyCircle = this.isLowerOnlyChordCircle(staveNote, chord);
+		const strings: {
+			index: number;
+			number: string;
+			below: boolean;
+			explicitPlacement: boolean;
+		}[] = [];
 		const fingerings: { index: number; text: string; below: boolean }[] = [];
+		const plucks: { index: number; text: string; below: boolean }[] = [];
 		chord.notes.forEach((note, index) => {
-			const labels: Technical[] = [];
-			let below = false;
+			const fingeringMarks: Technical[] = [];
+			const pluckMarks: Technical[] = [];
+			let fingeringPlacement: 'above' | 'below' | null = null;
+			let pluckPlacement: 'above' | 'below' | null = null;
 			for (const mark of this.reader.technicalsOf(note)) {
-				if (mark.placement === 'below') {
-					below = true;
-				}
+				const explicitPlacement =
+					mark.placement === 'above' || mark.placement === 'below';
 				if (
 					mark.technicalType === 'fingering' ||
-					mark.technicalType === 'pluck' ||
 					(mark.technicalType === 'tap' && mark.text?.trim())
 				) {
-					labels.push(mark);
+					if (explicitPlacement) {
+						fingeringPlacement = mark.placement;
+					}
+					fingeringMarks.push(mark);
+					continue;
+				}
+				if (mark.technicalType === 'pluck') {
+					if (explicitPlacement) {
+						pluckPlacement = mark.placement;
+					}
+					pluckMarks.push(mark);
 					continue;
 				}
 				if (mark.technicalType === 'string') {
 					const number = mark.text?.trim();
 					if (number) {
-						strings.push({ index, number, below: mark.placement === 'below' });
+						// Behind Bars p. 373 (guitar-string-circled-position): on guitar / plucked
+						// string parts, unplaced single-note circled string numbers sit on whichever
+						// side of the stave is closest to the note (below for notes below the middle
+						// line, above for middle-line and higher notes). Bowed strings (p. 394) and
+						// multi-note chord stacks (p. 374) keep their default above the stave.
+						const line = staveNote.getKeyProps()[index]?.line;
+						const below =
+							mark.placement === 'below' ||
+							(!explicitPlacement &&
+								chord.notes.length === 1 &&
+								line !== undefined &&
+								line < 3 &&
+								this.reader.isPluckedStringPart(note.measure.part));
+						strings.push({
+							index,
+							number,
+							below,
+							explicitPlacement,
+						});
 					}
 					continue;
 				}
 				const code = technicalCode(mark);
 				if (code) {
-					staveNote.addModifier(
-						new StaveArticulation(code).setPosition(
-							mark.placement === 'below'
-								? Modifier.Position.BELOW
-								: Modifier.Position.ABOVE,
-						),
-						index,
+					// Behind Bars pp. 397, 414 (string-double-stop-one-open,
+					// string-harmonic-lower-chord-below): on a single-stemmed chord where only
+					// the lowest note carries an unplaced open-string or sounding-pitch harmonic
+					// circle, place the circle below the stave.
+					const defaultBelow =
+						!explicitPlacement && code === 'ah' && lowerOnlyCircle;
+					const articulation = new StaveArticulation(code).setPosition(
+						mark.placement === 'below' || defaultBelow
+							? Modifier.Position.BELOW
+							: Modifier.Position.ABOVE,
 					);
+					if (
+						mark.technicalType === 'open-string' ||
+						mark.technicalType === 'stopped' ||
+						mark.technicalType === 'up-bow' ||
+						mark.technicalType === 'down-bow'
+					) {
+						articulation.markLowerVoiceBelow(explicitPlacement);
+					}
+					if (mark.technicalType === 'open-string') {
+						// Behind Bars p. 397 (string-double-stop-adjacent-open): align an open-string
+						// circle horizontally with its owning notehead when displaced in a second.
+						articulation.markAlignToNotehead();
+					}
+					if (
+						mark.technicalType === 'up-bow' ||
+						mark.technicalType === 'down-bow'
+					) {
+						// SMuFL stringsUpBowTurned / stringsDownBowTurned for the lower voice below.
+						articulation.markBowing(
+							mark.technicalType === 'up-bow' ? '\uE613' : '\uE611',
+						);
+					}
+					staveNote.addModifier(articulation, index);
 				}
 			}
 			// <open> is not one of mdom's technicals, so it is read off the element.
@@ -329,24 +643,94 @@ export class NotationTranslator {
 					index,
 				);
 			}
-			const text = this.fingeringLabel(labels);
-			if (text) {
-				fingerings.push({ index, text, below });
+			const fingeringText = this.fingeringLabel(fingeringMarks);
+			if (fingeringText) {
+				// Behind Bars p. 309 (kbd-fingering-side-default): on a two-stave keyboard
+				// grand staff, unplaced lower-stave fingerings default below the bass stave.
+				const hasFingering = fingeringMarks.some(
+					(mark) => mark.technicalType === 'fingering',
+				);
+				const below =
+					fingeringPlacement === 'below' ||
+					(fingeringPlacement === null &&
+						hasFingering &&
+						this.reader.isLowerGrandStaff(note));
+				fingerings.push({ index, text: fingeringText, below });
+			}
+			const pluckText = this.fingeringLabel(pluckMarks);
+			if (pluckText) {
+				plucks.push({
+					index,
+					text: pluckText,
+					below: pluckPlacement === 'below',
+				});
 			}
 		});
 		// Bottom-member first going up, top-member first going down; see the note above.
-		for (const side of [false, true]) {
-			const column = fingerings.filter((f) => f.below === side);
-			if (side) {
-				column.reverse();
-			}
-			for (const { index, text } of column) {
-				staveNote.addModifier(new FingeringAnnotation(text, side), index);
+		// Left-hand fingerings sit closest to the notehead, right-hand <pluck> letters
+		// outside them in italic, and circled <string> numbers outermost (Behind Bars pp. 374–375).
+		for (const [tier, italic] of [
+			[fingerings, false],
+			[plucks, true],
+		] as const) {
+			for (const side of [false, true]) {
+				const column = tier.filter((f) => f.below === side);
+				if (side) {
+					column.reverse();
+				}
+				for (const { index, text } of column) {
+					staveNote.addModifier(
+						new FingeringAnnotation(text, side, { italic }),
+						index,
+					);
+				}
 			}
 		}
-		for (const { index, number, below } of strings) {
-			staveNote.addModifier(new StringNumberAnnotation(number, below), index);
+		for (const { index, number, below, explicitPlacement } of strings) {
+			staveNote.addModifier(
+				new StringNumberAnnotation(number, below, explicitPlacement),
+				index,
+			);
 		}
+	}
+
+	/*
+	 * Whether a multi-note chord has open-string or sounding-pitch harmonic circles attached
+	 * exclusively to its lowest pitched notehead (not to any higher notehead).
+	 */
+	private isLowerOnlyChordCircle(staveNote: StaveNote, chord: Chord): boolean {
+		if (chord.notes.length < 2) {
+			return false;
+		}
+		const keyProps = staveNote.getKeyProps();
+		if (keyProps.length !== chord.notes.length) {
+			return false;
+		}
+		const lines = keyProps.map((k) => k.line);
+		const minLine = Math.min(...lines);
+		const maxLine = Math.max(...lines);
+		if (minLine >= maxLine) {
+			return false;
+		}
+		let hasLowerCircle = false;
+		for (let i = 0; i < chord.notes.length; i++) {
+			const note = chord.notes[i];
+			const line = lines[i];
+			if (!note || line === undefined) {
+				continue;
+			}
+			const hasCircle = this.reader
+				.technicalsOf(note)
+				.some((mark) => technicalCode(mark) === 'ah');
+			if (!hasCircle) {
+				continue;
+			}
+			if (line > minLine) {
+				return false;
+			}
+			hasLowerCircle = true;
+		}
+		return hasLowerCircle;
 	}
 
 	/*
@@ -362,12 +746,18 @@ export class NotationTranslator {
 			return;
 		}
 		const inverted = fermata === 'inverted';
-		const shape = note
+		const fermataElement = note
 			.childrenNamed('notations')
-			.flatMap((notations) => notations.childrenNamed('fermata'))[0]
-			?.text?.trim();
+			.flatMap((notations) => notations.childrenNamed('fermata'))[0];
+		const rawType = fermataElement?.getAttribute('type');
+		const explicitType = rawType === 'upright' || rawType === 'inverted';
+		const shape = fermataElement?.text?.trim();
 		const faces = FERMATA_SHAPES[shape ?? ''] ?? NORMAL_FERMATA;
-		const articulation = new StaveArticulation(faces[inverted ? 1 : 0]);
+		const belowGlyph = (FERMATA_GLYPHS[shape ?? ''] ??
+			NORMAL_FERMATA_GLYPHS)[1];
+		const articulation = new StaveArticulation(
+			faces[inverted ? 1 : 0],
+		).markFermata({ belowGlyph, explicitType });
 		// Vexflow defaults every Articulation to ABOVE; the below-shaped glyph also needs the
 		// BELOW position so it sits under the note instead of floating over it.
 		articulation.setPosition(
@@ -421,10 +811,20 @@ export class NotationTranslator {
 		if (bottom < 0 && top < 0) {
 			return;
 		}
+		let end: 'top' | 'bottom' | 'both' = 'both';
+		if (bottom < 0) {
+			end = 'top';
+		} else if (top < 0) {
+			end = 'bottom';
+		}
+		const markNote = chord.notes[top >= 0 ? top : bottom];
+		const number = markNote?.nonArpeggiateNumber ?? 1;
 		staveNote.addModifier(
 			new NonArpeggioBracket(
 				bottom < 0 ? 0 : bottom,
 				top < 0 ? chord.notes.length - 1 : top,
+				end,
+				number,
 			),
 			0,
 		);
@@ -434,12 +834,10 @@ export class NotationTranslator {
 	 * Attach a note's <lyric> verses as text under the stave, one annotation per verse in
 	 * verse order (verse 1 nearest the stave).
 	 *
-	 * A syllable that opens or continues a word ('begin'/'middle') carries a trailing hyphen
-	 * joining it to the next one: "Al-" "le-" "lu-" "ia".
-	 * ponytail: the hyphen rides on the syllable instead of being drawn centered in the gap
-	 * between the two: a centered hyphen needs a spanner across notes (and systems). A
-	 * document's hyphen distance adds more across a wide gap (LyricPlacer). The
-	 * melisma <extend/> flag is passed through for LyricPlacer.pin to draw.
+	 * Hyphens for 'begin'/'middle' syllables and continuations ('middle'/'end') are drawn by
+	 * LyricPlacer.drawSystemHyphens centred between syllables (and before/after extended
+	 * rests or system breaks) rather than appended to the syllable text. The melisma
+	 * <extend/> flag is passed through for LyricPlacer.pin to draw.
 	 */
 	private addLyrics(staveNote: StaveNote, lead: Note): void {
 		const verses = [...this.reader.lyricsOf(lead)].sort(
@@ -455,9 +853,8 @@ export class NotationTranslator {
 			);
 			const syllabic = verse.syllabic;
 			const hyphenated = syllabic === 'begin' || syllabic === 'middle';
-			const text =
-				(this.syllableOf(verse) || this.soundOf(verse)) +
-				(hyphenated ? '-' : '');
+			const continues = syllabic === 'middle' || syllabic === 'end';
+			const text = this.syllableOf(verse) || this.soundOf(verse);
 			if (text) {
 				staveNote.addModifier(
 					new LyricAnnotation(text, index, verse.extend, {
@@ -465,6 +862,7 @@ export class NotationTranslator {
 						justify: this.justifyOf(verse),
 						scale,
 						hyphenated,
+						continues,
 						documentPosition: this.reader.positionOf(verse),
 					}),
 				);
@@ -551,7 +949,7 @@ export class NotationTranslator {
 
 /*
  * MusicXML <articulations> name -> the notehead-side mark it draws: a vexflow articulation
- * code, or an [above, below] pair of raw SMuFL glyphs for the marks vexflow has no code for
+ * code, or an [above, below] pair of raw SMuFL glyphs when we need a specific glyph
  * (Articulation passes an unrecognized code through as the glyph, the same way Accidental
  * does). vexflow's own codes carry both faces already, so they need no pair.
  */
@@ -559,11 +957,10 @@ const ARTICULATION_CODES: Record<
 	string,
 	string | [above: string, below: string]
 > = {
-	staccato: 'a.',
+	staccato: ['\uE4A2', '\uE4A3'], // articStaccatoAbove/Below
 	accent: 'a>',
 	tenuto: 'a-',
 	staccatissimo: 'av',
-	'strong-accent': 'a^',
 	'detached-legato': ['\uE4B2', '\uE4B3'], // articTenutoStaccatoAbove/Below
 	spiccato: ['\uE4A8', '\uE4A9'], // articStaccatissimoWedgeAbove/Below
 	'soft-accent': ['\uED40', '\uED41'], // articSoftAccentAbove/Below
@@ -579,15 +976,6 @@ const NORMAL_FERMATA: [above: string, below: string] = ['a@a', 'a@u'];
 const FERMATA_SHAPES: Record<string, [above: string, below: string]> = {
 	...FERMATA_GLYPHS,
 	normal: NORMAL_FERMATA,
-};
-
-/*
- * Marks that name a moment in the bar rather than a way of playing the note. They sit
- * above the staff whichever way the stem points, so they're outside the notehead-side rule.
- */
-const MEASURE_MARK_GLYPHS: Record<string, string> = {
-	'breath-mark': '\uE4CE', // breathMarkComma
-	caesura: '\uE4D1', // caesura
 };
 
 /*
@@ -780,9 +1168,9 @@ function technicalCode(mark: Technical): string | undefined {
 				? '\uE840' // guitarLeftHandTapping
 				: '\uE841'; // guitarRightHandTapping
 		case 'harmonic':
-			// a diamond head already marks the touching pitch; a sounding-pitch harmonic keeps
-			// a normal head, so the small circle above is what tells it from a plain note
-			return mark.child('sounding-pitch') ? 'ah' : undefined;
+			// a diamond head already marks the touching pitch; a sounding-pitch or bare
+			// <harmonic/> keeps a normal head, so the small circle above tells it from a plain note
+			return harmonicPitchOf(mark) === 'sounding' ? 'ah' : undefined;
 	}
 	return TECHNICAL_CODES[mark.technicalType];
 }

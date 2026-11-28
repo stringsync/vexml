@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_acc-chord-seventh.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 337.7,
+				"y": 269
+			},
+			"to": {
+				"x": 349.7,
+				"y": 295
+			},
+			"label": "Eb/4 sign",
+			"note": "Eb/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 337.7,
+				"y": 239
+			},
+			"to": {
+				"x": 349.7,
+				"y": 265
+			},
+			"label": "Db/5 sign",
+			"note": "Db/5 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 385.3,
+				"y": 263
+			},
+			"to": {
+				"x": 398.3,
+				"y": 291
+			},
+			"label": "G#/4 sign",
+			"note": "G#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 385.3,
+				"y": 233
+			},
+			"to": {
+				"x": 398.3,
+				"y": 261
+			},
+			"label": "F#/5 sign",
+			"note": "F#/5 sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_trill-accidental-mark.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 798,
+				"y": 38
+			},
+			"to": {
+				"x": 819,
+				"y": 86
+			},
+			"label": "Sign and accidental",
+			"note": "Sign and accidental",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 841,
+				"y": 36
+			},
+			"to": {
+				"x": 862,
+				"y": 81
+			},
+			"label": "Sign and accidental",
+			"note": "Sign and accidental",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_volta-open-closed-ends.png",
+	"width": 958,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 776,
+				"y": 222
+			},
+			"to": {
+				"x": 901,
+				"y": 237
+			},
+			"label": "Volta m12",
+			"note": "Volta m12",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 776,
+				"y": 222
+			},
+			"to": {
+				"x": 901,
+				"y": 237
+			},
+			"label": "Volta m12",
+			"note": "Volta m12",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 63,
+				"y": 382
+			},
+			"to": {
+				"x": 214,
+				"y": 397
+			},
+			"label": "Volta m13",
+			"note": "Volta m13",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 63,
+				"y": 382
+			},
+			"to": {
+				"x": 214,
+				"y": 397
+			},
+			"label": "Volta m13",
+			"note": "Volta m13",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 218,
+				"y": 382
+			},
+			"to": {
+				"x": 329,
+				"y": 397
+			},
+			"label": "Volta m14",
+			"note": "Volta m14",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 218,
+				"y": 382
+			},
+			"to": {
+				"x": 329,
+				"y": 397
+			},
+			"label": "Volta m14",
+			"note": "Volta m14",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 780,
+				"y": 382
+			},
+			"to": {
+				"x": 899,
+				"y": 397
+			},
+			"label": "Volta m19",
+			"note": "Volta m19",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 780,
+				"y": 382
+			},
+			"to": {
+				"x": 899,
+				"y": 397
+			},
+			"label": "Volta m19",
+			"note": "Volta m19",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

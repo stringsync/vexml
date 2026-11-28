@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_pause-breath-caesura-place.png",
+	"width": 932,
+	"height": 412,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 183,
+				"y": 84
+			},
+			"to": {
+				"x": 189,
+				"y": 94
+			},
+			"label": "Breath",
+			"note": "Breath",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 280,
+				"y": 85
+			},
+			"to": {
+				"x": 295,
+				"y": 106
+			},
+			"label": "Caesura",
+			"note": "Caesura",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

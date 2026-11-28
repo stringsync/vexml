@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_tie-adjacent-away.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 102,
+				"y": 1057
+			},
+			"to": {
+				"x": 152,
+				"y": 1065
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 109,
+				"y": 1068
+			},
+			"to": {
+				"x": 148,
+				"y": 1075
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 100,
+				"y": 1089
+			},
+			"to": {
+				"x": 150,
+				"y": 1096
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

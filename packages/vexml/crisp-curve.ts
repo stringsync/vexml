@@ -18,6 +18,13 @@ export const CURVE_TIP = 1.25;
 /* How far past its notehead's centre a slur's end reaches, in px. */
 const HEAD_REACH = 0.7;
 
+/* How far past a stem's centre a stem-end slur reaches, in px, so the tapered
+ * tip visually centres over the stem rather than stopping short of it. */
+const STEM_REACH = 2;
+
+/** Where one end of a curve lands horizontally on its note. */
+export type CurveReach = 'edge' | 'head' | 'stem';
+
 /* The thickness that makes a solid curve's lens `middle` px deep at its midpoint. */
 export function curveThickness(middle: number): number {
 	return middle / LENS_DEPTH;
@@ -42,15 +49,15 @@ export class CrispCurve extends Curve {
 	private tip: number | null = null;
 
 	private readonly bezier: DocumentBezier | null;
-	private readonly reach: { start: boolean; end: boolean };
+	private readonly reach: { start: CurveReach; end: CurveReach };
 	private readonly openX: number | null;
 	constructor(
 		from: VexNote | undefined,
 		to: VexNote | undefined,
 		opts: CurveOptions & {
 			bezier?: DocumentBezier | null;
-			/** Which ends run to their notehead's centre instead of stopping at its edge. */
-			reach?: { start: boolean; end: boolean };
+			/** Where each end lands horizontally: vexflow's tie edge, the notehead centre, or the stem centre. */
+			reach?: { start: CurveReach; end: CurveReach };
 			/** Where a missing end lands, when it is not its stave's own edge: the system's. */
 			openX?: number;
 		},
@@ -58,7 +65,7 @@ export class CrispCurve extends Curve {
 		super(from, to, { ...opts, thickness: opts.thickness ?? CURVE_THICKNESS });
 		this.openX = opts.openX ?? null;
 		this.bezier = opts.bezier ?? null;
-		this.reach = opts.reach ?? { start: false, end: false };
+		this.reach = opts.reach ?? { start: 'edge', end: 'edge' };
 	}
 
 	setTip(tip: number | null): this {
@@ -101,19 +108,30 @@ export class CrispCurve extends Curve {
 		params: T,
 	): T {
 		// vet-ignore noop-objects-over-null: vexflow's Curve takes an undefined end to mean an open one, and a stand-in note would draw as a real end
-		const centre = (note: VexNote | undefined) =>
-			note instanceof StaveNote
-				? note.getNoteHeadBeginX() + note.getGlyphWidth() / 2
-				: null;
-		const first = this.reach.start ? centre(this.from) : null;
-		const last = this.reach.end ? centre(this.to) : null;
+		const endX = (
+			note: VexNote | undefined,
+			reach: CurveReach,
+			sign: -1 | 1,
+		): number | null => {
+			if (!(note instanceof StaveNote) || reach === 'edge') {
+				return null;
+			}
+			if (reach === 'stem') {
+				return note.getStemX() + sign * STEM_REACH;
+			}
+			return (
+				note.getNoteHeadBeginX() + note.getGlyphWidth() / 2 + sign * HEAD_REACH
+			);
+		};
+		const first = endX(this.from, this.reach.start, -1);
+		const last = endX(this.to, this.reach.end, 1);
 		const open = this.openX;
 		const openFirst = open !== null && !this.from ? open : params.firstX;
 		const openLast = open !== null && !this.to ? open : params.lastX;
 		return {
 			...params,
-			firstX: first === null ? openFirst : first - HEAD_REACH,
-			lastX: last === null ? openLast : last + HEAD_REACH,
+			firstX: first === null ? openFirst : first,
+			lastX: last === null ? openLast : last,
 		};
 	}
 

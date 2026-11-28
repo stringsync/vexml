@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_slur-tenuto-centre-head.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 282,
+				"y": 382
+			},
+			"to": {
+				"x": 387,
+				"y": 405
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 276,
+				"y": 409
+			},
+			"to": {
+				"x": 289,
+				"y": 411
+			},
+			"label": "Tenuto 1",
+			"note": "Tenuto 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 311,
+				"y": 404
+			},
+			"to": {
+				"x": 324,
+				"y": 406
+			},
+			"label": "Tenuto 2",
+			"note": "Tenuto 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 345,
+				"y": 399
+			},
+			"to": {
+				"x": 358,
+				"y": 401
+			},
+			"label": "Tenuto 3",
+			"note": "Tenuto 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 380,
+				"y": 404
+			},
+			"to": {
+				"x": 393,
+				"y": 406
+			},
+			"label": "Tenuto 4",
+			"note": "Tenuto 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

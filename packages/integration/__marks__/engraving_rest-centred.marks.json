@@ -1,0 +1,96 @@
+{
+	"screenshot": "engraving_rest-centred.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 276
+			},
+			"to": {
+				"x": 325.6,
+				"y": 276
+			},
+			"label": "middle line",
+			"note": "M6 middle stave line at y=260",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 113.8,
+				"y": 267
+			},
+			"to": {
+				"x": 125.8,
+				"y": 287
+			},
+			"label": "0",
+			"note": "M6 rest 1 (0.5b) top is 1¼ vs M5 home 1¼ (diff 0)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 167.3,
+				"y": 267
+			},
+			"to": {
+				"x": 179.3,
+				"y": 287
+			},
+			"label": "0",
+			"note": "M6 rest 2 (0.5b) top is 1¼ vs M5 home 1¼ (diff 0)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 217.3,
+				"y": 267
+			},
+			"to": {
+				"x": 232.3,
+				"y": 297
+			},
+			"label": "0",
+			"note": "M6 rest 3 (0.25b) top is 1¼ vs M5 home 1¼ (diff 0)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 266.5,
+				"y": 267
+			},
+			"to": {
+				"x": 281.5,
+				"y": 297
+			},
+			"label": "0",
+			"note": "M6 rest 4 (0.25b) top is 1¼ vs M5 home 1¼ (diff 0)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 289.7,
+				"y": 260
+			},
+			"to": {
+				"x": 302.7,
+				"y": 292
+			},
+			"label": "0",
+			"note": "M6 rest 5 (1b) top is ½ vs M5 home ½ (diff 0)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

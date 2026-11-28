@@ -11,8 +11,10 @@ export interface FakeLyricMarkOptions {
 	width?: number;
 	/** Which edge of its note the syllable lines up with. Default 'center'. */
 	justify?: LyricJustify;
-	/** Whether the syllable ends in a hyphen. Default false. */
+	/** Whether a hyphen follows the syllable. Default false. */
 	hyphenated?: boolean;
+	/** Whether the syllable continues a divided word. Default false. */
+	continues?: boolean;
 }
 
 /*
@@ -27,7 +29,8 @@ export class FakeLyricMark implements LyricMark {
 	fillStyle: string | undefined;
 	readonly extend: boolean;
 	readonly hyphenated: boolean;
-	/** The x of each extra hyphen the placer drew, in order. */
+	readonly continues: boolean;
+	/** The x of each hyphen the placer drew, in order. */
 	readonly hyphens: number[] = [];
 	readonly documentPosition: DocumentPosition | null;
 	private positionX = 0;
@@ -42,6 +45,7 @@ export class FakeLyricMark implements LyricMark {
 		this.documentPosition = opts.position ?? null;
 		this.extend = opts.extend ?? false;
 		this.hyphenated = opts.hyphenated ?? false;
+		this.continues = opts.continues ?? false;
 		this.width = opts.width ?? 20;
 		this.justify = opts.justify ?? 'center';
 	}

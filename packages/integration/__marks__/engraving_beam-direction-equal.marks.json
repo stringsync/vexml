@@ -1,0 +1,51 @@
+{
+	"screenshot": "engraving_beam-direction-equal.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 1401
+			},
+			"to": {
+				"x": 309.7,
+				"y": 1401
+			},
+			"label": "middle line",
+			"note": "Middle stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 86,
+				"y": 1448
+			},
+			"to": {
+				"x": 173,
+				"y": 1460
+			},
+			"label": "down",
+			"note": "M20 group stems down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 205,
+				"y": 1354
+			},
+			"to": {
+				"x": 292,
+				"y": 1367
+			},
+			"label": "up",
+			"note": "M20 group stems up",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

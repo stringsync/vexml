@@ -111,7 +111,8 @@ bin/mdom ship --bump minor           # shows the plan, asks, ships it all here
 
 Every request takes `--target <name>`, and all but `unshipped`, `current` and `versions` take
 `--version` or `--bump`, and `--upstream <name>=<version>`, once for each target it depends
-on. With several targets,
+on. A target declaring `version: { follows: "<dep>" }` can run `done`, `run`, or a terminal
+ship with `--upstream <dep>=<version>` in place of `--version` or `--bump`. With several targets,
 `plan` with no `--target` prints an array of plans, and the rest need one.
 `plan` shows an upstream it was not given as "the version <name> releases";
 the others refuse to plan without it.
@@ -259,7 +260,7 @@ asks no confirm, a costly one does.
 
 ## Publishing to npm
 
-`npm.release({ package, bump, repository, test, keep, omit, pins, fold, scope, prepare, check, mirrorTest, dependencies })` publishes a
+`npm.release({ package, bump | version, repository, test, keep, omit, pins, fold, scope, prepare, check, mirrorTest, dependencies })` publishes a
 package of mono from its public mirror, through a GitHub workflow npm
 trusts:
 
@@ -280,9 +281,15 @@ export const mdom = target({
 ```
 
 - **test** runs `test` from mono's root.
-- **version** takes npm's latest version raised by the bump, or the
-  package's own the first time, and keeps it beside the mirror's checkout
-  (in mono's git folder, under `ship/npm/`), so a resumed release keeps it.
+- **version** takes npm's latest version raised by `bump` (or the package's own
+  the first time), or uses an explicit `version` when passed in place of `bump`
+  (for example from a followed upstream via `version: { follows: "<dep>" }`).
+  An explicit `version` must be a clean semver string (no `v` prefix,
+  whitespace, build metadata, or unresolved upstream placeholder) and must not
+  already be published on npm unless resuming that same release's cached state.
+  The chosen version is kept beside the mirror's checkout (under
+  `~/.cache/core-ship/npm/`, respecting `XDG_CACHE_HOME`), so OS temp cleanup
+  never reaps either and a resumed release keeps it.
 - **workflow** commits `.github/workflows/publish.yml` to the mirror when
   it differs: the job checks out the release commit, installs, builds the
   package and runs `npm publish` on the build.

@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_string-double-stop-one-open.png",
+	"width": 932,
+	"height": 1265,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 521,
+				"y": 767
+			},
+			"to": {
+				"x": 529,
+				"y": 775
+			},
+			"label": "M10 B1 Upper",
+			"note": "M10 B1 Upper",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 700,
+				"y": 836
+			},
+			"to": {
+				"x": 708,
+				"y": 844
+			},
+			"label": "M10 B3 Lower",
+			"note": "M10 B3 Lower",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 90,
+				"y": 917
+			},
+			"to": {
+				"x": 98,
+				"y": 925
+			},
+			"label": "M11 B1 V1",
+			"note": "M11 B1 V1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 285,
+				"y": 1026
+			},
+			"to": {
+				"x": 293,
+				"y": 1034
+			},
+			"label": "M11 B3 V2",
+			"note": "M11 B3 V2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

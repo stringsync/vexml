@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_tremolo-two-note-beam-design.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 134,
+				"y": 87
+			},
+			"to": {
+				"x": 159,
+				"y": 110
+			},
+			"label": "Tremolo 1",
+			"note": "Tremolo 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 207,
+				"y": 92
+			},
+			"to": {
+				"x": 223,
+				"y": 115
+			},
+			"label": "Tremolo 2",
+			"note": "Tremolo 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 251,
+				"y": 132
+			},
+			"to": {
+				"x": 267,
+				"y": 155
+			},
+			"label": "Tremolo 3",
+			"note": "Tremolo 3",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

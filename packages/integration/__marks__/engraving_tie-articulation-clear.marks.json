@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-articulation-clear.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 610,
+				"y": 290
+			},
+			"to": {
+				"x": 640,
+				"y": 295
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

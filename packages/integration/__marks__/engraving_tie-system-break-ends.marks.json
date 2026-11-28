@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-system-break-ends.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 110,
+				"y": 896
+			},
+			"to": {
+				"x": 125,
+				"y": 936
+			},
+			"label": "Time signature",
+			"note": "Time signature",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

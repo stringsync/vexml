@@ -1,60 +1,13 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import type { Ctx } from "../ctx";
 import { type Step, step } from "../step";
 import type { Bump } from "../target";
 import { releaseTag } from "../unshipped";
-import { next } from "./version";
+import { isSemver, next } from "./version";
 import { WORKFLOW_FILE, WORKFLOW_PATH, workflow } from "./workflow";
 import type { Fold } from "./workspace";
-
-export interface ReleaseOptions {
-	/** The package's name on npm, as `@stringsync/mdom`. */
-	package: string;
-	/** How far the release raises npm's latest version. */
-	bump: Bump;
-	/** The package's public mirror on GitHub, as `stringsync/mdom`. */
-	repository: string;
-	/** The command that tests the package, run from mono's root. */
-	test: string;
-	/** Project-relative globs of otherwise omitted paths to carry, as `skills/vexml/**`. */
-	keep?: readonly string[];
-	/** Project-relative globs of tracked paths to omit; `keep` wins overlaps. */
-	omit?: readonly string[];
-	/** Versions the mirror depends on in place of npm's latest, by package name. */
-	pins?: Record<string, string>;
-	/**
-	 * A command run from the mirror's root after it is written and installed
-	 * and before it is built and committed, so what it changes is in the
-	 * release commit. The release's version is in `SHIP_VERSION`. The publish
-	 * workflow runs it too, before its build.
-	 */
-	prepare?: string;
-	/**
-	 * A command run from the mirror's root after the build, with
-	 * `SHIP_VERSION` set; the mirror step fails when it does, before anything
-	 * is committed.
-	 */
-	check?: string;
-	mirrorTest?: string; // Tests the built mirror from its root, before the commit.
-	/**
-	 * Private packages of other projects to fold into the mirror and the
-	 * build, by package name, with the files each reads from disk.
-	 */
-	fold?: Fold;
-	/**
-	 * What the mirror holds of the project: `project` (the default) its whole
-	 * folder, `package` only the published package's folder, at the mirror's
-	 * root, for a project that keeps the rest private. `keep` and `omit` globs
-	 * and the `mirror/` folder are then relative to the package's folder.
-	 */
-	scope?: "project" | "package";
-	/** Steps of the same target that finish before the first of these. */
-	dependencies?: readonly string[];
-	/** Milliseconds before the first retry of a failed registry query, doubling after (default 2000). */
-	retryDelay?: number;
-}
 
 /**
  * The steps of releasing `package` to npm through its public mirror, to spread
@@ -66,34 +19,47 @@ export interface ReleaseOptions {
  *   repository: "stringsync/mdom", test: "bin/mdom test" })
  */
 export function release(opts: ReleaseOptions): Step[] {
+	if (opts.bump !== undefined && opts.version !== undefined) {
+		throw new Error("Pass either bump or version to npm.release, not both");
+	}
+	if (opts.bump === undefined && opts.version === undefined) {
+		throw new Error("Pass either bump or version to npm.release");
+	}
 	const slug = opts.package.replace(/[^\w-]+/g, "-");
-	const statePath = join(tmpdir(), `ship-npm-${slug}.json`);
-	const checkout = join(tmpdir(), `ship-npm-${slug}-mirror`);
+	const cacheDir = opts.cacheDir ?? defaultCacheDir();
+	const statePath = join(cacheDir, `${slug}.json`);
+	const checkout = join(cacheDir, `${slug}-mirror`);
 	const remote = `https://github.com/${opts.repository}.git`;
 
 	const read = async (): Promise<State> =>
 		JSON.parse(await readFile(statePath, "utf8"));
-	const exists = async () => {
+	const readIfExists = async (): Promise<State | undefined> => {
 		try {
-			await readFile(statePath);
-			return true;
+			return await read();
 		} catch {
-			return false;
+			return undefined;
 		}
 	};
+	const exists = async () => (await readIfExists()) !== undefined;
 	/** Where the package sits in the mirror, whose root is the project folder. */
 	const inMirror = (dir: string) =>
 		opts.scope === "package" ? "." : dir.split("/").slice(1).join("/");
-	const write = (state: State) => writeFile(statePath, JSON.stringify(state));
+	const write = async (state: State) => {
+		await mkdir(cacheDir, { recursive: true });
+		await writeFile(statePath, JSON.stringify(state));
+	};
 	/** Whether a command succeeds, with its output ignored. */
 	const ok = async (ctx: Ctx, command: string) =>
 		(await ctx.sh(`(${command}) >/dev/null 2>&1 && echo ok || true`)).includes(
 			"ok",
 		);
-	/** A fresh clone of the mirror, or an updated one. */
+	/**
+	 * A fresh clone of the mirror, or an updated one. Falls back to a fresh
+	 * clone when a cached checkout is missing, broken, or detached.
+	 */
 	const sync = (ctx: Ctx) =>
 		ctx.sh(
-			`if [ -d ${quote(checkout)}/.git ]; then git -C ${quote(checkout)} fetch origin && git -C ${quote(checkout)} reset --hard origin/HEAD; else rm -rf ${quote(checkout)} && git clone ${quote(remote)} ${quote(checkout)}; fi`,
+			`([ -d ${quote(checkout)}/.git ] && git -C ${quote(checkout)} symbolic-ref -q HEAD >/dev/null && git -C ${quote(checkout)} fetch origin && git -C ${quote(checkout)} reset --hard origin/HEAD) || (rm -rf ${quote(checkout)} && mkdir -p ${quote(cacheDir)} && git clone ${quote(remote)} ${quote(checkout)})`,
 		);
 	/** The mono tag for `version`, as a full ref. */
 	const monoRef = (version: string) =>
@@ -170,6 +136,34 @@ export function release(opts: ReleaseOptions): Step[] {
 		(await view(ctx, opts.package, "version")) ?? "";
 
 	/**
+	 * Waits until npm serves `pkg@version`, since npm says a newly published
+	 * version "may take a few minutes to become available".
+	 */
+	const waitForVersion = async (
+		ctx: Ctx,
+		pkg: string,
+		version: string,
+	): Promise<boolean> => {
+		const spec = `${pkg}@${version}`;
+		const attempts = opts.waitAttempts ?? PUBLISH_WAIT_ATTEMPTS;
+		const delay = opts.waitDelay ?? PUBLISH_WAIT_DELAY;
+		for (let attempt = 0; attempt < attempts; attempt++) {
+			if (attempt > 0 && delay > 0) {
+				await new Promise((resolve) => setTimeout(resolve, delay));
+			}
+			if (
+				await ok(
+					ctx,
+					`npm view --prefer-online ${quote(spec)} version | grep -q .`,
+				)
+			) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	/**
 	 * Whether npm's latest version was published by the GitHub workflow, which
 	 * only happens once npm trusts it: `npm trust list` needs a one-time
 	 * password even to read, so this is how a release avoids asking for a login
@@ -199,10 +193,46 @@ export function release(opts: ReleaseOptions): Step[] {
 		}),
 		step({
 			id: "version",
-			does: `Pick the next ${opts.bump} of ${opts.package} after what npm has`,
+			does:
+				opts.version !== undefined
+					? `Use ${opts.version} for ${opts.package}`
+					: `Pick the next ${opts.bump} of ${opts.package} after what npm has`,
 			dependencies: ["test"],
-			done: exists,
+			done: async () => {
+				const cached = await readIfExists();
+				if (opts.version !== undefined) {
+					return cached?.version === opts.version;
+				}
+				return cached !== undefined;
+			},
 			run: async (ctx) => {
+				if (opts.version !== undefined) {
+					const placeholder = UNRESOLVED_UPSTREAM.exec(opts.version);
+					if (placeholder) {
+						throw new Error(
+							`Cannot release ${opts.package}: "${opts.version}" is an unresolved upstream version placeholder; pass --upstream ${placeholder[1]}=<version>`,
+						);
+					}
+					if (!isSemver(opts.version)) {
+						throw new Error(
+							`"${opts.version}" is not a clean semantic version for ${opts.package}`,
+						);
+					}
+					const cached = await readIfExists();
+					if (cached?.version === opts.version) {
+						ctx.update(`Releasing ${opts.package}@${opts.version}`);
+						return;
+					}
+					if (await view(ctx, `${opts.package}@${opts.version}`, "version")) {
+						throw new Error(
+							`${opts.package}@${opts.version} is already published on npm`,
+						);
+					}
+					const { dir } = await locate(ctx);
+					await write({ version: opts.version, dir });
+					ctx.update(`Releasing ${opts.package}@${opts.version}`);
+					return;
+				}
 				const { dir, version: declared } = await locate(ctx);
 				const latest = await publishedVersions(ctx);
 				const version = latest
@@ -246,13 +276,28 @@ export function release(opts: ReleaseOptions): Step[] {
 				const state = await read();
 				const dir = inMirror(state.dir);
 				await sync(ctx);
+				const pins = opts.pins
+					? Object.fromEntries(
+							Object.entries(opts.pins).filter(
+								([, version]) => !UNRESOLVED_UPSTREAM.test(version),
+							),
+						)
+					: undefined;
+				const hasPins = pins !== undefined && Object.keys(pins).length > 0;
 				await ctx.sh(
-					`bun core/packages/core/ship/npm/cli.ts mirror ${quote(state.dir)} ${quote(checkout)} ${quote(state.version)}${(opts.keep ?? []).map((glob) => ` ${quote(glob)}`).join("")}${opts.omit ? ` --omit ${quote(JSON.stringify(opts.omit))}` : ""}${opts.pins ? ` --pins ${quote(JSON.stringify(opts.pins))}` : ""}${opts.fold ? ` --fold ${quote(JSON.stringify(opts.fold))}` : ""}${opts.scope === "package" ? " --package-only" : ""}`,
+					`bun core/packages/core/ship/npm/cli.ts mirror ${quote(state.dir)} ${quote(checkout)} ${quote(state.version)}${(opts.keep ?? []).map((glob) => ` ${quote(glob)}`).join("")}${opts.omit ? ` --omit ${quote(JSON.stringify(opts.omit))}` : ""}${hasPins ? ` --pins ${quote(JSON.stringify(pins))}` : ""}${opts.fold ? ` --fold ${quote(JSON.stringify(opts.fold))}` : ""}${opts.scope === "package" ? " --package-only" : ""}`,
 				);
+				for (const [name, version] of Object.entries(pins ?? {})) {
+					if (!(await waitForVersion(ctx, name, version))) {
+						throw new Error(
+							`Pinned dependency ${name}@${version} did not appear on npm`,
+						);
+					}
+				}
 				const env = `export SHIP_VERSION=${quote(state.version)}`;
 				const hook = (command: string) =>
 					ctx.sh(`cd ${quote(checkout)} && ${env} && ${command}`);
-				await ctx.sh(`cd ${quote(checkout)} && bun install`);
+				await ctx.sh(`cd ${quote(checkout)} && bun install --no-cache`);
 				if (opts.prepare) {
 					await hook(opts.prepare);
 				}
@@ -343,6 +388,7 @@ export function release(opts: ReleaseOptions): Step[] {
 			},
 			run: async (ctx) => {
 				const { sha, version } = await read();
+				let workflowError: unknown;
 				try {
 					await ctx.sh(
 						`gh workflow run ${quote(WORKFLOW_FILE)} -R ${quote(opts.repository)} -f ref=${quote(sha as string)}`,
@@ -351,18 +397,19 @@ export function release(opts: ReleaseOptions): Step[] {
 						`sleep 5 && id=$(gh run list -R ${quote(opts.repository)} --workflow ${quote(WORKFLOW_FILE)} --limit 1 --json databaseId --jq '.[0].databaseId') && gh run watch "$id" -R ${quote(opts.repository)} --exit-status`,
 					);
 				} catch (error) {
-					// An earlier run may have published this version already,
-					// which makes this one fail with "cannot publish over"; the
-					// version being out is the goal. npm says a new version "may
-					// take a few minutes to become available", so wait for its
-					// view to catch up before calling the run a failure.
-					const out = await ok(
-						ctx,
-						`for i in $(seq 1 24); do npm view --prefer-online ${quote(`${opts.package}@${version}`)} version | grep -q . && exit 0; sleep 5; done; exit 1`,
-					);
-					if (!out) {
-						throw error;
+					workflowError = error;
+				}
+				// npm says a new version "may take a few minutes to become
+				// available": wait for the registry to serve it before
+				// advancing downstream targets (or, on a workflow failure like
+				// "cannot publish over", before treating the run as failed).
+				if (!(await waitForVersion(ctx, opts.package, version))) {
+					if (workflowError !== undefined) {
+						throw workflowError;
 					}
+					throw new Error(
+						`${opts.package}@${version} did not appear on npm after publishing`,
+					);
 				}
 				ctx.update(`Published ${opts.package}@${version}`);
 				ctx.released(version);
@@ -422,8 +469,86 @@ export function release(opts: ReleaseOptions): Step[] {
 // commit the mirror was written from.
 type State = { version: string; dir: string; sha?: string; monoSha?: string };
 
+interface ReleaseBaseOptions {
+	/** The package's name on npm, as `@stringsync/mdom`. */
+	package: string;
+	/** The package's public mirror on GitHub, as `stringsync/mdom`. */
+	repository: string;
+	/** The command that tests the package, run from mono's root. */
+	test: string;
+	/** Project-relative globs of otherwise omitted paths to carry, as `skills/vexml/**`. */
+	keep?: readonly string[];
+	/** Project-relative globs of tracked paths to omit; `keep` wins overlaps. */
+	omit?: readonly string[];
+	/** Versions the mirror depends on in place of npm's latest, by package name. */
+	pins?: Record<string, string>;
+	/**
+	 * A command run from the mirror's root after it is written and installed
+	 * and before it is built and committed, so what it changes is in the
+	 * release commit. The release's version is in `SHIP_VERSION`. The publish
+	 * workflow runs it too, before its build.
+	 */
+	prepare?: string;
+	/**
+	 * A command run from the mirror's root after the build, with
+	 * `SHIP_VERSION` set; the mirror step fails when it does, before anything
+	 * is committed.
+	 */
+	check?: string;
+	mirrorTest?: string; // Tests the built mirror from its root, before the commit.
+	/**
+	 * Private packages of other projects to fold into the mirror and the
+	 * build, by package name, with the files each reads from disk.
+	 */
+	fold?: Fold;
+	/**
+	 * What the mirror holds of the project: `project` (the default) its whole
+	 * folder, `package` only the published package's folder, at the mirror's
+	 * root, for a project that keeps the rest private. `keep` and `omit` globs
+	 * and the `mirror/` folder are then relative to the package's folder.
+	 */
+	scope?: "project" | "package";
+	/** Steps of the same target that finish before the first of these. */
+	dependencies?: readonly string[];
+	/** Milliseconds before the first retry of a failed registry query, doubling after (default 2000). */
+	retryDelay?: number;
+	/** Milliseconds between polls waiting for a newly published version to appear on npm (default 5000). */
+	waitDelay?: number;
+	/** Maximum polls waiting for a newly published version to appear on npm (default 60). */
+	waitAttempts?: number;
+	/** Where the mirror checkout and in-progress state live (default: `$XDG_CACHE_HOME/core-ship/npm` or `~/.cache/core-ship/npm`). */
+	cacheDir?: string;
+}
+
+export type ReleaseOptions = ReleaseBaseOptions &
+	(
+		| {
+				/** How far the release raises npm's latest version. */
+				bump: Bump;
+				version?: never;
+		  }
+		| {
+				/** The exact semantic version to publish, in place of bumping npm's latest. */
+				version: string;
+				bump?: never;
+		  }
+	);
+
+/** Placeholder version `serve` supplies when planning before an upstream releases. */
+const UNRESOLVED_UPSTREAM = /^the version (.+) releases$/;
+
 /** How many times a registry query that fails other than with E404 is tried. */
 const QUERY_ATTEMPTS = 3;
+
+/** Polls and interval (5 minutes total) waiting for a newly published version to appear on npm. */
+const PUBLISH_WAIT_ATTEMPTS = 60;
+const PUBLISH_WAIT_DELAY = 5000;
+
+/** Persistent cache outside `tmpdir()` (so OS temp cleanup never reaps it) and outside mono. */
+function defaultCacheDir(): string {
+	const base = process.env.XDG_CACHE_HOME || join(homedir(), ".cache");
+	return join(base, "core-ship", "npm");
+}
 
 function quote(word: string): string {
 	return /^[\w@%+=:,./-]+$/.test(word)

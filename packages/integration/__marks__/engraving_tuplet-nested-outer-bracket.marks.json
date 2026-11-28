@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tuplet-nested-outer-bracket.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 343,
+				"y": 227
+			},
+			"to": {
+				"x": 612,
+				"y": 246
+			},
+			"label": "Outer bracket (up)",
+			"note": "Outer bracket (up)",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 619,
+				"y": 307
+			},
+			"to": {
+				"x": 889,
+				"y": 326
+			},
+			"label": "Outer bracket (down)",
+			"note": "Outer bracket (down)",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

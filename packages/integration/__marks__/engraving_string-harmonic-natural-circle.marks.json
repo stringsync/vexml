@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_string-harmonic-natural-circle.png",
+	"width": 932,
+	"height": 1050,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 420,
+				"y": 401
+			},
+			"to": {
+				"x": 428,
+				"y": 409
+			},
+			"label": "Harm 1",
+			"note": "Harm 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 535,
+				"y": 406
+			},
+			"to": {
+				"x": 543,
+				"y": 414
+			},
+			"label": "Harm 2",
+			"note": "Harm 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 649,
+				"y": 391
+			},
+			"to": {
+				"x": 657,
+				"y": 399
+			},
+			"label": "Harm 3",
+			"note": "Harm 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 764,
+				"y": 406
+			},
+			"to": {
+				"x": 772,
+				"y": 414
+			},
+			"label": "Harm 4",
+			"note": "Harm 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

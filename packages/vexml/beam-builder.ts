@@ -1,7 +1,9 @@
 import type { BeamRun, Note } from '@stringsync/mdom';
-import { Beam, type StaveNote, Stem } from 'vexflow/core';
+import { type Beam, type StaveNote, Stem } from 'vexflow/core';
 import type { Appearance } from './appearance';
+import { DEFAULT_BEAM_WIDTH } from './constants';
 import { type BeamFan, FeatheredBeam } from './feathered-beam';
+import { InvisibleStaveNote } from './invisible-stave-note';
 import { NoteheadArticulation } from './notehead-articulation';
 import type { ScoreReader } from './score-reader';
 import { SpacedBeam } from './spaced-beam';
@@ -37,9 +39,15 @@ export class BeamBuilder {
 				// Grace notes are beamed by their own GraceNoteGroup; they live in byLead
 				// only for slur resolution, so skip them here to avoid a second, conflicting
 				// auto-stemmed beam drawn over the ornament.
+				// Hidden notes (print-object="no" or notes replaced by a <beat-repeat>/<slash>
+				// sign) draw no noteheads or stems, so skip them too: otherwise vexflow's Beam
+				// draws empty stems and beam bars over the replaced beat.
 				.filter((note) => !note.isGrace)
 				.flatMap((note) => notesByLead?.get(note) ?? [byLead.get(note)])
-				.filter((note): note is StaveNote => note !== undefined);
+				.filter(
+					(note): note is StaveNote =>
+						note !== undefined && !(note instanceof InvisibleStaveNote),
+				);
 			if (notes.length > 1) {
 				// auto_stem=true picks one direction for the whole group (notes' own
 				// autoStem would conflict). But explicit <stem>s (e.g. voice separation)
@@ -52,9 +60,57 @@ export class BeamBuilder {
 					!defaultStem &&
 					group.notes.every((note) => !note.stem) &&
 					!notes.every((note) => note.getStemDirection() === beamStem(notes));
-				const beam = this.beamOf(notes, autoStem, fanOf(group, this.reader));
+				// vexflow's own auto-stem sums distances, so the majority rule stems the notes
+				// here and the beam keeps their direction.
+				if (autoStem) {
+					const direction = beamStem(notes);
+					for (const note of notes) {
+						note.setStemDirection(direction, true);
+					}
+				} else {
+					// Align any un-stemmed rest inside the beam to the pitched notes' shared
+					// direction so it never splits the beam into a fake kneed beam.
+					const pitchedDirs = new Set(
+						notes
+							.filter((note) => !note.isRest())
+							.map((note) => note.getStemDirection()),
+					);
+					if (pitchedDirs.size === 1) {
+						const [shared] = pitchedDirs;
+						if (shared !== undefined) {
+							for (const note of group.notes) {
+								if (note.isRest && !note.stem) {
+									const restNote = byLead.get(note);
+									if (restNote && restNote.getStemDirection() !== shared) {
+										restNote.setStemDirection(shared, true);
+									}
+								}
+							}
+						}
+					}
+				}
+				const beam = this.beamOf(notes, false, fanOf(group, this.reader));
+				// Behind Bars p. 165: when a beam extends across outer rests (or a rest inside
+				// a beam explicitly carries a <stem>), draw short stemlets from the beam
+				// stopping short of each rest.
+				const hasStemletRest =
+					(notes[0]?.isRest() ?? false) ||
+					(notes.at(-1)?.isRest() ?? false) ||
+					group.notes.some(
+						(note) =>
+							note.isRest && (note.stem === 'up' || note.stem === 'down'),
+					);
+				if (hasStemletRest) {
+					beam.renderOptions.showStemlets = true;
+				}
 				beam.renderOptions.beamWidth =
-					this.appearance.lineWidth('beam') ?? beam.renderOptions.beamWidth;
+					this.appearance.lineWidth('beam') ?? DEFAULT_BEAM_WIDTH;
+				// A fractional beam is as long as a notehead (Gould, p. 17); vexflow's default is
+				// a fixed 10px, shorter than a head.
+				const head = notes[0]?.getGlyphWidth();
+				if (head) {
+					beam.renderOptions.partialBeamLength = head;
+				}
 				// The beam just settled stem directions; re-pin articulations placed
 				// against each note's pre-beam direction onto the notehead side.
 				if (autoStem) {
@@ -71,14 +127,11 @@ export class BeamBuilder {
 					beam.renderOptions.flatBeams = true;
 					// vexflow parks a flat beam at the group's *average* stem tip, so a group
 					// spanning a wide range leaves the note closest to the beam with a stub of
-					// a stem. Raise vexflow's floor (default 15) so that shortest stem is a
-					// full standard stem. Each extra beam adds another level distance, which
-					// keeps the innermost beam exactly one standard stem from the notehead.
+					// a stem. Raise vexflow's floor (default 15) for three or more beams so the
+					// innermost beam stays a standard stem from the notehead; one- and two-beam
+					// horizontal stems are sized in SpacedBeam.calculateFlatSlope (Gould pp. 18-19).
 					beam.renderOptions.minFlatBeamOffset =
-						Stem.HEIGHT -
-						(beam instanceof SpacedBeam
-							? beam.levelDistance()
-							: beam.renderOptions.beamWidth * 1.5);
+						Stem.HEIGHT - beam.levelDistance();
 				}
 				if (group.breaksAfter.length > 0) {
 					beam.breakSecondaryAt(group.breaksAfter);
@@ -89,70 +142,80 @@ export class BeamBuilder {
 		return beams;
 	}
 
-	/* The beam for one group: feathered when it fans, spaced when the document sets its levels'
-	 * distance, and vexflow's own otherwise. */
+	/* The beam for one group: feathered when it fans, otherwise SpacedBeam so flat-beam
+	 * stem lengths follow Gould and any document beam distance applies. */
 	private beamOf(
 		notes: StaveNote[],
 		autoStem: boolean,
 		fan: BeamFan | null,
-	): Beam {
+	): SpacedBeam {
 		const distance = this.appearance.distance('beam');
 		if (fan) {
 			return new FeatheredBeam(notes, autoStem, fan).setDistance(distance);
 		}
-		if (distance !== null) {
-			return new SpacedBeam(notes, autoStem).setDistance(distance);
-		}
-		return new Beam(notes, autoStem);
+		return new SpacedBeam(notes, autoStem).setDistance(distance);
 	}
 
 	/*
-	 * Beam slope follows the group's contour (Gould, Behind Bars): a beam slants only
-	 * when the run moves consistently one way, and is horizontal otherwise: equal outer
-	 * pitches, a contour that reverses direction, or a peak/trough sitting in the middle
-	 * (the classic "the highest note isn't an outer note, so the beam is flat").
+	 * Beam slope follows the notes nearest the beam (Gould, Behind Bars pp. 22-24): the beam
+	 * slants with the interval between its outer notes, whatever the inner notes do, and is
+	 * horizontal only when
+	 * - the outer notes sit on the same line,
+	 * - an inner note lies nearer the beam than both outer notes (a concave group),
+	 * - the notes repeat a pattern, each step reversing the last, or
+	 * - two pitches share the group and the odd end note is the one furthest from the beam.
+	 * A convex group (inner notes further from the beam) therefore slopes.
 	 *
-	 * A chord contributes its top and bottom notes as two parallel voices, and the run
-	 * counts as slanting only if *both* move the same way. So two stacked dyads that each
-	 * step up (B4/D#5 -> C#5/E5) still slant, while a run that returns to a pitch its
-	 * opening chord already sounded ([B2+G#3+D#4] G#3 D#4) goes flat: its bottom voice
-	 * rises but its top voice dips and comes back, so there is no direction to slant to.
-	 *
-	 * Rests and grace notes are excluded: a rest under a beam sits at a fixed staff
-	 * position that has nothing to do with the melodic contour, and graces beam on their
-	 * own. vexflow's own slope search (capped at ±0.25) still shapes the slanted case.
+	 * A chord counts by its note nearest the beam: its top note under a beam above (stems
+	 * up), its bottom note under a beam below. Rests and grace notes are excluded: a rest
+	 * under a beam sits at a fixed staff position that has nothing to do with the melodic
+	 * contour, and graces beam on their own. vexflow's own slope search (capped at +-0.25)
+	 * still shapes the slanted case.
 	 */
 	private isFlatBeam(group: BeamRun, byLead: Map<Note, StaveNote>): boolean {
-		// vexflow's `line` counts upward from the bottom stave line, so a higher pitch is
-		// a larger number.
-		const lines = group.notes
+		const events = group.notes
 			.filter((note) => !note.isGrace && !note.isRest)
 			.map((note) => byLead.get(note))
-			.filter((note): note is StaveNote => note !== undefined)
-			.map((note) => note.getKeyProps().map((key) => key.line));
-		const lo = lines.map((event) => Math.min(...event));
-		const hi = lines.map((event) => Math.max(...event));
-		if (lines.length < 2) {
+			.filter((note): note is StaveNote => note !== undefined);
+		if (events.length < 2) {
 			return false;
 		}
-		// sign is +1 to test a rising run, -1 for a falling one.
-		const sorted = (voice: number[], sign: number) =>
-			voice.every((line, i, all) => {
-				const prev = all.at(i - 1);
-				return i === 0 || prev === undefined || sign * (line - prev) >= 0;
-			});
-		const moved = (voice: number[], sign: number) => {
-			const first = voice.at(0);
-			const last = voice.at(-1);
-			return (
-				first !== undefined && last !== undefined && sign * (last - first) > 0
-			);
-		};
-		const monotonic = (sign: number) =>
-			sorted(lo, sign) &&
-			sorted(hi, sign) &&
-			(moved(lo, sign) || moved(hi, sign));
-		return !monotonic(1) && !monotonic(-1);
+		// vexflow's `line` counts upward from the bottom stave line, so a higher pitch is
+		// a larger number. Flip it so a larger number is nearer the beam.
+		const up = events[0]?.getStemDirection() !== Stem.DOWN;
+		const near = events.map((note) => {
+			const lines = note.getKeyProps().map((key) => key.line);
+			return up ? Math.max(...lines) : -Math.min(...lines);
+		});
+		const first = near[0];
+		const last = near.at(-1);
+		if (first === undefined || last === undefined || first === last) {
+			return true;
+		}
+		const inner = near.slice(1, -1);
+		if (inner.some((line) => line > Math.max(first, last))) {
+			return true;
+		}
+		const steps = near
+			.slice(1)
+			.map((line, i) => Math.sign(line - (near[i] ?? 0)));
+		if (
+			steps.length >= 3 &&
+			steps.every(
+				(step, i) => step !== 0 && (i === 0 || step === -(steps[i - 1] ?? 0)),
+			)
+		) {
+			return true;
+		}
+		// Two pitches, the odd end note furthest from the beam.
+		const pitches = new Set(near);
+		if (pitches.size === 2 && inner.length > 0) {
+			const far = Math.min(first, last);
+			const oddFirst = inner.every((line) => line === last);
+			const oddLast = inner.every((line) => line === first);
+			return (oddFirst && first === far) || (oddLast && last === far);
+		}
+		return false;
 	}
 
 	/*
@@ -171,16 +234,41 @@ export class BeamBuilder {
 }
 
 /*
- * The direction vexflow's Beam picks when it auto-stems a group (its calculateStemDirection,
- * which it does not export): the noteheads' summed distance from the middle line, down when
- * they sit on or above it on balance.
+ * The direction a beam group stems (Gould, p. 24): the side with more noteheads sets it, unless
+ * a minority note lies at least 1½ spaces further from the middle line than the majority's
+ * furthest, when the minority's side does. With as many either side, vexflow's rule stands: the
+ * summed distance from the middle line decides, down when they sit on or above it on balance.
  */
+const FAR_MINORITY = 1.5;
+
 function beamStem(notes: readonly StaveNote[]): number {
 	let sum = 0;
+	let above = 0;
+	let below = 0;
+	let aboveFar = 0;
+	let belowFar = 0;
 	for (const note of notes) {
-		for (const props of note.getKeyProps()) {
-			sum += props.line - 3;
+		if (note.isRest()) {
+			continue;
 		}
+		for (const props of note.getKeyProps()) {
+			const offset = props.line - 3;
+			sum += offset;
+			if (offset > 0) {
+				above++;
+				aboveFar = Math.max(aboveFar, offset);
+			} else if (offset < 0) {
+				below++;
+				belowFar = Math.max(belowFar, -offset);
+			}
+		}
+	}
+	if (above !== below) {
+		const aboveMajor = above > below;
+		const major = aboveMajor ? aboveFar : belowFar;
+		const minor = aboveMajor ? belowFar : aboveFar;
+		const minorityWins = minor - major >= FAR_MINORITY;
+		return aboveMajor !== minorityWins ? Stem.DOWN : Stem.UP;
 	}
 	return sum >= 0 ? Stem.DOWN : Stem.UP;
 }

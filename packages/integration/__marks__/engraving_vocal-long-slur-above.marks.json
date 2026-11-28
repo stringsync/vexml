@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_vocal-long-slur-above.png",
+	"width": 932,
+	"height": 427,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 103,
+				"y": 322
+			},
+			"to": {
+				"x": 342,
+				"y": 341
+			},
+			"label": "Long slur",
+			"note": "Long slur",
+			"role": "measure",
+			"pass": false
+		}
+	]
+}

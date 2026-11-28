@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_rest-whole-bar-signatures.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 233,
+				"y": 106
+			},
+			"to": {
+				"x": 244,
+				"y": 112
+			},
+			"label": "M1 rest",
+			"note": "M1 rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 439,
+				"y": 106
+			},
+			"to": {
+				"x": 450,
+				"y": 112
+			},
+			"label": "M2 rest",
+			"note": "M2 rest",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

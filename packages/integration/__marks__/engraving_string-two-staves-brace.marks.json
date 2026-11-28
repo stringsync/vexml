@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_string-two-staves-brace.png",
+	"width": 932,
+	"height": 342,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 17,
+				"y": 96
+			},
+			"to": {
+				"x": 29,
+				"y": 237
+			},
+			"label": "Brace",
+			"note": "Brace",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

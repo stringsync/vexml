@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_beam-feathered-converge.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 255,
+				"y": 396
+			},
+			"to": {
+				"x": 336,
+				"y": 416
+			},
+			"label": "Rit fan",
+			"note": "Rit fan",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 362,
+				"y": 396
+			},
+			"to": {
+				"x": 443,
+				"y": 416
+			},
+			"label": "Accel fan",
+			"note": "Accel fan",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

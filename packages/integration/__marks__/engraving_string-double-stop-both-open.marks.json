@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_string-double-stop-both-open.png",
+	"width": 932,
+	"height": 1265,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 90,
+				"y": 742
+			},
+			"to": {
+				"x": 98,
+				"y": 750
+			},
+			"label": "Double 1",
+			"note": "Double 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 90,
+				"y": 757
+			},
+			"to": {
+				"x": 98,
+				"y": 765
+			},
+			"label": "Double 2",
+			"note": "Double 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 285,
+				"y": 727
+			},
+			"to": {
+				"x": 293,
+				"y": 735
+			},
+			"label": "Triple 1",
+			"note": "Triple 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 285,
+				"y": 742
+			},
+			"to": {
+				"x": 293,
+				"y": 750
+			},
+			"label": "Triple 2",
+			"note": "Triple 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 285,
+				"y": 757
+			},
+			"to": {
+				"x": 293,
+				"y": 765
+			},
+			"label": "Triple 3",
+			"note": "Triple 3",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

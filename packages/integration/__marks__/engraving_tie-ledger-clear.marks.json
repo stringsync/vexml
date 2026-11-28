@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_tie-ledger-clear.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 760,
+				"y": 856
+			},
+			"to": {
+				"x": 811,
+				"y": 863
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 760,
+				"y": 866
+			},
+			"to": {
+				"x": 811,
+				"y": 873
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 760,
+				"y": 889
+			},
+			"to": {
+				"x": 812,
+				"y": 896
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

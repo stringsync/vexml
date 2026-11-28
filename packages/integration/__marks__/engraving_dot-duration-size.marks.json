@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_dot-duration-size.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 116
+			},
+			"to": {
+				"x": 129,
+				"y": 126
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 134,
+				"y": 119
+			},
+			"to": {
+				"x": 138,
+				"y": 123
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 122,
+				"y": 130
+			},
+			"to": {
+				"x": 125,
+				"y": 133
+			},
+			"label": "Staccato",
+			"note": "Staccato",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

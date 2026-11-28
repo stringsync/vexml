@@ -1,0 +1,187 @@
+{
+	"screenshot": "engraving_dot-crossed-both-parts.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 99.8,
+				"y": 1086
+			},
+			"to": {
+				"x": 111.8,
+				"y": 1096
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 1076
+			},
+			"to": {
+				"x": 100,
+				"y": 1086
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 1089
+			},
+			"to": {
+				"x": 121,
+				"y": 1093
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 1079
+			},
+			"to": {
+				"x": 121,
+				"y": 1083
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 111,
+				"y": 1056
+			},
+			"to": {
+				"x": 112,
+				"y": 1091
+			},
+			"label": "Stem",
+			"note": "Stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 1081
+			},
+			"to": {
+				"x": 89,
+				"y": 1116
+			},
+			"label": "Stem",
+			"note": "Stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 791.4,
+				"y": 1251
+			},
+			"to": {
+				"x": 803.4,
+				"y": 1261
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 779.6,
+				"y": 1236
+			},
+			"to": {
+				"x": 791.6,
+				"y": 1246
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 808,
+				"y": 1249
+			},
+			"to": {
+				"x": 812,
+				"y": 1253
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 808,
+				"y": 1239
+			},
+			"to": {
+				"x": 812,
+				"y": 1243
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 802,
+				"y": 1221
+			},
+			"to": {
+				"x": 803,
+				"y": 1256
+			},
+			"label": "Stem",
+			"note": "Stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 780,
+				"y": 1241
+			},
+			"to": {
+				"x": 781,
+				"y": 1276
+			},
+			"label": "Stem",
+			"note": "Stem",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

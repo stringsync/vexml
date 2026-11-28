@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_harp-damp-between-staves.png",
+	"width": 932,
+	"height": 351,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 445,
+				"y": 171
+			},
+			"to": {
+				"x": 456,
+				"y": 182
+			},
+			"label": "Damp all",
+			"note": "Damp all",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 673,
+				"y": 171
+			},
+			"to": {
+				"x": 683,
+				"y": 181
+			},
+			"label": "Downbeat damp",
+			"note": "Downbeat damp",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

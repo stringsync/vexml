@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_rhythm-whole-bar-note.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 225.3,
+				"y": 249
+			},
+			"to": {
+				"x": 250.8,
+				"y": 249
+			},
+			"label": "2½",
+			"note": "Left barline to whole note: 2½ stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 250.8,
+				"y": 249
+			},
+			"to": {
+				"x": 320.8,
+				"y": 249
+			},
+			"label": "7",
+			"note": "Whole note to right barline: 7 stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

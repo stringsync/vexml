@@ -1,0 +1,51 @@
+{
+	"screenshot": "engraving_octave-system-break.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 901,
+				"y": 56
+			},
+			"to": {
+				"x": 901,
+				"y": 136
+			},
+			"label": "barline",
+			"note": "M5 system-end barline at x=884.9999999999999",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 740,
+				"y": 61
+			},
+			"to": {
+				"x": 902,
+				"y": 77
+			},
+			"label": "within barline",
+			"note": "M5 octave line ends at x=885 vs barline x=884.9999999999999",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 84,
+				"y": 240
+			},
+			"to": {
+				"x": 137,
+				"y": 258
+			},
+			"label": "resumes",
+			"note": "M6 system start has 1 octave bracket(s) before first note (expected 1)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

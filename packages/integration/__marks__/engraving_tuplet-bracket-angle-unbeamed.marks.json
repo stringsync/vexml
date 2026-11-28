@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tuplet-bracket-angle-unbeamed.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 515,
+				"y": 67
+			},
+			"to": {
+				"x": 611,
+				"y": 86
+			},
+			"label": "ascending",
+			"note": "ascending",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 641,
+				"y": 67
+			},
+			"to": {
+				"x": 737,
+				"y": 86
+			},
+			"label": "descending",
+			"note": "descending",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_artic-stemless-as-stemmed.png",
+	"width": 932,
+	"height": 1047,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 95,
+				"y": 775
+			},
+			"to": {
+				"x": 98,
+				"y": 778
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 393,
+				"y": 733
+			},
+			"to": {
+				"x": 396,
+				"y": 736
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 659,
+				"y": 745
+			},
+			"to": {
+				"x": 662,
+				"y": 748
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

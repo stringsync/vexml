@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tie-mixed-stems-middle-line.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 435,
+				"y": 760
+			},
+			"to": {
+				"x": 490,
+				"y": 767
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 568,
+				"y": 770
+			},
+			"to": {
+				"x": 605,
+				"y": 776
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

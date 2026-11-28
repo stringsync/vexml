@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_string-open-above.png",
+	"width": 932,
+	"height": 1265,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 90,
+				"y": 255
+			},
+			"to": {
+				"x": 98,
+				"y": 263
+			},
+			"label": "Open 1",
+			"note": "Open 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 213,
+				"y": 245
+			},
+			"to": {
+				"x": 221,
+				"y": 253
+			},
+			"label": "Open 2",
+			"note": "Open 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 336,
+				"y": 255
+			},
+			"to": {
+				"x": 344,
+				"y": 263
+			},
+			"label": "Open 3",
+			"note": "Open 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 458,
+				"y": 245
+			},
+			"to": {
+				"x": 466,
+				"y": 253
+			},
+			"label": "Open 4",
+			"note": "Open 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

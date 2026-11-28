@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_beam-horizontal-cases.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 628,
+				"y": 1104
+			},
+			"to": {
+				"x": 729,
+				"y": 1113
+			},
+			"label": "flat",
+			"note": "M16 (same-ended): flat (0 spaces, expected flat)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 766,
+				"y": 1056
+			},
+			"to": {
+				"x": 854,
+				"y": 1073
+			},
+			"label": "flat",
+			"note": "M16 (repeated pattern): flat (0 spaces, expected flat)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 97,
+				"y": 1199
+			},
+			"to": {
+				"x": 175,
+				"y": 1208
+			},
+			"label": "flat",
+			"note": "M17 (concave): flat (0 spaces, expected flat)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

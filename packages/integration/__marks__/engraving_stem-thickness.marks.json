@@ -1,0 +1,36 @@
+{
+	"screenshot": "engraving_stem-thickness.png",
+	"width": 932,
+	"height": 417,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 116
+			},
+			"to": {
+				"x": 229,
+				"y": 116
+			},
+			"label": "line 1.5px",
+			"note": "Stave line inked thickness: 1.5px",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 114,
+				"y": 109
+			},
+			"to": {
+				"x": 121,
+				"y": 148
+			},
+			"label": "1.2px",
+			"note": "Average stem inked width 1.2px vs stave line 1.5px (expected stem < stave line)",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

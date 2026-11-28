@@ -42,7 +42,7 @@ export interface LayoutRules {
 	 * lead drawn there. */
 	areaOf(m: number, systemStart?: boolean): NoteArea;
 	estimateOf(m: number): NoteArea;
-	leadOf(m: number, systemStart: boolean): number;
+	leadOf(m: number, systemStart: boolean, systemEnd?: boolean): number;
 	padOf(m: number): number;
 	leadingPadOf(m: number, systemStart: boolean): number;
 	indentOf(systemIndex: number, first: number): number;
@@ -455,7 +455,9 @@ export class LazyLayoutPlan implements LayoutPlan {
 		const { rules } = this;
 		const start = this.musicStartOf(measures);
 		const end = this.musicEndOf(measures);
-		const leads = measures.map((m, i) => rules.leadOf(m, i === start));
+		const leads = measures.map((m, i) =>
+			rules.leadOf(m, i === start, i === end && !opts.isLast),
+		);
 		const areas = measures.map((m, i) => opts.areaOf(m, i === start));
 		const areaSum = areas.reduce((sum, a) => sum + a.ideal, 0);
 		const intrinsic = leads.reduce((sum, l) => sum + l, 0) + areaSum;

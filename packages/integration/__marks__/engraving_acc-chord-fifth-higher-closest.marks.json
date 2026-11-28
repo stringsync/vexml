@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_acc-chord-fifth-higher-closest.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 680.3,
+				"y": 263
+			},
+			"to": {
+				"x": 706.3,
+				"y": 291
+			},
+			"label": "G#/4 sign",
+			"note": "G#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 693.3,
+				"y": 243
+			},
+			"to": {
+				"x": 706.3,
+				"y": 271
+			},
+			"label": "D#/5 sign",
+			"note": "D#/5 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 721.3,
+				"y": 254
+			},
+			"to": {
+				"x": 743.3,
+				"y": 280
+			},
+			"label": "Ab/4 sign",
+			"note": "Ab/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 733.3,
+				"y": 248
+			},
+			"to": {
+				"x": 743.3,
+				"y": 276
+			},
+			"label": "C/5 sign",
+			"note": "C/5 sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

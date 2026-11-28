@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_beam-ledger-slight.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 86,
+				"y": 1074
+			},
+			"to": {
+				"x": 122,
+				"y": 1088
+			},
+			"label": "½",
+			"note": "M14 group 1: slope ½ spaces (expected ½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 148,
+				"y": 1074
+			},
+			"to": {
+				"x": 185,
+				"y": 1085
+			},
+			"label": "¼",
+			"note": "M14 group 2: slope ¼ spaces (expected ¼)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 221,
+				"y": 1074
+			},
+			"to": {
+				"x": 258,
+				"y": 1088
+			},
+			"label": "½",
+			"note": "M14 group 3: slope ½ spaces (expected ½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 284,
+				"y": 1077
+			},
+			"to": {
+				"x": 320,
+				"y": 1088
+			},
+			"label": "¼",
+			"note": "M14 group 4: slope ¼ spaces (expected ¼)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

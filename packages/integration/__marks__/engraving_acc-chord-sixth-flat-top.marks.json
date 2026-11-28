@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_acc-chord-sixth-flat-top.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 451.5,
+				"y": 268
+			},
+			"to": {
+				"x": 464.5,
+				"y": 296
+			},
+			"label": "F#/4 sign",
+			"note": "F#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 452.5,
+				"y": 239
+			},
+			"to": {
+				"x": 464.5,
+				"y": 265
+			},
+			"label": "Db/5 sign",
+			"note": "Db/5 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 500.2,
+				"y": 269
+			},
+			"to": {
+				"x": 512.2,
+				"y": 295
+			},
+			"label": "Eb/4 sign",
+			"note": "Eb/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 500.2,
+				"y": 244
+			},
+			"to": {
+				"x": 512.2,
+				"y": 270
+			},
+			"label": "Cb/5 sign",
+			"note": "Cb/5 sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

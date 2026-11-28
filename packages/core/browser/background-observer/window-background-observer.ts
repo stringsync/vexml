@@ -7,6 +7,11 @@ import type {
 
 const EVENTS = ["visibilitychange", "focus", "blur", "pageshow"] as const;
 
+export interface WindowBackgroundObserverOptions {
+	window?: EventTarget;
+	document?: EventTarget & Pick<Document, "visibilityState" | "hasFocus">;
+}
+
 /**
  * A `BackgroundObserver` over the window: the page counts as backgrounded when
  * it is not visible or does not have focus.
@@ -18,14 +23,21 @@ export class WindowBackgroundObserver implements BackgroundObserver, Resource {
 	);
 	readonly events = this.dispatcher.events;
 
-	private backgrounded = this.compute();
+	private readonly win: EventTarget;
+	private readonly doc: EventTarget &
+		Pick<Document, "visibilityState" | "hasFocus">;
+	private backgrounded: boolean;
 
-	constructor() {
+	constructor(opts: WindowBackgroundObserverOptions = {}) {
+		this.win = opts.window ?? window;
+		this.doc = opts.document ?? document;
+		this.backgrounded = this.compute();
+
 		for (const event of EVENTS) {
 			// visibilitychange only fires on the document, and the rest only on the
 			// window, so both are listened to and every one recomputes the same way.
 			const target: EventTarget =
-				event === "visibilitychange" ? document : window;
+				event === "visibilitychange" ? this.doc : this.win;
 			target.addEventListener(event, this.onChange);
 			this.disposer.defer(() =>
 				target.removeEventListener(event, this.onChange),
@@ -54,6 +66,6 @@ export class WindowBackgroundObserver implements BackgroundObserver, Resource {
 	// alone misses a mobile app switch that fires visibilitychange without a
 	// blur, so the page is in the foreground only when both agree.
 	private compute(): boolean {
-		return document.visibilityState !== "visible" || !document.hasFocus();
+		return this.doc.visibilityState !== "visible" || !this.doc.hasFocus();
 	}
 }

@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-overlap-cut-stem.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 358,
+				"y": 284
+			},
+			"to": {
+				"x": 358,
+				"y": 292
+			},
+			"label": "¾",
+			"note": "Tie depth: ¾ stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

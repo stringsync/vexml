@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tie-chord-with-slur.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 318,
+				"y": 799
+			},
+			"to": {
+				"x": 364,
+				"y": 809
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 325,
+				"y": 784
+			},
+			"to": {
+				"x": 357,
+				"y": 790
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

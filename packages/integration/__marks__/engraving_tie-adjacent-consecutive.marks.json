@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tie-adjacent-consecutive.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 325,
+				"y": 1075
+			},
+			"to": {
+				"x": 345,
+				"y": 1080
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 322,
+				"y": 1099
+			},
+			"to": {
+				"x": 348,
+				"y": 1104
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

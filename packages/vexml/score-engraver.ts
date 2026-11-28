@@ -9,7 +9,6 @@ import { DurationTranslator } from './duration-translator';
 import type { ElementFactory } from './element-factory';
 import type { ElementIndex } from './element-index';
 import { FontFamilies } from './font-families';
-import { FontShorthandPatch } from './font-shorthand-patch';
 import type { Gaps } from './gaps';
 import type { IdleScheduler } from './idle-scheduler';
 import { LayoutPlanner } from './layout-planner';
@@ -196,7 +195,6 @@ export class ScoreEngraver {
 		const parts = document.score.parts;
 		// Before the layout, which builds the first vexflow elements: each measures its glyph.
 		new ProbeTextCanvas(probe).install();
-		new FontShorthandPatch().install();
 		const drawn =
 			parts.length > 0
 				? this.scoreDrawer.draw(
@@ -267,7 +265,6 @@ export class ScoreEngraver {
 		}
 		this.configuredGaps.resolve(document);
 		new ProbeTextCanvas(probe).install();
-		new FontShorthandPatch().install();
 		// The first system and the next are planned exactly, which the forecast of the rest is
 		// scaled from; each draw step plans one more.
 		const plan = this.layoutPlanner.begin(document.score, this.config);

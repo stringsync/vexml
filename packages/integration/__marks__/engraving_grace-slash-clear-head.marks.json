@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_grace-slash-clear-head.png",
+	"width": 932,
+	"height": 739,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 470.7,
+				"y": 111
+			},
+			"to": {
+				"x": 486.7,
+				"y": 139.3
+			},
+			"label": "Single grace",
+			"note": "Single grace",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

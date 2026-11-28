@@ -32,7 +32,7 @@ export class CurveConnectors {
 		this.documentCurves = enabled;
 	}
 
-	/* A note's starting <tied>s with their partners resolved, read once per note. */
+	/* A note's starting and laissez-vibrer <tied>s with their partners resolved, read once per note. */
 	tiesOf(note: Note): TieEnd[] {
 		let ties = this.ties.get(note);
 		if (!ties) {
@@ -41,15 +41,21 @@ export class CurveConnectors {
 				.filter(
 					(tie) =>
 						tie.tieType === 'start' ||
+						tie.tieType === 'let-ring' ||
 						(this.documentCurves && tie.tieType === 'continue'),
 				)
 				.map((tie) => {
-					const segment = this.documentCurves ? curveSegmentOf(tie) : null;
+					const letRing = tie.tieType === 'let-ring';
+					const segment =
+						!letRing && this.documentCurves ? curveSegmentOf(tie) : null;
 					return {
-						partner: segment?.end.note ?? tie.partner?.note ?? null,
+						partner: letRing
+							? null
+							: (segment?.end.note ?? tie.partner?.note ?? null),
 						bezier: segment?.bezier ?? null,
 						dash: lineDashOf(tie),
 						orientation: tie.getAttribute('orientation'),
+						letRing,
 					};
 				});
 			this.ties.set(note, ties);
@@ -183,6 +189,9 @@ export class CurveConnectors {
 				...note.wavyLines
 					.filter((w) => w.wavyLineType === 'start')
 					.map((w) => w.partner?.note ?? null),
+				...note.tuplets
+					.filter((t) => t.tupletType === 'start')
+					.map((t) => t.partner?.note ?? null),
 			];
 			reach = Math.max(
 				note.measure.index,
@@ -194,13 +203,15 @@ export class CurveConnectors {
 	}
 }
 
-/* A tie starting on a note. */
+/* A tie starting on a note (or an open laissez-vibrer tie with no partner). */
 export type TieEnd = {
 	bezier: DocumentBezier | null;
 	partner: Note | null;
 	dash: number[] | null;
 	/* <tied orientation>: "over" bows the tie up, "under" down. */
 	orientation: string | null;
+	/* <tied type="let-ring">: short open tie extending to the right with no partner. */
+	letRing: boolean;
 };
 
 /*

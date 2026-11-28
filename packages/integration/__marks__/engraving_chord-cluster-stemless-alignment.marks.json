@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_chord-cluster-stemless-alignment.png",
+	"width": 932,
+	"height": 1049,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 113,
+				"y": 843
+			},
+			"to": {
+				"x": 130,
+				"y": 853
+			},
+			"label": "Cluster head",
+			"note": "Cluster head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 130,
+				"y": 843
+			},
+			"to": {
+				"x": 147,
+				"y": 853
+			},
+			"label": "Cluster head",
+			"note": "Cluster head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 147,
+				"y": 843
+			},
+			"to": {
+				"x": 164,
+				"y": 853
+			},
+			"label": "Cluster head",
+			"note": "Cluster head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 113,
+				"y": 928
+			},
+			"to": {
+				"x": 130,
+				"y": 938
+			},
+			"label": "M13 reference head",
+			"note": "M13 reference head",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

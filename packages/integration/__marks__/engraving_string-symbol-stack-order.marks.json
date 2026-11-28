@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_string-symbol-stack-order.png",
+	"width": 932,
+	"height": 439,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 126,
+				"y": 237
+			},
+			"to": {
+				"x": 150,
+				"y": 250
+			},
+			"label": "Fermata",
+			"note": "Fermata",
+			"role": "measure",
+			"pass": false
+		}
+	]
+}

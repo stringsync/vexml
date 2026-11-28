@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_tie-same-direction-apart.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 346,
+				"y": 403.5
+			},
+			"to": {
+				"x": 346,
+				"y": 413.5
+			},
+			"label": "1",
+			"note": "Tie to tie: 1 stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 346,
+				"y": 413.5
+			},
+			"to": {
+				"x": 346,
+				"y": 423.5
+			},
+			"label": "1",
+			"note": "Tie to tie: 1 stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 346,
+				"y": 448.5
+			},
+			"to": {
+				"x": 346,
+				"y": 458.5
+			},
+			"label": "1",
+			"note": "Tie to tie: 1 stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

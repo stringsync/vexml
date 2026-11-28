@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tuplet-side-stem.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 112,
+				"y": 72
+			},
+			"to": {
+				"x": 229,
+				"y": 91
+			},
+			"label": "up-stem above",
+			"note": "up-stem above",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 263,
+				"y": 147
+			},
+			"to": {
+				"x": 349,
+				"y": 166
+			},
+			"label": "down-stem below",
+			"note": "down-stem below",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

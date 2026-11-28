@@ -1,4 +1,5 @@
 import type { Part } from '@stringsync/mdom';
+import type { PartGroup } from './score-reader.js';
 export interface StaveVisibility {
     showTabs: boolean;
     showNotation: boolean;
@@ -47,8 +48,8 @@ export declare class StavePlan {
     pairsTabWithNotation(part: Part): boolean;
     partsPairTabWithNotation(parts: Part[]): boolean;
     symbolOf(part: Part): 'brace' | 'bracket' | null;
-    systemSymbol(parts: Part[]): 'brace' | 'bracket' | null;
-    systemOverhang(parts: Part[]): number;
+    systemSymbol(parts: Part[], partGroups?: readonly PartGroup[]): 'brace' | 'bracket' | null;
+    systemOverhang(parts: Part[], partGroups?: readonly PartGroup[]): number;
     private readSymbol;
     /** True when `<staff-details>` gives this staff both string tunings and an explicit
      * `<staff-lines>`: the MusicXML signal for tablature that doesn't depend on the clef.

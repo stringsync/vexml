@@ -1,0 +1,157 @@
+{
+	"screenshot": "engraving_dot-crossed-chords.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 764.5,
+				"y": 606
+			},
+			"to": {
+				"x": 776.5,
+				"y": 616
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 775.9,
+				"y": 601
+			},
+			"to": {
+				"x": 787.9,
+				"y": 611
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 753.1,
+				"y": 596
+			},
+			"to": {
+				"x": 765.1,
+				"y": 606
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 764.5,
+				"y": 591
+			},
+			"to": {
+				"x": 776.5,
+				"y": 601
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 790,
+				"y": 619
+			},
+			"to": {
+				"x": 794,
+				"y": 623
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 790,
+				"y": 609
+			},
+			"to": {
+				"x": 794,
+				"y": 613
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 790,
+				"y": 599
+			},
+			"to": {
+				"x": 794,
+				"y": 603
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 790,
+				"y": 589
+			},
+			"to": {
+				"x": 794,
+				"y": 593
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 775,
+				"y": 571
+			},
+			"to": {
+				"x": 776,
+				"y": 611
+			},
+			"label": "Stem",
+			"note": "Stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 764,
+				"y": 596
+			},
+			"to": {
+				"x": 766,
+				"y": 636
+			},
+			"label": "Stem",
+			"note": "Stem",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

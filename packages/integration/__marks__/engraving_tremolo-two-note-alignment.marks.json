@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_tremolo-two-note-alignment.png",
+	"width": 932,
+	"height": 342,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 520.2,
+				"y": 106
+			},
+			"to": {
+				"x": 537.2,
+				"y": 116
+			},
+			"label": "m.3 whole C5 / G3 upper",
+			"note": "m.3 whole C5 / G3 upper",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 520.2,
+				"y": 196
+			},
+			"to": {
+				"x": 532.2,
+				"y": 206
+			},
+			"label": "m.3 whole C5 / G3 lower",
+			"note": "m.3 whole C5 / G3 lower",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 708.3,
+				"y": 111
+			},
+			"to": {
+				"x": 720.3,
+				"y": 121
+			},
+			"label": "m.4 half B4 / E3 upper",
+			"note": "m.4 half B4 / E3 upper",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 708.3,
+				"y": 206
+			},
+			"to": {
+				"x": 720.3,
+				"y": 216
+			},
+			"label": "m.4 half B4 / E3 lower",
+			"note": "m.4 half B4 / E3 lower",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 795.9,
+				"y": 106
+			},
+			"to": {
+				"x": 807.9,
+				"y": 116
+			},
+			"label": "m.4 quarter C5 / A3 upper",
+			"note": "m.4 quarter C5 / A3 upper",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 795.9,
+				"y": 191
+			},
+			"to": {
+				"x": 807.9,
+				"y": 201
+			},
+			"label": "m.4 quarter C5 / A3 lower",
+			"note": "m.4 quarter C5 / A3 lower",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

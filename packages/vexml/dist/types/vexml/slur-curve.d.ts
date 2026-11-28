@@ -11,6 +11,7 @@ export type SlurCurve = {
     left: number;
     right: number;
     crossStave: boolean;
+    bulgeUp: boolean;
 };
 export type SlurCurveEnds = {
     from: StaveNote | undefined;

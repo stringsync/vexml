@@ -23,6 +23,12 @@ export interface StaveColumn {
     /** Which stave row (counted over the whole system) this stave lands on. */
     staveRow: number;
     isSystemStart: boolean;
+    /** Whether the preceding measure was drawn on this same system (not an edge gap). */
+    prevOnSameSystem: boolean;
+    /** Whether the preceding measure closed the system above (not an edge gap). */
+    prevOnPreviousSystem: boolean;
+    /** Whether the next measure opens the system below (not an edge gap). */
+    nextOnNextSystem: boolean;
     /** Whether this is the score's first measure of music, which prints the time signature.
      * Not measure 0 when leading gaps sit before it. */
     opensScore: boolean;
@@ -39,6 +45,8 @@ export interface StaveColumn {
     /** Whether the previous measure's backward repeat already closed this boundary, so
      * this measure skips its own opening dots. */
     suppressBegRepeat: boolean;
+    /** Whether the previous measure closed with a backward repeat barline. */
+    prevRepeatEnd: boolean;
     nextVolta: {
         x: number;
         width: number;
@@ -67,6 +75,9 @@ export declare class StaveBuilder {
     private readonly factory;
     constructor(opts: StaveBuilderOptions);
     private endCancelOf;
+    private cautionaryKeyOf;
+    private cautionaryTimeOf;
+    private clefChangeAt;
     build(part: Part, measure: Measure, staffNumber: string, visibleCount: number, column: StaveColumn): BuiltStave;
     drawMultiRest(stave: Stave, count: number, symbols: boolean): void;
     private addMeasureNumberObstacle;

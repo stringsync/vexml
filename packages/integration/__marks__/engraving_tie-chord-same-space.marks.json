@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_tie-chord-same-space.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 295,
+				"y": 402
+			},
+			"to": {
+				"x": 342,
+				"y": 409
+			},
+			"label": "G/5",
+			"note": "G/5: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 295,
+				"y": 412
+			},
+			"to": {
+				"x": 342,
+				"y": 419
+			},
+			"label": "E/5",
+			"note": "E/5: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 295,
+				"y": 422
+			},
+			"to": {
+				"x": 342,
+				"y": 429
+			},
+			"label": "C/5",
+			"note": "C/5: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 295,
+				"y": 443
+			},
+			"to": {
+				"x": 342,
+				"y": 450
+			},
+			"label": "A/4",
+			"note": "A/4: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 295,
+				"y": 453
+			},
+			"to": {
+				"x": 342,
+				"y": 460
+			},
+			"label": "F/4",
+			"note": "F/4: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

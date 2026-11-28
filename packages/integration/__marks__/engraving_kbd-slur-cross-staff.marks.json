@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_kbd-slur-cross-staff.png",
+	"width": 932,
+	"height": 456,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 115,
+				"y": 142
+			},
+			"to": {
+				"x": 201,
+				"y": 359
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 97,
+				"y": 239
+			},
+			"to": {
+				"x": 468,
+				"y": 255
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 219,
+				"y": 59
+			},
+			"to": {
+				"x": 901,
+				"y": 76
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 97,
+				"y": 234
+			},
+			"to": {
+				"x": 299,
+				"y": 271
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": false
+		}
+	]
+}

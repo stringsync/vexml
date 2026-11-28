@@ -1,4 +1,4 @@
-import { type Barline, type BeamRun, Chord, type Clef, type Harmony, type Key, MElement, type Measure, type Note, type Part, type Score, type Time } from '@stringsync/mdom';
+import { type Barline, type BeamRun, Chord, type Clef, type Direction, type Harmony, type Key, MElement, type Measure, type Note, type Part, type Score, type Time } from '@stringsync/mdom';
 import { Appearance } from './appearance.js';
 import type { ChordFrame } from './chord-diagram-glyph.js';
 import { DocumentLayout } from './document-layout.js';
@@ -25,8 +25,13 @@ export declare class ScoreReader {
     private readNote;
     beamsOf(note: Note): Note['beams'];
     technicalsOf(note: Note): Note['technicals'];
+    isPluckedStringPart(part: Part): boolean;
+    private readonly pluckedStringParts;
+    private detectPluckedStringPart;
+    isLowerGrandStaff(note: Note): boolean;
     lyricsOf(note: Note): Note['lyrics'];
     ornamentsOf(note: Note): Note['ornaments'];
+    accidentalMarksOf(note: Note): MElement[];
     dotsOf(note: Note): number;
     accidentalOf(note: Note): Note['accidental'];
     tiesOf(note: Note): Note['ties'];
@@ -37,7 +42,12 @@ export declare class ScoreReader {
     private projectVoices;
     keyIdentity(key: Key | null): string | null;
     meterFloor(measure: Measure, staffNumber?: string): number;
+    polymetreRatio(measure: Measure, staffNumber?: string): {
+        actual: number;
+        normal: number;
+    } | null;
     meterBeats(time: Time | null): number;
+    beatUnit(time: Time | null): number;
     midBarlinesOf(measure: Measure): MidBarline[];
     barlineAt(measure: Measure, location: 'left' | 'right'): Barline | null;
     barlineFermatasOf(measure: Measure): BarlineFermata[];
@@ -75,12 +85,16 @@ export declare class ScoreReader {
     wordsOf(measure: Measure): {
         text: string;
         glyph: boolean;
+        dynamicDirection?: Direction;
+        tempoDirection?: Direction;
         staffNumber: string;
         lead: Note | null;
         placement: Placement;
         opensBar: boolean;
         closesBar: boolean;
         directive: boolean;
+        tempo: boolean;
+        explicitSize: boolean;
         format: TextFormat;
         position: DocumentPosition | null;
     }[];
@@ -90,6 +104,7 @@ export declare class ScoreReader {
     dynamicsOf(measure: Measure): {
         text: string;
         glyph: boolean;
+        direction: Direction;
         staffNumber: string;
         lead: Note | null;
         placement: Placement;
@@ -100,14 +115,16 @@ export declare class ScoreReader {
         glyph: string;
         staffNumber: string;
         lead: Note | null;
-        placement: Placement;
+        placement: Placement | null;
+        isDamp: boolean;
+        opensBar: boolean;
     }[];
     private directionSymbolOf;
     harpPedalsOf(measure: Measure): {
         glyphs: string;
         staffNumber: string;
         lead: Note | null;
-        placement: Placement;
+        placement: Placement | null;
         position: DocumentPosition | null;
     }[];
     rehearsalsOf(measure: Measure): {
@@ -254,6 +271,9 @@ export type MeasureNumberingMark = {
 export type SystemRelation = (typeof SYSTEM_RELATIONS)[number];
 declare const SYSTEM_RELATIONS: readonly ['only-top', 'only-bottom', 'also-top', 'also-bottom', 'none'];
 export type TempoMark = {
+    /** The `<direction>` holding this metronome, used to place it inline after preceding
+     * tempo `<words>` in the same direction. */
+    direction?: Direction;
     duration: string;
     bpm: number;
     dots?: number;
@@ -355,6 +375,8 @@ export type WedgeMark = {
     niente: boolean;
     spread: number | null;
     trailing: boolean;
+    downbeat?: boolean;
+    positioned?: boolean;
 };
 export type OctaveShiftSpan = {
     notes: Note[];

@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_repeat-single-bar-sign.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 292,
+				"y": 425
+			},
+			"to": {
+				"x": 313,
+				"y": 446
+			},
+			"label": "Single-bar repeat",
+			"note": "Single-bar repeat",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

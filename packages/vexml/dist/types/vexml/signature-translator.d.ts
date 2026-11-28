@@ -10,9 +10,10 @@ export declare class SignatureTranslator {
     timeSignatureSpec(time: Time | null): string | null;
     extendedTimeSpec(time: Time | null): ExtendedTimeSpec | null;
     private timeSeparator;
-    keyCancel(key: Key | null, prevKey: Key | null): KeyCancel | null;
+    keyCancel(key: Key | null, prevKey: Key | null, cautionary?: boolean): KeyCancel | null;
     private timeFace;
     customKeyAccidentals(key: Key, clef: string): CustomKeyAccidental[];
+    keyAlters(key: Key | null): ReadonlyMap<string, number>;
     vexflowClef(sign: string, line: number | null): string;
     clefName(clef: Clef): string;
     clefSize(clef: Clef | null, change: boolean): ClefSize;

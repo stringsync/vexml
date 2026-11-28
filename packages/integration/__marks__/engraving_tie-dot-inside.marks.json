@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_tie-dot-inside.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 668,
+				"y": 450
+			},
+			"to": {
+				"x": 742,
+				"y": 458
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 676,
+				"y": 439
+			},
+			"to": {
+				"x": 680,
+				"y": 443
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 795,
+				"y": 414
+			},
+			"to": {
+				"x": 868,
+				"y": 422
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 802,
+				"y": 429
+			},
+			"to": {
+				"x": 806,
+				"y": 433
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

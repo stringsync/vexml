@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_chord-adjacent-even.png",
+	"width": 932,
+	"height": 882,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 88.6,
+				"y": 416
+			},
+			"to": {
+				"x": 100.6,
+				"y": 426
+			},
+			"label": "M9 E/5: left",
+			"note": "M9 E/5: left",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 100,
+				"y": 411
+			},
+			"to": {
+				"x": 112,
+				"y": 421
+			},
+			"label": "M9 F/5: right",
+			"note": "M9 F/5: right",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 88.6,
+				"y": 406
+			},
+			"to": {
+				"x": 100.6,
+				"y": 416
+			},
+			"label": "M9 G/5: left",
+			"note": "M9 G/5: left",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 100,
+				"y": 401
+			},
+			"to": {
+				"x": 112,
+				"y": 411
+			},
+			"label": "M9 A/5: right",
+			"note": "M9 A/5: right",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 180.9,
+				"y": 451
+			},
+			"to": {
+				"x": 192.9,
+				"y": 461
+			},
+			"label": "M9 E/4: left",
+			"note": "M9 E/4: left",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 192.3,
+				"y": 446
+			},
+			"to": {
+				"x": 204.3,
+				"y": 456
+			},
+			"label": "M9 F/4: right",
+			"note": "M9 F/4: right",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 180.9,
+				"y": 441
+			},
+			"to": {
+				"x": 192.9,
+				"y": 451
+			},
+			"label": "M9 G/4: left",
+			"note": "M9 G/4: left",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 192.3,
+				"y": 436
+			},
+			"to": {
+				"x": 204.3,
+				"y": 446
+			},
+			"label": "M9 A/4: right",
+			"note": "M9 A/4: right",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

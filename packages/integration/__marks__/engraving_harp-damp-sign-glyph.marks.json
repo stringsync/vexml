@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_harp-damp-sign-glyph.png",
+	"width": 932,
+	"height": 255,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 440,
+				"y": 70
+			},
+			"to": {
+				"x": 450,
+				"y": 80
+			},
+			"label": "Damp 1",
+			"note": "Damp 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 475,
+				"y": 69
+			},
+			"to": {
+				"x": 486,
+				"y": 80
+			},
+			"label": "Damp 2",
+			"note": "Damp 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

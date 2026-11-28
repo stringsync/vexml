@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_pause-fermata-double-stem.png",
+	"width": 932,
+	"height": 412,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 464,
+				"y": 217
+			},
+			"to": {
+				"x": 488,
+				"y": 230
+			},
+			"label": "Upper fermata",
+			"note": "Upper fermata",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 464,
+				"y": 337
+			},
+			"to": {
+				"x": 488,
+				"y": 350
+			},
+			"label": "Lower fermata",
+			"note": "Lower fermata",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

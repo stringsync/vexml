@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_string-left-hand-pizzicato-two-voices.png",
+	"width": 932,
+	"height": 1050,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 89,
+				"y": 383
+			},
+			"to": {
+				"x": 100,
+				"y": 394
+			},
+			"label": "B1 V1",
+			"note": "B1 V1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 89,
+				"y": 499
+			},
+			"to": {
+				"x": 100,
+				"y": 510
+			},
+			"label": "B1 V2",
+			"note": "B1 V2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 233,
+				"y": 378
+			},
+			"to": {
+				"x": 244,
+				"y": 389
+			},
+			"label": "B3 V1",
+			"note": "B3 V1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 233,
+				"y": 494
+			},
+			"to": {
+				"x": 244,
+				"y": 505
+			},
+			"label": "B3 V2",
+			"note": "B3 V2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

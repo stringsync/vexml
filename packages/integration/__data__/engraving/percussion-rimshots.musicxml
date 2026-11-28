@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1"><part-name>Snare</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>percussion</sign></clef>
+        <staff-details><staff-lines>1</staff-lines></staff-details>
+      </attributes>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+      </note>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <notehead>x</notehead>
+      </note>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <notehead>circle-x</notehead>
+      </note>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <notehead>circled</notehead>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

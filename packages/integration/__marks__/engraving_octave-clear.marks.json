@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_octave-clear.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 115,
+				"y": 61
+			},
+			"to": {
+				"x": 251,
+				"y": 77
+			},
+			"label": "clear",
+			"note": "Octave bracket at x=100 clears all other ink",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 284,
+				"y": 61
+			},
+			"to": {
+				"x": 335,
+				"y": 77
+			},
+			"label": "clear",
+			"note": "Octave bracket at x=269 clears all other ink",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 389,
+				"y": 61
+			},
+			"to": {
+				"x": 423,
+				"y": 77
+			},
+			"label": "clear",
+			"note": "Octave bracket at x=374 clears all other ink",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 564,
+				"y": 151
+			},
+			"to": {
+				"x": 706,
+				"y": 168
+			},
+			"label": "clear",
+			"note": "Octave bracket at x=549 clears all other ink",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 740,
+				"y": 61
+			},
+			"to": {
+				"x": 902,
+				"y": 77
+			},
+			"label": "clear",
+			"note": "Octave bracket at x=725 clears all other ink",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 85,
+				"y": 241
+			},
+			"to": {
+				"x": 136,
+				"y": 257
+			},
+			"label": "clear",
+			"note": "Octave bracket at x=70 clears all other ink",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 233,
+				"y": 241
+			},
+			"to": {
+				"x": 386,
+				"y": 257
+			},
+			"label": "clear",
+			"note": "Octave bracket at x=218 clears all other ink",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 477,
+				"y": 221
+			},
+			"to": {
+				"x": 511,
+				"y": 237
+			},
+			"label": "clear",
+			"note": "Octave bracket at x=462 clears all other ink",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

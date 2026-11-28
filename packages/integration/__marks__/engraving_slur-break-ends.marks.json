@@ -1,0 +1,36 @@
+{
+	"screenshot": "engraving_slur-break-ends.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 697,
+				"y": 75
+			},
+			"to": {
+				"x": 901,
+				"y": 92
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 901,
+				"y": 86
+			},
+			"to": {
+				"x": 901,
+				"y": 136
+			},
+			"label": "closing barline",
+			"note": "M1 closing barline at x=885, top=80",
+			"role": "reference"
+		}
+	]
+}

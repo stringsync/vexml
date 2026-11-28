@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_trill-single-stemmed-chord.png",
+	"width": 932,
+	"height": 281,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 716,
+				"y": 55
+			},
+			"to": {
+				"x": 737,
+				"y": 71
+			},
+			"label": "Upper tr",
+			"note": "Upper tr",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 716,
+				"y": 75
+			},
+			"to": {
+				"x": 737,
+				"y": 91
+			},
+			"label": "Lower tr",
+			"note": "Lower tr",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

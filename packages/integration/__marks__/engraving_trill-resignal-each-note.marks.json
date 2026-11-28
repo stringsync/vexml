@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_trill-resignal-each-note.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 611,
+				"y": 70
+			},
+			"to": {
+				"x": 632,
+				"y": 86
+			},
+			"label": "Trill sign",
+			"note": "Trill sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 649,
+				"y": 70
+			},
+			"to": {
+				"x": 670,
+				"y": 86
+			},
+			"label": "Trill sign",
+			"note": "Trill sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 686,
+				"y": 70
+			},
+			"to": {
+				"x": 707,
+				"y": 86
+			},
+			"label": "Trill sign",
+			"note": "Trill sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 724,
+				"y": 70
+			},
+			"to": {
+				"x": 745,
+				"y": 86
+			},
+			"label": "Trill sign",
+			"note": "Trill sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

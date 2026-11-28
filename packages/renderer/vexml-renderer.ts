@@ -20,7 +20,7 @@ import { tabPools } from './tab-pools';
  * and the library entry itself (so a fn can drive a re-render, as the stage tests do). */
 export interface VexmlContext {
 	score: Score;
-	inkMasks(): InkMask[];
+	inkMasks(options?: { separateNoteDots?: boolean }): InkMask[];
 	container: HTMLDivElement;
 	render: typeof render;
 	paint: typeof paint;

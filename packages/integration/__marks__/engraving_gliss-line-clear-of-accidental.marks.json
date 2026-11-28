@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_gliss-line-clear-of-accidental.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 416,
+				"y": 126
+			},
+			"to": {
+				"x": 463,
+				"y": 146
+			},
+			"label": "Glissando",
+			"note": "Glissando",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 453,
+				"y": 112
+			},
+			"to": {
+				"x": 478,
+				"y": 140
+			},
+			"label": "Accidental",
+			"note": "Accidental",
+			"role": "measure",
+			"pass": false
+		}
+	]
+}

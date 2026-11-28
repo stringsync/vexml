@@ -1,0 +1,367 @@
+{
+	"screenshot": "engraving_beam-stem-length.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 339,
+				"y": 281
+			},
+			"to": {
+				"x": 339,
+				"y": 246
+			},
+			"label": "3½",
+			"note": "M4 A/4: 3½ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 389,
+				"y": 281
+			},
+			"to": {
+				"x": 389,
+				"y": 246
+			},
+			"label": "3½",
+			"note": "M4 A/4: 3½ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 440,
+				"y": 281
+			},
+			"to": {
+				"x": 440,
+				"y": 246
+			},
+			"label": "3½",
+			"note": "M4 A/4: 3½ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 484,
+				"y": 281
+			},
+			"to": {
+				"x": 484,
+				"y": 246
+			},
+			"label": "3½",
+			"note": "M4 A/4: 3½ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 527,
+				"y": 281
+			},
+			"to": {
+				"x": 527,
+				"y": 246
+			},
+			"label": "3½",
+			"note": "M4 A/4: 3½ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 571,
+				"y": 281
+			},
+			"to": {
+				"x": 571,
+				"y": 246
+			},
+			"label": "3½",
+			"note": "M4 A/4: 3½ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 105,
+				"y": 446
+			},
+			"to": {
+				"x": 105,
+				"y": 413
+			},
+			"label": "3¼",
+			"note": "M5 G/4: 3¼ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 147,
+				"y": 446
+			},
+			"to": {
+				"x": 147,
+				"y": 414
+			},
+			"label": "3¼",
+			"note": "M5 G/4: 3¼ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 189,
+				"y": 446
+			},
+			"to": {
+				"x": 189,
+				"y": 413
+			},
+			"label": "3¼",
+			"note": "M5 G/4: 3¼ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 226,
+				"y": 446
+			},
+			"to": {
+				"x": 226,
+				"y": 413
+			},
+			"label": "3¼",
+			"note": "M5 G/4: 3¼ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 262,
+				"y": 446
+			},
+			"to": {
+				"x": 262,
+				"y": 413
+			},
+			"label": "3¼",
+			"note": "M5 G/4: 3¼ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 299,
+				"y": 446
+			},
+			"to": {
+				"x": 299,
+				"y": 413
+			},
+			"label": "3¼",
+			"note": "M5 G/4: 3¼ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 556,
+				"y": 431
+			},
+			"to": {
+				"x": 556,
+				"y": 466
+			},
+			"label": "3½",
+			"note": "M6 C/5: 3½ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 588,
+				"y": 431
+			},
+			"to": {
+				"x": 588,
+				"y": 466
+			},
+			"label": "3½",
+			"note": "M6 C/5: 3½ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 620,
+				"y": 431
+			},
+			"to": {
+				"x": 620,
+				"y": 466
+			},
+			"label": "3½",
+			"note": "M6 C/5: 3½ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 647,
+				"y": 431
+			},
+			"to": {
+				"x": 647,
+				"y": 466
+			},
+			"label": "3½",
+			"note": "M6 C/5: 3½ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 674,
+				"y": 431
+			},
+			"to": {
+				"x": 674,
+				"y": 466
+			},
+			"label": "3½",
+			"note": "M6 C/5: 3½ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 702,
+				"y": 431
+			},
+			"to": {
+				"x": 702,
+				"y": 466
+			},
+			"label": "3½",
+			"note": "M6 C/5: 3½ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 82,
+				"y": 586
+			},
+			"to": {
+				"x": 82,
+				"y": 618
+			},
+			"label": "3¼",
+			"note": "M7 D/5: 3¼ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 113,
+				"y": 586
+			},
+			"to": {
+				"x": 113,
+				"y": 618
+			},
+			"label": "3¼",
+			"note": "M7 D/5: 3¼ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 144,
+				"y": 586
+			},
+			"to": {
+				"x": 144,
+				"y": 619
+			},
+			"label": "3¼",
+			"note": "M7 D/5: 3¼ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 171,
+				"y": 586
+			},
+			"to": {
+				"x": 171,
+				"y": 619
+			},
+			"label": "3¼",
+			"note": "M7 D/5: 3¼ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 197,
+				"y": 586
+			},
+			"to": {
+				"x": 197,
+				"y": 619
+			},
+			"label": "3¼",
+			"note": "M7 D/5: 3¼ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 224,
+				"y": 586
+			},
+			"to": {
+				"x": 224,
+				"y": 618
+			},
+			"label": "3¼",
+			"note": "M7 D/5: 3¼ spaces from head centre to outer beam",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

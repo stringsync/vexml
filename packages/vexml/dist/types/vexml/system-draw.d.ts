@@ -43,6 +43,7 @@ export declare class SystemDraw {
     private readonly lyricDrops;
     private readonly voltaLifts;
     private readonly hairpinBands;
+    private readonly ottavaBands;
     private readonly marks;
     private activeFloorHeight;
     private settled;

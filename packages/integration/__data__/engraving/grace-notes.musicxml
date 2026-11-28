@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): grace-size-and-stem, grace-single-slash (p. 125) — slashed grace with sharp, unslashed appoggiatura with flat, and regular quarter -->
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>G</step><alter>1</alter><octave>4</octave></pitch>
+        <type>eighth</type>
+        <accidental>sharp</accidental>
+      </note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note>
+        <grace slash="no"/>
+        <pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch>
+        <type>eighth</type>
+        <accidental>flat</accidental>
+      </note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M2 (index 1): grace-slash-clear-head, grace-group-slash-position (p. 126) — single slashed grace and 3-note slashed beamed group -->
+    <measure number="2">
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <type>eighth</type>
+      </note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+        <beam number="2">begin</beam>
+      </note>
+      <note>
+        <grace/>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <type>16th</type>
+        <beam number="1">continue</beam>
+        <beam number="2">continue</beam>
+      </note>
+      <note>
+        <grace/>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <type>16th</type>
+        <beam number="1">end</beam>
+        <beam number="2">end</beam>
+      </note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
+    </measure>
+
+    <!-- M3 (index 2): grace-slash-clear-ledger (p. 126) — slashed grace notes on ledger lines below and above -->
+    <measure number="3">
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>A</step><octave>3</octave></pitch>
+        <type>eighth</type>
+      </note>
+      <note><pitch><step>B</step><octave>3</octave></pitch><duration>8</duration><type>half</type></note>
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>C</step><octave>6</octave></pitch>
+        <type>eighth</type>
+      </note>
+      <note><pitch><step>B</step><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+    </measure>
+
+    <!-- M4 (index 3): grace-stem-direction (pp. 126-127) — single-voice grace notes always stem up, even high on stave -->
+    <measure number="4">
+      <print new-system="yes"/>
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <type>eighth</type>
+      </note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <type>eighth</type>
+      </note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>A</step><octave>5</octave></pitch>
+        <type>eighth</type>
+      </note>
+      <note><pitch><step>G</step><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+    </measure>
+
+    <!-- M5 (index 4): grace-stem-direction (two voices) & grace-align-two-voices (pp. 126, 128) — upper voice stems up, lower voice stems down, aligned -->
+    <measure number="5">
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <voice>1</voice>
+        <type>eighth</type>
+      </note>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+      <backup><duration>16</duration></backup>
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <voice>2</voice>
+        <type>eighth</type>
+      </note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type></note>
+    </measure>
+
+    <!-- M6-M7 (indices 5-6): grace-after-note-before-barline & grace-after-barline (p. 127) -->
+    <measure number="6">
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+      <note>
+        <grace/>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+        <beam number="2">begin</beam>
+      </note>
+      <note>
+        <grace/>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <type>16th</type>
+        <beam number="1">end</beam>
+        <beam number="2">end</beam>
+      </note>
+    </measure>
+    <measure number="7">
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <type>eighth</type>
+      </note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>16</duration><type>whole</type></note>
+    </measure>
+
+    <!-- M8 (index 7): grace-slur-below (p. 129) — single-voice grace-note slurs curve below from notehead to notehead -->
+    <measure number="8">
+      <print new-system="yes"/>
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <type>eighth</type>
+        <notations><slur type="start" number="1"/></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>8</duration>
+        <type>half</type>
+        <notations><slur type="stop" number="1"/></notations>
+      </note>
+      <note>
+        <grace/>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+        <beam number="2">begin</beam>
+        <notations><slur type="start" number="1"/></notations>
+      </note>
+      <note>
+        <grace/>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <type>16th</type>
+        <beam number="1">end</beam>
+        <beam number="2">end</beam>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>half</type>
+        <notations><slur type="stop" number="1"/></notations>
+      </note>
+    </measure>
+
+    <!-- M9 (index 8): grace-slur-two-voices (p. 129) — two-voice grace slurs curve away from the stave -->
+    <measure number="9">
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <voice>1</voice>
+        <type>eighth</type>
+        <notations><slur type="start" number="1"/></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>16</duration>
+        <voice>1</voice>
+        <type>whole</type>
+        <notations><slur type="stop" number="1"/></notations>
+      </note>
+      <backup><duration>16</duration></backup>
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <voice>2</voice>
+        <type>eighth</type>
+        <notations><slur type="start" number="2"/></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>16</duration>
+        <voice>2</voice>
+        <type>whole</type>
+        <notations><slur type="stop" number="2"/></notations>
+      </note>
+    </measure>
+
+    <!-- M10 (index 9): grace-slur-clear-ledger (p. 129) — slur over ledger-line grace notes avoids obscuring ledger lines -->
+    <measure number="10">
+      <note>
+        <grace/>
+        <pitch><step>C</step><octave>6</octave></pitch>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+        <beam number="2">begin</beam>
+        <notations><slur type="start" number="1"/></notations>
+      </note>
+      <note>
+        <grace/>
+        <pitch><step>D</step><octave>6</octave></pitch>
+        <type>16th</type>
+        <beam number="1">continue</beam>
+        <beam number="2">continue</beam>
+      </note>
+      <note>
+        <grace/>
+        <pitch><step>E</step><octave>6</octave></pitch>
+        <type>16th</type>
+        <beam number="1">end</beam>
+        <beam number="2">end</beam>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>6</octave></pitch>
+        <duration>16</duration>
+        <type>whole</type>
+        <notations><slur type="stop" number="1"/></notations>
+      </note>
+    </measure>
+
+    <!-- M11 (index 10): grace-slur-clear-accidental & grace-slur-chord-top (p. 130) -->
+    <measure number="11">
+      <print new-system="yes"/>
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <type>eighth</type>
+        <notations><slur type="start" number="1"/></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><alter>1</alter><octave>5</octave></pitch>
+        <duration>8</duration>
+        <type>half</type>
+        <accidental>sharp</accidental>
+        <notations><slur type="stop" number="1"/></notations>
+      </note>
+      <note>
+        <grace/>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+        <beam number="2">begin</beam>
+        <notations><slur type="start" number="1"/></notations>
+      </note>
+      <note>
+        <grace/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <type>16th</type>
+        <beam number="1">end</beam>
+        <beam number="2">end</beam>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>half</type>
+        <notations><slur type="stop" number="1"/></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>8</duration>
+        <type>half</type>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>8</duration>
+        <type>half</type>
+      </note>
+    </measure>
+
+    <!-- M12 (index 11): grace-articulation-outside (p. 130) — articulations on grace notes sit outside the stave -->
+    <measure number="12">
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <type>eighth</type>
+        <notations><articulations><staccato/></articulations></notations>
+      </note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
+      <note>
+        <grace slash="yes"/>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <type>eighth</type>
+        <notations><articulations><accent/></articulations></notations>
+      </note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+    </measure>
+  </part>
+</score-partwise>

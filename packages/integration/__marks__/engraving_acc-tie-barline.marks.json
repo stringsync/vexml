@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_acc-tie-barline.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 652.7,
+				"y": 437
+			},
+			"to": {
+				"x": 669.7,
+				"y": 447
+			},
+			"label": "Tied-into F#4",
+			"note": "Tied-into F#4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

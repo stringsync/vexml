@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_tuplets-numeral.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 281.93 },
+		{ "index": 1, "system": 0, "x": 312.93, "w": 386.84 },
+		{ "index": 2, "system": 0, "x": 699.77, "w": 201.23 },
+		{ "index": 3, "system": 1, "x": 31, "w": 263.28 },
+		{ "index": 4, "system": 1, "x": 294.28, "w": 131 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 281.93
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 312.93,
+			"w": 386.84
+		},
+		{
+			"part": 0,
+			"measure": 2,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 699.77,
+			"w": 201.23
+		},
+		{
+			"part": 0,
+			"measure": 3,
+			"staff": 1,
+			"lines": [256, 266, 276, 286, 296],
+			"x": 31,
+			"w": 263.28
+		},
+		{
+			"part": 0,
+			"measure": 4,
+			"staff": 1,
+			"lines": [256, 266, 276, 286, 296],
+			"x": 294.28,
+			"w": 131
+		}
+	]
+}

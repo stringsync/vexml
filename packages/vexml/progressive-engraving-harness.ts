@@ -34,8 +34,9 @@ export const DATA_DIR = path.resolve(
 	import.meta.dir,
 	'../integration/__data__',
 );
-// Many systems, so a first screen leaves most of the score to the slices.
-export const LONG = 'score_schubert_gute_nacht.musicxml';
+// Multi-part voice-and-piano score spanning 8 systems, so a first screen leaves most of the score to the slices.
+export const LONG = 'score_mozart_an_chloe.musicxml';
+export const LONG_TITLE = 'An Chloe';
 // A tie whose two halves sit on either side of a system break.
 export const TIE_ACROSS_BREAK = 'tie_system_break.musicxml';
 // A rights credit, which prints as the footer under the last system.
@@ -131,6 +132,17 @@ export function wholeLong() {
 	return wholeLongRender;
 }
 
+// Cache fixture files so repeated renders avoid re-reading the same MusicXML from disk.
+const fixtureTexts = new Map<string, Promise<string>>();
+function readFixture(name: string): Promise<string> {
+	let text = fixtureTexts.get(name);
+	if (!text) {
+		text = Bun.file(path.join(DATA_DIR, name)).text();
+		fixtureTexts.set(name, text);
+	}
+	return text;
+}
+
 // A fixture's file name under DATA_DIR, its MusicXML itself, or a snapshot.
 export async function render(
 	fixture: string | ScoreSnapshot,
@@ -189,7 +201,7 @@ export async function render(
 	const score = await renderer.render(
 		typeof fixture !== 'string' || fixture.startsWith('<')
 			? fixture
-			: await Bun.file(path.join(DATA_DIR, fixture)).text(),
+			: await readFixture(fixture),
 	);
 	return { score, stage, scheduler };
 }

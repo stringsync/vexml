@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_kbd-cross-staff-tuplet-unbeamed.png",
+	"width": 932,
+	"height": 342,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 620.2,
+				"y": 121
+			},
+			"to": {
+				"x": 632.2,
+				"y": 131
+			},
+			"label": "G4",
+			"note": "G4",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 702.1,
+				"y": 206
+			},
+			"to": {
+				"x": 714.1,
+				"y": 216
+			},
+			"label": "E3",
+			"note": "E3",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 784.1,
+				"y": 216
+			},
+			"to": {
+				"x": 796.1,
+				"y": 226
+			},
+			"label": "C3",
+			"note": "C3",
+			"role": "measure",
+			"pass": false
+		}
+	]
+}

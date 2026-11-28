@@ -8,13 +8,17 @@ import type {
 } from '@stringsync/mdom';
 import { Rect } from 'core/geometry';
 import {
+	Accidental,
 	Barline,
 	BarNote,
 	Bend,
+	Clef,
 	ClefNote,
 	type Element,
-	Formatter,
 	GraceNoteGroup,
+	getBottomY,
+	getInitialOffset,
+	KeySignature,
 	Modifier,
 	type NoteHead,
 	type RenderContext,
@@ -24,17 +28,21 @@ import {
 	StaveNote,
 	Stem,
 	type StemmableNote,
+	Stroke,
 	type TabNote,
 	type TabStave,
 	type Tickable,
 	TickContext,
 	TimeSignature,
+	Tuplet,
 	type Note as VexNote,
 	Vibrato,
 	type Voice,
 } from 'vexflow/core';
 import { AfterGraceGroup } from './after-grace-group';
+import { AlignedFormatter } from './aligned-formatter';
 import { BAR_STYLE_TYPES } from './barline-translator';
+import { tuckChordAccidentals } from './chord-accidental-overlap';
 import type { ChordTranslator } from './chord-translator';
 import { CollisionResolver } from './collision-resolver';
 import type { ConnectorDrawer } from './connector-drawer';
@@ -46,18 +54,25 @@ import {
 	LYRIC_Y_OFFSET,
 	TAB_CURVE_RISE,
 	TECHNICAL_EDGE_GAP,
+	TECHNICAL_ROW_GAP,
 	TIE_APEX_RISE,
+	TUPLET_NUMERAL_HALF_HEIGHT,
+	TUPLET_SLUR_GAP,
 } from './constants';
+import { DisplayTuplet } from './display-tuplet';
 import { Ink } from './ink';
 import { InvisibleStaveNote } from './invisible-stave-note';
 import type { LyricPlacer } from './lyric-placer';
+import { PauseMark } from './pause-mark';
 import type { ScoreReader } from './score-reader';
 import type { SpannerBuilder } from './spanner-builder';
 import type { SpillTracker } from './spill-tracker';
 import { StaveArticulation } from './stave-articulation';
+import { StaveOrnament } from './stave-ornament';
 import type { TabBend } from './tab-bend';
 import { isTechnicalMark } from './technical-mark';
 import { VoiceArticulationPlacer } from './voice-articulation-placer';
+import { offsetAdjacentVoices, type VoiceTieEnds } from './voice-note-offset';
 import type { VoiceTranslator } from './voice-translator';
 
 // One stave's notes, built but not yet formatted or drawn. A part's staves are
@@ -84,6 +99,9 @@ export type PendingStave = {
 	// Each voice's chords, waiting alongside beamPlans: a tuplet hides its bracket when its
 	// notes are already beamed, so it has to be built AFTER the beams are.
 	tupletChords: Chord[][];
+	// Bar-wide unbracketed <time-modification> ratio when this stave is polymetrically scaled
+	// against another part (Behind Bars pp. 174–175).
+	polymetreRatio?: { actual: number; normal: number } | null;
 	// Real notes only (no gap-filling ghosts), for the bottom-bound calc.
 	staveNotes: StaveNote[];
 	// StaveNotes whose lead carries a tie, so they get a tie-apex collision obstacle once their
@@ -196,6 +214,25 @@ export class SystemFormatter {
 	 * A staff drawn at staff-size percent keeps its glyphs in proportion: its noteheads shrink
 	 * with the line spacing (vexflow sizes them off a fixed font scale, not the stave).
 	 */
+	private voiceTieEnds(
+		noteChords: ReadonlyArray<{ note: StaveNote; chord: Chord }>,
+	): VoiceTieEnds {
+		const starts = new Set<StaveNote>();
+		const stops = new Set<StaveNote>();
+		for (const { note, chord } of noteChords) {
+			for (const member of chord.notes) {
+				for (const tie of this.opts.reader.tiesOf(member)) {
+					if (tie.tieType === 'start') {
+						starts.add(note);
+					} else if (tie.tieType === 'stop') {
+						stops.add(note);
+					}
+				}
+			}
+		}
+		return { starts, stops };
+	}
+
 	private shrinkNoteheads(note: Tickable, stave: Stave): void {
 		const ratio = stave.getSpacingBetweenLines() / 10;
 		if (ratio === 1 || !(note instanceof StaveNote)) {
@@ -240,13 +277,12 @@ export class SystemFormatter {
 		// The leading pad sits inside the stave but off-limits to the formatter, the mirror of
 		// the trailing one below: the first note starts clear of the barline so a directive
 		// centered on it prints in the gap instead of over the divider.
-		const startX =
+		const paddedStartX =
 			Math.max(...pending.map((p) => p.stave.getNoteStartX())) +
 			column.measureLeadingPad;
-		let noteEndX = 0;
+		const noteEndX = Math.min(...pending.map((p) => p.stave.getNoteEndX()));
 		for (const p of pending) {
-			p.stave.setNoteStartX(startX);
-			noteEndX = p.stave.getNoteEndX();
+			p.stave.setNoteStartX(paddedStartX);
 			for (const vexVoice of p.vexVoices) {
 				vexVoice.setStave(p.stave);
 				// Voice.setStave doesn't reach the tickables; Voice.draw does that, which is
@@ -265,16 +301,35 @@ export class SystemFormatter {
 		// joinVoices per stave (voices on one stave share accidental/stem columns), then
 		// format every voice at once to share tick contexts across staves. The note area
 		// was sized to a global px-per-tick, so spacing stays consistent across measures.
-		const formatter = new Formatter({ softmaxFactor: this.softmaxFactor });
+		const formatter = new AlignedFormatter({
+			softmaxFactor: this.softmaxFactor,
+		});
 		for (const p of pending) {
 			this.articulationPlacer.place(p.vexVoices);
 			formatter.joinVoices(p.vexVoices);
+			offsetAdjacentVoices(
+				p.vexVoices,
+				p.vexVoices.length > 1 ? this.voiceTieEnds(p.noteChords) : undefined,
+			);
+			tuckChordAccidentals(p.vexVoices);
 		}
 		const allVoices = pending.flatMap((p) => p.vexVoices);
 		// The trailing pad is inside the stave but off-limits to the formatter, so the last
 		// note stops short of the barline and its words directive prints in the gap.
-		const justifyWidth =
-			noteEndX - startX - Stave.defaultPadding - column.measureTrailingPad;
+		const rightLimit =
+			noteEndX - Stave.defaultPadding - column.measureTrailingPad;
+		let startX = paddedStartX;
+		const desiredStartX = this.desiredNoteStart(pending, column, startX);
+		if (desiredStartX > startX) {
+			// Use only spare width for the larger gap in a tightly set measure.
+			// Moving the note start any farther can push notes over the far barline.
+			const minimum = formatter.preCalculateMinTotalWidth(allVoices);
+			startX = Math.max(startX, Math.min(desiredStartX, rightLimit - minimum));
+			for (const { stave } of pending) {
+				stave.setNoteStartX(startX);
+			}
+		}
+		const justifyWidth = rightLimit - startX;
 		formatter.format(allVoices, Math.max(1, justifyWidth), {
 			context: this.context,
 		});
@@ -300,8 +355,11 @@ export class SystemFormatter {
 			}
 		}
 		this.pushAfterGraces(allVoices, noteEndX);
+		this.placePauseMarks(pending, noteEndX);
 		for (const p of pending) {
+			this.orderFermatasOutsideOrnaments(p);
 			this.placeRests(p);
+			this.moveRestsOffBeams(p);
 		}
 
 		let bottom = 0;
@@ -315,10 +373,13 @@ export class SystemFormatter {
 		// A notation grace group's width, keyed by its main note's (shared) tick context, so a
 		// tab grace group at the same tick can match its notation counterpart by identity.
 		const notationGraceWidths = new Map<unknown, number>();
+		const maxNotationModLeft = this.maxNotationModLeftByTick(pending);
 		for (const p of pending) {
 			if (p.isTab) {
 				continue;
 			}
+			this.alignStaveGraces(p.vexVoices);
+			this.closeStaveGraces(p.vexVoices, maxNotationModLeft);
 			for (const vexVoice of p.vexVoices) {
 				for (const note of vexVoice.getTickables() as StaveNote[]) {
 					const group = this.graceGroupOf(this.translator, note);
@@ -340,12 +401,25 @@ export class SystemFormatter {
 			if (p.isTab) {
 				continue;
 			}
-			const floorY = p.stave.getBottomLineY();
-			let drop = Math.max(lyricDrops.get(p.row) ?? 0, LYRIC_Y_OFFSET);
 			for (const note of p.staveNotes) {
 				// The stave reaches the notes via Voice.draw, which hasn't run yet; the note
 				// bounds need it now. Setting it early is what draw would do anyway.
 				note.setStave(p.stave);
+			}
+		}
+		for (const p of pending) {
+			if (p.isTab) {
+				continue;
+			}
+			const floorY = p.stave.getBottomLineY();
+			let drop = Math.max(lyricDrops.get(p.row) ?? 0, LYRIC_Y_OFFSET);
+			// Extend two-note tremolo stems now that all staves and x positions are set, so
+			// cross-staff pairs see both staves and lyric drops/spill see final stem tips.
+			for (const tremolo of p.tremolos) {
+				tremolo.extendStems();
+				tremolo.placeFermatas();
+			}
+			for (const note of p.staveNotes) {
 				drop = Math.max(
 					drop,
 					this.noteBottom(note) + LYRIC_NOTE_CLEARANCE - floorY,
@@ -457,6 +531,7 @@ export class SystemFormatter {
 			for (const tremolo of p.tremolos) {
 				tremolo.setContext(this.context).draw();
 			}
+			this.offsetTupletsOverSlurs(p);
 			for (const tuplet of p.tuplets) {
 				tuplet.setContext(this.context).draw();
 				// The numeral (and bracket) sits in the band the above- and below-stave text
@@ -516,6 +591,42 @@ export class SystemFormatter {
 						band: p.row,
 					});
 				}
+				// Below-stave ornaments (such as a lower-voice trill) sit between the note and any
+				// below-stave dynamic; register their drawn bounds so dynamics drop clear of them.
+				for (const mod of note.getModifiers()) {
+					if (
+						mod.getCategory() === 'Ornament' &&
+						mod.getPosition() === Modifier.Position.BELOW
+					) {
+						const mbox = mod.getBoundingBox();
+						const mrect = new Rect(
+							mbox.getX(),
+							mbox.getY(),
+							mbox.getW(),
+							mbox.getH(),
+						);
+						bottom = Math.max(bottom, mrect.bottom);
+						this.recordStaveSpill(p, mrect);
+						this.collisionResolver.add({
+							rect: mrect,
+							kind: 'note',
+							band: p.row,
+						});
+					} else if (mod instanceof PauseMark) {
+						const mbox = mod.getBoundingBox();
+						const mrect = new Rect(
+							mbox.getX(),
+							mbox.getY(),
+							mbox.getW(),
+							mbox.getH(),
+						);
+						this.collisionResolver.add({
+							rect: mrect,
+							kind: 'note',
+							band: p.row,
+						});
+					}
+				}
 			}
 			for (const { note, chord } of p.tabChords) {
 				const rect = this.tabArcApexRect(p.stave, note, chord.lead);
@@ -571,6 +682,74 @@ export class SystemFormatter {
 	}
 
 	/*
+	 * Behind Bars p. 198: a tuplet bracket longer than (or intersecting) a slur on the same
+	 * side sits outside the slur. Shorter brackets stay put so the longer spanning slur can
+	 * arch outside them instead (see SlurNesting.shorterTuplets).
+	 */
+	private offsetTupletsOverSlurs(p: PendingStave): void {
+		if (
+			p.isTab ||
+			!p.tuplets.some((t) => t instanceof DisplayTuplet && t.isBracketed())
+		) {
+			return;
+		}
+		const slurs = this.spanners.buildSlurs(
+			p.noteChords.map(({ chord }) => chord),
+			this.byLead,
+		);
+		if (slurs.length === 0) {
+			return;
+		}
+		for (const tuplet of p.tuplets) {
+			if (!(tuplet instanceof DisplayTuplet) || !tuplet.isBracketed()) {
+				continue;
+			}
+			const notes = tuplet.getNotes();
+			const first = notes[0];
+			const last = notes[notes.length - 1];
+			if (!first || !last) {
+				continue;
+			}
+			const tLeft = first.getAbsoluteX();
+			const tRight = last.getAbsoluteX();
+			const above = tuplet.getLocation() === Tuplet.LOCATION_TOP;
+			const yPos = tuplet.getYPosition();
+			let delta = 0;
+			for (const slur of slurs) {
+				if (
+					slur.stave !== p.stave ||
+					slur.crossStave ||
+					slur.bulgeUp !== above
+				) {
+					continue;
+				}
+				if (slur.right <= tLeft + 1 || slur.left >= tRight - 1) {
+					continue;
+				}
+				const slurStrictlyLonger =
+					tLeft >= slur.left - 1 &&
+					tRight <= slur.right + 1 &&
+					tRight - tLeft < slur.right - slur.left - 1;
+				if (slurStrictlyLonger) {
+					continue;
+				}
+				if (above) {
+					const target =
+						slur.top - TUPLET_NUMERAL_HALF_HEIGHT - TUPLET_SLUR_GAP;
+					delta = Math.min(delta, target - yPos);
+				} else {
+					const target =
+						slur.bottom + TUPLET_NUMERAL_HALF_HEIGHT + TUPLET_SLUR_GAP;
+					delta = Math.max(delta, target - yPos);
+				}
+			}
+			if (delta !== 0) {
+				tuplet.shiftYOffset(delta);
+			}
+		}
+	}
+
+	/*
 	 * The collision obstacle for a tab arc (a <slur>, or a <hammer-on>/<pull-off> drawn as
 	 * one): the band it bows into above the fret digits it springs from. Same problem
 	 * tieApexRect solves: the arc is a spanner drawn in the finish pass, so there's no glyph
@@ -610,6 +789,93 @@ export class SystemFormatter {
 	private tabBendRect(note: TabNote): Rect | null {
 		const bend = this.translator.findModifier<TabBend>(note, Bend.CATEGORY);
 		return bend?.inkRect() ?? null;
+	}
+
+	private desiredNoteStart(
+		pending: PendingStave[],
+		column: FormatColumn,
+		startX: number,
+	): number {
+		if (!column.isSystemStart) {
+			return Math.max(
+				startX,
+				...pending.map(({ stave }) => this.signatureNoteStart(stave, false)),
+			);
+		}
+		// Supplied note x is fixed, so widening the opening would shift only the unpositioned
+		// notes off the beat they share with positioned ones.
+		if (this.opts.documentPositions) {
+			return startX;
+		}
+		return this.openingNoteStart(pending, startX);
+	}
+
+	// The first beat is shared across staves. Keep the closer opening when any voice starts
+	// with accidentals, grace notes or an arpeggio line, whose ink occupies the gap.
+	private openingNoteStart(pending: PendingStave[], startX: number): number {
+		let minimumStartX = startX;
+		for (const row of pending) {
+			const openingNotes = row.vexVoices
+				.map((voice) => voice.getTickables()[0])
+				.filter(
+					(note): note is StaveNote =>
+						note instanceof StaveNote &&
+						!(note instanceof InvisibleStaveNote) &&
+						!note.isRest(),
+				);
+			if (openingNotes.length === 0) {
+				continue;
+			}
+			if (
+				openingNotes.some((note) =>
+					note
+						.getModifiers()
+						.some(
+							(modifier) =>
+								modifier.getCategory() === Accidental.CATEGORY ||
+								modifier.getCategory() === GraceNoteGroup.CATEGORY ||
+								modifier.getCategory() === Stroke.CATEGORY,
+						),
+				)
+			) {
+				return startX;
+			}
+			minimumStartX = Math.max(
+				minimumStartX,
+				this.signatureNoteStart(row.stave, true),
+			);
+		}
+		return minimumStartX;
+	}
+
+	private signatureNoteStart(stave: Stave, isSystemStart: boolean): number {
+		const notePadding = Stave.defaultPadding - Stave.rightPadding;
+		let minimumStartX = stave.getNoteStartX();
+		for (const modifier of stave.getModifiers(StaveModifierPosition.BEGIN)) {
+			const category = modifier.getCategory();
+			if (
+				modifier.getWidth() <= 0 ||
+				(category !== TimeSignature.CATEGORY &&
+					category !== KeySignature.CATEGORY &&
+					category !== Clef.CATEGORY)
+			) {
+				continue;
+			}
+			let spaces = 2;
+			if (category !== TimeSignature.CATEGORY && isSystemStart) {
+				spaces = 2.5;
+			} else if (category === Clef.CATEGORY) {
+				spaces = 1;
+			}
+			minimumStartX = Math.max(
+				minimumStartX,
+				modifier.getX() +
+					modifier.getWidth() +
+					spaces * stave.getSpacingBetweenLines() -
+					notePadding,
+			);
+		}
+		return minimumStartX;
 	}
 
 	/*
@@ -678,6 +944,136 @@ export class SystemFormatter {
 	}
 
 	/*
+	 * Place each breath comma and caesura just before the next visible note or barline
+	 * (Behind Bars p. 187), falling back to the midpoint of the gap when space is tight.
+	 */
+	private placePauseMarks(pending: PendingStave[], areaEndX: number): void {
+		for (const p of pending) {
+			if (p.isTab) {
+				continue;
+			}
+			const space = p.stave.getSpacingBetweenLines();
+			for (const voice of p.vexVoices) {
+				const tickables = voice.getTickables();
+				for (const [i, note] of tickables.entries()) {
+					const marks = note
+						.getModifiers()
+						.filter((m): m is PauseMark => m instanceof PauseMark);
+					if (marks.length === 0) {
+						continue;
+					}
+					const next = tickables
+						.slice(i + 1)
+						.find((t) => !(t instanceof InvisibleStaveNote));
+					const hostRightX =
+						note.getAbsoluteX() +
+						(note instanceof StaveNote
+							? note.getGlyphWidth() + note.getMetrics().modRightPx
+							: note.getWidth());
+					let targetX = areaEndX;
+					if (next) {
+						targetX =
+							next instanceof StaveNote
+								? next.getAbsoluteX() - next.getMetrics().modLeftPx
+								: next.getAbsoluteX();
+					}
+					const avail = targetX - hostRightX;
+					for (const mark of marks) {
+						const w = mark.widthSpaces() * space;
+						const gap = (next && mark.kind !== 'caesura' ? 0.75 : 0.6) * space;
+						const desiredLeft = targetX - gap - w;
+						const minLeft = hostRightX + 0.3 * space;
+						const x =
+							desiredLeft >= minLeft
+								? desiredLeft
+								: hostRightX + Math.max(0.2 * space, (avail - w) / 2);
+						mark.setDrawX(x);
+					}
+				}
+			}
+		}
+	}
+
+	/*
+	 * VexFlow's ModifierContext formats Articulations before Ornaments, which puts a fermata
+	 * closer to the note than a trill on the same beat. Behind Bars p. 135 places `tr` closer
+	 * to the note than a fermata (while staying outside articulation marks). Re-stack any
+	 * note that carries both on the same side so ornaments take the fermata's slot and the
+	 * fermata sits outside them, and ensure below-stave ornaments clear the bottom staff line.
+	 */
+	private orderFermatasOutsideOrnaments(p: PendingStave): void {
+		if (p.isTab) {
+			return;
+		}
+		const numLines = p.stave.getNumLines();
+		const space = p.stave.getSpacingBetweenLines();
+		const bottomLineY = p.stave.getBottomLineY();
+		for (const note of p.staveNotes) {
+			for (const side of [Modifier.Position.ABOVE, Modifier.Position.BELOW]) {
+				const ornaments = note
+					.getModifiers()
+					.filter(
+						(mod): mod is StaveOrnament =>
+							mod instanceof StaveOrnament && mod.getPosition() === side,
+					);
+				if (ornaments.length === 0) {
+					continue;
+				}
+				const fermatas = note
+					.getModifiers()
+					.filter(
+						(mod): mod is StaveArticulation =>
+							mod instanceof StaveArticulation &&
+							mod.fermata &&
+							mod.getPosition() === side,
+					);
+				if (fermatas.length > 0) {
+					let line = Math.min(...fermatas.map((f) => f.getLine()));
+					if (side === Modifier.Position.ABOVE) {
+						let curTop = note.getLineNumber(true) + line;
+						const stem = note.getStem();
+						if (stem && note.getStemDirection() === Stem.UP) {
+							curTop += Math.abs(stem.getHeight()) / space;
+						}
+						if (curTop < numLines) {
+							line += numLines - curTop;
+						}
+					}
+					for (const ornament of ornaments) {
+						ornament.setTextLine(line);
+						line += 2;
+					}
+					for (const fermata of fermatas) {
+						fermata.setTextLine(line);
+						line += 2;
+					}
+				}
+				if (side === Modifier.Position.BELOW) {
+					const initialOffset = getInitialOffset(note, Modifier.Position.BELOW);
+					const minBaselineY = bottomLineY + 2 * space;
+					let shift = 0;
+					for (const ornament of ornaments) {
+						const t = ornament.getLine() + shift;
+						const baselineY =
+							getBottomY(note, t) + (t + initialOffset + 1.5) * space;
+						if (baselineY < minBaselineY) {
+							shift += (minBaselineY - baselineY) / space;
+						}
+						if (shift > 0) {
+							ornament.setTextLine(ornament.getLine() + shift);
+						}
+					}
+					if (shift > 0) {
+						for (const fermata of fermatas) {
+							fermata.setTextLine(fermata.getLine() + shift);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/*
 	 * The highest y a single note reaches: its top notehead and, when it has a stem,
 	 * the stem tip, which a beam extends up to its beam line. Excludes modifiers on
 	 * purpose (see formatAndDraw). Falls back to the notehead bound if the stem
@@ -701,6 +1097,8 @@ export class SystemFormatter {
 				mod.getCategory() === 'Articulation' &&
 				mod.getPosition() === Modifier.Position.ABOVE
 			) {
+				top = Math.min(top, mod.getBoundingBox().getY());
+			} else if (mod instanceof PauseMark && mod.placement === 'above') {
 				top = Math.min(top, mod.getBoundingBox().getY());
 			}
 		}
@@ -810,12 +1208,32 @@ export class SystemFormatter {
 			}
 			// The stave reaches the notes via Voice.draw, which hasn't run yet.
 			note.setStave(p.stave);
+			const aboveArticulations = note
+				.getModifiers()
+				.filter(
+					(mod): mod is StaveArticulation =>
+						mod instanceof StaveArticulation &&
+						mod.getPosition() === Modifier.Position.ABOVE,
+				);
+			const innerAbove = aboveArticulations.filter(
+				(mod) => !mod.bowing && !mod.fermata,
+			);
+			const outerAbove = aboveArticulations.filter(
+				(mod) => mod.bowing || mod.fermata,
+			);
+			let aboveEdge =
+				Math.min(p.stave.getYForLine(0), this.noteGlyphTop(note)) -
+				TECHNICAL_EDGE_GAP;
+			// Behind Bars p. 396 (string-fingering-stack-order): above-stave technical marks
+			// (fingering, string numbers) sit outside articulations and harmonic symbols.
+			for (const art of innerAbove) {
+				const bounds = art.inkBounds();
+				aboveEdge = Math.min(aboveEdge, bounds.y - TECHNICAL_ROW_GAP);
+			}
 			const sides = [
 				{
 					below: false,
-					edge:
-						Math.min(p.stave.getYForLine(0), this.noteGlyphTop(note)) -
-						TECHNICAL_EDGE_GAP,
+					edge: aboveEdge,
 				},
 				{
 					below: true,
@@ -824,9 +1242,11 @@ export class SystemFormatter {
 						TECHNICAL_EDGE_GAP,
 				},
 			];
+			let aboveColumnTop: number | null = null;
 			for (const { below, edge } of sides) {
+				const sideMarks = marks.filter((m) => m.below === below);
 				let y = edge;
-				for (const mark of marks.filter((m) => m.below === below)) {
+				for (const mark of sideMarks) {
 					const height = mark.rowHeight();
 					// A row's baseline is its bottom edge, so a column growing DOWN steps
 					// before placing the mark and one growing UP steps after.
@@ -846,6 +1266,24 @@ export class SystemFormatter {
 					if (!below) {
 						y -= height;
 					}
+				}
+				if (!below && sideMarks.length > 0) {
+					aboveColumnTop = y;
+				}
+			}
+			// Behind Bars p. 396 (string-fingering-stack-order): bowing signs (and fermatas)
+			// sit outside above-stave fingerings and string indications without colliding.
+			if (aboveColumnTop !== null && outerAbove.length > 0) {
+				const sortedOuter = [...outerAbove].sort(
+					(a, b) => Number(a.fermata) - Number(b.fermata),
+				);
+				let ceiling = aboveColumnTop;
+				for (const art of sortedOuter) {
+					const bounds = art.inkBounds(false);
+					const bottom = bounds.y + bounds.h;
+					const shift = bottom > ceiling ? ceiling - bottom : 0;
+					art.setStackShiftY(shift);
+					ceiling = Math.min(ceiling, bounds.y + shift - TECHNICAL_ROW_GAP);
 				}
 			}
 		}
@@ -922,6 +1360,57 @@ export class SystemFormatter {
 				}
 			}
 			resolver.add({ rect, kind: 'note' });
+		}
+	}
+
+	/* A beam keeps its place and a rest under it moves away to clear it (Behind Bars
+	 * p. 36): down from a beam over the notes, up from one under them, a whole
+	 * stave-space at a time like every other displaced rest. Explicit display
+	 * pitches stay under the document's control. */
+	private moveRestsOffBeams(p: PendingStave): void {
+		if (p.isTab) {
+			return;
+		}
+		const spacing = p.stave.getSpacingBetweenLines();
+		const rests = p.noteChords.filter(
+			({ note }) =>
+				note instanceof StaveNote &&
+				note.isRest() &&
+				!(note instanceof InvisibleStaveNote) &&
+				note.renderOptions.draw !== false,
+		);
+		if (rests.length === 0) {
+			return;
+		}
+		for (const beam of p.beams) {
+			const strips = beam.getStripBounds();
+			// A beam over the notes (stems up) pushes a rest down, one under them pushes it up.
+			const direction = beam.getStemDirection() === Stem.UP ? 1 : -1;
+			const overlaps = (rect: Rect) =>
+				strips.some(
+					(box) =>
+						rect.x < box.getX() + box.getW() &&
+						box.getX() < rect.x + rect.w &&
+						rect.y < box.getY() + box.getH() &&
+						box.getY() < rect.y + rect.h,
+				);
+			for (const { note, chord } of rests) {
+				const head = note.noteHeads[0];
+				if (!head || chord.lead.restPosition) {
+					continue;
+				}
+				let steps = 0;
+				let rect = this.headRect(note, head);
+				while (overlaps(rect) && steps < 8) {
+					steps++;
+					rect = new Rect(rect.x, rect.y + direction * spacing, rect.w, rect.h);
+				}
+				if (steps > 0) {
+					note.setKeyLine(0, note.getKeyLine(0) - direction * steps);
+					note.setStave(p.stave);
+					this.shrinkNoteheads(note, p.stave);
+				}
+			}
 		}
 	}
 
@@ -1040,6 +1529,121 @@ export class SystemFormatter {
 	 * counterpart (tab-only score) nothing moves. Runs before draw, which reads
 	 * spacingFromNextModifier when positioning the grace notes.
 	 */
+	/*
+	 * Behind Bars p. 128 (grace-align-two-voices): when two voices sharing one stave
+	 * both carry grace notes before the same beat, align their grace noteheads vertically.
+	 * VexFlow's GraceNoteGroup.format right-aligns simultaneous groups by total width,
+	 * which pushes a down-stem grace note right relative to an up-stem grace note whose
+	 * flag extends past the right side of its stem.
+	 */
+	private alignStaveGraces(voices: Voice[]): void {
+		if (voices.length < 2) {
+			return;
+		}
+		const byTick = new Map<unknown, GraceNoteGroup[]>();
+		for (const voice of voices) {
+			for (const note of voice.getTickables() as StaveNote[]) {
+				const group = this.graceGroupOf(this.translator, note);
+				if (!group || group.getPosition() === Modifier.Position.RIGHT) {
+					continue;
+				}
+				const tick = note.getTickContext();
+				const list = byTick.get(tick);
+				if (list) {
+					list.push(group);
+				} else {
+					byTick.set(tick, [group]);
+				}
+			}
+		}
+		for (const groups of byTick.values()) {
+			if (groups.length < 2) {
+				continue;
+			}
+			const entries = groups
+				.map((group) => {
+					const last = group.getGraceNotes().at(-1);
+					if (!last) {
+						return null;
+					}
+					const headX = last.getTickContext().getX();
+					return {
+						group,
+						headX,
+						offset: group.getSpacingFromNextModifier() + headX,
+					};
+				})
+				.filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+			if (entries.length < 2) {
+				continue;
+			}
+			const target = Math.min(...entries.map((entry) => entry.offset));
+			for (const entry of entries) {
+				entry.group.setSpacingFromNextModifier(
+					Math.max(StaveNote.minNoteheadPadding, target - entry.headX),
+				);
+			}
+		}
+	}
+
+	private maxNotationModLeftByTick(
+		pending: readonly PendingStave[],
+	): Map<unknown, number> {
+		const byTick = new Map<unknown, number>();
+		for (const p of pending) {
+			if (p.isTab) {
+				continue;
+			}
+			for (const voice of p.vexVoices) {
+				for (const note of voice.getTickables()) {
+					if (note instanceof BarNote || note instanceof ClefNote) {
+						continue;
+					}
+					const tc = note.checkTickContext();
+					const modLeft = note.getMetrics().modLeftPx;
+					byTick.set(tc, Math.max(byTick.get(tc) ?? 0, modLeft));
+				}
+			}
+		}
+		return byTick;
+	}
+
+	/*
+	 * Behind Bars p. 128 (grace-align-separate-staves): VexFlow positions a left-side
+	 * GraceNoteGroup off its shared TickContext's modLeftPx, which is the maximum across
+	 * every stave at that beat. When another notation stave carries wider grace notes or
+	 * accidentals, that pulls this stave's grace notes left into alignment with the wider
+	 * stave, leaving an unwanted gap before its own main note. Compensate by the difference
+	 * between the widest notation stave's modLeftPx and this note's own stave-local modLeftPx
+	 * so each stave's grace group closes up to its following measured note while keeping
+	 * multi-voice single-stave groups aligned (they share one ModifierContext, so both shift
+	 * equally) and leaving notation-tab pairs untouched.
+	 */
+	private closeStaveGraces(
+		voices: Voice[],
+		maxNotationModLeft: ReadonlyMap<unknown, number>,
+	): void {
+		for (const voice of voices) {
+			for (const note of voice.getTickables() as StaveNote[]) {
+				const group = this.graceGroupOf(this.translator, note);
+				if (!group || group.getPosition() === Modifier.Position.RIGHT) {
+					continue;
+				}
+				const tc = note.getTickContext();
+				const tcModLeft = Math.min(
+					tc.getMetrics().modLeftPx,
+					maxNotationModLeft.get(tc) ?? 0,
+				);
+				const extraLeft = Math.max(0, tcModLeft - note.getMetrics().modLeftPx);
+				if (extraLeft > 0) {
+					group.setSpacingFromNextModifier(
+						group.getSpacingFromNextModifier() + extraLeft,
+					);
+				}
+			}
+		}
+	}
+
 	private alignTabGraces(
 		voices: Voice[],
 		notationGraceWidths: Map<unknown, number>,
@@ -1093,7 +1697,7 @@ export class SystemFormatter {
 		notes: ReadonlyArray<VexNote>,
 		pending: PendingStave[],
 		owner: PendingStave,
-	): PendingStave {
+	): { stave: Stave; row: number } {
 		const staves = new Set(notes.map((note) => note.getStave()));
 		const distance = (stave: Stave) =>
 			Math.max(
@@ -1140,6 +1744,7 @@ export interface FormatColumn {
 	/** Which system the column belongs to: the band its lyric-drop and spill
 	 * measurements report under. */
 	systemIndex: number;
+	isSystemStart: boolean;
 	/** Width at the LEFT end of the measure the notes must not format into, so a centered
 	 * words directive on the first note prints clear of the opening barline (see MeasureBox). */
 	measureLeadingPad: number;

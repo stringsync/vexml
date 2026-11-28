@@ -257,12 +257,20 @@ function find(
 	opts: StepRequest & { lenient?: boolean | "planning" },
 ): Step {
 	const chosen = pick(list, opts.target);
+	const upstreams = readUpstream(opts.upstream);
+	const follows = chosen.version?.follows;
+	const hasFollowed = follows !== undefined && upstreams.has(follows);
 	if (
 		chosen.version &&
 		opts.version === undefined &&
-		!(opts.bump ?? chosen.bump)
+		!(opts.bump ?? chosen.bump) &&
+		!hasFollowed
 	) {
-		throw new Error(`The target "${chosen.name}" needs --version or --bump`);
+		throw new Error(
+			follows !== undefined
+				? `The target "${chosen.name}" needs --version, --bump, or --upstream ${follows}=<version>`
+				: `The target "${chosen.name}" needs --version or --bump`,
+		);
 	}
 	// A `done` or `run` request may come before any upstream has released (a
 	// step like `test` reads none), so it plans with a placeholder version, as
@@ -270,15 +278,16 @@ function find(
 	// With "planning" the placeholder is only for building the plan: a step
 	// that reads an upstream as it runs still refuses without the version.
 	let planning = true;
-	const strict = parseUpstream(opts.upstream);
+	const strict = upstreamLookup(upstreams);
+	const lenient = upstreamLookup(upstreams, (each) => ({
+		version: `the version ${each} releases`,
+	}));
 	const planned = steps(chosen, {
 		bump: opts.bump,
 		version: opts.version,
 		upstream: (name) =>
 			opts.lenient && (opts.lenient !== "planning" || planning)
-				? parseUpstream(opts.upstream, (each) => ({
-						version: `the version ${each} releases`,
-					}))(name)
+				? lenient(name)
 				: strict(name),
 	});
 	planning = false;
@@ -299,6 +308,10 @@ function parseUpstream(
 	values: readonly string[],
 	missing?: (name: string) => Upstream,
 ): (name: string) => Upstream {
+	return upstreamLookup(readUpstream(values), missing);
+}
+
+function readUpstream(values: readonly string[]): Map<string, string> {
 	const versions = new Map<string, string>();
 	for (const value of values) {
 		const at = value.indexOf("=");
@@ -307,6 +320,13 @@ function parseUpstream(
 		}
 		versions.set(value.slice(0, at), value.slice(at + 1));
 	}
+	return versions;
+}
+
+function upstreamLookup(
+	versions: ReadonlyMap<string, string>,
+	missing?: (name: string) => Upstream,
+): (name: string) => Upstream {
 	return (name) => {
 		const version = versions.get(name);
 		if (version !== undefined) {

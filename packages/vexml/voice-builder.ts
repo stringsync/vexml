@@ -3,18 +3,20 @@ import {
 	BarNote,
 	GhostNote,
 	type Stave,
-	type StaveNote,
+	StaveNote,
 	Stem,
 	type StemmableNote,
 	type TabNote,
 	type TabStave,
 } from 'vexflow/core';
+import { InvisibleStaveNote } from './invisible-stave-note';
 import { isLyricMark } from './lyric-mark';
 import type { MidBarline, ScoreReader, StaffVoice } from './score-reader';
 import type { MidClefSpec } from './signature-translator';
 import type { SpannerBuilder } from './spanner-builder';
 import type { PendingStave } from './system-formatter';
 import type { TabVoiceTranslator } from './tab-voice-translator';
+import { crossBarlineTupletLeads } from './tuplet-builder';
 import type { VoiceTranslator } from './voice-translator';
 
 /* The measure context one call to VoiceBuilder.buildNotes lays its notes out in. Every one
@@ -25,6 +27,9 @@ export interface BuildNotesOptions {
 	/** Pad the voices with ghost notes out to this beat, so an underfull measure still
 	 * reserves the trailing space the meter asks for. */
 	meterFloor?: number;
+	/** Bar-wide unbracketed <time-modification> ratio for polymetric measures (Behind Bars
+	 * pp. 174–175), applied to notes that did not join a drawn Tuplet. */
+	polymetreRatio?: { actual: number; normal: number } | null;
 	/** How far the stave's clef draws its notes from their sounding pitch (a treble-8
 	 * clef's octave down), before any <octave-shift> on top. */
 	clefOctaveShift?: number;
@@ -32,6 +37,11 @@ export interface BuildNotesOptions {
 	barlines?: MidBarline[];
 	/** Mid-measure clef changes (see ScoreReader.midClefsOf), which re-aim every later note. */
 	midClefs?: MidClefSpec[];
+	/** This measure opens a new system (system > 0), so a tied-into note at beat 0 repeats
+	 * its accidental (Behind Bars p. 80). */
+	opensSystem?: boolean;
+	/** The new system's opening key signature alterations by step. */
+	keyAlters?: ReadonlyMap<string, number>;
 }
 
 export interface VoiceBuilderOptions {
@@ -98,88 +108,68 @@ export class VoiceBuilder {
 		return this.crossStave;
 	}
 
-	/*
-	 * Settle the stem direction of each beam group in this measure of a part that crosses its
-	 * staves, before any stave is built, so each note is built pointing the way the beam
-	 * needs (see buildPartBeams for the rule). `staffNumbers` are the part's visible staves,
-	 * top first.
-	 */
 	planStems(measure: Measure, staffNumbers: readonly string[]): void {
-		this.plannedStems = new Map();
-		const rowOf = new Map(staffNumbers.map((staff, row) => [staff, row]));
-		for (const staffNumber of staffNumbers) {
-			const staffVoices = this.reader.staffVoices(measure, staffNumber);
-			staffVoices.forEach((voice, voiceIndex) => {
-				if (voice.beamChords === null) {
-					return;
-				}
-				const defaultStem = voiceStem(voiceIndex, staffVoices.length);
-				const chordOf = new Map(voice.beamChords.map((c) => [c.lead, c]));
-				for (const group of this.reader.beamRuns(
-					voice.beamChords.map((c) => c.lead),
-				)) {
-					// Each chord's noteheads per row: a chord split across staves draws a note on each.
-					const chords = group.notes.map((lead) => {
-						const heads = new Map<number, number>();
-						for (const note of chordOf.get(lead)?.notes ?? []) {
-							const row = rowOf.get(note.staff);
-							if (row !== undefined) {
-								heads.set(row, (heads.get(row) ?? 0) + 1);
-							}
-						}
-						return heads;
-					});
-					const rows = new Set(chords.flatMap((heads) => [...heads.keys()]));
-					// Written stems on every note stand: the beam follows them across the staves.
-					if (rows.size <= 1 || group.notes.every((lead) => lead.stem)) {
-						continue;
-					}
-					const bottom = Math.max(...rows);
-					let below = 0;
-					for (const heads of chords) {
-						let lean = 0;
-						for (const [row, count] of heads) {
-							lean += row === bottom ? count : -count;
-						}
-						below += lean > 0 ? 1 : -1;
-					}
-					const stem = defaultStem ?? (below > 0 ? 'up' : 'down');
-					for (const lead of group.notes) {
-						for (const note of chordOf.get(lead)?.notes ?? []) {
-							this.plannedStems.set(note, stem);
-						}
-					}
-				}
-			});
-		}
+		this.plannedStems = crossStaffStems(this.reader, measure, staffNumbers);
 	}
 
 	/*
-	 * The beam groups of a voice whose stems vexflow would choose (no written <stem>, no voice
-	 * default) and whose notes all sit on this staff: the translator builds them already
-	 * pointing the group's way. Groups crossing staves are planStems' instead.
+	 * The beam groups and single-staff two-note tremolos of a voice whose stems vexflow would
+	 * choose (no written <stem>, no voice default) and whose notes all sit on this staff: the
+	 * translator builds them already pointing the group's way. Groups crossing staves are
+	 * planStems' instead.
 	 */
 	private autoBeams(
 		voice: StaffVoice,
 		defaultStem: 'up' | 'down' | undefined,
 	): Note[][] {
-		if (voice.beamChords === null || defaultStem) {
+		if (defaultStem) {
 			return [];
 		}
-		// By lead and notehead count, not Chord identity: mdom builds fresh Chords per read.
-		const heads = new Map(voice.chords.map((c) => [c.lead, c.notes.length]));
-		const whole = new Map(
-			voice.beamChords.map((c) => [
-				c.lead,
-				heads.get(c.lead) === c.notes.length,
-			]),
-		);
-		return this.reader
-			.beamRuns(voice.beamChords.map((c) => c.lead))
-			.map((group) => group.notes)
-			.filter((leads) =>
-				leads.every((lead) => !lead.stem && whole.get(lead) === true),
+		const groups: Note[][] = [];
+		if (voice.beamChords !== null) {
+			// By lead and notehead count, not Chord identity: mdom builds fresh Chords per read.
+			const heads = new Map(voice.chords.map((c) => [c.lead, c.notes.length]));
+			const whole = new Map(
+				voice.beamChords.map((c) => [
+					c.lead,
+					heads.get(c.lead) === c.notes.length,
+				]),
 			);
+			for (const group of this.reader.beamRuns(
+				voice.beamChords.map((c) => c.lead),
+			)) {
+				if (
+					group.notes.every((lead) => !lead.stem && whole.get(lead) === true)
+				) {
+					groups.push(group.notes);
+				}
+			}
+		}
+		// Two-note tremolos on a single staff point both stems in the same direction
+		// (Behind Bars p. 226) unless the score gave an explicit <stem>.
+		let openTremolo: Note | undefined;
+		for (const { lead } of voice.chords) {
+			const tremolo = this.reader
+				.ornamentsOf(lead)
+				.find((o) => o.ornamentType === 'tremolo');
+			if (!tremolo) {
+				continue;
+			}
+			if (tremolo.tremoloType === 'start') {
+				openTremolo = lead;
+			} else if (tremolo.tremoloType === 'stop' && openTremolo) {
+				if (
+					!openTremolo.stem &&
+					!lead.stem &&
+					openTremolo.type !== 'whole' &&
+					lead.type !== 'whole'
+				) {
+					groups.push([openTremolo, lead]);
+				}
+				openTremolo = undefined;
+			}
+		}
+		return groups;
 	}
 
 	/*
@@ -215,7 +205,8 @@ export class VoiceBuilder {
 		const tiedNotes = new Set<StaveNote>();
 		const noteChords: Array<{ note: StaveNote; chord: Chord }> = [];
 		const graceChords: Array<{ note: StaveNote; chord: Chord }> = [];
-		const stemFor = (index: number) => voiceStem(index, voices.length);
+		const stems = voiceStems(voices, clef);
+		const stemFor = (index: number) => stems[index];
 		// A mid-measure divider belongs to the measure, not to a voice, so it goes in the
 		// first voice only: a second copy in each of the others would draw the same line
 		// again at the same x.
@@ -262,6 +253,10 @@ export class VoiceBuilder {
 				barlines: voiceIndex === 0 ? barlines : [],
 				midClefs,
 				drawMidClefs: voiceIndex === 0,
+				staffSpace: stave.getSpacingBetweenLines(),
+				multipleVoices: voices.length > 1,
+				opensSystem: opts.opensSystem,
+				keyAlters: opts.keyAlters,
 			});
 			if (voiceIndex === 0) {
 				// Built in the same order as `barlines`, so they pair by index.
@@ -326,6 +321,7 @@ export class VoiceBuilder {
 			tupletChords: voices.flatMap((v) =>
 				v.beamChords === null ? [] : [v.beamChords],
 			),
+			polymetreRatio: opts.polymetreRatio ?? null,
 			staveNotes,
 			tiedNotes,
 			noteChords,
@@ -404,7 +400,13 @@ export class VoiceBuilder {
 					}
 					const notes = group.notes
 						.flatMap((lead) => notesByLead.get(lead) ?? [this.byLead.get(lead)])
-						.filter((note): note is StaveNote => note !== undefined);
+						.filter(
+							(note): note is StaveNote =>
+								note !== undefined && !(note instanceof InvisibleStaveNote),
+						);
+					if (notes.length < 2) {
+						continue;
+					}
 					// A cross-staff group whose notes all carry a written <stem> keeps them (bass
 					// up, treble down puts the beam between the staves), as the file says. Without
 					// them it takes ONE direction like any other beam: the beam
@@ -493,9 +495,58 @@ export class VoiceBuilder {
 			// its notes already beamed, and draws a redundant one over the beam otherwise.
 			for (const chords of p.tupletChords) {
 				p.tuplets.push(...this.spanners.buildTuplets(chords, this.byLead));
-				p.tremolos.push(...this.spanners.buildTremolos(chords, this.byLead));
+				const tremolos = this.spanners.buildTremolos(chords, this.byLead);
+				for (const tremolo of tremolos) {
+					for (const note of tremolo.crossStaffNotes(rowOf)) {
+						this.crossStave.add(note);
+					}
+				}
+				p.tremolos.push(...tremolos);
+			}
+		}
+		// Cross-barline tuplets are drawn in SpannerResolver once both measures are placed,
+		// so rescale their notes' ticks here before per-measure formatting runs.
+		let rescaled = false;
+		const crossBarlineRescaled = new Set<StaveNote>();
+		for (const p of pending) {
+			for (const chords of p.tupletChords) {
+				for (const lead of crossBarlineTupletLeads(chords)) {
+					const note = this.byLead.get(lead);
+					const tm = lead.timeModification;
+					if (
+						!note ||
+						note.getTupletStack().length > 0 ||
+						crossBarlineRescaled.has(note) ||
+						!tm ||
+						tm.actual <= 0 ||
+						tm.normal <= 0
+					) {
+						continue;
+					}
+					note.applyTickMultiplier(tm.normal, tm.actual);
+					crossBarlineRescaled.add(note);
+					rescaled = true;
+				}
 			}
 			p.tupletChords.length = 0;
+		}
+		// Polymetric staves carry a bar-wide <time-modification> with no <tuplet> span
+		// (Behind Bars pp. 174–175), so scale their un-tupleted notes by that ratio directly.
+		for (const p of pending) {
+			const ratio = p.polymetreRatio;
+			if (!ratio) {
+				continue;
+			}
+			for (const { note } of p.noteChords) {
+				if (
+					note.getTupletStack().length > 0 ||
+					crossBarlineRescaled.has(note)
+				) {
+					continue;
+				}
+				note.applyTickMultiplier(ratio.normal, ratio.actual);
+				rescaled = true;
+			}
 		}
 		// A stand-in counts its note's time on another staff, so it takes that note's tuplet
 		// too; otherwise it holds a plain 16th where the note it stands for holds a triplet.
@@ -509,10 +560,10 @@ export class VoiceBuilder {
 		}
 		this.standIns.clear();
 		// Voice caches its total ticks and resolution denominator when notes are added.
-		// Tuplets just changed those ticks, on any of the part's staves, since a cross-staff
-		// tuplet rescales notes another stave drew: rebuild the voices so ordinary beats and
-		// tuplet beats share the correct formatter tick contexts.
-		if (pending.some((p) => p.tuplets.length > 0)) {
+		// Tuplets and time-modifications just changed those ticks, on any of the part's staves,
+		// since a cross-staff tuplet rescales notes another stave drew: rebuild the voices so
+		// ordinary beats and scaled beats share the correct formatter tick contexts.
+		if (rescaled || pending.some((p) => p.tuplets.length > 0)) {
 			for (const p of pending) {
 				p.vexVoices = p.vexVoices.map((voice) =>
 					this.translator.softVoice(voice.getTickables(), this.softmaxFactor),
@@ -571,6 +622,19 @@ export class VoiceBuilder {
 		// on the notation staff, so these aren't kept for drawing.
 		for (const voice of voices) {
 			this.spanners.buildTuplets(voice.chords, byTabTickable);
+			for (const lead of crossBarlineTupletLeads(voice.chords)) {
+				const note = byTabTickable.get(lead);
+				const tm = lead.timeModification;
+				if (
+					note &&
+					note.getTupletStack().length === 0 &&
+					tm &&
+					tm.actual > 0 &&
+					tm.normal > 0
+				) {
+					note.applyTickMultiplier(tm.normal, tm.actual);
+				}
+			}
 		}
 		// Wrap only after tuplets have finalized the ticks, as on the notation path.
 		const vexVoices = tickablesByVoice.map((tickables) =>
@@ -617,15 +681,163 @@ function sidesBelow(
 }
 
 /*
+ * Settle the stem direction of each beam group in this measure of a part that crosses its
+ * staves, before any stave is built, so each note is built pointing the way the beam
+ * needs (see VoiceBuilder.buildPartBeams). `staffNumbers` are the part's visible staves,
+ * top first.
+ */
+export function crossStaffStems(
+	reader: ScoreReader,
+	measure: Measure,
+	staffNumbers: readonly string[],
+): Map<Note, 'up' | 'down'> {
+	const stems = new Map<Note, 'up' | 'down'>();
+	if (staffNumbers.length < 2) {
+		return stems;
+	}
+	const rowOf = new Map(staffNumbers.map((staff, row) => [staff, row]));
+	for (const staffNumber of staffNumbers) {
+		const staffVoices = reader.staffVoices(measure, staffNumber);
+		staffVoices.forEach((voice, voiceIndex) => {
+			if (voice.beamChords === null) {
+				return;
+			}
+			const defaultStem = voiceStem(voiceIndex, staffVoices.length);
+			const chordOf = new Map(voice.beamChords.map((c) => [c.lead, c]));
+			for (const group of reader.beamRuns(
+				voice.beamChords.map((c) => c.lead),
+			)) {
+				// Each chord's noteheads per row: a chord split across staves draws a note on each.
+				const chords = group.notes.map((lead) => {
+					const heads = new Map<number, number>();
+					for (const note of chordOf.get(lead)?.notes ?? []) {
+						const row = rowOf.get(note.staff);
+						if (row !== undefined) {
+							heads.set(row, (heads.get(row) ?? 0) + 1);
+						}
+					}
+					return heads;
+				});
+				const rows = new Set(chords.flatMap((heads) => [...heads.keys()]));
+				// Written stems on every note stand: the beam follows them across the staves.
+				if (rows.size <= 1 || group.notes.every((lead) => lead.stem)) {
+					continue;
+				}
+				const bottom = Math.max(...rows);
+				let below = 0;
+				for (const heads of chords) {
+					let lean = 0;
+					for (const [row, count] of heads) {
+						lean += row === bottom ? count : -count;
+					}
+					below += lean > 0 ? 1 : -1;
+				}
+				const stem = defaultStem ?? (below > 0 ? 'up' : 'down');
+				for (const lead of group.notes) {
+					for (const note of chordOf.get(lead)?.notes ?? []) {
+						stems.set(note, stem);
+					}
+				}
+			}
+			// Cross-staff two-note tremolos stem into the inter-staff gap (upper staff down,
+			// lower staff up; Behind Bars p. 227) unless explicit <stem>s are given.
+			let openTremolo: Chord | undefined;
+			for (const chord of voice.beamChords) {
+				const tremolo = reader
+					.ornamentsOf(chord.lead)
+					.find((o) => o.ornamentType === 'tremolo');
+				if (!tremolo) {
+					continue;
+				}
+				if (tremolo.tremoloType === 'start') {
+					openTremolo = chord;
+				} else if (tremolo.tremoloType === 'stop' && openTremolo) {
+					const row1 = rowOf.get(openTremolo.lead.staff);
+					const row2 = rowOf.get(chord.lead.staff);
+					if (
+						row1 !== undefined &&
+						row2 !== undefined &&
+						row1 !== row2 &&
+						!openTremolo.lead.stem &&
+						!chord.lead.stem &&
+						openTremolo.lead.type !== 'whole' &&
+						chord.lead.type !== 'whole'
+					) {
+						const dir1 = row1 < row2 ? 'down' : 'up';
+						const dir2 = row1 < row2 ? 'up' : 'down';
+						for (const note of openTremolo.notes) {
+							stems.set(note, dir1);
+						}
+						for (const note of chord.notes) {
+							stems.set(note, dir2);
+						}
+					}
+					openTremolo = undefined;
+				}
+			}
+		});
+	}
+	return stems;
+}
+
+/*
  * Voices sharing a stave stem apart even without explicit <stem>s: the first voice up, the
  * rest down (engraving convention; matches how exporters that do write <stem>s separate
  * voices). A lone voice keeps position-based auto-stems.
  * ponytail: 3+ voices all stem down after the first; alternate up/down if a real
  * 3-voice-per-stave score ever shows up.
  */
-function voiceStem(index: number, count: number): 'up' | 'down' | undefined {
+export function voiceStem(
+	index: number,
+	count: number,
+): 'up' | 'down' | undefined {
 	if (count <= 1) {
 		return undefined;
 	}
 	return index === 0 ? 'up' : 'down';
+}
+
+/*
+ * Per-voice default stems on a stave. Normally voice 1 stems up and voice 2 down,
+ * but when two unstemmed voices cross on ledger lines (voice 2 strictly higher on
+ * upper ledger lines, or voice 1 strictly lower on lower ledger lines), stem the
+ * higher voice up and the lower voice down (Behind Bars p. 68).
+ */
+export function voiceStems(
+	voices: readonly StaffVoice[],
+	clef: string,
+): ('up' | 'down' | undefined)[] {
+	const defaults = voices.map((_, index) => voiceStem(index, voices.length));
+	if (voices.length !== 2) {
+		return defaults;
+	}
+	const [first, second] = voices as [StaffVoice, StaffVoice];
+	const hasExplicitStem = (voice: StaffVoice) =>
+		voice.chords.some((chord) => Boolean(chord.lead.stem));
+	if (hasExplicitStem(first) || hasExplicitStem(second)) {
+		return defaults;
+	}
+	const lineRange = (voice: StaffVoice): [number, number] | null => {
+		const keys: string[] = [];
+		for (const chord of voice.chords) {
+			for (const note of chord.notes) {
+				if (!note.isRest && note.pitch) {
+					keys.push(`${note.pitch.step.toLowerCase()}/${note.pitch.octave}`);
+				}
+			}
+		}
+		if (keys.length === 0) {
+			return null;
+		}
+		const lines = new StaveNote({ keys, duration: 'w', clef })
+			.getKeyProps()
+			.map((prop) => prop.line);
+		return [Math.min(...lines), Math.max(...lines)];
+	};
+	const v1 = lineRange(first);
+	const v2 = lineRange(second);
+	if (v1 && v2 && v2[0] > v1[1] && (v2[1] >= 6 || v1[0] <= 0)) {
+		return ['down', 'up'];
+	}
+	return defaults;
 }

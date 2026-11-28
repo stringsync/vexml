@@ -1,6 +1,11 @@
 import type { Curve, CurveOptions, Stave, StaveNote } from 'vexflow/core';
 import type { Appearance } from './appearance';
-import { CrispCurve, CURVE_THICKNESS, curveThickness } from './crisp-curve';
+import {
+	CrispCurve,
+	CURVE_THICKNESS,
+	type CurveReach,
+	curveThickness,
+} from './crisp-curve';
 import type { SlurConnector } from './curve-connectors';
 import { HeadCurve } from './head-curve';
 import type { SlurBow } from './slur-bow';
@@ -25,6 +30,8 @@ export type SlurCurve = {
 	 * curve whose height that same gap sets, and the two would chase each other. It takes
 	 * whatever room the notes leave. */
 	crossStave: boolean;
+	/* Whether the slur bows above its notes (true) or below them (false). */
+	bulgeUp: boolean;
 };
 
 /* The ends one curve of a slur is drawn between, and the shape solved for it. */
@@ -91,20 +98,35 @@ export class SlurCurveFactory {
 			start: curveFrom ? slur.bezier.start : { x: null, y: null },
 			end: curveTo ? slur.bezier.end : { x: null, y: null },
 		};
-		// An end lifted off its marks or its tie is pinned at its own Y, which vexflow's Curve
-		// can't take (it reads the end off the note), so it draws as a HeadCurve
-		// too.
+		// An end lifted off its marks, its tie, or a nested inner slur is pinned at its
+		// own Y, which vexflow's Curve can't take (it reads the end off the note), so it
+		// draws as a HeadCurve too.
 		const lifted = [curveFrom, curveTo].some(
-			(n) => n !== undefined && (bow.markLift(n) > 0 || bow.tieLift(n) > 0),
+			(n) =>
+				n !== undefined &&
+				(bow.markLift(n) > 0 || bow.tieLift(n) > 0 || bow.nestedLift(n) > 0),
 		);
-		// A body end runs to its notehead's centre, on the side away from its stem. A stem
-		// on the bow's side stands in the way, whichever anchor the end took,
-		// and a document's control points are offsets from the ends it knows.
-		const reachesHead = (note: StaveNote | undefined) =>
-			!bow.isGrace && !bezier && note !== undefined && !bow.towardBulge(note);
+		// A body end runs to its notehead's centre on the side away from its stem,
+		// or centres on the stem when the slur sits at the stem tip unless a tenuto
+		// line sits between stem and slur, in which case it centres on the notehead
+		// like the tenuto (Behind Bars p. 122). An end anchored at the notehead on
+		// the stem side keeps vexflow's edge so the stem does not stand through it;
+		// document control points keep their own edges.
+		const reachOf = (note: StaveNote | undefined): CurveReach => {
+			if (bow.isGrace || bezier || note === undefined) {
+				return 'edge';
+			}
+			if (!bow.towardBulge(note)) {
+				return 'head';
+			}
+			if (bow.atStemTip(note)) {
+				return bow.hasTenuto(note) ? 'head' : 'stem';
+			}
+			return 'edge';
+		};
 		const reach = {
-			start: reachesHead(curveFrom),
-			end: reachesHead(curveTo),
+			start: reachOf(curveFrom),
+			end: reachOf(curveTo),
 		};
 		const curve =
 			bow.isGrace || lifted || bow.ghost
@@ -183,6 +205,7 @@ export class SlurCurveFactory {
 				...controlXs,
 			),
 			crossStave: bow.crossStave && !bow.ghost,
+			bulgeUp: bow.bulgeUp,
 		};
 	}
 }

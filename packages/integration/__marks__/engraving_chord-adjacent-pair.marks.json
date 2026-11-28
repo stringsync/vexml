@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_chord-adjacent-pair.png",
+	"width": 932,
+	"height": 882,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 531.2,
+				"y": 286
+			},
+			"to": {
+				"x": 543.2,
+				"y": 296
+			},
+			"label": "M7 F/4: left",
+			"note": "M7 F/4: left",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 542.6,
+				"y": 281
+			},
+			"to": {
+				"x": 554.6,
+				"y": 291
+			},
+			"label": "M7 G/4: right",
+			"note": "M7 G/4: right",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 622.9,
+				"y": 281
+			},
+			"to": {
+				"x": 634.9,
+				"y": 291
+			},
+			"label": "M7 G/4: left",
+			"note": "M7 G/4: left",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 634.3,
+				"y": 276
+			},
+			"to": {
+				"x": 646.3,
+				"y": 286
+			},
+			"label": "M7 A/4: right",
+			"note": "M7 A/4: right",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,65 @@
+{
+	"screenshot": "engraving_tail-reach.png",
+	"width": 932,
+	"height": 252,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 115,
+				"y": 141
+			},
+			"to": {
+				"x": 141,
+				"y": 141
+			},
+			"label": "",
+			"note": "G/4 notehead bottom edge",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 130,
+				"y": 105
+			},
+			"to": {
+				"x": 139,
+				"y": 134
+			},
+			"label": "beside the head",
+			"note": "G/4 up-stem tail ends beside the head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 165.2,
+				"y": 126
+			},
+			"to": {
+				"x": 181,
+				"y": 126
+			},
+			"label": "",
+			"note": "C/5 notehead bottom edge",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 169,
+				"y": 123
+			},
+			"to": {
+				"x": 179,
+				"y": 151
+			},
+			"label": "clear or touching",
+			"note": "C/5 down-stem tail is clear or touching",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

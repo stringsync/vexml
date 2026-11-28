@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_vocal-articulation-placement.png",
+	"width": 932,
+	"height": 481,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 106,
+				"y": 330
+			},
+			"to": {
+				"x": 119,
+				"y": 340
+			},
+			"label": "M3 artic 1",
+			"note": "M3 artic 1",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 201,
+				"y": 330
+			},
+			"to": {
+				"x": 214,
+				"y": 340
+			},
+			"label": "M3 artic 2",
+			"note": "M3 artic 2",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 153,
+				"y": 330
+			},
+			"to": {
+				"x": 166,
+				"y": 332
+			},
+			"label": "M3 artic 3",
+			"note": "M3 artic 3",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 254,
+				"y": 319
+			},
+			"to": {
+				"x": 257,
+				"y": 322
+			},
+			"label": "M3 artic 4",
+			"note": "M3 artic 4",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 324,
+				"y": 345
+			},
+			"to": {
+				"x": 337,
+				"y": 355
+			},
+			"label": "M4 artic 1",
+			"note": "M4 artic 1",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 367,
+				"y": 350
+			},
+			"to": {
+				"x": 380,
+				"y": 360
+			},
+			"label": "M4 artic 2",
+			"note": "M4 artic 2",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 434,
+				"y": 355
+			},
+			"to": {
+				"x": 447,
+				"y": 365
+			},
+			"label": "M4 artic 3",
+			"note": "M4 artic 3",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 401,
+				"y": 345
+			},
+			"to": {
+				"x": 414,
+				"y": 347
+			},
+			"label": "M4 artic 4",
+			"note": "M4 artic 4",
+			"role": "measure",
+			"pass": false
+		}
+	]
+}

@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_slur-end-near-heads.png",
+	"width": 932,
+	"height": 1202,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 122,
+				"y": 946
+			},
+			"to": {
+				"x": 406,
+				"y": 968
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

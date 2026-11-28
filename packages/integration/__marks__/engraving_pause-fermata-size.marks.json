@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_pause-fermata-size.png",
+	"width": 932,
+	"height": 412,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 318,
+				"y": 77
+			},
+			"to": {
+				"x": 342,
+				"y": 90
+			},
+			"label": "Fermata",
+			"note": "Fermata",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

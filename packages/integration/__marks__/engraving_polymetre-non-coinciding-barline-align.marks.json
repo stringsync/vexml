@@ -1,0 +1,157 @@
+{
+	"screenshot": "engraving_polymetre-non-coinciding-barline-align.png",
+	"width": 932,
+	"height": 802,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 219.2,
+				"y": 586
+			},
+			"to": {
+				"x": 231.2,
+				"y": 596
+			},
+			"label": "P1 #4",
+			"note": "P1 #4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 219.2,
+				"y": 686
+			},
+			"to": {
+				"x": 231.2,
+				"y": 696
+			},
+			"label": "P2 #4",
+			"note": "P2 #4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 271,
+				"y": 591
+			},
+			"to": {
+				"x": 283,
+				"y": 601
+			},
+			"label": "P1 #5",
+			"note": "P1 #5",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 271,
+				"y": 691
+			},
+			"to": {
+				"x": 283,
+				"y": 701
+			},
+			"label": "P2 #5",
+			"note": "P2 #5",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 346.5,
+				"y": 601
+			},
+			"to": {
+				"x": 358.5,
+				"y": 611
+			},
+			"label": "P1 #7",
+			"note": "P1 #7",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 346.5,
+				"y": 681
+			},
+			"to": {
+				"x": 358.5,
+				"y": 691
+			},
+			"label": "P2 #7",
+			"note": "P2 #7",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 425,
+				"y": 591
+			},
+			"to": {
+				"x": 437,
+				"y": 601
+			},
+			"label": "P1 #9",
+			"note": "P1 #9",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 425,
+				"y": 691
+			},
+			"to": {
+				"x": 437,
+				"y": 701
+			},
+			"label": "P2 #9",
+			"note": "P2 #9",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 473.9,
+				"y": 586
+			},
+			"to": {
+				"x": 485.9,
+				"y": 596
+			},
+			"label": "P1 #10",
+			"note": "P1 #10",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 473.9,
+				"y": 686
+			},
+			"to": {
+				"x": 485.9,
+				"y": 696
+			},
+			"label": "P2 #10",
+			"note": "P2 #10",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

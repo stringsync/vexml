@@ -3,6 +3,51 @@ import { checkGraph } from "./graph";
 import { next } from "./npm/version";
 import type { Step } from "./step";
 
+/** Declares a target. It only returns the target: nothing runs. */
+export function target(spec: {
+	name: string;
+	bump?: Bump;
+	version?: VersionSpec;
+	dependencies?: readonly string[];
+	plan(input: PlanInput): readonly Step[];
+	unshipped?: (ctx: Pick<Ctx, "sh">) => Promise<number>;
+	current?: (ctx: Pick<Ctx, "sh">) => Promise<string>;
+	versions?: (ctx: Pick<Ctx, "sh">) => Promise<readonly VersionChoice[]>;
+}): Target {
+	if (!spec.name.trim()) {
+		throw new Error("A target needs a name");
+	}
+	const dependencies = spec.dependencies ?? [];
+	const seen = new Set<string>();
+	for (const dependency of dependencies) {
+		if (dependency === spec.name) {
+			throw new Error(`The target "${spec.name}" depends on itself`);
+		}
+		if (seen.has(dependency)) {
+			throw new Error(
+				`The target "${spec.name}" names "${dependency}" twice in its dependencies`,
+			);
+		}
+		seen.add(dependency);
+	}
+	const follows = spec.version?.follows;
+	if (follows !== undefined && !seen.has(follows)) {
+		throw new Error(
+			`The target "${spec.name}" follows "${follows}", which is not one of its dependencies`,
+		);
+	}
+	return Object.freeze({
+		name: spec.name,
+		...(spec.bump && { bump: spec.bump }),
+		...(spec.version && { version: Object.freeze({ ...spec.version }) }),
+		dependencies: Object.freeze([...dependencies]),
+		plan: spec.plan,
+		...(spec.unshipped && { unshipped: spec.unshipped }),
+		...(spec.current && { current: spec.current }),
+		...(spec.versions && { versions: spec.versions }),
+	});
+}
+
 export type Bump = "patch" | "minor" | "major";
 
 /** What a target's upstream released, read by a dependent's plan. */
@@ -60,51 +105,6 @@ export type Target = {
 		ctx: Pick<Ctx, "sh">,
 	) => Promise<readonly VersionChoice[]>;
 };
-
-/** Declares a target. It only returns the target: nothing runs. */
-export function target(spec: {
-	name: string;
-	bump?: Bump;
-	version?: VersionSpec;
-	dependencies?: readonly string[];
-	plan(input: PlanInput): readonly Step[];
-	unshipped?: (ctx: Pick<Ctx, "sh">) => Promise<number>;
-	current?: (ctx: Pick<Ctx, "sh">) => Promise<string>;
-	versions?: (ctx: Pick<Ctx, "sh">) => Promise<readonly VersionChoice[]>;
-}): Target {
-	if (!spec.name.trim()) {
-		throw new Error("A target needs a name");
-	}
-	const dependencies = spec.dependencies ?? [];
-	const seen = new Set<string>();
-	for (const dependency of dependencies) {
-		if (dependency === spec.name) {
-			throw new Error(`The target "${spec.name}" depends on itself`);
-		}
-		if (seen.has(dependency)) {
-			throw new Error(
-				`The target "${spec.name}" names "${dependency}" twice in its dependencies`,
-			);
-		}
-		seen.add(dependency);
-	}
-	const follows = spec.version?.follows;
-	if (follows !== undefined && !seen.has(follows)) {
-		throw new Error(
-			`The target "${spec.name}" follows "${follows}", which is not one of its dependencies`,
-		);
-	}
-	return Object.freeze({
-		name: spec.name,
-		...(spec.bump && { bump: spec.bump }),
-		...(spec.version && { version: Object.freeze({ ...spec.version }) }),
-		dependencies: Object.freeze([...dependencies]),
-		plan: spec.plan,
-		...(spec.unshipped && { unshipped: spec.unshipped }),
-		...(spec.current && { current: spec.current }),
-		...(spec.versions && { versions: spec.versions }),
-	});
-}
 
 /** A step as the review screen shows it: plain data, without `done` or `run`. */
 export type StepView = {

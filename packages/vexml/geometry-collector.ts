@@ -7,6 +7,7 @@ import type {
 import { Rect } from 'core/geometry';
 import {
 	type Element,
+	GraceNote,
 	Modifier,
 	type StaveNote,
 	Stem,
@@ -259,6 +260,21 @@ export class GeometryCollector {
 					ascent + descent,
 				),
 			);
+		}
+		if (note instanceof GraceNote && index === 0) {
+			const slash = note.getSlash();
+			if (slash) {
+				const minX = Math.min(slash.x1, slash.x2);
+				const minY = Math.min(slash.y1, slash.y2);
+				ink = ink.union(
+					new Rect(
+						minX,
+						minY,
+						Math.abs(slash.x2 - slash.x1),
+						Math.abs(slash.y2 - slash.y1),
+					),
+				);
+			}
 		}
 		return ink;
 	}

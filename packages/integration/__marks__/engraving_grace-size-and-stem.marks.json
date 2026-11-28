@@ -1,0 +1,81 @@
+{
+	"screenshot": "engraving_grace-size-and-stem.png",
+	"width": 932,
+	"height": 739,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 138,
+				"y": 129.3
+			},
+			"to": {
+				"x": 138,
+				"y": 107
+			},
+			"label": "2¼",
+			"note": "G#/4 up-stem: 2¼ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 119.3
+			},
+			"to": {
+				"x": 901,
+				"y": 119.3
+			},
+			"label": "middle line",
+			"note": "Middle stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 208,
+				"y": 119.3
+			},
+			"to": {
+				"x": 208,
+				"y": 97
+			},
+			"label": "2¼",
+			"note": "Bb/4 up-stem: 2¼ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 124,
+				"y": 124.3
+			},
+			"to": {
+				"x": 132,
+				"y": 134.3
+			},
+			"label": "Grace 1",
+			"note": "Grace 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 146,
+				"y": 119.3
+			},
+			"to": {
+				"x": 158,
+				"y": 129.3
+			},
+			"label": "Main",
+			"note": "Main",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

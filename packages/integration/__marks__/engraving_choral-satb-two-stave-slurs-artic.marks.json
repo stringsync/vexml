@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_choral-satb-two-stave-slurs-artic.png",
+	"width": 932,
+	"height": 499,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 152,
+				"y": 94
+			},
+			"to": {
+				"x": 227,
+				"y": 109
+			},
+			"label": "Syllabic slur",
+			"note": "Syllabic slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 152,
+				"y": 206
+			},
+			"to": {
+				"x": 216,
+				"y": 221
+			},
+			"label": "Syllabic slur",
+			"note": "Syllabic slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 160,
+				"y": 260
+			},
+			"to": {
+				"x": 235,
+				"y": 273
+			},
+			"label": "Syllabic slur",
+			"note": "Syllabic slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 154,
+				"y": 373
+			},
+			"to": {
+				"x": 167,
+				"y": 375
+			},
+			"label": "Bass tenuto below",
+			"note": "Bass tenuto below",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

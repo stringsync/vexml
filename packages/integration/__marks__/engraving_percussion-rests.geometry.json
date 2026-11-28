@@ -1,0 +1,41 @@
+{
+	"screenshot": "engraving_percussion-rests.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 337.89 },
+		{ "index": 1, "system": 0, "x": 368.89, "w": 532.11 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [101, 111, 121, 131, 141],
+			"x": 31,
+			"w": 337.89
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [101, 111, 121, 131, 141],
+			"x": 368.89,
+			"w": 532.11
+		},
+		{
+			"part": 1,
+			"measure": 0,
+			"staff": 1,
+			"lines": [188, 198, 208, 218, 228],
+			"x": 31,
+			"w": 337.89
+		},
+		{
+			"part": 1,
+			"measure": 1,
+			"staff": 1,
+			"lines": [188, 198, 208, 218, 228],
+			"x": 368.89,
+			"w": 532.11
+		}
+	]
+}

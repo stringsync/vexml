@@ -6,7 +6,10 @@ export type {
 	BackgroundObserver,
 	BackgroundObserverEventMap,
 } from "./background-observer/background-observer";
-export { WindowBackgroundObserver } from "./background-observer/window-background-observer";
+export {
+	WindowBackgroundObserver,
+	type WindowBackgroundObserverOptions,
+} from "./background-observer/window-background-observer";
 export { type ClassValue, cx } from "./cx";
 export {
 	type BrowserName,
@@ -27,4 +30,7 @@ export type {
 	UserActivationObserver,
 	UserActivationObserverEventMap,
 } from "./user-activation-observer/user-activation-observer";
-export { WindowUserActivationObserver } from "./user-activation-observer/window-user-activation-observer";
+export {
+	WindowUserActivationObserver,
+	type WindowUserActivationObserverOptions,
+} from "./user-activation-observer/window-user-activation-observer";

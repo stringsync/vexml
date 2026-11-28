@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_chord-adjacent-with-gap.png",
+	"width": 932,
+	"height": 882,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 88.6,
+				"y": 736
+			},
+			"to": {
+				"x": 100.6,
+				"y": 746
+			},
+			"label": "M17 E/5: left",
+			"note": "M17 E/5: left",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 100,
+				"y": 731
+			},
+			"to": {
+				"x": 112,
+				"y": 741
+			},
+			"label": "M17 F/5: right",
+			"note": "M17 F/5: right",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

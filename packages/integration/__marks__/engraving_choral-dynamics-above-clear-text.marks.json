@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_choral-dynamics-above-clear-text.png",
+	"width": 932,
+	"height": 529,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 132,
+				"y": 229
+			},
+			"to": {
+				"x": 147,
+				"y": 243
+			},
+			"label": "Soprano dynamic",
+			"note": "Soprano dynamic",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 132,
+				"y": 360
+			},
+			"to": {
+				"x": 147,
+				"y": 374
+			},
+			"label": "Alto dynamic",
+			"note": "Alto dynamic",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

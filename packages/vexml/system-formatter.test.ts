@@ -116,6 +116,7 @@ describe('SystemFormatter', () => {
 	it('reports no extent for a column with no pending staves', () => {
 		const extent = makeFormatter().formatAndDraw([], {
 			systemIndex: 0,
+			isSystemStart: false,
 			measureLeadingPad: 0,
 			measureTrailingPad: 0,
 		});
@@ -208,13 +209,43 @@ describe('SystemFormatter', () => {
 		<backup><duration>4</duration></backup>
 		<note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>2</voice><type>whole</type></note>`;
 		const followed = await horizontalGeometry('follow', 320, { body });
-		const ignored = await horizontalGeometry('ignore', 320, { body });
+		const unpositioned = await horizontalGeometry('follow', 320, {
+			body: body.replace(' default-x="160"', ''),
+		});
 		expect(followed.notes[0]?.rect.x).toBeCloseTo(
 			(followed.measures[0]?.rect.x ?? 0) + 160,
 		);
 		expect(followed.notes[1]?.rect.x).toBeCloseTo(
-			ignored.notes[1]?.rect.x ?? 0,
+			unpositioned.notes[1]?.rect.x ?? 0,
 		);
+	});
+
+	it('keeps a supplied opening rest on the beat of its positioned notes', async () => {
+		const rest = `<backup><duration>4</duration></backup>
+			<note><rest/><duration>1</duration><voice>2</voice><type>quarter</type></note>
+			<forward><duration>3</duration></forward>`;
+		// A lone rest takes the close opening; a supplied note on its beat must not move it.
+		const alone = await horizontalGeometry('strict', 320, {
+			body: `<forward><duration>4</duration><voice>1</voice></forward>${rest}`,
+		});
+		const geometry = await horizontalGeometry('strict', 320, {
+			body: `<note default-x="40"><pitch><step>E</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type></note>${rest}`,
+		});
+		expect(geometry.notes[1]?.rect.x).toBeCloseTo(alone.notes[0]?.rect.x ?? 0);
+	});
+
+	it('keeps the close opening when a system starts on an arpeggiated chord', async () => {
+		const chord = (arpeggio: string) =>
+			`<note><pitch><step>E</step><octave>4</octave></pitch><duration>4</duration><type>whole</type>${arpeggio}</note>
+			<note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><type>whole</type>${arpeggio}</note>`;
+		const plain = await horizontalGeometry('ignore', 320, { body: chord('') });
+		const rolled = await horizontalGeometry('ignore', 320, {
+			body: chord('<notations><arpeggiate/></notations>'),
+		});
+		// The wavy line takes under a space left of the heads; the wide opening adds more.
+		expect(
+			(rolled.notes[0]?.rect.x ?? 0) - (plain.notes[0]?.rect.x ?? 0),
+		).toBeLessThan(10);
 	});
 
 	it('keeps a lower voice rest below every head of a low chord', async () => {
@@ -265,6 +296,60 @@ describe('SystemFormatter', () => {
 		const strict = await horizontalGeometry('strict', 90);
 		expect(follow.measures[0]?.rect.w).toBeGreaterThan(90);
 		expect(strict.measures[0]?.rect.w).toBe(90);
+	});
+
+	it('closes plain separate-stave grace notes up to their following main note', async () => {
+		const config = {
+			...DEFAULT_CONFIG,
+			layout: { ...DEFAULT_STANDARD_LAYOUT },
+		};
+		const reader = new ScoreReader(new DynamicGlyphs());
+		const gaps = new Gaps([], new GapInserter(reader));
+		const engraver = ScoreEngraver.create(
+			config,
+			reader,
+			gaps,
+			new ElementFactory(),
+			new SequenceFactory(reader, gaps),
+		);
+		const document = await new DefaultScoreParser().parse(`
+			<score-partwise version="4.0">
+				<part-list>
+					<score-part id="P1"><part-name/></score-part>
+					<score-part id="P2"><part-name/></score-part>
+				</part-list>
+				<part id="P1"><measure number="1">
+					<attributes><divisions>4</divisions><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+					<note><grace/><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><type>16th</type><accidental>sharp</accidental></note>
+					<note><grace/><pitch><step>G</step><alter>1</alter><octave>4</octave></pitch><type>16th</type><accidental>sharp</accidental></note>
+					<note><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><type>whole</type></note>
+				</measure></part>
+				<part id="P2"><measure number="1">
+					<attributes><divisions>4</divisions><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+					<note><grace/><pitch><step>D</step><octave>4</octave></pitch><type>16th</type></note>
+					<note><grace/><pitch><step>E</step><octave>4</octave></pitch><type>16th</type></note>
+					<note><pitch><step>F</step><octave>4</octave></pitch><duration>16</duration><type>whole</type></note>
+				</measure></part>
+			</score-partwise>
+		`);
+		const geometry = engraver.engrave(
+			document,
+			new FakePaintProbe(),
+			new DetachedViewport(),
+			{ color: new InertDecoration(), halo: new InertDecoration() },
+		).drawn.geometry;
+		const graces = geometry.notes.filter((n) => n.mnote.isGrace);
+		const mains = geometry.notes.filter((n) => !n.mnote.isGrace);
+		const p1First = graces[0];
+		const p1Last = graces[1];
+		const p2First = graces[2];
+		const p2Last = graces[3];
+		const p1Main = mains[0];
+		const p2Main = mains[1];
+		expect(p2First?.rect.x).toBeGreaterThan(p1First?.rect.x ?? Infinity);
+		const p1Gap = (p1Main?.rect.x ?? 0) - (p1Last?.rect.right ?? 0);
+		const p2Gap = (p2Main?.rect.x ?? 0) - (p2Last?.rect.right ?? 0);
+		expect(Math.abs(p2Gap - p1Gap)).toBeLessThan(5);
 	});
 });
 

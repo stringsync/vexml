@@ -1,0 +1,65 @@
+{
+	"screenshot": "engraving_tail-short-stem.png",
+	"width": 932,
+	"height": 252,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 309,
+				"y": 101
+			},
+			"to": {
+				"x": 335,
+				"y": 101
+			},
+			"label": "",
+			"note": "A/5 notehead bottom edge",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 324,
+				"y": 70
+			},
+			"to": {
+				"x": 333,
+				"y": 99
+			},
+			"label": "beside the head",
+			"note": "A/5 up-stem tail ends beside the head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 360,
+				"y": 91
+			},
+			"to": {
+				"x": 386,
+				"y": 91
+			},
+			"label": "",
+			"note": "C/6 notehead bottom edge",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 375,
+				"y": 60
+			},
+			"to": {
+				"x": 384,
+				"y": 89
+			},
+			"label": "beside the head",
+			"note": "C/6 up-stem tail ends beside the head",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

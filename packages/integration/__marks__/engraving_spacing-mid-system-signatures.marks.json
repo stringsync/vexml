@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_spacing-mid-system-signatures.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 538,
+				"y": 89
+			},
+			"to": {
+				"x": 547.7,
+				"y": 89
+			},
+			"label": "1",
+			"note": "Changed clef to barline: 1 stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 571,
+				"y": 89
+			},
+			"to": {
+				"x": 591.7,
+				"y": 89
+			},
+			"label": "2",
+			"note": "Changed time to first note: 2 stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 728,
+				"y": 89
+			},
+			"to": {
+				"x": 748.4,
+				"y": 89
+			},
+			"label": "2",
+			"note": "Changed key to first note: 2 stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

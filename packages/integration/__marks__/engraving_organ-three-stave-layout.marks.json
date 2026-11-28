@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_organ-three-stave-layout.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 17,
+				"y": 96
+			},
+			"to": {
+				"x": 29,
+				"y": 237
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 31,
+				"y": 96
+			},
+			"to": {
+				"x": 32,
+				"y": 317
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 512,
+				"y": 96
+			},
+			"to": {
+				"x": 514,
+				"y": 236
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 512,
+				"y": 276
+			},
+			"to": {
+				"x": 514,
+				"y": 316
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 890,
+				"y": 96
+			},
+			"to": {
+				"x": 902,
+				"y": 236
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 890,
+				"y": 276
+			},
+			"to": {
+				"x": 902,
+				"y": 316
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

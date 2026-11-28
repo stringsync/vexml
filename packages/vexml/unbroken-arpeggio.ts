@@ -23,20 +23,18 @@ export class UnbrokenArpeggio extends Stroke {
 			this.setRendered();
 			return;
 		}
-		if (this.below.length === 0) {
-			super.draw();
-			return;
+		// Stroke stretches its wiggle over one end note's heads besides its own; lend it the
+		// lowest of the chords joined below, so the line runs from this chord to the bottom one.
+		const lowest = this.below.reduce<VexNote | undefined>(
+			(low, n) =>
+				low === undefined || Math.max(...n.getYs()) > Math.max(...low.getYs())
+					? n
+					: low,
+			undefined,
+		);
+		if (lowest !== undefined) {
+			this.addEndNote(lowest);
 		}
-		// Stroke measures the wiggle from its own note's heads; lend it the extent of the
-		// chords below by drawing through a note whose heads span all of them.
-		const note = this.checkAttachedNote();
-		const getYs = note.getYs.bind(note);
-		const ys = [...getYs(), ...this.below.flatMap((n) => n.getYs())];
-		note.getYs = () => ys;
-		try {
-			super.draw();
-		} finally {
-			note.getYs = getYs;
-		}
+		super.draw();
 	}
 }

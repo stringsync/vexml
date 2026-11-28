@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_pedal-retake-notch-barline.png",
+	"width": 932,
+	"height": 604,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 555,
+				"y": 254
+			},
+			"to": {
+				"x": 802,
+				"y": 277
+			},
+			"label": "M4-M5 pedal",
+			"note": "M4-M5 pedal",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

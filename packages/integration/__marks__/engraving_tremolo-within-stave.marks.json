@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_tremolo-within-stave.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 793,
+				"y": 109
+			},
+			"to": {
+				"x": 805,
+				"y": 131
+			},
+			"label": "Ledger tremolo 1",
+			"note": "Ledger tremolo 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 820,
+				"y": 114
+			},
+			"to": {
+				"x": 832,
+				"y": 136
+			},
+			"label": "Ledger tremolo 2",
+			"note": "Ledger tremolo 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 836,
+				"y": 101
+			},
+			"to": {
+				"x": 848,
+				"y": 123
+			},
+			"label": "Ledger tremolo 3",
+			"note": "Ledger tremolo 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 862,
+				"y": 96
+			},
+			"to": {
+				"x": 874,
+				"y": 118
+			},
+			"label": "Ledger tremolo 4",
+			"note": "Ledger tremolo 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

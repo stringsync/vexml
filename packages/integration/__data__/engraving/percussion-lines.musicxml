@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1"><part-name>Snare</part-name></score-part>
+    <score-part id="P2"><part-name>3-Line</part-name></score-part>
+    <score-part id="P3"><part-name>2-Line</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>percussion</sign></clef>
+        <staff-details><staff-lines>1</staff-lines></staff-details>
+      </attributes>
+      <direction><direction-type><dynamics><f/></dynamics></direction-type></direction>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <notations><articulations><accent/></articulations></notations>
+      </note>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>2</duration><voice>1</voice><type>eighth</type>
+        <beam number="1">begin</beam>
+      </note>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>2</duration><voice>1</voice><type>eighth</type>
+        <beam number="1">end</beam>
+      </note>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <notations><articulations><staccato/></articulations></notations>
+      </note>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <grace slash="yes"/>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <voice>1</voice><type>eighth</type>
+      </note>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <stem>down</stem>
+      </note>
+      <note>
+        <grace slash="yes"/>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <voice>1</voice><type>eighth</type>
+      </note>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <stem>down</stem>
+      </note>
+      <note>
+        <grace slash="yes"/>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <voice>1</voice><type>eighth</type>
+      </note>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <stem>up</stem>
+      </note>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <stem>down</stem>
+      </note>
+    </measure>
+  </part>
+  <part id="P2">
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>percussion</sign></clef>
+        <staff-details><staff-lines>3</staff-lines></staff-details>
+      </attributes>
+      <note>
+        <unpitched><display-step>D</display-step><display-octave>5</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+      </note>
+      <note>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+      </note>
+      <note>
+        <unpitched><display-step>D</display-step><display-octave>5</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+      </note>
+      <note>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+      </note>
+    </measure>
+    <measure number="2">
+      <note><rest measure="yes"/><duration>16</duration><voice>1</voice></note>
+    </measure>
+  </part>
+  <part id="P3">
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>percussion</sign></clef>
+        <staff-details><staff-lines>2</staff-lines></staff-details>
+      </attributes>
+      <note>
+        <unpitched><display-step>D</display-step><display-octave>5</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+      </note>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+      </note>
+      <note>
+        <unpitched><display-step>D</display-step><display-octave>5</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+      </note>
+      <note>
+        <unpitched><display-step>B</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+      </note>
+    </measure>
+    <measure number="2">
+      <note><rest measure="yes"/><duration>16</duration><voice>1</voice></note>
+    </measure>
+  </part>
+</score-partwise>

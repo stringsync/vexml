@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_rest-grace-align-main.png",
+	"width": 932,
+	"height": 602,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 495.2,
+				"y": 116
+			},
+			"to": {
+				"x": 507.2,
+				"y": 126
+			},
+			"label": "Beat 1 main",
+			"note": "Beat 1 main",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 495,
+				"y": 201
+			},
+			"to": {
+				"x": 506,
+				"y": 231
+			},
+			"label": "Beat 1 rest",
+			"note": "Beat 1 rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 696.3,
+				"y": 116
+			},
+			"to": {
+				"x": 708.3,
+				"y": 126
+			},
+			"label": "Beat 3 main",
+			"note": "Beat 3 main",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 696,
+				"y": 209
+			},
+			"to": {
+				"x": 706,
+				"y": 226
+			},
+			"label": "Beat 3 rest",
+			"note": "Beat 3 rest",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

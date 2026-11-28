@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_polymetre-vertical-alignment.png",
+	"width": 932,
+	"height": 802,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 346
+			},
+			"to": {
+				"x": 129,
+				"y": 356
+			},
+			"label": "P1 beat 1",
+			"note": "P1 beat 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 451
+			},
+			"to": {
+				"x": 129,
+				"y": 461
+			},
+			"label": "P2 beat 1",
+			"note": "P2 beat 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 482.5,
+				"y": 361
+			},
+			"to": {
+				"x": 494.5,
+				"y": 371
+			},
+			"label": "P1 midpoint",
+			"note": "P1 midpoint",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 482.5,
+				"y": 441
+			},
+			"to": {
+				"x": 494.5,
+				"y": 451
+			},
+			"label": "P2 midpoint",
+			"note": "P2 midpoint",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 299.8,
+				"y": 446
+			},
+			"to": {
+				"x": 311.8,
+				"y": 456
+			},
+			"label": "P2 beat 2",
+			"note": "P2 beat 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 665.3,
+				"y": 446
+			},
+			"to": {
+				"x": 677.3,
+				"y": 456
+			},
+			"label": "P2 beat 4",
+			"note": "P2 beat 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

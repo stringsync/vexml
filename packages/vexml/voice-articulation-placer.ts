@@ -1,9 +1,16 @@
-import { StaveNote, type Tickable } from 'vexflow/core';
+import { Modifier, StaveNote, Stem, type Tickable } from 'vexflow/core';
 import { NoteheadArticulation } from './notehead-articulation';
+import { StaveArticulation } from './stave-articulation';
+import { StaveOrnament } from './stave-ornament';
+import { StringNumberAnnotation } from './string-number-annotation';
 
 /*
  * Moves a notehead-side articulation to the stem side when another voice on the stave
- * strikes a note on the mark's side at the same moment.
+ * strikes a note on the mark's side at the same moment, places an unplaced lower-voice
+ * trill below the stave (Behind Bars p. 135), inverts a lower-voice default fermata
+ * below the stave in double-stemmed writing (Behind Bars p. 189), and routes unplaced
+ * lower-voice string designations, open-string marks, and left-hand pizzicato `+` signs
+ * below the stave (Behind Bars pp. 394–395, 412).
  *
  * With two voices on a stave the upper one stems up, so its accents and staccatos fall
  * below its noteheads, into the lower voice. A lower note struck on the same beat buries the
@@ -19,7 +26,27 @@ export class VoiceArticulationPlacer {
 		}
 		const onsets = voices.map((voice) => this.onsets(voice.getTickables()));
 		onsets.forEach((notes, voiceIndex) => {
+			const hasOtherVoice = onsets.some(
+				(other, index) => index !== voiceIndex && other.size > 0,
+			);
 			for (const [tick, note] of notes) {
+				if (hasOtherVoice && note.getStemDirection() === Stem.DOWN) {
+					for (const mod of note.getModifiers()) {
+						if (
+							mod instanceof StaveOrnament &&
+							mod.isTrill &&
+							!mod.explicitPlacement
+						) {
+							mod.setPosition(Modifier.Position.BELOW);
+						} else if (mod instanceof StaveArticulation && mod.fermata) {
+							mod.invertFermata();
+						} else if (mod instanceof StaveArticulation) {
+							mod.placeLowerVoiceBelow();
+						} else if (mod instanceof StringNumberAnnotation) {
+							mod.placeLowerVoiceBelow();
+						}
+					}
+				}
 				const marks = note
 					.getModifiers()
 					.filter((m) => m instanceof NoteheadArticulation);

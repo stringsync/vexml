@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_vocal-dotted-tie-slur.png",
+	"width": 932,
+	"height": 420,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 440,
+				"y": 302
+			},
+			"to": {
+				"x": 474,
+				"y": 313
+			},
+			"label": "Shorter solid slur",
+			"note": "Shorter solid slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 440,
+				"y": 299
+			},
+			"to": {
+				"x": 506,
+				"y": 317
+			},
+			"label": "Longer dotted slur",
+			"note": "Longer dotted slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

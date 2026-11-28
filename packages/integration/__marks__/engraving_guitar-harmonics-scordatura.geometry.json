@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_guitar-harmonics-scordatura.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 245.55 },
+		{ "index": 1, "system": 0, "x": 276.55, "w": 174.34 },
+		{ "index": 2, "system": 0, "x": 450.89, "w": 181.55 },
+		{ "index": 3, "system": 0, "x": 632.44, "w": 146.37 },
+		{ "index": 4, "system": 0, "x": 778.81, "w": 122.19 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 245.55
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 276.55,
+			"w": 174.34
+		},
+		{
+			"part": 0,
+			"measure": 2,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 450.89,
+			"w": 181.55
+		},
+		{
+			"part": 0,
+			"measure": 3,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 632.44,
+			"w": 146.37
+		},
+		{
+			"part": 0,
+			"measure": 4,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 778.81,
+			"w": 122.19
+		}
+	]
+}

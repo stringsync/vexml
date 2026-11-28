@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_chord-voices-stemless-unison.png",
+	"width": 932,
+	"height": 1049,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 321,
+				"y": 353
+			},
+			"to": {
+				"x": 338,
+				"y": 363
+			},
+			"label": "M6 notehead",
+			"note": "M6 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 340,
+				"y": 353
+			},
+			"to": {
+				"x": 357,
+				"y": 363
+			},
+			"label": "M6 notehead",
+			"note": "M6 notehead",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

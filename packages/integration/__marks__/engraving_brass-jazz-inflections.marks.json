@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_brass-jazz-inflections.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 653,
+				"y": 121
+			},
+			"to": {
+				"x": 666,
+				"y": 136
+			},
+			"label": "Scoop",
+			"note": "Scoop",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 713,
+				"y": 96
+			},
+			"to": {
+				"x": 725,
+				"y": 111
+			},
+			"label": "Plop",
+			"note": "Plop",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 804,
+				"y": 102
+			},
+			"to": {
+				"x": 823,
+				"y": 117
+			},
+			"label": "Doit",
+			"note": "Doit",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 862,
+				"y": 124
+			},
+			"to": {
+				"x": 874,
+				"y": 139
+			},
+			"label": "Falloff",
+			"note": "Falloff",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

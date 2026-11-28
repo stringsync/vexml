@@ -1,0 +1,41 @@
+{
+	"screenshot": "engraving_vocal-instrumentalist-spoken.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 17, "w": 544.28 },
+		{ "index": 1, "system": 0, "x": 561.28, "w": 339.72 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [98, 108, 118, 128, 138],
+			"x": 31,
+			"w": 530.28
+		},
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 2,
+			"lines": [198, 208, 218, 228, 238],
+			"x": 31,
+			"w": 530.28
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [98, 108, 118, 128, 138],
+			"x": 561.28,
+			"w": 339.72
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 2,
+			"lines": [198, 208, 218, 228, 238],
+			"x": 561.28,
+			"w": 339.72
+		}
+	]
+}

@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-overlap-no-stem-between.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 726,
+				"y": 125
+			},
+			"to": {
+				"x": 758,
+				"y": 131
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

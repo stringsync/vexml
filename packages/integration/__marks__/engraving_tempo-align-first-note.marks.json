@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tempo-align-first-note.png",
+	"width": 932,
+	"height": 607,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 489,
+				"y": 113
+			},
+			"to": {
+				"x": 545,
+				"y": 127
+			},
+			"label": "Presto",
+			"note": "Presto",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

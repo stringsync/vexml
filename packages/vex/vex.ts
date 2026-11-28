@@ -1,7 +1,6 @@
-import { resolve } from 'node:path';
+import { isAbsolute, resolve } from 'node:path';
 import { cli, type Deps, type Next } from 'core/cmd';
 import { color } from 'core/log';
-import { serve as serveRigs } from 'core/rig';
 import { serve } from 'core/ship';
 import type { Fs } from 'core/system';
 import { SystemClock } from 'core/time';
@@ -10,28 +9,34 @@ import { checkVexflow } from './check-vexflow';
 import { coverage } from './coverage';
 import { dev } from './dev';
 import { fix } from './fix';
+import { DEFAULT_MAX_JEV_IMAGES } from './jev-budget';
 import { lint, lintCorpus } from './lint';
 import { perf } from './perf';
 import { RendererBench } from './perf-bench';
 import { Retrier } from './perf-retrier';
 import { PerfRun } from './perf-run';
+import { DEFAULT_EVERY, perfTick } from './perf-tick';
 import { servePerfUi } from './perf-ui';
 import { reach } from './reach';
 import { readme } from './readme';
 import { render } from './render';
 import { FINDING_KINDS } from './render-lint';
+import { DEFAULT_MIN_CONFIDENCE } from './rule-book-box';
+import { RULE_TREATMENTS } from './rule-ledger';
+import { parseAnswerGroups, ruleStrip } from './rule-strip';
+import { rulesBookBox } from './rules-book-box-command';
 import {
-	review,
-	reviewRules,
-	showReview,
-	showRuleInbox,
-} from './review-command';
-import { vexmlRigs } from './rig';
-import { rulesStatus, rulesSync } from './rules-command';
+	rulesApprove,
+	rulesSettle,
+	rulesStatus,
+	rulesSync,
+} from './rules-command';
+import { rulesTriage } from './rules-triage-command';
 import { vexmlShip } from './ship';
 import { slice } from './slice';
 import { test } from './test';
 import { validate } from './validate';
+import { DEFAULT_MAX_IMAGES, visualCheck } from './visual-check';
 import { WarmBench } from './warm-bench';
 
 /** What `vex`'s commands are run with, on top of what any cli needs. */
@@ -266,122 +271,6 @@ vex
 		await new Promise(() => {});
 	});
 
-const reviews = vex
-	.group('review')
-	.description(
-		'review the snapshots `vex test` found moved, on a page the person marks up and submits',
-	)
-	.fallback('serve');
-
-reviews
-	.command('serve')
-	.description(
-		'serve the next version of the review page until ctrl-c; the page saves the review for `vex review show`',
-	)
-	.option('name', z.string().optional(), {
-		default: undefined,
-		description: "the review's name (default: the branch, less task/)",
-	})
-	.option('title', z.string().optional(), {
-		default: undefined,
-		description: 'the heading (default: the name)',
-	})
-	.option('tradeoffs', z.string().optional(), {
-		default: undefined,
-		description: 'a markdown file of trade-offs, shown above the snapshots',
-	})
-	.option('claims', z.string().optional(), {
-		default: undefined,
-		description:
-			"a markdown file with a `## <snapshot>` section per snapshot: plain prose or four `###` headings (The rule, The test case, What to look for, What was found), the first three defaulting to a rule's note in packages/integration/rules; naming an unchanged baseline includes it",
-	})
-	.option('replies', z.string().optional(), {
-		default: undefined,
-		description:
-			"a markdown file answering the last version's marks: a `## <snapshot>` section per snapshot, a numbered list by each mark's number in `vex review show`",
-	})
-	.option('port', z.coerce.number().int().optional(), {
-		default: undefined,
-		description: 'the port to serve on (default: the first free from 5173)',
-	})
-	.option('out', z.string().optional(), {
-		default: undefined,
-		description:
-			'write one self-contained HTML file instead of serving, for `splates artifact add`; it copies its review out',
-	})
-	.option('rules', bool, {
-		...flag,
-		description:
-			'serve the Behind Bars rule review inbox across sittings, persisting progress outside any worktree',
-	})
-	.option('fix', z.string().optional(), {
-		default: undefined,
-		description:
-			'serve a fix review for these comma-separated rule IDs plus every rule changed since main',
-	})
-	.option('max-width', z.coerce.number().int().positive(), {
-		default: 1200,
-		description: 'with --out: scale each image down to this width at most',
-	})
-	.action((opts, { log, fs, ps, invocationDir }) =>
-		opts.rules || opts.fix !== undefined
-			? reviewRules({ port: opts.port, fix: opts.fix, fs, ps, log })
-			: review({
-					name: opts.name,
-					title: opts.title,
-					tradeoffs: opts.tradeoffs,
-					claims: opts.claims,
-					replies: opts.replies,
-					port: opts.port,
-					out: opts.out,
-					maxWidth: opts['max-width'],
-					invocationDir,
-					fs,
-					ps,
-					log,
-				}),
-	);
-
-reviews
-	.command('show')
-	.description(
-		"print the review as the person left it: a `[VEX REVIEW ...]` message with each mark's measures, staves and notes, and the same as JSON",
-	)
-	.option('rules', bool, {
-		...flag,
-		description: 'print the Behind Bars rule review inbox pass instead',
-	})
-	.option('fix', z.string().optional(), {
-		default: undefined,
-		description:
-			'read the fix review for these comma-separated rule IDs plus every rule changed since main',
-	})
-	.option('name', z.string().optional(), {
-		default: undefined,
-		description: "the review's name (default: the branch, less task/)",
-	})
-	.option('version', z.coerce.number().int().positive().optional(), {
-		default: undefined,
-		description: 'the version (default: the newest)',
-	})
-	.option('submitted', bool, {
-		...flag,
-		description:
-			'fail until the person submits it, for a `splates signal poll` probe',
-	})
-	.action((opts, { log, fs, ps }) =>
-		opts.rules || opts.fix !== undefined
-			? showRuleInbox({ submitted: opts.submitted, fix: opts.fix, fs, ps, log })
-			: showReview({
-					name: opts.name,
-					version: opts.version,
-					submitted: opts.submitted,
-					fs,
-					ps,
-					log,
-				}),
-	);
-
 const rules = vex
 	.group('rules')
 	.description('inspect Behind Bars rule fingerprints and review verdicts');
@@ -398,15 +287,201 @@ rules
 	.action((opts, { log, fs }) => rulesStatus({ json: opts.json, fs, log }));
 
 rules
-	.command('sync')
+	.command('settle')
 	.description(
-		'update the Status column of ENGRAVING.md from the verdict ledger and check results',
+		'record agent verdicts for new or changed rules their measured checks decide (a pass approves, a failure with a `// fix: #<n>` task rejects), leaving subjective and eye-judged rules for the user',
 	)
 	.option('check', bool, {
 		...flag,
-		description: "don't write; fail if ENGRAVING.md is out of step",
+		description: "don't write; list what would be settled",
+	})
+	.action((opts, { log, fs }) => rulesSettle({ check: opts.check, fs, log }));
+
+rules
+	.command('approve')
+	.description(
+		'record user approval at the current fingerprint for one or more rules (e.g. after Ready to merge sign-off)',
+	)
+	.option('note', z.string().optional(), {
+		default: undefined,
+		description: 'reason or sign-off note recorded on the verdict',
+	})
+	.option('treatment', z.enum(RULE_TREATMENTS).optional(), {
+		default: undefined,
+		description: 'chosen renderer treatment (defaults to any prior treatment)',
+	})
+	.option('task', z.coerce.number().int().positive().optional(), {
+		default: undefined,
+		description: 'fix task number (defaults to any prior task)',
+	})
+	.rest('ids', z.string(), { description: 'Behind Bars rule ID(s) to approve' })
+	.action((opts, { log, fs }) =>
+		rulesApprove({
+			ids: opts.ids,
+			note: opts.note,
+			treatment: opts.treatment,
+			task: opts.task,
+			fs,
+			log,
+		}),
+	);
+
+rules
+	.command('sync')
+	.description(
+		"update the engraving ledger's Status cells and section rule counts from the verdict ledger and check results",
+	)
+	.option('check', bool, {
+		...flag,
+		description: "don't write; fail if the engraving ledger is out of step",
 	})
 	.action((opts, { log, fs }) => rulesSync({ check: opts.check, fs, log }));
+
+rules
+	.command('strip')
+	.description(
+		"write one clean PNG comparing a rule's checks: its statement and book page, the Behind Bars example, vexml (without and with the fix under --since), MuseScore, Verovio and OSMD at one staff-space size, optionally stacked under lettered answer groups",
+	)
+	.arg('rule', z.string(), { description: 'the Behind Bars rule ID' })
+	.option('check', z.coerce.number().int().positive().optional(), {
+		default: undefined,
+		description: 'show only this check (default: every check)',
+	})
+	.option('since', z.string().optional(), {
+		default: undefined,
+		description:
+			'show vexml without and with the fix, "without" from this ref\'s committed render; bare --since means main (default: one vexml tile)',
+	})
+	.option('groups', z.string().optional(), {
+		default: undefined,
+		description:
+			"stack tiles under lettered answer groups matching the review question's choices: '<letter>=<tile>,<tile>[: <what they draw>]' joined by ';', tiles from book, vexml, unfixed, musescore, verovio, osmd (default: ungrouped)",
+	})
+	.option('output', z.string().optional(), {
+		default: undefined,
+		description:
+			'output png path (default: <tmp>/vex-rule-strip/<rule>[-check-<n>].png, outside the repo)',
+	})
+	.use(timing)
+	.action(async (opts, { log, fs, ps, invocationDir }) => {
+		await ruleStrip({
+			id: opts.rule,
+			check: opts.check,
+			// A bare flag arrives as "true".
+			since: opts.since === 'true' ? 'main' : opts.since,
+			...(opts.groups === undefined
+				? {}
+				: { groups: parseAnswerGroups(opts.groups) }),
+			output: opts.output,
+			cwd: invocationDir,
+			fs,
+			ps,
+			log,
+		});
+	});
+
+rules
+	.command('book-box')
+	.description(
+		'opt-in Behind Bars music example locator using batched Jev box queries (at most one image per page), stave validation, and --benchmark accuracy mode',
+	)
+	.option('page', z.string().optional(), {
+		default: undefined,
+		description: 'print page label to query directly, e.g. 135',
+	})
+	.repeated('query', z.string(), {
+		description: 'example description to locate on --page (repeatable)',
+	})
+	.repeated('rule', z.string(), {
+		description: 'rule ID whose checks to locate on its book page (repeatable)',
+	})
+	.option('benchmark', z.string().optional(), {
+		default: undefined,
+		description:
+			'benchmark Jev boxes against committed Book: boxes on N distinct pages (bare --benchmark defaults to 10; strictly bounded by --max-images)',
+	})
+	.option('pages', z.string().optional(), {
+		default: undefined,
+		description:
+			'comma-separated print pages to benchmark instead of stratified sampling',
+	})
+	.option('max-images', z.coerce.number().int().min(0), {
+		default: DEFAULT_MAX_JEV_IMAGES,
+		description: 'hard per-run cap on uncached page images sent to Jev',
+	})
+	.option('min-confidence', z.coerce.number().min(0).max(1), {
+		default: DEFAULT_MIN_CONFIDENCE,
+		description: 'confidence floor below which a box is flagged low-confidence',
+	})
+	.option('no-cache', bool, {
+		...flag,
+		description:
+			'bypass the content-hash disk cache while keeping --max-images',
+	})
+	.option('output', z.string().optional(), {
+		default: undefined,
+		description:
+			'directory for visual comparison PNGs (benchmark defaults under /tmp)',
+	})
+	.option('json', bool, {
+		...flag,
+		description: 'print structured JSON instead of formatted text',
+	})
+	.action(async (opts, { log, fs, ps, invocationDir }) => {
+		await rulesBookBox({
+			page: opts.page,
+			queries: opts.query,
+			rules: opts.rule,
+			benchmark: opts.benchmark,
+			pages: opts.pages,
+			maxImages: opts['max-images'],
+			minConfidence: opts['min-confidence'],
+			noCache: opts['no-cache'],
+			output: opts.output,
+			json: opts.json,
+			cwd: invocationDir,
+			fs,
+			ps,
+			log,
+		});
+	});
+
+rules
+	.command('triage')
+	.description(
+		'opt-in advisory pre-screen of moved Behind Bars rule crops since a base ref using one cached, budget-capped Jev Before/After call per moved check',
+	)
+	.option('since', z.string().optional(), {
+		default: undefined,
+		description: 'base git ref to diff crops against (default: main)',
+	})
+	.repeated('rule', z.string(), {
+		description: 'limit triage to specific rule ID(s) (repeatable)',
+	})
+	.option('max-images', z.coerce.number().int().min(0), {
+		default: DEFAULT_MAX_JEV_IMAGES,
+		description: 'hard per-run cap on uncached Before/After images sent to Jev',
+	})
+	.option('no-cache', bool, {
+		...flag,
+		description:
+			'bypass the content-hash disk cache while keeping --max-images',
+	})
+	.option('json', bool, {
+		...flag,
+		description: 'print structured JSON instead of the advisory table',
+	})
+	.action(async (opts, { log, fs }) => {
+		await rulesTriage({
+			since: opts.since === 'true' ? 'main' : opts.since,
+			rules: opts.rule,
+			maxImages: opts['max-images'],
+			noCache: opts['no-cache'],
+			json: opts.json,
+			fs,
+			log,
+		});
+	});
 
 vex
 	.command('slice')
@@ -489,15 +564,90 @@ vex
 	);
 
 vex
-	.command('rig')
+	.command('perf-tick')
 	.description(
-		"the playground's dev server for splates's Rigs page: answers describe and start <rig>",
+		'count completed vexml tasks since the last check; with --fire, fire vexml.perf-due after every N vexml landings',
 	)
-	.rest('args', z.string(), {
-		description: '[describe | start <rig> [--<option>=<value>]]',
+	.option('every', z.coerce.number().int().min(1), {
+		default: DEFAULT_EVERY,
+		description: 'number of vexml landings between vexml.perf-due firings',
 	})
-	.allowUnknownOption()
-	.action((opts, { ps }) => serveRigs(vexmlRigs(ps), opts.args));
+	.option('fire', bool, {
+		...flag,
+		description: 'update the counter and fire vexml.perf-due when due',
+	})
+	.option('force', bool, {
+		...flag,
+		description: 'with --fire, fire vexml.perf-due immediately and reset count',
+	})
+	.option('seed', bool, {
+		...flag,
+		description: 'record HEAD at count 0 without firing',
+	})
+	.action((opts, { log, fs, ps }) =>
+		perfTick({
+			every: opts.every,
+			fire: opts.fire,
+			force: opts.force,
+			seed: opts.seed,
+			log,
+			fs,
+			ps,
+		}),
+	);
+
+vex
+	.command('visual-check')
+	.description(
+		'check modified vexml images on trunk for significant visual changes; with --fire, fire vexml.visual-changed',
+	)
+	.option('fire', bool, {
+		...flag,
+		description:
+			'update state and fire vexml.visual-changed when significant visual changes land',
+	})
+	.option('force', bool, {
+		...flag,
+		description: 'with --fire, fire even if below the significance bar',
+	})
+	.option('seed', bool, {
+		...flag,
+		description: 'record HEAD without firing',
+	})
+	.option('from', z.string().optional(), {
+		description: 'base git ref to diff from (default: last recorded commit)',
+	})
+	.option('to', z.string().optional(), {
+		description: 'target git ref to diff to (default: HEAD)',
+	})
+	.option('render', z.string().optional(), {
+		description:
+			'render cropped before/diff/after PNGs for the top changed images into this directory',
+	})
+	.option('max', z.coerce.number().int().min(1), {
+		default: DEFAULT_MAX_IMAGES,
+		description: 'maximum number of cropped diff panels to render',
+	})
+	.action((opts, { log, fs, ps, invocationDir }) => {
+		let renderDir: string | undefined;
+		if (opts.render !== undefined) {
+			renderDir = isAbsolute(opts.render)
+				? opts.render
+				: resolve(invocationDir, opts.render);
+		}
+		return visualCheck({
+			fire: opts.fire,
+			force: opts.force,
+			seed: opts.seed,
+			from: opts.from,
+			to: opts.to,
+			renderDir,
+			maxImages: opts.max,
+			log,
+			fs,
+			ps,
+		});
+	});
 
 vex
 	.command('ship')

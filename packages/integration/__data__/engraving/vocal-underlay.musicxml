@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+  <identification>
+    <miscellaneous>
+      <miscellaneous-field name="description">Behind Bars pp. 437-440, 446: vocal tuplet placement, text size and horizontal underlay baseline, single-note and melisma syllable alignment, vocal note spacing with lengthy syllables, and syllable elision underties.</miscellaneous-field>
+    </miscellaneous>
+  </identification>
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): vocal-tuplet-above (p. 437) — beamed down-stem triplet and unbeamed quarter triplet with lyrics, no explicit placement -->
+    <measure number="1">
+      <attributes>
+        <divisions>12</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <beam number="1">begin</beam>
+        <notations><tuplet type="start"/></notations>
+        <lyric number="1"><syllabic>begin</syllabic><text>Ring</text></lyric>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <beam number="1">continue</beam>
+        <lyric number="1"><syllabic>end</syllabic><text>ing</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <beam number="1">end</beam>
+        <notations><tuplet type="stop"/></notations>
+        <lyric number="1"><syllabic>single</syllabic><text>clear</text></lyric>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>now</text></lyric>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>8</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet type="start" bracket="yes"/></notations>
+        <lyric number="1"><syllabic>single</syllabic><text>through</text></lyric>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>8</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <lyric number="1"><syllabic>single</syllabic><text>the</text></lyric>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>8</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet type="stop"/></notations>
+        <lyric number="1"><syllabic>single</syllabic><text>hills.</text></lyric>
+      </note>
+    </measure>
+
+    <!-- M2-M3 (indices 1-2): vocal-underlay-level-line (pp. 438-439) and vocal-text-size-and-style (p. 438) -->
+    <measure number="2">
+      <print new-system="yes"/>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>O</text></lyric>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>begin</syllabic><text>qui</text></lyric>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>3</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>end</syllabic><text>et</text></lyric>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>3</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>stream,</text></lyric>
+      </note>
+    </measure>
+    <measure number="3">
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>where</text></lyric>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>do</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>3</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>you</text></lyric>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>glide?</text></lyric>
+      </note>
+    </measure>
+
+    <!-- M4-M5 (indices 3-4): vocal-syllable-single-note-align (p. 439) — short and very long single-note syllables across a barline -->
+    <measure number="4">
+      <print new-system="yes"/>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>I</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>walk</text></lyric>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>1</voice><type>eighth</type>
+        <beam number="1">begin</beam>
+        <lyric number="1"><syllabic>single</syllabic><text>by</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>1</voice><type>eighth</type>
+        <beam number="1">end</beam>
+        <lyric number="1"><syllabic>single</syllabic><text>bright</text></lyric>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>1</voice><type>eighth</type>
+        <beam number="1">begin</beam>
+        <lyric number="1"><syllabic>begin</syllabic><text>spark</text></lyric>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>1</voice><type>eighth</type>
+        <beam number="1">end</beam>
+        <lyric number="1"><syllabic>end</syllabic><text>ling</text></lyric>
+      </note>
+    </measure>
+    <measure number="5">
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>1</voice><type>eighth</type>
+        <beam number="1">begin</beam>
+        <lyric number="1"><syllabic>single</syllabic><text>strengths</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>1</voice><type>eighth</type>
+        <beam number="1">end</beam>
+        <lyric number="1"><syllabic>single</syllabic><text>of</text></lyric>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>clear</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>24</duration><voice>1</voice><type>half</type>
+        <lyric number="1"><syllabic>single</syllabic><text>dawn.</text></lyric>
+      </note>
+    </measure>
+
+    <!-- M6 (index 5): vocal-syllable-melisma-left-align (pp. 439-440) — slurred melisma and tied note without explicit justify -->
+    <measure number="6">
+      <print new-system="yes"/>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>1</voice><type>eighth</type>
+        <beam number="1">begin</beam>
+        <notations><slur type="start" number="1"/></notations>
+        <lyric number="1"><syllabic>single</syllabic><text>Stay</text><extend/></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>1</voice><type>eighth</type>
+        <beam number="1">continue</beam>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>1</voice><type>eighth</type>
+        <beam number="1">continue</beam>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>6</duration><voice>1</voice><type>eighth</type>
+        <beam number="1">end</beam>
+        <notations><slur type="stop" number="1"/></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>12</duration><tie type="start"/><voice>1</voice><type>quarter</type>
+        <notations><tied type="start"/></notations>
+        <lyric number="1"><syllabic>single</syllabic><text>true</text><extend/></lyric>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>12</duration><tie type="stop"/><voice>1</voice><type>quarter</type>
+        <notations><tied type="stop"/></notations>
+      </note>
+    </measure>
+
+    <!-- M7 (index 6): vocal-note-spacing-long-syllables (p. 440) — lengthy syllables on 16ths beside short syllables on quarters -->
+    <measure number="7">
+      <print new-system="yes"/>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>3</duration><voice>1</voice><type>16th</type>
+        <beam number="1">begin</beam><beam number="2">begin</beam>
+        <lyric number="1"><syllabic>begin</syllabic><text>Drift</text></lyric>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>3</duration><voice>1</voice><type>16th</type>
+        <beam number="1">continue</beam><beam number="2">continue</beam>
+        <lyric number="1"><syllabic>end</syllabic><text>ing</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>3</duration><voice>1</voice><type>16th</type>
+        <beam number="1">continue</beam><beam number="2">continue</beam>
+        <lyric number="1"><syllabic>single</syllabic><text>chill</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>3</duration><voice>1</voice><type>16th</type>
+        <beam number="1">end</beam><beam number="2">end</beam>
+        <lyric number="1"><syllabic>single</syllabic><text>clouds</text></lyric>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>pass,</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>we</text></lyric>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>3</duration><voice>1</voice><type>16th</type>
+        <beam number="1">begin</beam><beam number="2">begin</beam>
+        <lyric number="1"><syllabic>single</syllabic><text>climb</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>3</duration><voice>1</voice><type>16th</type>
+        <beam number="1">continue</beam><beam number="2">continue</beam>
+        <lyric number="1"><syllabic>single</syllabic><text>up</text></lyric>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>3</duration><voice>1</voice><type>16th</type>
+        <beam number="1">continue</beam><beam number="2">continue</beam>
+        <lyric number="1"><syllabic>single</syllabic><text>the</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>3</duration><voice>1</voice><type>16th</type>
+        <beam number="1">end</beam><beam number="2">end</beam>
+        <lyric number="1"><syllabic>single</syllabic><text>ridge.</text></lyric>
+      </note>
+    </measure>
+
+    <!-- M8 (index 7): vocal-elision-undertie (p. 446) — two and three elided syllables on one note -->
+    <measure number="8">
+      <print new-system="yes"/>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1">
+          <syllabic>single</syllabic><text>ma</text>
+          <elision/>
+          <syllabic>single</syllabic><text>un</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1">
+          <syllabic>single</syllabic><text>tra</text>
+          <elision/>
+          <syllabic>single</syllabic><text>o</text>
+          <elision/>
+          <syllabic>single</syllabic><text>il</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1">
+          <syllabic>single</syllabic><text>di</text>
+          <elision>&#x203F;</elision>
+          <syllabic>single</syllabic><text>al</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>12</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>sol.</text></lyric>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

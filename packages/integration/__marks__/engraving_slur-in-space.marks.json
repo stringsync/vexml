@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_slur-in-space.png",
+	"width": 932,
+	"height": 1202,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 93,
+				"y": 457
+			},
+			"to": {
+				"x": 287,
+				"y": 475
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

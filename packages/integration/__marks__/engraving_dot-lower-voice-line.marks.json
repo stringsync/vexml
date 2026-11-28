@@ -1,0 +1,442 @@
+{
+	"screenshot": "engraving_dot-lower-voice-line.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 441
+			},
+			"to": {
+				"x": 100,
+				"y": 451
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 421
+			},
+			"to": {
+				"x": 100,
+				"y": 431
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 102,
+				"y": 419
+			},
+			"to": {
+				"x": 106,
+				"y": 423
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 102,
+				"y": 449
+			},
+			"to": {
+				"x": 106,
+				"y": 453
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 1241
+			},
+			"to": {
+				"x": 129,
+				"y": 1251
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 156.8,
+				"y": 1241
+			},
+			"to": {
+				"x": 168.8,
+				"y": 1251
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 179.2,
+				"y": 1241
+			},
+			"to": {
+				"x": 191.2,
+				"y": 1251
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 219,
+				"y": 1241
+			},
+			"to": {
+				"x": 231,
+				"y": 1251
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 1221
+			},
+			"to": {
+				"x": 129,
+				"y": 1231
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 131,
+				"y": 1249
+			},
+			"to": {
+				"x": 135,
+				"y": 1253
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 193,
+				"y": 1249
+			},
+			"to": {
+				"x": 197,
+				"y": 1253
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 267.6,
+				"y": 1241
+			},
+			"to": {
+				"x": 279.6,
+				"y": 1251
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 291.1,
+				"y": 1241
+			},
+			"to": {
+				"x": 303.1,
+				"y": 1251
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 333,
+				"y": 1241
+			},
+			"to": {
+				"x": 345,
+				"y": 1251
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 267.6,
+				"y": 1221
+			},
+			"to": {
+				"x": 284.6,
+				"y": 1231
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 305,
+				"y": 1249
+			},
+			"to": {
+				"x": 309,
+				"y": 1253
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 395,
+				"y": 1251
+			},
+			"to": {
+				"x": 407,
+				"y": 1261
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 395,
+				"y": 1241
+			},
+			"to": {
+				"x": 407,
+				"y": 1251
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 395,
+				"y": 1221
+			},
+			"to": {
+				"x": 407,
+				"y": 1231
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 409,
+				"y": 1219
+			},
+			"to": {
+				"x": 413,
+				"y": 1223
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 409,
+				"y": 1259
+			},
+			"to": {
+				"x": 413,
+				"y": 1263
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 409,
+				"y": 1249
+			},
+			"to": {
+				"x": 413,
+				"y": 1253
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 314.9,
+				"y": 901
+			},
+			"to": {
+				"x": 326.9,
+				"y": 911
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 300.9,
+				"y": 901
+			},
+			"to": {
+				"x": 312.9,
+				"y": 911
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 329,
+				"y": 899
+			},
+			"to": {
+				"x": 333,
+				"y": 903
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 329,
+				"y": 909
+			},
+			"to": {
+				"x": 333,
+				"y": 913
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 710.9,
+				"y": 901
+			},
+			"to": {
+				"x": 722.9,
+				"y": 911
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 696.9,
+				"y": 901
+			},
+			"to": {
+				"x": 708.9,
+				"y": 911
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 725,
+				"y": 909
+			},
+			"to": {
+				"x": 729,
+				"y": 913
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

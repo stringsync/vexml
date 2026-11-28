@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_tremolo-stem-extends-past.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 428,
+				"y": 91
+			},
+			"to": {
+				"x": 440,
+				"y": 106
+			},
+			"label": "Tremolo 1",
+			"note": "Tremolo 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 454,
+				"y": 84
+			},
+			"to": {
+				"x": 466,
+				"y": 106
+			},
+			"label": "Tremolo 2",
+			"note": "Tremolo 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 481,
+				"y": 77
+			},
+			"to": {
+				"x": 493,
+				"y": 106
+			},
+			"label": "Tremolo 3",
+			"note": "Tremolo 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 497,
+				"y": 126
+			},
+			"to": {
+				"x": 509,
+				"y": 148
+			},
+			"label": "Tremolo 4",
+			"note": "Tremolo 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

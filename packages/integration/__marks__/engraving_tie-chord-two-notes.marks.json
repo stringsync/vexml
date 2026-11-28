@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tie-chord-two-notes.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 403,
+				"y": 912
+			},
+			"to": {
+				"x": 462,
+				"y": 920
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 403,
+				"y": 933
+			},
+			"to": {
+				"x": 462,
+				"y": 940
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

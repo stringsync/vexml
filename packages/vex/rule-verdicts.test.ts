@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { FakeFs } from 'core/system/testing';
+import { PNG } from 'pngjs';
 import {
 	deriveLedgerStatus,
 	parseLedgerRules,
@@ -358,6 +359,81 @@ async function percClefs() { const e = await engrave('clef-percussion'); return 
 		expect(await fs.read(LEDGER_FILE)).toContain('out of scope: terminology');
 	});
 
+	it('syncs Status cells in section files and the index Rules counts', async () => {
+		const { fs, verdicts } = await makeRuleWorkspace();
+		const section = 'packages/integration/ledger/005-ground.md';
+		await fs.write(
+			LEDGER_FILE,
+			[
+				'# Engraving',
+				'',
+				'| Pages | Section | Status | Rules |',
+				'| --- | --- | --- | --- |',
+				'| 5–37 | [Ground rules](ledger/005-ground.md) | pending | 0 |',
+				'',
+			].join('\n'),
+		);
+		await fs.write(
+			section,
+			LEDGER.replace(
+				'](engraving-stem-length.test.ts)',
+				'](../engraving-stem-length.test.ts)',
+			),
+		);
+
+		const dry = await verdicts.syncLedger({ check: true });
+		expect(dry.changed).toEqual([
+			{ id: 'stem-length', from: 'pass', to: 'pending' },
+		]);
+		expect(dry.counts).toEqual([{ file: section, from: 0, to: 2 }]);
+
+		await verdicts.syncLedger();
+		expect(await fs.read(section)).toContain(
+			'| stem-length | 14 | A stem is 3½ spaces. | pending |',
+		);
+		expect(await fs.read(LEDGER_FILE)).toContain(
+			'| 5–37 | [Ground rules](ledger/005-ground.md) | pending | 2 |',
+		);
+		const rows = await verdicts.readRules();
+		expect(rows[0]?.linkTarget).toBe('engraving-stem-length.test.ts');
+	});
+
+	it('keeps each check verdict a rule was judged by', async () => {
+		const verdicts = new RuleVerdicts(new FakeFs());
+		const verdict: RuleVerdict = {
+			id: 'clef-g-f-on-line',
+			fingerprint: {
+				note: 'n',
+				fixture: 'f',
+				screenshot: 's',
+				measurements: null,
+			},
+			verdict: 'needs-decision',
+			date: '2026-11-24',
+			note: 'Unsure whether the dots sit low.',
+			checks: [
+				{
+					n: 1,
+					question: 'Does the treble clef curl around the G line?',
+					verdict: 'approved',
+					note: '',
+					spec: 'a',
+					crop: 'b',
+				},
+				{
+					n: 2,
+					question: "Do the bass clef's dots sit either side of the F line?",
+					verdict: 'unsure',
+					note: 'Unsure whether the dots sit low.',
+					spec: 'c',
+					crop: 'd',
+				},
+			],
+		};
+		await verdicts.writeVerdict(verdict);
+		expect(await verdicts.readVerdict('clef-g-f-on-line')).toEqual(verdict);
+	});
+
 	it('rejects unsafe rule ids when reading or writing verdicts', async () => {
 		const { verdicts } = await makeRuleWorkspace();
 		await expect(verdicts.readVerdict('../escape')).rejects.toThrow(
@@ -369,6 +445,140 @@ async function percClefs() { const e = await engrave('clef-percussion'); return 
 				{ note: 'a', fixture: 'b', screenshot: 'c', measurements: null },
 			),
 		).toEqual(['fixture', 'measurements']);
+	});
+
+	it('persists chosen treatment on verdicts and checks and exposes rendererAgreement on statuses', async () => {
+		const { fs, verdicts } = await makeRuleWorkspace();
+		await fs.write(
+			`${RULE_NOTES_DIR}/stem-length.md`,
+			`${NOTE}\n### Renderers\n\n- Behind Bars: agrees, diagonal branch\n- MuseScore: differs, straight stem\n`,
+		);
+		const entry = await statusById(verdicts, 'stem-length');
+		expect(entry.rendererAgreement).toMatchObject({
+			status: 'disagree',
+			summary: 'MuseScore differs (straight stem)',
+		});
+
+		await verdicts.writeVerdict({
+			id: 'stem-length',
+			fingerprint: entry.fingerprint,
+			verdict: 'rejected',
+			treatment: 'musescore',
+			date: '2026-11-25',
+			note: 'Follow MuseScore',
+			checks: [
+				{
+					n: 1,
+					question: 'Does it branch?',
+					verdict: 'rejected',
+					treatment: 'musescore',
+					note: '',
+					spec: 's1',
+					crop: 'c1',
+				},
+			],
+		});
+		const saved = await verdicts.readVerdict('stem-length');
+		expect(saved?.treatment).toBe('musescore');
+		expect(saved?.checks?.[0]?.treatment).toBe('musescore');
+	});
+
+	it('hashes per-rule crop pixels so changes outside a crop keep its fingerprint stable', async () => {
+		const fs = new FakeFs();
+		const ledger = [
+			'| Id | Page | Rule | Status | Link |',
+			'| --- | --- | --- | --- | --- |',
+			'| tie-first | 60 | First measure tie. | pending | [ties](engraving-ties.test.ts) |',
+			'| tie-second | 61 | Second measure tie. | pending | [ties](engraving-ties.test.ts) |',
+			'| tie-uncropped | 62 | Whole-sheet fallback. | pending | [ties](engraving-ties.test.ts) |',
+		].join('\n');
+		const testFile = `
+describe('ties', () => {
+	it.concurrent('draws ties', async () => {
+		expect(await draw('ties')).toMatchScreenshot('engraving_ties.png');
+	});
+});
+`;
+		const geometry = {
+			screenshot: 'engraving_ties.png',
+			measures: [
+				{ index: 0, system: 0, x: 20, w: 60 },
+				{ index: 1, system: 0, x: 120, w: 60 },
+			],
+			staves: [
+				{
+					part: 0,
+					measure: 0,
+					staff: 1,
+					lines: [40, 50, 60, 70, 80],
+					x: 20,
+					w: 60,
+				},
+				{
+					part: 0,
+					measure: 1,
+					staff: 1,
+					lines: [40, 50, 60, 70, 80],
+					x: 120,
+					w: 60,
+				},
+			],
+		};
+		await fs.write(LEDGER_FILE, ledger);
+		await fs.write(
+			`${RULE_NOTES_DIR}/tie-first.md`,
+			'### Checks\n\n1. Does measure 1 look right?\n   Crop: measure 1, 1 above, 1 below\n',
+		);
+		await fs.write(
+			`${RULE_NOTES_DIR}/tie-second.md`,
+			'### Checks\n\n1. Does measure 2 look right?\n   Crop: measure 2, 1 above, 1 below\n',
+		);
+		await fs.write(
+			`${RULE_NOTES_DIR}/tie-uncropped.md`,
+			'### The rule\n\nNo crops.\n',
+		);
+		await fs.write(`${ENGRAVING_FIXTURES_DIR}/ties.musicxml`, '<ties/>');
+		await fs.write(`${INTEGRATION_DIR}/engraving-ties.test.ts`, testFile);
+		await fs.write(
+			`${MARKS_DIR}/engraving_ties.geometry.json`,
+			JSON.stringify(geometry),
+		);
+		await fs.writeBytes(
+			`${SCREENSHOTS_DIR}/engraving_ties.png`,
+			makeSolidPng(220, 120),
+		);
+
+		const verdicts = new RuleVerdicts(fs);
+		await approveAll(verdicts);
+
+		// Paint a pixel outside both crops (top-left corner): cropped rules stay approved, uncropped changes.
+		await fs.writeBytes(
+			`${SCREENSHOTS_DIR}/engraving_ties.png`,
+			makeSolidPng(220, 120, [{ x: 1, y: 1, r: 200, g: 0, b: 0 }]),
+		);
+		let byId = new Map((await verdicts.statuses()).map((e) => [e.id, e]));
+		expect(byId.get('tie-first')?.status).toBe('approved');
+		expect(byId.get('tie-second')?.status).toBe('approved');
+		expect(byId.get('tie-uncropped')?.status).toBe('changed');
+		expect(byId.get('tie-uncropped')?.changedParts).toEqual(['screenshot']);
+
+		// Paint a pixel inside measure 1's crop: only tie-first (and uncropped) change; tie-second stays approved.
+		await fs.writeBytes(
+			`${SCREENSHOTS_DIR}/engraving_ties.png`,
+			makeSolidPng(220, 120, [{ x: 40, y: 60, r: 0, g: 0, b: 255 }]),
+		);
+		byId = new Map((await verdicts.statuses()).map((e) => [e.id, e]));
+		expect(byId.get('tie-first')?.status).toBe('changed');
+		expect(byId.get('tie-first')?.changedParts).toEqual(['screenshot']);
+		expect(byId.get('tie-second')?.status).toBe('approved');
+
+		// Removing geometry falls back to hashing the full fixture PNG.
+		await fs.rm(`${MARKS_DIR}/engraving_ties.geometry.json`);
+		byId = new Map((await verdicts.statuses()).map((e) => [e.id, e]));
+		expect(byId.get('tie-second')?.status).toBe('changed');
+		expect(byId.get('tie-second')?.fingerprint.screenshot).toBe(
+			byId.get('tie-uncropped')?.fingerprint.screenshot,
+		);
 	});
 });
 
@@ -446,4 +656,21 @@ async function approveAll(verdicts: RuleVerdicts): Promise<void> {
 			note: '',
 		});
 	}
+}
+
+function makeSolidPng(
+	width: number,
+	height: number,
+	dots: { x: number; y: number; r: number; g: number; b: number }[] = [],
+): Uint8Array {
+	const png = new PNG({ width, height });
+	png.data.fill(255);
+	for (const dot of dots) {
+		const idx = (dot.y * width + dot.x) * 4;
+		png.data[idx] = dot.r;
+		png.data[idx + 1] = dot.g;
+		png.data[idx + 2] = dot.b;
+		png.data[idx + 3] = 255;
+	}
+	return new Uint8Array(PNG.sync.write(png));
 }

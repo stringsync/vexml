@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_key-unconventional.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 73,
+				"y": 562
+			},
+			"to": {
+				"x": 93,
+				"y": 603
+			},
+			"label": "F# and Bb key",
+			"note": "F# and Bb key",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

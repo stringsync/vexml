@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_tie-away-from-stems.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 127,
+				"y": 130
+			},
+			"to": {
+				"x": 185,
+				"y": 137
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 301,
+				"y": 645
+			},
+			"to": {
+				"x": 356,
+				"y": 652
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 426,
+				"y": 550
+			},
+			"to": {
+				"x": 481,
+				"y": 557
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

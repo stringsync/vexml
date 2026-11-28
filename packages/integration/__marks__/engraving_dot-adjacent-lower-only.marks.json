@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_dot-adjacent-lower-only.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 596.1,
+				"y": 441
+			},
+			"to": {
+				"x": 608.1,
+				"y": 451
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 610,
+				"y": 449
+			},
+			"to": {
+				"x": 614,
+				"y": 453
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

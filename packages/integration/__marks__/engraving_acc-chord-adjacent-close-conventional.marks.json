@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_acc-chord-adjacent-close-conventional.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 544.5,
+				"y": 108
+			},
+			"to": {
+				"x": 570.5,
+				"y": 136
+			},
+			"label": "F#/4 sign",
+			"note": "F#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 518.5,
+				"y": 103
+			},
+			"to": {
+				"x": 581.9,
+				"y": 131
+			},
+			"label": "G#/4 sign",
+			"note": "G#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 531.5,
+				"y": 98
+			},
+			"to": {
+				"x": 570.5,
+				"y": 126
+			},
+			"label": "A#/4 sign",
+			"note": "A#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 557.5,
+				"y": 88
+			},
+			"to": {
+				"x": 570.5,
+				"y": 116
+			},
+			"label": "C#/5 sign",
+			"note": "C#/5 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 670.3,
+				"y": 103
+			},
+			"to": {
+				"x": 692.3,
+				"y": 131
+			},
+			"label": "G/4 sign",
+			"note": "G/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 646.3,
+				"y": 94
+			},
+			"to": {
+				"x": 703.7,
+				"y": 120
+			},
+			"label": "Ab/4 sign",
+			"note": "Ab/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 658.3,
+				"y": 89
+			},
+			"to": {
+				"x": 692.3,
+				"y": 115
+			},
+			"label": "Bb/4 sign",
+			"note": "Bb/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 680.3,
+				"y": 79
+			},
+			"to": {
+				"x": 692.3,
+				"y": 105
+			},
+			"label": "Db/5 sign",
+			"note": "Db/5 sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

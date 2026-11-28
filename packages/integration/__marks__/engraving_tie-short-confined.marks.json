@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-short-confined.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 713,
+				"y": 130
+			},
+			"to": {
+				"x": 732,
+				"y": 135
+			},
+			"label": "Short tie",
+			"note": "Short tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

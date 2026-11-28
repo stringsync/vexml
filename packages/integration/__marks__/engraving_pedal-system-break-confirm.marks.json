@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_pedal-system-break-confirm.png",
+	"width": 932,
+	"height": 604,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 823,
+				"y": 254
+			},
+			"to": {
+				"x": 901,
+				"y": 277
+			},
+			"label": "M6 open pedal",
+			"note": "M6 open pedal",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 89,
+				"y": 514
+			},
+			"to": {
+				"x": 206,
+				"y": 540
+			},
+			"label": "M7 (Ped.) continuation",
+			"note": "M7 (Ped.) continuation",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

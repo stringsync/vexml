@@ -9,7 +9,7 @@ import {
 import {
 	BarNote,
 	GhostNote,
-	type Stave,
+	Stave,
 	type StaveNote,
 	Stem,
 	type TabNote,
@@ -35,6 +35,7 @@ describe('VoiceBuilder', () => {
 			measureBeat: 0,
 			ties: [],
 			beams: [],
+			tuplets: [],
 			isGrace: false,
 			isChordMember: false,
 			isRest: false,
@@ -51,9 +52,15 @@ describe('VoiceBuilder', () => {
 
 	// A built note the way buildPartBeams sees one: identity, a notehead count, and a
 	// recorded stem set.
-	const staveNote = (mods: unknown[] = [], heads = 1, built = 0) => {
+	const staveNote = (
+		mods: unknown[] = [],
+		heads = 1,
+		built = 0,
+		tuplets: unknown[] = [],
+	) => {
 		const note = {
 			stemDirections: [] as number[],
+			multipliers: [] as [number, number][],
 			getModifiers: () => mods,
 			getKeyProps: () => Array.from({ length: heads }, () => ({ line: 3 })),
 			// `built` is the direction the note was constructed with (0: none settled yet).
@@ -61,8 +68,15 @@ describe('VoiceBuilder', () => {
 			setStemDirection: (direction: number) => {
 				note.stemDirections.push(direction);
 			},
+			getTupletStack: () => tuplets,
+			applyTickMultiplier: (numerator: number, denominator: number) => {
+				note.multipliers.push([numerator, denominator]);
+			},
 		};
-		return note as unknown as StaveNote & { stemDirections: number[] };
+		return note as unknown as StaveNote & {
+			stemDirections: number[];
+			multipliers: [number, number][];
+		};
 	};
 
 	// Real vexflow tickables: the builder groups them with instanceof, and a BarNote's
@@ -164,6 +178,7 @@ describe('VoiceBuilder', () => {
 				beamRuns: (notes: Note[]) => groupBeamRuns(notes),
 				isChordMember: (note: Note) => note.isChordMember,
 				isRhythmSlashed: () => false,
+				ornamentsOf: () => [],
 				staffVoices: (_voices: unknown, staffNumber: string) =>
 					overrides.staffVoices?.(staffNumber) ?? [],
 			} as unknown as ScoreReader,
@@ -182,7 +197,7 @@ describe('VoiceBuilder', () => {
 		spanners = fakeSpanners();
 	});
 
-	const stave = {} as Stave;
+	const stave = new Stave(0, 0, 100);
 	const buildNotes = (
 		builder: VoiceBuilder,
 		voices: StaffVoice[],
@@ -675,6 +690,51 @@ describe('VoiceBuilder', () => {
 				(v) => v.softmaxFactor,
 			),
 		).toEqual([100, 100]);
+	});
+
+	it('scales ticks for unbracketed time-modification notes and skips tupleted ones', () => {
+		const scaledLead = lead({ timeModification: { actual: 3, normal: 2 } });
+		const tupletedLead = lead({ timeModification: { actual: 3, normal: 2 } });
+		const scaledNote = staveNote();
+		const tupletedNote = staveNote([], 1, 0, [{ built: 'tuplet' }]);
+		const noteByLead = new Map<Note, StaveNote>([
+			[scaledLead, scaledNote],
+			[tupletedLead, tupletedNote],
+		]);
+		let voiceBuilds = 0;
+		const translator = {
+			tickables(chords: Chord[], _clef: string, opts: VoiceTickablesOptions) {
+				return chords.map((chord) => {
+					const note = noteByLead.get(chord.lead) ?? staveNote();
+					opts.record?.(chord.lead, note);
+					return note;
+				});
+			},
+			softVoice(tickables: unknown[], softmaxFactor: number) {
+				voiceBuilds++;
+				return {
+					getTickables: () => tickables,
+					softmaxFactor,
+				};
+			},
+		};
+		const noTuplets = {
+			buildBeams: () => [],
+			buildTuplets: () => [],
+			buildTremolos: () => [],
+		};
+		const builder = makeBuilder({ translator, spanners: noTuplets });
+		const chords = [chordOf(scaledLead, 0), chordOf(tupletedLead, 1)];
+		const pending = buildNotes(builder, [staffVoice(chords, chords)], {
+			polymetreRatio: { actual: 3, normal: 2 },
+		});
+		expect(voiceBuilds).toBe(1);
+
+		builder.buildPartBeams([pending]);
+
+		expect(scaledNote.multipliers).toEqual([[2, 3]]);
+		expect(tupletedNote.multipliers).toEqual([]);
+		expect(voiceBuilds).toBe(2);
 	});
 });
 

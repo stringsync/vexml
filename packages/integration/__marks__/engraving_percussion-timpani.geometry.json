@@ -1,0 +1,25 @@
+{
+	"screenshot": "engraving_percussion-timpani.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 562.44 },
+		{ "index": 1, "system": 0, "x": 593.44, "w": 307.56 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 562.44
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 593.44,
+			"w": 307.56
+		}
+	]
+}

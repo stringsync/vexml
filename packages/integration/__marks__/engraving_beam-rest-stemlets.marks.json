@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_beam-rest-stemlets.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 109,
+				"y": 118
+			},
+			"to": {
+				"x": 119,
+				"y": 136
+			},
+			"label": "M1 opening rest",
+			"note": "M1 opening rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 113,
+				"y": 92
+			},
+			"to": {
+				"x": 115,
+				"y": 103
+			},
+			"label": "M1 opening stemlet",
+			"note": "M1 opening stemlet",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 371.1,
+				"y": 113
+			},
+			"to": {
+				"x": 381.1,
+				"y": 131
+			},
+			"label": "M1 closing rest",
+			"note": "M1 closing rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 375,
+				"y": 87
+			},
+			"to": {
+				"x": 377,
+				"y": 98
+			},
+			"label": "M1 closing stemlet",
+			"note": "M1 closing stemlet",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 555.4,
+				"y": 118
+			},
+			"to": {
+				"x": 568.4,
+				"y": 146
+			},
+			"label": "M2 middle rest",
+			"note": "M2 middle rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 561,
+				"y": 92
+			},
+			"to": {
+				"x": 563,
+				"y": 110
+			},
+			"label": "M2 middle stemlet",
+			"note": "M2 middle stemlet",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 671.5,
+				"y": 118
+			},
+			"to": {
+				"x": 684.5,
+				"y": 146
+			},
+			"label": "M2 closing rest",
+			"note": "M2 closing rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 677,
+				"y": 92
+			},
+			"to": {
+				"x": 679,
+				"y": 110
+			},
+			"label": "M2 closing stemlet",
+			"note": "M2 closing stemlet",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

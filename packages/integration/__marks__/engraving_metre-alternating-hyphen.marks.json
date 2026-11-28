@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_metre-alternating-hyphen.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 446,
+				"y": 96
+			},
+			"to": {
+				"x": 512,
+				"y": 136
+			},
+			"label": "2/4 - 3/4",
+			"note": "2/4 - 3/4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

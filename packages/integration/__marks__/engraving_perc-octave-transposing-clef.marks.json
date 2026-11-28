@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_perc-octave-transposing-clef.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 36,
+				"y": 73
+			},
+			"to": {
+				"x": 63,
+				"y": 152
+			},
+			"label": "M1 8va clef",
+			"note": "M1 8va clef",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 482,
+				"y": 91
+			},
+			"to": {
+				"x": 500,
+				"y": 144
+			},
+			"label": "M2 courtesy 15ma clef",
+			"note": "M2 courtesy 15ma clef",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 36,
+				"y": 233
+			},
+			"to": {
+				"x": 63,
+				"y": 312
+			},
+			"label": "M3 15ma clef",
+			"note": "M3 15ma clef",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

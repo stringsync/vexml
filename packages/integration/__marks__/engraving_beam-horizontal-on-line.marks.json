@@ -1,0 +1,187 @@
+{
+	"screenshot": "engraving_beam-horizontal-on-line.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 332,
+				"y": 245
+			},
+			"to": {
+				"x": 385,
+				"y": 252
+			},
+			"label": "on line",
+			"note": "M4 A/4: all 1 horizontal beam(s) touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 433,
+				"y": 245
+			},
+			"to": {
+				"x": 567,
+				"y": 260
+			},
+			"label": "on line",
+			"note": "M4 A/4: all 2 horizontal beam(s) touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 607,
+				"y": 230
+			},
+			"to": {
+				"x": 732,
+				"y": 252
+			},
+			"label": "on line",
+			"note": "M4 A/4: all 3 horizontal beam(s) touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 98,
+				"y": 412
+			},
+			"to": {
+				"x": 143,
+				"y": 420
+			},
+			"label": "on line",
+			"note": "M5 G/4: all 1 horizontal beam(s) touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 182,
+				"y": 412
+			},
+			"to": {
+				"x": 294,
+				"y": 427
+			},
+			"label": "on line",
+			"note": "M5 G/4: all 2 horizontal beam(s) touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 328,
+				"y": 395
+			},
+			"to": {
+				"x": 433,
+				"y": 417
+			},
+			"label": "on line",
+			"note": "M5 G/4: all 3 horizontal beam(s) touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 561,
+				"y": 460
+			},
+			"to": {
+				"x": 596,
+				"y": 467
+			},
+			"label": "on line",
+			"note": "M6 C/5: all 1 horizontal beam(s) touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 624,
+				"y": 452
+			},
+			"to": {
+				"x": 710,
+				"y": 467
+			},
+			"label": "on line",
+			"note": "M6 C/5: all 2 horizontal beam(s) touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 734,
+				"y": 460
+			},
+			"to": {
+				"x": 814,
+				"y": 482
+			},
+			"label": "on line",
+			"note": "M6 C/5: all 3 horizontal beam(s) touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 87,
+				"y": 613
+			},
+			"to": {
+				"x": 121,
+				"y": 619
+			},
+			"label": "on line",
+			"note": "M7 D/5: all 1 horizontal beam(s) touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 149,
+				"y": 605
+			},
+			"to": {
+				"x": 232,
+				"y": 620
+			},
+			"label": "on line",
+			"note": "M7 D/5: all 2 horizontal beam(s) touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 256,
+				"y": 615
+			},
+			"to": {
+				"x": 333,
+				"y": 637
+			},
+			"label": "on line",
+			"note": "M7 D/5: all 3 horizontal beam(s) touch a stave line",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

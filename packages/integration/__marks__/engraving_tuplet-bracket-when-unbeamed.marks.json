@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tuplet-bracket-when-unbeamed.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 368,
+				"y": 227
+			},
+			"to": {
+				"x": 491,
+				"y": 246
+			},
+			"label": "bracket with rest",
+			"note": "bracket with rest",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

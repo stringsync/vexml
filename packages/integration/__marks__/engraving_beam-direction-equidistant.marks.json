@@ -1,0 +1,51 @@
+{
+	"screenshot": "engraving_beam-direction-equidistant.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 558.4,
+				"y": 1401
+			},
+			"to": {
+				"x": 729.7,
+				"y": 1401
+			},
+			"label": "middle line",
+			"note": "Middle stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 573,
+				"y": 1429
+			},
+			"to": {
+				"x": 604,
+				"y": 1443
+			},
+			"label": "down",
+			"note": "M22 group stems down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 624,
+				"y": 1434
+			},
+			"to": {
+				"x": 654,
+				"y": 1448
+			},
+			"label": "down",
+			"note": "M22 group stems down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

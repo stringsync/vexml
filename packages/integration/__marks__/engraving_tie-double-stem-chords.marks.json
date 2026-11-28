@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_tie-double-stem-chords.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 329,
+				"y": 92
+			},
+			"to": {
+				"x": 377,
+				"y": 100
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 329,
+				"y": 102
+			},
+			"to": {
+				"x": 377,
+				"y": 110
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 329,
+				"y": 129
+			},
+			"to": {
+				"x": 378,
+				"y": 136
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 329,
+				"y": 139
+			},
+			"to": {
+				"x": 378,
+				"y": 146
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

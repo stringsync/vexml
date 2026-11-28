@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_acc-tie-system-break.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 65,
+				"y": 583
+			},
+			"to": {
+				"x": 95,
+				"y": 611
+			},
+			"label": "Tied-into G#4",
+			"note": "Tied-into G#4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

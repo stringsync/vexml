@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_key-placement-order.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 36,
+				"y": 82
+			},
+			"to": {
+				"x": 63,
+				"y": 152
+			},
+			"label": "Clef",
+			"note": "Clef",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 73,
+				"y": 77
+			},
+			"to": {
+				"x": 105,
+				"y": 125
+			},
+			"label": "Key signature",
+			"note": "Key signature",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 121,
+				"y": 96
+			},
+			"to": {
+				"x": 138,
+				"y": 136
+			},
+			"label": "Time signature",
+			"note": "Time signature",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

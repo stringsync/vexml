@@ -1,6 +1,7 @@
 import type { Chord, Note } from '@stringsync/mdom';
 import { Rect } from 'core/geometry';
 import {
+	Accidental,
 	type BarNote,
 	type ClefNote,
 	GhostNote,
@@ -21,10 +22,18 @@ import type { ChordTranslator } from './chord-translator';
 import {
 	EPSILON,
 	GRACE_SPACING,
+	STAVE_LINE_DISTANCE,
 	TUPLET_NUMERAL_HALF_HEIGHT,
 } from './constants';
+import { DisplayTuplet } from './display-tuplet';
 import type { DurationTranslator } from './duration-translator';
 import { GraceHostGhostNote } from './grace-host-ghost-note';
+import {
+	resolveMiddleLineStems,
+	type StemDirection,
+	type StemEntry,
+	stemFromKeyLines,
+} from './middle-line-stem';
 import type { ScoreReader } from './score-reader';
 import {
 	type MidClefSpec,
@@ -95,12 +104,22 @@ export class VoiceTranslator {
 			barlines = [],
 			midClefs = [],
 			drawMidClefs = true,
+			staffSpace = STAVE_LINE_DISTANCE,
 		} = opts;
 		const beamStems = this.beamStems(chords, clef, {
 			autoBeams,
 			midClefs,
 			octaveShiftOf,
 		});
+		const middleStems = defaultStem
+			? new Map<Note, StemDirection>()
+			: this.middleLineStems(chords, clef, {
+					midClefs,
+					octaveShiftOf,
+					stemOf,
+					beamStems,
+				});
+		const inTuplet = tupletedLeads(run.length > 0 ? run : chords);
 		const tickables: VoiceTickable[] = [];
 		// Mid-measure clef changes, consumed the same way the dividers below are. `activeClef`
 		// is what the notes after each one are positioned against.
@@ -139,11 +158,11 @@ export class VoiceTranslator {
 				nextBarline++;
 			}
 		};
-		// A lone whole rest fills the whole measure; center its glyph (full-measure-rest convention).
+		// A lone whole or breve rest fills the whole measure; center its glyph (full-measure-rest convention).
 		const soleLead = chords.filter((c) => !c.lead.isGrace).map((c) => c.lead);
 		const lone = soleLead.length === 1 ? soleLead[0] : undefined;
-		const centerWholeRest =
-			!!lone && lone.isRest && this.durations.code(lone) === 'w';
+		const loneCode = lone?.isRest ? this.durations.code(lone) : undefined;
+		const centerWholeRest = loneCode === 'w' || loneCode === '1/2';
 		let cursor = 0;
 		// Grace notes steal no time, so they aren't tickables: they accumulate here and
 		// attach to the next real note as a GraceNoteGroup modifier, drawn just left of it.
@@ -173,6 +192,7 @@ export class VoiceTranslator {
 				pendingGrace.push({
 					note: this.chords.staveNote(chord, activeClef, {
 						octaveShift: octaveShiftOf(chord.lead),
+						defaultStem,
 					}) as GraceNote,
 					lead: chord.lead,
 				});
@@ -184,16 +204,43 @@ export class VoiceTranslator {
 			flushBarlines(onset);
 			flushClefs(onset);
 			if (onset > cursor + EPSILON) {
-				tickables.push(...this.gapFill(cursor, onset, run, recordStandIn));
+				tickables.push(
+					...this.gapFill(cursor, onset, run, recordStandIn, inTuplet),
+				);
 			}
+			const opensSystem = Boolean(opts.opensSystem) && onset <= EPSILON;
 			const staveNote = this.chords.staveNote(chord, activeClef, {
 				alignCenter: centerWholeRest,
+				staffSpace,
+				multipleVoices: opts.multipleVoices,
 				octaveShift: octaveShiftOf(chord.lead),
 				defaultStem,
-				stem: stemOf(chord.lead) ?? beamStems.get(chord.lead),
+				stem:
+					stemOf(chord.lead) ??
+					beamStems.get(chord.lead) ??
+					middleStems.get(chord.lead),
 				slashed: this.reader.isRhythmSlashed(chord.lead),
 				styled: this.reader.noteStyleOf(chord.lead),
+				opensSystem,
+				keyAlters: opensSystem ? opts.keyAlters : undefined,
 			});
+			const tremoloRatio = this.tremoloTimeModification(
+				chord.lead,
+				inTuplet.has(chord.lead),
+			);
+			if (tremoloRatio) {
+				staveNote.applyTickMultiplier(tremoloRatio.normal, tremoloRatio.actual);
+			}
+			const previous = tickables.at(-1);
+			if (
+				previous instanceof AttributedClefNote &&
+				staveNote
+					.getModifiers()
+					.some((modifier) => modifier instanceof Accidental)
+			) {
+				// Keep room for the accidental in both the measured and drawn voice.
+				previous.setWidth(previous.getClef().getWidth() + staffSpace / 2);
+			}
 			if (pendingGrace.length > 0) {
 				const group = new GraceNoteGroup(pendingGrace.map((g) => g.note));
 				// The main beam pass skips grace notes (they never enter `byLead`), so a grace
@@ -240,7 +287,7 @@ export class VoiceTranslator {
 			// on another staff) has nothing to follow, but its graces still lead that note.
 			// Its stand-in ghost holds the beat on this staff, so they hang off that instead.
 			tickables.push(
-				...this.gapFill(cursor, endBeat, run, recordStandIn, true),
+				...this.gapFill(cursor, endBeat, run, recordStandIn, inTuplet, true),
 			);
 			cursor = endBeat;
 			const lead = tickables[0];
@@ -264,7 +311,9 @@ export class VoiceTranslator {
 		// before the trailing ghosts, so it sits inside the measure rather than past its fill.
 		flushClefs(Number.POSITIVE_INFINITY);
 		if (endBeat > cursor + EPSILON) {
-			tickables.push(...this.gapFill(cursor, endBeat, run, recordStandIn));
+			tickables.push(
+				...this.gapFill(cursor, endBeat, run, recordStandIn, inTuplet),
+			);
 		}
 		return tickables;
 	}
@@ -329,6 +378,92 @@ export class VoiceTranslator {
 	}
 
 	/*
+	 * Context-driven stem directions for unbeamed middle-line notes in a lone voice
+	 * (Behind Bars pp. 13-14; see resolveMiddleLineStems). Runs before any StaveNote is
+	 * built so each note takes its direction in the constructor.
+	 */
+	private middleLineStems(
+		chords: readonly Chord[],
+		clef: string,
+		opts: MiddleStemOptions,
+	): Map<Note, StemDirection> {
+		const entries: StemEntry<Note>[] = [];
+		let activeClef = clef;
+		let nextClef = 0;
+		let cursor = 0;
+		let time: Note['time'] = null;
+		for (const chord of chords) {
+			const lead = chord.lead;
+			if (lead.isGrace) {
+				continue;
+			}
+			const onset = this.reader.measureBeatOf(lead) ?? cursor;
+			for (
+				let change = opts.midClefs[nextClef];
+				change && change.beat <= onset + EPSILON;
+				change = opts.midClefs[nextClef]
+			) {
+				activeClef = change.clef;
+				nextClef++;
+			}
+			cursor = onset + (this.reader.beatsOf(lead) ?? 0);
+			if (
+				lead.isRest ||
+				lead.printObject === false ||
+				this.reader.noteStyleOf(lead)?.hidden ||
+				this.durations.code(lead) === 'w' ||
+				lead.stem === 'none'
+			) {
+				continue;
+			}
+			time ??= lead.time ?? null;
+			const slashed = this.reader.isRhythmSlashed(lead);
+			const lines = this.chords.keyLines(chord, activeClef, {
+				octaveShift: opts.octaveShiftOf(lead),
+				slashed,
+			});
+			if (lines.length === 0) {
+				continue;
+			}
+			const explicit =
+				lead.stem === 'up' || lead.stem === 'down' ? lead.stem : undefined;
+			const fixed = explicit ?? opts.stemOf(lead) ?? opts.beamStems.get(lead);
+			if (fixed) {
+				entries.push({
+					key: lead,
+					onset,
+					direction: fixed,
+					onMiddleLine: false,
+				});
+			} else if (slashed) {
+				entries.push({
+					key: lead,
+					onset,
+					direction: 'up',
+					onMiddleLine: false,
+				});
+			} else if (lines.length === 1 && lines[0] === MIDDLE_LINE) {
+				entries.push({
+					key: lead,
+					onset,
+					onMiddleLine: !lead.stem && lead.beams.length === 0,
+				});
+			} else {
+				entries.push({
+					key: lead,
+					onset,
+					direction: stemFromKeyLines(lines),
+					onMiddleLine: false,
+				});
+			}
+		}
+		return resolveMiddleLineStems(entries, {
+			beat: this.reader.beatUnit(time),
+			bar: this.reader.meterBeats(time),
+		});
+	}
+
+	/*
 	 * Ghosts holding the beats from `from` to `to`: first a stand-in for each of the voice's
 	 * notes sounding there on another staff, then a dyadic fill for whatever's left (a
 	 * <forward>, or a voice that stops early).
@@ -338,6 +473,7 @@ export class VoiceTranslator {
 		to: number,
 		run: readonly Chord[],
 		recordStandIn: ((lead: Note, ghost: GhostNote) => void) | undefined,
+		inTuplet: ReadonlySet<Note>,
 		hostsGraces = false,
 	): GhostNote[] {
 		const ghosts: GhostNote[] = [];
@@ -367,6 +503,13 @@ export class VoiceTranslator {
 				hostsGraces && ghosts.length === 0
 					? new GraceHostGhostNote(struct)
 					: new GhostNote(struct);
+			const tremoloRatio = this.tremoloTimeModification(
+				lead,
+				inTuplet.has(lead),
+			);
+			if (tremoloRatio) {
+				ghost.applyTickMultiplier(tremoloRatio.normal, tremoloRatio.actual);
+			}
 			ghosts.push(ghost);
 			recordStandIn?.(lead, ghost);
 			cursor = onset + beats;
@@ -375,6 +518,33 @@ export class VoiceTranslator {
 			ghosts.push(...this.durations.ghostNotes(to - cursor));
 		}
 		return ghosts;
+	}
+
+	/*
+	 * Two-note tremolos write each note at the tremolo's full duration with a
+	 * <time-modification> (normally 2:1) halving its sounding ticks so the second note
+	 * lands at the rhythmic midpoint (Behind Bars p. 227). Notes inside a <tuplet> span
+	 * are left to TupletBuilder, which applies the tuplet's own tick multiplier.
+	 */
+	private tremoloTimeModification(
+		lead: Note,
+		inTuplet: boolean,
+	): { actual: number; normal: number } | null {
+		if (inTuplet) {
+			return null;
+		}
+		const tm = lead.timeModification;
+		if (!tm || tm.actual <= 0 || tm.normal <= 0) {
+			return null;
+		}
+		const isTwoNoteTremolo = this.reader
+			.ornamentsOf(lead)
+			.some(
+				(o) =>
+					o.ornamentType === 'tremolo' &&
+					(o.tremoloType === 'start' || o.tremoloType === 'stop'),
+			);
+		return isTwoNoteTremolo ? tm : null;
 	}
 
 	/*
@@ -421,13 +591,14 @@ export class VoiceTranslator {
 		const xs = notes.map((note) => note.getAbsoluteX());
 		const hw = this.noteheadHalfWidth();
 		const left = Math.min(...xs) - hw;
-		const y = tuplet.getYPosition();
-		return new Rect(
-			left,
-			y - TUPLET_NUMERAL_HALF_HEIGHT,
-			Math.max(...xs) + hw - left,
-			2 * TUPLET_NUMERAL_HALF_HEIGHT,
-		);
+		const range =
+			tuplet instanceof DisplayTuplet ? tuplet.getBracketYRange() : null;
+		const top =
+			(range ? range.top : tuplet.getYPosition()) - TUPLET_NUMERAL_HALF_HEIGHT;
+		const bottom =
+			(range ? range.bottom : tuplet.getYPosition()) +
+			TUPLET_NUMERAL_HALF_HEIGHT;
+		return new Rect(left, top, Math.max(...xs) + hw - left, bottom - top);
 	}
 
 	/*
@@ -459,6 +630,31 @@ export class VoiceTranslator {
 			graces.every((g) => FLAGGED_DURATIONS.has(this.durations.code(g.lead)))
 		);
 	}
+}
+
+/* Lead notes covered by any <tuplet> start..stop span in a voice run. */
+function tupletedLeads(chords: readonly Chord[]): Set<Note> {
+	const open = new Set<string>();
+	const inside = new Set<Note>();
+	for (const { lead } of chords) {
+		if (lead.isGrace) {
+			continue;
+		}
+		let inSpan = open.size > 0;
+		for (const tuplet of lead.tuplets) {
+			if (tuplet.tupletType === 'start') {
+				open.add(tuplet.number);
+				inSpan = true;
+			} else if (tuplet.tupletType === 'stop') {
+				inSpan = true;
+				open.delete(tuplet.number);
+			}
+		}
+		if (inSpan) {
+			inside.add(lead);
+		}
+	}
+	return inside;
 }
 
 /* The settings VoiceTranslator.tickables applies to one voice. */
@@ -505,6 +701,13 @@ export interface VoiceTickablesOptions {
 	/* Also emit the small ClefNote glyph for each midClef. Like a divider, the glyph belongs
 	 * to the measure, so it rides on the first voice only. */
 	drawMidClefs?: boolean;
+	staffSpace?: number;
+	multipleVoices?: boolean;
+	/* This measure opens a new system (system > 0), so a tied-into note at beat 0 repeats
+	 * its accidental (Behind Bars p. 80). */
+	opensSystem?: boolean;
+	/* The new system's opening key signature alterations by step. */
+	keyAlters?: ReadonlyMap<string, number>;
 }
 
 /* What VoiceTranslator.beamStems reads besides the chords and the opening clef. */
@@ -515,4 +718,12 @@ interface BeamStemOptions {
 	midClefs: readonly MidClefSpec[];
 	/* How far off its sounding pitch each lead is drawn. */
 	octaveShiftOf: (lead: Note) => number;
+}
+
+/* What VoiceTranslator.middleLineStems reads besides the chords and the opening clef. */
+interface MiddleStemOptions {
+	midClefs: readonly MidClefSpec[];
+	octaveShiftOf: (lead: Note) => number;
+	stemOf: (lead: Note) => StemDirection | undefined;
+	beamStems: ReadonlyMap<Note, StemDirection>;
 }

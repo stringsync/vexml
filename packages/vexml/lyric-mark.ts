@@ -26,10 +26,11 @@ export interface LyricMark {
 	boxLeft(noteheadBeginX: number, noteheadEndX: number): number;
 	/** Whether a melisma `<extend/>` line trails this syllable. */
 	readonly extend: boolean;
-	/** Whether the syllable ends in the hyphen joining it to the next ('begin'/'middle'). */
+	/** Whether a hyphen follows this syllable ('begin'/'middle'). */
 	readonly hyphenated: boolean;
-	/** Draw one more of the syllable's hyphens centered at `x` on its baseline, where a wide
-	 * gap to the next syllable wants several (`<distance type="hyphen">`). */
+	/** Whether this syllable continues a divided word ('middle'/'end'). */
+	readonly continues: boolean;
+	/** Draw a hyphen centered at `x` on this syllable's baseline. */
 	drawHyphen(ctx: RenderContext, x: number): void;
 	/** The syllable's font size in px. */
 	readonly textSize: number;

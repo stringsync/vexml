@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+      <score-instrument id="P1-I1">
+        <instrument-name>Violin</instrument-name>
+        <instrument-sound>strings.violin</instrument-sound>
+      </score-instrument>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): string-designation-placement (p. 394): single voice string designations -->
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><string>3</string></technical></notations></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><string>3</string></technical></notations></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><string>2</string></technical></notations></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><string>2</string></technical></notations></note>
+    </measure>
+
+    <!-- M2 (index 1): string-designation-placement (p. 394): two voices sharing a stave -->
+    <measure number="2">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><string>1</string></technical></notations></note>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><string>1</string></technical></notations></note>
+      <backup><duration>16</duration></backup>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type><notations><technical><string>3</string></technical></notations></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type><notations><technical><string>3</string></technical></notations></note>
+    </measure>
+
+    <!-- M3 (index 2): string-open-above (p. 395): open-string zeros on single-voice up- and down-stem notes -->
+    <measure number="3">
+      <print new-system="yes"/>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><open-string/></technical></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><open-string/></technical></notations></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><open-string/></technical></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><open-string/></technical></notations></note>
+    </measure>
+
+    <!-- M4 (index 3): string-open-lower-voice (p. 395): open-string zeros in two voices sharing a stave -->
+    <measure number="4">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+      <backup><duration>16</duration></backup>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type></note>
+    </measure>
+
+    <!-- M5 (index 4): string-open-middle-chord (p. 395): open-string zero on the middle note of a three-note chord -->
+    <measure number="5">
+      <print new-system="yes"/>
+      <note><pitch><step>G</step><octave>3</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+      <note><chord/><pitch><step>D</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+      <note><chord/><pitch><step>B</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+      <note><chord/><pitch><step>D</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+    </measure>
+
+    <!-- M6 (index 5): string-fingering-stack-order (p. 396): single fingerings above stave -->
+    <measure number="6">
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><fingering>1</fingering></technical></notations></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><fingering>2</fingering></technical></notations></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><fingering>3</fingering></technical></notations></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><fingering>2</fingering></technical></notations></note>
+    </measure>
+
+    <!-- M7 (index 6): string-fingering-stack-order (p. 396): fingering outside articulation and inside bowing/string marks -->
+    <measure number="7">
+      <print new-system="yes"/>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><articulations><staccato/></articulations><technical><fingering>2</fingering><down-bow/></technical></notations></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><articulations><accent/></articulations><technical><fingering>3</fingering><up-bow/></technical></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><fingering>1</fingering><string>2</string></technical></notations></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><fingering>4</fingering><string>1</string></technical></notations></note>
+    </measure>
+
+    <!-- M8 (index 7): string-thumb-position-symbol (p. 396): thumb-position mark above stave -->
+    <measure number="8">
+      <attributes>
+        <clef><sign>F</sign><line>4</line></clef>
+      </attributes>
+      <note><pitch><step>G</step><octave>3</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><thumb-position/></technical></notations></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><thumb-position/></technical></notations></note>
+      <note><pitch><step>D</step><octave>3</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><thumb-position/></technical></notations></note>
+      <note><pitch><step>E</step><octave>3</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><thumb-position/></technical></notations></note>
+    </measure>
+
+    <!-- M9 (index 8): string-double-stop-both-open (pp. 397, 399): stacked open-string zeros above stave -->
+    <measure number="9">
+      <print new-system="yes"/>
+      <attributes>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+      <note><pitch><step>G</step><octave>3</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+      <note><chord/><pitch><step>D</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+    </measure>
+
+    <!-- M10 (index 9): string-double-stop-one-open (p. 397): single-stemmed double-stops with upper or lower open string -->
+    <measure number="10">
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+      <note><chord/><pitch><step>E</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+      <note><chord/><pitch><step>B</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+    </measure>
+
+    <!-- M11 (index 10): string-double-stop-one-open (p. 397): double-stemmed double-stops with one open string -->
+    <measure number="11">
+      <print new-system="yes"/>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+      <backup><duration>16</duration></backup>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type></note>
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+    </measure>
+
+    <!-- M12 (index 11): string-double-stop-adjacent-open (p. 397): adjacent-second double-stops with one open string -->
+    <measure number="12">
+      <note><pitch><step>D</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+      <note><chord/><pitch><step>E</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><open-string/></technical></notations></note>
+    </measure>
+
+    <!-- M13 (index 12): string-bowing-mark-above (p. 405): bowing marks above stave and above other markings -->
+    <measure number="13">
+      <print new-system="yes"/>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><slur type="start" number="1"/><articulations><staccato/></articulations><technical><down-bow/></technical></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><slur type="stop" number="1"/></notations></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><articulations><accent/></articulations><technical><up-bow/></technical></notations></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>quarter</type><notations><technical><down-bow/></technical></notations></note>
+    </measure>
+
+    <!-- M14 (index 13): string-bowing-lower-voice-below (p. 405): bowing marks in two voices sharing a stave -->
+    <measure number="14">
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><down-bow/></technical></notations></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>half</type><notations><technical><up-bow/></technical></notations></note>
+      <backup><duration>16</duration></backup>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type><notations><technical><down-bow/></technical></notations></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>half</type><notations><technical><up-bow/></technical></notations></note>
+    </measure>
+  </part>
+</score-partwise>

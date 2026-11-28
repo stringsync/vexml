@@ -1,0 +1,112 @@
+{
+	"screenshot": "engraving_chord-stem-extreme.png",
+	"width": 932,
+	"height": 882,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 126
+			},
+			"to": {
+				"x": 129,
+				"y": 136
+			},
+			"label": "M1 F/4",
+			"note": "M1 F/4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 106
+			},
+			"to": {
+				"x": 129,
+				"y": 116
+			},
+			"label": "M1 C/5",
+			"note": "M1 C/5",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 128,
+				"y": 76
+			},
+			"to": {
+				"x": 129,
+				"y": 131
+			},
+			"label": "M1 stem",
+			"note": "M1 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 325.5,
+				"y": 116
+			},
+			"to": {
+				"x": 337.5,
+				"y": 126
+			},
+			"label": "M2 A/4",
+			"note": "M2 A/4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 314.1,
+				"y": 96
+			},
+			"to": {
+				"x": 326.1,
+				"y": 106
+			},
+			"label": "M2 E/5",
+			"note": "M2 E/5",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 325.5,
+				"y": 91
+			},
+			"to": {
+				"x": 337.5,
+				"y": 101
+			},
+			"label": "M2 F/5",
+			"note": "M2 F/5",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 325,
+				"y": 96
+			},
+			"to": {
+				"x": 327,
+				"y": 156
+			},
+			"label": "M2 stem",
+			"note": "M2 stem",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_tie-chord-odd.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 589,
+				"y": 902
+			},
+			"to": {
+				"x": 640,
+				"y": 909
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 589,
+				"y": 929
+			},
+			"to": {
+				"x": 641,
+				"y": 936
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 589,
+				"y": 939
+			},
+			"to": {
+				"x": 641,
+				"y": 946
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

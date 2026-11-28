@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_dot-unison-whole-heads.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 136,
+				"y": 899
+			},
+			"to": {
+				"x": 140,
+				"y": 903
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 160,
+				"y": 899
+			},
+			"to": {
+				"x": 164,
+				"y": 903
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 901
+			},
+			"to": {
+				"x": 134,
+				"y": 911
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 141,
+				"y": 901
+			},
+			"to": {
+				"x": 158,
+				"y": 911
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

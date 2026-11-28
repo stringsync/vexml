@@ -1,0 +1,50 @@
+{
+	"screenshot": "engraving_rest-voices-simultaneous.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 328.9,
+				"y": 111
+			},
+			"to": {
+				"x": 465.3,
+				"y": 111
+			},
+			"label": "",
+			"note": "M3 separating stave line at y=95",
+			"role": "reference"
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 328.9,
+				"y": 121
+			},
+			"to": {
+				"x": 465.3,
+				"y": 121
+			},
+			"label": "",
+			"note": "M3 separating stave line at y=105",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 362.9,
+				"y": 111
+			},
+			"to": {
+				"x": 362.9,
+				"y": 123
+			},
+			"label": "2 lines",
+			"note": "M3 simultaneous rests have 2 stave line(s) between them (expected ≥1)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN"
+  "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name print-object="no">Piano</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- Measure 1: pedal-below-lowest-stave (p. 332) -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <staves>2</staves>
+        <clef number="1"><sign>G</sign><line>2</line></clef>
+        <clef number="2"><sign>F</sign><line>4</line></clef>
+      </attributes>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note>
+      <backup><duration>4</duration></backup>
+      <direction>
+        <direction-type><octave-shift type="up" size="8"/></direction-type>
+        <staff>2</staff>
+      </direction>
+      <direction>
+        <direction-type><pedal type="start" line="yes" sign="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+      <note><pitch><step>C</step><octave>2</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <note><pitch><step>D</step><octave>2</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <note><pitch><step>E</step><octave>2</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <note><pitch><step>F</step><octave>2</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <direction>
+        <direction-type><octave-shift type="stop" size="8"/></direction-type>
+        <staff>2</staff>
+      </direction>
+      <direction>
+        <direction-type><pedal type="stop" line="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+    </measure>
+
+    <!-- Measure 2: pedal-simultaneous-order (pp. 332-333) and pedal-sostenuto-label (p. 336) -->
+    <measure number="2">
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note>
+      <backup><duration>4</duration></backup>
+      <direction>
+        <direction-type><pedal type="start" number="1" line="yes" sign="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+      <direction>
+        <direction-type><pedal type="sostenuto" number="2" line="yes" sign="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <note><pitch><step>G</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <note><pitch><step>E</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <direction>
+        <direction-type><pedal type="stop" number="1" line="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+      <direction>
+        <direction-type><pedal type="stop" number="2" line="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+    </measure>
+
+    <!-- Measure 3: pedal-align-struck-note (pp. 333, 335) and pedal-extension-line-solid-hook (p. 334) -->
+    <measure number="3">
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>2</duration><voice>1</voice><type>half</type><staff>1</staff></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><voice>1</voice><type>half</type><staff>1</staff></note>
+      <backup><duration>4</duration></backup>
+      <direction>
+        <direction-type><pedal type="start" line="yes" sign="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <note><pitch><step>E</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <direction>
+        <direction-type><pedal type="stop" line="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+      <direction>
+        <direction-type><pedal type="start" line="yes" sign="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+      <note><pitch><step>F</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <direction>
+        <direction-type><pedal type="stop" line="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+    </measure>
+
+    <!-- Measures 4-5: pedal-retake-notch-barline (pp. 335-336) -->
+    <measure number="4">
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note>
+      <backup><duration>4</duration></backup>
+      <direction>
+        <direction-type><pedal type="start" line="yes" sign="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <note><pitch><step>E</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <direction>
+        <direction-type><pedal type="change" line="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+      <note><pitch><step>G</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <note><pitch><step>B</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+    </measure>
+    <measure number="5">
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note>
+      <backup><duration>4</duration></backup>
+      <direction>
+        <direction-type><pedal type="change" line="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+      <note><pitch><step>D</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <note><pitch><step>F</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <note><pitch><step>D</step><octave>3</octave></pitch><duration>1</duration><voice>2</voice><type>quarter</type><staff>2</staff></note>
+      <direction>
+        <direction-type><pedal type="stop" line="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+    </measure>
+
+    <!-- Measures 6-7: pedal-system-break-confirm (pp. 332-333) -->
+    <measure number="6">
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note>
+      <backup><duration>4</duration></backup>
+      <direction>
+        <direction-type><pedal type="start" line="yes" sign="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>2</duration><voice>2</voice><type>half</type><staff>2</staff></note>
+      <note><pitch><step>G</step><octave>3</octave></pitch><duration>2</duration><voice>2</voice><type>half</type><staff>2</staff></note>
+    </measure>
+    <measure number="7">
+      <print new-system="yes"/>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>whole</type><staff>1</staff></note>
+      <backup><duration>4</duration></backup>
+      <note><pitch><step>E</step><octave>3</octave></pitch><duration>2</duration><voice>2</voice><type>half</type><staff>2</staff></note>
+      <note><pitch><step>C</step><octave>3</octave></pitch><duration>2</duration><voice>2</voice><type>half</type><staff>2</staff></note>
+      <direction>
+        <direction-type><pedal type="stop" line="yes"/></direction-type>
+        <staff>2</staff>
+      </direction>
+    </measure>
+  </part>
+</score-partwise>

@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_rest-beam.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 370,
+				"y": 288
+			},
+			"to": {
+				"x": 382,
+				"y": 307
+			},
+			"label": "clear",
+			"note": "M7 rest at x=355 clears all beams",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 452,
+				"y": 298
+			},
+			"to": {
+				"x": 467,
+				"y": 327
+			},
+			"label": "clear",
+			"note": "M7 rest at x=437 clears all beams",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 501,
+				"y": 268
+			},
+			"to": {
+				"x": 516,
+				"y": 297
+			},
+			"label": "clear",
+			"note": "M7 rest at x=486 clears all beams",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 526,
+				"y": 268
+			},
+			"to": {
+				"x": 538,
+				"y": 287
+			},
+			"label": "clear",
+			"note": "M7 rest at x=511 clears all beams",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 555,
+				"y": 260
+			},
+			"to": {
+				"x": 568,
+				"y": 292
+			},
+			"label": "clear",
+			"note": "M7 rest at x=540 clears all beams",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

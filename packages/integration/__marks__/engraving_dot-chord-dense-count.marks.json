@@ -1,0 +1,187 @@
+{
+	"screenshot": "engraving_dot-chord-dense-count.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 778.9,
+				"y": 281
+			},
+			"to": {
+				"x": 790.9,
+				"y": 291
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 790.3,
+				"y": 276
+			},
+			"to": {
+				"x": 802.3,
+				"y": 286
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 778.9,
+				"y": 271
+			},
+			"to": {
+				"x": 790.9,
+				"y": 281
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 790.3,
+				"y": 266
+			},
+			"to": {
+				"x": 802.3,
+				"y": 276
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 778.9,
+				"y": 261
+			},
+			"to": {
+				"x": 790.9,
+				"y": 271
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 790.3,
+				"y": 256
+			},
+			"to": {
+				"x": 802.3,
+				"y": 266
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 778.9,
+				"y": 251
+			},
+			"to": {
+				"x": 790.9,
+				"y": 261
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 790.3,
+				"y": 246
+			},
+			"to": {
+				"x": 802.3,
+				"y": 256
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 804,
+				"y": 279
+			},
+			"to": {
+				"x": 808,
+				"y": 283
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 804,
+				"y": 269
+			},
+			"to": {
+				"x": 808,
+				"y": 273
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 804,
+				"y": 259
+			},
+			"to": {
+				"x": 808,
+				"y": 263
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 804,
+				"y": 249
+			},
+			"to": {
+				"x": 808,
+				"y": 253
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

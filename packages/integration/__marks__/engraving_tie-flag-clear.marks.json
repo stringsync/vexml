@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-flag-clear.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 393,
+				"y": 232
+			},
+			"to": {
+				"x": 404,
+				"y": 264
+			},
+			"label": "Flag",
+			"note": "Flag",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

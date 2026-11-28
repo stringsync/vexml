@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_grace-slur-chord-top.png",
+	"width": 932,
+	"height": 739,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 194,
+				"y": 562
+			},
+			"to": {
+				"x": 225,
+				"y": 585
+			},
+			"label": "Slur to chord top",
+			"note": "Slur to chord top",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

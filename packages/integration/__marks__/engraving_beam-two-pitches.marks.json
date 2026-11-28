@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_beam-two-pitches.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 399,
+				"y": 1216
+			},
+			"to": {
+				"x": 516,
+				"y": 1226
+			},
+			"label": "flat",
+			"note": "M18 group 1: flat (0 spaces, expected flat)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 548,
+				"y": 1194
+			},
+			"to": {
+				"x": 665,
+				"y": 1213
+			},
+			"label": "rises",
+			"note": "M18 group 2: rises (-1 spaces, expected rises)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

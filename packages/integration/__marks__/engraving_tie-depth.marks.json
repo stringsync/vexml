@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-depth.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 189,
+				"y": 130
+			},
+			"to": {
+				"x": 189,
+				"y": 137
+			},
+			"label": "¾",
+			"note": "Tie depth: ¾ stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,50 @@
+{
+	"screenshot": "engraving_rest-quarter.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 444.8,
+				"y": 96
+			},
+			"to": {
+				"x": 654.9,
+				"y": 96
+			},
+			"label": "",
+			"note": "M4 top stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 444.8,
+				"y": 136
+			},
+			"to": {
+				"x": 654.9,
+				"y": 136
+			},
+			"label": "",
+			"note": "M4 bottom stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 505.8,
+				"y": 101
+			},
+			"to": {
+				"x": 505.8,
+				"y": 131
+			},
+			"label": "½..3½",
+			"note": "M4 quarter rest spans ½ to 3½ spaces from top line (expected 0..1 to 3..4)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

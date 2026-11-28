@@ -4,6 +4,7 @@ import {
 	boxesOf,
 	cursorRectAt,
 	LONG,
+	LONG_TITLE,
 	render,
 	stepsOf,
 	straySystemsOf,
@@ -177,8 +178,8 @@ describe('ProgressiveEngraving', () => {
 		const final = stage.engravings.at(-1);
 		expect(firstScreen?.width).toBeLessThan(final?.width ?? 0);
 		expect(final?.width).toBe(whole.stage.engravings[0]?.width ?? -1);
-		expect(textOpsOf(final, 'Gute Nacht')).toEqual(
-			textOpsOf(whole.stage.engravings[0], 'Gute Nacht'),
+		expect(textOpsOf(final, LONG_TITLE)).toEqual(
+			textOpsOf(whole.stage.engravings[0], LONG_TITLE),
 		);
 	});
 });

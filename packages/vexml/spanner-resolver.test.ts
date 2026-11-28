@@ -15,6 +15,7 @@ import {
 	type SpannerResolverOptions,
 } from './spanner-resolver';
 import { SpillTracker } from './spill-tracker';
+import type { TieOptions as BuildTieOptions } from './tie-builder';
 import type { VoiceTranslator } from './voice-translator';
 
 describe('SpannerResolver', () => {
@@ -116,6 +117,7 @@ describe('SpannerResolver', () => {
 			buildSlides: () => [],
 			buildGlissandos: () => [],
 			buildWavyLines: () => [],
+			buildCrossBarlineTuplets: () => [],
 			buildWedges: () => [],
 			buildPedals: () => [],
 			...overrides,
@@ -349,6 +351,79 @@ describe('SpannerResolver', () => {
 		expect(offsets.get('dim')).toBe(offsets.get('cresc'));
 	});
 
+	it('stops a crescendo at the barline before a nearby downbeat dynamic', () => {
+		const nextStave = {
+			getX: () => 200,
+			getSpacingBetweenLines: () => 10,
+		} as unknown as Stave;
+		let endInset = 0;
+		const barlineWedge = (
+			overrides: Partial<{
+				opens: boolean;
+				isWrapped: boolean;
+				endsOnDownbeat: boolean;
+				hasPositionedEnd: boolean;
+				right: number;
+			}> = {},
+		) => {
+			endInset = 0;
+			const right = overrides.right ?? 217;
+			return {
+				stave: s,
+				endStave: nextStave,
+				above: false,
+				opens: overrides.opens ?? true,
+				isWrapped: overrides.isWrapped ?? false,
+				endsOnDownbeat: overrides.endsOnDownbeat ?? true,
+				hasPositionedEnd: overrides.hasPositionedEnd ?? false,
+				rect: new Rect(100, 210, right - 100, 10),
+				bounds: { top: 210, bottom: 220 },
+				setOffset() {},
+				getOffset: () => 0,
+				setHorizontalInsets() {},
+				setEndInset: (end: number) => {
+					endInset = end;
+				},
+				setContext() {
+					return this;
+				},
+				draw() {},
+			} as unknown as Hairpin;
+		};
+		const withDynamic = (
+			w: Hairpin,
+			dynamics: readonly Rect[] = [new Rect(212, 208, 12, 16)],
+		) => {
+			const { resolver } = resolverOf(
+				{ buildWedges: () => [w] },
+				{
+					directionPlacer: {
+						drawDirectionLines: () => {},
+						belowWordsOn: () => [],
+						dynamicsOn: (st: Stave) => (st === nextStave ? dynamics : []),
+					} as unknown as DirectionPlacer,
+				},
+			);
+			resolver.resolve(anchors());
+			return endInset;
+		};
+
+		// Reviewed exception: crescendo into a nearby downbeat dynamic stops at the barline (x=200).
+		expect(withDynamic(barlineWedge())).toBe(17);
+		// Diminuendo keeps the general default.
+		expect(withDynamic(barlineWedge({ opens: false }))).toBe(0);
+		// No dynamic on the downbeat keeps the general default.
+		expect(withDynamic(barlineWedge(), [])).toBe(0);
+		// Stop after beat 1 keeps the general default.
+		expect(withDynamic(barlineWedge({ endsOnDownbeat: false }))).toBe(0);
+		// Widely spaced downbeat (> 3 spaces past the barline) keeps its full span.
+		expect(
+			withDynamic(barlineWedge({ right: 245 }), [new Rect(240, 208, 12, 16)]),
+		).toBe(0);
+		// Explicitly positioned stop endpoint is preserved.
+		expect(withDynamic(barlineWedge({ hasPositionedEnd: true }))).toBe(0);
+	});
+
 	it('drops a pedal band below its own low notes and grows the crop under it', () => {
 		let line: number | undefined;
 		const marking = {
@@ -379,6 +454,24 @@ describe('SpannerResolver', () => {
 		resolver.addPedals([{ lead } as PedalMark]);
 		resolver.resolve(anchors(new Map([[lead, note]])));
 		expect(page.bottom).toBe(160 + 12);
+	});
+
+	it('keeps an open pedal in the window across a change before a system break', () => {
+		const startLead = {} as Note;
+		const changeLead = {} as Note;
+		const stopLead = {} as Note;
+		const { resolver } = resolverOf();
+		resolver.beginSystem(0);
+		resolver.addPedals([
+			{ lead: startLead, type: 'start', number: '1' } as PedalMark,
+			{ lead: changeLead, type: 'change', number: '1' } as PedalMark,
+		]);
+		expect(resolver.reachesPast(0)).toBe(true);
+		resolver.beginSystem(1);
+		resolver.addPedals([
+			{ lead: stopLead, type: 'stop', number: '1' } as PedalMark,
+		]);
+		expect(resolver.reachesPast(1)).toBe(false);
 	});
 
 	it('resolves direction-line endpoints through the lead map', () => {
@@ -464,10 +557,10 @@ describe('SpannerResolver', () => {
 				buildTies: (
 					chords: Chord[],
 					map: Map<Note, StaveNote>,
-					scope: SpanScope,
+					opts: BuildTieOptions = {},
 				) => {
 					pools.push(chords.map((chord) => chord.lead));
-					return pairs(scope, map) ? [tie(drawn)] : [];
+					return opts.scope && pairs(opts.scope, map) ? [tie(drawn)] : [];
 				},
 			} as unknown as Partial<SpannerBuilder>,
 			{ systemOfMeasure: (m: number) => m },

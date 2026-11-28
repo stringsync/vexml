@@ -11,12 +11,12 @@
 		"./vexml-renderer": "./vexml-renderer.ts"
 	},
 	"dependencies": {
-		"@stringsync/mdom": "^the version @stringsync/mdom releases",
+		"@stringsync/mdom": "^0.8.19",
 		"@stringsync/vexml": "workspace:*",
 		"@typescript/typescript6": "^6.0.2",
 		"core": "workspace:*",
 		"playwright": "1.61.1",
-		"vexflow": "5.9.0"
+		"vexflow": "5.11.0"
 	},
 	"devDependencies": {
 		"@coderline/alphatab": "^1.8.4",

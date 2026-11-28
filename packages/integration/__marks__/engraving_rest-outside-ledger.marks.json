@@ -1,0 +1,36 @@
+{
+	"screenshot": "engraving_rest-outside-ledger.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 276
+			},
+			"to": {
+				"x": 170.2,
+				"y": 276
+			},
+			"label": "top line",
+			"note": "M7 top stave line at y=260",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 82,
+				"y": 248
+			},
+			"to": {
+				"x": 106,
+				"y": 258
+			},
+			"label": "ledger",
+			"note": "M7 raised half rest outside=true, ledger=true",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

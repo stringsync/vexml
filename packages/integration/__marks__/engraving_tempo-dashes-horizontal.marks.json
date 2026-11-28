@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tempo-dashes-horizontal.png",
+	"width": 932,
+	"height": 607,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 568,
+				"y": 283
+			},
+			"to": {
+				"x": 803,
+				"y": 284
+			},
+			"label": "Dashes",
+			"note": "Dashes",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

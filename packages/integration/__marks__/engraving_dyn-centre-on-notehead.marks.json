@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_dyn-centre-on-notehead.png",
+	"width": 932,
+	"height": 1373,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 532,
+				"y": 175
+			},
+			"to": {
+				"x": 547,
+				"y": 189
+			},
+			"label": "Dynamic 1",
+			"note": "Dynamic 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 614,
+				"y": 170
+			},
+			"to": {
+				"x": 640,
+				"y": 189
+			},
+			"label": "Dynamic 2",
+			"note": "Dynamic 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 702,
+				"y": 170
+			},
+			"to": {
+				"x": 718,
+				"y": 189
+			},
+			"label": "Dynamic 3",
+			"note": "Dynamic 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 783,
+				"y": 175
+			},
+			"to": {
+				"x": 810,
+				"y": 189
+			},
+			"label": "Dynamic 4",
+			"note": "Dynamic 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

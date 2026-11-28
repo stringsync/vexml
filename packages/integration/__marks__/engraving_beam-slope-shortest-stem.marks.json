@@ -1,0 +1,157 @@
+{
+	"screenshot": "engraving_beam-slope-shortest-stem.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 471,
+				"y": 746
+			},
+			"to": {
+				"x": 471,
+				"y": 711
+			},
+			"label": "3½",
+			"note": "M10 E/5: shortest stem 3½ spaces (expected ≥3)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 473,
+				"y": 786
+			},
+			"to": {
+				"x": 473,
+				"y": 821
+			},
+			"label": "3½",
+			"note": "M10 D/4: shortest stem 3½ spaces (expected ≥3)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 505,
+				"y": 931
+			},
+			"to": {
+				"x": 505,
+				"y": 896
+			},
+			"label": "3½",
+			"note": "M13 G/4: shortest stem 3½ spaces (expected ≥3)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 584,
+				"y": 926
+			},
+			"to": {
+				"x": 584,
+				"y": 891
+			},
+			"label": "3½",
+			"note": "M13 A/4: shortest stem 3½ spaces (expected ≥3)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 726,
+				"y": 916
+			},
+			"to": {
+				"x": 726,
+				"y": 881
+			},
+			"label": "3½",
+			"note": "M13 C/5: shortest stem 3½ spaces (expected ≥3)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 856,
+				"y": 926
+			},
+			"to": {
+				"x": 856,
+				"y": 884
+			},
+			"label": "4¼",
+			"note": "M13 A/4: shortest stem 4¼ spaces (expected ≥3)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 82,
+				"y": 1041
+			},
+			"to": {
+				"x": 82,
+				"y": 1086
+			},
+			"label": "4½",
+			"note": "M14 C/6: shortest stem 4½ spaces (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 145,
+				"y": 1041
+			},
+			"to": {
+				"x": 145,
+				"y": 1083
+			},
+			"label": "4¼",
+			"note": "M14 C/6: shortest stem 4¼ spaces (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 230,
+				"y": 1121
+			},
+			"to": {
+				"x": 230,
+				"y": 1076
+			},
+			"label": "4½",
+			"note": "M14 A/3: shortest stem 4½ spaces (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 292,
+				"y": 1121
+			},
+			"to": {
+				"x": 292,
+				"y": 1079
+			},
+			"label": "4¼",
+			"note": "M14 A/3: shortest stem 4¼ spaces (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

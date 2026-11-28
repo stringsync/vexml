@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-tight-long.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 713,
+				"y": 130
+			},
+			"to": {
+				"x": 732,
+				"y": 135
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

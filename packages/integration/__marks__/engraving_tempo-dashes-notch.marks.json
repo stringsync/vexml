@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tempo-dashes-notch.png",
+	"width": 932,
+	"height": 607,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 119,
+				"y": 431
+			},
+			"to": {
+				"x": 208,
+				"y": 438
+			},
+			"label": "Notched dashes",
+			"note": "Notched dashes",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

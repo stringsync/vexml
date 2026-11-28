@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_chord-adjacent-odd.png",
+	"width": 932,
+	"height": 882,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 736.6,
+				"y": 261
+			},
+			"to": {
+				"x": 748.6,
+				"y": 271
+			},
+			"label": "M8 D/5: right",
+			"note": "M8 D/5: right",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 725.2,
+				"y": 256
+			},
+			"to": {
+				"x": 737.2,
+				"y": 266
+			},
+			"label": "M8 E/5: left",
+			"note": "M8 E/5: left",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 736.6,
+				"y": 251
+			},
+			"to": {
+				"x": 748.6,
+				"y": 261
+			},
+			"label": "M8 F/5: right",
+			"note": "M8 F/5: right",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 822.3,
+				"y": 286
+			},
+			"to": {
+				"x": 834.3,
+				"y": 296
+			},
+			"label": "M8 F/4: left",
+			"note": "M8 F/4: left",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 833.7,
+				"y": 281
+			},
+			"to": {
+				"x": 845.7,
+				"y": 291
+			},
+			"label": "M8 G/4: right",
+			"note": "M8 G/4: right",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 822.3,
+				"y": 276
+			},
+			"to": {
+				"x": 834.3,
+				"y": 286
+			},
+			"label": "M8 A/4: left",
+			"note": "M8 A/4: left",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

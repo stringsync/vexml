@@ -15,6 +15,11 @@ const ACTIVATION_EVENTS = [
 
 const LAPSE_POLL_INTERVAL = Duration.secs(1);
 
+export interface WindowUserActivationObserverOptions {
+	window?: EventTarget;
+	userActivation?: Pick<UserActivation, "isActive" | "hasBeenActive">;
+}
+
 /**
  * A `UserActivationObserver` over `navigator.userActivation`.
  */
@@ -27,25 +32,37 @@ export class WindowUserActivationObserver
 	);
 	readonly events = this.dispatcher.events;
 
+	private readonly win: EventTarget;
+	private readonly activation: Pick<
+		UserActivation,
+		"isActive" | "hasBeenActive"
+	>;
 	private poll = disposables.noop();
-	private wasActive = navigator.userActivation.isActive;
+	private wasActive: boolean;
 
-	constructor(private readonly timer: Timer) {
+	constructor(
+		private readonly timer: Timer,
+		opts: WindowUserActivationObserverOptions = {},
+	) {
+		this.win = opts.window ?? window;
+		this.activation = opts.userActivation ?? navigator.userActivation;
+		this.wasActive = this.activation.isActive;
+
 		for (const event of ACTIVATION_EVENTS) {
-			window.addEventListener(event, this.onActivation);
+			this.win.addEventListener(event, this.onActivation);
 			this.disposer.defer(() =>
-				window.removeEventListener(event, this.onActivation),
+				this.win.removeEventListener(event, this.onActivation),
 			);
 		}
 		this.disposer.defer(() => this.stopPolling());
 	}
 
 	isActive(): boolean {
-		return navigator.userActivation.isActive;
+		return this.activation.isActive;
 	}
 
 	hasBeenActive(): boolean {
-		return navigator.userActivation.hasBeenActive;
+		return this.activation.hasBeenActive;
 	}
 
 	wait(): Promise<void> {
@@ -70,7 +87,7 @@ export class WindowUserActivationObserver
 	}
 
 	private onActivation = () => {
-		if (this.wasActive || !navigator.userActivation.isActive) {
+		if (this.wasActive || !this.activation.isActive) {
 			return;
 		}
 		this.wasActive = true;
@@ -90,7 +107,7 @@ export class WindowUserActivationObserver
 	}
 
 	private detectLapse = () => {
-		if (navigator.userActivation.isActive) {
+		if (this.activation.isActive) {
 			return;
 		}
 		this.wasActive = false;

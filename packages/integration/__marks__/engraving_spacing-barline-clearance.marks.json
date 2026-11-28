@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_spacing-barline-clearance.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 782.5,
+				"y": 569
+			},
+			"to": {
+				"x": 802,
+				"y": 569
+			},
+			"label": "2",
+			"note": "Barline to accidental: 2 stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 782.5,
+				"y": 569
+			},
+			"to": {
+				"x": 812,
+				"y": 569
+			},
+			"label": "3",
+			"note": "Barline to stem: 3 stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

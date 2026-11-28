@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <identification>
+    <miscellaneous>
+      <miscellaneous-field name="description">Behind Bars pp. 424-430: artificial harmonic double glissando, scordatura tuning indication, and vertical stacking of string symbols in single- and two-voice writing.</miscellaneous-field>
+    </miscellaneous>
+  </identification>
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): string-artificial-harmonic-gliss (p. 424) — glissando lines on both fundamental and diamond harmonic heads -->
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>half</type>
+        <notations><glissando type="start" number="1" line-type="solid"/></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>half</type>
+        <notehead>diamond</notehead>
+        <notations><glissando type="start" number="2" line-type="solid"/></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>half</type>
+        <notations><glissando type="stop" number="1" line-type="solid"/></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>half</type>
+        <notehead>diamond</notehead>
+        <notations><glissando type="stop" number="2" line-type="solid"/></notations>
+      </note>
+    </measure>
+
+    <!-- M2 (index 1): string-scordatura-pitches (p. 424) — altered open-string tuning at the start of a scordatura passage -->
+    <measure number="2">
+      <direction>
+        <direction-type>
+          <scordatura>
+            <accord string="4"><tuning-step>F</tuning-step><tuning-alter>1</tuning-alter><tuning-octave>3</tuning-octave></accord>
+            <accord string="3"><tuning-step>C</tuning-step><tuning-alter>1</tuning-alter><tuning-octave>4</tuning-octave></accord>
+          </scordatura>
+        </direction-type>
+      </direction>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>2</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>2</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>2</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+
+    <!-- M3 (index 2): string-symbol-stack-order (p. 427) — vertical order of articulation, open-string/harmonic, fingering, string number, fermata, and bowing -->
+    <measure number="3">
+      <print new-system="yes"/>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations>
+          <articulations><staccato/></articulations>
+          <technical><open-string/><fingering>3</fingering><down-bow/></technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations>
+          <articulations><accent/></articulations>
+          <technical><harmonic/><up-bow/></technical>
+          <fermata>normal</fermata>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations>
+          <articulations><tenuto/></articulations>
+          <technical><string>2</string><down-bow/></technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations>
+          <articulations><accent/></articulations>
+          <technical><fingering>1</fingering><string>1</string><up-bow/></technical>
+        </notations>
+      </note>
+    </measure>
+
+    <!-- M4 (index 3): string-symbol-stack-order (p. 427) — two-voice divisi placing upper symbols above and lower symbols below -->
+    <measure number="4">
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>half</type>
+        <notations>
+          <articulations><accent/></articulations>
+          <technical><open-string/><down-bow/></technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>half</type>
+        <notations>
+          <articulations><tenuto/></articulations>
+          <technical><up-bow/></technical>
+        </notations>
+      </note>
+      <backup><duration>8</duration></backup>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>2</voice><type>half</type>
+        <notations>
+          <articulations><accent/></articulations>
+          <technical><open-string/><down-bow/></technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>4</duration><voice>2</voice><type>half</type>
+        <notations>
+          <articulations><staccatissimo/></articulations>
+          <technical><open-string/><up-bow/></technical>
+        </notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

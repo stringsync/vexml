@@ -1,0 +1,352 @@
+{
+	"screenshot": "engraving_perc-unbroken-roll-ties.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 115,
+				"y": 93
+			},
+			"to": {
+				"x": 210,
+				"y": 102
+			},
+			"label": "tie",
+			"note": "tie",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 218,
+				"y": 92
+			},
+			"to": {
+				"x": 355,
+				"y": 102
+			},
+			"label": "tie",
+			"note": "tie",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 602,
+				"y": 93
+			},
+			"to": {
+				"x": 689,
+				"y": 102
+			},
+			"label": "tie",
+			"note": "tie",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 697,
+				"y": 95
+			},
+			"to": {
+				"x": 742,
+				"y": 102
+			},
+			"label": "tie",
+			"note": "tie",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 100,
+				"y": 126
+			},
+			"to": {
+				"x": 112,
+				"y": 134
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 100,
+				"y": 133
+			},
+			"to": {
+				"x": 112,
+				"y": 141
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 100,
+				"y": 140
+			},
+			"to": {
+				"x": 112,
+				"y": 148
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 203,
+				"y": 126
+			},
+			"to": {
+				"x": 215,
+				"y": 134
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 203,
+				"y": 133
+			},
+			"to": {
+				"x": 215,
+				"y": 141
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 203,
+				"y": 140
+			},
+			"to": {
+				"x": 215,
+				"y": 148
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 347,
+				"y": 126
+			},
+			"to": {
+				"x": 359,
+				"y": 134
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 347,
+				"y": 133
+			},
+			"to": {
+				"x": 359,
+				"y": 141
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 347,
+				"y": 140
+			},
+			"to": {
+				"x": 359,
+				"y": 148
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 587,
+				"y": 126
+			},
+			"to": {
+				"x": 599,
+				"y": 134
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 587,
+				"y": 133
+			},
+			"to": {
+				"x": 599,
+				"y": 141
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 587,
+				"y": 140
+			},
+			"to": {
+				"x": 599,
+				"y": 148
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 682,
+				"y": 126
+			},
+			"to": {
+				"x": 694,
+				"y": 134
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 682,
+				"y": 133
+			},
+			"to": {
+				"x": 694,
+				"y": 141
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 682,
+				"y": 140
+			},
+			"to": {
+				"x": 694,
+				"y": 148
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 735,
+				"y": 126
+			},
+			"to": {
+				"x": 747,
+				"y": 134
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 735,
+				"y": 133
+			},
+			"to": {
+				"x": 747,
+				"y": 141
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 735,
+				"y": 140
+			},
+			"to": {
+				"x": 747,
+				"y": 148
+			},
+			"label": "tremolo",
+			"note": "tremolo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 686,
+				"y": 81
+			},
+			"to": {
+				"x": 699,
+				"y": 91
+			},
+			"label": "accent",
+			"note": "accent",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -13,6 +13,8 @@ import type { SlurCurve } from './slur-curve.js';
 import { type SpanScope } from './span-scope.js';
 import type { TabCurve } from './tab-curve.js';
 import type { TabSlideLine } from './tab-slide-line.js';
+import { type TieOptions } from './tie-builder.js';
+import { type CrossBarlineTupletOptions } from './tuplet-builder.js';
 import { type WedgeOptions } from './wedge-builder.js';
 export declare class SpannerBuilder {
     private readonly reader;
@@ -24,7 +26,8 @@ export declare class SpannerBuilder {
     buildTremolos(chords: Chord[], byLead: Map<Note, StaveNote>): BowedTremolo[];
     buildBeams(groups: BeamRun[], byLead: Map<Note, StaveNote>, opts?: BeamOptions): Beam[];
     buildTuplets<T extends StemmableNote>(chords: Chord[], byLead: Map<Note, T>): Tuplet[];
-    buildTies(chords: Chord[], byLead: Map<Note, StaveNote>, scope?: SpanScope): StaveTie[];
+    buildCrossBarlineTuplets<T extends StemmableNote>(chords: Chord[], byLead: Map<Note, T>, opts?: CrossBarlineTupletOptions<T>): Tuplet[];
+    buildTies(chords: Chord[], byLead: Map<Note, StaveNote>, opts?: TieOptions): StaveTie[];
     buildHammerPulls(chords: Chord[], byTabLead: Map<Note, TabNote>, scope?: SpanScope): TabCurve[];
     buildSlides(chords: Chord[], byTabLead: Map<Note, TabNote>, opts: SlideOptions): Array<TabSlideLine | SingleSlide>;
     buildGlissandos(chords: Chord[], byLead: Map<Note, StaveNote>, scope?: SpanScope): Array<NotationSlide | SingleSlide>;

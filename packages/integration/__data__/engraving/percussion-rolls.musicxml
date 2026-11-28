@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1"><part-name>Snare Drum</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>percussion</sign></clef>
+      </attributes>
+      <note>
+        <unpitched><display-step>C</display-step><display-octave>5</display-octave></unpitched>
+        <duration>8</duration><tie type="start"/><voice>1</voice><type>half</type>
+        <notations>
+          <tied type="start"/>
+          <ornaments><tremolo type="single">3</tremolo></ornaments>
+        </notations>
+      </note>
+      <note>
+        <unpitched><display-step>C</display-step><display-octave>5</display-octave></unpitched>
+        <duration>8</duration><tie type="stop"/><tie type="start"/><voice>1</voice><type>half</type>
+        <notations>
+          <tied type="stop"/><tied type="start"/>
+          <ornaments><tremolo type="single">3</tremolo></ornaments>
+        </notations>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <unpitched><display-step>C</display-step><display-octave>5</display-octave></unpitched>
+        <duration>8</duration><tie type="stop"/><voice>1</voice><type>half</type>
+        <notations>
+          <tied type="stop"/>
+          <ornaments><tremolo type="single">3</tremolo></ornaments>
+        </notations>
+      </note>
+      <note>
+        <rest/><duration>8</duration><voice>1</voice><type>half</type>
+      </note>
+    </measure>
+    <measure number="3">
+      <note>
+        <unpitched><display-step>C</display-step><display-octave>5</display-octave></unpitched>
+        <duration>6</duration><tie type="start"/><voice>1</voice><type>quarter</type><dot/>
+        <notations>
+          <tied type="start"/>
+          <ornaments><tremolo type="single">3</tremolo></ornaments>
+        </notations>
+      </note>
+      <note>
+        <unpitched><display-step>C</display-step><display-octave>5</display-octave></unpitched>
+        <duration>2</duration><tie type="stop"/><tie type="start"/><voice>1</voice><type>eighth</type>
+        <notations>
+          <tied type="stop"/><tied type="start"/>
+          <ornaments><tremolo type="single">3</tremolo></ornaments>
+          <articulations><accent/></articulations>
+        </notations>
+      </note>
+      <note>
+        <unpitched><display-step>C</display-step><display-octave>5</display-octave></unpitched>
+        <duration>8</duration><tie type="stop"/><voice>1</voice><type>half</type>
+        <notations>
+          <tied type="stop"/>
+          <ornaments><tremolo type="single">3</tremolo></ornaments>
+        </notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_tie-chord-even.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 101,
+				"y": 412
+			},
+			"to": {
+				"x": 164,
+				"y": 420
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 101,
+				"y": 422
+			},
+			"to": {
+				"x": 164,
+				"y": 430
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 101,
+				"y": 442
+			},
+			"to": {
+				"x": 164,
+				"y": 450
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 101,
+				"y": 452
+			},
+			"to": {
+				"x": 164,
+				"y": 460
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

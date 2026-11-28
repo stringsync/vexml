@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_guitar-rh-fingering-chord-stack.png",
+	"width": 932,
+	"height": 294,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 686,
+				"y": 102
+			},
+			"to": {
+				"x": 698,
+				"y": 193
+			},
+			"label": "RH stack",
+			"note": "RH stack",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 686,
+				"y": 84
+			},
+			"to": {
+				"x": 698,
+				"y": 173
+			},
+			"label": "RH stack",
+			"note": "RH stack",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 686,
+				"y": 72
+			},
+			"to": {
+				"x": 699,
+				"y": 158
+			},
+			"label": "RH stack",
+			"note": "RH stack",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 730,
+				"y": 112
+			},
+			"to": {
+				"x": 742,
+				"y": 213
+			},
+			"label": "RH stack",
+			"note": "RH stack",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 730,
+				"y": 94
+			},
+			"to": {
+				"x": 742,
+				"y": 193
+			},
+			"label": "RH stack",
+			"note": "RH stack",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 730,
+				"y": 82
+			},
+			"to": {
+				"x": 742,
+				"y": 168
+			},
+			"label": "RH stack",
+			"note": "RH stack",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

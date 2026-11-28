@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_perc-hi-hat-symbols.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 296,
+				"y": 74
+			},
+			"to": {
+				"x": 307,
+				"y": 85
+			},
+			"label": "stopped",
+			"note": "stopped",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 676,
+				"y": 74
+			},
+			"to": {
+				"x": 687,
+				"y": 85
+			},
+			"label": "stopped",
+			"note": "stopped",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 105,
+				"y": 72
+			},
+			"to": {
+				"x": 117,
+				"y": 84
+			},
+			"label": "open",
+			"note": "open",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 486,
+				"y": 73
+			},
+			"to": {
+				"x": 498,
+				"y": 84
+			},
+			"label": "half-muted",
+			"note": "half-muted",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

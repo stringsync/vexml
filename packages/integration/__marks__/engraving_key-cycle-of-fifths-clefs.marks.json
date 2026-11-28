@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_key-cycle-of-fifths-clefs.png",
+	"width": 932,
+	"height": 1002,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 74,
+				"y": 282
+			},
+			"to": {
+				"x": 150,
+				"y": 340
+			},
+			"label": "Tenor 7 sharps",
+			"note": "Tenor 7 sharps",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

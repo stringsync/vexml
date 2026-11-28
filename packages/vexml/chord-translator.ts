@@ -10,14 +10,24 @@ import {
 	Stem,
 	VexFlow,
 } from 'vexflow/core';
+import { AlteredUnisonNote } from './altered-unison-note';
 import { Appearance } from './appearance';
+import { ChordDot } from './chord-dot';
+import { STAVE_LINE_DISTANCE } from './constants';
 import { isCueSized } from './cue-note';
 import type { DurationTranslator } from './duration-translator';
 import { isDiamondHarmonic } from './harmonic-kind';
 import { InvisibleStaveNote } from './invisible-stave-note';
+import { LowerVoiceDot } from './lower-voice-dot';
+import { stemFromKeyLines } from './middle-line-stem';
 import type { NotationTranslator } from './notation-translator';
 import { NoteheadText } from './notehead-text';
 import type { NoteStyle, ScoreReader } from './score-reader';
+import { UnisonAccidental } from './unison-accidental';
+import { VexmlGraceNote } from './vexml-grace-note';
+import { VexmlStaveNote } from './vexml-stave-note';
+
+type VexmlNote = VexmlStaveNote | VexmlGraceNote;
 
 /*
  * Translates one mdom chord (a lead note plus any <chord/> members) to the vexflow StaveNote
@@ -64,9 +74,11 @@ export class ChordTranslator {
 		// visible members draws all of them; add per-notehead hiding if a fixture needs it.
 		// A note a <beat-repeat> or <slash> stands in for is hidden the same way.
 		const visible = lead.printObject && !opts.styled?.hidden;
-		const NoteClass = visible ? StaveNote : InvisibleStaveNote;
+		const NoteClass = visible ? VexmlStaveNote : InvisibleStaveNote;
 		if (lead.isRest) {
-			const rest = new NoteClass(this.struct(chord, clef, opts));
+			const cue = visible && isCueSized(lead);
+			const struct = this.struct(chord, clef, opts);
+			const rest = cue ? new VexmlGraceNote(struct) : new NoteClass(struct);
 			this.dressRest(rest);
 			this.hideSpacing(rest, lead);
 			this.attachSign(rest, opts);
@@ -75,7 +87,11 @@ export class ChordTranslator {
 			return rest;
 		}
 		if (lead.isGrace) {
-			const grace = new GraceNote({
+			// Behind Bars pp. 126–127: single-voice grace notes always stem up regardless of
+			// stave position, while on a multi-voice stave the lower voice takes down-stems
+			// (via defaultStem). An explicit <stem> in the MusicXML still wins.
+			const direction = this.stemOf(lead, opts.defaultStem);
+			const grace = new VexmlGraceNote({
 				keys: chord.notes.map((note) => this.vexflowKey(note)),
 				duration: this.durations.code(lead),
 				// Without this vexflow falls back to 'treble' and a grace on any other stave
@@ -86,32 +102,74 @@ export class ChordTranslator {
 				// slash="yes" on the <grace> element marks an acciaccatura (a stroke
 				// through the stem/flag); its absence is a plain appoggiatura.
 				slash: lead.graceSlash,
+				stemDirection: direction ? STEM[direction] : Stem.UP,
 			});
 			this.addAccidentals(grace, chord);
+			this.hideNoneNoteheads(grace, chord);
+			this.notations.attachGrace(grace, chord);
 			return grace;
 		}
 		// A cue note is a GraceNote that keeps its duration: vexflow sizes the head, stem,
 		// flag, dots and accidentals of that category at two thirds, and a grace group is
 		// only formed by VoiceTranslator for notes mdom calls grace.
-		const staveNote =
-			visible && isCueSized(lead)
-				? new GraceNote(this.struct(chord, clef, opts))
-				: new NoteClass(this.struct(chord, clef, opts));
+		const struct = this.struct(chord, clef, opts);
+		const cue = visible && isCueSized(lead);
+		const stemless =
+			lead.stem === 'none' || !StaveNote.getGlyphProps(struct.duration).stem;
+		const groups =
+			visible && !opts.slashed && !cue ? alteredUnisons(chord) : [];
+		let staveNote: VexmlNote;
+		if (cue) {
+			staveNote = new VexmlGraceNote(struct);
+		} else if (stemless && groups.length > 0) {
+			staveNote = new AlteredUnisonNote(struct, groups);
+		} else {
+			staveNote = new NoteClass(struct);
+		}
 		this.hideSpacing(staveNote, lead);
 		this.attachSign(staveNote, opts);
 		if (opts.slashed) {
 			// Rhythmic slash notation: one slash on the middle line, carrying no pitch to spell.
 			staveNote.noteHeads[0]?.setText(this.slashGlyph(chord));
 		} else {
-			this.addAccidentals(staveNote, chord);
+			staveNote.keyAlters = chord.notes.map((note) => note.pitch?.alter);
+			this.addAccidentals(staveNote, chord, groups, opts);
+			if (staveNote instanceof AlteredUnisonNote) {
+				staveNote.calcNoteDisplacements();
+			}
 			this.addParentheses(staveNote, chord);
 			this.addLevel(staveNote, chord);
 			this.addNoteheadText(staveNote, chord);
 		}
-		this.addDots(staveNote, lead);
+		this.addDots(
+			staveNote,
+			lead,
+			!opts.multipleVoices,
+			!!opts.multipleVoices && staveNote.getStemDirection() === Stem.DOWN,
+		);
+		if (
+			visible &&
+			!cue &&
+			!opts.multipleVoices &&
+			chord.notes.length === 1 &&
+			StaveNote.getGlyphProps(struct.duration).codeFlagUp === undefined &&
+			Dot.getDots(staveNote).length > 0
+		) {
+			// VexFlow starts right-hand modifiers 2 px past the head. Reserve the
+			// rest of the half-space in the first-dot indent so formatting sees it
+			// and the intervals between successive dots stay the same.
+			staveNote.extraDotGap = Math.max(
+				0,
+				(opts.staffSpace ?? STAVE_LINE_DISTANCE) / 2 - 2,
+			);
+		}
 		this.hideLedgerLines(staveNote, lead);
 		this.applyStemNone(staveNote, lead);
+		this.shortenOutwardStem(staveNote, lead);
+		this.extendFlaggedStem(staveNote, lead);
+		this.extendTiedFlaggedStem(staveNote, chord);
 		if (!opts.slashed) {
+			this.hideNoneNoteheads(staveNote, chord);
 			this.addSlashNoteheads(staveNote, chord);
 		}
 		this.notations.attach(staveNote, chord);
@@ -169,9 +227,7 @@ export class ChordTranslator {
 		} = this.struct(chord, clef, opts);
 		// vexflow's own key -> line rule (StaveNote.calculateKeyProps), minus the octave
 		// shift it applies there: seven half-line steps an octave.
-		return keys.map(
-			(key) => VexFlow.keyProperties(key, keyClef).line - 3.5 * octaveShift,
-		);
+		return keyLines(keys, keyClef, octaveShift);
 	}
 
 	/*
@@ -194,11 +250,14 @@ export class ChordTranslator {
 		// with the others sharing the stave.
 		if (lead.isRest) {
 			const restKey = this.pitchedRestKey(lead);
+			// A whole rest hangs from the fourth line (d/5 in vexflow's clef-independent
+			// default treble coordinates), while a half rest sits on the middle line (b/4)
+			// and a breve rest fills the space above it (Behind Bars pp. 34-35).
 			return {
 				keys: [
 					restKey ??
 						(defaultStem ? VOICE_REST_KEY[defaultStem] : undefined) ??
-						'b/4',
+						(duration === 'w' ? 'd/5' : 'b/4'),
 				],
 				duration: `${duration}r`,
 				dots: this.reader.dotsOf(lead),
@@ -210,19 +269,29 @@ export class ChordTranslator {
 				// A whole rest alone in a measure is a full-measure rest: engraving convention
 				// centers it horizontally (the formatter does the centering, see VoiceTranslator.tickables).
 				alignCenter,
-				// A rest stems up unless its beam group settled otherwise.
-				stemDirection: stem ? STEM[stem] : undefined,
+				// A rest stems up unless its beam group or explicit <stem> settled otherwise.
+				stemDirection: (() => {
+					const explicit =
+						lead.stem === 'up' || lead.stem === 'down' ? lead.stem : undefined;
+					const direction = stem ?? explicit;
+					return direction ? STEM[direction] : undefined;
+				})(),
 			};
 		}
 		// A rhythm slash stems up unless written otherwise: its head always sits on the
 		// middle line, where vexflow's own rule would turn it down.
-		const direction = opts.slashed
+		const keys = opts.slashed
+			? [this.middleKey(clef)]
+			: chord.notes.map((note) => this.vexflowKey(note));
+		let direction = opts.slashed
 			? (this.stemOf(lead, defaultStem) ?? 'up')
 			: (stem ?? this.stemOf(lead, defaultStem));
+		// A majority can only break the tie with at least three heads.
+		if (!direction && !lead.stem && keys.length >= 3) {
+			direction = stemFromKeyLines(keyLines(keys, clef, octaveShift));
+		}
 		return {
-			keys: opts.slashed
-				? [this.middleKey(clef)]
-				: chord.notes.map((note) => this.vexflowKey(note)),
+			keys,
 			duration,
 			dots: this.reader.dotsOf(lead),
 			clef,
@@ -321,8 +390,23 @@ export class ChordTranslator {
 		const fill = filled === null ? null : NOTEHEAD_FILL_SUFFIX[notehead.value];
 		const suffix =
 			(fill && (filled ? fill.filled : fill.open)) ??
-			NOTEHEAD_SUFFIX[notehead.value];
+			this.noteheadSuffix(note, notehead.value);
 		return suffix ? `${key}/${suffix}` : key;
+	}
+
+	/*
+	 * The vexflow key suffix for a <notehead> with no explicit `filled` attribute.
+	 * Half and whole cross heads take the thin-circled cross (X3, noteheadCircleX)
+	 * so longer durations stay distinct from solid crosses (Behind Bars, p. 12).
+	 */
+	private noteheadSuffix(note: Note, value: string): string | undefined {
+		if (value === 'x') {
+			const code = this.durations.code(note);
+			if (code === 'h' || code === 'w') {
+				return 'X3';
+			}
+		}
+		return NOTEHEAD_SUFFIX[value];
 	}
 
 	/*
@@ -353,42 +437,71 @@ export class ChordTranslator {
 	 * collides with the cross glyph instead of sitting clear to its left.)
 	 *
 	 * A tie-stop note is the same sounding pitch as its tie-start: the accidental was already
-	 * declared there and carries over, so skip it even when the MusicXML redundantly repeats it.
+	 * declared there and carries over, so skip it inside a system even when the MusicXML
+	 * redundantly repeats it. When the tied-into note opens a new system, Behind Bars p. 80
+	 * repeats the accidental so the reader need not look back to the previous system: honor
+	 * an explicit <accidental> if present, otherwise print a plain sign whenever the note's
+	 * alteration differs from the new system's key signature.
 	 *
 	 * A cautionary (reminder) accidental is wrapped in round parentheses and an editorial one in
 	 * square brackets: the two conventional "this is not from the composer" marks. Both flags
 	 * on one accidental take the brackets only, rather than nesting one wrapper inside the other.
 	 */
-	private addAccidentals(staveNote: StaveNote, chord: Chord): void {
-		chord.notes.forEach((note, i) => {
-			// A dead note prints no pitch, and a tied-into one isn't re-struck, so neither
-			// carries an accidental.
-			if (note.notehead?.value === 'x' || this.isHeld(note)) {
+	private addAccidentals(
+		staveNote: StaveNote,
+		chord: Chord,
+		groups: readonly number[][] = [],
+		opts: Pick<VexflowChordOptions, 'opensSystem' | 'keyAlters'> = {},
+	): void {
+		const entries = chord.notes.map((note, index) => ({ note, index }));
+		if (staveNote instanceof AlteredUnisonNote) {
+			// On the same staff line, the formatter places the first sign nearest
+			// the head. Read the resulting row from natural through flat to sharp.
+			entries.sort(
+				(a, b) => compactAccidentalRank(b.note) - compactAccidentalRank(a.note),
+			);
+		}
+		entries.forEach(({ note, index: i }) => {
+			// A dead note prints no pitch, and a tied-into one isn't re-struck, so it carries
+			// no accidental inside a system (only when it opens a new system).
+			const held = this.isHeld(note);
+			if (note.notehead?.value === 'x' || (held && !opts.opensSystem)) {
 				return;
 			}
 			const printed = this.reader.accidentalOf(note);
-			const code =
-				printed &&
-				(printed.value === 'other'
-					? smuflGlyph(printed.getAttribute('smufl'))
-					: ACCIDENTAL_CODES[printed.value]);
-			if (!printed || !code) {
+			const group = groups.find((members) => members.includes(i));
+			const pitch = note.pitch;
+			let code = group && pitch ? UNISON_ACCIDENTALS[pitch.alter] : undefined;
+			if (printed) {
+				code =
+					printed.value === 'other'
+						? smuflGlyph(printed.getAttribute('smufl'))
+						: ACCIDENTAL_CODES[printed.value];
+			} else if (
+				held &&
+				pitch &&
+				pitch.alter !== (opts.keyAlters?.get(pitch.step) ?? 0)
+			) {
+				code = UNISON_ACCIDENTALS[pitch.alter];
+			}
+			if (!code) {
 				return;
 			}
 			// An editorial accidental prints the same as an explicit bracket="yes".
-			const bracket = printed.bracket || printed.editorial;
+			const bracket = printed?.bracket || printed?.editorial;
 			// vexflow only knows the parenthesized (cautionary) form, so brackets are drawn by
 			// handing it a composed glyph string as the code: it passes through an unrecognized
 			// code verbatim, which measures and renders the same way the real ones do. Wrapping
 			// a throwaway Accidental's resolved text avoids a second name -> glyph map here.
-			const accidental = new Accidental(
-				bracket
-					? ACCIDENTAL_BRACKET_LEFT +
-							new Accidental(code).getText() +
-							ACCIDENTAL_BRACKET_RIGHT
-					: code,
-			);
-			if (!bracket && (printed.cautionary || printed.parentheses)) {
+			const glyph = bracket
+				? ACCIDENTAL_BRACKET_LEFT +
+					new Accidental(code).getText() +
+					ACCIDENTAL_BRACKET_RIGHT
+				: code;
+			const accidental = group
+				? new UnisonAccidental(glyph)
+				: new Accidental(glyph);
+			if (!bracket && (printed?.cautionary || printed?.parentheses)) {
 				accidental.setAsCautionary();
 			}
 			staveNote.addModifier(accidental, i);
@@ -441,9 +554,9 @@ export class ChordTranslator {
 	}
 
 	/* print-leger="no": the notehead sits off the stave without its ledger lines. */
-	private hideLedgerLines(staveNote: StaveNote, note: Note): void {
+	private hideLedgerLines(staveNote: VexmlNote, note: Note): void {
 		if (note.getAttribute('print-leger') === 'no') {
-			staveNote.drawLedgerLines = () => {};
+			staveNote.ledgerLinesShown = false;
 		}
 	}
 
@@ -473,12 +586,29 @@ export class ChordTranslator {
 			: text;
 	}
 
-	private addDots(staveNote: StaveNote, note: Note): void {
+	private addDots(
+		staveNote: StaveNote,
+		note: Note,
+		placeAdjacentRows = false,
+		lowerVoice = false,
+	): void {
 		// print-dot="no" keeps the duration but draws no augmentation dot.
 		if (note.getAttribute('print-dot') === 'no') {
 			return;
 		}
-		for (let i = 0; i < this.reader.dotsOf(note); i++) {
+		const count = this.reader.dotsOf(note);
+		if (
+			count > 0 &&
+			staveNote.keys.length > 1 &&
+			ChordDot.attach(staveNote, count, placeAdjacentRows)
+		) {
+			return;
+		}
+		if (count > 0 && lowerVoice) {
+			LowerVoiceDot.attach(staveNote, count);
+			return;
+		}
+		for (let i = 0; i < count; i++) {
 			Dot.buildAndAttach([staveNote], { all: true });
 		}
 	}
@@ -498,6 +628,135 @@ export class ChordTranslator {
 				codeFlagUp: undefined,
 			};
 		}
+	}
+
+	/*
+	 * Behind Bars pp. 14-15: stems pointing away from the stave (e.g. in two-part writing or
+	 * wide chords) shorten progressively as the note nearest the open end moves outside the
+	 * stave, from 3½ to 3 to 2½ stave-spaces, never shorter than 2½. Notes with two or more
+	 * tails (16th and shorter) keep the full stem for flag room; beamed notes are sized by
+	 * their Beam; grace/cue notes keep their scaled stems.
+	 */
+	private shortenOutwardStem(staveNote: StaveNote, note: Note): void {
+		if (
+			staveNote instanceof GraceNote ||
+			!staveNote.hasStem() ||
+			note.beams.length > 0 ||
+			(staveNote.getBeamCount() ?? 0) > 1
+		) {
+			return;
+		}
+		const lines = staveNote.getKeyProps().map((k) => k.line);
+		if (lines.length === 0) {
+			return;
+		}
+		const direction = staveNote.getStemDirection();
+		const outside =
+			direction === Stem.UP
+				? Math.max(...lines) - TOP_LINE
+				: BOTTOM_LINE - Math.min(...lines);
+		if (outside <= 0) {
+			return;
+		}
+		const minSpaces = staveNote.hasFlag()
+			? MIN_FLAGGED_OUTWARD_STEM_SPACES
+			: MIN_OUTWARD_STEM_SPACES;
+		const spaces = Math.max(minSpaces, STANDARD_STEM_SPACES - 0.5 * outside);
+		staveNote.setStemLength(spaces * (Stem.HEIGHT / STANDARD_STEM_SPACES));
+		staveNote.getStem()?.setExtension(staveNote.getStemExtension());
+	}
+
+	/*
+	 * Behind Bars pp. 15-16 (with the ledger-line house-style decision in ledger/decisions.md):
+	 * eighth and sixteenth stems stay 3½ spaces while each further tail lengthens the stem by
+	 * glyphProps.stemBeamExtension. StaveNote.getStemExtension() adds the beyond-middle-line
+	 * reach on top of this override, so ledger-line 8th/16th stems stop at the middle line and
+	 * 32nd/64th extend past it by the extra-flag increment.
+	 */
+	private extendFlaggedStem(staveNote: StaveNote, note: Note): void {
+		if (
+			staveNote instanceof GraceNote ||
+			!staveNote.hasStem() ||
+			!staveNote.hasFlag() ||
+			note.beams.length > 0
+		) {
+			return;
+		}
+		const extraFlagPx = staveNote.glyphProps.stemBeamExtension ?? 0;
+		if (extraFlagPx <= 0) {
+			return;
+		}
+		staveNote.setStemLength(Stem.HEIGHT + extraFlagPx);
+		staveNote.getStem()?.setExtension(staveNote.getStemExtension());
+	}
+
+	/*
+	 * Behind Bars p. 61 (tie-flag-clear): a flagged chord with a starting tie on the stem side
+	 * lengthens its stem so the flag clears the outer tie. A space note's chord tie sits half a
+	 * space further off its head than a line note's (see DashedTie.offHead), so it takes half a
+	 * space more stem.
+	 */
+	private extendTiedFlaggedStem(staveNote: StaveNote, chord: Chord): void {
+		if (
+			staveNote instanceof GraceNote ||
+			!staveNote.hasStem() ||
+			!staveNote.hasFlag() ||
+			chord.lead.beams.length > 0 ||
+			!this.hasStemSideTieStart(chord, staveNote.getStemDirection())
+		) {
+			return;
+		}
+		const lines = staveNote.getKeyProps().map((k) => k.line);
+		if (lines.length === 0) {
+			return;
+		}
+		const outerLine =
+			staveNote.getStemDirection() === Stem.UP
+				? Math.max(...lines)
+				: Math.min(...lines);
+		const tieClearSpaces = Number.isInteger(outerLine)
+			? TIED_FLAG_LINE_EXTENSION_SPACES
+			: TIED_FLAG_SPACE_EXTENSION_SPACES;
+		const extraFlagPx = staveNote.glyphProps.stemBeamExtension ?? 0;
+		const targetLength =
+			Stem.HEIGHT +
+			extraFlagPx +
+			tieClearSpaces * (Stem.HEIGHT / STANDARD_STEM_SPACES);
+		const currentLength = staveNote.getStemLength();
+		if (currentLength >= targetLength) {
+			return;
+		}
+		// Subtract VexFlow's middle-line reach, which getStemExtension() adds back on top of
+		// setStemLength(), so the final stem lands at targetLength rather than overshooting.
+		const reach = Math.max(0, currentLength - (Stem.HEIGHT + extraFlagPx));
+		staveNote.setStemLength(targetLength - reach);
+		staveNote.getStem()?.setExtension(staveNote.getStemExtension());
+	}
+
+	/* Whether any note of `chord` starts a tie that bows on the same side as its stem/flag. */
+	private hasStemSideTieStart(chord: Chord, stemDirection: number): boolean {
+		const heads = chord.notes.length;
+		const middle = (heads - 1) / 2;
+		const stemSide = stemDirection === Stem.UP ? -1 : 1;
+		return chord.notes.some((note, index) =>
+			this.reader.tiesOf(note).some((tie) => {
+				if (tie.tieType !== 'start') {
+					return false;
+				}
+				const orientation = tie.getAttribute('orientation');
+				let direction: number;
+				if (orientation === 'over') {
+					direction = -1;
+				} else if (orientation === 'under') {
+					direction = 1;
+				} else if (heads > 1 && index !== middle) {
+					direction = index > middle ? -1 : 1;
+				} else {
+					direction = -stemSide;
+				}
+				return direction === stemSide;
+			}),
+		);
 	}
 
 	/*
@@ -524,6 +783,19 @@ export class ChordTranslator {
 		return key;
 	}
 
+	/* <notehead>none</notehead>: omit the head glyph while keeping stems, beams, and modifiers. */
+	private hideNoneNoteheads(staveNote: VexmlNote, chord: Chord): void {
+		const hidden = new Set<number>();
+		chord.notes.forEach((note, i) => {
+			if (note.notehead?.value === 'none') {
+				hidden.add(i);
+			}
+		});
+		if (hidden.size > 0) {
+			staveNote.hiddenNoteHeads = hidden;
+		}
+	}
+
 	private addSlashNoteheads(staveNote: StaveNote, chord: Chord): void {
 		const byDuration = this.slashGlyph(chord);
 		const noteHeads = staveNote.noteHeads;
@@ -542,6 +814,47 @@ export class ChordTranslator {
 		});
 	}
 }
+
+/* Keep perfect unisons on the ordinary path. Within one written pitch, only the
+ * altered members need a left-to-right chromatic order. */
+function alteredUnisons(chord: Chord): number[][] {
+	const pitches = new Map<string, { index: number; alter: number }[]>();
+	chord.notes.forEach((note, index) => {
+		const pitch = note.pitch;
+		if (pitch) {
+			const key = `${pitch.step}/${pitch.octave}`;
+			const members = pitches.get(key) ?? [];
+			members.push({ index, alter: pitch.alter });
+			pitches.set(key, members);
+		}
+	});
+	return [...pitches.values()]
+		.filter((members) =>
+			members.some(({ alter }) => alter !== members[0]?.alter),
+		)
+		.map((members) =>
+			members.sort((a, b) => a.alter - b.alter).map(({ index }) => index),
+		);
+}
+
+function compactAccidentalRank(note: Note): number {
+	const alter = note.pitch?.alter ?? 0;
+	return alter === 0 ? -2 : Math.sign(alter);
+}
+
+const UNISON_ACCIDENTALS: Readonly<Record<number, string>> = {
+	[-3]: '\uE266',
+	[-2]: 'bb',
+	[-1.5]: 'db',
+	[-1]: 'b',
+	[-0.5]: 'd',
+	0: 'n',
+	0.5: '+',
+	1: '#',
+	1.5: '++',
+	2: '##',
+	3: '\uE265',
+};
 
 const ACCIDENTAL_SIGNS: Readonly<Record<string, string>> = {
 	sharp: '\u266F',
@@ -613,6 +926,10 @@ export function smuflGlyph(name: string | null): string | undefined {
 interface VexflowChordOptions {
 	/* Center the glyph in the measure, as a whole-measure rest is drawn. */
 	alignCenter?: boolean;
+	/* Space between staff lines, in pixels, for both width planning and drawing. */
+	staffSpace?: number;
+	/* Voices sharing this staff need their dots placed in relation to one another. */
+	multipleVoices?: boolean;
 	/* <clef-octave-change>: shifts every notehead's staff position by that many octaves
 	 * (e.g. -1 for a treble-8vb guitar clef draws sounding pitches an octave higher).
 	 * vexflow's own StaveNote option; keys stay at their sounding octave. */
@@ -628,12 +945,38 @@ interface VexflowChordOptions {
 	slashed?: boolean;
 	/* Under a <beat-repeat> or <slash> sign: hidden, and maybe the one that draws the sign. */
 	styled?: NoteStyle;
+	/* This chord opens a new system (beat 0 of a measure starting system > 0), so a tied-into
+	 * note repeats its accidental (Behind Bars p. 80). */
+	opensSystem?: boolean;
+	/* The new system's opening key signature alterations by step, used when a tied-into note
+	 * opening a new system omits an explicit <accidental>. */
+	keyAlters?: ReadonlyMap<string, number>;
 }
 
 const STEM = { up: Stem.UP, down: Stem.DOWN } as const;
 
-// vexflow's staff line for the middle line of five (keyProperties counts C4 in treble as 0).
+function keyLines(
+	keys: readonly string[],
+	clef: string | undefined,
+	octaveShift: number,
+): number[] {
+	return keys.map(
+		(key) => VexFlow.keyProperties(key, clef).line - 3.5 * octaveShift,
+	);
+}
+
+// vexflow's staff lines for a five-line stave (keyProperties counts C4 in treble as 0).
+const BOTTOM_LINE = 1;
 const MIDDLE_LINE = 3;
+const TOP_LINE = 5;
+const STANDARD_STEM_SPACES = 3.5;
+const MIN_OUTWARD_STEM_SPACES = 2.5;
+// Bravura's single flag is ~3 spaces tall; Behind Bars p. 16 lengthens a stem shorter than
+// 3 spaces when a longer tail would otherwise overshoot the notehead.
+const MIN_FLAGGED_OUTWARD_STEM_SPACES = 3;
+// Behind Bars p. 61: extra stem length to lift a chord's flag clear of a stem-side tie.
+const TIED_FLAG_LINE_EXTENSION_SPACES = 1;
+const TIED_FLAG_SPACE_EXTENSION_SPACES = 1.5;
 // Every natural from C2 to B5: one of them sits on the middle line of any clef vexflow has.
 const MIDDLE_KEY_CANDIDATES = [2, 3, 4, 5].flatMap((octave) =>
 	['c', 'd', 'e', 'f', 'g', 'a', 'b'].map((step) => `${step}/${octave}`),
@@ -661,9 +1004,10 @@ const SLASH_GLYPH_OPEN = '\uE103';
  * MusicXML <notehead> value -> vexflow key-suffix glyph code, appended to the key so vexflow
  * draws the alternate head (see vexflowKey). These codes go through vexflow's codeNoteHead, which
  * picks the duration-appropriate variant (open for half/whole, filled for quarter and shorter),
- * except 'x' (dead notes), pinned to the always-black X2 by convention. Values vexflow has no
- * glyph for (cross, the plus-shaped head, and none) are absent and keep the default oval; slash
- * has no code and is redrawn post-build by addSlashNoteheads.
+ * except 'x' (cross heads): black values take the bare X2, while half and whole values are routed
+ * to the circled cross X3 in noteheadSuffix. Values vexflow has no
+ * glyph for (cross, the plus-shaped head) are absent and keep the default oval; `none` is
+ * omitted by hideNoneNoteheads, and `slash` is redrawn post-build by addSlashNoteheads.
  */
 const NOTEHEAD_SUFFIX: Record<string, string> = {
 	x: 'X2', // cross

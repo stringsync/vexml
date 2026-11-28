@@ -1,0 +1,50 @@
+{
+	"screenshot": "engraving_rest-breve.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 308.5,
+				"y": 106
+			},
+			"to": {
+				"x": 444.8,
+				"y": 106
+			},
+			"label": "",
+			"note": "M3 second stave line at y=90",
+			"role": "reference"
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 308.5,
+				"y": 116
+			},
+			"to": {
+				"x": 444.8,
+				"y": 116
+			},
+			"label": "",
+			"note": "M3 middle stave line at y=100",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 401.1,
+				"y": 106
+			},
+			"to": {
+				"x": 401.1,
+				"y": 116
+			},
+			"label": "1..2",
+			"note": "M3 breve rest spans 1 to 2 spaces from top line (expected 1 to 2)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

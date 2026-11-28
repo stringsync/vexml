@@ -1,0 +1,34 @@
+{
+	"screenshot": "engraving_percussion-tuned.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 479 },
+		{ "index": 1, "system": 0, "x": 510, "w": 391 },
+		{ "index": 2, "system": 1, "x": 31, "w": 199 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 479
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 510,
+			"w": 391
+		},
+		{
+			"part": 0,
+			"measure": 2,
+			"staff": 1,
+			"lines": [256, 266, 276, 286, 296],
+			"x": 31,
+			"w": 199
+		}
+	]
+}

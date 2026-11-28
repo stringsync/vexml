@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tie-chord-inner-short.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 101,
+				"y": 422
+			},
+			"to": {
+				"x": 164,
+				"y": 430
+			},
+			"label": "Inner tie",
+			"note": "Inner tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 101,
+				"y": 442
+			},
+			"to": {
+				"x": 164,
+				"y": 450
+			},
+			"label": "Inner tie",
+			"note": "Inner tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

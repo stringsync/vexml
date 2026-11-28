@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tie-unison-altered.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 488,
+				"y": 458
+			},
+			"to": {
+				"x": 523,
+				"y": 464
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 488,
+				"y": 468
+			},
+			"to": {
+				"x": 523,
+				"y": 474
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

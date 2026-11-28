@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_chord-unison-single-stemless.png",
+	"width": 932,
+	"height": 882,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 584,
+				"y": 576
+			},
+			"to": {
+				"x": 601,
+				"y": 586
+			},
+			"label": "M15 notehead",
+			"note": "M15 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 600,
+				"y": 576
+			},
+			"to": {
+				"x": 617,
+				"y": 586
+			},
+			"label": "M15 notehead",
+			"note": "M15 notehead",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

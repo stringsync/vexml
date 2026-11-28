@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_dyn-interim-hairpin-angle.png",
+	"width": 932,
+	"height": 1373,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 132,
+				"y": 1131
+			},
+			"to": {
+				"x": 274,
+				"y": 1141
+			},
+			"label": "Before",
+			"note": "Before",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 297,
+				"y": 1131
+			},
+			"to": {
+				"x": 432,
+				"y": 1141
+			},
+			"label": "After",
+			"note": "After",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

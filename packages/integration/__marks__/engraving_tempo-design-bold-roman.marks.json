@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tempo-design-bold-roman.png",
+	"width": 932,
+	"height": 607,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 109,
+				"y": 57
+			},
+			"to": {
+				"x": 173,
+				"y": 76
+			},
+			"label": "Allegro",
+			"note": "Allegro",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 489,
+				"y": 113
+			},
+			"to": {
+				"x": 545,
+				"y": 127
+			},
+			"label": "Presto",
+			"note": "Presto",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

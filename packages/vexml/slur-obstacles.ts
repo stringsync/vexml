@@ -1,4 +1,5 @@
 import { Articulation, Modifier, type StaveNote } from 'vexflow/core';
+import { StaveArticulation } from './stave-articulation';
 
 /** How many px cheaper the other side must score before it replaces the rules' side. */
 const PREFERRED_SIDE_BONUS = 8;
@@ -74,18 +75,56 @@ export class SlurObstacles {
 	marksOnSide(
 		note: StaveNote,
 		above: boolean,
+		includeOutsideSlur = true,
 	): { top: number; bottom: number } | null {
 		const side = above ? Modifier.Position.ABOVE : Modifier.Position.BELOW;
 		let top = Infinity;
 		let bottom = -Infinity;
 		for (const mod of note.getModifiers()) {
 			if (mod instanceof Articulation && mod.getPosition() === side) {
+				if (mod instanceof StaveArticulation && mod.fermata) {
+					continue;
+				}
+				if (
+					!includeOutsideSlur &&
+					mod instanceof StaveArticulation &&
+					mod.sitsOutsideSlur(note)
+				) {
+					continue;
+				}
 				const box = mod.getBoundingBox();
 				top = Math.min(top, box.getY());
 				bottom = Math.max(bottom, box.getY() + box.getH());
 			}
 		}
 		return top === Infinity ? null : { top, bottom };
+	}
+
+	/** Bounding boxes of any fermatas attached on the given side of `note`. */
+	fermataBoxes(note: StaveNote, above: boolean) {
+		const side = above ? Modifier.Position.ABOVE : Modifier.Position.BELOW;
+		return note
+			.getModifiers()
+			.filter(
+				(mod): mod is StaveArticulation =>
+					mod instanceof StaveArticulation &&
+					mod.fermata &&
+					mod.getPosition() === side,
+			)
+			.map((mod) => mod.getBoundingBox());
+	}
+
+	/** Whether `note` carries a tenuto line on the given side (Behind Bars p. 122). */
+	hasTenutoOnSide(note: StaveNote, above: boolean): boolean {
+		const side = above ? Modifier.Position.ABOVE : Modifier.Position.BELOW;
+		return note
+			.getModifiers()
+			.some(
+				(mod) =>
+					mod instanceof Articulation &&
+					mod.getPosition() === side &&
+					mod.type === 'a-',
+			);
 	}
 
 	accidentalBoxes(note: StaveNote) {

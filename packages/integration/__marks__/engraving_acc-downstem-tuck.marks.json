@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_acc-downstem-tuck.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 780.3,
+				"y": 108
+			},
+			"to": {
+				"x": 793.3,
+				"y": 136
+			},
+			"label": "F#/4 sign",
+			"note": "F#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 840.5,
+				"y": 69
+			},
+			"to": {
+				"x": 852.5,
+				"y": 95
+			},
+			"label": "Fb/5 sign",
+			"note": "Fb/5 sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

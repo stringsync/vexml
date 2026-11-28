@@ -1,4 +1,4 @@
-import { PedalMarking, type StaveNote } from 'vexflow/core';
+import { Font, PedalMarking, type StaveNote } from 'vexflow/core';
 
 // The SMuFL pedal glyphs (vexflow/core doesn't export its Glyphs table).
 const GLYPHS = {
@@ -22,13 +22,19 @@ export type PedalStyle = {
 	sostenuto: boolean;
 	/** The span picks up an earlier one (a resume): no down sign or hook. */
 	resumed: boolean;
+	/** The span confirms a continuing pedal at the start of a new system: "(Ped.)". */
+	confirmed?: boolean;
 	/** The span is dropped rather than released (a discontinue): no release sign or hook. */
 	discontinued: boolean;
+	/** Explicit right edge (e.g. system-end barline) when the line runs open across a break. */
+	endX?: number;
 };
 
 // How far a re-pedal notch's sides reach either side of the note it changes on, and the
 // gap between a "*" and the note after it.
 const NOTCH = 5;
+// Breathing room between confirmation parentheses and the pedal glyph.
+const PAREN_GAP = 1.5;
 
 /*
  * A pedal span: down under one note, re-pedaled at each change, up past the last. vexflow's
@@ -53,7 +59,7 @@ export class PedalLine extends PedalMarking {
 			ctx.setStrokeStyle(this.renderOptions.color);
 			ctx.setFillStyle(this.renderOptions.color);
 		}
-		ctx.setFont(this.font);
+		ctx.setFont(this.fontInfo);
 		ctx.setLineWidth(this.renderOptions.bracketLineWidth);
 		const y = this.down.checkStave().getYForBottomText(this.line + 3);
 		if (this.pedal.line) {
@@ -71,9 +77,7 @@ export class PedalLine extends PedalMarking {
 		if (this.pedal.resumed) {
 			ctx.moveTo(x, y);
 		} else if (this.pedal.sign) {
-			const depress = this.depressSign();
-			ctx.fillText(depress, x, y);
-			x += ctx.measureText(depress).width + this.renderOptions.textMarginRight;
+			x += this.drawDepressSign(x, y) + this.renderOptions.textMarginRight;
 			ctx.moveTo(x, y);
 		} else {
 			ctx.moveTo(x, top);
@@ -85,7 +89,10 @@ export class PedalLine extends PedalMarking {
 			ctx.lineTo(cx, top);
 			ctx.lineTo(cx + NOTCH, y);
 		}
-		const end = this.liftX(this.up) - NOTCH;
+		const end =
+			this.pedal.endX !== undefined
+				? Math.max(x, this.pedal.endX)
+				: Math.max(x, this.liftX(this.up) - NOTCH);
 		ctx.lineTo(end, y);
 		if (!this.pedal.discontinued) {
 			ctx.lineTo(end, top);
@@ -99,7 +106,7 @@ export class PedalLine extends PedalMarking {
 		const release = GLYPHS.up;
 		const releaseWidth = ctx.measureText(release).width;
 		if (!this.pedal.resumed) {
-			ctx.fillText(depress, this.down.getAbsoluteX(), y);
+			this.drawDepressSign(this.down.getAbsoluteX(), y);
 		}
 		for (const change of this.changes) {
 			const cx = change.getAbsoluteX();
@@ -109,6 +116,34 @@ export class PedalLine extends PedalMarking {
 		if (!this.pedal.discontinued) {
 			ctx.fillText(release, this.liftX(this.up) - releaseWidth, y);
 		}
+	}
+
+	/* Draw the depress sign, wrapped in parentheses when confirming a continuing pedal on a new system. */
+	private drawDepressSign(x: number, y: number): number {
+		const ctx = this.checkContext();
+		const depress = this.depressSign();
+		if (!this.pedal.confirmed) {
+			ctx.fillText(depress, x, y);
+			return ctx.measureText(depress).width;
+		}
+		const basePx = Font.convertSizeToPixelValue(this.fontInfo.size);
+		const parenFont = {
+			family: 'Academico, serif',
+			size: `${Math.round(basePx * 0.55)}px`,
+			weight: 'normal',
+			style: 'normal',
+		};
+		ctx.setFont(parenFont);
+		ctx.fillText('(', x, y);
+		const openW = ctx.measureText('(').width + PAREN_GAP;
+		ctx.setFont(this.fontInfo);
+		ctx.fillText(depress, x + openW, y);
+		const glyphW = ctx.measureText(depress).width + PAREN_GAP;
+		ctx.setFont(parenFont);
+		ctx.fillText(')', x + openW + glyphW, y);
+		const closeW = ctx.measureText(')').width;
+		ctx.setFont(this.fontInfo);
+		return openW + glyphW + closeW;
 	}
 
 	private depressSign(): string {

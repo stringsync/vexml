@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_woodwind-key-slap-plus.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 293,
+				"y": 240
+			},
+			"to": {
+				"x": 304,
+				"y": 251
+			},
+			"label": "Plus 1",
+			"note": "Plus 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 322,
+				"y": 225
+			},
+			"to": {
+				"x": 333,
+				"y": 236
+			},
+			"label": "Plus 2",
+			"note": "Plus 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 352,
+				"y": 240
+			},
+			"to": {
+				"x": 363,
+				"y": 251
+			},
+			"label": "Plus 3",
+			"note": "Plus 3",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

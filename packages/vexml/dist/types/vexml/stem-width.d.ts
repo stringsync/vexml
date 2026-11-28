@@ -1,5 +1,4 @@
 export declare class StemWidth {
-    private static installed;
-    private static width;
+    private static readonly vexflow;
     set(width: number | null): void;
 }

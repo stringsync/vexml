@@ -1,0 +1,43 @@
+{
+	"screenshot": "engraving_vocal-clef-dynamics.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 514.45 },
+		{ "index": 1, "system": 0, "x": 545.45, "w": 355.55 },
+		{ "index": 2, "system": 1, "x": 31, "w": 258.13 },
+		{ "index": 3, "system": 1, "x": 289.13, "w": 186.69 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 514.45
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 545.45,
+			"w": 355.55
+		},
+		{
+			"part": 0,
+			"measure": 2,
+			"staff": 1,
+			"lines": [283, 293, 303, 313, 323],
+			"x": 31,
+			"w": 258.13
+		},
+		{
+			"part": 0,
+			"measure": 3,
+			"staff": 1,
+			"lines": [283, 293, 303, 313, 323],
+			"x": 289.13,
+			"w": 186.69
+		}
+	]
+}

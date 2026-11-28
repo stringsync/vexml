@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_pedal-align-struck-note.png",
+	"width": 932,
+	"height": 604,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 420,
+				"y": 254
+			},
+			"to": {
+				"x": 472,
+				"y": 277
+			},
+			"label": "Pedal 1",
+			"note": "Pedal 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 476,
+				"y": 254
+			},
+			"to": {
+				"x": 533,
+				"y": 277
+			},
+			"label": "Pedal 2",
+			"note": "Pedal 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

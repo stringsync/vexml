@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_brass-hand-stopped-open.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 118,
+				"y": 75
+			},
+			"to": {
+				"x": 129,
+				"y": 86
+			},
+			"label": "Stopped 1",
+			"note": "Stopped 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 179,
+				"y": 65
+			},
+			"to": {
+				"x": 190,
+				"y": 76
+			},
+			"label": "Stopped 2",
+			"note": "Stopped 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 240,
+				"y": 80
+			},
+			"to": {
+				"x": 251,
+				"y": 91
+			},
+			"label": "Stopped 3",
+			"note": "Stopped 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 301,
+				"y": 78
+			},
+			"to": {
+				"x": 313,
+				"y": 90
+			},
+			"label": "Open",
+			"note": "Open",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

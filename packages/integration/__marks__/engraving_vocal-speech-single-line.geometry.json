@@ -1,0 +1,25 @@
+{
+	"screenshot": "engraving_vocal-speech-single-line.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 444.93 },
+		{ "index": 1, "system": 0, "x": 475.93, "w": 425.07 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 444.93
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 475.93,
+			"w": 425.07
+		}
+	]
+}

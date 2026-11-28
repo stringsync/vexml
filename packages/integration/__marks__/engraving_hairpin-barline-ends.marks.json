@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_hairpin-barline-ends.png",
+	"width": 932,
+	"height": 1373,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 275,
+				"y": 640
+			},
+			"to": {
+				"x": 486,
+				"y": 650
+			},
+			"label": "Hairpin",
+			"note": "Hairpin",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 499,
+				"y": 650
+			},
+			"to": {
+				"x": 515,
+				"y": 669
+			},
+			"label": "f",
+			"note": "f",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_artic-accent-outside-stave.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 535,
+				"y": 81
+			},
+			"to": {
+				"x": 548,
+				"y": 91
+			},
+			"label": "Accent 1",
+			"note": "Accent 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 621,
+				"y": 81
+			},
+			"to": {
+				"x": 634,
+				"y": 91
+			},
+			"label": "Accent 2",
+			"note": "Accent 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 706,
+				"y": 141
+			},
+			"to": {
+				"x": 719,
+				"y": 151
+			},
+			"label": "Accent 3",
+			"note": "Accent 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 792,
+				"y": 141
+			},
+			"to": {
+				"x": 805,
+				"y": 151
+			},
+			"label": "Accent 4",
+			"note": "Accent 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

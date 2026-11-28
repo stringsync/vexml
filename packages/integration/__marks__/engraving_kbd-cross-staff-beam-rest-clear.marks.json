@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_kbd-cross-staff-beam-rest-clear.png",
+	"width": 932,
+	"height": 342,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 761.3,
+				"y": 108
+			},
+			"to": {
+				"x": 771.3,
+				"y": 126
+			},
+			"label": "Rest",
+			"note": "Rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 821.1,
+				"y": 208
+			},
+			"to": {
+				"x": 831.1,
+				"y": 226
+			},
+			"label": "Rest",
+			"note": "Rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 757,
+				"y": 100
+			},
+			"to": {
+				"x": 803,
+				"y": 109
+			},
+			"label": "Beam",
+			"note": "Beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 806,
+				"y": 248
+			},
+			"to": {
+				"x": 852,
+				"y": 257
+			},
+			"label": "Beam",
+			"note": "Beam",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

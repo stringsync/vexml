@@ -22,7 +22,7 @@ describe('DefaultFontLoader', () => {
 
 	// SSR safety: no document → must not throw, no container mutation needed.
 	it('does not throw without a document (SSR guard)', () => {
-		// @ts-expect-error
+		// @ts-expect-error: simulate SSR where globalThis.document is undefined
 		globalThis.document = undefined;
 		expect(() =>
 			new DefaultFontLoader(SHIPPED).load({

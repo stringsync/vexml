@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_rhythm-rest-gaps.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 123,
+				"y": 89
+			},
+			"to": {
+				"x": 149.5,
+				"y": 89
+			},
+			"label": "2¾",
+			"note": "M1 after 0.5 quarter-note beats: 2¾ stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 149.5,
+				"y": 89
+			},
+			"to": {
+				"x": 175.6,
+				"y": 89
+			},
+			"label": "2½",
+			"note": "M1 after 0.5 quarter-note beats: 2½ stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 175.6,
+				"y": 89
+			},
+			"to": {
+				"x": 211.5,
+				"y": 89
+			},
+			"label": "3½",
+			"note": "M1 after 1 quarter-note beats: 3½ stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

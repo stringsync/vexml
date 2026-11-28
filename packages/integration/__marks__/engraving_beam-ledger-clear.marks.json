@@ -1,0 +1,80 @@
+{
+	"screenshot": "engraving_beam-ledger-clear.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 741
+			},
+			"to": {
+				"x": 412,
+				"y": 741
+			},
+			"label": "outer line",
+			"note": "Top outer stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 781
+			},
+			"to": {
+				"x": 412,
+				"y": 781
+			},
+			"label": "outer line",
+			"note": "Bottom outer stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 82,
+				"y": 741
+			},
+			"to": {
+				"x": 82,
+				"y": 756
+			},
+			"label": "clear",
+			"note": "M9 C/6: innermost beam is clear of outer stave line",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 148,
+				"y": 741
+			},
+			"to": {
+				"x": 148,
+				"y": 748
+			},
+			"label": "clear",
+			"note": "M9 C/6: innermost beam is clear of outer stave line",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 271,
+				"y": 781
+			},
+			"to": {
+				"x": 271,
+				"y": 773
+			},
+			"label": "clear",
+			"note": "M9 A/3: innermost beam is clear of outer stave line",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

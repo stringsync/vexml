@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_dot-unison-one-voice.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 527,
+				"y": 921
+			},
+			"to": {
+				"x": 539,
+				"y": 931
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 541,
+				"y": 921
+			},
+			"to": {
+				"x": 553,
+				"y": 931
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 555,
+				"y": 919
+			},
+			"to": {
+				"x": 559,
+				"y": 923
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 696.9,
+				"y": 901
+			},
+			"to": {
+				"x": 708.9,
+				"y": 911
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 710.9,
+				"y": 901
+			},
+			"to": {
+				"x": 722.9,
+				"y": 911
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 725,
+				"y": 909
+			},
+			"to": {
+				"x": 729,
+				"y": 913
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

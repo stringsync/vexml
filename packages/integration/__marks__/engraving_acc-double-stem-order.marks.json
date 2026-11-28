@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_acc-double-stem-order.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 65,
+				"y": 273
+			},
+			"to": {
+				"x": 87,
+				"y": 301
+			},
+			"label": "E/4 sign",
+			"note": "E/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 75,
+				"y": 254
+			},
+			"to": {
+				"x": 87,
+				"y": 280
+			},
+			"label": "Ab/4 sign",
+			"note": "Ab/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 154.6,
+				"y": 278
+			},
+			"to": {
+				"x": 167.6,
+				"y": 306
+			},
+			"label": "D#/4 sign",
+			"note": "D#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 128.6,
+				"y": 268
+			},
+			"to": {
+				"x": 167.6,
+				"y": 296
+			},
+			"label": "F#/4 sign",
+			"note": "F#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 141.6,
+				"y": 258
+			},
+			"to": {
+				"x": 167.6,
+				"y": 286
+			},
+			"label": "A#/4 sign",
+			"note": "A#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 154.6,
+				"y": 248
+			},
+			"to": {
+				"x": 167.6,
+				"y": 276
+			},
+			"label": "C#/5 sign",
+			"note": "C#/5 sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

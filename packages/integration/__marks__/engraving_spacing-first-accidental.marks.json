@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_spacing-first-accidental.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 125,
+				"y": 249
+			},
+			"to": {
+				"x": 141,
+				"y": 249
+			},
+			"label": "1½",
+			"note": "Opening metre to note accidental: 1½ stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 116,
+				"y": 409
+			},
+			"to": {
+				"x": 132,
+				"y": 409
+			},
+			"label": "1½",
+			"note": "Opening metre to note accidental: 1½ stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

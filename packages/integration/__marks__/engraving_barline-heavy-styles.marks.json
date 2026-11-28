@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_barline-heavy-styles.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 261,
+				"y": 96
+			},
+			"to": {
+				"x": 266,
+				"y": 136
+			},
+			"label": "Light-heavy heavy stroke: 5px",
+			"note": "Light-heavy heavy stroke: 5px",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 571,
+				"y": 96
+			},
+			"to": {
+				"x": 576,
+				"y": 136
+			},
+			"label": "Heavy-heavy first stroke: 5px",
+			"note": "Heavy-heavy first stroke: 5px",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 579,
+				"y": 96
+			},
+			"to": {
+				"x": 584,
+				"y": 136
+			},
+			"label": "Heavy-heavy second stroke: 5px",
+			"note": "Heavy-heavy second stroke: 5px",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 733,
+				"y": 96
+			},
+			"to": {
+				"x": 738,
+				"y": 136
+			},
+			"label": "Heavy-light heavy stroke: 5px",
+			"note": "Heavy-light heavy stroke: 5px",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 741,
+				"y": 96
+			},
+			"to": {
+				"x": 743,
+				"y": 136
+			},
+			"label": "Heavy-light thin stroke: 2px",
+			"note": "Heavy-light thin stroke: 2px",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 420,
+				"y": 96
+			},
+			"to": {
+				"x": 425,
+				"y": 136
+			},
+			"label": "Heavy stroke: 5px",
+			"note": "Heavy stroke: 5px",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 576,
+				"y": 96
+			},
+			"to": {
+				"x": 579,
+				"y": 136
+			},
+			"label": "Gap between heavy strokes: 3px, ⅓ space is 3.3px",
+			"note": "Gap between heavy strokes: 3px, ⅓ space is 3.3px",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 738,
+				"y": 96
+			},
+			"to": {
+				"x": 741,
+				"y": 136
+			},
+			"label": "Gap from heavy to thin stroke: 3px, ⅓ space is 3.3px",
+			"note": "Gap from heavy to thin stroke: 3px, ⅓ space is 3.3px",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

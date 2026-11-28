@@ -1,0 +1,65 @@
+{
+	"screenshot": "engraving_clef-change-before-barline.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 298.3,
+				"y": 90
+			},
+			"to": {
+				"x": 298.3,
+				"y": 142
+			},
+			"label": "",
+			"note": "Bar 2 opening barline",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 269,
+				"y": 102
+			},
+			"to": {
+				"x": 288,
+				"y": 130
+			},
+			"label": "before",
+			"note": "bar 2 clef change is before the barline",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 501.6,
+				"y": 90
+			},
+			"to": {
+				"x": 501.6,
+				"y": 142
+			},
+			"label": "",
+			"note": "Bar 3 opening barline",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 473,
+				"y": 92
+			},
+			"to": {
+				"x": 492,
+				"y": 120
+			},
+			"label": "before",
+			"note": "bar 3 clef change is before the barline",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

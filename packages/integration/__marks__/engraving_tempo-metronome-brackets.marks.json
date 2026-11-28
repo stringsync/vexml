@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tempo-metronome-brackets.png",
+	"width": 932,
+	"height": 607,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 330,
+				"y": 273
+			},
+			"to": {
+				"x": 400,
+				"y": 291
+			},
+			"label": "Tempo I",
+			"note": "Tempo I",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 409,
+				"y": 271
+			},
+			"to": {
+				"x": 451,
+				"y": 290
+			},
+			"label": "(quarter = 72)",
+			"note": "(quarter = 72)",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

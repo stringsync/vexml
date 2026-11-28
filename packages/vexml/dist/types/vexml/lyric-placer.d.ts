@@ -24,6 +24,7 @@ export interface PinnedSyllable {
     readonly verseIndex: number;
     readonly textSize: number;
     readonly lyric: LyricMark;
+    melismaEndX?: number;
 }
 type PinOptions = {
     /** The system the row sits in; the first when absent. */
@@ -41,6 +42,7 @@ export declare class LyricPlacer {
     private observedLyricDrops;
     private readonly steppedSystems;
     private readonly pinned;
+    private readonly rests;
     constructor(translator: VoiceTranslator, context: RenderContext, collisionResolver: CollisionResolver, opts: LyricPlacerOptions);
     /** Key for one stave row of one system, the scope a verse's baseline is shared over. */
     private rowKey;
@@ -48,12 +50,13 @@ export declare class LyricPlacer {
     requestDrop(system: number, row: number, drop: number): void;
     carriedDrop(system: number, row: number): number;
     pin(notes: StaveNote[], row: number, baseline: number, opts?: PinOptions): void;
+    private recordRests;
     /** Resolve a verse baseline, then apply only this syllable's relative-y. */
     baselineOf(lyric: LyricMark, stave: Stave, row: number, system: number, baseline: number): number;
     pinnedSyllables(): ReadonlyArray<PinnedSyllable>;
     rowDrop(system: number, row: number): number;
     private drawMelismas;
-    private drawHyphens;
+    drawSystemHyphens(system: number): void;
     private lyricsOf;
     observedDrops(): Map<string, number>;
     stepped(system: number): boolean;

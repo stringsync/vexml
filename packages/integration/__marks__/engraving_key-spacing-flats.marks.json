@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_key-spacing-flats.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 705,
+				"y": 99
+			},
+			"to": {
+				"x": 714,
+				"y": 123
+			},
+			"label": "Flat 1",
+			"note": "Flat 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 715,
+				"y": 84
+			},
+			"to": {
+				"x": 724,
+				"y": 108
+			},
+			"label": "Flat 2",
+			"note": "Flat 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 725,
+				"y": 104
+			},
+			"to": {
+				"x": 734,
+				"y": 128
+			},
+			"label": "Flat 3",
+			"note": "Flat 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 735,
+				"y": 89
+			},
+			"to": {
+				"x": 744,
+				"y": 113
+			},
+			"label": "Flat 4",
+			"note": "Flat 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

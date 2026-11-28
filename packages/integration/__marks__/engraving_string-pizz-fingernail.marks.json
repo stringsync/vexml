@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_string-pizz-fingernail.png",
+	"width": 932,
+	"height": 1050,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 242
+			},
+			"to": {
+				"x": 104,
+				"y": 252
+			},
+			"label": "Nail 1",
+			"note": "Nail 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 181,
+				"y": 242
+			},
+			"to": {
+				"x": 197,
+				"y": 252
+			},
+			"label": "Nail 2",
+			"note": "Nail 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 274,
+				"y": 232
+			},
+			"to": {
+				"x": 290,
+				"y": 242
+			},
+			"label": "Nail 3",
+			"note": "Nail 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 367,
+				"y": 242
+			},
+			"to": {
+				"x": 383,
+				"y": 252
+			},
+			"label": "Nail 4",
+			"note": "Nail 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

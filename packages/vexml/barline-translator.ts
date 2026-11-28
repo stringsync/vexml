@@ -1,4 +1,5 @@
-import { Barline, BarNote, Volta } from 'vexflow/core';
+import { Barline, type BarNote, Volta } from 'vexflow/core';
+import { DocumentBarNote } from './document-bar-note';
 import type { MeasureEnding, MeasureRepeat, Winged } from './score-reader';
 
 /*
@@ -50,9 +51,11 @@ export class BarlineTranslator {
 	midBarNote(style: string): BarNote {
 		const type = BAR_STYLE_TYPES[style];
 		if (type === undefined) {
-			return new BarNote(Barline.type.NONE).setWidth(CUSTOM_MID_BAR_WIDTH);
+			return new DocumentBarNote(Barline.type.NONE).setWidth(
+				CUSTOM_MID_BAR_WIDTH,
+			);
 		}
-		return new BarNote(type);
+		return new DocumentBarNote(type);
 	}
 
 	private voltaType(ending: MeasureEnding): number {

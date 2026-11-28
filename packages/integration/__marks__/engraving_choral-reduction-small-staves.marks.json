@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_choral-reduction-small-staves.png",
+	"width": 932,
+	"height": 529,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 135,
+				"y": 278
+			},
+			"to": {
+				"x": 205,
+				"y": 291
+			},
+			"label": "Keyboard tempo",
+			"note": "Keyboard tempo",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_vocal-hyphen-across-rests.png",
+	"width": 932,
+	"height": 420,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 164,
+				"y": 173
+			},
+			"to": {
+				"x": 167,
+				"y": 174
+			},
+			"label": "Centred hyphen",
+			"note": "Centred hyphen",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 219,
+				"y": 173
+			},
+			"to": {
+				"x": 222,
+				"y": 174
+			},
+			"label": "Hyphen before rest",
+			"note": "Hyphen before rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 375,
+				"y": 173
+			},
+			"to": {
+				"x": 378,
+				"y": 174
+			},
+			"label": "Hyphen after rest",
+			"note": "Hyphen after rest",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

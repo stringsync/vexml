@@ -8,6 +8,9 @@ export type HairpinOptions = {
     spread?: number | null;
     runsOff?: 'left' | 'right';
     edgeX?: number;
+    openPoint?: boolean;
+    stopOnDownbeat?: boolean;
+    stopPositioned?: boolean;
 };
 export declare class Hairpin {
     private readonly from;
@@ -20,6 +23,9 @@ export declare class Hairpin {
     private readonly spread;
     private readonly runsOff;
     private readonly edgeX;
+    private readonly openPoint;
+    private readonly stopOnDownbeat;
+    private readonly stopPositioned;
     constructor(from: StaveNote, to: StaveNote, opts: HairpinOptions);
     private offset;
     private startInset;
@@ -29,8 +35,13 @@ export declare class Hairpin {
     setOffset(offset: number): this;
     getOffset(): number;
     setHorizontalInsets(start: number, end: number): this;
+    setEndInset(end: number): this;
     setLineWidth(lineWidth: number | null): this;
     get stave(): Stave;
+    get endStave(): Stave;
+    get isWrapped(): boolean;
+    get endsOnDownbeat(): boolean;
+    get hasPositionedEnd(): boolean;
     get above(): boolean;
     get opens(): boolean;
     private span;

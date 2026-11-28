@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_guitar-single-note-tremolo-fingering.png",
+	"width": 932,
+	"height": 419,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 825,
+				"y": 94
+			},
+			"to": {
+				"x": 857,
+				"y": 123
+			},
+			"label": "Tremolo 1",
+			"note": "Tremolo 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 864,
+				"y": 82
+			},
+			"to": {
+				"x": 876,
+				"y": 148
+			},
+			"label": "Tremolo 2",
+			"note": "Tremolo 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

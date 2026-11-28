@@ -1,0 +1,275 @@
+{
+	"screenshot": "engraving_stem-middle-line.png",
+	"width": 932,
+	"height": 417,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 116
+			},
+			"to": {
+				"x": 901,
+				"y": 116
+			},
+			"label": "middle line",
+			"note": "Middle stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 399,
+				"y": 126
+			},
+			"to": {
+				"x": 399,
+				"y": 91
+			},
+			"label": "up",
+			"note": "G/4: up-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 427,
+				"y": 121
+			},
+			"to": {
+				"x": 427,
+				"y": 86
+			},
+			"label": "up",
+			"note": "A/4: up-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 455,
+				"y": 116
+			},
+			"to": {
+				"x": 455,
+				"y": 81
+			},
+			"label": "up",
+			"note": "B/4: up-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 482,
+				"y": 121
+			},
+			"to": {
+				"x": 482,
+				"y": 86
+			},
+			"label": "up",
+			"note": "A/4: up-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 509,
+				"y": 116
+			},
+			"to": {
+				"x": 509,
+				"y": 151
+			},
+			"label": "down",
+			"note": "B/4: down-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 537,
+				"y": 116
+			},
+			"to": {
+				"x": 537,
+				"y": 151
+			},
+			"label": "down",
+			"note": "B/4: down-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 565,
+				"y": 116
+			},
+			"to": {
+				"x": 565,
+				"y": 151
+			},
+			"label": "down",
+			"note": "B/4: down-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 593,
+				"y": 116
+			},
+			"to": {
+				"x": 593,
+				"y": 151
+			},
+			"label": "down",
+			"note": "B/4: down-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 291
+			},
+			"to": {
+				"x": 901,
+				"y": 291
+			},
+			"label": "middle line",
+			"note": "Middle stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 573,
+				"y": 301
+			},
+			"to": {
+				"x": 573,
+				"y": 266
+			},
+			"label": "up",
+			"note": "G/4: up-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 615,
+				"y": 291
+			},
+			"to": {
+				"x": 615,
+				"y": 256
+			},
+			"label": "up",
+			"note": "B/4: up-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 633,
+				"y": 286
+			},
+			"to": {
+				"x": 633,
+				"y": 321
+			},
+			"label": "down",
+			"note": "C/5: down-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 675,
+				"y": 281
+			},
+			"to": {
+				"x": 675,
+				"y": 316
+			},
+			"label": "down",
+			"note": "D/5: down-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 753,
+				"y": 301
+			},
+			"to": {
+				"x": 753,
+				"y": 269
+			},
+			"label": "up",
+			"note": "G/4: up-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 755,
+				"y": 281
+			},
+			"to": {
+				"x": 755,
+				"y": 313
+			},
+			"label": "down",
+			"note": "D/5: down-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 778,
+				"y": 291
+			},
+			"to": {
+				"x": 778,
+				"y": 326
+			},
+			"label": "down",
+			"note": "B/4: down-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 832,
+				"y": 296
+			},
+			"to": {
+				"x": 832,
+				"y": 261
+			},
+			"label": "up",
+			"note": "A/4: up-stem",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

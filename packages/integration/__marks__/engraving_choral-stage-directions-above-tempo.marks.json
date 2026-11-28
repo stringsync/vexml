@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_choral-stage-directions-above-tempo.png",
+	"width": 932,
+	"height": 398,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 131,
+				"y": 56
+			},
+			"to": {
+				"x": 231,
+				"y": 72
+			},
+			"label": "Allegro molto",
+			"note": "Allegro molto",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 133,
+				"y": 84
+			},
+			"to": {
+				"x": 431,
+				"y": 100
+			},
+			"label": "Stage direction",
+			"note": "Stage direction",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 514,
+				"y": 60
+			},
+			"to": {
+				"x": 612,
+				"y": 76
+			},
+			"label": "Ann character",
+			"note": "Ann character",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 505,
+				"y": 102
+			},
+			"to": {
+				"x": 532,
+				"y": 116
+			},
+			"label": "Ann pp",
+			"note": "Ann pp",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 132,
+				"y": 187
+			},
+			"to": {
+				"x": 251,
+				"y": 203
+			},
+			"label": "Jack character",
+			"note": "Jack character",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 122,
+				"y": 229
+			},
+			"to": {
+				"x": 149,
+				"y": 243
+			},
+			"label": "Jack pp",
+			"note": "Jack pp",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

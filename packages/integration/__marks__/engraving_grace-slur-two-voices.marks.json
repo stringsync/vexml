@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_grace-slur-two-voices.png",
+	"width": 932,
+	"height": 739,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 492,
+				"y": 403
+			},
+			"to": {
+				"x": 520,
+				"y": 425
+			},
+			"label": "Upper grace slur",
+			"note": "Upper grace slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 492,
+				"y": 473
+			},
+			"to": {
+				"x": 512,
+				"y": 487
+			},
+			"label": "Lower grace slur",
+			"note": "Lower grace slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_string-harmonic-double-stop-circles.png",
+	"width": 932,
+	"height": 1050,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 521,
+				"y": 556
+			},
+			"to": {
+				"x": 529,
+				"y": 564
+			},
+			"label": "Beat1 1",
+			"note": "Beat1 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 521,
+				"y": 571
+			},
+			"to": {
+				"x": 529,
+				"y": 579
+			},
+			"label": "Beat1 2",
+			"note": "Beat1 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 700,
+				"y": 541
+			},
+			"to": {
+				"x": 708,
+				"y": 549
+			},
+			"label": "Beat3 1",
+			"note": "Beat3 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 700,
+				"y": 556
+			},
+			"to": {
+				"x": 708,
+				"y": 564
+			},
+			"label": "Beat3 2",
+			"note": "Beat3 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

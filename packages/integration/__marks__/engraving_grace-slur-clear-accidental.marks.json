@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_grace-slur-clear-accidental.png",
+	"width": 932,
+	"height": 739,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 80,
+				"y": 558
+			},
+			"to": {
+				"x": 122,
+				"y": 598
+			},
+			"label": "Slur above accidental",
+			"note": "Slur above accidental",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

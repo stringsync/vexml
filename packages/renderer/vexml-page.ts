@@ -51,12 +51,12 @@ class VexmlPage implements EnginePage<VexmlInput, VexmlContext> {
 		this.score = score;
 		return {
 			score,
-			inkMasks: () =>
+			inkMasks: (options) =>
 				new VexmlInkMasks(
 					score,
 					container,
 					input.config?.pixelRatio ?? window.devicePixelRatio,
-				).capture(),
+				).capture(options?.separateNoteDots),
 			container,
 			render,
 			paint,

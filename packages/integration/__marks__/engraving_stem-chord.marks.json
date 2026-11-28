@@ -1,0 +1,81 @@
+{
+	"screenshot": "engraving_stem-chord.png",
+	"width": 932,
+	"height": 417,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 802,
+				"y": 126
+			},
+			"to": {
+				"x": 802,
+				"y": 91
+			},
+			"label": "3½",
+			"note": "G/4 up-stem: 3½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 116
+			},
+			"to": {
+				"x": 901,
+				"y": 116
+			},
+			"label": "middle line",
+			"note": "Middle stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 806,
+				"y": 106
+			},
+			"to": {
+				"x": 806,
+				"y": 141
+			},
+			"label": "3½",
+			"note": "D/5 down-stem: 3½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 885,
+				"y": 146
+			},
+			"to": {
+				"x": 885,
+				"y": 111
+			},
+			"label": "3½",
+			"note": "C/4 up-stem: 3½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 833,
+				"y": 76
+			},
+			"to": {
+				"x": 833,
+				"y": 116
+			},
+			"label": "0",
+			"note": "C/6: ledger chord stem tip 0 spaces from middle line (expected 0)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

@@ -1,0 +1,66 @@
+{
+	"screenshot": "engraving_grace-slash-clear-ledger.png",
+	"width": 932,
+	"height": 739,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 719,
+				"y": 159.3
+			},
+			"to": {
+				"x": 719,
+				"y": 128
+			},
+			"label": "3¼",
+			"note": "A/3 up-stem: 3¼ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 119.3
+			},
+			"to": {
+				"x": 901,
+				"y": 119.3
+			},
+			"label": "middle line",
+			"note": "Middle stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 705.4,
+				"y": 127.2
+			},
+			"to": {
+				"x": 721.4,
+				"y": 164.3
+			},
+			"label": "Low A3 grace",
+			"note": "Low A3 grace",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 807.7,
+				"y": 56
+			},
+			"to": {
+				"x": 823.7,
+				"y": 84.3
+			},
+			"label": "High C6 grace",
+			"note": "High C6 grace",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

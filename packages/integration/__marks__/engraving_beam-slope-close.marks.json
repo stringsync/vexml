@@ -1,0 +1,36 @@
+{
+	"screenshot": "engraving_beam-slope-close.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 88,
+				"y": 968
+			},
+			"to": {
+				"x": 114,
+				"y": 968
+			},
+			"label": "2½ sp",
+			"note": "M12 average stem spacing 2½ spaces (<3)",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 86,
+				"y": 932
+			},
+			"to": {
+				"x": 269,
+				"y": 960
+			},
+			"label": "-½",
+			"note": "M12 close-set 32nds slope -½ spaces (expected -¼ or -½)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

@@ -3,9 +3,14 @@ import {
 	type RenderContext,
 	type Stave,
 	StaveConnector,
-	type StaveConnectorType,
+	StaveModifierPosition,
 } from 'vexflow/core';
-import { type BarKind, barRects, drawBarConnector } from './barline-width';
+import {
+	type BarStroke,
+	barRects,
+	drawBarConnector,
+	drawsFinalBarline,
+} from './barline-width';
 import {
 	BRACKET_X_SHIFT,
 	CONNECTOR_VERTICAL_OVERHANG,
@@ -13,6 +18,7 @@ import {
 	LABEL_GAP,
 	PART_GROUP_STEP,
 } from './constants';
+import { alignBarline } from './document-barline';
 import type { GroupTimeSignature } from './group-time-signature';
 import type { PartGroup, ScoreReader } from './score-reader';
 import type { StavePlan } from './stave-plan';
@@ -108,9 +114,8 @@ export class ConnectorDrawer {
 			}
 			// A repeat's bars run the full height of the system like any other barline, but its
 			// dots belong to each stave, and no connector type draws dots. So each stave draws
-			// the whole sign itself and a bold-double connector retraces just the bars: vexflow
-			// gives it the same geometry it gives a repeat barline, so it lands exactly over the
-			// per-stave bars and fills the gaps between staves.
+			// the whole sign itself and a connector retraces just the bars, using the same
+			// stroke geometry to fill the gaps between staves.
 			if (column.begRepeatX !== null) {
 				this.drawRepeatConnector(
 					column,
@@ -140,11 +145,18 @@ export class ConnectorDrawer {
 			// with no dotted, dashed or heavy member, so the exotic styles fall back to the plain
 			// line there. Single-stave scores (where these styles actually show up) get the full
 			// vocabulary via drawCustomBarline; widen this if a multi-stave fixture needs it.
-			let type: StaveConnectorType = 'singleRight';
+			let type: 'singleRight' | 'thinDouble' | 'final' = 'singleRight';
 			if (column.barStyle === 'light-light') {
 				type = 'thinDouble';
-			} else if (column.barStyle === 'light-heavy' || column.isLastMeasure) {
-				type = 'boldDoubleRight';
+			} else if (
+				drawsFinalBarline(
+					column.barStyle,
+					column.isLastMeasure,
+					column.repeatEnd,
+					true,
+				)
+			) {
+				type = 'final';
 			}
 			for (const run of this.barlineRuns(column)) {
 				drawBarConnector(this.context, {
@@ -241,6 +253,31 @@ export class ConnectorDrawer {
 		top.setX(measureX);
 	}
 
+	/* A connected pair uses the top stave's spacing so mixed-size staves share two strokes. */
+	alignBarlines(column: ConnectorColumn, staves: readonly Stave[]): void {
+		const { systemTop } = column;
+		if (systemTop && (column.repeatEnd || column.begRepeatX !== null)) {
+			for (const stave of staves) {
+				if (column.repeatEnd) {
+					alignBarline(stave, systemTop);
+				}
+				if (column.begRepeatX !== null) {
+					alignBarline(stave, systemTop, StaveModifierPosition.BEGIN);
+				}
+			}
+		}
+		if (column.barStyle !== 'light-light' || column.repeatEnd) {
+			return;
+		}
+		for (const { top, bottom } of this.barlineRuns(column)) {
+			for (const stave of staves) {
+				if (stave.getY() >= top.getY() && stave.getY() <= bottom.getY()) {
+					alignBarline(stave, top);
+				}
+			}
+		}
+	}
+
 	/*
 	 * The vertical runs a measure's barline connector is drawn in: one per unbroken stretch of
 	 * parts (see barlineBreaks), which by default means one run per part. A run always spans
@@ -315,7 +352,8 @@ export class ConnectorDrawer {
 				: stave.getBottomLineBottomY() - topY;
 			this.context.save();
 			this.context.setFillStyle(this.notationColor);
-			for (const [offset, width] of barRects(style.bars, style.gap)) {
+			const gap = style.gap === undefined ? undefined : style.gap * spacing;
+			for (const [offset, width] of barRects(style.bars, gap)) {
 				if (style.dash) {
 					// fillRect can't dash, so walk the stroke in [on, off] runs. The last run is
 					// clipped to the bar's height rather than overshooting past the bottom line.
@@ -329,7 +367,10 @@ export class ConnectorDrawer {
 						);
 					}
 				} else {
-					this.context.fillRect(x + offset, y, width, height);
+					// Whole-pixel edges, so a stroke at a fractional x stays solid instead of grey.
+					const left = Math.round(x + offset);
+					const right = Math.max(left + 1, Math.round(x + offset + width));
+					this.context.fillRect(left, y, right - left, height);
 				}
 			}
 			this.context.restore();
@@ -355,7 +396,7 @@ export class ConnectorDrawer {
 		if (!column.isSystemStart || !column.systemTop || !column.systemBottom) {
 			return null;
 		}
-		const symbol = this.staves.systemSymbol(this.parts);
+		const symbol = this.staves.systemSymbol(this.parts, this.partGroups);
 		if (symbol === null) {
 			return null;
 		}
@@ -364,7 +405,9 @@ export class ConnectorDrawer {
 		// The bracket's curls reach past the staves; a brace stops at their outer lines.
 		const curl = symbol === 'bracket' ? CONNECTOR_VERTICAL_OVERHANG : 0;
 		return {
-			left: column.measureX - this.staves.systemOverhang(this.parts),
+			left:
+				column.measureX -
+				this.staves.systemOverhang(this.parts, this.partGroups),
 			top: top - curl,
 			bottom: bottom + curl,
 		};
@@ -380,18 +423,32 @@ export class ConnectorDrawer {
 	 * The nudge is restored right after each draw, so nothing downstream sees a moved stave.
 	 */
 	private drawPartGroupConnectors(column: ConnectorColumn): void {
-		const maxDepth = Math.max(0, ...this.partGroups.map((g) => g.depth));
+		const drawable: Array<{ group: PartGroup; top: Stave; bottom: Stave }> = [];
 		for (const group of this.partGroups) {
 			const top = column.partStaves[group.fromPart]?.top;
 			const bottom = column.partStaves[group.toPart]?.bottom;
 			if (!top || !bottom) {
 				continue;
 			}
+			// A single-part <part-group> brace on a multi-stave part (e.g. a Sibelius Piano
+			// export) duplicates the brace drawPartSymbol already drew on its staves. On a
+			// single-stave part (top === bottom), drawPartSymbol drew nothing, so draw the
+			// compressed single-stave brace here (Behind Bars p. 343).
+			if (group.fromPart === group.toPart && top !== bottom) {
+				continue;
+			}
+			drawable.push({ group, top, bottom });
+		}
+		const maxDepth = Math.max(0, ...drawable.map(({ group }) => group.depth));
+		for (const { group, top, bottom } of drawable) {
+			const singleStaveBrace = group.symbol === 'brace' && top === bottom;
 			// The innermost group hugs the system; each level out steps further left. Depth
-			// counts inward, so invert it.
+			// counts inward, so invert it. A single-stave brace keeps the same x as a part's
+			// own grand-staff brace (no BRACKET_X_SHIFT) so it stays inside the left margin
+			// and aligns with multi-stave braces.
 			top.setX(
 				column.measureX -
-					BRACKET_X_SHIFT -
+					(singleStaveBrace ? 0 : BRACKET_X_SHIFT) -
 					PART_GROUP_STEP * (maxDepth - group.depth),
 			);
 			this.context.openGroup('vexml-staveconnector');
@@ -468,9 +525,10 @@ export class ConnectorDrawer {
 
 /*
  * The bars of each <bar-style> vexflow has no type for, left to right, laid out by barRects
- * at the document's barline widths (vexflow's 1px thin and 3px thick by default), so a custom
- * style sits flush with the plain dividers around it. `gap` is the space between its bars
- * where it is not barRects' 2px. `dash` turns the stroke into a broken line ([on, off]
+ * at the document's barline widths (a beam-weight heavy bar by default, the final barline's),
+ * so a custom style sits flush with the plain dividers around it. `gap` is the space between
+ * its bars in staff spaces, a repeat sign's third of a space, where it is not barRects' 2px.
+ * `dash` turns the stroke into a broken line ([on, off]
  * lengths).
  *
  * 'tick' and 'short' are the abbreviated dividers: both are single thin strokes that cover
@@ -480,7 +538,7 @@ export class ConnectorDrawer {
 const CUSTOM_BAR_STYLES: Record<
 	string,
 	{
-		bars: BarKind[];
+		bars: BarStroke[];
 		gap?: number;
 		dash?: [number, number];
 		span?: [from: number, to: number];
@@ -489,8 +547,8 @@ const CUSTOM_BAR_STYLES: Record<
 	dotted: { bars: ['light'], dash: [1, 3] },
 	dashed: { bars: ['light'], dash: [4, 4] },
 	heavy: { bars: ['heavy'] },
-	'heavy-light': { bars: ['heavy', 'light'] },
-	'heavy-heavy': { bars: ['heavy', 'heavy'], gap: 1 },
+	'heavy-light': { bars: ['heavy', 'ordinary'], gap: 1 / 3 },
+	'heavy-heavy': { bars: ['heavy', 'heavy'], gap: 1 / 3 },
 	tick: { bars: ['light'], span: [-0.5, 0.5] },
 	short: { bars: ['light'], span: [1, 3] },
 };

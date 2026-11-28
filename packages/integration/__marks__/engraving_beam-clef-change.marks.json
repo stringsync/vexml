@@ -1,0 +1,36 @@
+{
+	"screenshot": "engraving_beam-clef-change.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 132,
+				"y": 1582
+			},
+			"to": {
+				"x": 154,
+				"y": 1610
+			},
+			"label": "clef",
+			"note": "M24 mid-group bass clef",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 84,
+				"y": 1626
+			},
+			"to": {
+				"x": 178,
+				"y": 1636
+			},
+			"label": "clear",
+			"note": "M24 beam clears the mid-group clef (0px overlap)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

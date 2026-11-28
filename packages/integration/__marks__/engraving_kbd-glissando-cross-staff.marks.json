@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_kbd-glissando-cross-staff.png",
+	"width": 932,
+	"height": 456,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 803,
+				"y": 95
+			},
+			"to": {
+				"x": 854,
+				"y": 101
+			},
+			"label": "Glissando",
+			"note": "Glissando",
+			"role": "measure",
+			"pass": false
+		}
+	]
+}

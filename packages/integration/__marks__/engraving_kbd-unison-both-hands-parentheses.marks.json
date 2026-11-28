@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_kbd-unison-both-hands-parentheses.png",
+	"width": 932,
+	"height": 344,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 494.1,
+				"y": 138
+			},
+			"to": {
+				"x": 519.1,
+				"y": 154
+			},
+			"label": "Parenthesized C4",
+			"note": "Parenthesized C4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 348.6,
+				"y": 131
+			},
+			"to": {
+				"x": 360.6,
+				"y": 141
+			},
+			"label": "Plain E4",
+			"note": "Plain E4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

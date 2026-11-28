@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_acc-double-stem-altered-unison.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 447.5,
+				"y": 268
+			},
+			"to": {
+				"x": 457.5,
+				"y": 296
+			},
+			"label": "F/4 sign",
+			"note": "F/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 472.5,
+				"y": 248
+			},
+			"to": {
+				"x": 485.5,
+				"y": 276
+			},
+			"label": "C#/5 sign",
+			"note": "C#/5 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 501.5,
+				"y": 248
+			},
+			"to": {
+				"x": 511.5,
+				"y": 276
+			},
+			"label": "C/5 sign",
+			"note": "C/5 sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

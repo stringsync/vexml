@@ -9,14 +9,13 @@ import {
   resolveConfig,
   FontFamilies,
   ElementFactory,
-  CssFont,
   ScoreEngraver,
   CanvasPaintProbe
-} from "./index-8zre4znc.js";
+} from "./index-rj506x4q.js";
 import {
   SNAPSHOT_VERSION2,
   PaintDecoder
-} from "./index-6pn8cpem.js";
+} from "./index-z3hf2qfa.js";
 
 // detached-viewport.ts
 class DetachedViewport {
@@ -81,6 +80,69 @@ class InertDecoration {
   has(_target) {
     return false;
   }
+}
+
+// css-font.ts
+class CssFont {
+  style;
+  weightName;
+  weight;
+  size;
+  sizePx;
+  families;
+  constructor(style, weightName, weight, size, sizePx, families) {
+    this.style = style;
+    this.weightName = weightName;
+    this.weight = weight;
+    this.size = size;
+    this.sizePx = sizePx;
+    this.families = families;
+  }
+  static parse(shorthand) {
+    let style = "normal";
+    let weightName = "normal";
+    const words = shorthand.trim().split(/\s+/);
+    let at = 0;
+    for (;at < words.length; at++) {
+      const word = words[at] ?? "";
+      if (word === "italic" || word === "oblique") {
+        style = word;
+      } else if (WEIGHTS.has(word) || /^\d{1,4}$/.test(word)) {
+        weightName = word;
+      } else if (!MODIFIERS.has(word)) {
+        break;
+      }
+    }
+    const size = (words[at] ?? "").split("/")[0] ?? "";
+    const sizePx = toPx(size);
+    if (sizePx === null) {
+      return null;
+    }
+    const families = words.slice(at + 1).join(" ").split(",").map((name) => name.trim().replace(/^(['"])(.*)\1$/, "$2")).filter((name) => name.length > 0);
+    return new CssFont(style, weightName, WEIGHTS.get(weightName) ?? Number(weightName), size, sizePx, families);
+  }
+}
+var WEIGHTS = new Map([
+  ["normal", 400],
+  ["bold", 700],
+  ["lighter", 300],
+  ["bolder", 700]
+]);
+var MODIFIERS = new Set(["normal", "small-caps"]);
+var UNITS = {
+  px: 1,
+  pt: 4 / 3,
+  pc: 16,
+  in: 96,
+  cm: 96 / 2.54,
+  mm: 96 / 25.4,
+  em: 16,
+  rem: 16
+};
+function toPx(size) {
+  const match = /^(\d*\.?\d+)([a-z]+)$/.exec(size);
+  const unit = match ? UNITS[match[2] ?? ""] : undefined;
+  return match && unit !== undefined ? Number(match[1]) * unit : null;
 }
 
 // outline-face.ts

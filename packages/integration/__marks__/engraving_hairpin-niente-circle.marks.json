@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_hairpin-niente-circle.png",
+	"width": 932,
+	"height": 1373,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 1291
+			},
+			"to": {
+				"x": 222,
+				"y": 1301
+			},
+			"label": "Hairpin with circle",
+			"note": "Hairpin with circle",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

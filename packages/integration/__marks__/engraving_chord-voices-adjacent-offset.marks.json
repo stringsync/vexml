@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_chord-voices-adjacent-offset.png",
+	"width": 932,
+	"height": 1049,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 325.3,
+				"y": 106
+			},
+			"to": {
+				"x": 337.3,
+				"y": 116
+			},
+			"label": "Undisplaced head, upper voice",
+			"note": "Undisplaced head, upper voice",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 351.3,
+				"y": 111
+			},
+			"to": {
+				"x": 363.3,
+				"y": 121
+			},
+			"label": "Undisplaced head, lower voice",
+			"note": "Undisplaced head, lower voice",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 325.3,
+				"y": 208
+			},
+			"to": {
+				"x": 337.3,
+				"y": 218
+			},
+			"label": "M2 reference head",
+			"note": "M2 reference head",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

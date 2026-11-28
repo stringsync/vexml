@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_artic-stem-end-gap.png",
+	"width": 932,
+	"height": 1047,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 540,
+				"y": 58
+			},
+			"to": {
+				"x": 543,
+				"y": 61
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 625,
+				"y": 58
+			},
+			"to": {
+				"x": 628,
+				"y": 61
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 711,
+				"y": 58
+			},
+			"to": {
+				"x": 714,
+				"y": 61
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 796,
+				"y": 58
+			},
+			"to": {
+				"x": 799,
+				"y": 61
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 540,
+				"y": 162
+			},
+			"to": {
+				"x": 543,
+				"y": 165
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 625,
+				"y": 162
+			},
+			"to": {
+				"x": 628,
+				"y": 165
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 711,
+				"y": 162
+			},
+			"to": {
+				"x": 714,
+				"y": 165
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 796,
+				"y": 162
+			},
+			"to": {
+				"x": 799,
+				"y": 165
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

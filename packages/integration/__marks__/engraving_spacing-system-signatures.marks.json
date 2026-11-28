@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_spacing-system-signatures.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 63,
+				"y": 89
+			},
+			"to": {
+				"x": 73,
+				"y": 89
+			},
+			"label": "1",
+			"note": "Clef to key: 1 stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 94,
+				"y": 89
+			},
+			"to": {
+				"x": 110,
+				"y": 89
+			},
+			"label": "1½",
+			"note": "Key to metre: 1½ stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

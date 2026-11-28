@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_trill-line-stops-barline.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 454,
+				"y": 77
+			},
+			"to": {
+				"x": 478,
+				"y": 82
+			},
+			"label": "Trill line",
+			"note": "Trill line",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

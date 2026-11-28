@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_spacing-single-accidental-rhythm.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 302.2,
+				"y": 569
+			},
+			"to": {
+				"x": 337.7,
+				"y": 569
+			},
+			"label": "3½",
+			"note": "M8 after 0.5 quarter-note beats: 3½ stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 337.7,
+				"y": 569
+			},
+			"to": {
+				"x": 373.3,
+				"y": 569
+			},
+			"label": "3½",
+			"note": "M8 after 0.5 quarter-note beats: 3½ stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 373.3,
+				"y": 569
+			},
+			"to": {
+				"x": 408.8,
+				"y": 569
+			},
+			"label": "3½",
+			"note": "M8 after 0.5 quarter-note beats: 3½ stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 308.2,
+				"y": 569
+			},
+			"to": {
+				"x": 320,
+				"y": 569
+			},
+			"label": "1¼",
+			"note": "Clearance before accidental: 1¼ stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

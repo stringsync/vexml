@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_dyn-multi-char-align-last.png",
+	"width": 932,
+	"height": 1373,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 73,
+				"y": 335
+			},
+			"to": {
+				"x": 112,
+				"y": 349
+			},
+			"label": "ppp",
+			"note": "ppp",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 126,
+				"y": 330
+			},
+			"to": {
+				"x": 154,
+				"y": 349
+			},
+			"label": "ff",
+			"note": "ff",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

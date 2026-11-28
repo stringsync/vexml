@@ -8,8 +8,10 @@ export type LyricAnnotationOptions = {
     justify?: LyricJustify;
     /** Ratio of the syllable's font-size to the score's lyric-font. */
     scale?: number;
-    /** Whether the text ends in the hyphen joining it to the next syllable. */
+    /** Whether a hyphen follows this syllable ('begin'/'middle'). */
     hyphenated?: boolean;
+    /** Whether this syllable continues a divided word ('middle'/'end'). */
+    continues?: boolean;
     documentPosition?: DocumentPosition | null;
 };
 export declare class LyricAnnotation extends Annotation implements LyricMark {
@@ -23,6 +25,7 @@ export declare class LyricAnnotation extends Annotation implements LyricMark {
     readonly textSize: number;
     readonly justify: LyricJustify;
     readonly hyphenated: boolean;
+    readonly continues: boolean;
     readonly documentPosition: DocumentPosition | null;
     private baselineY;
     private positionX;

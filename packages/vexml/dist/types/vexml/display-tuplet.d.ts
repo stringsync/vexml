@@ -10,11 +10,24 @@ export type DisplayTupletOptions = TupletOptions & {
     normalValue?: TupletNoteValue | null;
     curved?: boolean;
     bracketWidth?: number | null;
+    rescale?: boolean;
 };
 export declare class DisplayTuplet extends Tuplet {
     private readonly curved;
     private readonly bracketWidth;
+    private readonly runs;
+    private slopedRange;
     constructor(notes: ConstructorParameters<typeof Tuplet>[0], opts?: DisplayTupletOptions);
     draw(): void;
+    getLocation(): number;
+    isBracketed(): boolean;
+    shiftYOffset(delta: number): void;
+    private numeralHeight;
+    getBracketYRange(): {
+        top: number;
+        bottom: number;
+    } | null;
+    private resolveSlopedBracket;
+    private beamedBracketSlope;
     private arc;
 }

@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_acc-chord-fourth-fifth-overlap.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 794.2,
+				"y": 269
+			},
+			"to": {
+				"x": 811.8,
+				"y": 295
+			},
+			"label": "Eb/4 sign",
+			"note": "Eb/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 799.8,
+				"y": 249
+			},
+			"to": {
+				"x": 811.8,
+				"y": 275
+			},
+			"label": "Bb/4 sign",
+			"note": "Bb/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 833.2,
+				"y": 268
+			},
+			"to": {
+				"x": 853.2,
+				"y": 296
+			},
+			"label": "F/4 sign",
+			"note": "F/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 843.2,
+				"y": 253
+			},
+			"to": {
+				"x": 853.2,
+				"y": 281
+			},
+			"label": "B/4 sign",
+			"note": "B/4 sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

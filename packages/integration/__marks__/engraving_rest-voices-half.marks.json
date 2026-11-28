@@ -1,0 +1,51 @@
+{
+	"screenshot": "engraving_rest-voices-half.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 212,
+				"y": 121
+			},
+			"to": {
+				"x": 328.9,
+				"y": 121
+			},
+			"label": "middle line",
+			"note": "M2 middle stave line at y=105",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 227,
+				"y": 103
+			},
+			"to": {
+				"x": 242,
+				"y": 113
+			},
+			"label": "V1 above",
+			"note": "M2 V1 half rest bottom y=95 vs middle y=105",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 283.4,
+				"y": 123
+			},
+			"to": {
+				"x": 298.4,
+				"y": 133
+			},
+			"label": "V2 below",
+			"note": "M2 V2 half rest top y=109 vs middle y=105",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

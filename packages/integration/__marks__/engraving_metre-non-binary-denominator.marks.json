@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_metre-non-binary-denominator.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 79,
+				"y": 256
+			},
+			"to": {
+				"x": 96,
+				"y": 296
+			},
+			"label": "4/6",
+			"note": "4/6",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 297,
+				"y": 256
+			},
+			"to": {
+				"x": 327,
+				"y": 296
+			},
+			"label": "5/10",
+			"note": "5/10",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

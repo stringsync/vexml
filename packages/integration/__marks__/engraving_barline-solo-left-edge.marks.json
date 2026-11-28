@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_barline-solo-left-edge.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 31,
+				"y": 96
+			},
+			"to": {
+				"x": 32,
+				"y": 136
+			},
+			"label": "Left edge of the solo stave",
+			"note": "Left edge of the solo stave",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

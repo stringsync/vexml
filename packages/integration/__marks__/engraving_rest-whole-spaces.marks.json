@@ -1,0 +1,187 @@
+{
+	"screenshot": "engraving_rest-whole-spaces.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 142.3,
+				"y": 95
+			},
+			"to": {
+				"x": 155.3,
+				"y": 127
+			},
+			"label": "-1",
+			"note": "M1 V1 rest moved -1 spaces from M6 home (expected whole integer)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 116,
+				"y": 125
+			},
+			"to": {
+				"x": 129,
+				"y": 157
+			},
+			"label": "+2",
+			"note": "M1 V2 rest moved 2 spaces from M6 home (expected whole integer)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 168.6,
+				"y": 124
+			},
+			"to": {
+				"x": 181.6,
+				"y": 132
+			},
+			"label": "+1",
+			"note": "M1 V2 rest moved 1 spaces from M6 home (expected whole integer)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 228,
+				"y": 104
+			},
+			"to": {
+				"x": 241,
+				"y": 112
+			},
+			"label": "-1",
+			"note": "M2 V1 rest moved -1 spaces from M6 home (expected whole integer)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 284.4,
+				"y": 124
+			},
+			"to": {
+				"x": 297.4,
+				"y": 132
+			},
+			"label": "+1",
+			"note": "M2 V2 rest moved 1 spaces from M6 home (expected whole integer)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 344.9,
+				"y": 104
+			},
+			"to": {
+				"x": 357.9,
+				"y": 112
+			},
+			"label": "-1",
+			"note": "M3 V1 rest moved -1 spaces from M6 home (expected whole integer)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 344.9,
+				"y": 122
+			},
+			"to": {
+				"x": 356.9,
+				"y": 142
+			},
+			"label": "+1",
+			"note": "M3 V2 rest moved 1 spaces from M6 home (expected whole integer)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 507.3,
+				"y": 102
+			},
+			"to": {
+				"x": 522.3,
+				"y": 132
+			},
+			"label": "-1",
+			"note": "M4 V1 rest moved -1 spaces from M6 home (expected whole integer)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 527.6,
+				"y": 102
+			},
+			"to": {
+				"x": 539.6,
+				"y": 122
+			},
+			"label": "-1",
+			"note": "M4 V1 rest moved -1 spaces from M6 home (expected whole integer)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 582.3,
+				"y": 104
+			},
+			"to": {
+				"x": 595.3,
+				"y": 112
+			},
+			"label": "-1",
+			"note": "M4 V1 rest moved -1 spaces from M6 home (expected whole integer)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 642.3,
+				"y": 75
+			},
+			"to": {
+				"x": 655.3,
+				"y": 107
+			},
+			"label": "-3",
+			"note": "M5 V1 rest moved -3 spaces from M6 home (expected whole integer)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 698.8,
+				"y": 104
+			},
+			"to": {
+				"x": 711.8,
+				"y": 112
+			},
+			"label": "-1",
+			"note": "M5 V1 rest moved -1 spaces from M6 home (expected whole integer)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

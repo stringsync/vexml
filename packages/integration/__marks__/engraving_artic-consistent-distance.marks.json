@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_artic-consistent-distance.png",
+	"width": 932,
+	"height": 1047,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 93,
+				"y": 302
+			},
+			"to": {
+				"x": 96,
+				"y": 305
+			},
+			"label": "Dot 1",
+			"note": "Dot 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 190,
+				"y": 290
+			},
+			"to": {
+				"x": 193,
+				"y": 293
+			},
+			"label": "Dot 2",
+			"note": "Dot 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 288,
+				"y": 260
+			},
+			"to": {
+				"x": 291,
+				"y": 263
+			},
+			"label": "Dot 3",
+			"note": "Dot 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 385,
+				"y": 248
+			},
+			"to": {
+				"x": 388,
+				"y": 251
+			},
+			"label": "Dot 4",
+			"note": "Dot 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

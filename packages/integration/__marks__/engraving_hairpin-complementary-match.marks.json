@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_hairpin-complementary-match.png",
+	"width": 932,
+	"height": 1373,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 698,
+				"y": 320
+			},
+			"to": {
+				"x": 805,
+				"y": 330
+			},
+			"label": "Crescendo",
+			"note": "Crescendo",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 810,
+				"y": 320
+			},
+			"to": {
+				"x": 862,
+				"y": 330
+			},
+			"label": "Diminuendo",
+			"note": "Diminuendo",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

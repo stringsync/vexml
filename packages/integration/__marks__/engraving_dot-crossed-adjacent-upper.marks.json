@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_dot-crossed-adjacent-upper.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 414.5,
+				"y": 586
+			},
+			"to": {
+				"x": 426.5,
+				"y": 596
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 434.7,
+				"y": 581
+			},
+			"to": {
+				"x": 446.7,
+				"y": 591
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 429,
+				"y": 589
+			},
+			"to": {
+				"x": 433,
+				"y": 593
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

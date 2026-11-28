@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-ledger-no-intersect.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 741,
+				"y": 270
+			},
+			"to": {
+				"x": 806,
+				"y": 278
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

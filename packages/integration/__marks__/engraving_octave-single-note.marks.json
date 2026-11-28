@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_octave-single-note.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 416,
+				"y": 60
+			},
+			"to": {
+				"x": 424,
+				"y": 78
+			},
+			"label": "corner ¾",
+			"note": "M3 one-note octave sign end corner height is ¾ spaces (expected ≥½)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

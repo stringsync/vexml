@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_spacing-tight-symbols.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 656.6,
+				"y": 569
+			},
+			"to": {
+				"x": 662,
+				"y": 569
+			},
+			"label": "½",
+			"note": "Opening note and flag to inserted clef: ½ stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 680,
+				"y": 569
+			},
+			"to": {
+				"x": 688,
+				"y": 569
+			},
+			"label": "¾",
+			"note": "Inserted clef to accidental: ¾ stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

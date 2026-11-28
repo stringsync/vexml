@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_tremolo-two-note-cross-staff.png",
+	"width": 932,
+	"height": 342,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 134,
+				"y": 153
+			},
+			"to": {
+				"x": 149,
+				"y": 178
+			},
+			"label": "Cross m.1 #1",
+			"note": "Cross m.1 #1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 199,
+				"y": 152
+			},
+			"to": {
+				"x": 235,
+				"y": 180
+			},
+			"label": "Cross m.1 #2",
+			"note": "Cross m.1 #2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 323,
+				"y": 153
+			},
+			"to": {
+				"x": 346,
+				"y": 179
+			},
+			"label": "Cross m.2 #1",
+			"note": "Cross m.2 #1",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

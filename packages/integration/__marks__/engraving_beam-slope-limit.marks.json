@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_beam-slope-limit.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 438,
+				"y": 709
+			},
+			"to": {
+				"x": 468,
+				"y": 723
+			},
+			"label": "½",
+			"note": "M10 beam spans ½ spaces (expected ≤1)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 477,
+				"y": 809
+			},
+			"to": {
+				"x": 507,
+				"y": 823
+			},
+			"label": "½",
+			"note": "M10 beam spans ½ spaces (expected ≤1)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 637,
+				"y": 694
+			},
+			"to": {
+				"x": 883,
+				"y": 723
+			},
+			"label": "2",
+			"note": "M11 beam spans 2 spaces (expected ≤2)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_slur-stemless-as-stemmed.png",
+	"width": 932,
+	"height": 1202,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 125,
+				"y": 791
+			},
+			"to": {
+				"x": 351,
+				"y": 810
+			},
+			"label": "Low whole notes",
+			"note": "Low whole notes",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 527,
+				"y": 729
+			},
+			"to": {
+				"x": 732,
+				"y": 746
+			},
+			"label": "Centre-line whole notes",
+			"note": "Centre-line whole notes",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

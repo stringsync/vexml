@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tuplet-bracket-partial-beam.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 706,
+				"y": 221
+			},
+			"to": {
+				"x": 773,
+				"y": 242
+			},
+			"label": "partial-beam bracket",
+			"note": "partial-beam bracket",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

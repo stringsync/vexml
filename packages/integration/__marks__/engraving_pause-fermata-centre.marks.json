@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_pause-fermata-centre.png",
+	"width": 932,
+	"height": 412,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 476,
+				"y": 77
+			},
+			"to": {
+				"x": 500,
+				"y": 90
+			},
+			"label": "F1",
+			"note": "F1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 543,
+				"y": 77
+			},
+			"to": {
+				"x": 567,
+				"y": 90
+			},
+			"label": "F2",
+			"note": "F2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 609,
+				"y": 67
+			},
+			"to": {
+				"x": 633,
+				"y": 80
+			},
+			"label": "F3",
+			"note": "F3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 675,
+				"y": 62
+			},
+			"to": {
+				"x": 699,
+				"y": 75
+			},
+			"label": "F4",
+			"note": "F4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 723,
+				"y": 69
+			},
+			"to": {
+				"x": 747,
+				"y": 82
+			},
+			"label": "F5",
+			"note": "F5",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

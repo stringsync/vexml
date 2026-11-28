@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_vocal-hyphen-mid-height-not-extender.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 316,
+				"y": 170
+			},
+			"to": {
+				"x": 319,
+				"y": 171
+			},
+			"label": "Centred hyphen",
+			"note": "Centred hyphen",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 713,
+				"y": 170
+			},
+			"to": {
+				"x": 717,
+				"y": 171
+			},
+			"label": "Centred hyphen",
+			"note": "Centred hyphen",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

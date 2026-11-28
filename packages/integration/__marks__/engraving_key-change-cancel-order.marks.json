@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_key-change-cancel-order.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 73,
+				"y": 237
+			},
+			"to": {
+				"x": 105,
+				"y": 285
+			},
+			"label": "M5: 3 sharps only",
+			"note": "M5: 3 sharps only",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 347,
+				"y": 242
+			},
+			"to": {
+				"x": 357,
+				"y": 270
+			},
+			"label": "M6: 1 sharp only",
+			"note": "M6: 1 sharp only",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

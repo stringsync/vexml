@@ -8,15 +8,16 @@
 		"vex": "./index.ts"
 	},
 	"dependencies": {
-		"@stringsync/mdom": "^the version @stringsync/mdom releases",
+		"@stringsync/mdom": "^0.8.19",
 		"@vexml/renderer": "workspace:*",
 		"core": "workspace:*",
 		"pngjs": "^7.0.0",
-		"vite": "^8.1.0",
+		"vite": "catalog:",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@types/pngjs": "^6.0.5"
+		"@types/pngjs": "^6.0.5",
+		"verovio": "^6.4.1"
 	},
 	"exports": {
 		"./finding-markup": "./finding-markup.ts",
@@ -25,10 +26,6 @@
 		"./measure-locator": "./measure-locator.ts",
 		"./measure-map": "./measure-map.ts",
 		"./measure-slicer": "./measure-slicer.ts",
-		"./render-lint": "./render-lint.ts",
-		"./review-data": "./review-data.ts",
-		"./review-message": "./review-message.ts",
-		"./review-saver": "./review-saver.ts",
-		"./rule-inbox-data": "./rule-inbox-data.ts"
+		"./render-lint": "./render-lint.ts"
 	}
 }

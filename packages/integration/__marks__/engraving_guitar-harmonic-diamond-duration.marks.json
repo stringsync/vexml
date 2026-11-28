@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_guitar-harmonic-diamond-duration.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 293.6,
+				"y": 96
+			},
+			"to": {
+				"x": 303.6,
+				"y": 106
+			},
+			"label": "Harmonic 1",
+			"note": "Harmonic 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 357.6,
+				"y": 96
+			},
+			"to": {
+				"x": 367.6,
+				"y": 106
+			},
+			"label": "Harmonic 2",
+			"note": "Harmonic 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 393.6,
+				"y": 96
+			},
+			"to": {
+				"x": 403.6,
+				"y": 106
+			},
+			"label": "Harmonic 3",
+			"note": "Harmonic 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 420.6,
+				"y": 111
+			},
+			"to": {
+				"x": 430.6,
+				"y": 121
+			},
+			"label": "Harmonic 4",
+			"note": "Harmonic 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

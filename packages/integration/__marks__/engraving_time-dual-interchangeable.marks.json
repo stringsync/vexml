@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_time-dual-interchangeable.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 79,
+				"y": 96
+			},
+			"to": {
+				"x": 147,
+				"y": 136
+			},
+			"label": "M1 dual time",
+			"note": "M1 dual time",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 360,
+				"y": 96
+			},
+			"to": {
+				"x": 422,
+				"y": 136
+			},
+			"label": "M2 dual time",
+			"note": "M2 dual time",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 653,
+				"y": 96
+			},
+			"to": {
+				"x": 718,
+				"y": 136
+			},
+			"label": "M3 dual time",
+			"note": "M3 dual time",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

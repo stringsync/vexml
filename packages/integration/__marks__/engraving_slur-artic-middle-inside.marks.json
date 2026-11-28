@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_slur-artic-middle-inside.png",
+	"width": 932,
+	"height": 1047,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 93,
+				"y": 554
+			},
+			"to": {
+				"x": 686,
+				"y": 581
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 290,
+				"y": 573
+			},
+			"to": {
+				"x": 293,
+				"y": 576
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 487,
+				"y": 573
+			},
+			"to": {
+				"x": 490,
+				"y": 576
+			},
+			"label": "Dot",
+			"note": "Dot",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

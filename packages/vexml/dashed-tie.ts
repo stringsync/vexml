@@ -1,5 +1,5 @@
 import { Rect } from 'core/geometry';
-import { StaveNote, StaveTie, type TieNotes } from 'vexflow/core';
+import { Dot, StaveNote, StaveTie, type TieNotes } from 'vexflow/core';
 import type { DocumentBezier } from './score-reader';
 
 export type DashedTieOptions = {
@@ -9,6 +9,8 @@ export type DashedTieOptions = {
 	bezier?: DocumentBezier | null;
 	/** Draw a solid tie in the engraved shape rather than vexflow's two parabolas. */
 	fit?: boolean;
+	/** Extra stave-spaces to push a chord tie outward when an inner tie curving the same way claims its space. */
+	extraOff?: number;
 };
 
 /* A solid tie's engraved shape, in staff spaces. The arc stands off its ends by
@@ -22,16 +24,28 @@ const TIE_TIP = 0.125;
 const TIE_SHOULDER = 0.24;
 /* How far a lone note's tie stands off the notehead's centre, wherever that falls on the stave. */
 const TIE_OFF_HEAD = 0.91;
-/* A chord's ties sit in the spaces: each end this far past the staff line (real or implied) on
- * the tie's side of the head, at least TIE_CHORD_MIN off its centre. */
-const TIE_OFF_LINE = 0.32;
-const TIE_CHORD_MIN = 0.3;
-/* How far a free end tucks in under its notehead, from the edge it faces. */
-const TIE_TUCK = 0.37;
+/* A chord's ties sit in the spaces: a line note's end sits this far past its line into the
+ * adjacent space; a space note's end stays in its own space, this far shy of the line on the
+ * tie's side (0.5 - TIE_OFF_LINE off its centre). */
+export const TIE_OFF_LINE = 0.32;
+/* A displaced second's tie curving away from its partner into another same-direction tie
+ * starts clear of its own head in the space between the heads, pushing the outer tie clear
+ * of its own head as well. */
+export const TIE_OFF_DISPLACED = 1 - TIE_OFF_LINE;
+/* How far a free end tucks in under its notehead, from the inner edge (between centre and edge). */
+const TIE_TUCK = 0.24;
 /* The gap to whatever a blocked end must start beside: a head level with it, or else a stem or
  * another head of the chord. */
 const TIE_GAP_LEVEL = 0.05;
 const TIE_GAP_BLOCKED = 0.2;
+/* White space between an incoming system-break tie and a repeated accidental it curves past. */
+const TIE_ACCIDENTAL_CLEARANCE = 0.25;
+/* White space left between an outgoing system-break tie and the system's closing barline
+ * (Behind Bars p. 65). */
+const TIE_BARLINE_GAP = 0.4;
+/* Horizontal span of a short open laissez-vibrer tie (<tied type="let-ring"/>), in staff spaces
+ * (Behind Bars p. 72). */
+export const TIE_LV_LENGTH = 2;
 
 /*
  * A tie that can be dashed or dotted (<tied line-type>). vexflow fills a tie as a lens between
@@ -48,12 +62,30 @@ export class DashedTie extends StaveTie {
 	private readonly tip: number | null;
 	private readonly bezier: DocumentBezier | null;
 	private readonly fit: boolean;
+	private readonly extraOff: number;
 	constructor(notes: TieNotes, opts: DashedTieOptions = {}) {
 		super(notes);
 		this.dash = opts.dash ?? null;
 		this.tip = opts.tip ?? null;
 		this.bezier = opts.bezier ?? null;
 		this.fit = opts.fit ?? false;
+		this.extraOff = opts.extraOff ?? 0;
+	}
+
+	override getLastX(): number {
+		const x = super.getLastX();
+		const notes = this.getNotes();
+		if (
+			!notes.lastNote &&
+			notes.firstNote &&
+			notes.laissezVibrer === undefined
+		) {
+			const stave = notes.firstNote.getStave();
+			if (stave) {
+				return x - TIE_BARLINE_GAP * stave.getSpacingBetweenLines();
+			}
+		}
+		return x;
 	}
 
 	override renderTie(params: {
@@ -194,6 +226,7 @@ export class DashedTie extends StaveTie {
 		}
 		const space = stave.getSpacingBetweenLines();
 		const dir = params.direction;
+		const lv = notes.laissezVibrer !== undefined;
 		const ctx = this.checkContext();
 		for (let i = 0; i < firstIndexes.length; i++) {
 			const firstIndex = firstIndexes[i] as number;
@@ -201,15 +234,20 @@ export class DashedTie extends StaveTie {
 			const firstHead = params.firstYs[firstIndex] ?? 0;
 			const lastHead = params.lastYs[lastIndex] ?? 0;
 			const firstOff = this.offHead(first, firstHead, dir, stave);
-			const lastOff = this.offHead(last, lastHead, dir, stave);
+			const lastOff = lv
+				? firstOff
+				: this.offHead(last, lastHead, dir, last?.getStave() ?? stave);
 			const firstX = first
 				? this.startX(first, firstIndex, firstOff, dir, params.firstX, space)
 				: params.firstX;
-			const lastX = last
-				? this.endX(last, lastIndex, lastOff, dir, params.lastX, space)
-				: params.lastX;
-			const firstY = firstHead + dir * firstOff * space;
-			const lastY = lastHead + dir * lastOff * space;
+			let lastX = params.lastX;
+			if (last) {
+				lastX = this.endX(last, lastIndex, lastOff, dir, params.lastX, space);
+			} else if (lv) {
+				lastX = firstX + (notes.laissezVibrer as number);
+			}
+			let firstY = firstHead + dir * firstOff * space;
+			let lastY = lastHead + dir * lastOff * space;
 			const length = Math.abs(lastX - firstX);
 			const rise =
 				space * Math.min(TIE_MAX_RISE, TIE_RISE * Math.sqrt(length / space));
@@ -219,6 +257,20 @@ export class DashedTie extends StaveTie {
 			const middle = (TIE_MIDDLE * space) / 2;
 			const nearLift = (rise - middle + tip) / 0.75;
 			const farLift = (rise + middle - tip) / 0.75;
+			if (!first && last instanceof StaveNote) {
+				const shift = this.accidentalClearance(
+					last,
+					firstX,
+					lastX,
+					firstY,
+					lastY,
+					nearLift,
+					dir,
+					space,
+				);
+				firstY += dir * shift;
+				lastY += dir * shift;
+			}
 			const x0 = firstX + length * TIE_SHOULDER;
 			const x1 = lastX - length * TIE_SHOULDER;
 			ctx.beginPath();
@@ -272,29 +324,131 @@ export class DashedTie extends StaveTie {
 		}
 		const space = stave.getSpacingBetweenLines();
 		const position = (headY - stave.getYForLine(0)) / space;
-		const line =
-			dir > 0
-				? Math.ceil(position + TIE_CHORD_MIN - TIE_OFF_LINE)
-				: Math.floor(position - TIE_CHORD_MIN + TIE_OFF_LINE);
-		return Math.abs(line + dir * TIE_OFF_LINE - position);
+		const nearestLine = Math.round(position);
+		const onSpace = Math.abs(position - nearestLine) > 0.25;
+		const base = onSpace
+			? 0.5 - TIE_OFF_LINE
+			: Math.abs(nearestLine + dir * TIE_OFF_LINE - position);
+		return base + this.extraOff;
 	}
 
-	/* An end must start beside its head, not under it, when it sits level with the head, when
-	 * the chord has another head on the tie's side, or when the tie passes the stem. */
-	private blocked(
+	/*
+	 * Whether a tie end is blocked from tucking over/under its own head, and the outer edge it
+	 * must clear when blocked. A notehead on the tie's side blocks `start` when it sits in the
+	 * same column or to the right, and blocks `end` when it sits in the same column or to the
+	 * left; a stem blocks only when it stands on that side of the head (a displaced head sits
+	 * outside the stem).
+	 */
+	private endObstacle(
 		note: StaveNote,
 		index: number,
 		off: number,
 		dir: number,
-		stemDirection: number,
-	): boolean {
-		const heads = note.getKeys().length;
-		const inner = dir > 0 ? index > 0 : index < heads - 1;
-		return (
-			off < 0.5 ||
-			inner ||
-			(note.hasStem() && note.getStemDirection() === stemDirection)
-		);
+		side: 'start' | 'end',
+		fallback: number,
+	): { blocked: boolean; edge: number } {
+		const props = note.getKeyProps();
+		const myLine = props[index]?.line;
+		const head = note.noteHeads[index];
+		const begin = note.getNoteHeadBeginX();
+		const myDisp = head?.getDisplacementX() ?? 0;
+		const myLeft = head ? begin + myDisp : fallback;
+		const myRight = head ? myLeft + head.getWidth() : fallback;
+		let edge =
+			side === 'start'
+				? this.lineRightEdge(note, index, fallback)
+				: this.lineLeftEdge(note, index, fallback);
+		let inner = false;
+		if (myLine !== undefined) {
+			for (let i = 0; i < props.length; i++) {
+				const line = props[i]?.line;
+				if (line === undefined || !(dir > 0 ? line < myLine : line > myLine)) {
+					continue;
+				}
+				const other = note.noteHeads[i];
+				if (!other) {
+					inner = true;
+					continue;
+				}
+				const oLeft = begin + other.getDisplacementX();
+				const oRight = oLeft + other.getWidth();
+				if (side === 'start' ? oRight > myLeft + 1 : oLeft < myRight - 1) {
+					inner = true;
+					edge =
+						side === 'start' ? Math.max(edge, oRight) : Math.min(edge, oLeft);
+				}
+			}
+		} else {
+			inner = dir > 0 ? index > 0 : index < note.getKeys().length - 1;
+		}
+		const stemBlocks =
+			note.hasStem() &&
+			(side === 'start'
+				? dir < 0 && note.getStemDirection() === 1 && myDisp <= 0
+				: dir > 0 && note.getStemDirection() === -1 && myDisp >= 0);
+		return {
+			blocked: off < 0.5 || inner || stemBlocks,
+			edge,
+		};
+	}
+
+	/* Rightmost notehead edge at `index`'s staff line, so a unison clears its displaced sibling. */
+	private lineRightEdge(
+		note: StaveNote,
+		index: number,
+		fallback: number,
+	): number {
+		const head = note.noteHeads[index];
+		if (!head) {
+			return fallback;
+		}
+		const begin = note.getNoteHeadBeginX();
+		const myLine = note.getKeyProps()[index]?.line;
+		let edge = begin + head.getDisplacementX() + head.getWidth();
+		if (myLine === undefined) {
+			return edge;
+		}
+		const props = note.getKeyProps();
+		for (let i = 0; i < note.noteHeads.length; i++) {
+			if (i !== index && props[i]?.line === myLine) {
+				const sibling = note.noteHeads[i];
+				if (sibling) {
+					edge = Math.max(
+						edge,
+						begin + sibling.getDisplacementX() + sibling.getWidth(),
+					);
+				}
+			}
+		}
+		return edge;
+	}
+
+	/* Leftmost notehead edge at `index`'s staff line, so a unison clears its displaced sibling. */
+	private lineLeftEdge(
+		note: StaveNote,
+		index: number,
+		fallback: number,
+	): number {
+		const head = note.noteHeads[index];
+		if (!head) {
+			return fallback;
+		}
+		const begin = note.getNoteHeadBeginX();
+		const myLine = note.getKeyProps()[index]?.line;
+		let edge = begin + head.getDisplacementX();
+		if (myLine === undefined) {
+			return edge;
+		}
+		const props = note.getKeyProps();
+		for (let i = 0; i < note.noteHeads.length; i++) {
+			if (i !== index && props[i]?.line === myLine) {
+				const sibling = note.noteHeads[i];
+				if (sibling) {
+					edge = Math.min(edge, begin + sibling.getDisplacementX());
+				}
+			}
+		}
+		return edge;
 	}
 
 	private startX(
@@ -308,11 +462,28 @@ export class DashedTie extends StaveTie {
 		if (!(note instanceof StaveNote)) {
 			return fallback;
 		}
-		// A head's right side holds the stem when it points up, which a tie above must clear.
-		if (this.blocked(note, index, off, dir, dir < 0 ? 1 : 0)) {
-			return fallback + (off < 0.5 ? TIE_GAP_LEVEL : TIE_GAP_BLOCKED) * space;
+		const obstacle = this.endObstacle(note, index, off, dir, 'start', fallback);
+		if (obstacle.blocked) {
+			// Start beside the blocking edge (plus any augmentation-dot shift) so a
+			// displaced second does not push an undisplaced note's tie across both heads,
+			// while a unison or blocked inner tie clears the head in its way.
+			// Only shift past dots when this note itself is dotted: ModifierContext is
+			// shared across voices on the same beat, so another voice's dot must not
+			// push an undotted voice's tie past it.
+			const rightShift =
+				Dot.getDots(note).length > 0
+					? (note.getModifierContext()?.getRightShiftForTie() ?? 0)
+					: 0;
+			const anchor = obstacle.edge + rightShift;
+			return anchor + (off < 0.5 ? TIE_GAP_LEVEL : TIE_GAP_BLOCKED) * space;
 		}
-		return note.getNoteHeadEndX() - TIE_TUCK * space;
+		return (
+			Math.max(
+				note.getNoteHeadEndX(),
+				this.lineRightEdge(note, index, note.getNoteHeadEndX()),
+			) -
+			TIE_TUCK * space
+		);
 	}
 
 	private endX(
@@ -326,11 +497,66 @@ export class DashedTie extends StaveTie {
 		if (!(note instanceof StaveNote)) {
 			return fallback;
 		}
-		// A head's left side holds the stem when it points down, which a tie below must clear.
-		if (this.blocked(note, index, off, dir, dir > 0 ? -1 : 0)) {
-			return fallback - (off < 0.5 ? TIE_GAP_LEVEL : TIE_GAP_BLOCKED) * space;
+		const obstacle = this.endObstacle(note, index, off, dir, 'end', fallback);
+		if (obstacle.blocked) {
+			return (
+				obstacle.edge - (off < 0.5 ? TIE_GAP_LEVEL : TIE_GAP_BLOCKED) * space
+			);
 		}
-		return note.getNoteHeadBeginX() + TIE_TUCK * space;
+		return (
+			Math.min(
+				note.getNoteHeadBeginX(),
+				this.lineLeftEdge(note, index, note.getNoteHeadBeginX()),
+			) +
+			TIE_TUCK * space
+		);
+	}
+
+	/*
+	 * Outward shift (in px) so an incoming system-break tie keeps its natural shallow arc
+	 * while clearing any repeated accidental standing between its left edge and its notehead
+	 * (Behind Bars p. 80).
+	 */
+	private accidentalClearance(
+		last: StaveNote,
+		firstX: number,
+		lastX: number,
+		firstY: number,
+		lastY: number,
+		nearLift: number,
+		dir: number,
+		space: number,
+	): number {
+		const length = lastX - firstX;
+		if (length <= 0) {
+			return 0;
+		}
+		const tip = (TIE_TIP * space) / 2;
+		const pad = TIE_ACCIDENTAL_CLEARANCE * space;
+		let shift = 0;
+		for (const mod of last.getModifiers()) {
+			if (mod.getCategory() !== 'Accidental') {
+				continue;
+			}
+			const box = mod.getBoundingBox();
+			const left = Math.max(firstX, box.getX());
+			const right = Math.min(lastX, box.getX() + box.getW());
+			if (right <= left) {
+				continue;
+			}
+			const obstacleY =
+				dir > 0 ? box.getY() + box.getH() + pad : box.getY() - pad;
+			for (const x of [left, (left + right) / 2, right]) {
+				const t = (x - firstX) / length;
+				const curveY =
+					firstY +
+					(lastY - firstY) * t -
+					dir * tip +
+					dir * 3 * t * (1 - t) * nearLift;
+				shift = Math.max(shift, dir * (obstacleY - curveY));
+			}
+		}
+		return shift;
 	}
 
 	/*
@@ -376,4 +602,24 @@ export class DashedTie extends StaveTie {
 			ctx.fill();
 		}
 	}
+}
+
+/* Vertical staff-line span [min, max] a fitted tie's ink covers on `line` curving in `dir`. */
+export function tieLineBand(
+	line: number,
+	dir: number,
+	chord: boolean,
+	lengthInSpaces: number,
+): [number, number] {
+	let off = TIE_OFF_HEAD;
+	if (chord) {
+		off = Number.isInteger(line) ? TIE_OFF_LINE : 0.5 - TIE_OFF_LINE;
+	}
+	const rise = Math.min(
+		TIE_MAX_RISE,
+		TIE_RISE * Math.sqrt(Math.max(0, lengthInSpaces)),
+	);
+	const near = off - TIE_TIP / 2;
+	const far = off + rise + TIE_MIDDLE / 2;
+	return dir < 0 ? [line + near, line + far] : [line - far, line - near];
 }

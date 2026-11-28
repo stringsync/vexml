@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_piano-silent-key-diamond.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 116
+			},
+			"to": {
+				"x": 127,
+				"y": 126
+			},
+			"label": "Diamond head",
+			"note": "Diamond head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 311,
+				"y": 106
+			},
+			"to": {
+				"x": 321,
+				"y": 116
+			},
+			"label": "Diamond head",
+			"note": "Diamond head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 420,
+				"y": 96
+			},
+			"to": {
+				"x": 430,
+				"y": 106
+			},
+			"label": "Diamond head",
+			"note": "Diamond head",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

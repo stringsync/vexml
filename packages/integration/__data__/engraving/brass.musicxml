@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <identification>
+    <miscellaneous>
+      <miscellaneous-field name="description">Behind Bars pp. 260-268: brass hand-stopped plus and open circle, half-stopped circled plus, and jazz brass inflections (scoop, plop, doit, falloff).</miscellaneous-field>
+    </miscellaneous>
+  </identification>
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1: horn hand-stopping (+) and open (o) above stave, including tied stopped notes (p. 263) -->
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><stopped/></technical></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration><tie type="start"/><voice>1</voice><type>quarter</type>
+        <notations>
+          <tied type="start"/>
+          <technical><stopped/></technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration><tie type="stop"/><voice>1</voice><type>quarter</type>
+        <notations>
+          <tied type="stop"/>
+          <technical><stopped/></technical>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><open/></technical></notations>
+      </note>
+    </measure>
+    <!-- M2: half-stopped brass circled plus above stave (p. 264) -->
+    <measure number="2">
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><half-muted/></technical></notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><half-muted/></technical></notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><open/></technical></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><half-muted/></technical></notations>
+      </note>
+    </measure>
+    <!-- M3: jazz brass inflections: scoop, plop, doit, falloff (p. 267) -->
+    <measure number="3">
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><articulations><scoop/></articulations></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><articulations><plop/></articulations></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><articulations><doit/></articulations></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><articulations><falloff/></articulations></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

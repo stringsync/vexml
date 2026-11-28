@@ -1,6 +1,5 @@
-import { Curve, type StaveNote } from 'vexflow/core';
+import { Curve, GraceNote, type StaveNote } from 'vexflow/core';
 import {
-	SLUR_GRACE_ANCHOR,
 	SLUR_GRACE_Y_SHIFT,
 	SLUR_MARK_GAP,
 	SLUR_STEM_TIP_SLANT,
@@ -23,6 +22,9 @@ export type SlurBowOptions = {
 	/* Whether a tie starts or ends on each end's chord. */
 	tiedFrom: boolean;
 	tiedTo: boolean;
+	/* Extra lift (px) at a shared endpoint to clear a shorter nested slur on the same side. */
+	nestedLiftFrom?: number;
+	nestedLiftTo?: number;
 };
 
 /*
@@ -42,6 +44,8 @@ export class SlurBow {
 	ghost: boolean;
 	private readonly tiedFrom: boolean;
 	private readonly tiedTo: boolean;
+	private readonly nestedLiftFrom: number;
+	private readonly nestedLiftTo: number;
 	// Chosen once, for the side the slur starts on: only a cross-stave slur changes side
 	// afterwards, and it never takes the stem tips.
 	private readonly useStemTips: boolean;
@@ -60,6 +64,8 @@ export class SlurBow {
 		this.ghost = opts.ghost;
 		this.tiedFrom = opts.tiedFrom;
 		this.tiedTo = opts.tiedTo;
+		this.nestedLiftFrom = opts.nestedLiftFrom ?? 0;
+		this.nestedLiftTo = opts.nestedLiftTo ?? 0;
 		this.useStemTips = this.stemTipsAreLevel();
 	}
 
@@ -102,16 +108,30 @@ export class SlurBow {
 			: Curve.Position.NEAR_HEAD;
 	}
 
-	// Where a grace curve's ends land, per SLUR_GRACE_ANCHOR. Neither vexflow
-	// position metric works here: on a stem-down chord NEAR_HEAD is the *top*
-	// note (the wrong end of the chord entirely), so resolve the Y explicitly
-	// and hand it to HeadCurve. Always the bulge side, so an above-bulging
-	// curve mirrors the same rule upward.
+	/** Whether this end sits at the note's stem tip rather than its notehead. */
+	atStemTip(note: StaveNote): boolean {
+		return this.metric(note) === Curve.Position.NEAR_TOP && note.hasStem();
+	}
+
+	/** Whether `note` carries a tenuto line on the bulge side (between stem and slur). */
+	hasTenuto(note: StaveNote): boolean {
+		return this.obstacles.hasTenutoOnSide(note, this.bulgeUp);
+	}
+
+	// Where a grace curve's ends land (Behind Bars pp. 129–130). The measured note
+	// always anchors on its bulge-side notehead (never dropping to a down-stem tip);
+	// a grace note anchors on its bulge-side notehead when its stem points away from
+	// the bow, or on its stem tip when its stem/beam/slash sits on the bow side so
+	// the curve clears it.
 	anchorY(note: StaveNote): number {
 		const bulgeSide = (top: number, bottom: number) =>
 			this.bulgeUp ? Math.min(top, bottom) : Math.max(top, bottom);
 		const { yTop, yBottom } = note.getNoteHeadBounds();
-		if (SLUR_GRACE_ANCHOR === 'notehead' || !note.hasStem()) {
+		if (
+			!(note instanceof GraceNote) ||
+			!note.hasStem() ||
+			!this.towardBulge(note)
+		) {
 			return bulgeSide(yTop, yBottom);
 		}
 		// vexflow names these backwards from how they read: baseY is the notehead
@@ -165,7 +185,7 @@ export class SlurBow {
 		if (this.isGrace || (this.crossStave && this.bulgeUp)) {
 			return 0;
 		}
-		const marks = this.obstacles.marksOnSide(note, this.bulgeUp);
+		const marks = this.obstacles.marksOnSide(note, this.bulgeUp, false);
 		if (!marks) {
 			return 0;
 		}
@@ -186,6 +206,16 @@ export class SlurBow {
 		return tieDir === this.dir ? SLUR_TIE_GAP : 0;
 	}
 
+	nestedLift(note: StaveNote): number {
+		if (note === this.from) {
+			return this.nestedLiftFrom;
+		}
+		if (note === this.to) {
+			return this.nestedLiftTo;
+		}
+		return 0;
+	}
+
 	// The exact Y each end of the curve will be drawn at: what HeadCurve was handed
 	// for a grace, and what vexflow reads off getStemExtents() for everything else.
 	endpointY(note: StaveNote): number {
@@ -194,7 +224,8 @@ export class SlurBow {
 		}
 		const end = this.ghostOf(note);
 		return (
-			this.noteEndY(end) + this.dir * (this.markLift(end) + this.tieLift(end))
+			this.noteEndY(end) +
+			this.dir * (this.markLift(end) + this.tieLift(end) + this.nestedLift(end))
 		);
 	}
 

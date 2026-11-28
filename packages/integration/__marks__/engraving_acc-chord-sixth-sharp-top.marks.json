@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_acc-chord-sixth-sharp-top.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 565.3,
+				"y": 268
+			},
+			"to": {
+				"x": 591.3,
+				"y": 296
+			},
+			"label": "F#/4 sign",
+			"note": "F#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 578.3,
+				"y": 243
+			},
+			"to": {
+				"x": 591.3,
+				"y": 271
+			},
+			"label": "D#/5 sign",
+			"note": "D#/5 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 606.3,
+				"y": 269
+			},
+			"to": {
+				"x": 631.3,
+				"y": 295
+			},
+			"label": "Eb/4 sign",
+			"note": "Eb/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 618.3,
+				"y": 248
+			},
+			"to": {
+				"x": 631.3,
+				"y": 276
+			},
+			"label": "C#/5 sign",
+			"note": "C#/5 sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

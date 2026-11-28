@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_rest-horizontal-onset.png",
+	"width": 932,
+	"height": 602,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 116
+			},
+			"to": {
+				"x": 129,
+				"y": 126
+			},
+			"label": "Note 1",
+			"note": "Note 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 210
+			},
+			"to": {
+				"x": 128,
+				"y": 216
+			},
+			"label": "Rest 1",
+			"note": "Rest 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 255.7,
+				"y": 116
+			},
+			"to": {
+				"x": 267.7,
+				"y": 126
+			},
+			"label": "Note 2",
+			"note": "Note 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 256,
+				"y": 201
+			},
+			"to": {
+				"x": 267,
+				"y": 231
+			},
+			"label": "Rest 2",
+			"note": "Rest 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 333.6,
+				"y": 116
+			},
+			"to": {
+				"x": 345.6,
+				"y": 126
+			},
+			"label": "Note 3",
+			"note": "Note 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 334,
+				"y": 209
+			},
+			"to": {
+				"x": 344,
+				"y": 226
+			},
+			"label": "Rest 3",
+			"note": "Rest 3",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

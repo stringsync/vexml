@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list><score-part id="P1"><part-name>Clarinet</part-name></score-part></part-list>
+  <part id="P1">
+    <!-- M1: Single dotted space note with a staccato comparison. -->
+    <measure number="1">
+      <attributes><divisions>8</divisions><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/><notations><articulations><staccato/></articulations></notations></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+    </measure>
+    <!-- M2: Single dotted line note. -->
+    <measure number="2">
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+    </measure>
+    <!-- M3: Dotted ledger-line note. -->
+    <measure number="3">
+      <note><pitch><step>A</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+    </measure>
+    <!-- M4: Triple-dotted note. -->
+    <measure number="4">
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>15</duration><voice>1</voice><type>quarter</type><dot/><dot/><dot/></note>
+      <forward><duration>17</duration><voice>1</voice></forward>
+    </measure>
+    <!-- M5: Up-stemmed flagged note on a line. -->
+    <measure number="5">
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>6</duration><voice>1</voice><type>eighth</type><dot/></note>
+      <forward><duration>26</duration><voice>1</voice></forward>
+    </measure>
+    <!-- M6: Spaced chord. -->
+    <measure number="6">
+      <print new-system="yes"/>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>B</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>E</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+    </measure>
+    <!-- M7: Second with an upper line note. -->
+    <measure number="7">
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+    </measure>
+    <!-- M8: Second with a lower line note. -->
+    <measure number="8">
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+    </measure>
+    <!-- M9: Adjacent-note ledger chord. -->
+    <measure number="9">
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>B</step><octave>3</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>C</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+    </measure>
+    <!-- M10: Four consecutive notes in a single chord. -->
+    <measure number="10">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>B</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+    </measure>
+    <!-- M11: Eight consecutive notes in a single chord. -->
+    <measure number="11">
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>B</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>E</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>F</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>G</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+    </measure>
+    <!-- M12: Two dotted parts with a line note below. -->
+    <measure number="12">
+      <print new-system="yes"/>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M13: Both adjacent parts dotted. -->
+    <measure number="13">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M14: Only upper adjacent part dotted. -->
+    <measure number="14">
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>8</duration><voice>2</voice><type>quarter</type></note>
+      <forward><duration>24</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M15: Only lower adjacent part dotted. -->
+    <measure number="15">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>quarter</type></note>
+      <forward><duration>24</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M16: Two dotted chords with seconds. -->
+    <measure number="16">
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M17: Crossed parts a third apart, one dotted. -->
+    <measure number="17">
+      <print new-system="yes"/>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>24</duration><voice>1</voice><type>half</type><dot/></note>
+      <forward><duration>8</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>quarter</type></note>
+      <forward><duration>24</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M18: Crossed adjacent parts, both dotted. -->
+    <measure number="18">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M19: Crossed adjacent parts, up-stem dotted. -->
+    <measure number="19">
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>8</duration><voice>2</voice><type>quarter</type></note>
+      <forward><duration>24</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M20: Crossed adjacent parts, down-stem line note dotted. -->
+    <measure number="20">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>quarter</type></note>
+      <forward><duration>24</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M21: Crossed dotted chords. -->
+    <measure number="21">
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>B</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M22: Same-stem perfect unison on a line. -->
+    <measure number="22">
+      <print new-system="yes"/>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+    </measure>
+    <!-- M23: Altered unison on one stem. -->
+    <measure number="23">
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>6</duration><voice>1</voice><type>eighth</type><dot/></note>
+      <note><chord/><pitch><step>G</step><alter>1</alter><octave>4</octave></pitch><duration>6</duration><voice>1</voice><type>eighth</type><dot/><accidental>sharp</accidental></note>
+      <forward><duration>26</duration><voice>1</voice></forward>
+    </measure>
+    <!-- M24: Two dotted stemmed notes in unison. -->
+    <measure number="24">
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M25: Two dotted whole notes in unison. -->
+    <measure number="25">
+      <print new-system="yes"/>
+      <attributes><time><beats>6</beats><beat-type>4</beat-type></time></attributes>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>48</duration><voice>1</voice><type>whole</type><dot/></note>
+      <backup><duration>48</duration></backup>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>48</duration><voice>2</voice><type>whole</type><dot/></note>
+    </measure>
+    <!-- M26: Unlike dotted durations in unison. -->
+    <measure number="26">
+      <attributes><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>24</duration><voice>1</voice><type>half</type><dot/></note>
+      <forward><duration>8</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M27: Dotted and plain notes of the same head type in unison. -->
+    <measure number="27">
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>24</duration><voice>1</voice><type>half</type><dot/></note>
+      <forward><duration>8</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><voice>2</voice><type>half</type></note>
+      <forward><duration>16</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M28: Dotted and plain notes with distinct head types in unison. -->
+    <measure number="28">
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>16</duration><voice>1</voice><type>half</type></note>
+      <forward><duration>16</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M29: Crossed dotted parts a third apart. -->
+    <measure number="29">
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>24</duration><voice>1</voice><type>half</type><dot/></note>
+      <forward><duration>8</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M30: Crossed undotted adjacent parts. -->
+    <measure number="30">
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>8</duration><voice>1</voice><type>quarter</type></note>
+      <forward><duration>24</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>8</duration><voice>2</voice><type>quarter</type></note>
+      <forward><duration>24</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M31: Double-dotted note. -->
+    <measure number="31">
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>14</duration><voice>1</voice><type>quarter</type><dot/><dot/></note>
+      <forward><duration>18</duration><voice>1</voice></forward>
+    </measure>
+    <!-- M32: Stemless same-voice unison in a space. -->
+    <measure number="32">
+      <attributes><time><beats>6</beats><beat-type>4</beat-type></time></attributes>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>whole</type><dot/></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>48</duration><voice>1</voice><type>whole</type><dot/></note>
+    </measure>
+    <!-- M33: Lower-voice line notes dotted under an upper-voice attack and then a rest. -->
+    <measure number="33">
+      <print new-system="yes"/>
+      <attributes><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>16</duration><voice>1</voice><type>half</type></note>
+      <note><rest/><duration>16</duration><voice>1</voice><type>half</type></note>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>2</voice><type>eighth</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>2</voice><type>eighth</type></note>
+    </measure>
+    <!-- M34: A dotted lower-voice line note attacked under an upper-voice sustain. -->
+    <measure number="34">
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>32</duration><voice>1</voice><type>whole</type></note>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>2</voice><type>eighth</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><voice>2</voice><type>half</type></note>
+    </measure>
+    <!-- M35: A dotted lower-voice chord of line notes a third apart. -->
+    <measure number="35">
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>12</duration><voice>1</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M36: Crossed parts a fourth apart, the lower up-stem part dotted. -->
+    <measure number="36">
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>24</duration><voice>1</voice><type>half</type><dot/></note>
+      <forward><duration>8</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><voice>2</voice><type>quarter</type></note>
+      <forward><duration>24</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M37: Crossed parts a third apart, the upper down-stem part dotted. -->
+    <measure number="37">
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>half</type></note>
+      <forward><duration>16</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>2</voice></forward>
+    </measure>
+    <!-- M38: Crossed dotted parts a fourth apart. -->
+    <measure number="38">
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>24</duration><voice>1</voice><type>half</type><dot/></note>
+      <forward><duration>8</duration><voice>1</voice></forward>
+      <backup><duration>32</duration></backup>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>12</duration><voice>2</voice><type>quarter</type><dot/></note>
+      <forward><duration>20</duration><voice>2</voice></forward>
+    </measure>
+  </part>
+</score-partwise>

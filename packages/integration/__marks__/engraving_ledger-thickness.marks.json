@@ -1,0 +1,112 @@
+{
+	"screenshot": "engraving_ledger-thickness.png",
+	"width": 932,
+	"height": 257,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 112,
+				"y": 88
+			},
+			"to": {
+				"x": 134,
+				"y": 94
+			},
+			"label": "2.0×",
+			"note": "M1 ledger line is 2px thick vs 1px stave line (2.0×, expected ≥1.6×)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 112,
+				"y": 98
+			},
+			"to": {
+				"x": 134,
+				"y": 104
+			},
+			"label": "2.0×",
+			"note": "M1 ledger line is 2px thick vs 1px stave line (2.0×, expected ≥1.6×)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 142,
+				"y": 88
+			},
+			"to": {
+				"x": 164,
+				"y": 94
+			},
+			"label": "2.0×",
+			"note": "M1 ledger line is 2px thick vs 1px stave line (2.0×, expected ≥1.6×)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 142,
+				"y": 98
+			},
+			"to": {
+				"x": 164,
+				"y": 104
+			},
+			"label": "2.0×",
+			"note": "M1 ledger line is 2px thick vs 1px stave line (2.0×, expected ≥1.6×)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 172,
+				"y": 158
+			},
+			"to": {
+				"x": 194,
+				"y": 164
+			},
+			"label": "2.0×",
+			"note": "M1 ledger line is 2px thick vs 1px stave line (2.0×, expected ≥1.6×)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 172,
+				"y": 168
+			},
+			"to": {
+				"x": 194,
+				"y": 174
+			},
+			"label": "2.0×",
+			"note": "M1 ledger line is 2px thick vs 1px stave line (2.0×, expected ≥1.6×)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 202,
+				"y": 158
+			},
+			"to": {
+				"x": 224,
+				"y": 164
+			},
+			"label": "2.0×",
+			"note": "M1 ledger line is 2px thick vs 1px stave line (2.0×, expected ≥1.6×)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

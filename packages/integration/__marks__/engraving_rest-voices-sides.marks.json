@@ -1,0 +1,66 @@
+{
+	"screenshot": "engraving_rest-voices-sides.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 121
+			},
+			"to": {
+				"x": 212,
+				"y": 121
+			},
+			"label": "middle line",
+			"note": "M1 middle stave line at y=105",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 142.3,
+				"y": 95
+			},
+			"to": {
+				"x": 155.3,
+				"y": 127
+			},
+			"label": "V1 above",
+			"note": "M1 V1 rest centre y=95 vs middle y=105 (above, expected above)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 116,
+				"y": 125
+			},
+			"to": {
+				"x": 129,
+				"y": 157
+			},
+			"label": "V2 below",
+			"note": "M1 V2 rest centre y=125 vs middle y=105 (below, expected below)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 168.6,
+				"y": 124
+			},
+			"to": {
+				"x": 181.6,
+				"y": 132
+			},
+			"label": "V2 below",
+			"note": "M1 V2 rest centre y=112 vs middle y=105 (below, expected below)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

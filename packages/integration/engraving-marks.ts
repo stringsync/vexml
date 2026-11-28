@@ -19,7 +19,7 @@ export interface EngravingMark {
 	to: MarkPoint;
 	/** Short label drawn on the image (e.g. '3½', 'middle line'). */
 	label: string;
-	/** One-line "look for" note shown by `vex review`. */
+	/** One-line "look for" note for a reviewer. */
 	note?: string;
 	/** Whether the measurement passed; omitted on reference lines. */
 	pass?: boolean;

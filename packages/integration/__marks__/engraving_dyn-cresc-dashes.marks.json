@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_dyn-cresc-dashes.png",
+	"width": 932,
+	"height": 1373,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 89,
+				"y": 873
+			},
+			"to": {
+				"x": 129,
+				"y": 882
+			},
+			"label": "cresc.",
+			"note": "cresc.",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 134,
+				"y": 878
+			},
+			"to": {
+				"x": 409,
+				"y": 879
+			},
+			"label": "Dashes",
+			"note": "Dashes",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 397,
+				"y": 970
+			},
+			"to": {
+				"x": 413,
+				"y": 989
+			},
+			"label": "f",
+			"note": "f",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

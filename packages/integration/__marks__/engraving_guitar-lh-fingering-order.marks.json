@@ -1,0 +1,142 @@
+{
+	"screenshot": "engraving_guitar-lh-fingering-order.png",
+	"width": 932,
+	"height": 294,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 783,
+				"y": 114
+			},
+			"to": {
+				"x": 795,
+				"y": 124
+			},
+			"label": "RH 1",
+			"note": "RH 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 783,
+				"y": 130
+			},
+			"to": {
+				"x": 795,
+				"y": 139
+			},
+			"label": "LH 1",
+			"note": "LH 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 782,
+				"y": 95
+			},
+			"to": {
+				"x": 797,
+				"y": 109
+			},
+			"label": "String 1",
+			"note": "String 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 815,
+				"y": 117
+			},
+			"to": {
+				"x": 827,
+				"y": 124
+			},
+			"label": "RH 2",
+			"note": "RH 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 815,
+				"y": 130
+			},
+			"to": {
+				"x": 827,
+				"y": 139
+			},
+			"label": "LH 2",
+			"note": "LH 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 813,
+				"y": 95
+			},
+			"to": {
+				"x": 828,
+				"y": 109
+			},
+			"label": "String 2",
+			"note": "String 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 847,
+				"y": 117
+			},
+			"to": {
+				"x": 859,
+				"y": 124
+			},
+			"label": "RH 3",
+			"note": "RH 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 847,
+				"y": 130
+			},
+			"to": {
+				"x": 859,
+				"y": 139
+			},
+			"label": "LH 3",
+			"note": "LH 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 845,
+				"y": 95
+			},
+			"to": {
+				"x": 860,
+				"y": 109
+			},
+			"label": "String 3",
+			"note": "String 3",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

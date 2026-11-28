@@ -25,7 +25,7 @@ export interface LayoutRules {
     edgeWidthOf(m: number): number;
     areaOf(m: number, systemStart?: boolean): NoteArea;
     estimateOf(m: number): NoteArea;
-    leadOf(m: number, systemStart: boolean): number;
+    leadOf(m: number, systemStart: boolean, systemEnd?: boolean): number;
     padOf(m: number): number;
     leadingPadOf(m: number, systemStart: boolean): number;
     indentOf(systemIndex: number, first: number): number;

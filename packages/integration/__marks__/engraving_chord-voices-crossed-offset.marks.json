@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_chord-voices-crossed-offset.png",
+	"width": 932,
+	"height": 1049,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 522,
+				"y": 573
+			},
+			"to": {
+				"x": 523,
+				"y": 608
+			},
+			"label": "M11 stem",
+			"note": "M11 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 499,
+				"y": 603
+			},
+			"to": {
+				"x": 500,
+				"y": 638
+			},
+			"label": "M11 stem",
+			"note": "M11 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 510.8,
+				"y": 603
+			},
+			"to": {
+				"x": 522.8,
+				"y": 613
+			},
+			"label": "M11 up-stem part, -0.2px clear",
+			"note": "M11 up-stem part, -0.2px clear",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 499,
+				"y": 688
+			},
+			"to": {
+				"x": 511,
+				"y": 698
+			},
+			"label": "M11 reference head",
+			"note": "M11 reference head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 734,
+				"y": 548
+			},
+			"to": {
+				"x": 736,
+				"y": 593
+			},
+			"label": "M12 stem",
+			"note": "M12 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 708,
+				"y": 578
+			},
+			"to": {
+				"x": 710,
+				"y": 623
+			},
+			"label": "M12 stem",
+			"note": "M12 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 723.5,
+				"y": 588
+			},
+			"to": {
+				"x": 735.5,
+				"y": 598
+			},
+			"label": "M12 up-stem part, 3.0px clear",
+			"note": "M12 up-stem part, 3.0px clear",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 708.5,
+				"y": 688
+			},
+			"to": {
+				"x": 720.5,
+				"y": 698
+			},
+			"label": "M12 reference head",
+			"note": "M12 reference head",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

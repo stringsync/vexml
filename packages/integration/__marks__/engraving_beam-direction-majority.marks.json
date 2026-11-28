@@ -1,0 +1,36 @@
+{
+	"screenshot": "engraving_beam-direction-majority.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 251,
+				"y": 1601
+			},
+			"to": {
+				"x": 489.3,
+				"y": 1601
+			},
+			"label": "middle line",
+			"note": "Middle stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 266,
+				"y": 1594
+			},
+			"to": {
+				"x": 419,
+				"y": 1605
+			},
+			"label": "down",
+			"note": "M25 group stems down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

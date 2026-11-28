@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_guitar-string-circled-position.png",
+	"width": 932,
+	"height": 294,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 268,
+				"y": 221
+			},
+			"to": {
+				"x": 283,
+				"y": 235
+			},
+			"label": "String 1",
+			"note": "String 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 303,
+				"y": 211
+			},
+			"to": {
+				"x": 318,
+				"y": 225
+			},
+			"label": "String 2",
+			"note": "String 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 339,
+				"y": 125
+			},
+			"to": {
+				"x": 354,
+				"y": 139
+			},
+			"label": "String 3",
+			"note": "String 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 374,
+				"y": 125
+			},
+			"to": {
+				"x": 389,
+				"y": 139
+			},
+			"label": "String 4",
+			"note": "String 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

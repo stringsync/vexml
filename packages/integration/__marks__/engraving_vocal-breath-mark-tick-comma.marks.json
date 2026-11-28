@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_vocal-breath-mark-tick-comma.png",
+	"width": 932,
+	"height": 427,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 487,
+				"y": 249
+			},
+			"to": {
+				"x": 506,
+				"y": 269
+			},
+			"label": "Tick",
+			"note": "Tick",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 575,
+				"y": 259
+			},
+			"to": {
+				"x": 581,
+				"y": 269
+			},
+			"label": "Comma",
+			"note": "Comma",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

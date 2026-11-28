@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_kbd-dynamics-between-staves.png",
+	"width": 932,
+	"height": 457,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 114,
+				"y": 175
+			},
+			"to": {
+				"x": 129,
+				"y": 189
+			},
+			"label": "Dynamic",
+			"note": "Dynamic",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 230,
+				"y": 170
+			},
+			"to": {
+				"x": 246,
+				"y": 189
+			},
+			"label": "Dynamic",
+			"note": "Dynamic",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

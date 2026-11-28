@@ -1,0 +1,112 @@
+{
+	"screenshot": "engraving_tremolo-clear-flag-beam.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 558,
+				"y": 108
+			},
+			"to": {
+				"x": 570,
+				"y": 116
+			},
+			"label": "Tremolo 1",
+			"note": "Tremolo 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 584,
+				"y": 96
+			},
+			"to": {
+				"x": 596,
+				"y": 111
+			},
+			"label": "Tremolo 2",
+			"note": "Tremolo 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 600,
+				"y": 121
+			},
+			"to": {
+				"x": 612,
+				"y": 136
+			},
+			"label": "Tremolo 3",
+			"note": "Tremolo 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 663,
+				"y": 102
+			},
+			"to": {
+				"x": 675,
+				"y": 110
+			},
+			"label": "Tremolo 4",
+			"note": "Tremolo 4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 689,
+				"y": 102
+			},
+			"to": {
+				"x": 701,
+				"y": 110
+			},
+			"label": "Tremolo 5",
+			"note": "Tremolo 5",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 705,
+				"y": 126
+			},
+			"to": {
+				"x": 717,
+				"y": 141
+			},
+			"label": "Tremolo 6",
+			"note": "Tremolo 6",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 731,
+				"y": 126
+			},
+			"to": {
+				"x": 743,
+				"y": 141
+			},
+			"label": "Tremolo 7",
+			"note": "Tremolo 7",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

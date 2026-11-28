@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_microtone-arrow-accidentals.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 98,
+				"y": 85
+			},
+			"to": {
+				"x": 111,
+				"y": 116
+			},
+			"label": "Arrow 1",
+			"note": "Arrow 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 174.6,
+				"y": 86
+			},
+			"to": {
+				"x": 187.6,
+				"y": 121
+			},
+			"label": "Arrow 2",
+			"note": "Arrow 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 253.1,
+				"y": 77
+			},
+			"to": {
+				"x": 264.1,
+				"y": 113
+			},
+			"label": "Arrow 3",
+			"note": "Arrow 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 330.7,
+				"y": 80
+			},
+			"to": {
+				"x": 340.7,
+				"y": 116
+			},
+			"label": "Arrow 4",
+			"note": "Arrow 4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 404.2,
+				"y": 67
+			},
+			"to": {
+				"x": 417.2,
+				"y": 103
+			},
+			"label": "Arrow 5",
+			"note": "Arrow 5",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 480.8,
+				"y": 70
+			},
+			"to": {
+				"x": 493.8,
+				"y": 106
+			},
+			"label": "Arrow 6",
+			"note": "Arrow 6",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

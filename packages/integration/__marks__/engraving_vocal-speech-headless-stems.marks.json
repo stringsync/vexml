@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_vocal-speech-headless-stems.png",
+	"width": 932,
+	"height": 408,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 102,
+				"y": 309
+			},
+			"to": {
+				"x": 191,
+				"y": 315
+			},
+			"label": "beam",
+			"note": "beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 102,
+				"y": 282
+			},
+			"to": {
+				"x": 103,
+				"y": 314
+			},
+			"label": "stem 1",
+			"note": "stem 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 137,
+				"y": 282
+			},
+			"to": {
+				"x": 138,
+				"y": 314
+			},
+			"label": "stem 2",
+			"note": "stem 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 163,
+				"y": 282
+			},
+			"to": {
+				"x": 165,
+				"y": 314
+			},
+			"label": "stem 3",
+			"note": "stem 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 190,
+				"y": 282
+			},
+			"to": {
+				"x": 191,
+				"y": 314
+			},
+			"label": "stem 4",
+			"note": "stem 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

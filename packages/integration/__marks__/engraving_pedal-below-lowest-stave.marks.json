@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_pedal-below-lowest-stave.png",
+	"width": 932,
+	"height": 604,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 115,
+				"y": 252
+			},
+			"to": {
+				"x": 248,
+				"y": 267
+			},
+			"label": "8vb bracket",
+			"note": "8vb bracket",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 283
+			},
+			"to": {
+				"x": 265,
+				"y": 306
+			},
+			"label": "Pedal",
+			"note": "Pedal",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

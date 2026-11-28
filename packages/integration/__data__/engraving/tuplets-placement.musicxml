@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN"
+  "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name print-object="no">MusicXML Part</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1: tuplet-side-stem (p. 197): up-stems -> tuplet above -->
+    <measure number="1">
+      <attributes>
+        <divisions>240</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>2</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations>
+          <tuplet type="start"/>
+          <slur type="start" number="1"/>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><slur type="stop" number="1"/></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations>
+          <tuplet type="stop"/>
+          <articulations><staccato/></articulations>
+        </notations>
+      </note>
+    </measure>
+
+    <!-- M2: tuplet-side-stem (p. 197): down-stems -> tuplet below -->
+    <measure number="2">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations>
+          <tuplet type="start"/>
+          <slur type="start" number="1"/>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><slur type="stop" number="1"/></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations>
+          <tuplet type="stop"/>
+          <articulations><staccato/></articulations>
+        </notations>
+      </note>
+    </measure>
+
+    <!-- M3: tuplet-side-ledger-lines (p. 198) -->
+    <measure number="3">
+      <note>
+        <pitch><step>E</step><octave>6</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet type="start"/></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>6</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>6</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet type="stop"/></notations>
+      </note>
+    </measure>
+
+    <!-- M4: tuplet-side-mixed-stems (p. 198) -->
+    <measure number="4">
+      <direction placement="below">
+        <direction-type><wedge type="crescendo"/></direction-type>
+      </direction>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>96</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>5</actual-notes><normal-notes>4</normal-notes></time-modification>
+        <notations><tuplet type="start"/></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>96</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>5</actual-notes><normal-notes>4</normal-notes></time-modification>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>96</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>5</actual-notes><normal-notes>4</normal-notes></time-modification>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>96</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>5</actual-notes><normal-notes>4</normal-notes></time-modification>
+      </note>
+      <direction placement="below">
+        <direction-type><wedge type="stop"/></direction-type>
+      </direction>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>96</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>5</actual-notes><normal-notes>4</normal-notes></time-modification>
+        <notations><tuplet type="stop"/></notations>
+      </note>
+    </measure>
+
+    <!-- M5: tuplet-bracket-slur-nesting (p. 198): bracket longer than slur -->
+    <measure number="5">
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations>
+          <tuplet type="start"/>
+          <slur type="start" number="1" placement="above"/>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><slur type="stop" number="1"/></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet type="stop"/></notations>
+      </note>
+    </measure>
+
+    <!-- M6: tuplet-bracket-slur-nesting (p. 198): bracket shorter than slur -->
+    <measure number="6">
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>80</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations>
+          <tuplet type="start"/>
+          <slur type="start" number="1" placement="above"/>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet type="stop"/></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>80</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet type="start"/></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations>
+          <tuplet type="stop"/>
+          <slur type="stop" number="1"/>
+        </notations>
+      </note>
+    </measure>
+
+    <!-- M7: tuplet-bracket-outside-stave (p. 199) -->
+    <measure number="7">
+      <note>
+        <pitch><step>A</step><octave>3</octave></pitch>
+        <duration>80</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet type="start"/></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>3</octave></pitch>
+        <duration>80</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>80</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet type="stop"/></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>5</octave></pitch>
+        <duration>80</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet type="start"/></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>5</octave></pitch>
+        <duration>80</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>6</octave></pitch>
+        <duration>80</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet type="stop"/></notations>
+      </note>
+    </measure>
+
+    <!-- M8: tuplet-bracket-when-unbeamed (p. 199) -->
+    <measure number="8">
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet type="start"/></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+      </note>
+      <note>
+        <rest/><duration>160</duration><voice>1</voice><type>quarter</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <notations><tuplet type="stop"/></notations>
+      </note>
+    </measure>
+
+    <!-- M9: tuplet-bracket-omit-beamed (p. 200) -->
+    <measure number="9">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>80</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <beam number="1">begin</beam>
+        <notations><tuplet type="start"/></notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>80</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <beam number="1">continue</beam>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>80</duration><voice>1</voice><type>eighth</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <beam number="1">end</beam>
+        <notations><tuplet type="stop"/></notations>
+      </note>
+      <note>
+        <rest/><duration>240</duration><voice>1</voice><type>quarter</type>
+      </note>
+    </measure>
+
+    <!-- M10: tuplet-bracket-partial-beam (p. 200) -->
+    <measure number="10">
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>40</duration><voice>1</voice><type>16th</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <beam number="1">begin</beam><beam number="2">begin</beam>
+        <notations><tuplet type="start"/></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>40</duration><voice>1</voice><type>16th</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <beam number="1">continue</beam><beam number="2">continue</beam>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>40</duration><voice>1</voice><type>16th</type>
+        <time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>
+        <beam number="1">continue</beam><beam number="2">end</beam>
+        <notations><tuplet type="stop"/></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>120</duration><voice>1</voice><type>eighth</type>
+        <beam number="1">end</beam>
+      </note>
+      <note>
+        <rest/><duration>240</duration><voice>1</voice><type>quarter</type>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

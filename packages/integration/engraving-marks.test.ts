@@ -172,7 +172,12 @@ describe('engraving marks', () => {
 	});
 });
 
-function syntheticRaw(opts: { shiftX: number; shiftY: number }): RawEngraving {
+interface SyntheticRawOptions {
+	shiftX: number;
+	shiftY: number;
+}
+
+function syntheticRaw(opts: SyntheticRawOptions): RawEngraving {
 	const { shiftX, shiftY } = opts;
 	return {
 		staves: [

@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_slur-mixed-stem-artic.png",
+	"width": 932,
+	"height": 1047,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 422,
+				"y": 413
+			},
+			"to": {
+				"x": 425,
+				"y": 416
+			},
+			"label": "Dot 1",
+			"note": "Dot 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 537,
+				"y": 455
+			},
+			"to": {
+				"x": 540,
+				"y": 458
+			},
+			"label": "Dot 2",
+			"note": "Dot 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 652,
+				"y": 413
+			},
+			"to": {
+				"x": 655,
+				"y": 416
+			},
+			"label": "Dot 3",
+			"note": "Dot 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 767,
+				"y": 455
+			},
+			"to": {
+				"x": 770,
+				"y": 458
+			},
+			"label": "Dot 4",
+			"note": "Dot 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

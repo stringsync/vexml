@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-overlap-one-part.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 495,
+				"y": 108
+			},
+			"to": {
+				"x": 591,
+				"y": 117
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

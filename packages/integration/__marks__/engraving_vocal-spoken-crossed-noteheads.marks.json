@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_vocal-spoken-crossed-noteheads.png",
+	"width": 932,
+	"height": 408,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 666.9,
+				"y": 137
+			},
+			"to": {
+				"x": 678.9,
+				"y": 147
+			},
+			"label": "x-head 1",
+			"note": "x-head 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 729.6,
+				"y": 122
+			},
+			"to": {
+				"x": 741.6,
+				"y": 132
+			},
+			"label": "x-head 2",
+			"note": "x-head 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 792.3,
+				"y": 107
+			},
+			"to": {
+				"x": 804.3,
+				"y": 117
+			},
+			"label": "x-head 3",
+			"note": "x-head 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 855,
+				"y": 127
+			},
+			"to": {
+				"x": 867,
+				"y": 137
+			},
+			"label": "x-head 4",
+			"note": "x-head 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

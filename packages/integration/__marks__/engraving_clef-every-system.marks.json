@@ -1,0 +1,36 @@
+{
+	"screenshot": "engraving_clef-every-system.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 250
+			},
+			"to": {
+				"x": 31,
+				"y": 302
+			},
+			"label": "",
+			"note": "System 2 stave start",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 36,
+				"y": 256
+			},
+			"to": {
+				"x": 63,
+				"y": 291
+			},
+			"label": "opening clef",
+			"note": "system 2 opens with a clef ½ spaces from stave start",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

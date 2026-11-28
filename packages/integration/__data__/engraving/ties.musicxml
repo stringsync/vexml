@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list><score-part id="P1"><part-name>Clarinet</part-name></score-part></part-list>
+  <part id="P1">
+    <!-- M1: Space note tied across a half bar. -->
+    <measure number="1">
+      <attributes><divisions>8</divisions><key><fifths>0</fifths></key><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M2: The same tie, for comparison with M3. -->
+    <measure number="2">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M3: A slur between the same two notes. -->
+    <measure number="3">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>half</type><notations><slur type="start" number="1"/></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>half</type><notations><slur type="stop" number="1"/></notations></note>
+    </measure>
+    <!-- M4: Enharmonic tie, F sharp to G flat. -->
+    <measure number="4">
+      <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><accidental>sharp</accidental><notations><tied type="start"/></notations></note>
+      <note><pitch><step>G</step><alter>-1</alter><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><accidental>flat</accidental><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M5: A sixteenth tied to the note right after it. -->
+    <measure number="5">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><tie type="start"/><voice>1</voice><type>16th</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>6</duration><tie type="stop"/><voice>1</voice><type>eighth</type><dot/><notations><tied type="stop"/></notations></note>
+      <note><rest/><duration>8</duration><voice>1</voice><type>quarter</type></note>
+      <note><rest/><duration>16</duration><voice>1</voice><type>half</type></note>
+    </measure>
+    <!-- M6: Whole note tied over the barline. -->
+    <measure number="6">
+      <print new-system="yes"/>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>32</duration><tie type="start"/><voice>1</voice><type>whole</type><notations><tied type="start"/></notations></note>
+    </measure>
+    <!-- M7: Its tied continuation. -->
+    <measure number="7">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>32</duration><tie type="stop"/><voice>1</voice><type>whole</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M8: Flagged up-stem chord tied to a quarter chord. -->
+    <measure number="8">
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>4</duration><tie type="start"/><voice>1</voice><type>eighth</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><tie type="start"/><voice>1</voice><type>eighth</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>B</step><octave>4</octave></pitch><duration>4</duration><tie type="start"/><voice>1</voice><type>eighth</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>8</duration><tie type="stop"/><voice>1</voice><type>quarter</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>8</duration><tie type="stop"/><voice>1</voice><type>quarter</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>B</step><octave>4</octave></pitch><duration>8</duration><tie type="stop"/><voice>1</voice><type>quarter</type><notations><tied type="stop"/></notations></note>
+      <note><rest/><duration>4</duration><voice>1</voice><type>eighth</type></note>
+      <note><rest/><duration>16</duration><voice>1</voice><type>half</type></note>
+    </measure>
+    <!-- M9: Tied notes carrying accents and tenuto below. -->
+    <measure number="9">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><tie type="start"/><voice>1</voice><type>quarter</type><notations><tied type="start"/><articulations><accent placement="below"/></articulations></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><tie type="stop"/><voice>1</voice><type>quarter</type><notations><tied type="stop"/><articulations><tenuto placement="below"/></articulations></notations></note>
+      <note><rest/><duration>16</duration><voice>1</voice><type>half</type></note>
+    </measure>
+    <!-- M10: Down-stem two-note chord tied to the next. -->
+    <measure number="10">
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M11: Four-note chord in thirds, tied. -->
+    <measure number="11">
+      <print new-system="yes"/>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>E</step><octave>5</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>E</step><octave>5</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M12: Close-position five-note chord, tied. -->
+    <measure number="12">
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>E</step><octave>5</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>G</step><octave>5</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>E</step><octave>5</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>G</step><octave>5</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M13: Chord with a second, tied to a shorter chord. -->
+    <measure number="13">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>B</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><tie type="stop"/><voice>1</voice><type>quarter</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>B</step><octave>4</octave></pitch><duration>8</duration><tie type="stop"/><voice>1</voice><type>quarter</type><notations><tied type="stop"/></notations></note>
+      <note><rest/><duration>8</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+    <!-- M14: Dotted notes tied to the next. -->
+    <measure number="14">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>12</duration><tie type="start"/><voice>1</voice><type>quarter</type><dot/><notations><tied type="start"/></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><tie type="stop"/><voice>1</voice><type>eighth</type><notations><tied type="stop"/></notations></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>12</duration><tie type="start"/><voice>1</voice><type>quarter</type><dot/><notations><tied type="start"/></notations></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>4</duration><tie type="stop"/><voice>1</voice><type>eighth</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M15: Dotted four-note chord, tied. -->
+    <measure number="15">
+      <print new-system="yes"/>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>24</duration><tie type="start"/><voice>1</voice><type>half</type><dot/><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>24</duration><tie type="start"/><voice>1</voice><type>half</type><dot/><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>24</duration><tie type="start"/><voice>1</voice><type>half</type><dot/><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>E</step><octave>5</octave></pitch><duration>24</duration><tie type="start"/><voice>1</voice><type>half</type><dot/><notations><tied type="start"/></notations></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>8</duration><tie type="stop"/><voice>1</voice><type>quarter</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><tie type="stop"/><voice>1</voice><type>quarter</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>8</duration><tie type="stop"/><voice>1</voice><type>quarter</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>E</step><octave>5</octave></pitch><duration>8</duration><tie type="stop"/><voice>1</voice><type>quarter</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M16: Ledger, space and high notes tied. -->
+    <measure number="16">
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>8</duration><tie type="start"/><voice>1</voice><type>quarter</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>8</duration><tie type="stop"/><voice>1</voice><type>quarter</type><notations><tied type="stop"/></notations></note>
+      <note><pitch><step>A</step><octave>5</octave></pitch><duration>8</duration><tie type="start"/><voice>1</voice><type>quarter</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>A</step><octave>5</octave></pitch><duration>8</duration><tie type="stop"/><voice>1</voice><type>quarter</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M17: Stemless note below the middle line. -->
+    <measure number="17">
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>32</duration><tie type="start"/><voice>1</voice><type>whole</type><notations><tied type="start"/></notations></note>
+    </measure>
+    <!-- M18: Its tied continuation. -->
+    <measure number="18">
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>32</duration><tie type="stop"/><voice>1</voice><type>whole</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M19: Stemless note above the middle line. -->
+    <measure number="19">
+      <print new-system="yes"/>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>32</duration><tie type="start"/><voice>1</voice><type>whole</type><notations><tied type="start"/></notations></note>
+    </measure>
+    <!-- M20: Its tied continuation. -->
+    <measure number="20">
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>32</duration><tie type="stop"/><voice>1</voice><type>whole</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M21: Ties between notes with opposite stems. -->
+    <measure number="21">
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>8</duration><tie type="start"/><voice>1</voice><type>quarter</type><stem>up</stem><notations><tied type="start"/></notations></note>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>8</duration><tie type="stop"/><voice>1</voice><type>quarter</type><stem>down</stem><notations><tied type="stop"/></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><tie type="start"/><voice>1</voice><type>eighth</type><stem>up</stem><notations><tied type="start"/></notations></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><tie type="stop"/><voice>1</voice><type>quarter</type><stem>down</stem><notations><tied type="stop"/></notations></note>
+      <note><rest/><duration>4</duration><voice>1</voice><type>eighth</type></note>
+    </measure>
+    <!-- M22: Up-stem note tied over the system break. -->
+    <measure number="22">
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>32</duration><tie type="start"/><voice>1</voice><type>whole</type><notations><tied type="start"/></notations></note>
+    </measure>
+    <!-- M23: New system with a new key and metre; the tie ends on a down-stem note. -->
+    <measure number="23">
+      <print new-system="yes"/>
+      <attributes><key><fifths>2</fifths></key><time><beats>3</beats><beat-type>8</beat-type></time></attributes>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><tie type="stop"/><voice>1</voice><type>eighth</type><stem>down</stem><beam number="1">begin</beam><notations><tied type="stop"/></notations></note>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>eighth</type><stem>down</stem><beam number="1">end</beam></note>
+      <note><rest/><duration>4</duration><voice>1</voice><type>eighth</type></note>
+    </measure>
+    <!-- M24: Two-note chord tied. -->
+    <measure number="24">
+      <attributes><key><fifths>0</fifths></key><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M25: Three-note up-stem chord tied. -->
+    <measure number="25">
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M26: Chord on ledger lines above, tied. -->
+    <measure number="26">
+      <note><pitch><step>A</step><octave>5</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>C</step><octave>6</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>E</step><octave>6</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>A</step><octave>5</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>C</step><octave>6</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>E</step><octave>6</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M27: Chord with one second, tied. -->
+    <measure number="27">
+      <print new-system="yes"/>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M28: Chord with two seconds, tied. -->
+    <measure number="28">
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>E</step><octave>5</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>E</step><octave>5</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+    </measure>
+    <!-- M29: Three-note cluster, tied. -->
+    <measure number="29">
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="start"/><voice>1</voice><type>half</type><notations><tied type="start"/></notations></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+      <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><tie type="stop"/><voice>1</voice><type>half</type><notations><tied type="stop"/></notations></note>
+    </measure>
+  </part>
+</score-partwise>

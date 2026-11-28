@@ -7,6 +7,8 @@ import {
 } from './constants';
 import { DefaultScoreParser } from './default-score-parser';
 import { DynamicGlyphs } from './dynamic-glyphs';
+import { FakeHistory } from './fake-history';
+import { FakeReadCounter } from './fake-read-counter';
 import { ScoreReader } from './score-reader';
 
 describe('ScoreReader', () => {
@@ -43,34 +45,18 @@ describe('ScoreReader', () => {
 
 	it('reads hot note children once per render reader', async () => {
 		const measure = await measureOf(QUARTER);
-		const note = required(measure.notes[0], 'fixture note');
-		let dotReads = 0;
-		let accidentalReads = 0;
-		let chordReads = 0;
-		Object.defineProperty(note, 'dots', {
-			get: () => {
-				dotReads++;
-				return 2;
-			},
-		});
-		Object.defineProperty(note, 'accidental', {
-			get: () => {
-				accidentalReads++;
-				return null;
-			},
-		});
-		Object.defineProperty(note, 'isChordMember', {
-			get: () => {
-				chordReads++;
-				return false;
-			},
-		});
+		const counter = new FakeReadCounter(
+			required(measure.notes[0], 'fixture note'),
+			{ dots: 2, accidental: null, isChordMember: false },
+		);
+		const note = counter.view;
 
 		expect(reader.notesOf(measure)).toBe(reader.notesOf(measure));
 		expect(reader.beamsOf(note)).toBe(reader.beamsOf(note));
 		expect(reader.technicalsOf(note)).toBe(reader.technicalsOf(note));
 		expect(reader.lyricsOf(note)).toBe(reader.lyricsOf(note));
 		expect(reader.ornamentsOf(note)).toBe(reader.ornamentsOf(note));
+		expect(reader.accidentalMarksOf(note)).toBe(reader.accidentalMarksOf(note));
 		expect(reader.tiesOf(note)).toBe(reader.tiesOf(note));
 		expect(reader.dotsOf(note)).toBe(2);
 		expect(reader.dotsOf(note)).toBe(2);
@@ -78,13 +64,13 @@ describe('ScoreReader', () => {
 		expect(reader.accidentalOf(note)).toBeNull();
 		expect(reader.isChordMember(note)).toBe(false);
 		expect(reader.isChordMember(note)).toBe(false);
-		expect(dotReads).toBe(1);
-		expect(accidentalReads).toBe(1);
-		expect(chordReads).toBe(1);
+		expect(counter.readsOf('dots')).toBe(1);
+		expect(counter.readsOf('accidental')).toBe(1);
+		expect(counter.readsOf('isChordMember')).toBe(1);
 
 		const nextRender = new ScoreReader(new DynamicGlyphs());
 		expect(nextRender.dotsOf(note)).toBe(2);
-		expect(dotReads).toBe(2);
+		expect(counter.readsOf('dots')).toBe(2);
 	});
 
 	it('keeps cached beam grouping equivalent to mdom', async () => {
@@ -160,6 +146,24 @@ describe('ScoreReader', () => {
 		);
 		expect(plain?.parenthesis).toBe(false);
 		expect(wrapped?.parenthesis).toBe(true);
+	});
+
+	it('links tempo words preceding a metronome in the same direction, and skips words following it', async () => {
+		const m = await measureOf(
+			'<direction>' +
+				'<direction-type><words>Tempo I</words></direction-type>' +
+				'<direction-type><metronome parentheses="yes"><beat-unit>quarter</beat-unit><per-minute>72</per-minute></metronome></direction-type>' +
+				'</direction>' +
+				'<direction>' +
+				'<direction-type><metronome parentheses="no"><beat-unit>quarter</beat-unit><per-minute>76</per-minute></metronome></direction-type>' +
+				'<direction-type><words>Feierlich</words></direction-type>' +
+				'</direction>',
+		);
+		const words = reader.wordsOf(m);
+		const tempo = reader.tempoOf(m);
+		expect(words[0]?.tempoDirection).toBe(tempo?.direction);
+		expect(words[0]?.tempoDirection).toBeDefined();
+		expect(words[1]?.tempoDirection).toBeUndefined();
 	});
 
 	/*
@@ -496,21 +500,13 @@ describe('ScoreReader', () => {
 			const measure = await measureOf(
 				`<direction><direction-type><words>Andante</words></direction-type>${offset}</direction>`,
 			);
-			const part = measure.part;
-			const measures = part.measures;
-			let historyReads = 0;
-			Object.defineProperty(part, 'measures', {
-				get: () => {
-					historyReads++;
-					return measures;
-				},
-			});
+			const history = new FakeHistory(measure);
 
-			expect(reader.wordsOf(measure)[0]).toMatchObject({
+			expect(reader.wordsOf(history.measure)[0]).toMatchObject({
 				text: 'Andante',
 				lead: measure.notes[0],
 			});
-			expect(historyReads).toBe(0);
+			expect(history.reads).toBe(0);
 		},
 	);
 
@@ -519,20 +515,12 @@ describe('ScoreReader', () => {
 			'<direction><direction-type><words>later</words></direction-type><offset>1</offset></direction>' +
 				'<harmony><root><root-step>C</root-step></root><kind>major</kind><offset>1</offset></harmony>',
 		);
-		const part = measure.part;
-		const measures = part.measures;
-		let historyReads = 0;
-		Object.defineProperty(part, 'measures', {
-			get: () => {
-				historyReads++;
-				return measures;
-			},
-		});
+		const history = new FakeHistory(measure);
 
-		expect(reader.wordsOf(measure)[0]?.lead).toBe(measure.notes[1]);
-		expect(reader.harmoniesOf(measure)[0]?.lead).toBe(measure.notes[1]);
-		expect(reader.wordsOf(measure)[0]?.lead).toBe(measure.notes[1]);
-		expect(historyReads).toBe(1);
+		expect(reader.wordsOf(history.measure)[0]?.lead).toBe(measure.notes[1]);
+		expect(reader.harmoniesOf(history.measure)[0]?.lead).toBe(measure.notes[1]);
+		expect(reader.wordsOf(history.measure)[0]?.lead).toBe(measure.notes[1]);
+		expect(history.reads).toBe(1);
 	});
 
 	it('uses the divisions in effect at each measure', async () => {
@@ -563,18 +551,10 @@ describe('ScoreReader', () => {
 		expect(reader.wordsOf(measure)[0]?.lead).toBe(measure.notes[1]);
 		measure.setDivisions(2);
 
-		const part = measure.part;
-		const measures = part.measures;
-		let historyReads = 0;
-		Object.defineProperty(part, 'measures', {
-			get: () => {
-				historyReads++;
-				return measures;
-			},
-		});
+		const history = new FakeHistory(measure);
 		const nextRender = new ScoreReader(new DynamicGlyphs());
-		expect(nextRender.wordsOf(measure)[0]?.lead).toBe(measure.notes[1]);
-		expect(historyReads).toBe(1);
+		expect(nextRender.wordsOf(history.measure)[0]?.lead).toBe(measure.notes[1]);
+		expect(history.reads).toBe(1);
 	});
 
 	it('reads an other-direction as its smufl glyph, else its text', async () => {
@@ -636,6 +616,66 @@ describe('ScoreReader', () => {
 				rotation: -45,
 				align: 'center',
 				valign: null,
+			},
+		]);
+	});
+
+	it('marks words paired with sound tempo or metronome as tempo indications without inheriting word-font weight', async () => {
+		const doc =
+			await new DefaultScoreParser().parse(`<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <defaults><word-font font-size="10" font-weight="normal" font-style="italic"/></defaults>
+  <part-list><score-part id="P1"><part-name>P1</part-name></score-part></part-list>
+  <part id="P1"><measure number="1">
+    <attributes><divisions>1</divisions></attributes>
+    <direction>
+      <direction-type><words>Allegro</words></direction-type>
+      <sound tempo="120"/>
+    </direction>
+    <direction>
+      <direction-type><words font-weight="normal" font-size="11">Lento</words></direction-type>
+      <direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>60</per-minute></metronome></direction-type>
+    </direction>
+    <direction>
+      <direction-type><words>dolce</words></direction-type>
+    </direction>
+    <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+  </measure></part>
+</score-partwise>`);
+		const measure = doc.score.parts[0]?.measures[0] as MMeasure;
+		expect(
+			reader.wordsOf(measure).map((w) => ({
+				text: w.text,
+				tempo: w.tempo,
+				explicitSize: w.explicitSize,
+				bold: w.format.bold,
+				italic: w.format.italic,
+				scale: w.format.scale,
+			})),
+		).toEqual([
+			{
+				text: 'Allegro',
+				tempo: true,
+				explicitSize: false,
+				bold: null,
+				italic: null,
+				scale: 1,
+			},
+			{
+				text: 'Lento',
+				tempo: true,
+				explicitSize: true,
+				bold: false,
+				italic: null,
+				scale: 1.1,
+			},
+			{
+				text: 'dolce',
+				tempo: false,
+				explicitSize: false,
+				bold: false,
+				italic: true,
+				scale: 1,
 			},
 		]);
 	});
@@ -1467,6 +1507,30 @@ describe('ScoreReader', () => {
 		expect(layout.blankPages(0)).toBe(0);
 		expect(layout.blankPages(1)).toBe(2);
 		expect(layout.blankPages(2)).toBe(0);
+	});
+
+	it('scales meterFloor by a bar-wide unbracketed time-modification ratio', async () => {
+		const tm =
+			'<time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>';
+		const scaledNote = `<note><pitch><step>C</step><octave>5</octave></pitch><duration>2</duration><voice>1</voice><type>quarter</type>${tm}</note>`;
+		const plainNote =
+			'<note><pitch><step>C</step><octave>5</octave></pitch><duration>3</duration><voice>1</voice><type>quarter</type></note>';
+		const mdoc = await new DefaultScoreParser().parse(`<?xml version="1.0"?>
+<score-partwise version="4.0">
+	<part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+	<part id="P1">
+		<measure number="1">
+			<attributes><divisions>3</divisions><time><beats>6</beats><beat-type>4</beat-type></time></attributes>
+			${scaledNote.repeat(6)}
+		</measure>
+		<measure number="2">
+			${scaledNote}${plainNote}
+		</measure>
+	</part>
+</score-partwise>`);
+		const [scaled, mixed] = mdoc.score.parts[0]?.measures ?? [];
+		expect(reader.meterFloor(required(scaled, 'scaled measure'))).toBe(4);
+		expect(reader.meterFloor(required(mixed, 'mixed measure'))).toBe(6);
 	});
 });
 

@@ -1,9 +1,10 @@
-import { CanvasContext } from 'vexflow/core';
+import type { CanvasContext } from 'vexflow/core';
 import { Affine } from '../vexml/affine';
 import { CanvasPaintProbe } from '../vexml/canvas-paint-probe';
 import { PaintContext } from '../vexml/paint-context';
 import { PaintList } from '../vexml/paint-list';
 import { PaintReplayer } from '../vexml/paint-replayer';
+import { RecordingCanvasContext } from '../vexml/recording-canvas-context';
 import type { InkMask } from './ink-mask';
 import { PaintInkMasks } from './paint-ink-masks';
 
@@ -25,11 +26,7 @@ export class LegacyInkRecording {
 			new CanvasPaintProbe(probe),
 			null,
 		);
-		this.context = new CanvasContext(
-			this.recorder as unknown as CanvasRenderingContext2D,
-		);
-		this.context.openGroup = (kind) => this.list.openGroup(kind ?? 'element');
-		this.context.closeGroup = () => this.list.closeGroup();
+		this.context = new RecordingCanvasContext(this.recorder, this.list);
 	}
 
 	reset(): void {

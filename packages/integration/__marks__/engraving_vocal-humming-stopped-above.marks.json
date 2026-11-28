@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_vocal-humming-stopped-above.png",
+	"width": 932,
+	"height": 408,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 191,
+				"y": 76
+			},
+			"to": {
+				"x": 202,
+				"y": 87
+			},
+			"label": "A4 with + above",
+			"note": "A4 with + above",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 253,
+				"y": 86
+			},
+			"to": {
+				"x": 264,
+				"y": 97
+			},
+			"label": "D5 with + above",
+			"note": "D5 with + above",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

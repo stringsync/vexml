@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_dot-unison-one-stem.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 114,
+				"y": 749
+			},
+			"to": {
+				"x": 118,
+				"y": 753
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 114,
+				"y": 739
+			},
+			"to": {
+				"x": 118,
+				"y": 743
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 88.6,
+				"y": 741
+			},
+			"to": {
+				"x": 100.6,
+				"y": 751
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 100,
+				"y": 741
+			},
+			"to": {
+				"x": 112,
+				"y": 751
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 764,
+				"y": 1079
+			},
+			"to": {
+				"x": 768,
+				"y": 1083
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 764,
+				"y": 1069
+			},
+			"to": {
+				"x": 768,
+				"y": 1073
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 728.2,
+				"y": 1076
+			},
+			"to": {
+				"x": 745.2,
+				"y": 1086
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 744.6,
+				"y": 1076
+			},
+			"to": {
+				"x": 761.6,
+				"y": 1086
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

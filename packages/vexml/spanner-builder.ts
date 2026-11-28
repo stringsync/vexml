@@ -26,9 +26,12 @@ import type { SlurCurve } from './slur-curve';
 import { type SpanScope, WHOLE_SCORE } from './span-scope';
 import type { TabCurve } from './tab-curve';
 import type { TabSlideLine } from './tab-slide-line';
-import { TieBuilder } from './tie-builder';
+import { TieBuilder, type TieOptions } from './tie-builder';
 import { TremoloBuilder } from './tremolo-builder';
-import { TupletBuilder } from './tuplet-builder';
+import {
+	type CrossBarlineTupletOptions,
+	TupletBuilder,
+} from './tuplet-builder';
 import { WavyLineBuilder } from './wavy-line-builder';
 import { WedgeBuilder, type WedgeOptions } from './wedge-builder';
 
@@ -56,9 +59,12 @@ export class SpannerBuilder {
 		this.appearance = appearance;
 	}
 
-	/* The slashes of two-note tremolos. */
+	/* The beams of two-note tremolos. */
 	buildTremolos(chords: Chord[], byLead: Map<Note, StaveNote>): BowedTremolo[] {
-		return new TremoloBuilder(this.reader).build(chords, byLead);
+		return new TremoloBuilder(this.reader, this.appearance).build(
+			chords,
+			byLead,
+		);
 	}
 
 	/* Beams, built before formatting so the beamed notes drop their flags. */
@@ -85,16 +91,29 @@ export class SpannerBuilder {
 		);
 	}
 
-	/* Ties, drawn after the notes are placed. */
+	/* Cross-barline tuplet brackets, resolved over the spanner pool after notes are placed. */
+	buildCrossBarlineTuplets<T extends StemmableNote>(
+		chords: Chord[],
+		byLead: Map<Note, T>,
+		opts: CrossBarlineTupletOptions<T> = {},
+	): Tuplet[] {
+		return new TupletBuilder(this.reader, this.appearance).buildCrossBarline(
+			chords,
+			byLead,
+			opts,
+		);
+	}
+
+	/* Ties, drawn after the notes are placed; `wraps` tells a later system from another stave of the same one. */
 	buildTies(
 		chords: Chord[],
 		byLead: Map<Note, StaveNote>,
-		scope: SpanScope = WHOLE_SCORE,
+		opts: TieOptions = {},
 	): StaveTie[] {
 		return new TieBuilder(this.connectors, this.appearance).build(
 			chords,
 			byLead,
-			scope,
+			opts,
 		);
 	}
 
@@ -144,7 +163,7 @@ export class SpannerBuilder {
 		byLead: Map<Note, StaveNote>,
 		scope: SpanScope = WHOLE_SCORE,
 	): VibratoBracket[] {
-		return new WavyLineBuilder().build(chords, byLead, scope);
+		return new WavyLineBuilder(this.connectors).build(chords, byLead, scope);
 	}
 
 	/* Pedal signs and lines, each with the notes it covers. */

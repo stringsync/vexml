@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): microtone-arrow-accidentals (p. 94) — arrowed quarter-tone accidentals -->
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>6</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note>
+        <pitch><step>G</step><alter>-0.5</alter><octave>4</octave></pitch>
+        <duration>1</duration><type>quarter</type><accidental>flat-up</accidental>
+      </note>
+      <note>
+        <pitch><step>A</step><alter>-1.5</alter><octave>4</octave></pitch>
+        <duration>1</duration><type>quarter</type><accidental>flat-down</accidental>
+      </note>
+      <note>
+        <pitch><step>B</step><alter>0.5</alter><octave>4</octave></pitch>
+        <duration>1</duration><type>quarter</type><accidental>natural-up</accidental>
+      </note>
+      <note>
+        <pitch><step>C</step><alter>-0.5</alter><octave>5</octave></pitch>
+        <duration>1</duration><type>quarter</type><accidental>natural-down</accidental>
+      </note>
+      <note>
+        <pitch><step>D</step><alter>1.5</alter><octave>5</octave></pitch>
+        <duration>1</duration><type>quarter</type><accidental>sharp-up</accidental>
+      </note>
+      <note>
+        <pitch><step>E</step><alter>0.5</alter><octave>5</octave></pitch>
+        <duration>1</duration><type>quarter</type><accidental>sharp-down</accidental>
+      </note>
+    </measure>
+
+    <!-- M2 (index 1): microtone-fixed-symbols (p. 96) — fixed quarter-tone symbols -->
+    <measure number="2">
+      <attributes>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <note>
+        <pitch><step>G</step><alter>0.5</alter><octave>4</octave></pitch>
+        <duration>1</duration><type>quarter</type><accidental>quarter-sharp</accidental>
+      </note>
+      <note>
+        <pitch><step>A</step><alter>1.5</alter><octave>4</octave></pitch>
+        <duration>1</duration><type>quarter</type><accidental>three-quarters-sharp</accidental>
+      </note>
+      <note>
+        <pitch><step>B</step><alter>-0.5</alter><octave>4</octave></pitch>
+        <duration>1</duration><type>quarter</type><accidental>quarter-flat</accidental>
+      </note>
+      <note>
+        <pitch><step>C</step><alter>-1.5</alter><octave>5</octave></pitch>
+        <duration>1</duration><type>quarter</type><accidental>three-quarters-flat</accidental>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

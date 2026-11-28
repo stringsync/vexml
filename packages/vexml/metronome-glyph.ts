@@ -12,10 +12,11 @@ import type { DocumentPosition } from './score-reader';
  * for collisions and the ink that actually lands come from the same numbers.
  */
 export class MetronomeGlyph {
-	/** Total advance width, and how far the ink reaches above/below the baseline. */
+	/** Total advance width, how far the ink reaches above/below the baseline, and the center of `=`. */
 	readonly width: number;
 	readonly ascent: number;
 	readonly descent: number;
+	readonly equalsCenter: number;
 
 	private readonly placed: Placed[] = [];
 	private readonly bars: Bar[] = [];
@@ -53,7 +54,9 @@ export class MetronomeGlyph {
 		}
 		this.putGroup(modulation.left);
 		this.x += GAP;
+		const equalsLeft = this.x;
 		this.putText('=');
+		this.equalsCenter = (equalsLeft + this.x) / 2;
 		this.x += GAP;
 		if (modulation.rate !== null) {
 			this.putText(modulation.rate);
@@ -317,16 +320,41 @@ export class MetronomeGlyph {
  * metNoteWhole, then the stem-up metNoteHalfUp through metNote128thUp.
  */
 const NOTE_GLYPHS: Record<string, string> = {
+	long: '\uECA1',
+	'1/4': '\uECA1',
 	breve: '\uECA0',
+	'1/2': '\uECA0',
 	whole: '\uECA2',
+	w: '\uECA2',
+	'1': '\uECA2',
 	half: '\uECA3',
+	h: '\uECA3',
+	'2': '\uECA3',
 	quarter: '\uECA5',
+	q: '\uECA5',
+	'4': '\uECA5',
 	eighth: '\uECA7',
+	'8': '\uECA7',
 	'16th': '\uECA9',
+	'16': '\uECA9',
 	'32nd': '\uECAB',
+	'32': '\uECAB',
 	'64th': '\uECAD',
+	'64': '\uECAD',
 	'128th': '\uECAF',
+	'128': '\uECAF',
+	'256th': '\uECB1',
+	'256': '\uECB1',
+	'512th': '\uECB3',
+	'512': '\uECB3',
+	'1024th': '\uECB5',
+	'1024': '\uECB5',
 };
+
+/** SMuFL metronome note glyph for a MusicXML beat-unit or VexFlow duration code. */
+export function metronomeNoteGlyph(duration: string): string {
+	return NOTE_GLYPHS[duration] ?? BEAMED_GLYPH;
+}
 
 /*
  * metNoteQuarterUp: a stemmed black notehead with NO flag, which is exactly what a beamed note

@@ -26,6 +26,21 @@ export class TabPools implements AsyncResource {
 		return existing;
 	}
 
+	/** Screenshot `selector` on a one-off tab of the shared browser loaded with `html`. */
+	async snapshot(opts: HtmlSnapshotInput): Promise<Buffer> {
+		this.browser ??= new PlaywrightBrowser();
+		const tab = await this.browser.open({
+			html: opts.html,
+			width: opts.width,
+			height: opts.height,
+		});
+		try {
+			return await tab.screenshot(opts.selector);
+		} finally {
+			await tab.disposeAsync();
+		}
+	}
+
 	/** Close the pooled tabs and the shared browser, and forget the pools. Rendering
 	 * after this lazily starts fresh machinery. */
 	async disposeAsync(): Promise<void> {
@@ -38,6 +53,16 @@ export class TabPools implements AsyncResource {
 		}
 		await browser?.disposeAsync();
 	}
+}
+
+/** A self-contained HTML document (inline styles, data-URL images) to capture. */
+export interface HtmlSnapshotInput {
+	html: string;
+	/** The element to capture. */
+	selector: string;
+	/** Viewport size in CSS pixels; the capture reaches below it but not past its width. */
+	width: number;
+	height: number;
 }
 
 /** The one set of pools for the run: every renderer borrows its tabs from here, and

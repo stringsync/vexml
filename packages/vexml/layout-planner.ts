@@ -1,13 +1,20 @@
 // vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
 import type { Chord, Measure, Part, Score } from '@stringsync/mdom';
 import {
-	Formatter,
 	GhostNote,
 	GraceNoteGroup,
 	Metrics,
+	type StaveNote,
 	type Voice,
 } from 'vexflow/core';
+import { AlignedFormatter } from './aligned-formatter';
 import { Appearance } from './appearance';
+import {
+	drawsFinalBarline,
+	finalBarlineInset,
+	repeatEndPadding,
+} from './barline-width';
+import { tuckChordAccidentals } from './chord-accidental-overlap';
 import type { Config, Gap, PanoramicLayout, StandardLayout } from './config';
 import {
 	BASE_VOICE_WIDTH,
@@ -25,6 +32,7 @@ import {
 	LEAD_CLEF,
 	LEAD_CLEF_CHANGE,
 	LEAD_KEY,
+	LEAD_REPEAT_BEGIN,
 	LEAD_TIME,
 	LOG_SPACING_RATIO,
 	MIN_LOG_FACTOR,
@@ -34,11 +42,14 @@ import {
 	PAGE_MARGIN_TOP_WITH_TEMPO,
 	PAGE_MARGIN_X,
 	QUARTER_NOTE_TICKS,
+	STAVE_LINE_DISTANCE,
+	TAB_LINE_DISTANCE,
 	TAB_MIN_NOTE_SPACING,
 	TUPLET_MIN_GROUP_WIDTH,
 	WORDS_CHAR_WIDTH,
 } from './constants';
 import type { DocumentLayout, DocumentPage, PageSize } from './document-layout';
+import { ExtendedTimeSignature } from './extended-time-signature';
 import type { Gaps } from './gaps';
 import { HeaderPlan } from './header-plan';
 import type { LayoutPlan } from './layout-plan';
@@ -48,7 +59,12 @@ import type { MidClefSpec, SignatureTranslator } from './signature-translator';
 import { StaveFactory } from './stave-factory';
 import type { StavePlan } from './stave-plan';
 import type { TabVoiceTranslator } from './tab-voice-translator';
-import type { VoiceTranslator } from './voice-translator';
+import { crossStaffStems, voiceStems } from './voice-builder';
+import { offsetAdjacentVoices, type VoiceTieEnds } from './voice-note-offset';
+import type {
+	VoiceTickablesOptions,
+	VoiceTranslator,
+} from './voice-translator';
 import { WholeLayoutPlan } from './whole-layout-plan';
 
 export class LayoutPlanner {
@@ -108,33 +124,68 @@ export class LayoutPlanner {
 			tuning,
 			barlines,
 			midClefs,
+			staffSpace,
+			stemOf,
 		} of staves) {
 			// Match drawNotes: pad underfull measures to the meter so the measured width
 			// reserves the same trailing space the draw pass will leave.
 			const endBeat = Math.max(this.reader.endBeatOf(voices), meterFloor);
+			const tieStarts = new Set<StaveNote>();
+			const tieStops = new Set<StaveNote>();
+			const stems = voiceStems(voices, clef);
 			// Tab voices build TabNotes (no ghost padding), matching drawTabNotes.
-			const perVoice = voices.map((voice, voiceIndex) =>
-				isTab
-					? this.tab.tickables(voice.chords, tuning)
-					: this.translator.tickables(voice.chords, clef, {
-							endBeat,
-							run: voice.run,
-							// Matches buildNotes: the dividers and clef glyphs ride on the first
-							// voice only, but the clef changes re-aim every voice's notes.
-							barlines: voiceIndex === 0 ? barlines : [],
-							midClefs,
-							drawMidClefs: voiceIndex === 0,
-						}),
-			);
+			const perVoice = voices.map((voice, voiceIndex) => {
+				if (isTab) {
+					return this.tab.tickables(voice.chords, tuning);
+				}
+				const chordByLead =
+					voices.length > 1
+						? new Map(voice.chords.map((chord) => [chord.lead, chord]))
+						: undefined;
+				return this.translator.tickables(voice.chords, clef, {
+					endBeat,
+					run: voice.run,
+					defaultStem: stems[voiceIndex],
+					stemOf,
+					record: chordByLead
+						? (lead, note) => {
+								const chord = chordByLead.get(lead);
+								if (!chord) {
+									return;
+								}
+								for (const member of chord.notes) {
+									for (const tie of this.reader.tiesOf(member)) {
+										if (tie.tieType === 'start') {
+											tieStarts.add(note);
+										} else if (tie.tieType === 'stop') {
+											tieStops.add(note);
+										}
+									}
+								}
+							}
+						: undefined,
+					// Matches buildNotes: the dividers and clef glyphs ride on the first
+					// voice only, but the clef changes re-aim every voice's notes.
+					barlines: voiceIndex === 0 ? barlines : [],
+					midClefs,
+					drawMidClefs: voiceIndex === 0,
+					staffSpace,
+					multipleVoices: voices.length > 1,
+				});
+			});
 			const vexVoices = perVoice.map((tickables) =>
 				this.translator.softVoice(tickables, softmaxFactor),
 			);
 			if (vexVoices.length === 0) {
 				continue;
 			}
+			const ties =
+				!isTab && voices.length > 1
+					? { starts: tieStarts, stops: tieStops }
+					: undefined;
 			minNotes = Math.max(
 				minNotes,
-				this.minNoteWidth(vexVoices, softmaxFactor),
+				this.minNoteWidth(vexVoices, softmaxFactor, ties),
 			);
 			// Brackets are built at draw time, after this measuring, so the formatter's minimum
 			// never sees them: floor the width by the busiest voice's outermost tuplet groups.
@@ -247,8 +298,16 @@ export class LayoutPlanner {
 	 * skips ghosts, and duration spread is taken within each voice (the busiest wins). A
 	 * single voice with no ghosts gets vexflow's own number.
 	 */
-	private minNoteWidth(voices: Voice[], softmaxFactor: number): number {
-		const formatter = new Formatter({ softmaxFactor }).joinVoices(voices);
+	private minNoteWidth(
+		voices: Voice[],
+		softmaxFactor: number,
+		ties?: VoiceTieEnds,
+	): number {
+		const formatter = new AlignedFormatter({ softmaxFactor }).joinVoices(
+			voices,
+		);
+		offsetAdjacentVoices(voices, ties);
+		tuckChordAccidentals(voices);
 		formatter.preCalculateMinTotalWidth(voices);
 		const contexts = formatter.getTickContexts();
 		const ticks = contexts?.list ?? [];
@@ -739,7 +798,10 @@ export class LayoutPlanner {
 		// The last leading box butts against whatever opens the system: the part labels, or
 		// the bracket/brace reaching left of the staves, whichever is wider. That room replaces
 		// the first system's label indent, so it counts here only by what it adds to it.
-		const systemOverhang = this.staves.systemOverhang(parts);
+		const systemOverhang = this.staves.systemOverhang(
+			parts,
+			this.reader.partGroups(score),
+		);
 		const lastLeading = firstMusic === undefined ? -1 : firstMusic - 1;
 		const edgeLeadOf = (m: number) =>
 			edgeWidthOf(m) +
@@ -779,17 +841,30 @@ export class LayoutPlanner {
 				if (!measure) {
 					continue;
 				}
-				for (const staffNumber of this.staves.visibleNumbers(part)) {
+				const staffNumbers = this.staves.visibleNumbers(part);
+				// Only actual width measurements need cross-staff stems. The
+				// forecast uses beat counts and never builds any tickables.
+				let stems: ReturnType<typeof crossStaffStems> | undefined;
+				const stemOf: NonNullable<VoiceTickablesOptions['stemOf']> = (lead) => {
+					stems ??= crossStaffStems(this.reader, measure, staffNumbers);
+					return stems.get(lead);
+				};
+				for (const staffNumber of staffNumbers) {
 					const clef = measure.getClef(staffNumber);
 					const voices = this.reader.staffVoices(measure, staffNumber);
 					if (voices.length > 0) {
 						staves.push({
 							voices,
+							stemOf,
 							clef: clef ? this.signatures.clefName(clef) : 'treble',
 							meterFloor: this.reader.meterFloor(measure, staffNumber),
 							isTab: this.staves.isTab(part, staffNumber),
 							tuning: this.staves.tuningOf(part, staffNumber),
 							barlines: this.reader.midBarlinesOf(measure),
+							staffSpace:
+								(STAVE_LINE_DISTANCE *
+									StaveFactory.staffSizing(measure, staffNumber).size) /
+								100,
 							midClefs: this.signatures.midClefSpecs(
 								this.reader.midClefsOf(measure, staffNumber),
 							),
@@ -876,13 +951,46 @@ export class LayoutPlanner {
 			return { min: width, ideal: width, fixed: true };
 		};
 
-		// Room held open before the right barline for a directive on the measure's last note
-		// (see trailingWordsPad). Budgeted alongside the leads: fixed either way, never
-		// stretched or squeezed, so the text keeps its room at any system width.
+		// The closing strokes extend into the measure. Reserve their space even when
+		// the note area is squeezed to its minimum.
+		const lastDrawn = music.findLast((m) => !multiRestHidden.has(m));
+		const closingPadOf = (m: number): number => {
+			const bars = parts[0]?.measures[m]?.barlines ?? [];
+			const style =
+				bars.find((bar) => bar.location === 'right')?.barStyle ?? null;
+			const repeatEnd = bars.some((bar) => bar.repeat === 'backward');
+			if (
+				!repeatEnd &&
+				!drawsFinalBarline(style, m === lastDrawn, repeatEnd, totalStaves > 1)
+			) {
+				return 0;
+			}
+			const spacings = parts.flatMap((part) => {
+				const measure = part.measures[m];
+				return measure
+					? this.staves.visibleNumbers(part).map((staff) => {
+							const { size } = StaveFactory.staffSizing(measure, staff);
+							const spacing = this.staves.isTab(part, staff)
+								? TAB_LINE_DISTANCE
+								: STAVE_LINE_DISTANCE;
+							return (spacing * size) / 100;
+						})
+					: [];
+			});
+			const spacing = Math.max(0, ...spacings);
+			return Math.max(
+				0,
+				repeatEnd
+					? repeatEndPadding(spacing, appearance)
+					: finalBarlineInset(spacing, appearance),
+			);
+		};
+		// Budget both the closing ink and a last-note directive alongside the leads.
 		const pads = Array.from({ length: measureCount }, (_, m) =>
 			gaps.has(m)
 				? 0
-				: this.trailingWordsPad(
+				: closingPadOf(m) +
+					this.trailingWordsPad(
 						parts.flatMap((part) => part.measures[m] ?? []),
 						noteSpacing,
 					),
@@ -901,6 +1009,54 @@ export class LayoutPlanner {
 		// change clef eats into the note area).
 		// ponytail: fixed, deliberately generous estimates so notes never collide with
 		// the glyphs; measure stave.getNoteStartX() if exact alignment is ever needed.
+		const hasTimeChangeAt = perMeasure(
+			(m) =>
+				m > 0 &&
+				m < measureCount &&
+				parts.some((part) =>
+					this.staves.visibleNumbers(part).some((staffNumber) => {
+						if (this.staves.isTab(part, staffNumber)) {
+							return false;
+						}
+						const time = part.measures[m]?.getTime(staffNumber) ?? null;
+						const spec = this.signatures.timeSignatureSpec(time);
+						const prev = part.measures[m - 1]?.getTime(staffNumber) ?? null;
+						const prevSpec =
+							this.signatures.timeSignatureSpec(prev) ??
+							(m - 1 === (firstMusic ?? 0) && !prev ? '4/4' : null);
+						return (
+							spec !== null &&
+							time?.getAttribute('print-object') !== 'no' &&
+							spec !== prevSpec
+						);
+					}),
+				),
+		);
+		const extendedTimeWidthAt = perMeasure((m) => {
+			if (m >= measureCount) {
+				return 0;
+			}
+			let max = 0;
+			for (const part of parts) {
+				for (const staffNumber of this.staves.visibleNumbers(part)) {
+					if (this.staves.isTab(part, staffNumber)) {
+						continue;
+					}
+					const time = part.measures[m]?.getTime(staffNumber) ?? null;
+					if (!time || time.getAttribute('print-object') === 'no') {
+						continue;
+					}
+					const extended = this.signatures.extendedTimeSpec(time);
+					if (extended) {
+						max = Math.max(
+							max,
+							new ExtendedTimeSignature(extended).getWidth() + 12,
+						);
+					}
+				}
+			}
+			return max;
+		});
 		const leadFull = perMeasure((m) => {
 			// Per STAVE, not per part: the staves of one part can carry different keys
 			// (staves_different_keys), so a part whose first stave is in C still needs the
@@ -919,53 +1075,122 @@ export class LayoutPlanner {
 				LEAD_BARLINE +
 				LEAD_CLEF +
 				(hasKey ? LEAD_KEY : 0) +
-				(m === (firstMusic ?? 0) ? LEAD_TIME : 0)
+				(m === (firstMusic ?? 0) || hasTimeChangeAt(m)
+					? Math.max(LEAD_TIME, extendedTimeWidthAt(m))
+					: 0)
 			);
 		});
-		const clefChangesAt = perMeasure(
+		const hasKeyChangeAt = perMeasure(
 			(m) =>
 				m > 0 &&
+				m < measureCount &&
 				parts.some((part) =>
-					this.staves.visibleNumbers(part).some(
-						(staffNumber) =>
-							!this.staves.isTab(part, staffNumber) &&
-							this.signatures.vexflowClefSpec(
-								part.measures[m]?.getClef(staffNumber) ?? null,
-							) !==
-								this.signatures.vexflowClefSpec(
-									// End of the previous measure, matching buildStave: a change
-									// stated inside it is not restated at this barline.
-									this.reader.clefAtEndOf(part.measures[m - 1], staffNumber),
-								),
-					),
+					this.staves.visibleNumbers(part).some((staffNumber) => {
+						if (this.staves.isTab(part, staffNumber)) {
+							return false;
+						}
+						const key = part.measures[m]?.getKey(staffNumber) ?? null;
+						if (key?.getAttribute('print-object') === 'no') {
+							return false;
+						}
+						const prevKey = part.measures[m - 1]?.getKey(staffNumber) ?? null;
+						return (
+							this.reader.keyIdentity(key) !== this.reader.keyIdentity(prevKey)
+						);
+					}),
 				),
 		);
+		const hasForwardRepeatAt = perMeasure((m) =>
+			(parts[0]?.measures[m]?.barlines ?? []).some(
+				(bar) => bar.repeat === 'forward',
+			),
+		);
+		const hasBackwardRepeatAt = perMeasure((m) =>
+			(parts[0]?.measures[m]?.barlines ?? []).some(
+				(bar) => bar.repeat === 'backward',
+			),
+		);
+		const drawsForwardRepeatAt = (m: number, systemStart: boolean) =>
+			hasForwardRepeatAt(m) && (systemStart || !hasBackwardRepeatAt(m - 1));
+		const hasClefChange = (m: number, afterBarline: boolean) =>
+			m > 0 &&
+			m < measureCount &&
+			parts.some((part) =>
+				this.staves.visibleNumbers(part).some((staffNumber) => {
+					if (this.staves.isTab(part, staffNumber)) {
+						return false;
+					}
+					const clef = part.measures[m]?.getClef(staffNumber) ?? null;
+					if (!clef || clef.getAttribute('print-object') === 'no') {
+						return false;
+					}
+					const isAfter =
+						clef.getAttribute('after-barline') === 'yes' ||
+						gaps.has(m - 1) ||
+						(hasBackwardRepeatAt(m - 1) &&
+							clef.getAttribute('after-barline') !== 'no');
+					if (isAfter !== afterBarline) {
+						return false;
+					}
+					return (
+						this.signatures.vexflowClefSpec(clef) !==
+						this.signatures.vexflowClefSpec(
+							// End of the previous measure, matching buildStave: a change
+							// stated inside it is not restated at this barline.
+							this.reader.clefAtEndOf(part.measures[m - 1], staffNumber),
+						)
+					);
+				}),
+			);
+		const afterBarlineClefAt = perMeasure((m) => hasClefChange(m, true));
+		const trailingClefChangeAt = perMeasure(
+			(m) => !gaps.has(m + 1) && hasClefChange(m + 1, false),
+		);
+		const cautionaryTimePadAt = perMeasure((m) => {
+			if (gaps.has(m + 1) || !hasTimeChangeAt(m + 1)) {
+				return 0;
+			}
+			return Math.max(LEAD_TIME, extendedTimeWidthAt(m + 1));
+		});
 		// The measure's fixed width: everything that isn't note area. Lead glyphs at the front,
-		// trailing-directive room at the back.
+		// trailing-directive, before-barline clef, and system-end cautionary time room at the back.
 		const leadGlyphs = (m: number, systemStart: boolean) =>
-			systemStart
+			(systemStart
 				? leadFull(m)
-				: LEAD_BARLINE + (clefChangesAt(m) ? LEAD_CLEF_CHANGE : 0);
+				: LEAD_BARLINE +
+					(afterBarlineClefAt(m) ? LEAD_CLEF_CHANGE : 0) +
+					(hasKeyChangeAt(m) ? LEAD_KEY : 0) +
+					(hasTimeChangeAt(m)
+						? Math.max(LEAD_TIME, extendedTimeWidthAt(m))
+						: 0)) +
+			(drawsForwardRepeatAt(m, systemStart) ? LEAD_REPEAT_BEGIN : 0);
 		// A leading directive prints over the lead glyphs' room, so only the part of it those
 		// glyphs don't already cover is reserved: a measure opening with a clef and a key
 		// usually needs nothing extra.
 		const leadingPadOf = (m: number, systemStart: boolean) =>
 			Math.max(0, (leadingPads[m] ?? 0) - leadGlyphs(m, systemStart));
-		const leadOf = (m: number, systemStart: boolean) =>
+		const leadOf = (m: number, systemStart: boolean, systemEnd = false) =>
 			isMusic(m)
-				? leadGlyphs(m, systemStart) + padOf(m) + leadingPadOf(m, systemStart)
+				? leadGlyphs(m, systemStart) +
+					padOf(m) +
+					(trailingClefChangeAt(m) ? LEAD_CLEF_CHANGE : 0) +
+					(systemEnd ? cautionaryTimePadAt(m) : 0) +
+					leadingPadOf(m, systemStart)
 				: edgeLeadOf(m);
 
 		// A system's width at each of the two note-area sizes, for 'widen' below: `ideal` is what
 		// it wants. Leads are fixed glyph widths.
-		const spanOf = (measures: readonly number[]) =>
-			measures.reduce(
+		const spanOf = (measures: readonly number[], isLast: boolean) => {
+			const start = Math.max(0, measures.findIndex(isMusic));
+			const end = measures.findLastIndex(isMusic);
+			return measures.reduce(
 				(sum, m, i) =>
 					sum +
-					leadOf(m, i === Math.max(0, measures.findIndex(isMusic))) +
-					areaOf(m, i === Math.max(0, measures.findIndex(isMusic))).ideal,
+					leadOf(m, i === start, i === end && !isLast) +
+					areaOf(m, i === start).ideal,
 				0,
 			);
+		};
 
 		// --- Breaks and placement -----------------------------------------------------
 		// The plan breaks the measures into systems and places them, a system at a time or whole
@@ -1044,18 +1269,17 @@ export class LayoutPlanner {
 		// on the pass that needs no growth, so the cap only bites on pathological input.
 		if (overflow === 'widen') {
 			for (let pass = 0; pass < 4; pass++) {
+				const systems = plan.systemMeasures();
 				const needed = Math.max(
 					width,
-					...plan
-						.systemMeasures()
-						.map(
-							(measures, systemIndex) =>
-								spanOf(measures) +
-								x +
-								right +
-								indentOf(systemIndex, measures[0] ?? 0) +
-								rightIndentOf(measures[0] ?? 0),
-						),
+					...systems.map(
+						(measures, systemIndex) =>
+							spanOf(measures, systemIndex === systems.length - 1) +
+							x +
+							right +
+							indentOf(systemIndex, measures[0] ?? 0) +
+							rightIndentOf(measures[0] ?? 0),
+					),
 				);
 				if (needed <= width) {
 					break;
@@ -1219,6 +1443,7 @@ export type NoteArea = {
  * clef/meter/tab context that shapes their tickables. */
 type StaveSpec = {
 	voices: StaffVoice[];
+	stemOf: NonNullable<VoiceTickablesOptions['stemOf']>;
 	clef: string;
 	meterFloor: number;
 	isTab: boolean;
@@ -1230,4 +1455,5 @@ type StaveSpec = {
 	/** Mid-measure clef changes (see ScoreReader.midClefsOf): the small ClefNotes they insert
 	 * take horizontal room too, and they re-aim the notes after them. */
 	midClefs: MidClefSpec[];
+	staffSpace: number;
 };

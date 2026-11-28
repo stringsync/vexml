@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tuplet-numeral-outside-stave.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 118,
+				"y": 207
+			},
+			"to": {
+				"x": 129,
+				"y": 222
+			},
+			"label": "high triplet",
+			"note": "high triplet",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 233,
+				"y": 331
+			},
+			"to": {
+				"x": 244,
+				"y": 346
+			},
+			"label": "low triplet",
+			"note": "low triplet",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

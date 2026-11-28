@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_tie-adjacent-pairs.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 238,
+				"y": 1048
+			},
+			"to": {
+				"x": 264,
+				"y": 1053
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 241,
+				"y": 1060
+			},
+			"to": {
+				"x": 249,
+				"y": 1063
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 241,
+				"y": 1089
+			},
+			"to": {
+				"x": 249,
+				"y": 1093
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 238,
+				"y": 1099
+			},
+			"to": {
+				"x": 252,
+				"y": 1103
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

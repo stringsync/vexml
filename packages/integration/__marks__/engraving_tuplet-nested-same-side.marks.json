@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tuplet-nested-same-side.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 83,
+				"y": 362
+			},
+			"to": {
+				"x": 316,
+				"y": 381
+			},
+			"label": "Outer above",
+			"note": "Outer above",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 319,
+				"y": 492
+			},
+			"to": {
+				"x": 553,
+				"y": 511
+			},
+			"label": "Outer below",
+			"note": "Outer below",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

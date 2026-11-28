@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tuplet-double-stem-placement.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 112,
+				"y": 27
+			},
+			"to": {
+				"x": 634,
+				"y": 46
+			},
+			"label": "upper voice",
+			"note": "upper voice",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 112,
+				"y": 189
+			},
+			"to": {
+				"x": 634,
+				"y": 209
+			},
+			"label": "lower voice",
+			"note": "lower voice",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

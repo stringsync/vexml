@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_tempo-align-time-signature.png",
+	"width": 932,
+	"height": 607,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 109,
+				"y": 57
+			},
+			"to": {
+				"x": 173,
+				"y": 76
+			},
+			"label": "Allegro",
+			"note": "Allegro",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 110,
+				"y": 141
+			},
+			"to": {
+				"x": 127,
+				"y": 181
+			},
+			"label": "3/4",
+			"note": "3/4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 300,
+				"y": 105
+			},
+			"to": {
+				"x": 330,
+				"y": 124
+			},
+			"label": "quarter = 96",
+			"note": "quarter = 96",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 301,
+				"y": 141
+			},
+			"to": {
+				"x": 318,
+				"y": 181
+			},
+			"label": "4/4",
+			"note": "4/4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tuplet-bracket-square.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 306,
+				"y": 222
+			},
+			"to": {
+				"x": 396,
+				"y": 241
+			},
+			"label": "square bracket",
+			"note": "square bracket",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,6 +1,7 @@
-import { Annotation, StaveNote } from 'vexflow/core';
+import { Annotation, type StaveNote } from 'vexflow/core';
 import { MeasureStyleDrawer } from './measure-style-drawer';
 import type { StyleSign } from './score-reader';
+import { VexmlStaveNote } from './vexml-stave-note';
 
 /*
  * A note (or rest) marked print-object="no": it holds its tick so the other voices stay
@@ -13,7 +14,7 @@ import type { StyleSign } from './score-reader';
  * it that IS meant to be seen (OSMD keeps them too). Annotation-only drawing mirrors
  * vexflow's own GhostNote.
  */
-export class InvisibleStaveNote extends StaveNote {
+export class InvisibleStaveNote extends VexmlStaveNote {
 	/*
 	 * print-spacing="no": the note takes no horizontal room. The formatter spaces by tick so it
 	 * still gets a slot; SystemFormatter closes that slot after formatting.

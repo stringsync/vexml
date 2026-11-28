@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_tremolo-adjacent-chord.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 375,
+				"y": 244
+			},
+			"to": {
+				"x": 387,
+				"y": 266
+			},
+			"label": "Stemmed chord 1",
+			"note": "Stemmed chord 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 429,
+				"y": 281
+			},
+			"to": {
+				"x": 441,
+				"y": 303
+			},
+			"label": "Stemmed chord 2",
+			"note": "Stemmed chord 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 503,
+				"y": 244
+			},
+			"to": {
+				"x": 515,
+				"y": 266
+			},
+			"label": "Whole chord",
+			"note": "Whole chord",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

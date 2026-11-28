@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_beam-chord-angle.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 709,
+				"y": 1209
+			},
+			"to": {
+				"x": 742,
+				"y": 1218
+			},
+			"label": "flat",
+			"note": "M19 group 1: flat (0 spaces, expected flat)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 765,
+				"y": 1209
+			},
+			"to": {
+				"x": 798,
+				"y": 1220
+			},
+			"label": "rises",
+			"note": "M19 group 2: rises (-¼ spaces, expected rises)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

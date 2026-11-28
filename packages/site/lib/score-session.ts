@@ -33,6 +33,8 @@ import type { LoupeSettings } from './loupe-settings';
 import { PlayheadFollow } from './playhead-follow';
 import { SiteEditingBindings } from './site-editing-bindings';
 
+type ScoreTouchAction = 'none' | 'pan-y pinch-zoom' | 'auto';
+
 export type ScoreMode = 'view' | 'edit';
 
 /* Where a session finds the instrument to sound notes on, read at each note: the user can switch
@@ -74,6 +76,13 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	private loupe: Loupe | null = null;
 	// Where the press went down (client px), until it lifts.
 	private press: { x: number; y: number } | null = null;
+	// Leave playback alone while a touch could still turn into a native scroll.
+	private touchPress: {
+		id: number;
+		x: number;
+		y: number;
+		moved: boolean;
+	} | null = null;
 	// Whether the press has moved past the slop, or been held, into a drag: a tap never shows the
 	// knob or loupe.
 	private dragging = false;
@@ -125,6 +134,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 		readonly editingVoices: EditingVoices,
 		private readonly loupeSettings: LoupeSettings,
 		public mode: ScoreMode,
+		private readonly viewTouchAction: ScoreTouchAction,
 	) {
 		this.durationMs = score.getDurationMs();
 		this.disposer.use(this.dispatcher);
@@ -204,10 +214,23 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.dispatcher.dispatch('changed'),
 		);
 
-		// Scrubbing opens on pointerdown rather than click so a press that becomes a drag seeks from
-		// its first frame instead of waiting for the release.
+		// A mouse can seek immediately. A finger on a phone waits for a tap or a horizontal
+		// gesture in stacked notation so the browser gets first claim on a swipe.
 		this.watch(this.score.events, 'pointerdown', (e) => {
-			if (this.mode !== 'view' || e.native.button !== 0) {
+			if (
+				this.mode !== 'view' ||
+				e.native.button !== 0 ||
+				!e.native.isPrimary
+			) {
+				return;
+			}
+			if (this.viewTouchAction !== 'none' && e.native.pointerType === 'touch') {
+				this.touchPress = {
+					id: e.native.pointerId,
+					x: e.native.clientX,
+					y: e.native.clientY,
+					moved: false,
+				};
 				return;
 			}
 			this.container.focus({ preventScroll: true });
@@ -224,26 +247,58 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 			this.magnify(e.point, e.native);
 		});
 		this.watch(this.score.events, 'pointermove', (e) => {
-			// buttons === 1 means the primary button is held, so this continues the scrub during a
-			// drag and ignores a plain hover: no manual drag-state flag needed. beginSeek also
-			// catches a drag that started off the score and moved onto it.
-			if (this.mode === 'view' && e.native.buttons === 1) {
+			if (
+				this.mode !== 'view' ||
+				e.native.buttons !== 1 ||
+				!e.native.isPrimary
+			) {
+				return;
+			}
+			if (this.viewTouchAction !== 'none' && e.native.pointerType === 'touch') {
+				const press = this.touchPress;
+				if (press?.id !== e.native.pointerId) {
+					return;
+				}
+				const across = Math.abs(e.native.clientX - press.x);
+				const down = Math.abs(e.native.clientY - press.y);
+				if (!press.moved && Math.hypot(across, down) >= DRAG_SLOP_PX) {
+					press.moved = true;
+					if (this.viewTouchAction === 'pan-y pinch-zoom' && across > down) {
+						this.container.setPointerCapture(e.native.pointerId);
+						this.press = press;
+					}
+				}
+				if (!this.press) {
+					return;
+				}
+			}
+			this.beginSeek({ follow: false });
+			this.scrub(() => this.seekTo(e.point));
+			this.magnify(e.point, e.native);
+		});
+		this.watch(this.score.events, 'pointerup', (e) => {
+			if (this.mode !== 'view' || !e.native.isPrimary) {
+				return;
+			}
+			const press = this.touchPress;
+			if (
+				press?.id === e.native.pointerId &&
+				!press.moved &&
+				Math.hypot(e.native.clientX - press.x, e.native.clientY - press.y) <
+					DRAG_SLOP_PX
+			) {
 				this.beginSeek({ follow: false });
 				this.scrub(() => this.seekTo(e.point));
-				this.magnify(e.point, e.native);
-			}
-		});
-		// Finishing a scrub-drag: hand playback back if the drag took it, and bring the cursor into
-		// view if it landed off-screen (endSeek does both).
-		this.watch(this.score.events, 'pointerup', () => {
-			if (this.mode !== 'view') {
-				return;
 			}
 			this.endSeek();
 		});
 		// A drag released off the score never reaches the score's own pointerup, so the window's
 		// is what guarantees the gesture closes. endSeek does nothing when none is open.
-		const onPointerUp = () => this.endSeek();
+		const onPointerUp = (e: PointerEvent) => {
+			if (e.isPrimary) {
+				this.endSeek();
+			}
+		};
 		window.addEventListener('pointerup', onPointerUp);
 		window.addEventListener('pointercancel', onPointerUp);
 		this.disposer.defer(() =>
@@ -320,7 +375,8 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	private updateMode(): void {
 		this.editing.setEnabled(this.mode === 'edit' && !this.playing);
 		this.playhead.setVisible(this.mode === 'view' || this.playing);
-		this.container.style.touchAction = this.mode === 'view' ? 'none' : '';
+		this.container.style.touchAction =
+			this.mode === 'view' ? this.viewTouchAction : '';
 		this.paint(
 			this.mode === 'view' || this.playing
 				? this.cursor.getHighlightedElements()
@@ -444,6 +500,7 @@ export class ScoreSession implements Eventful<ScoreSessionEvents>, Resource {
 	/* Closes the gesture, resuming if it was playing when the gesture began, and scrolls the cursor
 	 * into view if the gesture left it off-screen. */
 	endSeek(): void {
+		this.touchPress = null;
 		this.press = null;
 		this.dragging = false;
 		this.hold?.dispose();

@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_grace-after-note-before-barline.png",
+	"width": 932,
+	"height": 739,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 732.1,
+				"y": 269.3
+			},
+			"to": {
+				"x": 740.1,
+				"y": 279.3
+			},
+			"label": "After-grace 1",
+			"note": "After-grace 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 744.1,
+				"y": 264.3
+			},
+			"to": {
+				"x": 752.1,
+				"y": 274.3
+			},
+			"label": "After-grace 2",
+			"note": "After-grace 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

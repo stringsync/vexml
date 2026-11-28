@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_string-snap-pizzicato-symbol.png",
+	"width": 932,
+	"height": 1050,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 431,
+				"y": 71
+			},
+			"to": {
+				"x": 439,
+				"y": 83
+			},
+			"label": "Snap 1",
+			"note": "Snap 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 536,
+				"y": 81
+			},
+			"to": {
+				"x": 544,
+				"y": 93
+			},
+			"label": "Snap 2",
+			"note": "Snap 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 641,
+				"y": 76
+			},
+			"to": {
+				"x": 649,
+				"y": 88
+			},
+			"label": "Snap 3",
+			"note": "Snap 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 746,
+				"y": 66
+			},
+			"to": {
+				"x": 754,
+				"y": 78
+			},
+			"label": "Snap 4",
+			"note": "Snap 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

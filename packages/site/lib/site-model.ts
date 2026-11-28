@@ -110,7 +110,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		container: HTMLDivElement,
 		opts: RenderIntoOptions,
 	): Promise<void> {
-		const { input, format, config } = opts;
+		const { input, format, config, scrollContainer } = opts;
 		if (input == null) {
 			return;
 		}
@@ -125,8 +125,9 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 		} else if (!sameDocument) {
 			this.resumeMs = null;
 		}
-		const scrollTop = sameDocument ? container.scrollTop : 0;
-		const scrollLeft = sameDocument ? container.scrollLeft : 0;
+		const scrollElement = scrollContainer ?? container;
+		const scrollTop = sameDocument ? scrollElement.scrollTop : 0;
+		const scrollLeft = sameDocument ? scrollElement.scrollLeft : 0;
 		const focused = container === container.ownerDocument.activeElement;
 		// render() appends a fresh managed canvas, so the previous score has to go first or the
 		// canvases stack.
@@ -169,11 +170,19 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 					}),
 				);
 			}
-			const score = await render(voices.editor.document, container, config);
+			const score = await render(
+				voices.editor.document,
+				container,
+				scrollContainer
+					? { ...config, height: null, maxHeight: null, scrollContainer }
+					: config,
+			);
 			if (at !== this.generation) {
 				score.dispose();
 				return;
 			}
+			const mobileTouchAction =
+				config.layout?.type === 'panoramic' ? 'auto' : 'pan-y pinch-zoom';
 			this.session = new ScoreSession(
 				score,
 				container,
@@ -181,6 +190,7 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 				voices,
 				this.loupe,
 				this.mode,
+				scrollContainer ? mobileTouchAction : 'none',
 			);
 			this.sessionDisposer.use(this.session);
 			this.sessionDisposer.defer(
@@ -189,8 +199,8 @@ export class SiteModel implements Eventful<SiteModelEvents>, Resource {
 				),
 			);
 			this.session.cursor.cancelScroll();
-			container.scrollTop = scrollTop;
-			container.scrollLeft = scrollLeft;
+			scrollElement.scrollTop = scrollTop;
+			scrollElement.scrollLeft = scrollLeft;
 			if (this.resumeMs !== null) {
 				this.session.seekMs(this.resumeMs);
 			}
@@ -294,6 +304,7 @@ export interface RenderIntoOptions {
 	/* Which parser `input` needs; it is a Blob for anything but 'musicxml'. */
 	format: DocumentFormat;
 	config: ConfigInput;
+	scrollContainer: HTMLElement | null;
 }
 
 export interface RestoreOptions {

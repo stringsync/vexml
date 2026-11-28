@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_wind-breath-mark-tick.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 181,
+				"y": 74
+			},
+			"to": {
+				"x": 200,
+				"y": 94
+			},
+			"label": "Tick",
+			"note": "Tick",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 287,
+				"y": 84
+			},
+			"to": {
+				"x": 293,
+				"y": 94
+			},
+			"label": "Comma",
+			"note": "Comma",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

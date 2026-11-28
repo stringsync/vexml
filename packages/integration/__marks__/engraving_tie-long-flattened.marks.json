@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-long-flattened.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 103,
+				"y": 290
+			},
+			"to": {
+				"x": 253,
+				"y": 301
+			},
+			"label": "Long tie",
+			"note": "Long tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Cello</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1-M2: vocal-instrumentalist-spoken-line (p. 461) -->
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <staves>2</staves>
+        <clef number="1"><sign>percussion</sign></clef>
+        <clef number="2"><sign>F</sign><line>4</line></clef>
+        <staff-details number="1">
+          <staff-lines>1</staff-lines>
+        </staff-details>
+      </attributes>
+      <direction placement="above">
+        <direction-type>
+          <words font-style="italic">spoken</words>
+        </direction-type>
+        <staff>1</staff>
+      </direction>
+      <note>
+        <unpitched>
+          <display-step>E</display-step>
+          <display-octave>4</display-octave>
+        </unpitched>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <notehead>x</notehead>
+        <staff>1</staff>
+        <beam number="1">begin</beam>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>What</text>
+        </lyric>
+      </note>
+      <note>
+        <unpitched>
+          <display-step>E</display-step>
+          <display-octave>4</display-octave>
+        </unpitched>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <notehead>x</notehead>
+        <staff>1</staff>
+        <beam number="1">end</beam>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>is</text>
+        </lyric>
+      </note>
+      <note>
+        <unpitched>
+          <display-step>E</display-step>
+          <display-octave>4</display-octave>
+        </unpitched>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notehead>x</notehead>
+        <staff>1</staff>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>it?</text>
+        </lyric>
+      </note>
+      <note>
+        <rest/>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <staff>1</staff>
+      </note>
+      <backup><duration>8</duration></backup>
+      <direction>
+        <direction-type>
+          <dynamics><pp/></dynamics>
+        </direction-type>
+        <staff>2</staff>
+      </direction>
+      <note>
+        <pitch><step>C</step><octave>3</octave></pitch>
+        <duration>6</duration>
+        <voice>2</voice>
+        <type>half</type>
+        <dot/>
+        <staff>2</staff>
+      </note>
+      <direction>
+        <direction-type>
+          <dynamics><mf/></dynamics>
+        </direction-type>
+        <staff>2</staff>
+      </direction>
+      <note>
+        <pitch><step>G</step><octave>3</octave></pitch>
+        <duration>2</duration>
+        <voice>2</voice>
+        <type>quarter</type>
+        <staff>2</staff>
+      </note>
+    </measure>
+    <measure number="2">
+      <direction placement="above">
+        <direction-type>
+          <words font-style="italic">whispered</words>
+        </direction-type>
+        <staff>1</staff>
+      </direction>
+      <note>
+        <rest/>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <staff>1</staff>
+      </note>
+      <note>
+        <unpitched>
+          <display-step>E</display-step>
+          <display-octave>4</display-octave>
+        </unpitched>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notehead>x</notehead>
+        <staff>1</staff>
+        <lyric number="1">
+          <syllabic>begin</syllabic>
+          <text>lis</text>
+        </lyric>
+      </note>
+      <note>
+        <unpitched>
+          <display-step>E</display-step>
+          <display-octave>4</display-octave>
+        </unpitched>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <notehead>x</notehead>
+        <staff>1</staff>
+        <lyric number="1">
+          <syllabic>end</syllabic>
+          <text>ten!</text>
+        </lyric>
+      </note>
+      <backup><duration>8</duration></backup>
+      <note>
+        <pitch><step>A</step><octave>3</octave></pitch>
+        <duration>8</duration>
+        <voice>2</voice>
+        <type>whole</type>
+        <staff>2</staff>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

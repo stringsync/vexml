@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_dot-adjacent-both-voices.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 246.2,
+				"y": 436
+			},
+			"to": {
+				"x": 258.2,
+				"y": 446
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 257,
+				"y": 441
+			},
+			"to": {
+				"x": 269,
+				"y": 451
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 271,
+				"y": 439
+			},
+			"to": {
+				"x": 275,
+				"y": 443
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 271,
+				"y": 449
+			},
+			"to": {
+				"x": 275,
+				"y": 453
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 257,
+				"y": 406
+			},
+			"to": {
+				"x": 258,
+				"y": 441
+			},
+			"label": "Stem",
+			"note": "Stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 257,
+				"y": 446
+			},
+			"to": {
+				"x": 258,
+				"y": 481
+			},
+			"label": "Stem",
+			"note": "Stem",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_grace-single-slash.png",
+	"width": 932,
+	"height": 739,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 114,
+				"y": 106
+			},
+			"to": {
+				"x": 140,
+				"y": 139.3
+			},
+			"label": "Slashed",
+			"note": "Slashed",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 185.4,
+				"y": 96
+			},
+			"to": {
+				"x": 208.2,
+				"y": 124.3
+			},
+			"label": "Appoggiatura",
+			"note": "Appoggiatura",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

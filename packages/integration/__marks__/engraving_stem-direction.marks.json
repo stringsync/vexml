@@ -1,0 +1,141 @@
+{
+	"screenshot": "engraving_stem-direction.png",
+	"width": 932,
+	"height": 417,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 116
+			},
+			"to": {
+				"x": 901,
+				"y": 116
+			},
+			"label": "middle line",
+			"note": "Middle stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 111,
+				"y": 111
+			},
+			"to": {
+				"x": 111,
+				"y": 146
+			},
+			"label": "down",
+			"note": "C/5: down-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 137,
+				"y": 106
+			},
+			"to": {
+				"x": 137,
+				"y": 141
+			},
+			"label": "down",
+			"note": "D/5: down-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 164,
+				"y": 101
+			},
+			"to": {
+				"x": 164,
+				"y": 136
+			},
+			"label": "down",
+			"note": "E/5: down-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 190,
+				"y": 96
+			},
+			"to": {
+				"x": 190,
+				"y": 131
+			},
+			"label": "down",
+			"note": "F/5: down-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 264,
+				"y": 121
+			},
+			"to": {
+				"x": 264,
+				"y": 86
+			},
+			"label": "up",
+			"note": "A/4: up-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 292,
+				"y": 126
+			},
+			"to": {
+				"x": 292,
+				"y": 91
+			},
+			"label": "up",
+			"note": "G/4: up-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 320,
+				"y": 136
+			},
+			"to": {
+				"x": 320,
+				"y": 101
+			},
+			"label": "up",
+			"note": "E/4: up-stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 348,
+				"y": 146
+			},
+			"to": {
+				"x": 348,
+				"y": 111
+			},
+			"label": "up",
+			"note": "C/4: up-stem",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

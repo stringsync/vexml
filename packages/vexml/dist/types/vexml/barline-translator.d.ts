@@ -1,4 +1,4 @@
-import { BarNote } from 'vexflow/core';
+import { type BarNote } from 'vexflow/core';
 import type { MeasureRepeat, Winged } from './score-reader.js';
 export declare class BarlineTranslator {
     /**

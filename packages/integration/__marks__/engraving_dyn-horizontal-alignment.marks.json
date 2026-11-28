@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_dyn-horizontal-alignment.png",
+	"width": 932,
+	"height": 1373,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 114,
+				"y": 815
+			},
+			"to": {
+				"x": 129,
+				"y": 829
+			},
+			"label": "Dynamic 1",
+			"note": "Dynamic 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 389,
+				"y": 810
+			},
+			"to": {
+				"x": 405,
+				"y": 829
+			},
+			"label": "Dynamic 2",
+			"note": "Dynamic 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 662,
+				"y": 815
+			},
+			"to": {
+				"x": 688,
+				"y": 829
+			},
+			"label": "Dynamic 3",
+			"note": "Dynamic 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 132,
+				"y": 800
+			},
+			"to": {
+				"x": 393,
+				"y": 810
+			},
+			"label": "Hairpin 1",
+			"note": "Hairpin 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 409,
+				"y": 800
+			},
+			"to": {
+				"x": 669,
+				"y": 810
+			},
+			"label": "Hairpin 2",
+			"note": "Hairpin 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

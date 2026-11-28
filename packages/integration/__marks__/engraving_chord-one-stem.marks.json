@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_chord-one-stem.png",
+	"width": 932,
+	"height": 882,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 128,
+				"y": 76
+			},
+			"to": {
+				"x": 129,
+				"y": 131
+			},
+			"label": "M1 stem",
+			"note": "M1 stem",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

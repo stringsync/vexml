@@ -1,0 +1,81 @@
+{
+	"screenshot": "engraving_stem-outside-shortened.png",
+	"width": 932,
+	"height": 417,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 394,
+				"y": 271
+			},
+			"to": {
+				"x": 394,
+				"y": 236
+			},
+			"label": "3½",
+			"note": "F/5 up-stem: 3½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 291
+			},
+			"to": {
+				"x": 901,
+				"y": 291
+			},
+			"label": "middle line",
+			"note": "Middle stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 436,
+				"y": 261
+			},
+			"to": {
+				"x": 436,
+				"y": 231
+			},
+			"label": "3",
+			"note": "A/5 up-stem: 3 spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 478,
+				"y": 251
+			},
+			"to": {
+				"x": 478,
+				"y": 226
+			},
+			"label": "2½",
+			"note": "C/6 up-stem: 2½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 520,
+				"y": 241
+			},
+			"to": {
+				"x": 520,
+				"y": 216
+			},
+			"label": "2½",
+			"note": "E/6 up-stem: 2½ spaces from notehead centre to stem tip",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,38 @@
+{
+	"screenshot": "engraving_choral-reduction.png",
+	"measures": [{ "index": 0, "system": 0, "x": 17, "w": 884 }],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 870
+		},
+		{
+			"part": 1,
+			"measure": 0,
+			"staff": 1,
+			"lines": [198, 208, 218, 228, 238],
+			"x": 31,
+			"w": 870
+		},
+		{
+			"part": 2,
+			"measure": 0,
+			"staff": 1,
+			"lines": [305, 312.5, 320, 327.5, 335],
+			"x": 31,
+			"w": 870
+		},
+		{
+			"part": 2,
+			"measure": 0,
+			"staff": 2,
+			"lines": [405, 412.5, 420, 427.5, 435],
+			"x": 31,
+			"w": 870
+		}
+	]
+}

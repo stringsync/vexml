@@ -1,0 +1,202 @@
+{
+	"screenshot": "engraving_string-fingering-stack-order.png",
+	"width": 932,
+	"height": 1265,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 421,
+				"y": 414
+			},
+			"to": {
+				"x": 426,
+				"y": 423
+			},
+			"label": "M6 Fing 1",
+			"note": "M6 Fing 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 535,
+				"y": 409
+			},
+			"to": {
+				"x": 541,
+				"y": 418
+			},
+			"label": "M6 Fing 2",
+			"note": "M6 Fing 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 650,
+				"y": 414
+			},
+			"to": {
+				"x": 656,
+				"y": 423
+			},
+			"label": "M6 Fing 3",
+			"note": "M6 Fing 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 765,
+				"y": 414
+			},
+			"to": {
+				"x": 771,
+				"y": 423
+			},
+			"label": "M6 Fing 4",
+			"note": "M6 Fing 4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 91,
+				"y": 583
+			},
+			"to": {
+				"x": 97,
+				"y": 592
+			},
+			"label": "M7 B1 Fing",
+			"note": "M7 B1 Fing",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 564
+			},
+			"to": {
+				"x": 101,
+				"y": 577
+			},
+			"label": "M7 B1 Bow",
+			"note": "M7 B1 Bow",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 178,
+				"y": 591
+			},
+			"to": {
+				"x": 191,
+				"y": 601
+			},
+			"label": "M7 B2 Accent",
+			"note": "M7 B2 Accent",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 182,
+				"y": 578
+			},
+			"to": {
+				"x": 188,
+				"y": 587
+			},
+			"label": "M7 B2 Fing",
+			"note": "M7 B2 Fing",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 180,
+				"y": 552
+			},
+			"to": {
+				"x": 190,
+				"y": 572
+			},
+			"label": "M7 B2 Bow",
+			"note": "M7 B2 Bow",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 273,
+				"y": 578
+			},
+			"to": {
+				"x": 279,
+				"y": 587
+			},
+			"label": "M7 B3 Fing",
+			"note": "M7 B3 Fing",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 269,
+				"y": 557
+			},
+			"to": {
+				"x": 283,
+				"y": 572
+			},
+			"label": "M7 B3 String",
+			"note": "M7 B3 String",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 364,
+				"y": 588
+			},
+			"to": {
+				"x": 370,
+				"y": 597
+			},
+			"label": "M7 B4 Fing",
+			"note": "M7 B4 Fing",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 360,
+				"y": 567
+			},
+			"to": {
+				"x": 374,
+				"y": 582
+			},
+			"label": "M7 B4 String",
+			"note": "M7 B4 String",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

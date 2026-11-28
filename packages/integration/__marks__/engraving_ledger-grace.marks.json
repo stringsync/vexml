@@ -1,0 +1,65 @@
+{
+	"screenshot": "engraving_ledger-grace.png",
+	"width": 932,
+	"height": 257,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 524,
+				"y": 85
+			},
+			"to": {
+				"x": 536,
+				"y": 85
+			},
+			"label": "12px",
+			"note": "M3 grace C/6 ledger is 12px vs main C/6 ledger 18px (expected shorter)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 547,
+				"y": 85
+			},
+			"to": {
+				"x": 565,
+				"y": 85
+			},
+			"label": "18px",
+			"note": "M3 main C/6 ledger width (18px)",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 578,
+				"y": 155
+			},
+			"to": {
+				"x": 590,
+				"y": 155
+			},
+			"label": "12px",
+			"note": "M3 grace A/3 ledger is 12px vs main A/3 ledger 18px (expected shorter)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 601,
+				"y": 155
+			},
+			"to": {
+				"x": 619,
+				"y": 155
+			},
+			"label": "18px",
+			"note": "M3 main A/3 ledger width (18px)",
+			"role": "reference"
+		}
+	]
+}

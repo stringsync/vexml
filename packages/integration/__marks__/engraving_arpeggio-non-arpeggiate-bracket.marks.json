@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_arpeggio-non-arpeggiate-bracket.png",
+	"width": 932,
+	"height": 387,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 663.4,
+				"y": 102
+			},
+			"to": {
+				"x": 687.4,
+				"y": 142
+			},
+			"label": "Single-stave bracket",
+			"note": "Single-stave bracket",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 765,
+				"y": 96
+			},
+			"to": {
+				"x": 784,
+				"y": 271
+			},
+			"label": "Grand-staff bracket",
+			"note": "Grand-staff bracket",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

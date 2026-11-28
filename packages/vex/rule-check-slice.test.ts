@@ -1,83 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { extractDrawFixtures, sliceRuleCheck } from './rule-check-slice';
 
-const SINGLE_RULE_FILE = `
-import { describe, expect, it } from 'bun:test';
-import { draw, engrave, quarters } from './engraving-render';
-
-describe('stem-length (Behind Bars p. 14)', () => {
-	it.concurrent('draws stem-length', async () => {
-		expect(await draw('stem-length')).toMatchScreenshot(
-			'engraving_stem-length.png',
-		);
-	});
-
-	it.concurrent('draws stems 3½ spaces long (p. 14)', async () => {
-		expect(await stemLengths('stem-length')).toMatchMeasurements([
-			[3.5, 3.5],
-		]);
-	});
-});
-
-async function stemLengths(file: string) {
-	const e = await engrave(file);
-	return e.check(e.measures.map((m) => quarters(m, e.space(m))));
-}
-
-function unusedHelper() {
-	return 42;
-}
-`;
-
-const MULTI_RULE_FILE = `
-import { describe, expect, it } from 'bun:test';
-import { draw, engrave } from './engraving-render';
-
-describe('Behind Bars clefs (pp. 5-9)', () => {
-	it.concurrent('draws clefs', async () => {
-		expect(await draw('clefs')).toMatchScreenshot('engraving_clefs.png');
-	});
-
-	it.concurrent('draws clef-percussion', async () => {
-		expect(await draw('clef-percussion')).toMatchScreenshot('engraving_clef-percussion.png');
-	});
-
-	it.concurrent('clef-c-centred (p. 6): centres C clefs', async () => {
-		expect(await cClefOffsets()).toEqual([0, 0]);
-	});
-
-	it.todo('clef-change-before-barline (p. 8): barline order', async () => {
-		expect(await barlineSides()).toEqual(['before']);
-	});
-
-	it.concurrent('clef-percussion-centred (p. 6): percussion', async () => {
-		expect(await percussionClefs()).toEqual({ fiveLine: 0 });
-	});
-});
-
-const centreY = (y: number, h: number) => y + h / 2;
-
-async function clefsOf(m: number) {
-	const e = await engrave('clefs');
-	return { e, m };
-}
-
-async function cClefOffsets() {
-	const { e } = await clefsOf(0);
-	return [centreY(0, e.space())];
-}
-
-async function barlineSides() {
-	const { e } = await clefsOf(1);
-	return e.measures.map(() => 'before');
-}
-
-async function percussionClefs() {
-	const e = await engrave('clef-percussion');
-	return { fiveLine: centreY(0, e.space()) };
-}
-`;
-
 describe('sliceRuleCheck', () => {
 	it('slices a single-rule describe file, skipping the screenshot-only test and unused helpers', () => {
 		const slice = sliceRuleCheck(SINGLE_RULE_FILE, 'stem-length');
@@ -170,3 +93,80 @@ it('demo-rule: checks template', () => {
 		]);
 	});
 });
+
+const SINGLE_RULE_FILE = `
+import { describe, expect, it } from 'bun:test';
+import { draw, engrave, quarters } from './engraving-render';
+
+describe('stem-length (Behind Bars p. 14)', () => {
+	it.concurrent('draws stem-length', async () => {
+		expect(await draw('stem-length')).toMatchScreenshot(
+			'engraving_stem-length.png',
+		);
+	});
+
+	it.concurrent('draws stems 3½ spaces long (p. 14)', async () => {
+		expect(await stemLengths('stem-length')).toMatchMeasurements([
+			[3.5, 3.5],
+		]);
+	});
+});
+
+async function stemLengths(file: string) {
+	const e = await engrave(file);
+	return e.check(e.measures.map((m) => quarters(m, e.space(m))));
+}
+
+function unusedHelper() {
+	return 42;
+}
+`;
+
+const MULTI_RULE_FILE = `
+import { describe, expect, it } from 'bun:test';
+import { draw, engrave } from './engraving-render';
+
+describe('Behind Bars clefs (pp. 5-9)', () => {
+	it.concurrent('draws clefs', async () => {
+		expect(await draw('clefs')).toMatchScreenshot('engraving_clefs.png');
+	});
+
+	it.concurrent('draws clef-percussion', async () => {
+		expect(await draw('clef-percussion')).toMatchScreenshot('engraving_clef-percussion.png');
+	});
+
+	it.concurrent('clef-c-centred (p. 6): centres C clefs', async () => {
+		expect(await cClefOffsets()).toEqual([0, 0]);
+	});
+
+	it.todo('clef-change-before-barline (p. 8): barline order', async () => {
+		expect(await barlineSides()).toEqual(['before']);
+	});
+
+	it.concurrent('clef-percussion-centred (p. 6): percussion', async () => {
+		expect(await percussionClefs()).toEqual({ fiveLine: 0 });
+	});
+});
+
+const centreY = (y: number, h: number) => y + h / 2;
+
+async function clefsOf(m: number) {
+	const e = await engrave('clefs');
+	return { e, m };
+}
+
+async function cClefOffsets() {
+	const { e } = await clefsOf(0);
+	return [centreY(0, e.space())];
+}
+
+async function barlineSides() {
+	const { e } = await clefsOf(1);
+	return e.measures.map(() => 'before');
+}
+
+async function percussionClefs() {
+	const e = await engrave('clef-percussion');
+	return { fiveLine: centreY(0, e.space()) };
+}
+`;

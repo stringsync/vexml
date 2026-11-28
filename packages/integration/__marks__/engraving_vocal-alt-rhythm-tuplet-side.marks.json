@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_vocal-alt-rhythm-tuplet-side.png",
+	"width": 932,
+	"height": 420,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 728,
+				"y": 194
+			},
+			"to": {
+				"x": 815,
+				"y": 213
+			},
+			"label": "Voice 2 tuplet",
+			"note": "Voice 2 tuplet",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

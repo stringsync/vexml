@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_vocal-instrumentalist-spoken-line.png",
+	"width": 932,
+	"height": 344,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 131.8,
+				"y": 133
+			},
+			"to": {
+				"x": 143.8,
+				"y": 143
+			},
+			"label": "Spoken note + lyric",
+			"note": "Spoken note + lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 202.9,
+				"y": 133
+			},
+			"to": {
+				"x": 214.9,
+				"y": 143
+			},
+			"label": "Spoken note + lyric",
+			"note": "Spoken note + lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 274,
+				"y": 133
+			},
+			"to": {
+				"x": 286,
+				"y": 143
+			},
+			"label": "Spoken note + lyric",
+			"note": "Spoken note + lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 368.7,
+				"y": 112
+			},
+			"to": {
+				"x": 379.7,
+				"y": 118
+			},
+			"label": "Spoken note + lyric",
+			"note": "Spoken note + lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 123,
+				"y": 277
+			},
+			"to": {
+				"x": 150,
+				"y": 291
+			},
+			"label": "Played dynamic",
+			"note": "Played dynamic",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 433,
+				"y": 272
+			},
+			"to": {
+				"x": 459,
+				"y": 291
+			},
+			"label": "Played dynamic",
+			"note": "Played dynamic",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

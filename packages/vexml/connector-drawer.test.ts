@@ -21,16 +21,24 @@ describe('ConnectorDrawer', () => {
 	// The barline geometry paintBarStyle reads off a stave, and the edges drawCustomBarline
 	// anchors to. Bare identity objects (no overrides) are enough for barlineRuns, which
 	// only groups references.
-	const stave = (opts: StaveOptions = {}) =>
-		({
-			getX: () => opts.x ?? 0,
+	const stave = (opts: StaveOptions = {}) => {
+		let x = opts.x ?? 0;
+		return {
+			getX: () => x,
+			setX(next: number) {
+				x = next;
+				return this;
+			},
 			getWidth: () => opts.width ?? 100,
+			getNumLines: () => 5,
 			getTopLineTopY: () => opts.lineTop ?? 100,
 			getBottomLineBottomY: () => opts.lineBottom ?? 140,
 			getSpacingBetweenLines: () => opts.spacing ?? 10,
-			getYForLine: () => opts.lineTop ?? 100,
+			getYForLine: (line = 0) =>
+				(opts.lineTop ?? 100) + line * (opts.spacing ?? 10),
 			getBottomLineY: () => opts.lineBottom ?? 140,
-		}) as unknown as Stave;
+		} as unknown as Stave;
+	};
 
 	interface StaveOptions {
 		x?: number;
@@ -61,14 +69,22 @@ describe('ConnectorDrawer', () => {
 		overrides: Partial<ConnectorDrawerOptions> = {},
 		staves: Partial<StavePlan> = {},
 	) => {
-		// Captures every filled bar so a custom barline's strokes are assertable.
+		// Captures every filled bar and brace curve so custom barlines and braces are assertable.
 		const rects: FillRect[] = [];
+		let braces = 0;
 		const context = {
 			openGroup() {},
 			closeGroup() {},
 			save() {},
 			restore() {},
 			setFillStyle() {},
+			beginPath() {},
+			moveTo() {},
+			bezierCurveTo() {},
+			fill() {
+				braces++;
+			},
+			stroke() {},
 			fillRect(x: number, y: number, w: number, h: number) {
 				rects.push({ x, y, w, h });
 			},
@@ -92,7 +108,7 @@ describe('ConnectorDrawer', () => {
 				...overrides,
 			},
 		);
-		return { drawer, rects };
+		return { drawer, rects, getBraces: () => braces };
 	};
 
 	it('runs one barline over the whole system when no breaks are declared', () => {
@@ -152,7 +168,7 @@ describe('ConnectorDrawer', () => {
 		expect(rects).toEqual([]);
 	});
 
-	it('paints a heavy-light barline as a thick bar leading a thin one', () => {
+	it('paints a heavy-light barline as a beam-weight bar a third of a space before an ordinary one', () => {
 		const { drawer, rects } = makeDrawer();
 		drawer.paintBarStyle(
 			stave({ lineTop: 100, lineBottom: 140 }),
@@ -160,8 +176,8 @@ describe('ConnectorDrawer', () => {
 			'heavy-light',
 		);
 		expect(rects).toEqual([
-			{ x: 495, y: 100, w: 3, h: 40 },
-			{ x: 500, y: 100, w: 1, h: 40 },
+			{ x: 491, y: 100, w: 5, h: 40 },
+			{ x: 499, y: 100, w: 2, h: 40 },
 		]);
 	});
 
@@ -189,7 +205,7 @@ describe('ConnectorDrawer', () => {
 			stave({ x: 400, width: 100, lineTop: 100, lineBottom: 140 }),
 			column({ barStyle: 'heavy' }),
 		);
-		expect(rects).toEqual([{ x: 498, y: 100, w: 3, h: 40 }]);
+		expect(rects).toEqual([{ x: 496, y: 100, w: 5, h: 40 }]);
 	});
 
 	it('lets a repeat sign at the same edge win over the custom barline', () => {
@@ -276,5 +292,74 @@ describe('ConnectorDrawer', () => {
 				}),
 			),
 		).toBeNull();
+	});
+
+	it('draws a compressed brace on a single-stave part wrapped in a braced part-group', () => {
+		const manual = stave({ x: 15, lineTop: 100, lineBottom: 140 });
+		const pedal = stave({ x: 15, lineTop: 200, lineBottom: 240 });
+		const { drawer, getBraces } = makeDrawer(
+			{
+				partGroups: [
+					{
+						fromPart: 0,
+						toPart: 0,
+						symbol: 'brace',
+						depth: 0,
+						name: null,
+						abbreviation: null,
+					},
+				],
+			},
+			{ partsPairTabWithNotation: () => false },
+		);
+		drawer.drawSystemStart(
+			column({
+				isSystemStart: true,
+				measureX: 15,
+				systemTop: manual,
+				systemBottom: pedal,
+				partStaves: [
+					{ top: manual, bottom: manual },
+					{ top: pedal, bottom: pedal },
+				],
+			}),
+		);
+		expect(getBraces()).toBe(1);
+		expect(manual.getX()).toBe(15);
+	});
+
+	it('skips a single-part braced part-group on a multi-stave part to avoid duplicating its brace', () => {
+		const voice = stave({ x: 15, lineTop: 100, lineBottom: 140 });
+		const pianoTop = stave({ x: 15, lineTop: 200, lineBottom: 240 });
+		const pianoBottom = stave({ x: 15, lineTop: 300, lineBottom: 340 });
+		const { drawer, getBraces } = makeDrawer(
+			{
+				totalStaves: 3,
+				partGroups: [
+					{
+						fromPart: 1,
+						toPart: 1,
+						symbol: 'brace',
+						depth: 0,
+						name: null,
+						abbreviation: null,
+					},
+				],
+			},
+			{ partsPairTabWithNotation: () => false },
+		);
+		drawer.drawSystemStart(
+			column({
+				isSystemStart: true,
+				measureX: 15,
+				systemTop: voice,
+				systemBottom: pianoBottom,
+				partStaves: [
+					{ top: voice, bottom: voice },
+					{ top: pianoTop, bottom: pianoBottom },
+				],
+			}),
+		);
+		expect(getBraces()).toBe(0);
 	});
 });

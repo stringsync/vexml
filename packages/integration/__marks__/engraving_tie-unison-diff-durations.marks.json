@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-unison-diff-durations.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 102,
+				"y": 602
+			},
+			"to": {
+				"x": 127,
+				"y": 607
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_chord-voices-unison-stems.png",
+	"width": 932,
+	"height": 1049,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 728,
+				"y": 71
+			},
+			"to": {
+				"x": 729,
+				"y": 106
+			},
+			"label": "M4 stem",
+			"note": "M4 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 717,
+				"y": 106
+			},
+			"to": {
+				"x": 718,
+				"y": 141
+			},
+			"label": "M4 stem",
+			"note": "M4 stem",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

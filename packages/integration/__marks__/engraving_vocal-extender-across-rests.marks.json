@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_vocal-extender-across-rests.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 91,
+				"y": 314
+			},
+			"to": {
+				"x": 115,
+				"y": 324
+			},
+			"label": "Syllable",
+			"note": "Syllable",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 119,
+				"y": 324
+			},
+			"to": {
+				"x": 529,
+				"y": 325
+			},
+			"label": "Extender across rests",
+			"note": "Extender across rests",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

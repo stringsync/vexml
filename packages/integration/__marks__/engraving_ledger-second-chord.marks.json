@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_ledger-second-chord.png",
+	"width": 932,
+	"height": 257,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 712,
+				"y": 98
+			},
+			"to": {
+				"x": 744,
+				"y": 103
+			},
+			"label": "2×",
+			"note": "M4 C6-D6 A5 ledger is 30px (both heads, expected both heads)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 712,
+				"y": 88
+			},
+			"to": {
+				"x": 744,
+				"y": 93
+			},
+			"label": "2×",
+			"note": "M4 C6-D6 C6 ledger is 30px (both heads, expected both heads)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 745,
+				"y": 98
+			},
+			"to": {
+				"x": 776,
+				"y": 103
+			},
+			"label": "2×",
+			"note": "M4 B5-C6 A5 ledger is 29px (both heads, expected both heads)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 756,
+				"y": 88
+			},
+			"to": {
+				"x": 776,
+				"y": 93
+			},
+			"label": "1×",
+			"note": "M4 B5-C6 C6 ledger is 18px (one head, expected one head)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

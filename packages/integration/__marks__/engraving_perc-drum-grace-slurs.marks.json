@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_perc-drum-grace-slurs.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 102,
+				"y": 131
+			},
+			"to": {
+				"x": 127,
+				"y": 138
+			},
+			"label": "grace slur",
+			"note": "grace slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 181,
+				"y": 131
+			},
+			"to": {
+				"x": 218,
+				"y": 138
+			},
+			"label": "grace slur",
+			"note": "grace slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

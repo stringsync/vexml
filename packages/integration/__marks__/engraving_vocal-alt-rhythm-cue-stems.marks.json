@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_vocal-alt-rhythm-cue-stems.png",
+	"width": 932,
+	"height": 420,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 464.1,
+				"y": 116
+			},
+			"to": {
+				"x": 476.1,
+				"y": 126
+			},
+			"label": "Principal head",
+			"note": "Principal head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 513.9,
+				"y": 116
+			},
+			"to": {
+				"x": 521.9,
+				"y": 126
+			},
+			"label": "Cue head",
+			"note": "Cue head",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

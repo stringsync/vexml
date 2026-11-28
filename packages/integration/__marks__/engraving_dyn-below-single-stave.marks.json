@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_dyn-below-single-stave.png",
+	"width": 932,
+	"height": 1373,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 114,
+				"y": 175
+			},
+			"to": {
+				"x": 129,
+				"y": 189
+			},
+			"label": "Dynamic 1",
+			"note": "Dynamic 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 302,
+				"y": 170
+			},
+			"to": {
+				"x": 318,
+				"y": 189
+			},
+			"label": "Dynamic 2",
+			"note": "Dynamic 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

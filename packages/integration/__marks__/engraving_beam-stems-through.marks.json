@@ -1,0 +1,65 @@
+{
+	"screenshot": "engraving_beam-stems-through.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 126,
+				"y": 93
+			},
+			"to": {
+				"x": 249,
+				"y": 93
+			},
+			"label": "outer beam",
+			"note": "M1 outer beam edge",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 126,
+				"y": 91
+			},
+			"to": {
+				"x": 248,
+				"y": 108
+			},
+			"label": "through",
+			"note": "M1: all 4 stems reach the outer beam",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 492,
+				"y": 76
+			},
+			"to": {
+				"x": 617,
+				"y": 76
+			},
+			"label": "outer beam",
+			"note": "M2 outer beam edge",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 492,
+				"y": 74
+			},
+			"to": {
+				"x": 617,
+				"y": 98
+			},
+			"label": "through",
+			"note": "M2: all 4 stems reach the outer beam",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

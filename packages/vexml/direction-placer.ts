@@ -1,10 +1,12 @@
 // vet-ignore-file compact-files: came in at this size from the upstream repository; splitting it is a refactor of its own
-import type { Harmony, Measure } from '@stringsync/mdom';
+import type { Direction, Harmony, Measure } from '@stringsync/mdom';
 import { Rect } from 'core/geometry';
 import {
+	Barline,
 	Element,
 	type RenderContext,
 	type Stave,
+	StaveModifierPosition,
 	StaveNote,
 	StaveTempo,
 	TabNote,
@@ -12,6 +14,7 @@ import {
 } from 'vexflow/core';
 import { AccordionRegistrationGlyph } from './accordion-registration-glyph';
 import { Appearance } from './appearance';
+import { openingRepeatLeftOffset } from './barline-width';
 import { ChordDiagramGlyph, type ChordFrame } from './chord-diagram-glyph';
 import { type CollisionKind, CollisionResolver } from './collision-resolver';
 import {
@@ -24,6 +27,7 @@ import {
 	CHORD_DIAGRAM_WIDTH,
 	DIRECTION_LINE_HOOK,
 	DIRECTION_LINE_TEXT_LINE,
+	DIRECTION_LINE_WORD_GAP,
 	DYNAMICS_FONT_SIZE,
 	ENCLOSURE_PADDING,
 	HARMONY_ACCIDENTAL_FONT_SIZE,
@@ -46,6 +50,8 @@ import {
 	TEMPO_MARK_GAP,
 	TEMPO_NOTE_CLEARANCE,
 	TEMPO_SCALE,
+	TEMPO_WORD_METRONOME_GAP,
+	TEMPO_WORDS_FONT_SIZE,
 	WORDS_FONT_SIZE,
 	WORDS_NOTE_CLEARANCE,
 	WORDS_Y_OFFSET,
@@ -55,7 +61,11 @@ import { FERMATA_GLYPHS, NORMAL_FERMATA_GLYPHS } from './fermata-glyphs';
 import { FontFamilies } from './font-families';
 import { FormattedText } from './formatted-text';
 import type { GeometryCollector } from './geometry-collector';
-import { MetronomeGlyph, type TempoModulation } from './metronome-glyph';
+import {
+	MetronomeGlyph,
+	metronomeNoteGlyph,
+	type TempoModulation,
+} from './metronome-glyph';
 import type {
 	DirectionLineSpan,
 	DocumentPosition,
@@ -74,6 +84,11 @@ type RehearsalOptions = {
 	format?: TextFormat;
 	position?: DocumentPosition | null;
 };
+
+interface DrawTempoOptions {
+	afterWord?: Rect;
+	isSystemStart?: boolean;
+}
 
 type PlaceBesideOptions = {
 	below: boolean;
@@ -114,6 +129,15 @@ export class DirectionPlacer {
 	// Every below-stave words direction placed so far, by its stave: hairpins and direction
 	// lines resolved later under the same stave clear them (see SpannerResolver).
 	private readonly belowWords = new Map<Stave, Rect[]>();
+
+	// Every above-stave words direction placed so far, by its stave: a <dashes> span that
+	// starts on the same note continues after the word on its line.
+	private readonly aboveWords = new Map<Stave, Rect[]>();
+
+	// Every above-stave annotation placed so far (words, tempo marks, chord symbols,
+	// rehearsal marks), by its stave: an above-stave ottava bracket resolved later checks
+	// whether it collided with any of them (see SpannerResolver.observeStackedOttava).
+	private readonly aboveMarks = new Map<Stave, Rect[]>();
 
 	// Every dynamic placed so far, by its stave: a hairpin resolved later that starts under
 	// one begins past it instead of running through its glyph (see SpannerResolver).
@@ -188,90 +212,36 @@ export class DirectionPlacer {
 		return this.belowWords.get(stave) ?? [];
 	}
 
+	/* Above-stave annotations placed on `stave`, for ottava brackets resolved later to check
+	 * overlap (see SpannerResolver.observeStackedOttava). */
+	aboveAnnotationsOn(stave: Stave): readonly Rect[] {
+		return this.aboveMarks.get(stave) ?? [];
+	}
+
+	private recordAboveMark(stave: Stave, rect: Rect): void {
+		const marks = this.aboveMarks.get(stave);
+		if (marks) {
+			marks.push(rect);
+		} else {
+			this.aboveMarks.set(stave, [rect]);
+		}
+	}
+
 	/*
 	 * Draw the above-stave annotations queued for this measure, after the system is
-	 * formatted so every anchor x is real: words, then chord symbols/diagrams, then
-	 * tempo marks.
+	 * formatted so every anchor x is real: dynamics (and their inline qualifiers), then
+	 * words, then chord symbols/diagrams, then tempo marks.
 	 */
 	placeColumn(column: DirectionColumn): void {
-		// Words go before the diagrams so a chord diagram draws on top of any words it
-		// shares a measure with, so the fret box stays fully legible and the text yields.
-		for (const w of column.words) {
-			// A tab fret glyph is drawn CENTERED on its column x, but a notation notehead is
-			// drawn FROM it, so text left-anchored at that x starts at the fret's middle and
-			// reads as shifted right of the fret AND of the notehead above it. Center it over a
-			// tab anchor so it lines up with both. On a notation stave, left-anchored at the
-			// notehead is already right (and is what MuseScore draws), so leave that alone.
-			// The document's own halign or justify overrides either.
-			// Upright unless the document says italic: MusicXML's default font-style is normal,
-			// and exporters mark the italic expressions ("dolce", "cresc.") as such.
-			const placement = this.sideOf(w.placement, w.position);
-			const placed = this.drawWords(
-				w.stave,
-				w.text,
-				this.wordsAnchor(w),
-				placement,
-				w.glyph
-					? {
-							font: this.notationFont,
-							size: NAVIGATION_FONT_SIZE,
-							italic: false,
-							color: this.notationColor,
-							align: w.format?.align ?? this.wordsAlign(w),
-							clearsHairpins: true,
-							position: w.position,
-						}
-					: {
-							font: this.faceOf(w.format),
-							size: WORDS_FONT_SIZE * (w.format?.scale ?? 1),
-							italic: w.format?.italic ?? false,
-							bold: w.format?.bold ?? false,
-							align: w.format?.align ?? this.wordsAlign(w),
-							clearsHairpins: true,
-							position: w.position,
-							...this.decorationOf(w.format),
-						},
-			);
-			// A below-stave directive grows the crop downward instead (drawWords already
-			// reported the drop); only above-stave text lifts the measure box's top.
-			if (placement === 'below') {
-				const placedOnStave = this.belowWords.get(w.stave);
-				if (placedOnStave) {
-					placedOnStave.push(placed);
-				} else {
-					this.belowWords.set(w.stave, [placed]);
-				}
-			} else {
-				this.reporter.growPageTop(placed.y);
-				this.spill.growDecorationTop(column.systemIndex, placed.y);
-			}
-		}
+		// Dynamics sit closer to the stave than co-located text directions (character
+		// directions, stage notes, expression words), so place them, and any inline
+		// qualifiers sharing their direction, before general words directives.
 		// Dynamics ride the same path as words: they're just typed in the music font. A
 		// marking spelled out of SMuFL's dynamic letters engraves as glyphs; an
 		// <other-dynamics> keeps its literal text in the words face, italic unless the
 		// document says otherwise. A dynamic stays centered on its note whatever its halign:
 		// exporters pair that with a default-x offset, which alone it would misplace.
-		// Symbol-style direction types (damp, eyeglasses, string mute...) are SMuFL glyphs on
-		// the same path, centered on their note like a dynamic.
-		for (const sym of column.symbols) {
-			const placed = this.drawWords(
-				sym.stave,
-				sym.glyph,
-				sym.anchor,
-				sym.placement,
-				{
-					font: this.notationFont,
-					size: DYNAMICS_FONT_SIZE,
-					italic: false,
-					color: this.notationColor,
-					align: 'center',
-				},
-			);
-			if (sym.placement !== 'below') {
-				this.reporter.growPageTop(placed.y);
-				this.spill.growDecorationTop(column.systemIndex, placed.y);
-			}
-		}
+		const qualified = new Map<Direction, { box: Rect; placement: Placement }>();
 		for (const d of column.dynamics) {
 			const placement = this.sideOf(d.placement, d.position);
 			const placed = this.drawWords(
@@ -286,6 +256,7 @@ export class DirectionPlacer {
 							italic: false,
 							color: this.notationColor,
 							align: 'center',
+							clearsLyrics: false,
 							position: d.position,
 							...this.decorationOf(d.format),
 						}
@@ -295,6 +266,7 @@ export class DirectionPlacer {
 							italic: d.format?.italic ?? true,
 							bold: d.format?.bold ?? false,
 							align: 'center',
+							clearsLyrics: false,
 							position: d.position,
 							...this.decorationOf(d.format),
 						},
@@ -305,23 +277,92 @@ export class DirectionPlacer {
 			} else {
 				this.placedDynamics.set(d.stave, [placed]);
 			}
-			if (placement !== 'below') {
+			if (placement === 'below') {
+				this.reporter.dropLyricsBelow(column.systemIndex, d.stave, placed);
+			} else {
+				this.reporter.growPageTop(placed.y);
+				this.spill.growDecorationTop(column.systemIndex, placed.y);
+			}
+			if (d.direction && !qualified.has(d.direction)) {
+				qualified.set(d.direction, { box: placed, placement });
+			}
+		}
+		// Words go before the diagrams so a chord diagram draws on top of any words it
+		// shares a measure with, so the fret box stays fully legible and the text yields.
+		const otherWords: WordsTask[] = [];
+		const tempoWords = new Map<Direction, Rect>();
+		for (const word of column.words) {
+			const dynamic =
+				word.dynamicDirection && !this.followed(word.position)
+					? qualified.get(word.dynamicDirection)
+					: undefined;
+			if (dynamic) {
+				this.placeWord(column, word, dynamic);
+			} else {
+				otherWords.push(word);
+			}
+		}
+		for (const word of otherWords) {
+			const placed = this.placeWord(column, word);
+			if (word.tempoDirection) {
+				tempoWords.set(word.tempoDirection, placed);
+			}
+		}
+		// Symbol-style direction types (damp, eyeglasses, string mute...) are SMuFL glyphs on
+		// the same path, centered on their note like a dynamic. On a grand staff with no
+		// explicit placement, a harp damping sign sits between the two staves, and a downbeat
+		// damping sign on a centered whole-measure rest sits just after the opening barline
+		// (Behind Bars p. 364).
+		for (const sym of column.symbols) {
+			const anchor =
+				sym.opensBar && sym.anchor?.isCenterAligned()
+					? sym.stave.getNoteStartX()
+					: sym.anchor;
+			const placed =
+				sym.lowerStave && sym.placement === 'below'
+					? this.drawGlyphsBetween(
+							sym.stave,
+							sym.lowerStave,
+							sym.glyph,
+							anchor,
+							null,
+						)
+					: this.drawWords(sym.stave, sym.glyph, anchor, sym.placement, {
+							font: this.notationFont,
+							size: DYNAMICS_FONT_SIZE,
+							italic: false,
+							color: this.notationColor,
+							align: typeof anchor === 'number' ? 'left' : 'center',
+						});
+			if (sym.placement !== 'below') {
 				this.reporter.growPageTop(placed.y);
 				this.spill.growDecorationTop(column.systemIndex, placed.y);
 			}
 		}
 		// Harp pedal diagrams: glyphs in the notation font, centered on their note, through
-		// the same clearance as a dynamic.
+		// the same clearance as a dynamic. On a grand staff with no explicit placement, center
+		// the glyph ink vertically between the two staves (Behind Bars p. 356).
 		for (const h of column.harpPedals) {
 			const placement = this.sideOf(h.placement, h.position);
-			const placed = this.drawWords(h.stave, h.glyphs, h.anchor, placement, {
-				font: this.notationFont,
-				size: DYNAMICS_FONT_SIZE,
-				italic: false,
-				color: this.notationColor,
-				align: 'center',
-				position: h.position,
-			});
+			const placed =
+				h.lowerStave &&
+				placement === 'below' &&
+				this.followed(h.position)?.y == null
+					? this.drawGlyphsBetween(
+							h.stave,
+							h.lowerStave,
+							h.glyphs,
+							h.anchor,
+							h.position,
+						)
+					: this.drawWords(h.stave, h.glyphs, h.anchor, placement, {
+							font: this.notationFont,
+							size: DYNAMICS_FONT_SIZE,
+							italic: false,
+							color: this.notationColor,
+							align: 'center',
+							position: h.position,
+						});
 			if (placement !== 'below') {
 				this.reporter.growPageTop(placed.y);
 				this.spill.growDecorationTop(column.systemIndex, placed.y);
@@ -535,7 +576,14 @@ export class DirectionPlacer {
 		// note, so they land in the same spot; engraving convention (and MuseScore) puts the
 		// symbol nearest the staff and the tempo above it, which is what drawing last gives.
 		for (const t of column.tempos) {
-			const top = this.drawTempo(t.stave, t);
+			const afterWord =
+				t.direction && !this.followed(t.position)
+					? tempoWords.get(t.direction)
+					: undefined;
+			const top = this.drawTempo(t.stave, t, {
+				afterWord,
+				isSystemStart: column.isSystemStart,
+			});
 			this.reporter.growPageTop(top);
 			this.spill.growDecorationTop(column.systemIndex, top);
 		}
@@ -557,9 +605,9 @@ export class DirectionPlacer {
 		const topStave = column.topStave;
 		const measure = column.measure;
 		// Segno/coda: measure-level landmarks like a rehearsal mark, so they're read from the
-		// first part and printed once over the column's top stave, at its left edge, where a
-		// player scanning for "the sign" looks. Drawn before the rehearsal marks so a mark in
-		// the same measure stacks above rather than over them.
+		// first part and printed once over the column's top stave, centered horizontally over
+		// its opening barline (Behind Bars p. 240). Drawn before the rehearsal marks so a mark
+		// in the same measure stacks above rather than over them.
 		if (topStave && measure) {
 			for (const { kind, position } of this.reader.navigationsOf(measure)) {
 				const placed = this.drawWords(
@@ -572,6 +620,7 @@ export class DirectionPlacer {
 						size: NAVIGATION_FONT_SIZE,
 						italic: false,
 						color: this.notationColor,
+						align: 'center',
 						sideGap: NAVIGATION_TEXT_GAP,
 						position,
 					},
@@ -721,6 +770,7 @@ export class DirectionPlacer {
 			formatted.draw(placed);
 			this.context.restore();
 			this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
+			this.recordAboveMark(stave, placed);
 			return placed.y;
 		} finally {
 			this.context.closeGroup();
@@ -728,20 +778,21 @@ export class DirectionPlacer {
 	}
 
 	/*
-	 * The collision box of a metronome mark drawn at (`x`, `baseline`): StaveTempo lays the
-	 * beat-unit glyph, "=", and the bpm out on one baseline with 3px gaps, all shrunk by
-	 * TEMPO_SCALE. Measured with the same vexflow Elements (and Metrics font info) StaveTempo
-	 * draws with, so the box matches the drawn glyphs, ink ascent AND descent, because the
-	 * beat-unit glyph's origin is its notehead center, so half of it hangs below the baseline.
-	 * ponytail: measured with the quarter-note glyph whatever the beat unit; the note glyphs
-	 * are within a couple of pixels of each other at this size, except a stemless whole note,
-	 * which just reserves a little more air than it needs.
+	 * Measure a metronome mark in canvas pixels: StaveTempo lays the beat-unit glyph, "=", and
+	 * the bpm or second unit out on one baseline with 3px gaps, all shrunk by TEMPO_SCALE.
+	 * Measured with the same vexflow Elements (and Metrics font info) StaveTempo draws with, so
+	 * the box matches the drawn glyphs, ink ascent AND descent, because the beat-unit glyph's
+	 * origin is its notehead center, so half of it hangs below the baseline. For a standalone
+	 * tempo equation (unit = unit or note-group = note-group), also returns the center of "="
+	 * from the mark's left edge so mid-system equations can center "=" over the barline.
 	 */
-	private tempoLayout(
-		task: TempoTask,
-		x: number,
-		baseline: number,
-	): { rect: Rect; markWidth: number } {
+	private measureTempo(task: TempoTask): {
+		width: number;
+		ascent: number;
+		descent: number;
+		markWidth: number;
+		equalsCenter: number | null;
+	} {
 		const tempo = task.tempo;
 		// \uECA5 is SMuFL metNoteQuarterUp; vexflow's Glyphs enum isn't re-exported.
 		const glyph = new Element('StaveTempo.glyph').setText('\uECA5');
@@ -752,17 +803,29 @@ export class DirectionPlacer {
 		let w = 0;
 		let ascent = ink.actualBoundingBoxAscent;
 		let descent = ink.actualBoundingBoxDescent;
+		let equalsCenter: number | null = null;
 		if (tempo) {
 			// Walk the same pieces StaveTempo.draw lays down, each advancing by its own width
 			// plus a 3px gap: an opening paren, the beat unit and its dots, "=", then either a
 			// second dotted unit (the metric-modulation form) or the bpm, then a closing paren.
 			const advance = (el: Element) => el.getWidth() + 3;
 			w += tempo.parenthesis ? advance(text.setText('(')) : 0;
-			w += advance(glyph) + (tempo.dots ?? 0) * advance(dot);
-			w += advance(text.setText('='));
-			w += tempo.duration2
-				? advance(glyph) + (tempo.dots2 ?? 0) * advance(dot)
-				: advance(text.setText(String(tempo.bpm)));
+			w +=
+				advance(glyph.setText(metronomeNoteGlyph(tempo.duration))) +
+				(tempo.dots ?? 0) * advance(dot);
+			const equalsLeft = w;
+			const equalsWidth = text.setText('=').getWidth();
+			w += equalsWidth + 3;
+			if (tempo.duration2) {
+				if (task.modulations.length === 0) {
+					equalsCenter = equalsLeft + equalsWidth / 2;
+				}
+				w +=
+					advance(glyph.setText(metronomeNoteGlyph(tempo.duration2))) +
+					(tempo.dots2 ?? 0) * advance(dot);
+			} else {
+				w += advance(text.setText(String(tempo.bpm)));
+			}
 			if (tempo.parenthesis) {
 				w += text.setText(')').getWidth();
 			}
@@ -773,18 +836,19 @@ export class DirectionPlacer {
 		// union of them: widths add, and a tuplet bracket reaches higher than a beat unit.
 		for (const [i, modulation] of task.modulations.entries()) {
 			const group = new MetronomeGlyph(modulation);
+			if (!tempo && task.modulations.length === 1 && modulation.rate === null) {
+				equalsCenter = group.equalsCenter;
+			}
 			w += (tempo || i > 0 ? TEMPO_MARK_GAP : 0) + group.width;
 			ascent = Math.max(ascent, group.ascent);
 			descent = Math.max(descent, group.descent);
 		}
 		return {
-			rect: new Rect(
-				x,
-				baseline - ascent * TEMPO_SCALE,
-				w * TEMPO_SCALE,
-				(ascent + descent) * TEMPO_SCALE,
-			),
+			width: w * TEMPO_SCALE,
+			ascent: ascent * TEMPO_SCALE,
+			descent: descent * TEMPO_SCALE,
 			markWidth: markWidth + (tempo ? TEMPO_MARK_GAP : 0),
+			equalsCenter: equalsCenter !== null ? equalsCenter * TEMPO_SCALE : null,
 		};
 	}
 
@@ -797,12 +861,20 @@ export class DirectionPlacer {
 	 * the mark reaches up to so the caller can grow the page crop above it. Drawn after the
 	 * notes are formatted so the anchor x and the note extents are real.
 	 */
-	private drawTempo(stave: Stave, task: TempoTask): number {
+	private drawTempo(
+		stave: Stave,
+		task: TempoTask,
+		opts: DrawTempoOptions = {},
+	): number {
+		const { afterWord, isSystemStart = false } = opts;
 		this.context.openGroup('vexml-tempo');
 		try {
-			// The mark stands on vexflow's top text line, or on the document's baseline.
+			// The mark stands on vexflow's top text line, on the document's baseline, or on the
+			// baseline of a preceding tempo word in the same <direction>.
 			const doc = this.followed(task.position);
-			const baseY = this.baselineOf(stave, stave.getYForTopText(1), doc);
+			const baseY = afterWord
+				? afterWord.bottom
+				: this.baselineOf(stave, stave.getYForTopText(1), doc);
 			// vexflow's StaveTempo.draw reads stave.getModifierXShift(position), which uses the
 			// position enum as an index into the stave's modifier array. ABOVE (the default, 3)
 			// indexes modifiers[3], which is undefined (and throws) on a system-start stave that
@@ -817,25 +889,41 @@ export class DirectionPlacer {
 			// lands back on its original anchor. Internally StaveTempo draws at (this.x + shiftX + 10,
 			// the stave's top-text y + this.yShift); solving s·(passed) = target gives the
 			// compensated inputs below.
-			const anchorX = stave.getX() + shiftX + 10;
-			// `justify` aligns the mark within the measure: left sits it on the anchor, right ends
-			// it at the stave's right edge, center splits the space between. Never left of the anchor.
-			const free =
-				stave.getX() +
-				stave.getWidth() -
-				10 -
-				anchorX -
-				this.tempoLayout(task, anchorX, baseY).rect.w;
-			const targetX = this.xOf(
-				stave,
-				anchorX + Math.max(0, alignOffsetOf(task.justify, free)),
-				doc,
-			);
+			const metrics = this.measureTempo(task);
+			let targetX: number;
+			if (afterWord) {
+				targetX = afterWord.right + TEMPO_WORD_METRONOME_GAP;
+			} else if (
+				!isSystemStart &&
+				!task.justify &&
+				metrics.equalsCenter !== null
+			) {
+				// Behind Bars p. 185: centre the "=" of a mid-system tempo equation over the
+				// barline so each note-value stands above the bar of its own tempo.
+				targetX = this.xOf(stave, stave.getX() - metrics.equalsCenter, doc);
+			} else {
+				// Align a bar-opening metronome mark with a coinciding time signature's left edge,
+				// or with a system-opening forward repeat sign; without either, fall back to
+				// StaveTempo's default over the first note.
+				const anchorX =
+					this.openingTempoAnchorX(stave, isSystemStart) ??
+					stave.getX() + shiftX + 10;
+				// `justify` aligns the mark within the measure: left sits it on the anchor, right ends
+				// it at the stave's right edge, center splits the space between. Never left of the anchor.
+				const free =
+					stave.getX() + stave.getWidth() - 10 - anchorX - metrics.width;
+				targetX = this.xOf(
+					stave,
+					anchorX + Math.max(0, alignOffsetOf(task.justify, free)),
+					doc,
+				);
+			}
 			const band = this.reporter.rowOf(stave);
-			const { rect: natural, markWidth } = this.tempoLayout(
-				task,
+			const natural = new Rect(
 				targetX,
-				baseY,
+				baseY - metrics.ascent,
+				metrics.width,
+				metrics.ascent + metrics.descent,
 			);
 			const placed = this.pins(doc)
 				? natural
@@ -870,7 +958,7 @@ export class DirectionPlacer {
 					.setPosition(position)
 					.setContext(this.context)
 					.draw();
-				cursor += markWidth;
+				cursor += metrics.markWidth;
 			}
 			for (const modulation of task.modulations) {
 				const group = new MetronomeGlyph(modulation);
@@ -879,6 +967,7 @@ export class DirectionPlacer {
 			}
 			this.context.restore();
 			this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
+			this.recordAboveMark(stave, placed);
 			return placed.y;
 		} finally {
 			this.context.closeGroup();
@@ -1043,6 +1132,9 @@ export class DirectionPlacer {
 			this.context.restore();
 			// Register the placed symbol so a later annotation in this system stacks clear of it.
 			this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
+			if (!below) {
+				this.recordAboveMark(stave, placed);
+			}
 			return placed.y;
 		} finally {
 			this.context.closeGroup();
@@ -1058,6 +1150,7 @@ export class DirectionPlacer {
 	 */
 	private wordsAnchor(
 		task: WordsTask,
+		isSystemStart: boolean,
 	): StaveNote | TabNote | number | undefined {
 		const { anchor, stave } = task;
 		if (task.directive) {
@@ -1066,9 +1159,51 @@ export class DirectionPlacer {
 		if (task.closesBar) {
 			return stave.getX() + stave.getWidth();
 		}
+		if (task.tempo && task.opensBar) {
+			const anchorX = this.openingTempoAnchorX(stave, isSystemStart);
+			if (anchorX !== undefined) {
+				return anchorX;
+			}
+		}
 		return task.opensBar && anchor?.isCenterAligned()
 			? stave.getNoteStartX()
 			: anchor;
+	}
+
+	/* Where a bar-opening tempo or metronome mark anchors before falling back to the first
+	 * note: a coinciding time signature's left edge, else a system-opening forward repeat
+	 * sign's left edge (Behind Bars p. 183). */
+	private openingTempoAnchorX(
+		stave: Stave,
+		isSystemStart: boolean,
+	): number | undefined {
+		return (
+			this.openingTimeSignatureX(stave) ??
+			(isSystemStart ? this.openingRepeatX(stave) : undefined)
+		);
+	}
+
+	/* The left edge of a time signature opening `stave`, if it prints one. Only BEGIN
+	 * modifiers count: a cautionary time signature at the end of a system sits past the
+	 * closing barline and never anchors a bar-opening tempo. */
+	private openingTimeSignatureX(stave: Stave): number | undefined {
+		return stave
+			.getModifiers(StaveModifierPosition.BEGIN, TimeSignature.CATEGORY)[0]
+			?.getX();
+	}
+
+	/* The left edge of a forward repeat sign opening `stave`, if it prints one. Only called
+	 * at a system start: a mid-system repeat sign acts as a barline, so bar-opening tempo
+	 * marks align with the first note instead (Behind Bars p. 183). */
+	private openingRepeatX(stave: Stave): number | undefined {
+		const repeat = stave
+			.getModifiers(StaveModifierPosition.BEGIN)
+			.find(
+				(modifier) =>
+					modifier instanceof Barline &&
+					modifier.getType() === Barline.type.REPEAT_BEGIN,
+			);
+		return repeat ? repeat.getX() + openingRepeatLeftOffset() : undefined;
 	}
 
 	/* Where a directive starts: the left edge of the stave's time signature, or its first
@@ -1111,6 +1246,77 @@ export class DirectionPlacer {
 			rotation: format?.rotation,
 			enclosure: enclosure && enclosure !== 'none' ? enclosure : undefined,
 		};
+	}
+
+	private placeWord(
+		column: DirectionColumn,
+		w: WordsTask,
+		dynamic?: { box: Rect; placement: Placement },
+	): Rect {
+		// A tab fret glyph is drawn CENTERED on its column x, but a notation notehead is
+		// drawn FROM it, so text left-anchored at that x starts at the fret's middle and
+		// reads as shifted right of the fret AND of the notehead above it. Center it over a
+		// tab anchor so it lines up with both. On a notation stave, left-anchored at the
+		// notehead is already right (and is what MuseScore draws), so leave that alone.
+		// The document's own halign or justify overrides either.
+		// Upright unless the document says italic: MusicXML's default font-style is normal,
+		// and exporters mark the italic expressions ("dolce", "cresc.") as such.
+		const placement =
+			dynamic?.placement ?? this.sideOf(w.placement, w.position);
+		const placed = this.drawWords(
+			w.stave,
+			w.text,
+			this.wordsAnchor(w, column.isSystemStart),
+			placement,
+			w.glyph
+				? {
+						font: this.notationFont,
+						size: NAVIGATION_FONT_SIZE,
+						italic: false,
+						color: this.notationColor,
+						align: w.format?.align ?? this.wordsAlign(w),
+						clearsHairpins: true,
+						position: w.position,
+					}
+				: {
+						font: this.faceOf(w.format),
+						size:
+							(w.tempo && !w.explicitSize
+								? TEMPO_WORDS_FONT_SIZE
+								: WORDS_FONT_SIZE) * (w.format?.scale ?? 1),
+						italic: w.format?.italic ?? false,
+						bold: w.format?.bold ?? Boolean(w.tempo),
+						align: w.format?.align ?? this.wordsAlign(w),
+						clearsHairpins: true,
+						clearsLyrics: !dynamic,
+						position: w.position,
+						besideDynamic: dynamic?.box,
+						...this.decorationOf(w.format),
+					},
+		);
+		// A below-stave directive grows the crop downward instead (drawWords already
+		// reported the drop); only above-stave text lifts the measure box's top.
+		if (placement === 'below') {
+			if (dynamic) {
+				this.reporter.dropLyricsBelow(column.systemIndex, w.stave, placed);
+			}
+			const placedOnStave = this.belowWords.get(w.stave);
+			if (placedOnStave) {
+				placedOnStave.push(placed);
+			} else {
+				this.belowWords.set(w.stave, [placed]);
+			}
+		} else {
+			const placedOnStave = this.aboveWords.get(w.stave);
+			if (placedOnStave) {
+				placedOnStave.push(placed);
+			} else {
+				this.aboveWords.set(w.stave, [placed]);
+			}
+			this.reporter.growPageTop(placed.y);
+			this.spill.growDecorationTop(column.systemIndex, placed.y);
+		}
+		return placed;
 	}
 
 	/*
@@ -1180,19 +1386,31 @@ export class DirectionPlacer {
 			if (doc?.y != null && style.valign) {
 				textTop = formatted.topAt(baseline, style.valign);
 			}
+			if (style.besideDynamic) {
+				const dynamic = style.besideDynamic;
+				textTop = formatted.topAt(dynamic.bottom, 'baseline');
+				const right = dynamic.right + WORDS_NOTE_CLEARANCE;
+				anchorX =
+					right + w <= this.scratchViewport.right - PAGE_MARGIN_X
+						? right
+						: dynamic.x - WORDS_NOTE_CLEARANCE - w;
+			}
 			const natural = new Rect(
-				this.xOf(stave, anchorX, doc) - alignOffsetOf(style.align, w),
+				this.xOf(stave, anchorX, doc) -
+					alignOffsetOf(style.besideDynamic ? 'left' : style.align, w),
 				textTop,
 				w,
 				h,
 			);
+			const clearBase =
+				style.clearsLyrics === false ? DYNAMIC_CLEAR_KINDS : TEXT_CLEAR_KINDS;
 			const placed = this.placeBeside(
 				stave,
 				natural,
-				typeof anchor !== 'number' && doc?.x == null,
+				typeof anchor !== 'number' && doc?.x == null && !style.besideDynamic,
 				{
 					below,
-					kinds: style.clearsHairpins ? WORDS_CLEAR_KINDS : TEXT_CLEAR_KINDS,
+					kinds: style.clearsHairpins ? [...clearBase, 'hairpin'] : clearBase,
 					sideGap: style.sideGap,
 					pinned: this.pins(doc),
 					pinnedX: this.pins(doc) && doc?.x != null,
@@ -1249,6 +1467,86 @@ export class DirectionPlacer {
 		position: DocumentPosition | null | undefined,
 	): Placement {
 		return this.followed(position)?.side ?? placement;
+	}
+
+	/*
+	 * Place notation-font glyphs (a grand-staff <harp-pedals> diagram or <damp>/<damp-all>
+	 * sign) centered vertically in the gap between their upper and lower staves (Behind Bars
+	 * pp. 356, 364), using the glyph string's actual ink box so its midline sits evenly
+	 * between the staves while clearing low upper-stave notes and reporting its drop to the
+	 * re-spacing pass when either stave needs more room.
+	 */
+	private drawGlyphsBetween(
+		stave: Stave,
+		lowerStave: Stave,
+		glyphs: string,
+		anchor: StaveNote | TabNote | number | undefined,
+		position: DocumentPosition | null | undefined,
+	): Rect {
+		this.context.openGroup('vexml-words');
+		try {
+			const doc = this.followed(position);
+			let anchorX =
+				typeof anchor === 'number'
+					? anchor
+					: (anchor?.getAbsoluteX() ?? stave.getNoteStartX());
+			if (anchor instanceof StaveNote) {
+				anchorX = (anchor.getNoteHeadBeginX() + anchor.getNoteHeadEndX()) / 2;
+			}
+			this.context.save();
+			this.context.setFont(
+				this.notationFont,
+				DYNAMICS_FONT_SIZE,
+				'normal',
+				'normal',
+			);
+			this.context.setFillStyle(this.notationColor);
+			this.context.setStrokeStyle(this.notationColor);
+			const ink = new Element()
+				.setFont(this.notationFont, DYNAMICS_FONT_SIZE)
+				.setText(glyphs)
+				.getTextMetrics();
+			const left = -ink.actualBoundingBoxLeft;
+			const w = Math.max(
+				this.context.measureText(glyphs).width,
+				ink.actualBoundingBoxRight - left,
+			);
+			const ascent = ink.actualBoundingBoxAscent;
+			const descent = ink.actualBoundingBoxDescent;
+			const inkHeight = ascent + descent;
+			const height = inkHeight > 0 ? inkHeight : DYNAMICS_FONT_SIZE;
+			const midY = (stave.getBottomLineY() + lowerStave.getYForLine(0)) / 2;
+			const naturalX =
+				typeof anchor === 'number'
+					? this.xOf(stave, anchorX, doc)
+					: this.xOf(stave, anchorX, doc) - w / 2;
+			const natural = new Rect(
+				naturalX,
+				midY - height / 2 - (doc?.dy ?? 0),
+				w,
+				height,
+			);
+			const placed = this.placeBeside(
+				stave,
+				natural,
+				typeof anchor !== 'number' && doc?.x == null,
+				{
+					below: true,
+					kinds: TEXT_CLEAR_KINDS,
+					pinned: this.pins(doc),
+					pinnedX: this.pins(doc) && doc?.x != null,
+				},
+			);
+			this.context.fillText(
+				glyphs,
+				placed.x - left,
+				placed.y + (inkHeight > 0 ? ascent : height),
+			);
+			this.context.restore();
+			return placed;
+		} finally {
+			this.context.closeGroup();
+		}
 	}
 
 	/*
@@ -1440,6 +1738,7 @@ export class DirectionPlacer {
 			this.reporter.recordAnnotationDrop(stave, placed);
 		} else {
 			this.reporter.recordAnnotationSpill(stave, placed);
+			this.recordAboveMark(stave, placed);
 		}
 		this.collisionResolver.add({ rect: placed, kind: 'annotation', band });
 		return placed;
@@ -1467,19 +1766,27 @@ export class DirectionPlacer {
 			if (!start || !stop) {
 				continue;
 			}
-			const left = start.getAbsoluteX();
-			const right = stop.getAbsoluteX() + stop.getGlyphWidth();
-			// A span that wraps onto a later system runs right-to-left here; dropped rather than
-			// drawn backwards (the same limit octaveShiftsOf documents).
-			if (right <= left) {
-				continue;
-			}
+			let left = start.getAbsoluteX();
+			let right = stop.getAbsoluteX() + stop.getGlyphWidth();
 			const stave = start.checkStave();
+			// A <dashes> span starting on a word (cresc., dim., rit.) continues after the word
+			// on its own line rather than floating above or below it.
+			const leadingWord =
+				span.kind === 'dashes'
+					? (span.above
+							? (this.aboveWords.get(stave) ?? [])
+							: (this.belowWords.get(stave) ?? [])
+						).find((rect) => left >= rect.x - 2 && left <= rect.right + 2)
+					: undefined;
 			const naturalY = span.above
 				? stave.getYForTopText(DIRECTION_LINE_TEXT_LINE)
 				: stave.getYForBottomText(DIRECTION_LINE_TEXT_LINE);
 			let y = naturalY;
-			if (!span.above) {
+			if (leadingWord) {
+				left = leadingWord.right + DIRECTION_LINE_WORD_GAP;
+				// Align with the lowercase x-height middle of the word (about 28% up from baseline).
+				y = leadingWord.bottom - leadingWord.h * 0.28;
+			} else if (!span.above) {
 				const scoped = new CollisionResolver(this.scratchViewport, {});
 				for (const rect of this.belowWordsOn(stave)) {
 					scoped.add({ rect, kind: 'annotation' });
@@ -1490,6 +1797,25 @@ export class DirectionPlacer {
 					{},
 				).y;
 			}
+			if (span.kind === 'dashes') {
+				const stopStave = stop.checkStave();
+				const stopX = stop.getAbsoluteX();
+				const endingDynamic = this.dynamicsOn(stopStave).find(
+					(dyn) =>
+						dyn.x < right &&
+						dyn.right > stopX &&
+						y >= dyn.y - 4 &&
+						y <= dyn.bottom + 4,
+				);
+				if (endingDynamic) {
+					right = Math.min(right, endingDynamic.x - DIRECTION_LINE_WORD_GAP);
+				}
+			}
+			// A span that wraps onto a later system (or has no room left past its word) runs
+			// right-to-left here; dropped rather than drawn backwards.
+			if (right <= left) {
+				continue;
+			}
 			// A hook drops toward the staff from an above-stave line and rises toward it from a
 			// below-stave one, so the whole bracket flips with its placement.
 			const toward = span.above ? 1 : -1;
@@ -1497,28 +1823,35 @@ export class DirectionPlacer {
 				end === 'none'
 					? 0
 					: (end === 'up' ? -1 : 1) * toward * DIRECTION_LINE_HOOK;
-			this.context.save();
-			this.context.setStrokeStyle(this.notationColor);
-			this.context.setLineWidth(this.appearance.lineWidth(span.kind) ?? 1);
-			if (span.dash) {
-				this.context.setLineDash(span.dash);
+			this.context.openGroup(
+				span.kind === 'dashes' ? 'vexml-dashes' : 'vexml-bracket',
+			);
+			try {
+				this.context.save();
+				this.context.setStrokeStyle(this.notationColor);
+				this.context.setLineWidth(this.appearance.lineWidth(span.kind) ?? 1);
+				if (span.dash) {
+					this.context.setLineDash(span.dash);
+				}
+				this.context.beginPath();
+				const startHook = hookOf(span.startEnd);
+				if (startHook) {
+					this.context.moveTo(left, y + startHook);
+					this.context.lineTo(left, y);
+				} else {
+					this.context.moveTo(left, y);
+				}
+				this.context.lineTo(right, y);
+				const stopHook = hookOf(span.stopEnd);
+				if (stopHook) {
+					this.context.lineTo(right, y + stopHook);
+				}
+				this.context.stroke();
+				this.context.closePath();
+				this.context.restore();
+			} finally {
+				this.context.closeGroup();
 			}
-			this.context.beginPath();
-			const startHook = hookOf(span.startEnd);
-			if (startHook) {
-				this.context.moveTo(left, y + startHook);
-				this.context.lineTo(left, y);
-			} else {
-				this.context.moveTo(left, y);
-			}
-			this.context.lineTo(right, y);
-			const stopHook = hookOf(span.stopEnd);
-			if (stopHook) {
-				this.context.lineTo(right, y + stopHook);
-			}
-			this.context.stroke();
-			this.context.closePath();
-			this.context.restore();
 			this.reporter.growPageTop(y - DIRECTION_LINE_HOOK);
 			this.reporter.growPageBottom(y + DIRECTION_LINE_HOOK);
 		}
@@ -1528,7 +1861,16 @@ export class DirectionPlacer {
 // Above-stave text (chord symbols, words) clears notes, ties, and other placed text, but NOT
 // chord diagrams: a diagram deliberately draws on top of any text it shares a spot with. All
 // nudge logic funnels through the CollisionResolver; see AGENTS.md, "Collisions and nudges".
-const TEXT_CLEAR_KINDS: CollisionKind[] = ['note', 'tie', 'annotation'];
+const TEXT_CLEAR_KINDS: CollisionKind[] = [
+	'note',
+	'tie',
+	'annotation',
+	'lyric',
+];
+
+// Dynamics (and their inline qualifiers) stay closer to the stave than lyrics; below-stave
+// lyrics drop beyond them on the next pass instead (Behind Bars p. 468).
+const DYNAMIC_CLEAR_KINDS: CollisionKind[] = ['note', 'tie', 'annotation'];
 
 // A words direction also clears the hairpins on its side of the stave, which the previous
 // pass placed (see DrawPassOptions.hairpinBands). A dynamic doesn't: it shares the
@@ -1592,6 +1934,11 @@ type SideTextStyle = {
 	sideGap?: number;
 	/** Whether the string also clears hairpins (see WORDS_CLEAR_KINDS). */
 	clearsHairpins?: boolean;
+	/** Whether the string clears lyrics (true by default; false for dynamics and their inline
+	 * qualifiers, which stay closer to the stave while lyrics drop beyond them). */
+	clearsLyrics?: boolean;
+	/** A subito qualifier shares the row of the dynamic from its direction. */
+	besideDynamic?: Rect;
 	/** The ink's height, when it is not the font size: a lone SMuFL glyph is far shorter
 	 * than its em, and a box that tall would push neighbors needlessly far. Absent means
 	 * the font size. */
@@ -1609,6 +1956,8 @@ type SideTextStyle = {
  * relation from a `<metronome-note>` one, or both. At least one is non-null.
  */
 export type TempoTask = {
+	/** The `<direction>` holding this metronome, matched against preceding tempo words. */
+	direction?: Direction;
 	tempo: TempoMark | null;
 	/** Marks drawn as note glyphs after the bpm mark, left to right. */
 	modulations: TempoModulation[];
@@ -1639,6 +1988,9 @@ export type HarmonyTask = {
 /** A queued words direction, drawn on its stave's `placement` side at the laid-out x of
  * the note it applies to. */
 export type WordsTask = {
+	dynamicDirection?: Direction;
+	/** The `<direction>` holding this word when a `<metronome>` follows it inline. */
+	tempoDirection?: Direction;
 	stave: Stave;
 	text: string;
 	/** The text is a SMuFL glyph (an <other-direction smufl>), drawn in the notation font.
@@ -1654,6 +2006,12 @@ export type WordsTask = {
 	/* The words are a directive (an <attributes><directive> or direction@directive="yes"), so
 	 * they sit left of the first note, aligned with the time signature. Absent means they don't. */
 	directive?: boolean;
+	/* The words are a tempo indication (paired with <sound tempo> or <metronome>), so they
+	 * default to bold roman type larger than ordinary text unless explicitly formatted. */
+	tempo?: boolean;
+	/* The <words> element carries an explicit font-size attribute, so its scale applies to
+	 * WORDS_FONT_SIZE rather than TEMPO_WORDS_FONT_SIZE. */
+	explicitSize?: boolean;
 	/** The <words> element's formatting. Absent means the document asks for none. */
 	format?: TextFormat;
 	/** The <words> element's document position (see ScoreReader.positionOf). Absent or null
@@ -1673,6 +2031,7 @@ export type BarlineFermataTask = {
 /** A queued dynamics marking: a words task plus whether the marking spells out of SMuFL's
  * dynamic letters (and so engraves as glyphs in the notation font). */
 export type DynamicsTask = {
+	direction?: Direction;
 	stave: Stave;
 	text: string;
 	glyph: boolean;
@@ -1688,14 +2047,21 @@ export type DynamicsTask = {
 /** A queued symbol-style direction: the SMuFL string it engraves, centered on its note. */
 export type SymbolTask = {
 	stave: Stave;
+	/** The lower stave of a grand-staff pair when a damping sign sits between the two staves. */
+	lowerStave?: Stave;
 	glyph: string;
 	anchor: StaveNote | TabNote | undefined;
 	placement: Placement;
+	/** The damping sign falls on beat 1 of its measure, so on a centered whole-measure rest
+	 * it sits just after the opening barline instead of centered over the rest. */
+	opensBar?: boolean;
 };
 
 /** A queued <harp-pedals> diagram: the glyph string, divider included. */
 export type HarpPedalTask = {
 	stave: Stave;
+	/** The lower stave of a grand-staff pair when the diagram sits between the two staves. */
+	lowerStave?: Stave;
 	glyphs: string;
 	anchor: StaveNote | TabNote | undefined;
 	placement: Placement;
@@ -1742,6 +2108,8 @@ export type DirectionLineTask = {
 export interface DirectionColumn {
 	measureIndex: number;
 	systemIndex: number;
+	/** Whether this column opens a system (affecting system-opening repeat-sign tempo alignment). */
+	isSystemStart: boolean;
 	/** The system's top stave at this column, where measure-level marks print; undefined
 	 * until a stave exists. */
 	// vet-ignore noop-objects-over-null: a part can lack a stave in a system; absence is layout data, not a missing collaborator
@@ -1780,6 +2148,9 @@ export interface DirectionReporter {
 	/** The below-stave mirror of recordAnnotationSpill: how far a below-stave annotation
 	 * reached under its stave (also grows the page and system bottoms). */
 	recordAnnotationDrop(stave: Stave, rect: Rect): void;
+	/** A below-stave dynamic (or its inline qualifier) landed at `rect` on `stave` in
+	 * `system`: have any lyrics on that stave hang clear of it on the next pass. */
+	dropLyricsBelow(system: number, stave: Stave, rect: Rect): void;
 	/** Ink that reached `top`: keeps the page crop above it. */
 	growPageTop(top: number): void;
 	/** Ink that reached `bottom`: keeps the page crop below it. */

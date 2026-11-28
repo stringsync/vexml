@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_grace-align-separate-staves.png",
+	"width": 932,
+	"height": 322,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 659.9,
+				"y": 126
+			},
+			"to": {
+				"x": 667.9,
+				"y": 136
+			},
+			"label": "P1 grace 1",
+			"note": "P1 grace 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 668.9,
+				"y": 216
+			},
+			"to": {
+				"x": 676.9,
+				"y": 226
+			},
+			"label": "P2 grace 1",
+			"note": "P2 grace 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 680.9,
+				"y": 211
+			},
+			"to": {
+				"x": 688.9,
+				"y": 221
+			},
+			"label": "P2 grace 2",
+			"note": "P2 grace 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 696.9,
+				"y": 206
+			},
+			"to": {
+				"x": 713.9,
+				"y": 216
+			},
+			"label": "P2 whole note",
+			"note": "P2 whole note",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

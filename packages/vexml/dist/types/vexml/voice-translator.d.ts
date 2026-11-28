@@ -19,7 +19,9 @@ export declare class VoiceTranslator {
     useAppearance(appearance: Appearance): void;
     tickables(chords: Chord[], clef: string, opts: VoiceTickablesOptions): VoiceTickable[];
     private beamStems;
+    private middleLineStems;
     private gapFill;
+    private tremoloTimeModification;
     softVoice(tickables: Tickable[], softmaxFactor: number): Voice;
     private noteheadHalfWidthCache;
     noteheadHalfWidth(): number;
@@ -46,4 +48,8 @@ export interface VoiceTickablesOptions {
     }[];
     midClefs?: readonly MidClefSpec[];
     drawMidClefs?: boolean;
+    staffSpace?: number;
+    multipleVoices?: boolean;
+    opensSystem?: boolean;
+    keyAlters?: ReadonlyMap<string, number>;
 }

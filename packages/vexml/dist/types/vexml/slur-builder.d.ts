@@ -10,4 +10,5 @@ export declare class SlurBuilder {
     private readonly curves;
     constructor(connectors: CurveConnectors, appearance: Appearance);
     build(chords: Chord[], byLead: ReadonlyMap<Note, StaveNote>, scope?: SpanScope): SlurCurve[];
+    private graceBulgeUp;
 }

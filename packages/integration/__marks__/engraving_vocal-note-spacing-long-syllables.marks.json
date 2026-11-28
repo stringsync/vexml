@@ -1,0 +1,157 @@
+{
+	"screenshot": "engraving_vocal-note-spacing-long-syllables.png",
+	"width": 932,
+	"height": 1046,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 91,
+				"y": 798
+			},
+			"to": {
+				"x": 116,
+				"y": 808
+			},
+			"label": "Lyric",
+			"note": "Lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 170,
+				"y": 798
+			},
+			"to": {
+				"x": 187,
+				"y": 811
+			},
+			"label": "Lyric",
+			"note": "Lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 240,
+				"y": 798
+			},
+			"to": {
+				"x": 265,
+				"y": 808
+			},
+			"label": "Lyric",
+			"note": "Lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 308,
+				"y": 798
+			},
+			"to": {
+				"x": 347,
+				"y": 808
+			},
+			"label": "Lyric",
+			"note": "Lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 388,
+				"y": 801
+			},
+			"to": {
+				"x": 417,
+				"y": 811
+			},
+			"label": "Lyric",
+			"note": "Lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 509,
+				"y": 801
+			},
+			"to": {
+				"x": 526,
+				"y": 808
+			},
+			"label": "Lyric",
+			"note": "Lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 616,
+				"y": 798
+			},
+			"to": {
+				"x": 649,
+				"y": 808
+			},
+			"label": "Lyric",
+			"note": "Lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 700,
+				"y": 801
+			},
+			"to": {
+				"x": 715,
+				"y": 811
+			},
+			"label": "Lyric",
+			"note": "Lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 772,
+				"y": 798
+			},
+			"to": {
+				"x": 791,
+				"y": 808
+			},
+			"label": "Lyric",
+			"note": "Lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 840,
+				"y": 798
+			},
+			"to": {
+				"x": 873,
+				"y": 811
+			},
+			"label": "Lyric",
+			"note": "Lyric",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

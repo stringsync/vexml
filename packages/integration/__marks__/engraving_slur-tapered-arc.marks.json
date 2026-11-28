@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_slur-tapered-arc.png",
+	"width": 932,
+	"height": 1202,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 122,
+				"y": 74
+			},
+			"to": {
+				"x": 406,
+				"y": 91
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

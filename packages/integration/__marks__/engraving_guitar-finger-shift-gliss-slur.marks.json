@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_guitar-finger-shift-gliss-slur.png",
+	"width": 932,
+	"height": 419,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 302,
+				"y": 113
+			},
+			"to": {
+				"x": 327,
+				"y": 124
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 358,
+				"y": 103
+			},
+			"to": {
+				"x": 390,
+				"y": 115
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 302,
+				"y": 128
+			},
+			"to": {
+				"x": 318,
+				"y": 138
+			},
+			"label": "Glissando",
+			"note": "Glissando",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 365,
+				"y": 118
+			},
+			"to": {
+				"x": 381,
+				"y": 128
+			},
+			"label": "Glissando",
+			"note": "Glissando",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

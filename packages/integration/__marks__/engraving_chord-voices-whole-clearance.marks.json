@@ -1,0 +1,142 @@
+{
+	"screenshot": "engraving_chord-voices-whole-clearance.png",
+	"width": 932,
+	"height": 1049,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 738,
+				"y": 343
+			},
+			"to": {
+				"x": 739,
+				"y": 378
+			},
+			"label": "M8 stem",
+			"note": "M8 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 719,
+				"y": 338
+			},
+			"to": {
+				"x": 736,
+				"y": 348
+			},
+			"label": "M8 notehead",
+			"note": "M8 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 738,
+				"y": 338
+			},
+			"to": {
+				"x": 750,
+				"y": 348
+			},
+			"label": "M8 notehead",
+			"note": "M8 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 118,
+				"y": 578
+			},
+			"to": {
+				"x": 119,
+				"y": 613
+			},
+			"label": "M9 stem",
+			"note": "M9 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 107,
+				"y": 608
+			},
+			"to": {
+				"x": 119,
+				"y": 618
+			},
+			"label": "M9 notehead",
+			"note": "M9 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 608
+			},
+			"to": {
+				"x": 105,
+				"y": 618
+			},
+			"label": "M9 notehead",
+			"note": "M9 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 308,
+				"y": 608
+			},
+			"to": {
+				"x": 310,
+				"y": 643
+			},
+			"label": "M10 stem",
+			"note": "M10 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 290,
+				"y": 598
+			},
+			"to": {
+				"x": 307,
+				"y": 608
+			},
+			"label": "M10 notehead",
+			"note": "M10 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 309,
+				"y": 603
+			},
+			"to": {
+				"x": 321,
+				"y": 613
+			},
+			"label": "M10 notehead",
+			"note": "M10 notehead",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_tie-moving-passage-consistent.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 750,
+				"y": 602
+			},
+			"to": {
+				"x": 779,
+				"y": 608
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 792,
+				"y": 614
+			},
+			"to": {
+				"x": 822,
+				"y": 620
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 835,
+				"y": 602
+			},
+			"to": {
+				"x": 864,
+				"y": 608
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

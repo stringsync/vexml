@@ -262,11 +262,18 @@ describe('SpillResolver', () => {
 		);
 	});
 
-	it('redraws for words a hairpin was drawn through', () => {
+	it('redraws for words a hairpin or ottava bracket was drawn through', () => {
 		expect(
 			new SpillResolver().revise(
 				[0, 120],
 				{ ...quietReport, hairpinsStacked: true },
+				1,
+			).needed,
+		).toBe(true);
+		expect(
+			new SpillResolver().revise(
+				[0, 120],
+				{ ...quietReport, ottavasStacked: true },
 				1,
 			).needed,
 		).toBe(true);

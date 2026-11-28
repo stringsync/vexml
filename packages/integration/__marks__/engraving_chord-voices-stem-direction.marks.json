@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_chord-voices-stem-direction.png",
+	"width": 932,
+	"height": 1049,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 526,
+				"y": 59
+			},
+			"to": {
+				"x": 527,
+				"y": 91
+			},
+			"label": "M3 stem",
+			"note": "M3 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 515,
+				"y": 111
+			},
+			"to": {
+				"x": 517,
+				"y": 146
+			},
+			"label": "M3 stem",
+			"note": "M3 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 522,
+				"y": 573
+			},
+			"to": {
+				"x": 523,
+				"y": 608
+			},
+			"label": "M11 stem",
+			"note": "M11 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 499,
+				"y": 603
+			},
+			"to": {
+				"x": 500,
+				"y": 638
+			},
+			"label": "M11 stem",
+			"note": "M11 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 734,
+				"y": 548
+			},
+			"to": {
+				"x": 736,
+				"y": 593
+			},
+			"label": "M12 stem",
+			"note": "M12 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 708,
+				"y": 578
+			},
+			"to": {
+				"x": 710,
+				"y": 623
+			},
+			"label": "M12 stem",
+			"note": "M12 stem",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

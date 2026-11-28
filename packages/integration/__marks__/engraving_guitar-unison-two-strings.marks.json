@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_guitar-unison-two-strings.png",
+	"width": 932,
+	"height": 419,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 729.1,
+				"y": 128
+			},
+			"to": {
+				"x": 741.1,
+				"y": 138
+			},
+			"label": "Unison 1a",
+			"note": "Unison 1a",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 740.5,
+				"y": 128
+			},
+			"to": {
+				"x": 752.5,
+				"y": 138
+			},
+			"label": "Unison 1b",
+			"note": "Unison 1b",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 761.9,
+				"y": 113
+			},
+			"to": {
+				"x": 773.9,
+				"y": 123
+			},
+			"label": "Unison 2a",
+			"note": "Unison 2a",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 773.3,
+				"y": 113
+			},
+			"to": {
+				"x": 785.3,
+				"y": 123
+			},
+			"label": "Unison 2b",
+			"note": "Unison 2b",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 739,
+				"y": 75
+			},
+			"to": {
+				"x": 754,
+				"y": 89
+			},
+			"label": "String number",
+			"note": "String number",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 772,
+				"y": 75
+			},
+			"to": {
+				"x": 787,
+				"y": 89
+			},
+			"label": "String number",
+			"note": "String number",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

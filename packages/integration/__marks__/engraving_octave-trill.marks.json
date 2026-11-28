@@ -1,0 +1,36 @@
+{
+	"screenshot": "engraving_octave-trill.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 512,
+				"y": 218
+			},
+			"to": {
+				"x": 512,
+				"y": 311
+			},
+			"label": "",
+			"note": "M8 note after trill at x=495.9612978953626",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 478,
+				"y": 216
+			},
+			"to": {
+				"x": 510,
+				"y": 216
+			},
+			"label": "through trill",
+			"note": "M8 octave line ends ¼ spaces before next note (expected ≤1½)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

@@ -22,6 +22,10 @@ export type PendingStave = {
     tuplets: ReturnType<SpannerBuilder['buildTuplets']>;
     tremolos: ReturnType<SpannerBuilder['buildTremolos']>;
     tupletChords: Chord[][];
+    polymetreRatio?: {
+        actual: number;
+        normal: number;
+    } | null;
     staveNotes: StaveNote[];
     tiedNotes: Set<StaveNote>;
     noteChords: Array<{
@@ -65,15 +69,22 @@ export declare class SystemFormatter {
     private readonly articulationPlacer;
     constructor(opts: SystemFormatterOptions);
     alignBegModifiers(staves: readonly Stave[]): number | null;
+    private voiceTieEnds;
     private shrinkNoteheads;
     formatAndDraw(pending: PendingStave[], column: FormatColumn): {
         top: number;
         bottom: number;
     };
+    private offsetTupletsOverSlurs;
     private tabArcApexRect;
     private tabBendRect;
+    private desiredNoteStart;
+    private openingNoteStart;
+    private signatureNoteStart;
     private closeHiddenGaps;
     private pushAfterGraces;
+    private placePauseMarks;
+    private orderFermatasOutsideOrnaments;
     private noteTop;
     private accidentalTop;
     private noteGlyphTop;
@@ -81,11 +92,15 @@ export declare class SystemFormatter {
     private belowMarksBottom;
     private pinTechnicals;
     private placeRests;
+    private moveRestsOffBeams;
     private headRect;
     noteRect(note: StaveNote): Rect;
     private tieApexRect;
     private stretchBends;
     private stretchVibratos;
+    private alignStaveGraces;
+    private maxNotationModLeftByTick;
+    private closeStaveGraces;
     private alignTabGraces;
     private recordStaveSpill;
     private spillHost;
@@ -96,6 +111,7 @@ export interface FormatColumn {
     /** Which system the column belongs to: the band its lyric-drop and spill
      * measurements report under. */
     systemIndex: number;
+    isSystemStart: boolean;
     /** Width at the LEFT end of the measure the notes must not format into, so a centered
      * words directive on the first note prints clear of the opening barline (see MeasureBox). */
     measureLeadingPad: number;

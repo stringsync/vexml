@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_slur-staccato-centre-stem.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 621,
+				"y": 389
+			},
+			"to": {
+				"x": 824,
+				"y": 410
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

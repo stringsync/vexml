@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>16</divisions><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+      <direction placement="above"><direction-type><octave-shift type="down" size="8"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>6</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type><notations><articulations><accent/></articulations></notations></note>
+      <note><pitch><step>D</step><octave>6</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type><notations><articulations><accent/></articulations></notations></note>
+      <note><pitch><step>E</step><octave>6</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type><notations><articulations><accent/></articulations></notations></note>
+      <note><pitch><step>F</step><octave>6</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type><notations><articulations><accent/></articulations></notations></note>
+      <direction placement="above"><direction-type><octave-shift type="stop" size="8"/></direction-type></direction>
+    </measure>
+    <measure number="2">
+      
+      <direction placement="above"><direction-type><octave-shift type="down" size="8"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>6</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>6</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><dot/></note>
+      <direction placement="above"><direction-type><octave-shift type="stop" size="8"/></direction-type></direction>
+    </measure>
+    <measure number="3">
+      
+      <direction placement="above"><direction-type><octave-shift type="down" size="8"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>6</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <direction placement="above"><direction-type><octave-shift type="stop" size="8"/></direction-type></direction>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+    <measure number="4">
+      
+      <direction placement="below"><direction-type><octave-shift type="up" size="8"/></direction-type></direction>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>F</step><octave>3</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>F</step><octave>3</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <direction placement="below"><direction-type><octave-shift type="stop" size="8"/></direction-type></direction>
+    </measure>
+    <measure number="5">
+      
+      <direction placement="above"><direction-type><octave-shift type="down" size="8"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>6</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>6</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>E</step><octave>6</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>F</step><octave>6</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+    <measure number="6">
+      <print new-system="yes"/>
+      <note><pitch><step>E</step><octave>6</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>D</step><octave>6</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <direction placement="above"><direction-type><octave-shift type="stop" size="8"/></direction-type></direction>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+    <measure number="7">
+      
+      <direction placement="above"><direction-type><octave-shift type="down" size="8"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>6</octave></pitch><duration>5.333333333333333</duration><voice>1</voice><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification><beam number="1">begin</beam><notations><tuplet type="start" bracket="yes"/></notations></note>
+      <note><pitch><step>D</step><octave>6</octave></pitch><duration>5.333333333333333</duration><voice>1</voice><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification><beam number="1">continue</beam></note>
+      <note><pitch><step>E</step><octave>6</octave></pitch><duration>5.333333333333333</duration><voice>1</voice><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification><beam number="1">end</beam><notations><tuplet type="stop"/></notations></note>
+      <note><pitch><step>F</step><octave>6</octave></pitch><duration>5.333333333333333</duration><voice>1</voice><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification><beam number="1">begin</beam><notations><tuplet type="start" bracket="yes"/></notations></note>
+      <note><pitch><step>E</step><octave>6</octave></pitch><duration>5.333333333333333</duration><voice>1</voice><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification><beam number="1">continue</beam></note>
+      <note><pitch><step>D</step><octave>6</octave></pitch><duration>5.333333333333333</duration><voice>1</voice><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification><beam number="1">end</beam><notations><tuplet type="stop"/></notations></note>
+      <note><pitch><step>C</step><octave>6</octave></pitch><duration>32</duration><voice>1</voice><type>half</type></note>
+      <direction placement="above"><direction-type><octave-shift type="stop" size="8"/></direction-type></direction>
+    </measure>
+    <measure number="8">
+      
+      <direction placement="above"><direction-type><octave-shift type="down" size="8"/></direction-type></direction>
+      <note><pitch><step>C</step><octave>6</octave></pitch><duration>48</duration><voice>1</voice><type>half</type><dot/><notations><ornaments><trill-mark/><wavy-line type="start"/></ornaments></notations></note>
+      <direction placement="above"><direction-type><octave-shift type="stop" size="8"/></direction-type></direction>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>16</duration><voice>1</voice><type>quarter</type><notations><ornaments><wavy-line type="stop"/></ornaments></notations></note>
+    </measure>
+  </part>
+</score-partwise>

@@ -10,8 +10,10 @@ export type LyricAnnotationOptions = {
 	justify?: LyricJustify;
 	/** Ratio of the syllable's font-size to the score's lyric-font. */
 	scale?: number;
-	/** Whether the text ends in the hyphen joining it to the next syllable. */
+	/** Whether a hyphen follows this syllable ('begin'/'middle'). */
 	hyphenated?: boolean;
+	/** Whether this syllable continues a divided word ('middle'/'end'). */
+	continues?: boolean;
 	documentPosition?: DocumentPosition | null;
 };
 
@@ -33,6 +35,7 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 	readonly textSize: number;
 	readonly justify: LyricJustify;
 	readonly hyphenated: boolean;
+	readonly continues: boolean;
 	readonly documentPosition: DocumentPosition | null;
 
 	private baselineY = 0;
@@ -52,6 +55,7 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 		const { family, scale = 1 } = opts;
 		this.justify = opts.justify ?? 'center';
 		this.hyphenated = opts.hyphenated ?? false;
+		this.continues = opts.continues ?? false;
 		this.documentPosition = opts.documentPosition ?? null;
 		this.setVerticalJustification(Annotation.VerticalJustify.BOTTOM);
 		this.textSize = LYRIC_FONT_SIZE * scale;
@@ -106,7 +110,12 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 	drawHyphen(ctx: RenderContext, x: number): void {
 		ctx.save();
 		ctx.setFont(this.fontInfo);
-		ctx.fillText('-', x - ctx.measureText('-').width / 2, this.baselineY);
+		ctx.openGroup('vexml-lyric');
+		try {
+			ctx.fillText('-', x - ctx.measureText('-').width / 2, this.baselineY);
+		} finally {
+			ctx.closeGroup();
+		}
 		ctx.restore();
 	}
 
@@ -119,6 +128,11 @@ export class LyricAnnotation extends Annotation implements LyricMark {
 		// placement is ours.
 		this.x = this.boxLeft(note.getNoteHeadBeginX(), note.getNoteHeadEndX());
 		this.y = this.baselineY;
-		this.renderText(ctx, 0, 0);
+		ctx.openGroup('vexml-lyric');
+		try {
+			this.renderText(ctx, 0, 0);
+		} finally {
+			ctx.closeGroup();
+		}
 	}
 }

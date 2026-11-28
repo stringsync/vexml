@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_acc-chord-octave-offset.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 99,
+				"y": 108
+			},
+			"to": {
+				"x": 125.6,
+				"y": 136
+			},
+			"label": "F#/4 sign",
+			"note": "F#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 112,
+				"y": 103
+			},
+			"to": {
+				"x": 137,
+				"y": 131
+			},
+			"label": "G#/4 sign",
+			"note": "G#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 124,
+				"y": 73
+			},
+			"to": {
+				"x": 137,
+				"y": 101
+			},
+			"label": "F#/5 sign",
+			"note": "F#/5 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 216.4,
+				"y": 109
+			},
+			"to": {
+				"x": 228.4,
+				"y": 135
+			},
+			"label": "Eb/4 sign",
+			"note": "Eb/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 204.4,
+				"y": 89
+			},
+			"to": {
+				"x": 228.4,
+				"y": 115
+			},
+			"label": "Bb/4 sign",
+			"note": "Bb/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 216.4,
+				"y": 74
+			},
+			"to": {
+				"x": 228.4,
+				"y": 100
+			},
+			"label": "Eb/5 sign",
+			"note": "Eb/5 sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

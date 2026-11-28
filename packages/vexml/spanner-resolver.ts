@@ -14,6 +14,7 @@ import {
 import type { Appearance, GlyphType } from './appearance';
 import { CollisionResolver } from './collision-resolver';
 import {
+	HAIRPIN_BARLINE_STOP_MAX_SPACES,
 	HAIRPIN_CHAIN_GAP,
 	HAIRPIN_DYNAMIC_GAP,
 	OTTAVA_TEXT_LINE,
@@ -125,8 +126,14 @@ export class SpannerResolver {
 	// Every bow drawn so far, by the stave it bows over: a hairpin clears the slurs and ties
 	// on its stave, and a bow wrapping off the end of a system is drawn with the next one.
 	private readonly bows = new Map<Stave, Rect[]>();
+	// Below-stave ottava brackets (e.g. 8vb) drawn so far, by their opening stave: piano
+	// pedals sit below all other notation including 8vb brackets (Behind Bars p. 332).
+	private readonly belowOttavas = new Map<Stave, Rect[]>();
 	// Per system, the below-stave hairpins a words direction ran into (see observeStackedWords).
 	private readonly stackedHairpins = new Map<number, HairpinBand[]>();
+	// Per system, the above-stave ottava brackets an above-stave annotation ran into (see
+	// observeStackedOttava).
+	private readonly stackedOttavas = new Map<number, HairpinBand[]>();
 
 	constructor(opts: SpannerResolverOptions) {
 		this.context = opts.context;
@@ -167,6 +174,12 @@ export class SpannerResolver {
 		this.systemStarts.delete(system);
 		this.systemReach.delete(system);
 		this.stackedHairpins.delete(system);
+		this.stackedOttavas.delete(system);
+		for (const [stave, placement] of this.staveRows) {
+			if (placement.system === system) {
+				this.belowOttavas.delete(stave);
+			}
+		}
 	}
 
 	/* Mark where `system`'s chords and markers start, before any of them is recorded. */
@@ -346,7 +359,7 @@ export class SpannerResolver {
 			marks.slice(0, before).forEach((mark, index) => {
 				if (mark.type === 'start') {
 					open.set(mark.number, index);
-				} else {
+				} else if (mark.type === 'stop') {
 					open.delete(mark.number);
 				}
 			});
@@ -378,23 +391,33 @@ export class SpannerResolver {
 		wedgeScope: SpanScope,
 		anchors: SpannerAnchors,
 	): void {
-		for (const tie of this.spanners.buildTies(
-			pool.chords,
-			anchors.byLead,
+		for (const tie of this.spanners.buildTies(pool.chords, anchors.byLead, {
 			scope,
-		)) {
+			wraps: (from, to) => this.systemOfNote(to) > this.systemOfNote(from),
+		})) {
 			this.context.openGroup('vexml-tie');
 			tie.setContext(this.context).draw();
 			this.context.closeGroup();
 			// A tie off a note above or below the staff arcs further out than the notehead,
 			// and one running to the end of a system stretches that arc over every note to
 			// the barline: the band a hairpin or the neighbouring stave sits in.
-			const stave = (
-				tie.getNotes().firstNote ?? tie.getNotes().lastNote
-			)?.checkStave();
+			const { firstNote, lastNote } = tie.getNotes();
+			const firstStave = firstNote?.checkStave();
+			const lastStave = lastNote?.checkStave();
+			const stave = firstStave ?? lastStave;
 			if (stave) {
 				const rect = this.tieRect(tie);
-				this.reportBow(stave, rect, false);
+				const firstRow = firstStave
+					? this.staveRows.get(firstStave)?.row
+					: undefined;
+				const lastRow = lastStave
+					? this.staveRows.get(lastStave)?.row
+					: undefined;
+				const crossStave =
+					firstRow !== undefined &&
+					lastRow !== undefined &&
+					firstRow !== lastRow;
+				this.reportBow(stave, rect, crossStave);
 				this.addBow(stave, rect);
 			}
 		}
@@ -455,7 +478,9 @@ export class SpannerResolver {
 		}
 		// Ottava brackets (<octave-shift>): the "8va"/"15mb" label and its dashed line over
 		// (or under) the notes it covers. The notes were already drawn at the shifted
-		// position by buildNotes; this is the label that says so.
+		// position by buildNotes; this is the label that says so. A span crossing a system
+		// break splits per system: each earlier system's line runs to its last barline
+		// without an end corner, and each new system repeats the label before its first note.
 		for (const span of this.octaveShiftSpans) {
 			const first = span.notes[0];
 			const last = span.notes.at(-1);
@@ -465,43 +490,67 @@ export class SpannerResolver {
 			if (!start || !stop || !scope.owns(start, stop)) {
 				continue;
 			}
-			const bracket = new OttavaBracket({
-				start,
-				stop,
-				text: span.label,
-				superscript: span.suffix,
-				position: span.above
-					? OttavaBracket.Position.TOP
-					: OttavaBracket.Position.BOTTOM,
-			});
+			const drawnNotes = span.notes
+				.map((note) => anchors.byLead.get(note))
+				.filter((note): note is StaveNote => note !== undefined);
+			const segments = this.splitBySystem(drawnNotes);
 			// The label is "8" for a size of 8, so this names the span's own glyph type.
 			const glyph = this.appearance.glyph(
 				`octave-shift-${span.above ? 'down' : 'up'}-${span.label}` as GlyphType,
 			);
-			if (glyph !== null) {
-				bracket.useGlyph(glyph, this.notationFont);
-			}
-			// vexflow paints a bracket in its own black, over the context's notation ink.
-			bracket.renderOptions.color = Ink.NOTATION;
-			bracket.renderOptions.lineWidth =
-				this.appearance.lineWidth('octave shift') ??
-				bracket.renderOptions.lineWidth;
-			this.clearOctaveBracket(
-				bracket,
-				span.notes
-					.map((note) => anchors.byLead.get(note))
-					.filter((note): note is StaveNote => note !== undefined),
-				span.above,
-			);
-			this.context.openGroup('vexml-bracket');
-			// TextBracket.draw never applies its render options, so its line took whatever width and
-			// color the context was left with.
-			this.context.save();
-			this.context.setLineWidth(bracket.renderOptions.lineWidth);
-			this.context.setStrokeStyle(Ink.NOTATION);
-			bracket.setContext(this.context).draw();
-			this.context.restore();
-			this.context.closeGroup();
+			segments.forEach((segment, index) => {
+				const segStart = segment[0];
+				const segStop = segment.at(-1);
+				if (!segStart || !segStop) {
+					return;
+				}
+				const continues = index < segments.length - 1;
+				const bracket = new OttavaBracket({
+					start: segStart,
+					stop: segStop,
+					text: span.label,
+					superscript: span.suffix,
+					position: span.above
+						? OttavaBracket.Position.TOP
+						: OttavaBracket.Position.BOTTOM,
+				});
+				if (glyph !== null) {
+					bracket.useGlyph(glyph, this.notationFont);
+				}
+				// vexflow paints a bracket in its own black, over the context's notation ink.
+				bracket.renderOptions.color = Ink.NOTATION;
+				bracket.renderOptions.lineWidth =
+					this.appearance.lineWidth('octave shift') ??
+					bracket.renderOptions.lineWidth;
+				const barlineX = continues
+					? this.systemEndX(segStop.checkStave())
+					: undefined;
+				if (barlineX !== undefined) {
+					bracket.runToBarline(barlineX);
+				}
+				this.clearOctaveBracket(bracket, segment, span.above, barlineX);
+				this.context.openGroup('vexml-bracket');
+				// TextBracket.draw never applies its render options, so its line took whatever width and
+				// color the context was left with.
+				this.context.save();
+				this.context.setLineWidth(bracket.renderOptions.lineWidth);
+				this.context.setStrokeStyle(Ink.NOTATION);
+				bracket.setContext(this.context).draw();
+				this.context.restore();
+				this.context.closeGroup();
+				if (span.above) {
+					this.observeStackedOttava(bracket, segment);
+				} else {
+					const stave = segStart.getStave();
+					if (stave) {
+						const box = bracket.getBoundingBox();
+						this.addBelowOttava(
+							stave,
+							new Rect(box.getX(), box.getY(), box.getW(), box.getH()),
+						);
+					}
+				}
+			});
 		}
 		// The <bracket>/<dashes> spans, with each endpoint resolved to its drawn note (or
 		// left undefined when it sits on a hidden staff).
@@ -521,9 +570,37 @@ export class SpannerResolver {
 			anchors.byLead,
 			scope,
 		)) {
-			this.context.openGroup('vexml-bracket');
+			this.context.openGroup('vexml-trill-line');
 			bracket.setContext(this.context).draw();
 			this.context.closeGroup();
+		}
+		// Cross-barline tuplets (Behind Bars p. 210): draw one unbroken bracket spanning across
+		// the barline, reporting page bounds and stave spill across every stave it covers.
+		for (const tuplet of this.spanners.buildCrossBarlineTuplets(
+			pool.chords,
+			anchors.byLead,
+			{
+				scope,
+				splitBySystem: (notes) => this.splitBySystem(notes),
+			},
+		)) {
+			tuplet.setContext(this.context).draw();
+			const rect = this.translator.tupletRect(tuplet);
+			this.reporter.growPageTop(rect.top);
+			this.reporter.growPageBottom(rect.bottom);
+			const staves = new Set(
+				tuplet
+					.getNotes()
+					.map((note) => note.getStave())
+					.filter((stave): stave is Stave => stave !== undefined),
+			);
+			for (const stave of staves) {
+				const placement = this.staveRows.get(stave);
+				if (placement) {
+					this.spill.recordStave(placement.system, placement.row, stave, rect);
+					this.spill.growHighestTop(placement.system, rect.top);
+				}
+			}
 		}
 		// Hairpins, like the pedals below them, are resolved over the whole score so a wedge
 		// can open in one measure and close in another. A below-stave one reaches under the
@@ -535,6 +612,7 @@ export class SpannerResolver {
 		for (const wedge of wedges) {
 			this.clearWedge(wedge, anchors.byLead.values());
 			this.startPastDynamic(wedge);
+			this.stopAtBarlineBeforeDynamic(wedge);
 		}
 		this.alignWedgeChains(wedges);
 		for (const wedge of wedges) {
@@ -567,7 +645,15 @@ export class SpannerResolver {
 			pool.pedals,
 			anchors.byLead,
 			pool.chords,
-			{ scope },
+			{
+				scope,
+				systemOf: (note) => this.systemOfNote(note),
+				rowOf: (note) => {
+					const stave = note.getStave();
+					return stave ? this.staveRows.get(stave)?.row : undefined;
+				},
+				systemEndX: (stave) => this.systemEndX(stave),
+			},
 		)) {
 			this.dropPedalClear(marking, notes, wedges);
 			this.context.openGroup('vexml-pedal');
@@ -623,6 +709,11 @@ export class SpannerResolver {
 			if (wedge.stave === stave && !wedge.above) {
 				scoped.add({ rect: wedge.rect, kind: 'note' });
 			}
+		}
+		// Below-stave ottava brackets (e.g. 8vb) sit closer to the stave than piano pedals
+		// (Behind Bars p. 332), so the pedal drops clear beneath them too.
+		for (const rect of this.belowOttavasOnRowOf(stave)) {
+			scoped.add({ rect, kind: 'annotation' });
 		}
 		const placed = scoped.dropClear(natural, WORDS_NOTE_CLEARANCE, {});
 		marking.setLine((placed.y - natural.y) / stave.getSpacingBetweenLines());
@@ -694,6 +785,51 @@ export class SpannerResolver {
 	}
 
 	/*
+	 * When a crescendo resolves into a dynamic on the next measure's downbeat and that downbeat
+	 * sits close to the barline, stop the wedge at the barline instead of running across into
+	 * the dynamic. Widely spaced downbeats, explicitly positioned stops, and other hairpins
+	 * keep their full span.
+	 */
+	private stopAtBarlineBeforeDynamic(wedge: Hairpin): void {
+		if (
+			!wedge.opens ||
+			wedge.isWrapped ||
+			!wedge.endsOnDownbeat ||
+			wedge.hasPositionedEnd
+		) {
+			return;
+		}
+		const stopStave = wedge.endStave;
+		if (stopStave === wedge.stave) {
+			return;
+		}
+		const barlineX = stopStave.getX();
+		const { left, right } = wedge.rect;
+		const space = stopStave.getSpacingBetweenLines();
+		if (
+			left >= barlineX ||
+			right <= barlineX ||
+			right - barlineX > HAIRPIN_BARLINE_STOP_MAX_SPACES * space
+		) {
+			return;
+		}
+		const { top, bottom } = wedge.bounds;
+		const hasDownbeatDynamic = this.directionPlacer
+			.dynamicsOn(stopStave)
+			.some(
+				(dynamic) =>
+					dynamic.top < bottom &&
+					dynamic.bottom > top &&
+					dynamic.left <= right &&
+					dynamic.right >= right - space,
+			);
+		if (!hasDownbeatDynamic) {
+			return;
+		}
+		wedge.setEndInset(right - barlineX);
+	}
+
+	/*
 	 * Below-stave words that a hairpin was drawn through. Words are placed with their measure
 	 * and hairpins only once their system is drawn, so the words never saw the wedge: record
 	 * the wedge's band so the next pass drops the words under it (see
@@ -745,6 +881,68 @@ export class SpannerResolver {
 	 * stave's top line. */
 	observedHairpinBands(): Map<number, HairpinBand[]> {
 		return this.stackedHairpins;
+	}
+
+	/*
+	 * Above-stave annotations (tempo indications, words, chord symbols, rehearsal marks) that
+	 * an above-stave ottava bracket was drawn through. Annotations are placed with their
+	 * measure and ottava brackets only once their system is drawn, so the annotations never
+	 * saw the bracket: record the bracket's band so the next pass lifts them clear of it (see
+	 * DrawPassOptions.ottavaBands), and report the rise so that pass opens any gap needed.
+	 */
+	private observeStackedOttava(
+		bracket: OttavaBracket,
+		notes: readonly StaveNote[],
+	): void {
+		const firstStave = notes[0]?.getStave();
+		const placement = firstStave ? this.staveRows.get(firstStave) : undefined;
+		if (!firstStave || !placement) {
+			return;
+		}
+		const box = bracket.getBoundingBox();
+		const rect = new Rect(box.getX(), box.getY(), box.getW(), box.getH());
+		const scoped = new CollisionResolver(this.scratchViewport, {});
+		scoped.add({ rect, kind: 'annotation' });
+		const staves = new Set<Stave>();
+		for (const note of notes) {
+			const stave = note.getStave();
+			if (stave) {
+				staves.add(stave);
+			}
+		}
+		let stacked = false;
+		for (const stave of staves) {
+			for (const mark of this.directionPlacer.aboveAnnotationsOn(stave)) {
+				const lifted = scoped.liftClear(mark, WORDS_NOTE_CLEARANCE, {});
+				if (lifted.y === mark.y) {
+					continue;
+				}
+				stacked = true;
+				this.reporter.growPageTop(lifted.y);
+				this.spill.recordRise(placement.system, placement.row, stave, lifted);
+				this.spill.growHighestTop(placement.system, lifted.y);
+			}
+		}
+		if (!stacked) {
+			return;
+		}
+		const lineTop = firstStave.getYForLine(0);
+		const band: HairpinBand = {
+			row: placement.row,
+			rect: rect.translate(0, -lineTop),
+		};
+		const bands = this.stackedOttavas.get(placement.system);
+		if (bands) {
+			bands.push(band);
+		} else {
+			this.stackedOttavas.set(placement.system, [band]);
+		}
+	}
+
+	/* Per system, the above-stave ottava brackets annotations ran into this pass, each
+	 * relative to its stave's top line. */
+	observedOttavaBands(): Map<number, HairpinBand[]> {
+		return this.stackedOttavas;
 	}
 
 	/*
@@ -816,6 +1014,33 @@ export class SpannerResolver {
 			bows.push(rect);
 		} else {
 			this.bows.set(stave, [rect]);
+		}
+	}
+
+	/* Every below-stave ottava bracket drawn on the stave row `stave` sits on, for pedals
+	 * resolving on that row to drop clear beneath. */
+	private belowOttavasOnRowOf(stave: Stave): Rect[] {
+		const placement = this.staveRows.get(stave);
+		if (!placement) {
+			return this.belowOttavas.get(stave) ?? [];
+		}
+		const rects: Rect[] = [];
+		for (const [other, brackets] of this.belowOttavas) {
+			const at = this.staveRows.get(other);
+			if (at?.system === placement.system && at.row === placement.row) {
+				rects.push(...brackets);
+			}
+		}
+		return rects;
+	}
+
+	/* Keep a drawn below-stave ottava bracket so pedals on the same stave row drop beneath it. */
+	private addBelowOttava(stave: Stave, rect: Rect): void {
+		const brackets = this.belowOttavas.get(stave);
+		if (brackets) {
+			brackets.push(rect);
+		} else {
+			this.belowOttavas.set(stave, [rect]);
 		}
 	}
 
@@ -911,6 +1136,37 @@ export class SpannerResolver {
 		);
 	}
 
+	/* Partition a span's drawn notes into contiguous runs on the same system. */
+	private splitBySystem(notes: readonly StaveNote[]): StaveNote[][] {
+		const segments: StaveNote[][] = [];
+		let currentSystem: number | undefined;
+		for (const note of notes) {
+			const system = this.systemOfNote(note);
+			if (segments.length === 0 || system !== currentSystem) {
+				segments.push([note]);
+				currentSystem = system;
+			} else {
+				segments.at(-1)?.push(note);
+			}
+		}
+		return segments;
+	}
+
+	/* The right barline x of the system row `stave` sits on. */
+	private systemEndX(stave: Stave): number {
+		const placement = this.staveRows.get(stave);
+		let right = stave.getX() + stave.getWidth();
+		if (!placement) {
+			return right;
+		}
+		for (const [other, at] of this.staveRows) {
+			if (at.system === placement.system && at.row === placement.row) {
+				right = Math.max(right, other.getX() + other.getWidth());
+			}
+		}
+		return right;
+	}
+
 	/*
 	 * Move an ottava bracket's row further from the stave until its label clears the notes it
 	 * covers. vexflow parks a TextBracket one text line off the staff, which is right until a
@@ -927,6 +1183,7 @@ export class SpannerResolver {
 		bracket: OttavaBracket,
 		notes: StaveNote[],
 		above: boolean,
+		endX?: number,
 	): void {
 		const stave = notes[0]?.getStave();
 		if (!stave) {
@@ -944,15 +1201,25 @@ export class SpannerResolver {
 		const hw = this.translator.noteheadHalfWidth();
 		const xs = notes.map((note) => note.getAbsoluteX());
 		const left = Math.min(...xs) - hw;
-		const natural = new Rect(
-			left,
-			baseline - height,
-			Math.max(...xs) + hw - left,
-			height,
-		);
+		const right =
+			endX !== undefined
+				? Math.max(Math.max(...xs) + hw, endX)
+				: Math.max(...xs) + hw;
+		const natural = new Rect(left, baseline - height, right - left, height);
 		const scoped = new CollisionResolver(this.scratchViewport, {});
 		for (const note of notes) {
 			scoped.add({ rect: this.reporter.noteObstacle(note), kind: 'note' });
+			// An ornament (a trill sign) sits above or below the note outside its obstacle, and
+			// the octave line must stay clear of it too (Behind Bars p. 29).
+			for (const mod of note.getModifiers()) {
+				if (mod.getCategory() === 'Ornament') {
+					const box = mod.getBoundingBox();
+					scoped.add({
+						rect: new Rect(box.getX(), box.getY(), box.getW(), box.getH()),
+						kind: 'note',
+					});
+				}
+			}
 		}
 		const placed = above
 			? scoped.liftClear(natural, WORDS_NOTE_CLEARANCE, {})

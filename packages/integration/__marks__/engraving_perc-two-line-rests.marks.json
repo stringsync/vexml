@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_perc-two-line-rests.png",
+	"width": 932,
+	"height": 334,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 221.4,
+				"y": 111
+			},
+			"to": {
+				"x": 232.4,
+				"y": 117
+			},
+			"label": "whole",
+			"note": "whole",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 385.9,
+				"y": 115
+			},
+			"to": {
+				"x": 396.9,
+				"y": 121
+			},
+			"label": "half",
+			"note": "half",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 562.8,
+				"y": 106
+			},
+			"to": {
+				"x": 573.8,
+				"y": 136
+			},
+			"label": "quarter",
+			"note": "quarter",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 662.2,
+				"y": 113
+			},
+			"to": {
+				"x": 672.2,
+				"y": 131
+			},
+			"label": "eighth",
+			"note": "eighth",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

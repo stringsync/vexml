@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_beam-slope-direction.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 364,
+				"y": 1039
+			},
+			"to": {
+				"x": 466,
+				"y": 1058
+			},
+			"label": "falls",
+			"note": "M15 group 1: falls (1 spaces, expected falls)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 493,
+				"y": 1049
+			},
+			"to": {
+				"x": 595,
+				"y": 1063
+			},
+			"label": "rises",
+			"note": "M15 group 2: rises (-½ spaces, expected rises)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

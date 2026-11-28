@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tremolo-two-note-whole-note.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 587,
+				"y": 87
+			},
+			"to": {
+				"x": 609,
+				"y": 110
+			},
+			"label": "Whole tremolo m.4",
+			"note": "Whole tremolo m.4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 682,
+				"y": 122
+			},
+			"to": {
+				"x": 704,
+				"y": 145
+			},
+			"label": "Whole tremolo m.5",
+			"note": "Whole tremolo m.5",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

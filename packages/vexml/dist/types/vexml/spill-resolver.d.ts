@@ -5,6 +5,7 @@ export interface SpillReport {
     lyricsStepped: boolean;
     voltasLifted: boolean;
     hairpinsStacked: boolean;
+    ottavasStacked?: boolean;
 }
 export interface PassRevision {
     systemStaveOffsets: Map<number, number[]>;

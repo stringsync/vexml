@@ -1,0 +1,34 @@
+{
+	"screenshot": "engraving_percussion-rolls.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 304.3 },
+		{ "index": 1, "system": 0, "x": 335.3, "w": 240.3 },
+		{ "index": 2, "system": 0, "x": 575.6, "w": 325.4 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 304.3
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 335.3,
+			"w": 240.3
+		},
+		{
+			"part": 0,
+			"measure": 2,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 575.6,
+			"w": 325.4
+		}
+	]
+}

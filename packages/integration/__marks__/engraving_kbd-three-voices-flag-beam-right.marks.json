@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_kbd-three-voices-flag-beam-right.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 368.5,
+				"y": 111
+			},
+			"to": {
+				"x": 380.5,
+				"y": 121
+			},
+			"label": "v2 beamed #1",
+			"note": "v2 beamed #1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 354.5,
+				"y": 131
+			},
+			"to": {
+				"x": 366.5,
+				"y": 141
+			},
+			"label": "v3 plain #1",
+			"note": "v3 plain #1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 638.2,
+				"y": 111
+			},
+			"to": {
+				"x": 650.2,
+				"y": 121
+			},
+			"label": "v2 beamed #2",
+			"note": "v2 beamed #2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 624.2,
+				"y": 136
+			},
+			"to": {
+				"x": 636.2,
+				"y": 146
+			},
+			"label": "v3 plain #2",
+			"note": "v3 plain #2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

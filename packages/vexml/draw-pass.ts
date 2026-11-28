@@ -23,6 +23,8 @@ import { CollisionResolver } from './collision-resolver';
 import type { Config, Gap } from './config';
 import { type ConnectorColumn, ConnectorDrawer } from './connector-drawer';
 import {
+	DEFAULT_BEAM_WIDTH,
+	DEFAULT_STEM_WIDTH,
 	FOOTER_GAP,
 	GAP_LABEL_FONT_SIZE,
 	HEADER_GAP,
@@ -61,6 +63,7 @@ import { Ink } from './ink';
 import type { DocumentSystem, MeasureBox, ScoreLayout } from './layout-planner';
 import { LyricPlacer } from './lyric-placer';
 import { MeasureStyleDrawer } from './measure-style-drawer';
+import { NonArpeggioBracket } from './non-arpeggio-bracket';
 import type { PaintContext, PaintContextMark } from './paint-context';
 import type { PaintList, PaintListMark } from './paint-list';
 import { RepeatWingDrawer } from './repeat-wing-drawer';
@@ -308,6 +311,7 @@ export class DrawPass {
 	// Measured on the previous pass and reserved on this one; empty on the first pass.
 	private readonly voltaLifts: Map<number, number>;
 	private readonly hairpinBands: Map<number, HairpinBand[]>;
+	private readonly ottavaBands: Map<number, HairpinBand[]>;
 
 	constructor(opts: DrawPassOptions) {
 		const {
@@ -342,12 +346,9 @@ export class DrawPass {
 		this.list = list;
 		this.paint = paint;
 		const { translator, spanners, notationFont } = this;
-		// CanvasContext discards VexFlow's notation groups. Keep them on the recording
-		// sink, where diagnostic mask replays can separate elements without changing paint.
-		this.context.openGroup = (kind) => this.list.openGroup(kind ?? 'element');
-		this.context.closeGroup = () => this.list.closeGroup();
 		this.voltaLifts = opts.voltaLifts ?? new Map();
 		this.hairpinBands = opts.hairpinBands ?? new Map();
+		this.ottavaBands = opts.ottavaBands ?? new Map();
 		const {
 			boxes,
 			staveOffsets,
@@ -506,6 +507,8 @@ export class DrawPass {
 					this.recordAnnotationSpill(stave, rect),
 				recordAnnotationDrop: (stave, rect) =>
 					this.recordAnnotationDrop(stave, rect),
+				dropLyricsBelow: (system, stave, rect) =>
+					this.dropLyricsBelow(system, stave, rect),
 				growPageTop: (top) => {
 					this.pageTop = Math.min(this.pageTop, top);
 				},
@@ -582,10 +585,13 @@ export class DrawPass {
 		Metrics.clear('Stem');
 		// The document's line widths, when the layout follows it. The stem width is vexflow's
 		// global too, set afresh like the stroke above so one score's never leaks into the next.
-		new StemWidth().set(layout.appearance.lineWidth('stem'));
+		new StemWidth().set(
+			layout.appearance.lineWidth('stem') ?? DEFAULT_STEM_WIDTH,
+		);
 		new BarlineWidths().set(
 			layout.appearance.lineWidth('light barline'),
 			layout.appearance.lineWidth('heavy barline'),
+			layout.appearance.lineWidth('beam') ?? DEFAULT_BEAM_WIDTH,
 		);
 		spanners.useAppearance(layout.appearance);
 		spanners.useDocumentCurves(
@@ -640,6 +646,54 @@ export class DrawPass {
 			for (const lower of rest) {
 				top.stroke.join(lower.stroke, lower.staveNote);
 			}
+		}
+	}
+
+	/*
+	 * Pair cross-staff <non-arpeggiate> ends on the same beat and number into one continuous
+	 * bracket: an upper staff's type="top" joins a lower staff's type="bottom" so the top
+	 * chord draws one spine across both staves and the lower chord stays quiet.
+	 */
+	private joinNonArpeggioBrackets(measure: Measure): void {
+		const byKey = new Map<
+			string,
+			Array<{
+				staff: number;
+				bracket: NonArpeggioBracket;
+				staveNote: StaveNote;
+			}>
+		>();
+		for (const chord of measure.chords) {
+			const staveNote = this.byLead.get(chord.lead);
+			const bracket = staveNote
+				?.getModifiers()
+				.find((mod) => mod instanceof NonArpeggioBracket);
+			const beat = chord.lead.measureBeat;
+			if (
+				!staveNote ||
+				!(bracket instanceof NonArpeggioBracket) ||
+				bracket.end === 'both' ||
+				beat === null
+			) {
+				continue;
+			}
+			const key = `${beat}:${bracket.number}`;
+			const group = byKey.get(key) ?? [];
+			group.push({
+				staff: Number(chord.lead.staff),
+				bracket,
+				staveNote,
+			});
+			byKey.set(key, group);
+		}
+		for (const group of byKey.values()) {
+			group.sort((a, b) => a.staff - b.staff);
+			const top = group.find((entry) => entry.bracket.end === 'top');
+			const bottom = group.findLast((entry) => entry.bracket.end === 'bottom');
+			if (!top || !bottom || top.staff >= bottom.staff) {
+				continue;
+			}
+			top.bracket.join(bottom.bracket, bottom.staveNote);
 		}
 	}
 
@@ -742,6 +796,7 @@ export class DrawPass {
 		const hairpinBands = this.spannerResolver
 			.observedHairpinBands()
 			.get(system);
+		const ottavaBands = this.spannerResolver.observedOttavaBands().get(system);
 		return {
 			overflow: this.spill.observedOverflow().get(system) ?? 0,
 			staveSpill: this.spill.observedStaveSpill().get(system),
@@ -755,6 +810,10 @@ export class DrawPass {
 			// Words this pass drew through a hairpin it had no band for yet.
 			hairpinsStacked:
 				hairpinBands !== undefined && !this.hairpinBands.has(system),
+			ottavaBands,
+			// Above-stave annotations this pass drew through an ottava bracket it had no band for yet.
+			ottavasStacked:
+				ottavaBands !== undefined && !this.ottavaBands.has(system),
 		};
 	}
 
@@ -860,6 +919,7 @@ export class DrawPass {
 			// run that changes staff mid-group can finally resolve all of them.
 			this.voiceBuilder.buildPartBeams(this.pendingStaves);
 			this.joinUnbrokenArpeggios(measure);
+			this.joinNonArpeggioBrackets(measure);
 
 			// Defer formatting to one pass over the whole system (below) so notes align
 			// across parts, not just within this part.
@@ -913,6 +973,7 @@ export class DrawPass {
 			if ((tempo || modulation) && topStave) {
 				this.tempoTasks.push({
 					stave: topStave.stave,
+					direction: tempo?.direction,
 					tempo: rate ? null : tempo,
 					modulations: [rate, modulation].flatMap((m) => (m ? [m] : [])),
 					justify: tempo?.justify ?? modulation?.justify ?? null,
@@ -934,18 +995,26 @@ export class DrawPass {
 			// falling back to this part's top staff when that staff isn't rendered, and
 			// anchored at the note the direction precedes (its first note when it names
 			// none). Drawn after the system is formatted so that note's x is real.
+			const words = this.reader.wordsOf(measure);
+			const qualifiedDirections = new Set(
+				words.map((word) => word.dynamicDirection),
+			);
 			for (const {
 				text,
 				glyph,
+				dynamicDirection,
+				tempoDirection,
 				staffNumber,
 				lead,
 				placement,
 				opensBar,
 				closesBar,
 				directive,
+				tempo,
+				explicitSize,
 				format,
 				position,
-			} of this.reader.wordsOf(measure)) {
+			} of words) {
 				const target =
 					this.pendingStaves[staves.indexOf(staffNumber)] ?? topStave;
 				if (target) {
@@ -956,11 +1025,15 @@ export class DrawPass {
 						stave: target.stave,
 						text,
 						glyph,
+						dynamicDirection,
+						tempoDirection,
 						anchor: anchor ?? target.staveNotes[0],
 						placement,
 						opensBar,
 						closesBar,
 						directive,
+						tempo,
+						explicitSize,
 						format,
 						position,
 					});
@@ -972,18 +1045,21 @@ export class DrawPass {
 			for (const {
 				text,
 				glyph,
+				direction,
 				staffNumber,
 				lead,
 				placement,
 				format,
 				position,
 			} of this.reader.dynamicsOf(measure)) {
+				const qualified = qualifiedDirections.has(direction);
 				if (
 					this.directionPlacer.suppressesDynamic(
 						`${partIndex}:${staffNumber}`,
 						text,
 						m,
-					)
+					) &&
+					!qualified
 				) {
 					continue;
 				}
@@ -997,6 +1073,7 @@ export class DrawPass {
 						stave: target.stave,
 						text,
 						glyph,
+						direction: qualified ? direction : undefined,
 						anchor: anchor ?? target.staveNotes[0],
 						placement,
 						format,
@@ -1005,12 +1082,17 @@ export class DrawPass {
 				}
 			}
 
-			// Symbol-style directions (damp, eyeglasses, string mute...) bind like words.
+			// Symbol-style directions (damp, eyeglasses, string mute...) bind like words. On a
+			// grand-staff part, a harp damping sign (<damp/> or <damp-all/>) with unspecified
+			// placement sits between the two staves (Behind Bars p. 364).
+			const notationStaves = this.pendingStaves.filter((s) => !s.isTab);
 			for (const {
 				glyph,
 				staffNumber,
 				lead,
 				placement,
+				isDamp,
+				opensBar,
 			} of this.reader.symbolsOf(measure)) {
 				const target =
 					this.pendingStaves[staves.indexOf(staffNumber)] ?? topStave;
@@ -1018,16 +1100,35 @@ export class DrawPass {
 					const anchor = lead
 						? (this.byLead.get(lead) ?? this.byTabLead.get(lead))
 						: undefined;
+					const between =
+						isDamp && placement === null && notationStaves.length >= 2
+							? notationStaves.indexOf(target)
+							: -1;
+					const upper =
+						between >= 0
+							? (notationStaves[
+									between + 1 < notationStaves.length ? between : between - 1
+								] ?? target)
+							: target;
+					const lower =
+						between >= 0
+							? notationStaves[
+									between + 1 < notationStaves.length ? between + 1 : between
+								]
+							: undefined;
 					this.symbolTasks.push({
-						stave: target.stave,
+						stave: upper.stave,
+						lowerStave: lower?.stave,
 						glyph,
 						anchor: anchor ?? target.staveNotes[0],
-						placement,
+						placement: lower ? 'below' : (placement ?? 'above'),
+						opensBar: isDamp ? opensBar : false,
 					});
 				}
 			}
 
-			// Harp pedal diagrams bind to staff and lead note like a dynamic.
+			// Harp pedal diagrams bind to staff and lead note like a dynamic. On a grand-staff
+			// part, an unspecified placement sits between the two staves (Behind Bars p. 356).
 			for (const {
 				glyphs,
 				staffNumber,
@@ -1041,11 +1142,28 @@ export class DrawPass {
 					const anchor = lead
 						? (this.byLead.get(lead) ?? this.byTabLead.get(lead))
 						: undefined;
+					const between =
+						placement === null && notationStaves.length >= 2
+							? notationStaves.indexOf(target)
+							: -1;
+					const upper =
+						between >= 0
+							? (notationStaves[
+									between + 1 < notationStaves.length ? between : between - 1
+								] ?? target)
+							: target;
+					const lower =
+						between >= 0
+							? notationStaves[
+									between + 1 < notationStaves.length ? between + 1 : between
+								]
+							: undefined;
 					this.harpPedalTasks.push({
-						stave: target.stave,
+						stave: upper.stave,
+						lowerStave: lower?.stave,
 						glyphs,
 						anchor: anchor ?? target.staveNotes[0],
-						placement,
+						placement: lower ? 'below' : (placement ?? 'above'),
 						position,
 					});
 				}
@@ -1139,10 +1257,12 @@ export class DrawPass {
 		// than to one stave (the opening repeat, the time signature) can be squared up
 		// across its staves before any of them is committed to the canvas.
 		this.begRepeatX = this.systemFormatter.alignBegModifiers(this.columnStaves);
+		const column = this.connectorColumn();
+		this.connectorDrawer.alignBarlines(column, this.columnStaves);
 		// An edge gap's staves only place its box (see drawEdgeGap); none of them prints.
 		for (const stave of this.edge ? [] : this.columnStaves) {
 			stave.setContext(this.context).draw();
-			this.connectorDrawer.drawCustomBarline(stave, this.connectorColumn());
+			this.connectorDrawer.drawCustomBarline(stave, column);
 		}
 		if (!this.edge) {
 			this.drawRepeatWings(m);
@@ -1243,6 +1363,7 @@ export class DrawPass {
 	private formatColumn(): FormatColumn {
 		return {
 			systemIndex: this.systemIndex,
+			isSystemStart: this.isSystemStart,
 			measureLeadingPad: this.measureLeadingPad,
 			measureTrailingPad: this.measureTrailingPad,
 		};
@@ -1254,6 +1375,7 @@ export class DrawPass {
 		return {
 			measureIndex: m,
 			systemIndex: this.systemIndex,
+			isSystemStart: this.isSystemStart,
 			topStave: this.systemTop,
 			measure: this.parts[0]?.measures[m],
 			repeatTimesLabel: this.decorations[m]?.repeatTimesLabel ?? null,
@@ -1291,6 +1413,7 @@ export class DrawPass {
 
 	/* Snapshotted at the call, since the measure loop keeps mutating these locals. */
 	private staveColumn(m: number): StaveColumn {
+		const prevBox = this.boxes[m - 1];
 		const nextBox = this.boxes[m + 1];
 		return {
 			measureIndex: m,
@@ -1300,6 +1423,18 @@ export class DrawPass {
 			systemY: this.systemY,
 			staveRow: this.staveRow,
 			isSystemStart: this.isSystemStart,
+			prevOnSameSystem:
+				prevBox !== undefined &&
+				prevBox.systemIndex === this.systemIndex &&
+				!prevBox.edge,
+			prevOnPreviousSystem:
+				prevBox !== undefined &&
+				prevBox.systemIndex !== this.systemIndex &&
+				!prevBox.edge,
+			nextOnNextSystem:
+				nextBox !== undefined &&
+				nextBox.systemIndex !== this.systemIndex &&
+				!nextBox.edge,
 			opensScore: this.opensScore,
 			groupTimes: this.groupTimes,
 			isLastMeasure: this.isLastMeasure,
@@ -1307,6 +1442,7 @@ export class DrawPass {
 			decoration: this.decoration,
 			repeatBoth: this.repeatBoth,
 			suppressBegRepeat: this.suppressBegRepeat,
+			prevRepeatEnd: this.decorations[m - 1]?.repeatEnd === true,
 			nextVolta:
 				nextBox &&
 				nextBox.systemIndex === this.systemIndex &&
@@ -1359,6 +1495,7 @@ export class DrawPass {
 	 */
 	private endSystem(system: number): void {
 		this.resolveSpanners(system);
+		this.lyricPlacer.drawSystemHyphens(system);
 		this.systemBottoms.set(system, this.systemContentBottom);
 		this.warnEscapes();
 		// A verse hangs below its stave, in the gap to the stave under it, so it's spill like
@@ -1484,14 +1621,20 @@ export class DrawPass {
 		} else if (voices.length > 0) {
 			const clef = measure.getClef(staffNumber);
 			const clefName = clef ? this.signatures.clefName(clef) : 'treble';
+			const opensSystem = this.isSystemStart && this.systemIndex > 0;
 			this.pendingStaves.push(
 				this.voiceBuilder.buildNotes(stave, this.staveRow, voices, clefName, {
 					meterFloor: this.reader.meterFloor(measure, staffNumber),
+					polymetreRatio: this.reader.polymetreRatio(measure, staffNumber),
 					clefOctaveShift: clef?.octaveChange ?? 0,
 					barlines: this.reader.midBarlinesOf(measure),
 					midClefs: this.signatures.midClefSpecs(
 						this.reader.midClefsOf(measure, staffNumber),
 					),
+					opensSystem,
+					keyAlters: opensSystem
+						? this.signatures.keyAlters(measure.getKey(staffNumber))
+						: undefined,
 				}),
 			);
 			for (const voice of voices) {
@@ -1856,6 +1999,15 @@ export class DrawPass {
 				});
 			}
 		}
+		for (const band of this.ottavaBands.get(this.systemIndex) ?? []) {
+			if (band.row === row) {
+				this.collisionResolver.add({
+					rect: band.rect.translate(0, lineTop),
+					kind: 'annotation',
+					band: row,
+				});
+			}
+		}
 	}
 
 	/* Which stave row (of this measure's column) a stave sits on: the collision band its
@@ -1893,6 +2045,28 @@ export class DrawPass {
 			return;
 		}
 		this.spill.recordDrop(this.systemOf(stave), row, stave, rect);
+	}
+
+	/*
+	 * A below-stave dynamic (or its inline qualifier) placed on a stave that carries lyrics
+	 * stays near the stave while the lyrics drop beyond it on the next pass (Behind Bars p. 468).
+	 */
+	private dropLyricsBelow(system: number, stave: Stave, rect: Rect): void {
+		const row = this.rowOf(stave);
+		if (row === undefined) {
+			return;
+		}
+		const hasLyrics = this.lyricPlacer
+			.pinnedSyllables()
+			.some((syllable) => syllable.stave === stave);
+		if (!hasLyrics) {
+			return;
+		}
+		this.lyricPlacer.requestDrop(
+			system,
+			row,
+			rect.bottom + LYRIC_NOTE_CLEARANCE - stave.getBottomLineY(),
+		);
 	}
 
 	/* Which system a stave belongs to, read off the spanner resolver's registry. The
@@ -2045,6 +2219,8 @@ export interface DrawPassOptions {
 	voltaLifts?: Map<number, number>;
 	/* Per system, the below-stave hairpins its words have to drop under. */
 	hairpinBands?: Map<number, HairpinBand[]>;
+	/* Per system, the above-stave ottava brackets its annotations have to lift above. */
+	ottavaBands?: Map<number, HairpinBand[]>;
 }
 
 /* How far a system's ink reaches up and down, in the pass's scratch space. */
@@ -2068,6 +2244,9 @@ export interface SystemObservation {
 	/* The below-stave hairpins its words ran into, undefined when none. */
 	hairpinBands: HairpinBand[] | undefined;
 	hairpinsStacked: boolean;
+	/* The above-stave ottava brackets its annotations ran into, undefined when none. */
+	ottavaBands: HairpinBand[] | undefined;
+	ottavasStacked: boolean;
 }
 
 /* The page extents and hit-index geometry a pass collected, in its scratch space. */

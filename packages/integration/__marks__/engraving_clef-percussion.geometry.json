@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_clef-percussion.png",
+	"measures": [{ "index": 0, "system": 0, "x": 31, "w": 870 }],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 870
+		},
+		{
+			"part": 1,
+			"measure": 0,
+			"staff": 1,
+			"lines": [176, 186, 196, 206, 216],
+			"x": 31,
+			"w": 870
+		}
+	]
+}

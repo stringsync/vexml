@@ -17,7 +17,7 @@ import { layoutOf } from './testing';
 // The screenshot half of the tests: a `toMatchScreenshot` matcher that pixel-diffs a PNG
 // against its committed baseline in `__screenshots__/`, writes a side-by-side composite to
 // `__diffs__/` on mismatch (and beside it a `.json` naming the test that asked and, for a
-// Testing.render image, where its notation landed, which `vex review` reads), regenerates baselines under UPDATE_SCREENSHOTS=1, and prints an
+// Testing.render image, where its notation landed, which reviews read), regenerates baselines under UPDATE_SCREENSHOTS=1, and prints an
 // added/updated/deleted report at the end of the run. Imported once by setup.ts (the
 // preload), so its afterAll cleanups scope to the whole run.
 
@@ -120,7 +120,7 @@ expect.extend({
 		const gotPng = PNG.sync.read(buf);
 
 		// A size mismatch is diffed on both images padded (transparent) to the larger size, so
-		// it lands in __diffs__ and `vex review` like any other mismatch.
+		// it lands in __diffs__ like any other mismatch.
 		const sizeMismatch =
 			gotPng.width !== baselinePng.width ||
 			gotPng.height !== baselinePng.height;

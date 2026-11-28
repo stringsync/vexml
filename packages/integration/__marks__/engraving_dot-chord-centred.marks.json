@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_dot-chord-centred.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 639.3,
+				"y": 276
+			},
+			"to": {
+				"x": 651.3,
+				"y": 286
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 650.7,
+				"y": 271
+			},
+			"to": {
+				"x": 662.7,
+				"y": 281
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 639.3,
+				"y": 266
+			},
+			"to": {
+				"x": 651.3,
+				"y": 276
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 650.7,
+				"y": 261
+			},
+			"to": {
+				"x": 662.7,
+				"y": 271
+			},
+			"label": "Notehead",
+			"note": "Notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 665,
+				"y": 289
+			},
+			"to": {
+				"x": 669,
+				"y": 293
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 665,
+				"y": 279
+			},
+			"to": {
+				"x": 669,
+				"y": 283
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 665,
+				"y": 269
+			},
+			"to": {
+				"x": 669,
+				"y": 273
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 665,
+				"y": 259
+			},
+			"to": {
+				"x": 669,
+				"y": 263
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

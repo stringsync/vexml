@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_kbd-fingering-chord-stack.png",
+	"width": 932,
+	"height": 386,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 424,
+				"y": 86
+			},
+			"to": {
+				"x": 436,
+				"y": 164
+			},
+			"label": "Chord fingering stack",
+			"note": "Chord fingering stack",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 424,
+				"y": 71
+			},
+			"to": {
+				"x": 436,
+				"y": 154
+			},
+			"label": "Chord fingering stack",
+			"note": "Chord fingering stack",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 424,
+				"y": 56
+			},
+			"to": {
+				"x": 436,
+				"y": 144
+			},
+			"label": "Chord fingering stack",
+			"note": "Chord fingering stack",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 424,
+				"y": 236
+			},
+			"to": {
+				"x": 436,
+				"y": 330
+			},
+			"label": "Chord fingering stack",
+			"note": "Chord fingering stack",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 424,
+				"y": 226
+			},
+			"to": {
+				"x": 436,
+				"y": 315
+			},
+			"label": "Chord fingering stack",
+			"note": "Chord fingering stack",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 424,
+				"y": 216
+			},
+			"to": {
+				"x": 436,
+				"y": 300
+			},
+			"label": "Chord fingering stack",
+			"note": "Chord fingering stack",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

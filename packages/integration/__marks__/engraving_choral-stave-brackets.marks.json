@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_choral-stave-brackets.png",
+	"width": 932,
+	"height": 529,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 23,
+				"y": 235
+			},
+			"to": {
+				"x": 42,
+				"y": 442
+			},
+			"label": "Choir square bracket",
+			"note": "Choir square bracket",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 31,
+				"y": 121
+			},
+			"to": {
+				"x": 32,
+				"y": 424
+			},
+			"label": "Systemic barline",
+			"note": "Systemic barline",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

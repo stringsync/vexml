@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_rhythm-equal-within-system.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 512.8,
+				"y": 89
+			},
+			"to": {
+				"x": 563,
+				"y": 89
+			},
+			"label": "5",
+			"note": "M3 after 1 quarter-note beats: 5 stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 563,
+				"y": 89
+			},
+			"to": {
+				"x": 613.2,
+				"y": 89
+			},
+			"label": "5",
+			"note": "M3 after 1 quarter-note beats: 5 stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 613.2,
+				"y": 89
+			},
+			"to": {
+				"x": 663.3,
+				"y": 89
+			},
+			"label": "5",
+			"note": "M3 after 1 quarter-note beats: 5 stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 718.4,
+				"y": 89
+			},
+			"to": {
+				"x": 768.6,
+				"y": 89
+			},
+			"label": "5",
+			"note": "M4 after 1 quarter-note beats: 5 stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 768.6,
+				"y": 89
+			},
+			"to": {
+				"x": 818.8,
+				"y": 89
+			},
+			"label": "5",
+			"note": "M4 after 1 quarter-note beats: 5 stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 818.8,
+				"y": 89
+			},
+			"to": {
+				"x": 869,
+				"y": 89
+			},
+			"label": "5",
+			"note": "M4 after 1 quarter-note beats: 5 stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

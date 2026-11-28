@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_harp-chord-strum-arrow.png",
+	"width": 932,
+	"height": 255,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 261,
+				"y": 69
+			},
+			"to": {
+				"x": 273,
+				"y": 109
+			},
+			"label": "Strum arrow 1",
+			"note": "Strum arrow 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 314,
+				"y": 63
+			},
+			"to": {
+				"x": 326,
+				"y": 109
+			},
+			"label": "Strum arrow 2",
+			"note": "Strum arrow 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

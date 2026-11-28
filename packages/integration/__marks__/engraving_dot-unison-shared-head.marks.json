@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_dot-unison-shared-head.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 634.3,
+				"y": 766
+			},
+			"to": {
+				"x": 646.3,
+				"y": 776
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 634.3,
+				"y": 766
+			},
+			"to": {
+				"x": 646.3,
+				"y": 776
+			},
+			"label": "Voice 2 head",
+			"note": "Voice 2 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 648,
+				"y": 769
+			},
+			"to": {
+				"x": 652,
+				"y": 773
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 648,
+				"y": 769
+			},
+			"to": {
+				"x": 652,
+				"y": 773
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

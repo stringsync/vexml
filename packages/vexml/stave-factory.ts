@@ -1,14 +1,29 @@
-import type { Clef, LineDetail, Measure, Part } from '@stringsync/mdom';
+import type {
+	Clef,
+	Key,
+	LineDetail,
+	Measure,
+	Part,
+	Time,
+} from '@stringsync/mdom';
 import {
-	type Clef as ClefGlyph,
+	Barline,
+	Clef as ClefGlyph,
 	type Stave,
 	StaveModifierPosition,
-	TabStave,
+	type TabStave,
+	TimeSignature,
 } from 'vexflow/core';
 import { CancellingKeySignature } from './cancelling-key-signature';
-import { TAB_LINE_DISTANCE } from './constants';
+import {
+	DEFAULT_STAFF_LINE_WIDTH,
+	STAVE_LINE_DISTANCE,
+	TAB_LINE_DISTANCE,
+} from './constants';
 import { CustomKeySignature } from './custom-key-signature';
 import { DetailedStave, type LineStyle } from './detailed-stave';
+import { DocumentTabStave } from './document-tab-stave';
+import { ExtendedTimeSignature } from './extended-time-signature';
 import type { ScoreReader } from './score-reader';
 import {
 	type KeyCancel,
@@ -16,10 +31,8 @@ import {
 	scaleClefGlyph,
 	setClefGlyph,
 } from './signature-translator';
+import { scaleTimeSignature } from './staff-scaled-signatures';
 import type { StavePlan } from './stave-plan';
-
-/** vexflow's default space between staff lines, in px. */
-const STAVE_LINE_DISTANCE = 10;
 
 /* The staff-size percent an ossia or cue staff draws at when it states none. */
 const SMALL_STAFF_SIZE = 75;
@@ -40,6 +53,15 @@ export interface PlacedStave {
  * opening from it, so the pinned strip and the real system start can't drift apart.
  */
 export class StaveFactory {
+	static staffSizing(measure: Measure, staffNumber: string) {
+		const details = measure.getStaffDetails(staffNumber);
+		const staffType = details?.child('staff-type')?.text?.trim();
+		const size =
+			details?.staffSize ??
+			(staffType === 'ossia' || staffType === 'cue' ? SMALL_STAFF_SIZE : 100);
+		return { staffType, size };
+	}
+
 	constructor(
 		private readonly signatures: SignatureTranslator,
 		private readonly staves: StavePlan,
@@ -67,13 +89,7 @@ export class StaveFactory {
 		const halfNudge = Math.max(0, (5 - staveLines) / 2 - hiddenAbove);
 		// staff-size is a percentage of normal: the line spacing shrinks with it, and every row
 		// vexflow measures off the stave (notes, ledger lines, clef, key) follows.
-		const staffType = measure
-			.getStaffDetails(staffNumber)
-			?.child('staff-type')
-			?.text?.trim();
-		const size =
-			measure.getStaffDetails(staffNumber)?.staffSize ??
-			(staffType === 'ossia' || staffType === 'cue' ? SMALL_STAFF_SIZE : 100);
+		const { staffType, size } = StaveFactory.staffSizing(measure, staffNumber);
 		const spacing = (STAVE_LINE_DISTANCE * size) / 100;
 		// The shrunk five lines center on where the full-size ones would sit, so the staff
 		// stays in its row and only the ink shrinks.
@@ -86,7 +102,7 @@ export class StaveFactory {
 		);
 		const tabSpacing = (TAB_LINE_DISTANCE * size) / 100;
 		const stave = isTab
-			? new TabStave(x, y, width, {
+			? new DocumentTabStave(x, y, width, {
 					numLines: tabLines,
 					spacingBetweenLinesPx: tabSpacing,
 				})
@@ -105,7 +121,14 @@ export class StaveFactory {
 					spacingBetweenLinesPx: spacing,
 				});
 		// Tab is exempt: its line count IS its string count, so a 4-string stave draws four
-		// lines and means it.
+		// lines and means it. Notation staves default to Bravura's stave-line thickness unless
+		// the document's `<appearance>` overrides it later in StaveBuilder.
+		if (!isTab) {
+			stave.setStyle({
+				...stave.getStyle(),
+				lineWidth: DEFAULT_STAFF_LINE_WIDTH,
+			});
+		}
 		for (let line = 0; line < 5 && !isTab && staveLines < 5; line++) {
 			stave.setConfigForLine(line, {
 				visible: line >= hiddenAbove && line < hiddenAbove + staveLines,
@@ -223,6 +246,34 @@ export class StaveFactory {
 		this.dressClef(stave, scale, this.signatures.clefGlyph(name, annotation));
 	}
 
+	/* A clef change drawn before the barline (at the end of the preceding measure),
+	 * small unless its size attribute says otherwise. */
+	addEndClefChange(stave: Stave, measure: Measure, staffNumber: string): void {
+		const clef = measure.getClef(staffNumber);
+		if (!clef) {
+			return;
+		}
+		const { size, scale } = this.signatures.clefSize(clef, true);
+		const name = this.signatures.clefName(clef);
+		const annotation = this.signatures.vexflowClefAnnotation(clef.octaveChange);
+		const clefGlyph = new ClefGlyph(name, size, annotation);
+		stave.addModifier(clefGlyph, StaveModifierPosition.END);
+		this.dressClef(stave, scale, this.signatures.clefGlyph(name, annotation));
+		// End modifiers lay out from right to left. The divider already supplies
+		// some clearance on its left, so add only what it lacks.
+		const [barline] = stave.getModifiers(
+			StaveModifierPosition.END,
+			Barline.CATEGORY,
+		);
+		const barPadding = barline?.getLayoutMetrics()?.paddingLeft ?? 0;
+		clefGlyph.setLayoutMetrics({
+			xMin: 0,
+			xMax: clefGlyph.getWidth(),
+			paddingLeft: 0,
+			paddingRight: Math.max(0, stave.getSpacingBetweenLines() - barPadding),
+		});
+	}
+
 	/*
 	 * The naturals a <cancel location="before-barline"> hangs at the end of the measure before
 	 * the key change, ahead of its barline, at the clef that measure ends in.
@@ -238,6 +289,48 @@ export class StaveFactory {
 			).setPosition(StaveModifierPosition.END),
 			StaveModifierPosition.END,
 		);
+	}
+
+	/*
+	 * A cautionary key change at the end of a system: the key the next system opens with,
+	 * with the naturals of the key it replaces, at the clef the system ends in.
+	 */
+	addEndKey(
+		stave: Stave,
+		key: Key,
+		cancel: KeyCancel | null,
+		clef: Clef | null,
+	): void {
+		stave.addModifier(
+			new CancellingKeySignature(
+				this.signatures.vexflowKeySpec(key),
+				cancel?.spec,
+				clef ? this.signatures.clefName(clef) : 'treble',
+				cancel?.location === 'right',
+			).setPosition(StaveModifierPosition.END),
+			StaveModifierPosition.END,
+		);
+	}
+
+	/*
+	 * A cautionary time signature at the end of a system, placed after the closing barline
+	 * when the next system opens in a different metre.
+	 */
+	addEndTimeSignature(stave: Stave, time: Time, timeSpec: string): void {
+		const extended = this.signatures.extendedTimeSpec(time);
+		if (extended) {
+			stave.addModifier(
+				new ExtendedTimeSignature(extended).setPosition(
+					StaveModifierPosition.END,
+				),
+				StaveModifierPosition.END,
+			);
+			return;
+		}
+		const plain = new TimeSignature(timeSpec);
+		scaleTimeSignature(plain, stave);
+		plain.setPosition(StaveModifierPosition.END);
+		stave.addModifier(plain, StaveModifierPosition.END);
 	}
 
 	/* The key in effect at `measure`'s start, spelled out accidental by accidental when the

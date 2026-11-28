@@ -9,7 +9,7 @@
 		"core": "workspace:*"
 	},
 	"devDependencies": {
-		"@napi-rs/canvas": "1.1.0",
+		"@napi-rs/canvas": "catalog:",
 		"@types/pngjs": "^6.0.5",
 		"canvas": "^3.2.3",
 		"pixelmatch": "^7.2.0",

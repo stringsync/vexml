@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-stem-not-end-on-tie.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 471,
+				"y": 290
+			},
+			"to": {
+				"x": 598,
+				"y": 300
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_grace-articulation-outside.png",
+	"width": 932,
+	"height": 739,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 301,
+				"y": 637
+			},
+			"to": {
+				"x": 303,
+				"y": 639
+			},
+			"label": "Grace staccato",
+			"note": "Grace staccato",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 376,
+				"y": 637
+			},
+			"to": {
+				"x": 385,
+				"y": 643
+			},
+			"label": "Grace accent",
+			"note": "Grace accent",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

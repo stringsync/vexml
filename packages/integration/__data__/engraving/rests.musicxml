@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list><score-part id="P1"><part-name>Music</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>16</divisions><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
+      <note><rest/><duration>64</duration><voice>1</voice><type>whole</type></note>
+    </measure>
+    <measure number="2">
+      
+      <note><rest/><duration>32</duration><voice>1</voice><type>half</type></note>
+      <note><rest/><duration>32</duration><voice>1</voice><type>half</type></note>
+    </measure>
+    <measure number="3">
+      <attributes><time><beats>8</beats><beat-type>4</beat-type></time></attributes>
+      <note><rest/><duration>128</duration><voice>1</voice><type>breve</type></note>
+    </measure>
+    <measure number="4">
+      <attributes><time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+      <note><rest/><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><rest/><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><rest/><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><rest/><duration>16</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+    <measure number="5">
+      
+      <note><rest/><duration>8</duration><voice>1</voice><type>eighth</type></note>
+      <note><rest/><duration>4</duration><voice>1</voice><type>16th</type></note>
+      <note><rest/><duration>2</duration><voice>1</voice><type>32nd</type></note>
+      <note><rest/><duration>1</duration><voice>1</voice><type>64th</type></note>
+      <note><rest/><duration>1</duration><voice>1</voice><type>64th</type></note>
+      <note><rest/><duration>16</duration><voice>1</voice><type>quarter</type></note>
+      <note><rest/><duration>32</duration><voice>1</voice><type>half</type></note>
+    </measure>
+    <measure number="6">
+      
+      <note><pitch><step>C</step><octave>6</octave></pitch><duration>8</duration><voice>1</voice><type>eighth</type></note>
+      <note><rest/><duration>8</duration><voice>1</voice><type>eighth</type></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>8</duration><voice>1</voice><type>eighth</type></note>
+      <note><rest/><duration>8</duration><voice>1</voice><type>eighth</type></note>
+      <note><pitch><step>C</step><octave>6</octave></pitch><duration>4</duration><voice>1</voice><type>16th</type></note>
+      <note><rest/><duration>4</duration><voice>1</voice><type>16th</type></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>4</duration><voice>1</voice><type>16th</type></note>
+      <note><rest/><duration>4</duration><voice>1</voice><type>16th</type></note>
+      <note><rest/><duration>16</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+    <measure number="7">
+      
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>8</duration><voice>1</voice><type>eighth</type><beam number="1">begin</beam></note>
+      <note><rest/><duration>8</duration><voice>1</voice><type>eighth</type></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>8</duration><voice>1</voice><type>eighth</type><beam number="1">end</beam></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>4</duration><voice>1</voice><type>16th</type><beam number="1">begin</beam><beam number="2">begin</beam></note>
+      <note><rest/><duration>4</duration><voice>1</voice><type>16th</type></note>
+      <note><pitch><step>A</step><octave>3</octave></pitch><duration>4</duration><voice>1</voice><type>16th</type><beam number="1">end</beam><beam number="2">end</beam></note>
+      <note><rest/><duration>4</duration><voice>1</voice><type>16th</type></note>
+      <note><rest/><duration>8</duration><voice>1</voice><type>eighth</type></note>
+      <note><rest/><duration>16</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+  </part>
+</score-partwise>

@@ -1,0 +1,51 @@
+{
+	"screenshot": "engraving_octave-end-corner.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 331.5,
+				"y": 58
+			},
+			"to": {
+				"x": 331.5,
+				"y": 111
+			},
+			"label": "",
+			"note": "M2 dotted half ink right edge at x=315.4781732766041",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 331.5,
+				"y": 44
+			},
+			"to": {
+				"x": 334,
+				"y": 44
+			},
+			"label": "+¼",
+			"note": "M2 octave line ends ¼ spaces past the dot (expected 0 to 1)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 328,
+				"y": 60
+			},
+			"to": {
+				"x": 336,
+				"y": 78
+			},
+			"label": "corner ¾",
+			"note": "M2 octave end corner height is ¾ spaces (expected ≥½)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

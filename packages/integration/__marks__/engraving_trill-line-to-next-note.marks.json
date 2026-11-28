@@ -1,0 +1,36 @@
+{
+	"screenshot": "engraving_trill-line-to-next-note.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 297,
+				"y": 77
+			},
+			"to": {
+				"x": 315,
+				"y": 82
+			},
+			"label": "Trill line",
+			"note": "Trill line",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 315.8,
+				"y": 73
+			},
+			"to": {
+				"x": 315.8,
+				"y": 101
+			},
+			"label": "Sharp",
+			"note": "M2 F# accidental left edge at x=299.7587706788363",
+			"role": "reference"
+		}
+	]
+}

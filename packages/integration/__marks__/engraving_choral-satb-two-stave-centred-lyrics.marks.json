@@ -1,0 +1,112 @@
+{
+	"screenshot": "engraving_choral-satb-two-stave-centred-lyrics.png",
+	"width": 932,
+	"height": 499,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 152,
+				"y": 71
+			},
+			"to": {
+				"x": 167,
+				"y": 85
+			},
+			"label": "Upper dynamic",
+			"note": "Upper dynamic",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 152,
+				"y": 407
+			},
+			"to": {
+				"x": 167,
+				"y": 421
+			},
+			"label": "Bass dynamic",
+			"note": "Bass dynamic",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 141,
+				"y": 238
+			},
+			"to": {
+				"x": 175,
+				"y": 247
+			},
+			"label": "Shared lyric",
+			"note": "Shared lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 274,
+				"y": 237
+			},
+			"to": {
+				"x": 308,
+				"y": 247
+			},
+			"label": "Shared lyric",
+			"note": "Shared lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 147,
+				"y": 432
+			},
+			"to": {
+				"x": 169,
+				"y": 442
+			},
+			"label": "Bass lyric",
+			"note": "Bass lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 214,
+				"y": 432
+			},
+			"to": {
+				"x": 235,
+				"y": 442
+			},
+			"label": "Bass lyric",
+			"note": "Bass lyric",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 281,
+				"y": 432
+			},
+			"to": {
+				"x": 302,
+				"y": 442
+			},
+			"label": "Bass lyric",
+			"note": "Bass lyric",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

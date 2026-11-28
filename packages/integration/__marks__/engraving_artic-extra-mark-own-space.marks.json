@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_artic-extra-mark-own-space.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 94,
+				"y": 248
+			},
+			"to": {
+				"x": 97,
+				"y": 251
+			},
+			"label": "Dot 1",
+			"note": "Dot 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 236
+			},
+			"to": {
+				"x": 101,
+				"y": 246
+			},
+			"label": "Accent 1",
+			"note": "Accent 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 191,
+				"y": 248
+			},
+			"to": {
+				"x": 194,
+				"y": 251
+			},
+			"label": "Dot 2",
+			"note": "Dot 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 186,
+				"y": 231
+			},
+			"to": {
+				"x": 199,
+				"y": 241
+			},
+			"label": "Accent 2",
+			"note": "Accent 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 289,
+				"y": 302
+			},
+			"to": {
+				"x": 292,
+				"y": 305
+			},
+			"label": "Dot 3",
+			"note": "Dot 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 283,
+				"y": 306
+			},
+			"to": {
+				"x": 296,
+				"y": 316
+			},
+			"label": "Accent 3",
+			"note": "Accent 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 386,
+				"y": 290
+			},
+			"to": {
+				"x": 389,
+				"y": 293
+			},
+			"label": "Dot 4",
+			"note": "Dot 4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 381,
+				"y": 301
+			},
+			"to": {
+				"x": 394,
+				"y": 311
+			},
+			"label": "Accent 4",
+			"note": "Accent 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

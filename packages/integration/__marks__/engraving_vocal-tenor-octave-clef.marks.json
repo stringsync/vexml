@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_vocal-tenor-octave-clef.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 36,
+				"y": 82
+			},
+			"to": {
+				"x": 63,
+				"y": 161
+			},
+			"label": "Tenor 8vb clef",
+			"note": "Tenor 8vb clef",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

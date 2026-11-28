@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_guitar-snap-pizzicato.png",
+	"width": 932,
+	"height": 419,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 79,
+				"y": 113
+			},
+			"to": {
+				"x": 96,
+				"y": 153
+			},
+			"label": "Snap pizzicato",
+			"note": "Snap pizzicato",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 114,
+				"y": 162
+			},
+			"to": {
+				"x": 132,
+				"y": 174
+			},
+			"label": "Snap pizzicato",
+			"note": "Snap pizzicato",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 128,
+				"y": 91
+			},
+			"to": {
+				"x": 205,
+				"y": 101
+			},
+			"label": "Snap pizzicato",
+			"note": "Snap pizzicato",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 129,
+				"y": 71
+			},
+			"to": {
+				"x": 206,
+				"y": 83
+			},
+			"label": "Snap pizzicato",
+			"note": "Snap pizzicato",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 119,
+				"y": 246
+			},
+			"to": {
+				"x": 127,
+				"y": 258
+			},
+			"label": "Snap pizzicato",
+			"note": "Snap pizzicato",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 147,
+				"y": 241
+			},
+			"to": {
+				"x": 155,
+				"y": 253
+			},
+			"label": "Snap pizzicato",
+			"note": "Snap pizzicato",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

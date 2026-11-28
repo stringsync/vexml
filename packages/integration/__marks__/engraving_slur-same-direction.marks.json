@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_slur-same-direction.png",
+	"width": 932,
+	"height": 1202,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 391,
+				"y": 466
+			},
+			"to": {
+				"x": 585,
+				"y": 488
+			},
+			"label": "Stems up",
+			"note": "Stems up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 657,
+				"y": 379
+			},
+			"to": {
+				"x": 851,
+				"y": 406
+			},
+			"label": "Stems down",
+			"note": "Stems down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

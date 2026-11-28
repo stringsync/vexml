@@ -230,7 +230,7 @@ export class SvgInkMasks {
 		return masks;
 	}
 
-	private async enqueue(
+	protected async enqueue(
 		clone: SVGSVGElement,
 		x: number,
 		y: number,
@@ -270,7 +270,7 @@ export class SvgInkMasks {
 		}
 	}
 
-	private async flush(styles: string, ratio: number): Promise<void> {
+	protected async flush(styles: string, ratio: number): Promise<void> {
 		if (!this.tiles.length) {
 			return;
 		}
@@ -319,8 +319,7 @@ export class SvgInkMasks {
 		}
 		try {
 			// Font data is parsed once per atlas instead of once per glyph.
-			image.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(new XMLSerializer().serializeToString(atlas))))}`;
-			await image.decode();
+			await this.decode(image, atlas);
 			for (const job of this.tiles) {
 				canvas.width = job.width;
 				canvas.height = job.height;
@@ -363,6 +362,15 @@ export class SvgInkMasks {
 			this.cursorY = 0;
 			this.rowHeight = 0;
 		}
+	}
+
+	/* Decode an SVG into the image, ready to draw. */
+	protected async decode(
+		image: HTMLImageElement,
+		svg: SVGSVGElement,
+	): Promise<void> {
+		image.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(new XMLSerializer().serializeToString(svg))))}`;
+		await image.decode();
 	}
 
 	private static kind(cls: string): string {

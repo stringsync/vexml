@@ -1,0 +1,112 @@
+{
+	"screenshot": "engraving_beam-extra-stems.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 488,
+				"y": 126
+			},
+			"to": {
+				"x": 488,
+				"y": 96
+			},
+			"label": "3",
+			"note": "M2 G/4 (3 beams): 3 spaces from head to innermost beam (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 603,
+				"y": 281
+			},
+			"to": {
+				"x": 603,
+				"y": 251
+			},
+			"label": "3",
+			"note": "M4 A/4 (3 beams): 3 spaces from head to innermost beam (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 323,
+				"y": 446
+			},
+			"to": {
+				"x": 323,
+				"y": 416
+			},
+			"label": "3",
+			"note": "M5 G/4 (3 beams): 3 spaces from head to innermost beam (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 741,
+				"y": 431
+			},
+			"to": {
+				"x": 741,
+				"y": 461
+			},
+			"label": "3",
+			"note": "M6 C/5 (3 beams): 3 spaces from head to innermost beam (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 263,
+				"y": 586
+			},
+			"to": {
+				"x": 263,
+				"y": 616
+			},
+			"label": "3",
+			"note": "M7 D/5 (3 beams): 3 spaces from head to innermost beam (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 441,
+				"y": 606
+			},
+			"to": {
+				"x": 441,
+				"y": 576
+			},
+			"label": "3",
+			"note": "M8 G/4 (4 beams): 3 spaces from head to innermost beam (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 568,
+				"y": 591
+			},
+			"to": {
+				"x": 568,
+				"y": 621
+			},
+			"label": "3",
+			"note": "M8 C/5 (4 beams): 3 spaces from head to innermost beam (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

@@ -1,10 +1,18 @@
 import type { Chord, Note } from '@stringsync/mdom';
 import type { Stave, StaveNote } from 'vexflow/core';
 import type { Appearance } from './appearance';
-import { SLUR_GHOST_MAX_BETWEEN, SLUR_GHOST_STEEPNESS } from './constants';
+import {
+	SLUR_ACCIDENTAL_GAP,
+	SLUR_BARLINE_GAP,
+	SLUR_GHOST_MAX_BETWEEN,
+	SLUR_GHOST_STEEPNESS,
+	SLUR_GRACE_CP_Y,
+	SLUR_GRACE_Y_SHIFT,
+} from './constants';
 import type { CurveConnectors } from './curve-connectors';
 import { SlurBow } from './slur-bow';
 import { type SlurCurve, SlurCurveFactory } from './slur-curve';
+import { type SlurCandidate, SlurNesting } from './slur-nesting';
 import { SlurObstacles } from './slur-obstacles';
 import { SlurShape } from './slur-shape';
 import { type SpanScope, WHOLE_SCORE } from './span-scope';
@@ -48,6 +56,7 @@ export class SlurBuilder {
 			return [];
 		}
 		const slurs: SlurCurve[] = [];
+		const candidates: SlurCandidate[] = [];
 		const spans = this.connectors.slurSpans(chords);
 		const indexOf = new Map(chords.map((chord, i) => [chord.lead, i]));
 		// A slur can start or stop on any note of a chord, not just its lead, but only a
@@ -222,8 +231,16 @@ export class SlurBuilder {
 							voiceOf.get(n) === voiceOf.get(from),
 					);
 				if (isGrace) {
-					// Cross-staff graces can request an upper bow, including at a ghost end.
-					bulgeUp = crossStave && slur.placement === 'above';
+					bulgeUp = this.graceBulgeUp(
+						from,
+						to,
+						span,
+						slur.placement,
+						crossStave,
+						fromStave,
+						voiceOf,
+						onRow,
+					);
 				} else if (crossStave) {
 					bulgeUp = from.getStemDirection() !== 1;
 				} else if (slur.placement === 'above') {
@@ -283,112 +300,351 @@ export class SlurBuilder {
 				if (ghost && !(isGrace && slur.placement)) {
 					bulgeUp = false;
 				}
-				const bow = new SlurBow(this.obstacles, {
+				const wraps = Boolean(
+					toStave && fromStave && toStave.getY() > fromStave.getY(),
+				);
+				candidates.push({
 					from,
 					to,
+					lead: chord.lead,
+					partner,
+					slur,
 					isGrace,
+					span,
+					fromStave,
+					toStave,
 					crossStave,
-					mayGhost,
 					bulgeUp,
+					mayGhost,
 					ghost,
-					tiedFrom: tiedLeads.has(chord.lead),
-					tiedTo: tiedLeads.has(partner),
+					wraps,
+					width: Math.abs(to.getAbsoluteX() - from.getAbsoluteX()),
 				});
-
-				// When the stop note wraps onto a later system its stave sits lower on the
-				// page (greater Y), so a single Curve would slant across the page gap. Split
-				// it into two partial curves like a wrapped tie (see tieSpecs): one bowing off
-				// the right edge of the start note's stave ("slur to nothing") and one bowing
-				// in from the left edge of the stop note's ("slur from nothing"). vexflow
-				// renders a Curve given only a `from` or only a `to` exactly so, anchoring the
-				// open end at the stave's tie edge. (Y, not X: a slur whose start note is the
-				// first in its system shares the stop note's left X but not its row.)
-				if (toStave && fromStave && toStave.getY() > fromStave.getY()) {
-					// Each half is level: the curve reads the open end's Y off the note the half
-					// does have, so both its ends sit at that one Y.
-					const fromY = bow.endpointY(from);
-					const toY = bow.endpointY(to);
-					// The halves run to the system's edge, not just their own measure's: the row's
-					// staves are every measure the system holds at that height.
-					const fromRow = onRow(fromStave).flatMap(({ note }) => {
-						const stave = note.getStave();
-						return stave ? [stave] : [];
-					});
-					const toRow = onRow(toStave).flatMap(({ note }) => {
-						const stave = note.getStave();
-						return stave ? [stave] : [];
-					});
-					const rowEndX = Math.max(
-						fromStave.getTieEndX(),
-						...fromRow.map((stave) => stave.getTieEndX()),
-					);
-					const rowStartX = Math.min(
-						toStave.getTieStartX(),
-						...toRow.map((stave) => stave.getTieStartX()),
-					);
-					slurs.push(
-						this.curves.create(bow, slur, {
-							from,
-							to: undefined,
-							openX: rowEndX,
-							shape: new SlurShape(
-								bow,
-								span.filter((n) => n.getStave() === fromStave),
-								{ xL: from.getAbsoluteX(), xR: rowEndX, yL: fromY, yR: fromY },
-							),
-						}),
-						this.curves.create(bow, slur, {
-							from: undefined,
-							to,
-							openX: rowStartX,
-							shape: new SlurShape(
-								bow,
-								span.filter((n) => n.getStave() === toStave),
-								{ xL: rowStartX, xR: to.getAbsoluteX(), yL: toY, yR: toY },
-							),
-						}),
-					);
-					continue;
-				}
-
-				const solve = () =>
-					new SlurShape(
-						bow,
-						bow.ghost
-							? span.filter((n) => n.getStave()?.getY() === fromStave?.getY())
-							: span,
-						{
-							xL: from.getAbsoluteX(),
-							xR: to.getAbsoluteX(),
-							yL: bow.endpointY(from),
-							yR: bow.endpointY(to),
-						},
-					);
-				let shape = solve();
-				if (mayGhost && !bow.ghost && !isGrace && shape.blocked) {
-					bow.takeSide(!bow.bulgeUp);
-					shape = solve();
-					if (shape.blocked) {
-						bow.ghost = true;
-						bow.takeSide(false);
-						shape = solve();
-					}
-				}
-				// A ghost end is only useful if it clears the intervening ink. When it
-				// cannot, omit the slur rather than draw a detached bow through the notes.
-				if (bow.ghost && shape.blocked) {
-					continue;
-				}
-				slurs.push(
-					this.curves.create(bow, slur, {
-						from,
-						to,
-						openX: undefined,
-						shape,
-					}),
-				);
 			}
 		});
+
+		// Build shorter slurs first so a longer simultaneous slur on the same side
+		// clears any inner slur and lifts past shared endpoints (Behind Bars p. 113).
+		candidates.sort((a, b) => {
+			if (a.wraps !== b.wraps) {
+				return a.wraps ? 1 : -1;
+			}
+			return a.width - b.width;
+		});
+		const nesting = new SlurNesting();
+
+		for (const c of candidates) {
+			const { from, to, slur, span, fromStave, toStave } = c;
+			const bowOpts = {
+				from,
+				to,
+				isGrace: c.isGrace,
+				crossStave: c.crossStave,
+				mayGhost: c.mayGhost,
+				bulgeUp: c.bulgeUp,
+				ghost: c.ghost,
+				tiedFrom: tiedLeads.has(c.lead),
+				tiedTo: tiedLeads.has(c.partner),
+			};
+			let bow = new SlurBow(this.obstacles, bowOpts);
+
+			// When the stop note wraps onto a later system its stave sits lower on the
+			// page (greater Y), so a single Curve would slant across the page gap. Split
+			// it into two partial curves like a wrapped tie (see tieSpecs): one bowing off
+			// the right edge of the start note's stave ("slur to nothing") and one bowing
+			// in from the left edge of the stop note's ("slur from nothing"). vexflow
+			// renders a Curve given only a `from` or only a `to` exactly so, anchoring the
+			// open end at the stave's tie edge. (Y, not X: a slur whose start note is the
+			// first in its system shares the stop note's left X but not its row.)
+			if (c.wraps && toStave && fromStave) {
+				const rowEndX = Math.max(
+					fromStave.getTieEndX(),
+					...onRow(fromStave).map(
+						({ note }) => note.getStave()?.getTieEndX() ?? 0,
+					),
+				);
+				const rowStartX = Math.min(
+					toStave.getTieStartX(),
+					...onRow(toStave).map(
+						({ note }) => note.getStave()?.getTieStartX() ?? Infinity,
+					),
+				);
+				const fromX = from.getAbsoluteX();
+				const toX = to.getAbsoluteX();
+				const fromOver = slur.bezier
+					? []
+					: nesting.overlapping(fromStave.getY(), bow.bulgeUp, fromX, rowEndX);
+				const toOver = slur.bezier
+					? []
+					: nesting.overlapping(toStave.getY(), bow.bulgeUp, rowStartX, toX);
+				const fromTuplets = slur.bezier
+					? []
+					: nesting.shorterTuplets(
+							span,
+							fromStave.getY(),
+							bow.bulgeUp,
+							fromX,
+							rowEndX,
+						);
+				const toTuplets = slur.bezier
+					? []
+					: nesting.shorterTuplets(
+							span,
+							toStave.getY(),
+							bow.bulgeUp,
+							rowStartX,
+							toX,
+						);
+				bow = nesting.liftBow(
+					bow,
+					fromOver,
+					toOver,
+					fromTuplets,
+					toTuplets,
+					bowOpts,
+				);
+				// At a system break, the outgoing half reaches the closing barline's X as a level
+				// open arc. Lift it when needed so its tip clears the outer edge of the closing
+				// barline instead of touching or crossing it (Behind Bars p. 112 / house style).
+				const barlineEdge = bow.bulgeUp
+					? fromStave.getYForLine(0)
+					: fromStave.getYForLine(fromStave.getNumLines() - 1);
+				const barlineMinYShift = slur.bezier
+					? 0
+					: bow.dir * (barlineEdge - bow.endpointY(from)) + SLUR_BARLINE_GAP;
+				const halves = [
+					{
+						stave: fromStave,
+						from,
+						to: undefined,
+						openX: rowEndX,
+						xL: fromX,
+						xR: rowEndX,
+						y: bow.endpointY(from),
+						over: fromOver,
+						tuplets: fromTuplets,
+						minYShift: barlineMinYShift,
+					},
+					{
+						stave: toStave,
+						from: undefined,
+						to,
+						openX: rowStartX,
+						xL: rowStartX,
+						xR: toX,
+						y: bow.endpointY(to),
+						over: toOver,
+						tuplets: toTuplets,
+						minYShift: 0,
+					},
+				];
+				for (const h of halves) {
+					const shape = new SlurShape(
+						bow,
+						span.filter((n) => n.getStave() === h.stave),
+						{ xL: h.xL, xR: h.xR, yL: h.y, yR: h.y },
+						[
+							...nesting.obstacles(h.over, h.xL, h.xR),
+							...nesting.tupletObstacles(
+								h.tuplets,
+								bow.bulgeUp,
+								bow.dir,
+								h.xL,
+								h.xR,
+							),
+						],
+						h.minYShift,
+					);
+					nesting.record({
+						rowY: h.stave.getY(),
+						bulgeUp: bow.bulgeUp,
+						from: h.from,
+						to: h.to,
+						xL: h.xL,
+						xR: h.xR,
+						yL: h.y,
+						yR: h.y,
+						shape,
+						dir: bow.dir,
+					});
+					slurs.push(
+						this.curves.create(bow, slur, {
+							from: h.from,
+							to: h.to,
+							openX: h.openX,
+							shape,
+						}),
+					);
+				}
+				continue;
+			}
+
+			const canNest =
+				!c.isGrace &&
+				!c.crossStave &&
+				!slur.bezier &&
+				fromStave !== undefined &&
+				toStave !== undefined &&
+				fromStave.getY() === toStave.getY();
+			const over = canNest
+				? nesting.overlapping(
+						fromStave.getY(),
+						bow.bulgeUp,
+						from.getAbsoluteX(),
+						to.getAbsoluteX(),
+					)
+				: [];
+			const innerTuplets = canNest
+				? nesting.shorterTuplets(
+						span,
+						fromStave.getY(),
+						bow.bulgeUp,
+						from.getAbsoluteX(),
+						to.getAbsoluteX(),
+					)
+				: [];
+			if (over.length > 0 || innerTuplets.length > 0) {
+				bow = nesting.liftBow(
+					bow,
+					over,
+					over,
+					innerTuplets,
+					innerTuplets,
+					bowOpts,
+				);
+			}
+			const extra = [
+				...(over.length > 0
+					? nesting.obstacles(over, from.getAbsoluteX(), to.getAbsoluteX())
+					: []),
+				...(innerTuplets.length > 0
+					? nesting.tupletObstacles(
+							innerTuplets,
+							bow.bulgeUp,
+							bow.dir,
+							from.getAbsoluteX(),
+							to.getAbsoluteX(),
+						)
+					: []),
+			];
+
+			const solve = () =>
+				new SlurShape(
+					bow,
+					bow.ghost
+						? span.filter((n) => n.getStave()?.getY() === fromStave?.getY())
+						: span,
+					{
+						xL: from.getAbsoluteX(),
+						xR: to.getAbsoluteX(),
+						yL: bow.endpointY(from),
+						yR: bow.endpointY(to),
+					},
+					extra,
+				);
+			let shape = solve();
+			if (c.mayGhost && !bow.ghost && !c.isGrace && shape.blocked) {
+				bow.takeSide(!bow.bulgeUp);
+				shape = solve();
+				if (shape.blocked) {
+					bow.ghost = true;
+					bow.takeSide(false);
+					shape = solve();
+				}
+			}
+			// A ghost end is only useful if it clears the intervening ink. When it
+			// cannot, omit the slur rather than draw a detached bow through the notes.
+			if (bow.ghost && shape.blocked) {
+				continue;
+			}
+			if (canNest) {
+				nesting.record({
+					rowY: fromStave.getY(),
+					bulgeUp: bow.bulgeUp,
+					from,
+					to,
+					xL: from.getAbsoluteX(),
+					xR: to.getAbsoluteX(),
+					yL: bow.endpointY(from),
+					yR: bow.endpointY(to),
+					shape,
+					dir: bow.dir,
+				});
+			}
+			slurs.push(
+				this.curves.create(bow, slur, {
+					from,
+					to,
+					openX: undefined,
+					shape,
+				}),
+			);
+		}
 		return slurs;
+	}
+
+	/*
+	 * Behind Bars pp. 129–130: single-voice grace-note slurs curve below by default,
+	 * but curve away from the stave in two-voice writing (upper voice above, lower
+	 * voice below), and above in single-voice writing when curving below would collide
+	 * with an accidental on the measured note or when slurring to a chord's upper note.
+	 */
+	private graceBulgeUp(
+		from: StaveNote,
+		to: StaveNote,
+		span: StaveNote[],
+		placement: string | null | undefined,
+		crossStave: boolean,
+		fromStave: Stave | undefined,
+		voiceOf: ReadonlyMap<StaveNote, string>,
+		onRow: (stave: Stave) => Array<{ note: StaveNote; index: number }>,
+	): boolean {
+		if (crossStave) {
+			return placement === 'above';
+		}
+		const sharedStave =
+			fromStave !== undefined &&
+			onRow(fromStave).some(
+				({ note: n }) =>
+					n.getStave() === fromStave &&
+					voiceOf.get(n) !== undefined &&
+					voiceOf.get(n) !== voiceOf.get(from),
+			);
+		if (sharedStave) {
+			return from.getStemDirection() === 1;
+		}
+		const accBoxes = this.obstacles.accidentalBoxes(to);
+		if (accBoxes.length > 0) {
+			const xL = from.getAbsoluteX();
+			const xR = to.getAbsoluteX();
+			const width = xR - xL;
+			const yL = from.getNoteHeadBounds().yBottom;
+			const yR = to.getNoteHeadBounds().yBottom;
+			const hitsAccidental = accBoxes.some((box) => {
+				const cx = box.getX() + box.getW() / 2;
+				const s = width > 0 ? Math.max(0, Math.min(1, (cx - xL) / width)) : 0.5;
+				const curveY =
+					yL +
+					SLUR_GRACE_Y_SHIFT +
+					s * (yR - yL) +
+					3 * s * (1 - s) * SLUR_GRACE_CP_Y;
+				return curveY <= box.getY() + box.getH() + SLUR_ACCIDENTAL_GAP;
+			});
+			if (hitsAccidental) {
+				return true;
+			}
+		}
+		if (to.getKeys().length > 1) {
+			const resolving =
+				span.length >= 2 ? (span[span.length - 2] ?? from) : from;
+			const graceBounds = resolving.getNoteHeadBounds();
+			const graceMidY = (graceBounds.yTop + graceBounds.yBottom) / 2;
+			const toBounds = to.getNoteHeadBounds();
+			const chordMidY = (toBounds.yTop + toBounds.yBottom) / 2;
+			if (graceMidY <= chordMidY) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

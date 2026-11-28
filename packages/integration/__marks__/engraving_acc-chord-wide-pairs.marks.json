@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_acc-chord-wide-pairs.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 403.4,
+				"y": 443
+			},
+			"to": {
+				"x": 429.4,
+				"y": 471
+			},
+			"label": "C#/4 sign",
+			"note": "C#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 416.4,
+				"y": 423
+			},
+			"to": {
+				"x": 429.4,
+				"y": 451
+			},
+			"label": "G#/4 sign",
+			"note": "G#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 403.4,
+				"y": 408
+			},
+			"to": {
+				"x": 429.4,
+				"y": 436
+			},
+			"label": "C#/5 sign",
+			"note": "C#/5 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 416.4,
+				"y": 388
+			},
+			"to": {
+				"x": 429.4,
+				"y": 416
+			},
+			"label": "G#/5 sign",
+			"note": "G#/5 sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

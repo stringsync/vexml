@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_woodwind-harmonic-fundamental-diamond.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 589.1,
+				"y": 141
+			},
+			"to": {
+				"x": 599.1,
+				"y": 151
+			},
+			"label": "Fund 1",
+			"note": "Fund 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 589.1,
+				"y": 71
+			},
+			"to": {
+				"x": 601.1,
+				"y": 81
+			},
+			"label": "Sound 1",
+			"note": "Sound 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 590,
+				"y": 58
+			},
+			"to": {
+				"x": 598,
+				"y": 66
+			},
+			"label": "Circle 1",
+			"note": "Circle 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 651.8,
+				"y": 136
+			},
+			"to": {
+				"x": 661.8,
+				"y": 146
+			},
+			"label": "Fund 2",
+			"note": "Fund 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 651.8,
+				"y": 81
+			},
+			"to": {
+				"x": 663.8,
+				"y": 91
+			},
+			"label": "Sound 2",
+			"note": "Sound 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 653,
+				"y": 68
+			},
+			"to": {
+				"x": 661,
+				"y": 76
+			},
+			"label": "Circle 2",
+			"note": "Circle 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

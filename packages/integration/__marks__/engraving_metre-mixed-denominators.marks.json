@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_metre-mixed-denominators.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 618,
+				"y": 96
+			},
+			"to": {
+				"x": 735,
+				"y": 136
+			},
+			"label": "2/4 + 3/8 + 3/16",
+			"note": "2/4 + 3/8 + 3/16",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

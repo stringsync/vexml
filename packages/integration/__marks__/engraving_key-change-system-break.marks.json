@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_key-change-system-break.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 851,
+				"y": 242
+			},
+			"to": {
+				"x": 896,
+				"y": 294
+			},
+			"label": "Cautionary key (naturals + 2 sharps)",
+			"note": "Cautionary key (naturals + 2 sharps)",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 73,
+				"y": 402
+			},
+			"to": {
+				"x": 94,
+				"y": 445
+			},
+			"label": "New system: 2 sharps only",
+			"note": "New system: 2 sharps only",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

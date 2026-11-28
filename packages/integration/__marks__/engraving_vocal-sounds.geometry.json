@@ -1,0 +1,43 @@
+{
+	"screenshot": "engraving_vocal-sounds.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 347.7 },
+		{ "index": 1, "system": 0, "x": 378.7, "w": 258.98 },
+		{ "index": 2, "system": 0, "x": 637.68, "w": 263.32 },
+		{ "index": 3, "system": 1, "x": 31, "w": 274.62 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [102, 112, 122, 132, 142],
+			"x": 31,
+			"w": 347.7
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [102, 112, 122, 132, 142],
+			"x": 378.7,
+			"w": 258.98
+		},
+		{
+			"part": 0,
+			"measure": 2,
+			"staff": 1,
+			"lines": [102, 112, 122, 132, 142],
+			"x": 637.68,
+			"w": 263.32
+		},
+		{
+			"part": 0,
+			"measure": 3,
+			"staff": 1,
+			"lines": [262, 272, 282, 292, 302],
+			"x": 31,
+			"w": 274.62
+		}
+	]
+}

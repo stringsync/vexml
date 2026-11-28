@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_vocal-falsetto-harmonic-circle.png",
+	"width": 932,
+	"height": 408,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 400,
+				"y": 89
+			},
+			"to": {
+				"x": 408,
+				"y": 97
+			},
+			"label": "Harm 1",
+			"note": "Harm 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 454,
+				"y": 84
+			},
+			"to": {
+				"x": 462,
+				"y": 92
+			},
+			"label": "Harm 2",
+			"note": "Harm 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 507,
+				"y": 79
+			},
+			"to": {
+				"x": 515,
+				"y": 87
+			},
+			"label": "Harm 3",
+			"note": "Harm 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 560,
+				"y": 84
+			},
+			"to": {
+				"x": 568,
+				"y": 92
+			},
+			"label": "Harm 4",
+			"note": "Harm 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

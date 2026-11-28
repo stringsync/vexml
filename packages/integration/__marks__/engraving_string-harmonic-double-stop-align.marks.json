@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_string-harmonic-double-stop-align.png",
+	"width": 932,
+	"height": 1050,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 914
+			},
+			"to": {
+				"x": 98,
+				"y": 924
+			},
+			"label": "B1-V1 top",
+			"note": "B1-V1 top",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 929
+			},
+			"to": {
+				"x": 100,
+				"y": 939
+			},
+			"label": "B1-V1 base",
+			"note": "B1-V1 base",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 939
+			},
+			"to": {
+				"x": 98,
+				"y": 949
+			},
+			"label": "B1-V2 top",
+			"note": "B1-V2 top",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 954
+			},
+			"to": {
+				"x": 100,
+				"y": 964
+			},
+			"label": "B1-V2 base",
+			"note": "B1-V2 base",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 164.2,
+				"y": 919
+			},
+			"to": {
+				"x": 174.2,
+				"y": 929
+			},
+			"label": "B3-V1 top",
+			"note": "B3-V1 top",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 164.2,
+				"y": 934
+			},
+			"to": {
+				"x": 176.2,
+				"y": 944
+			},
+			"label": "B3-V1 base",
+			"note": "B3-V1 base",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 149.2,
+				"y": 924
+			},
+			"to": {
+				"x": 159.2,
+				"y": 934
+			},
+			"label": "B3-V2 top",
+			"note": "B3-V2 top",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 149.2,
+				"y": 939
+			},
+			"to": {
+				"x": 161.2,
+				"y": 949
+			},
+			"label": "B3-V2 base",
+			"note": "B3-V2 base",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

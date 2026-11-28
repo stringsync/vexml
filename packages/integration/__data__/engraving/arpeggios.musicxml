@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): arpeggio-design-and-placement (p. 131) — wavy line after barline, left of accidentals, spanning noteheads only -->
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>half</type>
+        <accidental>sharp</accidental>
+        <notations><arpeggiate/></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>half</type>
+        <notations><arpeggiate/></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>C</step><alter>1</alter><octave>5</octave></pitch>
+        <duration>8</duration>
+        <type>half</type>
+        <accidental>sharp</accidental>
+        <notations><arpeggiate/></notations>
+      </note>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
+    </measure>
+
+    <!-- M2 (index 1): arpeggio-direction-arrows (p. 131) — unmarked, down arrow, up arrow -->
+    <measure number="2">
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations><arpeggiate/></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations><arpeggiate/></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations><arpeggiate/></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations><arpeggiate direction="down"/></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations><arpeggiate direction="down"/></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations><arpeggiate direction="down"/></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations><arpeggiate direction="up"/></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations><arpeggiate direction="up"/></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>quarter</type>
+        <notations><arpeggiate direction="up"/></notations>
+      </note>
+      <note><rest/><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M3 (index 2): arpeggio-non-arpeggiate-bracket (p. 132) — vertical square bracket on single stave -->
+    <measure number="3">
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>half</type>
+        <notations><non-arpeggiate type="bottom"/></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <type>half</type>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>8</duration>
+        <type>half</type>
+        <notations><non-arpeggiate type="top"/></notations>
+      </note>
+      <note><rest/><duration>8</duration><type>half</type></note>
+    </measure>
+  </part>
+</score-partwise>

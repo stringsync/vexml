@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_rhythm-whole-note-alignment.png",
+	"width": 932,
+	"height": 322,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 399.4,
+				"y": 121
+			},
+			"to": {
+				"x": 416.4,
+				"y": 131
+			},
+			"label": "Upper part first onset",
+			"note": "Upper part first onset",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 399.4,
+				"y": 196
+			},
+			"to": {
+				"x": 411.4,
+				"y": 206
+			},
+			"label": "Lower part first onset",
+			"note": "Lower part first onset",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

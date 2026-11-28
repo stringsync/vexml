@@ -24,6 +24,7 @@ export declare class ChordTranslator {
     applyNoteColors(staveNote: StaveNote, chord: Chord): void;
     private vexflowKey;
     private spellKey;
+    private noteheadSuffix;
     private displayKey;
     private pitchedRestKey;
     private addAccidentals;
@@ -34,19 +35,28 @@ export declare class ChordTranslator {
     private noteheadRun;
     private addDots;
     private applyStemNone;
+    private shortenOutwardStem;
+    private extendFlaggedStem;
+    private extendTiedFlaggedStem;
+    private hasStemSideTieStart;
     private slashGlyph;
     private middleKey;
+    private hideNoneNoteheads;
     private addSlashNoteheads;
 }
 export declare const ACCIDENTAL_CODES: Record<string, string>;
 export declare function smuflGlyph(name: string | null): string | undefined;
 interface VexflowChordOptions {
     alignCenter?: boolean;
+    staffSpace?: number;
+    multipleVoices?: boolean;
     octaveShift?: number;
     defaultStem?: 'up' | 'down';
     stem?: 'up' | 'down';
     slashed?: boolean;
     styled?: NoteStyle;
+    opensSystem?: boolean;
+    keyAlters?: ReadonlyMap<string, number>;
 }
 export declare const SLASH_GLYPHS: Record<string, string>;
 export declare const SLASH_GLYPH_FILLED = "\uE100";

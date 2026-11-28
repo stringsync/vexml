@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_rhythm-compressed-gaps.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 315.4,
+				"y": 89
+			},
+			"to": {
+				"x": 383.6,
+				"y": 89
+			},
+			"label": "6¾",
+			"note": "M2 after 2 quarter-note beats: 6¾ stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 383.6,
+				"y": 89
+			},
+			"to": {
+				"x": 421.9,
+				"y": 89
+			},
+			"label": "3¾",
+			"note": "M2 after 1 quarter-note beats: 3¾ stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 421.9,
+				"y": 89
+			},
+			"to": {
+				"x": 450.6,
+				"y": 89
+			},
+			"label": "2¾",
+			"note": "M2 after 0.5 quarter-note beats: 2¾ stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

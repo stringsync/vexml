@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_dot-line-position.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 269.7,
+				"y": 121
+			},
+			"to": {
+				"x": 281.7,
+				"y": 131
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 287,
+				"y": 119
+			},
+			"to": {
+				"x": 291,
+				"y": 123
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

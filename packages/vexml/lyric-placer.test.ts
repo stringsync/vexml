@@ -172,11 +172,11 @@ describe('LyricPlacer', () => {
 		expect(v1.fillStyle).toBe('#123456');
 	});
 
-	it('registers each syllable as an annotation obstacle centered on its notehead', () => {
+	it('registers each syllable as a lyric obstacle centered on its notehead', () => {
 		const { placer, obstacles } = makePlacer();
 		placer.pin([note(100, [new FakeLyricMark(0, { width: 20 })])], 3, 200);
 		const [hit] = obstacles();
-		expect(hit?.other).toMatchObject({ kind: 'annotation', band: 3 });
+		expect(hit?.other).toMatchObject({ kind: 'lyric', band: 3 });
 		// The notehead's center is half a notehead (6) right of its left edge.
 		expect(hit?.other.rect).toMatchObject({
 			x: 96,
@@ -252,30 +252,86 @@ describe('LyricPlacer', () => {
 		expect(obstacles()).toHaveLength(0);
 	});
 
-	it('spreads extra hyphens across a gap wider than the hyphen distance', () => {
+	const rest = (x: number, ticks: number) =>
+		({
+			getAbsoluteX: () => x,
+			getNoteHeadBeginX: () => x,
+			getNoteHeadEndX: () => x + 12,
+			getModifiers: () => [],
+			checkStave: () => stave,
+			isRest: () => true,
+			getTicks: () => ({ value: () => ticks }),
+		}) as unknown as StaveNote;
+
+	it('spreads hyphens across a gap wider than the hyphen distance', () => {
 		const { placer } = makePlacer({ hyphenDistance: 30 });
 		const al = new FakeLyricMark(0, { hyphenated: true });
-		const near = new FakeLyricMark(0, { hyphenated: true });
+		const near = new FakeLyricMark(0, { hyphenated: true, continues: true });
 		placer.pin(
 			[
 				note(100, [al]),
 				note(200, [near]),
-				note(220, [new FakeLyricMark(0, {})]),
+				note(220, [new FakeLyricMark(0, { continues: true })]),
 			],
 			0,
 			50,
 		);
-		// From al's hyphen (116 - 3) to the next syllable's ink (196 + 3): 86px holds two
-		// more, a third of the way apart. The next pair sits closer than the distance.
+		placer.drawSystemHyphens(0);
+		// From al's right ink (116 - 3) to near's left ink (196 + 3): 86px holds two
+		// hyphens spaced evenly; near to the final syllable (133 to 216 -> 6px) gets one centred.
 		expect(al.hyphens.map(Math.round)).toEqual([142, 170]);
-		expect(near.hyphens).toEqual([]);
+		expect(near.hyphens.map(Math.round)).toEqual([216]);
 	});
 
-	it('draws no extra hyphens without a hyphen distance', () => {
+	it('centres a single hyphen between syllables without a hyphen distance', () => {
 		const { placer } = makePlacer();
-		const al = new FakeLyricMark(0, { hyphenated: true });
-		placer.pin([note(100, [al]), note(400, [new FakeLyricMark(0, {})])], 0, 50);
-		expect(al.hyphens).toEqual([]);
+		const wa = new FakeLyricMark(0, { hyphenated: true });
+		const ter = new FakeLyricMark(0, { continues: true });
+		placer.pin([note(100, [wa]), rest(150, 2048), note(200, [ter])], 0, 50);
+		placer.drawSystemHyphens(0);
+		// Midpoint of (113, 199) is 156: one centred hyphen across the short eighth rest.
+		expect(wa.hyphens.map(Math.round)).toEqual([156]);
+		expect(ter.hyphens).toEqual([]);
+	});
+
+	it('places hyphens before and after extended rests without filling the rest passage', () => {
+		const { placer } = makePlacer();
+		const ter = new FakeLyricMark(0, { hyphenated: true });
+		const fall = new FakeLyricMark(0, { continues: true });
+		// Two half rests (8192 ticks each) across measures on the same system.
+		placer.pin([note(100, [ter]), rest(160, 8192)], 0, 50);
+		placer.pin([rest(260, 8192), note(340, [fall])], 0, 50);
+		placer.drawSystemHyphens(0);
+		expect(ter.hyphens.map(Math.round)).toEqual([125]);
+		expect(fall.hyphens.map(Math.round)).toEqual([327]);
+	});
+
+	it('places trailing and leading hyphens across a system break', () => {
+		const { placer } = makePlacer();
+		const wa = new FakeLyricMark(0, { hyphenated: true });
+		const ter = new FakeLyricMark(0, { continues: true });
+		placer.pin([note(100, [wa])], 0, 50, { system: 0 });
+		placer.drawSystemHyphens(0);
+		placer.pin([note(100, [ter])], 0, 50, { system: 1 });
+		placer.drawSystemHyphens(1);
+		expect(wa.hyphens).toHaveLength(1);
+		expect(ter.hyphens).toHaveLength(1);
+		expect(wa.hyphens[0]).toBeGreaterThan(113);
+		expect(ter.hyphens[0]).toBeLessThan(99);
+	});
+
+	it('places a hyphen after a melisma extender instead of over it', () => {
+		const { placer } = makePlacer();
+		const ov = new FakeLyricMark(0, {
+			extend: true,
+			hyphenated: true,
+			width: 30,
+		});
+		const er = new FakeLyricMark(0, { continues: true });
+		placer.pin([note(100, [ov]), note(150, []), note(220, [er])], 0, 50);
+		placer.drawSystemHyphens(0);
+		// Melisma ends at 156 (150 + 6); er starts at 219 (216 + 3); midpoint is 187.5.
+		expect(ov.hyphens.map(Math.round)).toEqual([188]);
 	});
 
 	it('draws a melisma line up to the note before the next syllable in its verse', () => {

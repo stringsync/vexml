@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_organ-single-manual-brace.png",
+	"width": 932,
+	"height": 322,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 31,
+				"y": 96
+			},
+			"to": {
+				"x": 32,
+				"y": 217
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 17,
+				"y": 95
+			},
+			"to": {
+				"x": 29,
+				"y": 138
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 512,
+				"y": 96
+			},
+			"to": {
+				"x": 514,
+				"y": 136
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 512,
+				"y": 176
+			},
+			"to": {
+				"x": 514,
+				"y": 216
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 890,
+				"y": 96
+			},
+			"to": {
+				"x": 902,
+				"y": 136
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 890,
+				"y": 176
+			},
+			"to": {
+				"x": 902,
+				"y": 216
+			},
+			"label": "Connector",
+			"note": "Connector",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

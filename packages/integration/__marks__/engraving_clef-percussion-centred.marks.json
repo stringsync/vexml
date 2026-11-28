@@ -1,0 +1,79 @@
+{
+	"screenshot": "engraving_clef-percussion-centred.png",
+	"width": 932,
+	"height": 322,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 106
+			},
+			"to": {
+				"x": 901,
+				"y": 106
+			},
+			"label": "",
+			"note": "Upper boundary of middle two spaces (line 4)",
+			"role": "reference"
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 126
+			},
+			"to": {
+				"x": 901,
+				"y": 126
+			},
+			"label": "",
+			"note": "Lower boundary of middle two spaces (line 2)",
+			"role": "reference"
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 31,
+				"y": 196
+			},
+			"to": {
+				"x": 901,
+				"y": 196
+			},
+			"label": "",
+			"note": "Single stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 36,
+				"y": 106
+			},
+			"to": {
+				"x": 51,
+				"y": 126
+			},
+			"label": "0",
+			"note": "5-line percussion clef centre is 0 spaces from middle line, within middle two spaces",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 36,
+				"y": 186
+			},
+			"to": {
+				"x": 51,
+				"y": 206
+			},
+			"label": "0",
+			"note": "1-line percussion clef centre is 0 spaces from the line",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

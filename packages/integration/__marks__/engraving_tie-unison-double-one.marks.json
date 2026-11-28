@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tie-unison-double-one.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 773,
+				"y": 440
+			},
+			"to": {
+				"x": 820,
+				"y": 447
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

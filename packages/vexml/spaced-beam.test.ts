@@ -129,4 +129,40 @@ describe('SpacedBeam', () => {
 		);
 		expect(beam.renderOptions.beamWidth).toBe(5);
 	});
+
+	it('sizes flat 1- and 2-beam stems 3½ in a space and 3¼ on a line', () => {
+		const flatReach = (key: string, duration: string, direction: number) => {
+			const stave = new Stave(0, 40, 300);
+			const notes = [0, 1].map((index) => {
+				const note = new StaveNote({
+					keys: [key],
+					duration,
+					stemDirection: direction,
+				});
+				note.setStave(stave);
+				new TickContext()
+					.addTickable(note)
+					.preFormat()
+					.setX(50 + index * 40);
+				return note;
+			});
+			const beam = new SpacedBeam(notes, false);
+			beam.renderOptions.flatBeams = true;
+			beam.postFormat();
+			const tip = beam.renderOptions.flatBeamOffset ?? Number.NaN;
+			const head = notes[0]?.getYs()[0] ?? Number.NaN;
+			return (head - tip) * direction;
+		};
+		expect(flatReach('a/4', '8', Stem.UP)).toBeCloseTo(35);
+		expect(flatReach('a/4', '16', Stem.UP)).toBeCloseTo(35);
+		expect(flatReach('g/4', '8', Stem.UP)).toBeCloseTo(32.5);
+		expect(flatReach('g/4', '16', Stem.UP)).toBeCloseTo(32.5);
+		expect(flatReach('c/5', '8', Stem.DOWN)).toBeCloseTo(35);
+		expect(flatReach('c/5', '16', Stem.DOWN)).toBeCloseTo(35);
+		expect(flatReach('d/5', '8', Stem.DOWN)).toBeCloseTo(32.5);
+		expect(flatReach('d/5', '16', Stem.DOWN)).toBeCloseTo(32.5);
+		// Ledger-line notes still reach the middle line (4 spaces from C6 / A3).
+		expect(flatReach('c/6', '16', Stem.DOWN)).toBeCloseTo(40);
+		expect(flatReach('a/3', '16', Stem.UP)).toBeCloseTo(40);
+	});
 });

@@ -11,8 +11,12 @@ export type PedalStyle = {
     sostenuto: boolean;
     /** The span picks up an earlier one (a resume): no down sign or hook. */
     resumed: boolean;
+    /** The span confirms a continuing pedal at the start of a new system: "(Ped.)". */
+    confirmed?: boolean;
     /** The span is dropped rather than released (a discontinue): no release sign or hook. */
     discontinued: boolean;
+    /** Explicit right edge (e.g. system-end barline) when the line runs open across a break. */
+    endX?: number;
 };
 export declare class PedalLine extends PedalMarking {
     private readonly down;
@@ -23,6 +27,7 @@ export declare class PedalLine extends PedalMarking {
     draw(): void;
     private drawLine;
     private drawSigns;
+    private drawDepressSign;
     private depressSign;
     private liftX;
 }

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1"><part-name>Timpani</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>F</sign><line>4</line></clef>
+      </attributes>
+      <note>
+        <pitch><step>B</step><alter>-1</alter><octave>2</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <accidental>flat</accidental>
+        <notations>
+          <slur type="start" number="1"/>
+          <glissando type="start" number="1" line-type="solid"/>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>3</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <notations>
+          <slur type="stop" number="1"/>
+          <glissando type="stop" number="1"/>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>3</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <notations>
+          <slur type="start" number="1"/>
+          <glissando type="start" number="1" line-type="solid"/>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>B</step><alter>-1</alter><octave>2</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <notations>
+          <slur type="stop" number="1"/>
+          <glissando type="stop" number="1"/>
+        </notations>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <pitch><step>B</step><alter>-1</alter><octave>2</octave></pitch>
+        <duration>8</duration><voice>1</voice><type>half</type>
+        <accidental>flat</accidental>
+        <notations>
+          <ornaments><tremolo type="single">3</tremolo></ornaments>
+          <glissando type="start" number="1" line-type="solid"/>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>3</octave></pitch>
+        <duration>8</duration><voice>1</voice><type>half</type>
+        <notations>
+          <ornaments><tremolo type="single">3</tremolo></ornaments>
+          <glissando type="stop" number="1"/>
+        </notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

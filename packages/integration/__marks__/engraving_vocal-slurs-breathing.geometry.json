@@ -1,0 +1,43 @@
+{
+	"screenshot": "engraving_vocal-slurs-breathing.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 487 },
+		{ "index": 1, "system": 0, "x": 518, "w": 383 },
+		{ "index": 2, "system": 1, "x": 31, "w": 336.72 },
+		{ "index": 3, "system": 1, "x": 367.72, "w": 219.79 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 487
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 518,
+			"w": 383
+		},
+		{
+			"part": 0,
+			"measure": 2,
+			"staff": 1,
+			"lines": [271.69, 281.69, 291.69, 301.69, 311.69],
+			"x": 31,
+			"w": 336.72
+		},
+		{
+			"part": 0,
+			"measure": 3,
+			"staff": 1,
+			"lines": [271.69, 281.69, 291.69, 301.69, 311.69],
+			"x": 367.72,
+			"w": 219.79
+		}
+	]
+}

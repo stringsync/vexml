@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_rest-whole-bar-centre.png",
+	"width": 932,
+	"height": 602,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 184,
+				"y": 466
+			},
+			"to": {
+				"x": 195,
+				"y": 472
+			},
+			"label": "M3 whole-bar rest",
+			"note": "M3 whole-bar rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 594,
+				"y": 466
+			},
+			"to": {
+				"x": 605,
+				"y": 472
+			},
+			"label": "M4 whole-bar rest",
+			"note": "M4 whole-bar rest",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

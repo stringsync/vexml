@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tuplet-bracket-omit-beamed.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 553,
+				"y": 311
+			},
+			"to": {
+				"x": 564,
+				"y": 326
+			},
+			"label": "numeral only",
+			"note": "numeral only",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

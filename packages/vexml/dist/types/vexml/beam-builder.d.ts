@@ -1,5 +1,5 @@
 import type { BeamRun, Note } from '@stringsync/mdom';
-import { Beam, type StaveNote } from 'vexflow/core';
+import { type Beam, type StaveNote } from 'vexflow/core';
 import type { Appearance } from './appearance.js';
 import type { ScoreReader } from './score-reader.js';
 export type BeamOptions = {

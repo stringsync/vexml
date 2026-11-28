@@ -1,0 +1,187 @@
+{
+	"screenshot": "engraving_choral-satb-two-stave-stems.png",
+	"width": 932,
+	"height": 499,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 166,
+				"y": 120
+			},
+			"to": {
+				"x": 167,
+				"y": 155
+			},
+			"label": "Up stem",
+			"note": "Up stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 232,
+				"y": 115
+			},
+			"to": {
+				"x": 233,
+				"y": 150
+			},
+			"label": "Up stem",
+			"note": "Up stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 299,
+				"y": 110
+			},
+			"to": {
+				"x": 300,
+				"y": 145
+			},
+			"label": "Up stem",
+			"note": "Up stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 166,
+				"y": 286
+			},
+			"to": {
+				"x": 167,
+				"y": 313
+			},
+			"label": "Up stem",
+			"note": "Up stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 232,
+				"y": 283
+			},
+			"to": {
+				"x": 233,
+				"y": 308
+			},
+			"label": "Up stem",
+			"note": "Up stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 299,
+				"y": 286
+			},
+			"to": {
+				"x": 300,
+				"y": 313
+			},
+			"label": "Up stem",
+			"note": "Up stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 155,
+				"y": 165
+			},
+			"to": {
+				"x": 156,
+				"y": 200
+			},
+			"label": "Down stem",
+			"note": "Down stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 221,
+				"y": 160
+			},
+			"to": {
+				"x": 223,
+				"y": 195
+			},
+			"label": "Down stem",
+			"note": "Down stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 288,
+				"y": 155
+			},
+			"to": {
+				"x": 289,
+				"y": 190
+			},
+			"label": "Down stem",
+			"note": "Down stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 155,
+				"y": 333
+			},
+			"to": {
+				"x": 156,
+				"y": 368
+			},
+			"label": "Down stem",
+			"note": "Down stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 221,
+				"y": 329
+			},
+			"to": {
+				"x": 223,
+				"y": 363
+			},
+			"label": "Down stem",
+			"note": "Down stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 288,
+				"y": 323
+			},
+			"to": {
+				"x": 289,
+				"y": 358
+			},
+			"label": "Down stem",
+			"note": "Down stem",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

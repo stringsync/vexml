@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_beam-slope-ends-on-lines.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 456,
+				"y": 899
+			},
+			"to": {
+				"x": 462,
+				"y": 908
+			},
+			"label": "line",
+			"note": "M13 E/4: all beam ends touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 496,
+				"y": 894
+			},
+			"to": {
+				"x": 502,
+				"y": 903
+			},
+			"label": "line",
+			"note": "M13 G/4: all beam ends touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 536,
+				"y": 894
+			},
+			"to": {
+				"x": 542,
+				"y": 903
+			},
+			"label": "line",
+			"note": "M13 F/4: all beam ends touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 575,
+				"y": 889
+			},
+			"to": {
+				"x": 581,
+				"y": 898
+			},
+			"label": "line",
+			"note": "M13 A/4: all beam ends touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 615,
+				"y": 889
+			},
+			"to": {
+				"x": 621,
+				"y": 905
+			},
+			"label": "line",
+			"note": "M13 G/4: all beam ends touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 717,
+				"y": 879
+			},
+			"to": {
+				"x": 723,
+				"y": 896
+			},
+			"label": "line",
+			"note": "M13 C/5: all beam ends touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 752,
+				"y": 891
+			},
+			"to": {
+				"x": 758,
+				"y": 915
+			},
+			"label": "line",
+			"note": "M13 E/4: all beam ends touch a stave line",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 847,
+				"y": 882
+			},
+			"to": {
+				"x": 853,
+				"y": 906
+			},
+			"label": "line",
+			"note": "M13 A/4: all beam ends touch a stave line",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

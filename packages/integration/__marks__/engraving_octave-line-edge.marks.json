@@ -1,0 +1,65 @@
+{
+	"screenshot": "engraving_octave-line-edge.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 114,
+				"y": 62
+			},
+			"to": {
+				"x": 148,
+				"y": 62
+			},
+			"label": "",
+			"note": "M1 8va numeral top at y=46",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 126,
+				"y": 60
+			},
+			"to": {
+				"x": 148,
+				"y": 64
+			},
+			"label": "0",
+			"note": "M1 8va line at y=46 vs numeral top y=46 (0 spaces off, expected 0)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 563,
+				"y": 165
+			},
+			"to": {
+				"x": 598,
+				"y": 165
+			},
+			"label": "",
+			"note": "M4 8vb numeral base at y=149",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 576,
+				"y": 163
+			},
+			"to": {
+				"x": 598,
+				"y": 168
+			},
+			"label": "0",
+			"note": "M4 8vb line at y=150 vs numeral base y=149 (0 spaces off, expected 0)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

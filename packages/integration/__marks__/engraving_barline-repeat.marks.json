@@ -1,0 +1,157 @@
+{
+	"screenshot": "engraving_barline-repeat.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 753,
+				"y": 96
+			},
+			"to": {
+				"x": 755,
+				"y": 136
+			},
+			"label": "Repeat stroke",
+			"note": "Repeat stroke",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 758,
+				"y": 96
+			},
+			"to": {
+				"x": 763,
+				"y": 136
+			},
+			"label": "Repeat stroke",
+			"note": "Repeat stroke",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 747,
+				"y": 109
+			},
+			"to": {
+				"x": 751,
+				"y": 113
+			},
+			"label": "Repeat dot",
+			"note": "Repeat dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 747,
+				"y": 119
+			},
+			"to": {
+				"x": 751,
+				"y": 123
+			},
+			"label": "Repeat dot",
+			"note": "Repeat dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 755,
+				"y": 89
+			},
+			"to": {
+				"x": 758,
+				"y": 89
+			},
+			"label": "¼",
+			"note": "Clear gap between repeat strokes: ¼ stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 609,
+				"y": 96
+			},
+			"to": {
+				"x": 614,
+				"y": 136
+			},
+			"label": "Repeat stroke",
+			"note": "Repeat stroke",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 617,
+				"y": 96
+			},
+			"to": {
+				"x": 619,
+				"y": 136
+			},
+			"label": "Repeat stroke",
+			"note": "Repeat stroke",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 622,
+				"y": 109
+			},
+			"to": {
+				"x": 625,
+				"y": 113
+			},
+			"label": "Repeat dot",
+			"note": "Repeat dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 622,
+				"y": 119
+			},
+			"to": {
+				"x": 625,
+				"y": 123
+			},
+			"label": "Repeat dot",
+			"note": "Repeat dot",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 614,
+				"y": 89
+			},
+			"to": {
+				"x": 617,
+				"y": 89
+			},
+			"label": "¼",
+			"note": "Clear gap between repeat strokes: ¼ stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

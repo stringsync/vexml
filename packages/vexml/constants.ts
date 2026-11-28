@@ -27,6 +27,20 @@ export const TILE_SIZE =
 /** Default standard-layout width. */
 export const DEFAULT_WIDTH = 900;
 
+/** Default stem stroke width (px) when the document declares no `<appearance>` stem width. */
+export const DEFAULT_STEM_WIDTH =
+	// Bravura's SMuFL engraving default (0.12 spaces at 10px/space): thinner than stave lines
+	// (Behind Bars p. 13) without anti-aliasing to faint grey on 1x screens.
+	1.2;
+
+// VexFlow’s default beam width, also used for the heavy stroke of a closing barline.
+export const DEFAULT_BEAM_WIDTH = 5;
+
+/** Default notation stave-line thickness (px) when the document declares no `<appearance>` staff width. */
+export const DEFAULT_STAFF_LINE_WIDTH =
+	// Bravura's SMuFL engraving default (0.13 spaces at 10px/space), paired with DEFAULT_STEM_WIDTH.
+	1.3;
+
 /** Left/right page margin. Leaves room for the brace/bracket drawn left of the stave. */
 export const PAGE_MARGIN_X = 15;
 
@@ -141,6 +155,9 @@ export const LEAD_KEY = 40;
 /** Lead glyph width for a time signature, printed once at the piece start. */
 export const LEAD_TIME = 32;
 
+/** Extra lead width for an opening forward repeat barline (`||:`) beyond a plain barline. */
+export const LEAD_REPEAT_BEGIN = 16;
+
 /** Horizontal gap (px) between a right-aligned part label and its stave. */
 export const LABEL_GAP =
 	// Horizontal gap between a right-aligned part label and the stave it sits beside. Wide
@@ -183,6 +200,9 @@ export const TAB_MIN_NOTE_SPACING = 32;
  * triplet brackets and their numerals do not touch. */
 export const TUPLET_MIN_GROUP_WIDTH = 64;
 
+/** VexFlow's default distance between staff lines, in pixels. */
+export const STAVE_LINE_DISTANCE = 10;
+
 /** Space between tablature string lines, in px. Wider than a notation staff's 10px so stacked
  * fret digits and inner-string hammer-on arcs have vertical breathing room. */
 export const TAB_LINE_DISTANCE = 15;
@@ -202,7 +222,7 @@ export const GRACE_SPACING =
 	// it would fling the dots out to the right.
 	16;
 
-/** Grace tab frets, as a fraction of the main-note fret size (matches Soundslice's ~80%). */
+/** Grace tab frets, as a fraction of the main-note fret size (~80%). */
 export const TAB_GRACE_SCALE = 0.8;
 
 /** Padding added to a tab grace group's width (vexflow's groupSpacingTab is 0). */
@@ -350,6 +370,10 @@ export const CHORD_DIAGRAM_PADDING =
  * both read as annotations above the notes. */
 export const WORDS_FONT_SIZE = 13;
 
+/** Default text size for tempo indications (`<words>` paired with `<sound tempo>` or
+ * `<metronome>`), larger than ordinary text so tempo headings stand out (Behind Bars p. 182). */
+export const TEMPO_WORDS_FONT_SIZE = 16;
+
 /** How far a words-direction baseline sits above the top staff line. */
 export const WORDS_Y_OFFSET = 14;
 
@@ -408,11 +432,19 @@ export const NAVIGATION_TEXT_GAP = 4;
 /** How tall a crescendo/diminuendo hairpin's open mouth is. */
 export const HAIRPIN_HEIGHT = 10;
 
+/** Fraction of a hairpin's mouth height kept open at the broken end of a system wrap
+ * (the left of a continuing crescendo, the right of a continuing diminuendo). */
+export const HAIRPIN_BREAK_OPEN_RATIO = 0.4;
+
 /** Horizontal air between a crescendo and the diminuendo immediately following it. */
 export const HAIRPIN_CHAIN_GAP = 4;
 
 /** Air between a dynamic and the hairpin that starts past it. */
 export const HAIRPIN_DYNAMIC_GAP = 3;
+
+/** Furthest a downbeat note may sit past its barline (in staff spaces) for an incoming
+ * crescendo resolving into a dynamic there to stop at the barline instead of crossing it. */
+export const HAIRPIN_BARLINE_STOP_MAX_SPACES = 3;
 
 /** Radius of the circle at a niente hairpin's point. */
 export const HAIRPIN_NIENTE_RADIUS = 3;
@@ -493,6 +525,9 @@ export const TUPLET_NUMERAL_HALF_HEIGHT =
 	// about 12px; the rest is air.
 	8;
 
+/** Minimum vertical air (px) a longer tuplet bracket keeps outside a shorter or intersecting slur on the same side. */
+export const TUPLET_SLUR_GAP = 4;
+
 /** Rehearsal-mark (section header, e.g. "A" or "Chorus") text size, bigger and bolder than
  * the other above-stave annotations, since it's the label a player navigates the chart by. */
 export const REHEARSAL_FONT_SIZE = 14;
@@ -542,6 +577,10 @@ export const TEMPO_MARK_GAP =
 	// statements rather than one long equation. Pre-scale, like everything else in the mark.
 	12;
 
+/** Horizontal gap (px) between a tempo word and a following inline metronome mark in the
+ * same `<direction>` (e.g. `Tempo I (quarter = 72)`). */
+export const TEMPO_WORD_METRONOME_GAP = 6;
+
 /** bpm a metronome directive falls back to when it carries no number. */
 export const DEFAULT_TEMPO_BPM = 120;
 
@@ -553,17 +592,34 @@ export const LEDGER_HEADROOM =
 /** Raises a slur's endpoints off the notes. */
 export const SLUR_Y_SHIFT = 10;
 
+/** Minimum vertical clearance (px) an open system-break slur end keeps outside the closing barline. */
+export const SLUR_BARLINE_GAP = 4;
+
 /** How much further a slur end lifts to clear a tie on its own note (px). */
 export const SLUR_TIE_GAP =
 	// How much further a slur end lifts to clear a tie on its own note, in px: a slur ending
 	// on a tied note bows past the tie rather than lying on it.
 	7;
 
+/** How much further an outer nested slur's shared endpoint lifts past an inner slur's endpoint (px). */
+export const SLUR_NESTED_END_GAP = 4;
+
+/** Minimum vertical air an outer nested slur keeps outside an inner slur's arc (px). */
+export const SLUR_NESTED_GAP = 3;
+
+/** How much further a longer slur's endpoint lifts past a shorter same-side tuplet bracket (px). */
+export const SLUR_TUPLET_END_GAP = 4;
+
+/** Minimum vertical air a longer slur keeps outside a shorter same-side tuplet bracket and numeral (px). */
+export const SLUR_TUPLET_GAP = 4;
+
 /** Extra clearance the arc keeps above/below the most extreme note it spans. */
 export const SLUR_MARGIN = 14;
 
 /** The gap a slur keeps off an accidental it passes: only one it would cross lifts it. */
 export const SLUR_ACCIDENTAL_GAP = 2;
+/** Minimum vertical air a slur arc keeps outside a mid-phrase fermata on its bulge side (Behind Bars p. 189). */
+export const SLUR_FERMATA_GAP = 6;
 /** The air a slur end keeps past an articulation on its own note (a staccato it starts or
  * ends over), in px. Tighter than SLUR_MARGIN: the end is meant to read as attached to the
  * note, just clear of the mark. */
@@ -654,20 +710,11 @@ export const SLUR_GHOST_OVERLAP = 4;
  * its real end however it has to bend. */
 export const SLUR_GHOST_MAX_BETWEEN = 2;
 
-/** Which point on a note a grace curve starts and stops at: 'stem-base' (the stem's far end) or 'notehead' (the bulge-side notehead). */
-export const SLUR_GRACE_ANCHOR: 'stem-base' | 'notehead' =
-	// Which point on a note a grace curve starts and stops at. vexflow's own Curve can only
-	// name two spots per note and neither is reliably the right one on a chord, so vexml
-	// resolves the Y itself (see HeadCurve) and this picks which one. Change this one value to
-	// re-aim every grace curve in the score:  - 'stem-base': the far end of the stem (below a
-	// stem-down note, above a stem-up one). On a stem-down chord this is the stem's bottom
-	// tip, past every notehead. - 'notehead': the bulge-side notehead itself, ignoring the
-	// stem. Tighter, but on a stem-down chord it stops well short of where the stem ends.
-	// Both read the bulge side, so an above-bulging curve mirrors each rule upward.
-	'stem-base';
-
 /** How far across its notehead, from the left, a grace curve starts. */
 export const GRACE_START = 0.35;
+
+/** Horizontal clearance (px) a below grace slur keeps left of a down-stem target note so the tip does not touch the stem. */
+export const GRACE_END_STEM_GAP = 4;
 
 /** Guards float drift when comparing dyadic beat positions. */
 export const EPSILON = 1e-6;
@@ -803,6 +850,9 @@ export const OTTAVA_TEXT_LINE =
 
 /** Length (px) of the vertical hook a <bracket>'s `line-end` terminates in. */
 export const DIRECTION_LINE_HOOK = 8;
+
+/** Horizontal air (px) between a word (e.g. "cresc.") and the <dashes> line that continues it. */
+export const DIRECTION_LINE_WORD_GAP = 4;
 
 /** Inset (px) of a consolidated multi-bar rest's thick horizontal bar from each edge of its
  * measure, so the bar reads as sitting inside the measure rather than touching its barlines. */

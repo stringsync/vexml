@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tuplet-bracket-long-final.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 418,
+				"y": 67
+			},
+			"to": {
+				"x": 470,
+				"y": 86
+			},
+			"label": "quarter+half bracket",
+			"note": "quarter+half bracket",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

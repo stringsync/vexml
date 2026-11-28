@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_guitar-harmonic-combined-stem.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 795.8,
+				"y": 151
+			},
+			"to": {
+				"x": 807.8,
+				"y": 161
+			},
+			"label": "Stopped 1",
+			"note": "Stopped 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 795.8,
+				"y": 96
+			},
+			"to": {
+				"x": 805.8,
+				"y": 106
+			},
+			"label": "Harmonic 1",
+			"note": "Harmonic 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 846,
+				"y": 131
+			},
+			"to": {
+				"x": 858,
+				"y": 141
+			},
+			"label": "Stopped 2",
+			"note": "Stopped 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 846,
+				"y": 111
+			},
+			"to": {
+				"x": 856,
+				"y": 121
+			},
+			"label": "Harmonic 2",
+			"note": "Harmonic 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

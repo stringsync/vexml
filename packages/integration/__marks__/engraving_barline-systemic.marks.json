@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_barline-systemic.png",
+	"width": 932,
+	"height": 322,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 31,
+				"y": 96
+			},
+			"to": {
+				"x": 32,
+				"y": 216
+			},
+			"label": "System opening across both staves",
+			"note": "System opening across both staves",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

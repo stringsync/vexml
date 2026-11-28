@@ -54,6 +54,7 @@ export declare class ConnectorDrawer {
     private drawGroupTimes;
     drawSystemStart(column: ConnectorColumn): void;
     drawPartSymbol(part: Part, top: Stave, bottom: Stave, measureX: number): void;
+    alignBarlines(column: ConnectorColumn, staves: readonly Stave[]): void;
     barlineRuns(column: ConnectorColumn): Array<{
         top: Stave;
         bottom: Stave;

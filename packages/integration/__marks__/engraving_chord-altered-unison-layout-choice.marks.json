@@ -1,0 +1,217 @@
+{
+	"screenshot": "engraving_chord-altered-unison-layout-choice.png",
+	"width": 932,
+	"height": 882,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 639,
+				"y": 412
+			},
+			"to": {
+				"x": 649,
+				"y": 440
+			},
+			"label": "M12 accidental",
+			"note": "M12 accidental",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 627,
+				"y": 409
+			},
+			"to": {
+				"x": 636,
+				"y": 433
+			},
+			"label": "M12 accidental",
+			"note": "M12 accidental",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 664,
+				"y": 426
+			},
+			"to": {
+				"x": 665,
+				"y": 458
+			},
+			"label": "M12 stem",
+			"note": "M12 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 664,
+				"y": 428
+			},
+			"to": {
+				"x": 676,
+				"y": 460
+			},
+			"label": "M12 flag",
+			"note": "M12 flag",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 101,
+				"y": 584
+			},
+			"to": {
+				"x": 110,
+				"y": 608
+			},
+			"label": "M13 accidental",
+			"note": "M13 accidental",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 91,
+				"y": 587
+			},
+			"to": {
+				"x": 97,
+				"y": 614
+			},
+			"label": "M13 accidental",
+			"note": "M13 accidental",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 78,
+				"y": 587
+			},
+			"to": {
+				"x": 88,
+				"y": 615
+			},
+			"label": "M13 accidental",
+			"note": "M13 accidental",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 124,
+				"y": 559
+			},
+			"to": {
+				"x": 125,
+				"y": 601
+			},
+			"label": "M13 stem",
+			"note": "M13 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 124,
+				"y": 557
+			},
+			"to": {
+				"x": 135,
+				"y": 589
+			},
+			"label": "M13 flag",
+			"note": "M13 flag",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 192,
+				"y": 749
+			},
+			"to": {
+				"x": 201,
+				"y": 773
+			},
+			"label": "M18 accidental",
+			"note": "M18 accidental",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 179,
+				"y": 752
+			},
+			"to": {
+				"x": 189,
+				"y": 780
+			},
+			"label": "M18 accidental",
+			"note": "M18 accidental",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 215,
+				"y": 729
+			},
+			"to": {
+				"x": 216,
+				"y": 766
+			},
+			"label": "M18 stem",
+			"note": "M18 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 239,
+				"y": 727
+			},
+			"to": {
+				"x": 240,
+				"y": 761
+			},
+			"label": "M18 stem",
+			"note": "M18 stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 215,
+				"y": 726
+			},
+			"to": {
+				"x": 240,
+				"y": 733
+			},
+			"label": "M18 beam",
+			"note": "M18 beam",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

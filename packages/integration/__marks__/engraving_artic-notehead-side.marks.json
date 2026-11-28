@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_artic-notehead-side.png",
+	"width": 932,
+	"height": 1047,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 122,
+				"y": 88
+			},
+			"to": {
+				"x": 125,
+				"y": 91
+			},
+			"label": "Dot 1",
+			"note": "Dot 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 216,
+				"y": 88
+			},
+			"to": {
+				"x": 219,
+				"y": 91
+			},
+			"label": "Dot 2",
+			"note": "Dot 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 310,
+				"y": 142
+			},
+			"to": {
+				"x": 313,
+				"y": 145
+			},
+			"label": "Dot 3",
+			"note": "Dot 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 404,
+				"y": 130
+			},
+			"to": {
+				"x": 407,
+				"y": 133
+			},
+			"label": "Dot 4",
+			"note": "Dot 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,36 @@
+{
+	"screenshot": "engraving_clef-change-smaller.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 30,
+				"y": 82
+			},
+			"to": {
+				"x": 30,
+				"y": 152
+			},
+			"label": "7",
+			"note": "opening treble clef height: 7 spaces",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 770,
+				"y": 97
+			},
+			"to": {
+				"x": 770,
+				"y": 144
+			},
+			"label": "0.67×",
+			"note": "mid-measure treble clef height: 4¾ spaces (0.67× opening, expected 0.6–0.75×)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

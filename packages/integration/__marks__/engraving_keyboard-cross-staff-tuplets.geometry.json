@@ -1,0 +1,41 @@
+{
+	"screenshot": "engraving_keyboard-cross-staff-tuplets.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 17, "w": 586.19 },
+		{ "index": 1, "system": 0, "x": 603.19, "w": 297.81 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 572.19
+		},
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 2,
+			"lines": [196, 206, 216, 226, 236],
+			"x": 31,
+			"w": 572.19
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 603.19,
+			"w": 297.81
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 2,
+			"lines": [196, 206, 216, 226, 236],
+			"x": 603.19,
+			"w": 297.81
+		}
+	]
+}

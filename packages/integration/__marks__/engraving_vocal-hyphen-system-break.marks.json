@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_vocal-hyphen-system-break.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 532,
+				"y": 494
+			},
+			"to": {
+				"x": 536,
+				"y": 495
+			},
+			"label": "Break hyphen",
+			"note": "Break hyphen",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 646,
+				"y": 494
+			},
+			"to": {
+				"x": 649,
+				"y": 495
+			},
+			"label": "Break hyphen",
+			"note": "Break hyphen",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 139,
+				"y": 654
+			},
+			"to": {
+				"x": 143,
+				"y": 655
+			},
+			"label": "Break hyphen",
+			"note": "Break hyphen",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 162,
+				"y": 827
+			},
+			"to": {
+				"x": 165,
+				"y": 828
+			},
+			"label": "Break hyphen",
+			"note": "Break hyphen",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,6 +1,7 @@
 import { Rect } from 'core/geometry';
 import type { RenderContext, Stave, StaveNote } from 'vexflow/core';
 import {
+	HAIRPIN_BREAK_OPEN_RATIO,
 	HAIRPIN_HEIGHT,
 	HAIRPIN_NIENTE_RADIUS,
 	HAIRPIN_STAVE_GAP,
@@ -23,6 +24,12 @@ export type HairpinOptions = {
 	runsOff?: 'left' | 'right';
 	/* Where a wrapped half ends: its system's edge, when that lies past its own stave's. */
 	edgeX?: number;
+	/* True when the wedge's closed end stays open because it continues across a system break. */
+	openPoint?: boolean;
+	/* True when the wedge's stop anchors on beat 1 of its measure. */
+	stopOnDownbeat?: boolean;
+	/* True when the wedge's stop sets an explicit horizontal position. */
+	stopPositioned?: boolean;
 };
 
 /*
@@ -45,6 +52,9 @@ export class Hairpin {
 	private readonly spread: number | null;
 	private readonly runsOff: 'left' | 'right' | null;
 	private readonly edgeX: number | null;
+	private readonly openPoint: boolean;
+	private readonly stopOnDownbeat: boolean;
+	private readonly stopPositioned: boolean;
 	constructor(
 		private readonly from: StaveNote,
 		private readonly to: StaveNote,
@@ -57,6 +67,9 @@ export class Hairpin {
 		this.spread = opts.spread ?? null;
 		this.runsOff = opts.runsOff ?? null;
 		this.edgeX = opts.edgeX ?? null;
+		this.openPoint = opts.openPoint ?? false;
+		this.stopOnDownbeat = opts.stopOnDownbeat ?? false;
+		this.stopPositioned = opts.stopPositioned ?? false;
 	}
 	/*
 	 * Extra distance from the staff, set by the caller when the fixed gap would put the wedge
@@ -84,12 +97,28 @@ export class Hairpin {
 		this.endInset = end;
 		return this;
 	}
+	setEndInset(end: number): this {
+		this.endInset = end;
+		return this;
+	}
 	setLineWidth(lineWidth: number | null): this {
 		this.lineWidth = lineWidth;
 		return this;
 	}
 	get stave(): Stave {
 		return this.from.checkStave();
+	}
+	get endStave(): Stave {
+		return this.to.checkStave();
+	}
+	get isWrapped(): boolean {
+		return this.runsOff !== null;
+	}
+	get endsOnDownbeat(): boolean {
+		return this.stopOnDownbeat;
+	}
+	get hasPositionedEnd(): boolean {
+		return this.stopPositioned;
 	}
 	get above(): boolean {
 		return this.placement === 'above';
@@ -148,11 +177,18 @@ export class Hairpin {
 		// at the first note), a diminuendo closes rightward (its point sits at the last).
 		const [x1, x2] = this.span();
 		const [pointX, mouthX] = this.crescendo ? [x1, x2] : [x2, x1];
-		// A niente point is a small circle the two arms run up to, not a shared vertex.
-		const radius = this.niente ? HAIRPIN_NIENTE_RADIUS : 0;
+		// A system-break continuation leaves the broken point end open at a partial spread
+		// instead of closing to a vertex (and omits any niente circle from that broken end).
+		const radius = this.niente && !this.openPoint ? HAIRPIN_NIENTE_RADIUS : 0;
 		const run = Math.abs(mouthX - pointX);
 		const circleX = pointX + (mouthX > pointX ? radius : -radius);
-		const armY = (y: number) => mid + (y - mid) * (run ? radius / run : 0);
+		const openHalf = this.openPoint
+			? ((bottom - top) * HAIRPIN_BREAK_OPEN_RATIO) / 2
+			: 0;
+		const armY = (y: number) =>
+			this.openPoint
+				? mid + Math.sign(y - mid) * openHalf
+				: mid + (y - mid) * (run ? radius / run : 0);
 		ctx.save();
 		if (this.lineWidth !== null) {
 			ctx.setLineWidth(this.lineWidth);
@@ -163,7 +199,7 @@ export class Hairpin {
 		ctx.beginPath();
 		ctx.moveTo(mouthX, top);
 		ctx.lineTo(circleX, armY(top));
-		if (radius) {
+		if (radius || this.openPoint) {
 			ctx.moveTo(circleX, armY(bottom));
 		}
 		ctx.lineTo(mouthX, bottom);

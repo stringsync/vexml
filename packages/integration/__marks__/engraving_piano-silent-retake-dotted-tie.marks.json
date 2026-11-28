@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_piano-silent-retake-dotted-tie.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 635,
+				"y": 104
+			},
+			"to": {
+				"x": 675,
+				"y": 109
+			},
+			"label": "Dotted tie",
+			"note": "Dotted tie",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

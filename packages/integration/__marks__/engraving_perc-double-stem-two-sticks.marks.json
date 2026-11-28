@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_perc-double-stem-two-sticks.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 662,
+				"y": 111
+			},
+			"to": {
+				"x": 674,
+				"y": 121
+			},
+			"label": "head",
+			"note": "head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 662,
+				"y": 111
+			},
+			"to": {
+				"x": 674,
+				"y": 121
+			},
+			"label": "head",
+			"note": "head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 716,
+				"y": 111
+			},
+			"to": {
+				"x": 728,
+				"y": 121
+			},
+			"label": "head",
+			"note": "head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 716,
+				"y": 111
+			},
+			"to": {
+				"x": 728,
+				"y": 121
+			},
+			"label": "head",
+			"note": "head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 662,
+				"y": 116
+			},
+			"to": {
+				"x": 664,
+				"y": 151
+			},
+			"label": "stem",
+			"note": "stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 673,
+				"y": 81
+			},
+			"to": {
+				"x": 674,
+				"y": 116
+			},
+			"label": "stem",
+			"note": "stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 716,
+				"y": 116
+			},
+			"to": {
+				"x": 718,
+				"y": 151
+			},
+			"label": "stem",
+			"note": "stem",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 727,
+				"y": 81
+			},
+			"to": {
+				"x": 728,
+				"y": 116
+			},
+			"label": "stem",
+			"note": "stem",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tremolo-tuplet-numeral.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 123,
+				"y": 67
+			},
+			"to": {
+				"x": 134,
+				"y": 82
+			},
+			"label": "Numeral 1",
+			"note": "Numeral 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 148,
+				"y": 151
+			},
+			"to": {
+				"x": 159,
+				"y": 166
+			},
+			"label": "Numeral 2",
+			"note": "Numeral 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

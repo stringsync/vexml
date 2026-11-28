@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_string-open-lower-voice.png",
+	"width": 932,
+	"height": 1265,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 622,
+				"y": 245
+			},
+			"to": {
+				"x": 630,
+				"y": 253
+			},
+			"label": "V1 Open",
+			"note": "V1 Open",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 622,
+				"y": 354
+			},
+			"to": {
+				"x": 630,
+				"y": 362
+			},
+			"label": "V2 Open",
+			"note": "V2 Open",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

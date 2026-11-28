@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_grace-stem-direction.png",
+	"width": 932,
+	"height": 739,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 77,
+				"y": 276
+			},
+			"to": {
+				"x": 93,
+				"y": 304.3
+			},
+			"label": "M4 grace 1",
+			"note": "M4 grace 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 155.3,
+				"y": 236
+			},
+			"to": {
+				"x": 171.3,
+				"y": 264.3
+			},
+			"label": "M4 grace 2",
+			"note": "M4 grace 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 233.7,
+				"y": 226
+			},
+			"to": {
+				"x": 249.7,
+				"y": 254.3
+			},
+			"label": "M4 grace 3",
+			"note": "M4 grace 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 438,
+				"y": 241
+			},
+			"to": {
+				"x": 454,
+				"y": 269.3
+			},
+			"label": "Voice 1 grace",
+			"note": "Voice 1 grace",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 430,
+				"y": 284.3
+			},
+			"to": {
+				"x": 446,
+				"y": 312.7
+			},
+			"label": "Voice 2 grace",
+			"note": "Voice 2 grace",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

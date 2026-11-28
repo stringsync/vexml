@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_gliss-line-between-heads.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 129,
+				"y": 126
+			},
+			"to": {
+				"x": 174,
+				"y": 146
+			},
+			"label": "Glissando",
+			"note": "Glissando",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 290,
+				"y": 86
+			},
+			"to": {
+				"x": 336,
+				"y": 106
+			},
+			"label": "Glissando",
+			"note": "Glissando",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

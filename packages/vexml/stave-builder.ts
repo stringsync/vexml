@@ -1,4 +1,4 @@
-import type { Measure, Part } from '@stringsync/mdom';
+import type { Clef, Key, Measure, Part, Time } from '@stringsync/mdom';
 import { Rect } from 'core/geometry';
 import {
 	Barline,
@@ -45,6 +45,12 @@ export interface StaveColumn {
 	/** Which stave row (counted over the whole system) this stave lands on. */
 	staveRow: number;
 	isSystemStart: boolean;
+	/** Whether the preceding measure was drawn on this same system (not an edge gap). */
+	prevOnSameSystem: boolean;
+	/** Whether the preceding measure closed the system above (not an edge gap). */
+	prevOnPreviousSystem: boolean;
+	/** Whether the next measure opens the system below (not an edge gap). */
+	nextOnNextSystem: boolean;
 	/** Whether this is the score's first measure of music, which prints the time signature.
 	 * Not measure 0 when leading gaps sit before it. */
 	opensScore: boolean;
@@ -63,6 +69,8 @@ export interface StaveColumn {
 	/** Whether the previous measure's backward repeat already closed this boundary, so
 	 * this measure skips its own opening dots. */
 	suppressBegRepeat: boolean;
+	/** Whether the previous measure closed with a backward repeat barline. */
+	prevRepeatEnd: boolean;
 	// The next measure's box when it carries a volta on this same system, or null;
 	// see the early obstacle registration in build.
 	nextVolta: { x: number; width: number } | null;
@@ -162,6 +170,86 @@ export class StaveBuilder {
 	}
 
 	/*
+	 * The key change opening `next`, with the cancel of the key it replaces, for the cautionary
+	 * key at the end of the system above it; null when `next` changes no printed key.
+	 */
+	private cautionaryKeyOf(
+		// vet-ignore noop-objects-over-null: an absent value is part of this public shape, and a Noop stand-in would change what callers and tests see
+		next: Measure | undefined,
+		measure: Measure,
+		staffNumber: string,
+	): { key: Key; cancel: KeyCancel | null } | null {
+		const key = next?.getKey(staffNumber) ?? null;
+		const prevKey = measure.getKey(staffNumber);
+		if (
+			!next ||
+			!key?.rootNote ||
+			key.getAttribute('print-object') === 'no' ||
+			this.reader.keyIdentity(key) === this.reader.keyIdentity(prevKey) ||
+			this.factory.customKey(next, staffNumber).length > 0
+		) {
+			return null;
+		}
+		return { key, cancel: this.signatures.keyCancel(key, prevKey, true) };
+	}
+
+	/*
+	 * The time-signature change opening `next`, for the cautionary time signature printed
+	 * after the closing barline at the end of the system above it; null when `next` changes
+	 * no printed time signature.
+	 */
+	private cautionaryTimeOf(
+		// vet-ignore noop-objects-over-null: an absent value is part of this internal lookup
+		next: Measure | undefined,
+		measure: Measure,
+		staffNumber: string,
+		opensScore: boolean,
+	): { time: Time; spec: string } | null {
+		const nextTime = next?.getTime(staffNumber) ?? null;
+		if (!next || !nextTime || nextTime.getAttribute('print-object') === 'no') {
+			return null;
+		}
+		const nextSpec = this.signatures.timeSignatureSpec(nextTime);
+		if (!nextSpec) {
+			return null;
+		}
+		const curTime = measure.getTime(staffNumber);
+		const curSpec =
+			this.signatures.timeSignatureSpec(curTime) ??
+			(opensScore && !curTime ? '4/4' : null);
+		return nextSpec !== curSpec ? { time: nextTime, spec: nextSpec } : null;
+	}
+
+	/*
+	 * The printed clef change opening `next` relative to the clef in effect at the end of `prev`,
+	 * or null when the clef is unchanged or hidden (`print-object="no"`).
+	 */
+	private clefChangeAt(
+		// vet-ignore noop-objects-over-null: an absent value is part of this internal lookup
+		next: Measure | undefined,
+		// vet-ignore noop-objects-over-null: an absent value is part of this internal lookup
+		prev: Measure | undefined,
+		staffNumber: string,
+	): Clef | null {
+		if (!next || !prev) {
+			return null;
+		}
+		const clef = next.getClef(staffNumber);
+		if (!clef || clef.getAttribute('print-object') === 'no') {
+			return null;
+		}
+		if (
+			this.signatures.vexflowClefSpec(clef) ===
+			this.signatures.vexflowClefSpec(
+				this.reader.clefAtEndOf(prev, staffNumber),
+			)
+		) {
+			return null;
+		}
+		return clef;
+	}
+
+	/*
 	 * Build the column's stave for the given part-staff: place it at its row, set its
 	 * clef/key/time and barlines, and dress it with the repeat, volta and measure-number
 	 * furniture. `visibleCount` is how many staves the part renders (tab/notation staves
@@ -175,7 +263,7 @@ export class StaveBuilder {
 		column: StaveColumn,
 	): BuiltStave {
 		const m = column.measureIndex;
-		const clef = measure.getClef(staffNumber);
+		const _clef = measure.getClef(staffNumber);
 		// Each system gets its own offsets once pass one has measured it (a bar that needs a
 		// wide grand-staff gap doesn't spread its neighbours apart); pass one has none yet.
 		const offsets =
@@ -292,43 +380,76 @@ export class StaveBuilder {
 				? this.signatures.keyCancel(key, prevKey)
 				: null;
 		// Naturals that print before the barline went at the previous measure's end instead.
+		// A key change at a system break is cautioned at the end of the system above, so the
+		// new system opens with the new key alone.
 		const keyCancel =
-			cancel && cancel.location !== 'before-barline' ? cancel : undefined;
+			cancel &&
+			cancel.location !== 'before-barline' &&
+			!(column.prevOnPreviousSystem && !isTab)
+				? cancel
+				: undefined;
+		const nextMeasure = part.measures[m + 1];
 		const nextCancel = isTab
 			? null
-			: this.endCancelOf(part.measures[m + 1], measure, staffNumber);
-		if (nextCancel) {
+			: this.endCancelOf(nextMeasure, measure, staffNumber);
+		const cautionary =
+			column.nextOnNextSystem && !isTab && !this.gaps.has(m + 1)
+				? this.cautionaryKeyOf(nextMeasure, measure, staffNumber)
+				: null;
+		if (cautionary) {
+			this.factory.addEndKey(
+				stave,
+				cautionary.key,
+				cautionary.cancel,
+				this.reader.clefAtEndOf(measure, staffNumber),
+			);
+		} else if (nextCancel) {
 			this.factory.addEndCancel(
 				stave,
 				nextCancel,
 				this.reader.clefAtEndOf(measure, staffNumber),
 			);
 		}
-		// Against the clef in effect at the END of the previous measure, not at its start: a
-		// change stated INSIDE that measure (or as its trailing courtesy clef) has already
-		// been announced, so restating it here would draw the same glyph twice.
-		const clefChanged =
-			m > 0 &&
-			this.signatures.vexflowClefSpec(clef) !==
-				this.signatures.vexflowClefSpec(
-					this.reader.clefAtEndOf(prevMeasure, staffNumber),
-				);
+		// A barline clef change on the next measure goes BEFORE the barline (at the end of
+		// this measure), both mid-system and as a courtesy clef at a system end, unless
+		// it explicitly asks for `after-barline="yes"` or follows a backward repeat barline
+		// (Behind Bars p. 235: changes applying only after a repeat go after the repeat barline).
+		if (nextMeasure && !isTab && !this.gaps.has(m + 1)) {
+			const nextClef = this.clefChangeAt(nextMeasure, measure, staffNumber);
+			const afterRepeat =
+				column.decoration.repeatEnd &&
+				nextClef?.getAttribute('after-barline') !== 'no';
+			if (
+				nextClef &&
+				nextClef.getAttribute('after-barline') !== 'yes' &&
+				!afterRepeat
+			) {
+				this.factory.addEndClefChange(stave, nextMeasure, staffNumber);
+			}
+		}
 
 		// Clef and key print at every system start (re-stated on each new line).
-		// A mid-system clef or key change is also redrawn where it happens (the time
-		// signature is not repeated for either). The changed clef is drawn at the
-		// small "change clef" size, which is how a mid-piece clef change is engraved:
-		// it reads as a correction to the stave, not a fresh system opening.
+		// A mid-system clef change normally went at the end of the previous measure above;
+		// draw it after the barline only when `after-barline="yes"`, when it follows a
+		// backward repeat barline, or when the previous measure was not drawn on this system.
+		// Key changes always follow the barline.
 		if (column.isSystemStart) {
 			this.factory.addOpening(placed, measure, staffNumber, keyCancel);
 		} else {
-			if (
-				clef &&
-				clefChanged &&
-				!isTab &&
-				clef.getAttribute('print-object') !== 'no'
-			) {
-				this.factory.addClefChange(stave, measure, staffNumber);
+			if (!isTab && m > 0) {
+				const startClef = this.clefChangeAt(measure, prevMeasure, staffNumber);
+				const afterRepeat =
+					column.prevRepeatEnd &&
+					startClef?.getAttribute('after-barline') !== 'no';
+				if (
+					startClef &&
+					(!column.prevOnSameSystem ||
+						this.gaps.has(m - 1) ||
+						startClef.getAttribute('after-barline') === 'yes' ||
+						afterRepeat)
+				) {
+					this.factory.addClefChange(stave, measure, staffNumber);
+				}
 			}
 			if (keyChanged && !isTab) {
 				this.factory.addKey(stave, measure, staffNumber, keyCancel);
@@ -350,6 +471,22 @@ export class StaveBuilder {
 		const span = this.groupTimeSpans.findIndex(
 			(s) => partIndex >= s.fromPart && partIndex <= s.toPart,
 		);
+		const cautionaryTime =
+			column.nextOnNextSystem && !isTab && !this.gaps.has(m + 1) && span < 0
+				? this.cautionaryTimeOf(
+						nextMeasure,
+						measure,
+						staffNumber,
+						column.opensScore,
+					)
+				: null;
+		if (cautionaryTime) {
+			this.factory.addEndTimeSignature(
+				stave,
+				cautionaryTime.time,
+				cautionaryTime.spec,
+			);
+		}
 		const time = measure.getTime(staffNumber);
 		const timeSpec =
 			this.signatures.timeSignatureSpec(time) ??
@@ -435,7 +572,7 @@ export class StaveBuilder {
 			// vexflow centers the number on the stave's x, baselined 3px under its top-text
 			// line (Stave.draw).
 			this.context.save();
-			this.context.setFont(stave.getFont());
+			this.context.setFont(stave.fontInfo);
 			this.addMeasureNumberObstacle(
 				String(Number(measure.number)),
 				stave.getX(),
@@ -483,7 +620,7 @@ export class StaveBuilder {
 		if (showNumber && (numberOccluded || numberBeside)) {
 			const baseline = stave.getYForTopText(0) + (numberOccluded ? -14 : 3);
 			this.context.save();
-			this.context.setFont(stave.getFont());
+			this.context.setFont(stave.fontInfo);
 			this.context.setFillStyle(this.textColor);
 			this.context.fillText(measure.number, stave.getX() + 4, baseline);
 			this.addMeasureNumberObstacle(

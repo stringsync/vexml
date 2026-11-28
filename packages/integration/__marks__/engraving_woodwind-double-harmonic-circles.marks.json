@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_woodwind-double-harmonic-circles.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 756,
+				"y": 68
+			},
+			"to": {
+				"x": 764,
+				"y": 76
+			},
+			"label": "Upper 1",
+			"note": "Upper 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 756,
+				"y": 83
+			},
+			"to": {
+				"x": 764,
+				"y": 91
+			},
+			"label": "Lower 1",
+			"note": "Lower 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 841,
+				"y": 63
+			},
+			"to": {
+				"x": 849,
+				"y": 71
+			},
+			"label": "Upper 2",
+			"note": "Upper 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 841,
+				"y": 78
+			},
+			"to": {
+				"x": 849,
+				"y": 86
+			},
+			"label": "Lower 2",
+			"note": "Lower 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

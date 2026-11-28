@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tie-moving-alternate-sides.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 570,
+				"y": 602
+			},
+			"to": {
+				"x": 599,
+				"y": 608
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 654,
+				"y": 614
+			},
+			"to": {
+				"x": 684,
+				"y": 620
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

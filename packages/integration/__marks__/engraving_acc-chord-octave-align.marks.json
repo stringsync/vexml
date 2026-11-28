@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_acc-chord-octave-align.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 223.8,
+				"y": 268
+			},
+			"to": {
+				"x": 236.8,
+				"y": 296
+			},
+			"label": "F#/4 sign",
+			"note": "F#/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 223.8,
+				"y": 233
+			},
+			"to": {
+				"x": 236.8,
+				"y": 261
+			},
+			"label": "F#/5 sign",
+			"note": "F#/5 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 272.5,
+				"y": 269
+			},
+			"to": {
+				"x": 284.5,
+				"y": 295
+			},
+			"label": "Eb/4 sign",
+			"note": "Eb/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 272.5,
+				"y": 219
+			},
+			"to": {
+				"x": 284.5,
+				"y": 245
+			},
+			"label": "Ab/5 sign",
+			"note": "Ab/5 sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

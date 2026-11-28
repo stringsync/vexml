@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_repeat-beat-slash.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 262,
+				"y": 105
+			},
+			"to": {
+				"x": 283,
+				"y": 126
+			},
+			"label": "M1 slash 1",
+			"note": "M1 slash 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 657,
+				"y": 105
+			},
+			"to": {
+				"x": 699,
+				"y": 126
+			},
+			"label": "M1 slash 2",
+			"note": "M1 slash 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 422,
+				"y": 265
+			},
+			"to": {
+				"x": 485,
+				"y": 286
+			},
+			"label": "M2 slash 1",
+			"note": "M2 slash 1",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

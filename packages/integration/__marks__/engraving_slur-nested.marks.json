@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_slur-nested.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 525,
+				"y": 237
+			},
+			"to": {
+				"x": 615,
+				"y": 254
+			},
+			"label": "Short slur",
+			"note": "Short slur",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 524,
+				"y": 226
+			},
+			"to": {
+				"x": 794,
+				"y": 259
+			},
+			"label": "Long slur",
+			"note": "Long slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

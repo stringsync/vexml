@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_kbd-three-voices-same-stem-offset.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 131,
+				"y": 111
+			},
+			"to": {
+				"x": 143,
+				"y": 121
+			},
+			"label": "v2 #1",
+			"note": "v2 #1",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 121
+			},
+			"to": {
+				"x": 129,
+				"y": 131
+			},
+			"label": "v3 #1",
+			"note": "v3 #1",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 223.2,
+				"y": 116
+			},
+			"to": {
+				"x": 235.2,
+				"y": 126
+			},
+			"label": "v2 #2",
+			"note": "v2 #2",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 209.2,
+				"y": 126
+			},
+			"to": {
+				"x": 221.2,
+				"y": 136
+			},
+			"label": "v3 #2",
+			"note": "v3 #2",
+			"role": "measure",
+			"pass": false
+		}
+	]
+}

@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_guitar-clef-octave-down.png",
+	"width": 932,
+	"height": 294,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 36,
+				"y": 134
+			},
+			"to": {
+				"x": 63,
+				"y": 213
+			},
+			"label": "Octave-down clef",
+			"note": "Octave-down clef",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

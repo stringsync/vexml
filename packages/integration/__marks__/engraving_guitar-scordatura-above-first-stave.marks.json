@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_guitar-scordatura-above-first-stave.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 118,
+				"y": 69
+			},
+			"to": {
+				"x": 238,
+				"y": 82
+			},
+			"label": "Scordatura",
+			"note": "Scordatura",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_tuplet-numeral-centre.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 384,
+				"y": 67
+			},
+			"to": {
+				"x": 395,
+				"y": 82
+			},
+			"label": "odd 3",
+			"note": "odd 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 575,
+				"y": 67
+			},
+			"to": {
+				"x": 587,
+				"y": 82
+			},
+			"label": "even 6",
+			"note": "even 6",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 760,
+				"y": 65
+			},
+			"to": {
+				"x": 771,
+				"y": 80
+			},
+			"label": "subdivided 3",
+			"note": "subdivided 3",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

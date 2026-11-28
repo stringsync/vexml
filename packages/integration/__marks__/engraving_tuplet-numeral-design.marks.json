@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tuplet-numeral-design.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 157,
+				"y": 72
+			},
+			"to": {
+				"x": 168,
+				"y": 87
+			},
+			"label": "tuplet numeral",
+			"note": "tuplet numeral",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

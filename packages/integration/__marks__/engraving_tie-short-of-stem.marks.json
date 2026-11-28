@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tie-short-of-stem.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 793,
+				"y": 256
+			},
+			"to": {
+				"x": 844,
+				"y": 263
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 793,
+				"y": 279
+			},
+			"to": {
+				"x": 844,
+				"y": 286
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

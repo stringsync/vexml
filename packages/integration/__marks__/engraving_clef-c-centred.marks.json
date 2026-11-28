@@ -1,0 +1,65 @@
+{
+	"screenshot": "engraving_clef-c-centred.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 298.3,
+				"y": 116
+			},
+			"to": {
+				"x": 501.6,
+				"y": 116
+			},
+			"label": "middle C",
+			"note": "Middle stave line (alto clef centre)",
+			"role": "reference"
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 501.6,
+				"y": 106
+			},
+			"to": {
+				"x": 681,
+				"y": 106
+			},
+			"label": "middle C",
+			"note": "Fourth stave line (tenor clef centre)",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 269,
+				"y": 102
+			},
+			"to": {
+				"x": 288,
+				"y": 130
+			},
+			"label": "0",
+			"note": "alto clef centre is 0 spaces from middle line",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 473,
+				"y": 92
+			},
+			"to": {
+				"x": 492,
+				"y": 120
+			},
+			"label": "0",
+			"note": "tenor clef centre is 0 spaces from fourth line",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_tempo-align-repeat.png",
+	"width": 932,
+	"height": 607,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 792,
+				"y": 96
+			},
+			"to": {
+				"x": 883,
+				"y": 112
+			},
+			"label": "Più mosso",
+			"note": "Più mosso",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 105,
+				"y": 272
+			},
+			"to": {
+				"x": 198,
+				"y": 287
+			},
+			"label": "Animando",
+			"note": "Animando",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 105,
+				"y": 301
+			},
+			"to": {
+				"x": 115,
+				"y": 342
+			},
+			"label": "Repeat sign",
+			"note": "Repeat sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

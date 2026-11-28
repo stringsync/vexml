@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN"
+  "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name print-object="no">MusicXML Part</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- Measure 1: tremolo-two-note-beam-design (pp. 225-226) -->
+    <measure number="1">
+      <attributes>
+        <divisions>8</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="start">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="stop">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="start">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="stop">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="start">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="stop">3</tremolo></ornaments></notations>
+      </note>
+    </measure>
+
+    <!-- Measure 2: tremolo-two-note-stems (p. 226) -->
+    <measure number="2">
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="start">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="stop">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="start">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="stop">3</tremolo></ornaments></notations>
+      </note>
+    </measure>
+
+    <!-- Measure 3: tremolo-two-note-octave-between (p. 226) -->
+    <measure number="3">
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="start">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="stop">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="start">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="stop">3</tremolo></ornaments></notations>
+      </note>
+    </measure>
+
+    <!-- Measure 4: tremolo-two-note-whole-note (pp. 226-227) -->
+    <measure number="4">
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>16</duration>
+        <voice>1</voice>
+        <type>whole</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="start">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>16</duration>
+        <voice>1</voice>
+        <type>whole</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="stop">3</tremolo></ornaments></notations>
+      </note>
+    </measure>
+
+    <!-- Measure 5: tremolo-two-note-whole-note upper & tremolo-two-note-beam-length (p. 228) -->
+    <measure number="5">
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>16</duration>
+        <voice>1</voice>
+        <type>whole</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="start">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>16</duration>
+        <voice>1</voice>
+        <type>whole</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="stop">3</tremolo></ornaments></notations>
+      </note>
+    </measure>
+
+    <!-- Measure 6: tremolo-two-note-beam-length (p. 228) -->
+    <measure number="6">
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="start">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>half</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="stop">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="start">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <time-modification><actual-notes>2</actual-notes><normal-notes>1</normal-notes></time-modification>
+        <notations><ornaments><tremolo type="stop">3</tremolo></ornaments></notations>
+      </note>
+      <note>
+        <rest/>
+        <duration>8</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

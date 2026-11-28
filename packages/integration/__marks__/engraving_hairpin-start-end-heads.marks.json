@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_hairpin-start-end-heads.png",
+	"width": 932,
+	"height": 1373,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 478,
+				"y": 320
+			},
+			"to": {
+				"x": 641,
+				"y": 330
+			},
+			"label": "Hairpin",
+			"note": "Hairpin",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

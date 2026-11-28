@@ -1,0 +1,112 @@
+{
+	"screenshot": "engraving_notehead-size.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 112,
+				"y": 126
+			},
+			"to": {
+				"x": 112,
+				"y": 136
+			},
+			"label": "1",
+			"note": "F/4: height 1 spaces, ½ from nearest line (expected 1 height, ½ off-line)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 152.9,
+				"y": 121
+			},
+			"to": {
+				"x": 152.9,
+				"y": 131
+			},
+			"label": "1",
+			"note": "G/4: height 1 spaces, 0 from nearest line (expected 1 height, 0 off-line)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 193.8,
+				"y": 116
+			},
+			"to": {
+				"x": 193.8,
+				"y": 126
+			},
+			"label": "1",
+			"note": "A/4: height 1 spaces, ½ from nearest line (expected 1 height, ½ off-line)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 234.7,
+				"y": 111
+			},
+			"to": {
+				"x": 234.7,
+				"y": 121
+			},
+			"label": "1",
+			"note": "B/4: height 1 spaces, 0 from nearest line (expected 1 height, 0 off-line)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 287.9,
+				"y": 126
+			},
+			"to": {
+				"x": 287.9,
+				"y": 136
+			},
+			"label": "1",
+			"note": "F/4: height 1 spaces, ½ from nearest line (expected 1 height, ½ off-line)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 337.7,
+				"y": 121
+			},
+			"to": {
+				"x": 337.7,
+				"y": 131
+			},
+			"label": "1",
+			"note": "G/4: height 1 spaces, 0 from nearest line (expected 1 height, 0 off-line)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 398.7,
+				"y": 126
+			},
+			"to": {
+				"x": 398.7,
+				"y": 136
+			},
+			"label": "1",
+			"note": "F/4: height 1 spaces, ½ from nearest line (expected 1 height, ½ off-line)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

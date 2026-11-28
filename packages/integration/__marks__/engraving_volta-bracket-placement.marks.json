@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_volta-bracket-placement.png",
+	"width": 958,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 250,
+				"y": 222
+			},
+			"to": {
+				"x": 384,
+				"y": 237
+			},
+			"label": "Volta m8",
+			"note": "Volta m8",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 386,
+				"y": 222
+			},
+			"to": {
+				"x": 511,
+				"y": 237
+			},
+			"label": "Volta m9",
+			"note": "Volta m9",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

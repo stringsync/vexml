@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_artic-tenuto-ledger-distance.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 519,
+				"y": 326
+			},
+			"to": {
+				"x": 532,
+				"y": 328
+			},
+			"label": "Tenuto 1",
+			"note": "Tenuto 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 609,
+				"y": 331
+			},
+			"to": {
+				"x": 622,
+				"y": 333
+			},
+			"label": "Tenuto 2",
+			"note": "Tenuto 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 698,
+				"y": 326
+			},
+			"to": {
+				"x": 711,
+				"y": 328
+			},
+			"label": "Tenuto 3",
+			"note": "Tenuto 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 788,
+				"y": 331
+			},
+			"to": {
+				"x": 801,
+				"y": 333
+			},
+			"label": "Tenuto 4",
+			"note": "Tenuto 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

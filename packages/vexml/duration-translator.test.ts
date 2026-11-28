@@ -40,6 +40,14 @@ describe('DurationTranslator', () => {
 		expect(durations.code(note)).toBe('h');
 	});
 
+	it('maps a breve note or rest to vexflow’s 1/2 code', () => {
+		const note = noteOf(
+			'<time><beats>8</beats><beat-type>4</beat-type></time>',
+			'<note><rest/><duration>24</duration><type>breve</type></note>',
+		);
+		expect(durations.code(note)).toBe('1/2');
+	});
+
 	it('draws a typeless rest lasting its whole 3/4 bar as a whole rest', () => {
 		const note = noteOf(
 			THREE_FOUR,
@@ -54,6 +62,29 @@ describe('DurationTranslator', () => {
 			'<note><rest/><duration>9</duration></note>',
 		);
 		expect(durations.code(note)).toBe('w');
+	});
+
+	it('draws a typeless whole-bar rest as a whole rest in 3/2 and as a breve rest in 4/2, 8/4 and 5/2', () => {
+		const threeTwo = noteOf(
+			'<time><beats>3</beats><beat-type>2</beat-type></time>',
+			'<note><rest measure="yes"/><duration>18</duration></note>',
+		);
+		const fourTwo = noteOf(
+			'<time><beats>4</beats><beat-type>2</beat-type></time>',
+			'<note><rest measure="yes"/><duration>24</duration></note>',
+		);
+		const eightFour = noteOf(
+			'<time><beats>8</beats><beat-type>4</beat-type></time>',
+			'<note><rest measure="yes"/><duration>24</duration></note>',
+		);
+		const fiveTwo = noteOf(
+			'<time><beats>5</beats><beat-type>2</beat-type></time>',
+			'<note><rest measure="yes"/><duration>30</duration></note>',
+		);
+		expect(durations.code(threeTwo)).toBe('w');
+		expect(durations.code(fourTwo)).toBe('1/2');
+		expect(durations.code(eightFour)).toBe('1/2');
+		expect(durations.code(fiveTwo)).toBe('1/2');
 	});
 
 	it('maps a shorter typeless rest to the note value it equals', () => {

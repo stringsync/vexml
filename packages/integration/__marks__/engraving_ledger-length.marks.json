@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_ledger-length.png",
+	"width": 932,
+	"height": 257,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 114,
+				"y": 86
+			},
+			"to": {
+				"x": 132,
+				"y": 86
+			},
+			"label": "+3/+3px",
+			"note": "M1 C/6 ledger extends 3px left and 3px right of head (expected ≥1px each side)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 144,
+				"y": 86
+			},
+			"to": {
+				"x": 162,
+				"y": 86
+			},
+			"label": "+3/+3px",
+			"note": "M1 D/6 ledger extends 3px left and 3px right of head (expected ≥1px each side)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 174,
+				"y": 156
+			},
+			"to": {
+				"x": 192,
+				"y": 156
+			},
+			"label": "+3/+3px",
+			"note": "M1 A/3 ledger extends 3px left and 3px right of head (expected ≥1px each side)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 204,
+				"y": 156
+			},
+			"to": {
+				"x": 222,
+				"y": 156
+			},
+			"label": "+3/+3px",
+			"note": "M1 C/4 ledger extends 3px left and 3px right of head (expected ≥1px each side)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 253,
+				"y": 88
+			},
+			"to": {
+				"x": 422,
+				"y": 104
+			},
+			"label": "apart",
+			"note": "M2 adjacent 16th-note ledgers: 0 joined segments (expected 0)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

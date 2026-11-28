@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_pedal-sostenuto-label.png",
+	"width": 932,
+	"height": 604,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 286,
+				"y": 254
+			},
+			"to": {
+				"x": 399,
+				"y": 277
+			},
+			"label": "Sost. Ped.",
+			"note": "Sost. Ped.",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

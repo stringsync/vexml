@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tie-stemless.png",
+	"width": 932,
+	"height": 1203,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 598,
+				"y": 620
+			},
+			"to": {
+				"x": 753,
+				"y": 631
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 103,
+				"y": 725
+			},
+			"to": {
+				"x": 275,
+				"y": 737
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

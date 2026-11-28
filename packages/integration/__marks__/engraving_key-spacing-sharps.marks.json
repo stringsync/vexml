@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_key-spacing-sharps.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 302,
+				"y": 82
+			},
+			"to": {
+				"x": 312,
+				"y": 110
+			},
+			"label": "Sharp 1",
+			"note": "Sharp 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 313,
+				"y": 97
+			},
+			"to": {
+				"x": 323,
+				"y": 125
+			},
+			"label": "Sharp 2",
+			"note": "Sharp 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 324,
+				"y": 77
+			},
+			"to": {
+				"x": 334,
+				"y": 105
+			},
+			"label": "Sharp 3",
+			"note": "Sharp 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 335,
+				"y": 92
+			},
+			"to": {
+				"x": 345,
+				"y": 120
+			},
+			"label": "Sharp 4",
+			"note": "Sharp 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

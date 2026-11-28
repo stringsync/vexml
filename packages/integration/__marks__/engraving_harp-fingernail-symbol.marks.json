@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_harp-fingernail-symbol.png",
+	"width": 932,
+	"height": 255,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 678,
+				"y": 88
+			},
+			"to": {
+				"x": 694,
+				"y": 109
+			},
+			"label": "Fingernail 1",
+			"note": "Fingernail 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 729,
+				"y": 93
+			},
+			"to": {
+				"x": 745,
+				"y": 109
+			},
+			"label": "Fingernail 2",
+			"note": "Fingernail 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

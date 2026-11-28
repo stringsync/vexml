@@ -1,0 +1,25 @@
+{
+	"screenshot": "engraving_organ-pedal-markings.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 29, "w": 481.5 },
+		{ "index": 1, "system": 0, "x": 510.5, "w": 388.5 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [98, 108, 118, 128, 138],
+			"x": 29,
+			"w": 481.5
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [98, 108, 118, 128, 138],
+			"x": 510.5,
+			"w": 388.5
+		}
+	]
+}

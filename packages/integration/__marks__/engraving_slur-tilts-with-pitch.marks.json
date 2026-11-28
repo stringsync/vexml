@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_slur-tilts-with-pitch.png",
+	"width": 932,
+	"height": 1202,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 540,
+				"y": 72
+			},
+			"to": {
+				"x": 798,
+				"y": 101
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_grace-slur-below.png",
+	"width": 932,
+	"height": 739,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 80,
+				"y": 449
+			},
+			"to": {
+				"x": 97,
+				"y": 457
+			},
+			"label": "Grace slur 1",
+			"note": "Grace slur 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 249,
+				"y": 464
+			},
+			"to": {
+				"x": 274,
+				"y": 475
+			},
+			"label": "Grace slur 2",
+			"note": "Grace slur 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

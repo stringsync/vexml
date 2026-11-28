@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tie-unison-stem-clear.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 112,
+				"y": 450
+			},
+			"to": {
+				"x": 178,
+				"y": 458
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 112,
+				"y": 464
+			},
+			"to": {
+				"x": 178,
+				"y": 472
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

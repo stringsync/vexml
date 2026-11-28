@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_grace-align-other-part.png",
+	"width": 932,
+	"height": 322,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 381.7,
+				"y": 91
+			},
+			"to": {
+				"x": 393.7,
+				"y": 101
+			},
+			"label": "P1 beat 1",
+			"note": "P1 beat 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 381.7,
+				"y": 196
+			},
+			"to": {
+				"x": 393.7,
+				"y": 206
+			},
+			"label": "P2 beat 1",
+			"note": "P2 beat 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 353.7,
+				"y": 101
+			},
+			"to": {
+				"x": 361.7,
+				"y": 111
+			},
+			"label": "P1 grace",
+			"note": "P1 grace",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

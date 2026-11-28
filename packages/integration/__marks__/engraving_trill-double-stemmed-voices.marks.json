@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_trill-double-stemmed-voices.png",
+	"width": 932,
+	"height": 281,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 520,
+				"y": 50
+			},
+			"to": {
+				"x": 541,
+				"y": 66
+			},
+			"label": "Voice 1 tr",
+			"note": "Voice 1 tr",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 520,
+				"y": 170
+			},
+			"to": {
+				"x": 541,
+				"y": 186
+			},
+			"label": "Voice 2 tr",
+			"note": "Voice 2 tr",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 521,
+				"y": 216
+			},
+			"to": {
+				"x": 536,
+				"y": 230
+			},
+			"label": "Dynamic p",
+			"note": "Dynamic p",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

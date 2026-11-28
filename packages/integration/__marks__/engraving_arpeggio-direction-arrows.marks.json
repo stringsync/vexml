@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_arpeggio-direction-arrows.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 363.8,
+				"y": 106
+			},
+			"to": {
+				"x": 387.8,
+				"y": 146
+			},
+			"label": "Chord 1",
+			"note": "Chord 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 435.4,
+				"y": 106
+			},
+			"to": {
+				"x": 459.4,
+				"y": 151
+			},
+			"label": "Chord 2",
+			"note": "Chord 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 507,
+				"y": 106
+			},
+			"to": {
+				"x": 531,
+				"y": 146
+			},
+			"label": "Chord 3",
+			"note": "Chord 3",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

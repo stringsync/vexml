@@ -1,0 +1,125 @@
+{
+	"screenshot": "engraving_beam-kneed.png",
+	"width": 932,
+	"height": 1727,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 729.7,
+				"y": 1381
+			},
+			"to": {
+				"x": 901,
+				"y": 1381
+			},
+			"label": "outer line",
+			"note": "Top outer stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "line",
+			"from": {
+				"x": 729.7,
+				"y": 1421
+			},
+			"to": {
+				"x": 901,
+				"y": 1421
+			},
+			"label": "outer line",
+			"note": "Bottom outer stave line",
+			"role": "reference"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 741,
+				"y": 1371
+			},
+			"to": {
+				"x": 741,
+				"y": 1400
+			},
+			"label": "3",
+			"note": "M23 A/5: stem 3 spaces (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 789,
+				"y": 1431
+			},
+			"to": {
+				"x": 789,
+				"y": 1402
+			},
+			"label": "3",
+			"note": "M23 C/4: stem 3 spaces (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 792,
+				"y": 1371
+			},
+			"to": {
+				"x": 792,
+				"y": 1403
+			},
+			"label": "3¼",
+			"note": "M23 A/5: stem 3¼ spaces (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 840,
+				"y": 1441
+			},
+			"to": {
+				"x": 840,
+				"y": 1404
+			},
+			"label": "3¾",
+			"note": "M23 A/3: stem 3¾ spaces (expected ≥2½)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 745,
+				"y": 1394
+			},
+			"to": {
+				"x": 786,
+				"y": 1408
+			},
+			"label": "falls",
+			"note": "M23 kneed group 1: falls (½ spaces, expected falls; outer lines clear)",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 795,
+				"y": 1397
+			},
+			"to": {
+				"x": 836,
+				"y": 1410
+			},
+			"label": "falls",
+			"note": "M23 kneed group 2: falls (½ spaces, expected falls; outer lines clear)",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

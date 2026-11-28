@@ -220,6 +220,7 @@ export type CollisionKind =
 	| 'stem'
 	| 'tie'
 	| 'annotation'
+	| 'lyric'
 	| 'diagram'
 	| 'hairpin';
 /*

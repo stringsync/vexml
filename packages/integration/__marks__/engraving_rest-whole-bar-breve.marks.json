@@ -1,0 +1,82 @@
+{
+	"screenshot": "engraving_rest-whole-bar-breve.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 177,
+				"y": 266
+			},
+			"to": {
+				"x": 188,
+				"y": 272
+			},
+			"label": "M4 semibreve",
+			"note": "M4 semibreve",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 342,
+				"y": 266
+			},
+			"to": {
+				"x": 353,
+				"y": 272
+			},
+			"label": "M5 semibreve",
+			"note": "M5 semibreve",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 496,
+				"y": 266
+			},
+			"to": {
+				"x": 507,
+				"y": 272
+			},
+			"label": "M6 semibreve",
+			"note": "M6 semibreve",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 653,
+				"y": 266
+			},
+			"to": {
+				"x": 658,
+				"y": 276
+			},
+			"label": "M7 breve",
+			"note": "M7 breve",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 806,
+				"y": 266
+			},
+			"to": {
+				"x": 811,
+				"y": 276
+			},
+			"label": "M8 breve",
+			"note": "M8 breve",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

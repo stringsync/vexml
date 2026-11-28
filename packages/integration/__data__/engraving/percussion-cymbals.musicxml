@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1"><part-name>Hi-hat</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>percussion</sign></clef>
+      </attributes>
+      <note>
+        <unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <notehead>x</notehead>
+        <notations><technical><open/></technical></notations>
+      </note>
+      <note>
+        <unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <notehead>x</notehead>
+        <notations><technical><stopped/></technical></notations>
+      </note>
+      <note>
+        <unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <notehead>x</notehead>
+        <notations><technical><half-muted/></technical></notations>
+      </note>
+      <note>
+        <unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <notehead>x</notehead>
+        <notations><technical><stopped/></technical></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

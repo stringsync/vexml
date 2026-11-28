@@ -1,0 +1,36 @@
+{
+	"screenshot": "engraving_clef-courtesy-system-end.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 901,
+				"y": 90
+			},
+			"to": {
+				"x": 901,
+				"y": 142
+			},
+			"label": "",
+			"note": "System 1 closing barline",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 873,
+				"y": 99
+			},
+			"to": {
+				"x": 891,
+				"y": 123
+			},
+			"label": "courtesy clef",
+			"note": "courtesy clef before system 1 closing barline",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

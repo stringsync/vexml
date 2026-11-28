@@ -1,0 +1,36 @@
+{
+	"screenshot": "engraving_rest-displaced-outward.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "line",
+			"from": {
+				"x": 639.3,
+				"y": 111
+			},
+			"to": {
+				"x": 659.3,
+				"y": 111
+			},
+			"label": "",
+			"note": "M5 V2 C5 notehead top at y=95",
+			"role": "reference"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 641.3,
+				"y": 74
+			},
+			"to": {
+				"x": 656.3,
+				"y": 108
+			},
+			"label": "clear",
+			"note": "M5 V1 quarter rest bottom y=90 vs V2 C5 top y=95",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

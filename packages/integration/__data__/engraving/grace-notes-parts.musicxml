@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+    <score-part id="P2">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): setup bar -->
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note><pitch><step>C</step><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+    </measure>
+    <!-- M2 (index 1): grace-align-other-part (pp. 127-128) — Part 1 has grace notes after barline; Part 2 aligns with beat 1 -->
+    <measure number="2">
+      <note>
+        <grace/>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+        <beam number="2">begin</beam>
+      </note>
+      <note>
+        <grace/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <type>16th</type>
+        <beam number="1">end</beam>
+        <beam number="2">end</beam>
+      </note>
+      <note><pitch><step>F</step><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+      <note><pitch><step>E</step><octave>5</octave></pitch><duration>8</duration><type>half</type></note>
+    </measure>
+    <!-- M3 (index 2): grace-align-separate-staves (p. 128) — Part 1 has sharps on grace notes; Part 2 has plain grace notes -->
+    <measure number="3">
+      <note>
+        <grace/>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <type>16th</type>
+        <accidental>sharp</accidental>
+        <beam number="1">begin</beam>
+        <beam number="2">begin</beam>
+      </note>
+      <note>
+        <grace/>
+        <pitch><step>G</step><alter>1</alter><octave>4</octave></pitch>
+        <type>16th</type>
+        <accidental>sharp</accidental>
+        <beam number="1">end</beam>
+        <beam number="2">end</beam>
+      </note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>16</duration><type>whole</type></note>
+    </measure>
+  </part>
+  <part id="P2">
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
+    </measure>
+    <measure number="2">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>8</duration><type>half</type></note>
+    </measure>
+    <measure number="3">
+      <note>
+        <grace/>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <type>16th</type>
+        <beam number="1">begin</beam>
+        <beam number="2">begin</beam>
+      </note>
+      <note>
+        <grace/>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <type>16th</type>
+        <beam number="1">end</beam>
+        <beam number="2">end</beam>
+      </note>
+      <note><pitch><step>F</step><octave>4</octave></pitch><duration>16</duration><type>whole</type></note>
+    </measure>
+  </part>
+</score-partwise>

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <identification>
+    <miscellaneous>
+      <miscellaneous-field name="description">Behind Bars p. 434: vocal dynamics, hairpins, expression text above the stave, and vocal articulation placement on mid-stave and low-stave notes with lyrics.</miscellaneous-field>
+    </miscellaneous>
+  </identification>
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): vocal-dynamics-above (p. 434) — dynamic, expression text, and crescendo hairpin with no placement attribute -->
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <direction><direction-type><dynamics><f/></dynamics></direction-type></direction>
+      <direction><direction-type><words>con passione</words></direction-type></direction>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>Come!</text></lyric>
+      </note>
+      <direction><direction-type><wedge type="crescendo"/></direction-type></direction>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>Lift</text></lyric>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>your</text></lyric>
+      </note>
+      <direction><direction-type><wedge type="stop"/></direction-type></direction>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>voice</text></lyric>
+      </note>
+    </measure>
+
+    <!-- M2 (index 1): vocal-dynamics-above (p. 434) — piano dynamic, expression text, and diminuendo hairpin -->
+    <measure number="2">
+      <direction><direction-type><dynamics><p/></dynamics></direction-type></direction>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>Soft</text></lyric>
+      </note>
+      <direction><direction-type><words>dolce</words></direction-type></direction>
+      <direction><direction-type><wedge type="diminuendo"/></direction-type></direction>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>and</text></lyric>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>still</text></lyric>
+      </note>
+      <direction><direction-type><wedge type="stop"/></direction-type></direction>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>now.</text></lyric>
+      </note>
+    </measure>
+
+    <!-- M3 (index 2): vocal-articulation-placement (p. 434) — mid-stave vocal notes with default articulations -->
+    <measure number="3">
+      <print new-system="yes"/>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><articulations><accent/></articulations></notations>
+        <lyric number="1"><syllabic>single</syllabic><text>Praise</text></lyric>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><articulations><tenuto/></articulations></notations>
+        <lyric number="1"><syllabic>single</syllabic><text>the</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><articulations><accent/></articulations></notations>
+        <lyric number="1"><syllabic>single</syllabic><text>bright</text></lyric>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><articulations><staccato/></articulations></notations>
+        <lyric number="1"><syllabic>single</syllabic><text>day.</text></lyric>
+      </note>
+    </measure>
+
+    <!-- M4 (index 3): vocal-articulation-placement (p. 434) — low notes below the stave with articulations and two lyric verses -->
+    <measure number="4">
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><articulations><accent/></articulations></notations>
+        <lyric number="1"><syllabic>single</syllabic><text>Sit</text></lyric>
+        <lyric number="2"><syllabic>single</syllabic><text>Praise</text></lyric>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>3</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><articulations><accent/></articulations></notations>
+        <lyric number="1"><syllabic>single</syllabic><text>laus</text></lyric>
+        <lyric number="2"><syllabic>single</syllabic><text>be</text></lyric>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><articulations><tenuto/></articulations></notations>
+        <lyric number="1"><syllabic>begin</syllabic><text>vo</text></lyric>
+        <lyric number="2"><syllabic>single</syllabic><text>to</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>3</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><articulations><accent/><staccatissimo/></articulations></notations>
+        <lyric number="1"><syllabic>end</syllabic><text>bis.</text></lyric>
+        <lyric number="2"><syllabic>single</syllabic><text>you.</text></lyric>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

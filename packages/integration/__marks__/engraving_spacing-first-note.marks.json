@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_spacing-first-note.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 127,
+				"y": 89
+			},
+			"to": {
+				"x": 148,
+				"y": 89
+			},
+			"label": "2",
+			"note": "Opening metre to unaltered note: 2 stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

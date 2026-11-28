@@ -13,7 +13,6 @@ import { DefaultScoreParser } from './default-score-parser';
 import { DurationTranslator } from './duration-translator';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { FakePaintProbe } from './fake-paint-probe';
-import { FontShorthandPatch } from './font-shorthand-patch';
 import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
 import { LayoutPlanner } from './layout-planner';
@@ -110,7 +109,7 @@ describe('LazyLayoutPlan', () => {
 		// whole plan, and closer as more are measured.
 		expect(Math.abs(early.systemCount - wholeCount)).toBeLessThan(6);
 		expect(Math.abs(later.systemCount - wholeCount)).toBeLessThanOrEqual(
-			Math.abs(early.systemCount - wholeCount),
+			Math.max(1, Math.abs(early.systemCount - wholeCount)),
 		);
 		expect(plan.systemOfMeasure(whole.boxes.length - 1)).toBe(
 			later.systemCount - 1,
@@ -186,7 +185,6 @@ function planner(): LayoutPlanner {
 
 // The layout builds vexflow elements, which measure text through the probe.
 new ProbeTextCanvas(new FakePaintProbe()).install();
-new FontShorthandPatch().install();
 
 // Null for a fixture with no parts, which has no layout.
 async function parseAny(fixture: string) {

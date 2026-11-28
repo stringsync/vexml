@@ -1,17 +1,24 @@
 import type { Chord, Note } from '@stringsync/mdom';
 import type { StaveNote } from 'vexflow/core';
+import { Appearance } from './appearance';
 import { BowedTremolo } from './bowed-tremolo';
+import { DEFAULT_BEAM_WIDTH } from './constants';
 import type { ScoreReader } from './score-reader';
 
-/* Builds the slashes of two-note tremolos. */
+/* Builds the beams of two-note tremolos. */
 export class TremoloBuilder {
-	constructor(private readonly reader: ScoreReader) {}
+	constructor(
+		private readonly reader: ScoreReader,
+		private readonly appearance: Appearance = Appearance.NONE,
+	) {}
 
 	/*
 	 * Two-note tremolos: each <tremolo type="start"> pairs with the next "stop" in the voice's
-	 * chords, and the slashes between their stems are drawn once the notes are placed.
+	 * chords, and the beams between their stems are drawn once the notes are placed.
 	 */
 	build(chords: Chord[], byLead: Map<Note, StaveNote>): BowedTremolo[] {
+		const beamWidth = this.appearance.lineWidth('beam') ?? DEFAULT_BEAM_WIDTH;
+		const levelDistance = this.appearance.distance('beam') ?? beamWidth * 1.5;
 		const out: BowedTremolo[] = [];
 		let open: { note: StaveNote; marks: number } | undefined;
 		for (const { lead } of chords) {
@@ -25,7 +32,12 @@ export class TremoloBuilder {
 			if (tremolo.tremoloType === 'start') {
 				open = { note: staveNote, marks: tremolo.tremoloMarks || 1 };
 			} else if (tremolo.tremoloType === 'stop' && open) {
-				out.push(new BowedTremolo(open.note, staveNote, open.marks));
+				out.push(
+					new BowedTremolo(open.note, staveNote, open.marks, {
+						beamWidth,
+						levelDistance,
+					}),
+				);
 				open = undefined;
 			}
 		}

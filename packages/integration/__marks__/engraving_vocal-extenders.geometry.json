@@ -1,0 +1,61 @@
+{
+	"screenshot": "engraving_vocal-extenders.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 614.16 },
+		{ "index": 1, "system": 0, "x": 645.16, "w": 255.84 },
+		{ "index": 2, "system": 1, "x": 31, "w": 621.56 },
+		{ "index": 3, "system": 1, "x": 652.56, "w": 248.44 },
+		{ "index": 4, "system": 2, "x": 31, "w": 870 },
+		{ "index": 5, "system": 3, "x": 31, "w": 235 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 614.16
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 645.16,
+			"w": 255.84
+		},
+		{
+			"part": 0,
+			"measure": 2,
+			"staff": 1,
+			"lines": [256, 266, 276, 286, 296],
+			"x": 31,
+			"w": 621.56
+		},
+		{
+			"part": 0,
+			"measure": 3,
+			"staff": 1,
+			"lines": [256, 266, 276, 286, 296],
+			"x": 652.56,
+			"w": 248.44
+		},
+		{
+			"part": 0,
+			"measure": 4,
+			"staff": 1,
+			"lines": [416, 426, 436, 446, 456],
+			"x": 31,
+			"w": 870
+		},
+		{
+			"part": 0,
+			"measure": 5,
+			"staff": 1,
+			"lines": [576, 586, 596, 606, 616],
+			"x": 31,
+			"w": 235
+		}
+	]
+}

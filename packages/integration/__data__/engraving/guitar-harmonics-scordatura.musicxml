@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Classical Guitar</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1: scordatura tuning indication above the opening of the first stave (pp. 388-389) -->
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <direction>
+        <direction-type>
+          <scordatura>
+            <accord string="6">
+              <tuning-step>D</tuning-step>
+              <tuning-octave>2</tuning-octave>
+            </accord>
+          </scordatura>
+        </direction-type>
+      </direction>
+      <note>
+        <pitch><step>D</step><octave>3</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>3</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <accidental>sharp</accidental>
+      </note>
+    </measure>
+    <!-- M2: diamond noteheads open for half notes, filled for quarter and eighth (p. 384) -->
+    <measure number="2">
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><technical><harmonic><natural/></harmonic></technical></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><technical><harmonic><natural/></harmonic></technical></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <beam number="1">begin</beam>
+        <notations><technical><harmonic><natural/></harmonic></technical></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <type>eighth</type>
+        <beam number="1">end</beam>
+        <notations><technical><harmonic><natural/></harmonic></technical></notations>
+      </note>
+    </measure>
+    <!-- M3: natural harmonics as ordinary notehead with small circle above (p. 385) -->
+    <measure number="3">
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><technical><harmonic><natural/><sounding-pitch/></harmonic></technical></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><technical><harmonic><natural/><sounding-pitch/></harmonic></technical></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><technical><harmonic><natural/><sounding-pitch/></harmonic></technical></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><technical><harmonic><natural/><sounding-pitch/></harmonic></technical></notations>
+      </note>
+    </measure>
+    <!-- M4: artificial harmonics with stopped notehead and open diamond node (pp. 385, 388) -->
+    <measure number="4">
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><technical><harmonic><artificial/><base-pitch/></harmonic></technical></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><technical><harmonic><artificial/><touching-pitch/></harmonic></technical></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><technical><harmonic><artificial/><base-pitch/></harmonic></technical></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>2</duration>
+        <type>quarter</type>
+        <notations><technical><harmonic><artificial/><touching-pitch/></harmonic></technical></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><technical><harmonic><artificial/><base-pitch/></harmonic></technical></notations>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><technical><harmonic><artificial/><touching-pitch/></harmonic></technical></notations>
+      </note>
+    </measure>
+    <!-- M5: natural harmonic combined on one stem with an ordinary stopped note (p. 388) -->
+    <measure number="5">
+      <note>
+        <pitch><step>A</step><octave>3</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><technical><harmonic><natural/></harmonic></technical></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+      </note>
+      <note>
+        <chord/>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>half</type>
+        <notations><technical><harmonic><natural/></harmonic></technical></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

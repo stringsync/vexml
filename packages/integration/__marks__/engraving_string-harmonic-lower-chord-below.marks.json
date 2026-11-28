@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_string-harmonic-lower-chord-below.png",
+	"width": 932,
+	"height": 1050,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 93,
+				"y": 650
+			},
+			"to": {
+				"x": 101,
+				"y": 658
+			},
+			"label": "M7 Harm 1",
+			"note": "M7 Harm 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 287,
+				"y": 655
+			},
+			"to": {
+				"x": 295,
+				"y": 663
+			},
+			"label": "M7 Harm 2",
+			"note": "M7 Harm 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

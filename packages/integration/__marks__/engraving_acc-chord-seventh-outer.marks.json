@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_acc-chord-seventh-outer.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 301.2,
+				"y": 429
+			},
+			"to": {
+				"x": 313.2,
+				"y": 455
+			},
+			"label": "Eb/4 sign",
+			"note": "Eb/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 277.2,
+				"y": 419
+			},
+			"to": {
+				"x": 313.2,
+				"y": 445
+			},
+			"label": "Gb/4 sign",
+			"note": "Gb/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 289.2,
+				"y": 409
+			},
+			"to": {
+				"x": 313.2,
+				"y": 435
+			},
+			"label": "Bb/4 sign",
+			"note": "Bb/4 sign",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 301.2,
+				"y": 399
+			},
+			"to": {
+				"x": 313.2,
+				"y": 425
+			},
+			"label": "Db/5 sign",
+			"note": "Db/5 sign",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

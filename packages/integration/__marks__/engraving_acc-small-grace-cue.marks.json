@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_acc-small-grace-cue.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 255.4,
+				"y": 108
+			},
+			"to": {
+				"x": 268.4,
+				"y": 136
+			},
+			"label": "Full-size sharp",
+			"note": "Full-size sharp",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 101,
+				"y": 93.7
+			},
+			"to": {
+				"x": 111,
+				"y": 127
+			},
+			"label": "Grace sharp",
+			"note": "Grace sharp",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 292.3,
+				"y": 107
+			},
+			"to": {
+				"x": 302.3,
+				"y": 127
+			},
+			"label": "Cue sharp",
+			"note": "Cue sharp",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

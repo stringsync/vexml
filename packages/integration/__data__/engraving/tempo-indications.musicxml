@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <identification>
+    <miscellaneous>
+      <miscellaneous-field name="description">Behind Bars pp. 182-187: tempo typography, vertical clearance above other marks, horizontal alignment with time signatures, first elements, mid-bar beats, and repeats, metronome brackets, horizontal tempo dashes, terminating notch, and tempo equations.</miscellaneous-field>
+    </miscellaneous>
+  </identification>
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1: opening tempo with time signature, high note, accent, slur, and 8va (pp. 182-183) -->
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+        <key><fifths>2</fifths></key>
+        <time><beats>3</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <direction>
+        <direction-type><words>Allegro</words></direction-type>
+        <sound tempo="120"/>
+      </direction>
+      <direction>
+        <direction-type><octave-shift type="down" size="8" number="1"/></direction-type>
+      </direction>
+      <note>
+        <pitch><step>D</step><octave>6</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations>
+          <slur type="start" number="1"/>
+          <articulations><accent/></articulations>
+        </notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>6</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>6</octave></pitch>
+        <duration>2</duration><voice>1</voice><type>quarter</type>
+        <notations><slur type="stop" number="1"/></notations>
+      </note>
+      <direction>
+        <direction-type><octave-shift type="stop" size="8" number="1"/></direction-type>
+      </direction>
+    </measure>
+    <!-- M2: mid-system time signature change with metronome mark (p. 183) -->
+    <measure number="2">
+      <attributes>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <direction>
+        <direction-type>
+          <metronome>
+            <beat-unit>quarter</beat-unit>
+            <per-minute>96</per-minute>
+          </metronome>
+        </direction-type>
+      </direction>
+      <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>half</type></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>half</type></note>
+    </measure>
+    <!-- M3: tempo change with no new time signature, aligned with accidental on beat 1 (p. 183) -->
+    <measure number="3">
+      <direction>
+        <direction-type><words>Presto</words></direction-type>
+        <sound tempo="168"/>
+      </direction>
+      <note>
+        <pitch><step>C</step><alter>1</alter><octave>5</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>half</type>
+        <accidental>sharp</accidental>
+      </note>
+      <note><pitch><step>D</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>half</type></note>
+    </measure>
+    <!-- M4: mid-bar tempo indication on beat 3 (p. 183) -->
+    <measure number="4">
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><voice>1</voice><type>quarter</type></note>
+      <note><rest/><duration>2</duration><voice>1</voice><type>quarter</type></note>
+      <direction>
+        <direction-type><words>Vivace</words></direction-type>
+        <sound tempo="144"/>
+      </direction>
+      <note>
+        <pitch><step>G</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>half</type>
+        <accidental>sharp</accidental>
+      </note>
+    </measure>
+    <!-- M5: repeat sign acting as barline, tempo aligns with first note (p. 183) -->
+    <measure number="5">
+      <barline location="left">
+        <bar-style>heavy-light</bar-style>
+        <repeat direction="forward"/>
+      </barline>
+      <direction>
+        <direction-type><words>Più mosso</words></direction-type>
+        <sound tempo="132"/>
+      </direction>
+      <note>
+        <pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>half</type>
+        <accidental>flat</accidental>
+      </note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>half</type></note>
+    </measure>
+    <!-- M6: new system with repeat sign not acting as barline, tempo aligns with repeat sign (p. 183) -->
+    <measure number="6">
+      <print new-system="yes"/>
+      <barline location="left">
+        <bar-style>heavy-light</bar-style>
+        <repeat direction="forward"/>
+      </barline>
+      <direction>
+        <direction-type><words>Animando</words></direction-type>
+        <sound tempo="138"/>
+      </direction>
+      <note>
+        <pitch><step>G</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>4</duration><voice>1</voice><type>half</type>
+        <accidental>sharp</accidental>
+      </note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>half</type></note>
+    </measure>
+    <!-- M7: metronome mark in brackets following tempo word (p. 183) -->
+    <measure number="7">
+      <direction>
+        <direction-type><words>Tempo I</words></direction-type>
+        <direction-type>
+          <metronome parentheses="yes">
+            <beat-unit>quarter</beat-unit>
+            <per-minute>72</per-minute>
+          </metronome>
+        </direction-type>
+      </direction>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>half</type></note>
+      <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>half</type></note>
+    </measure>
+    <!-- M8-M9: gradual tempo change with horizontal dashes across contrasting note heights (p. 184) -->
+    <measure number="8">
+      <direction>
+        <direction-type><words>accel.</words></direction-type>
+        <direction-type><dashes type="start" number="1"/></direction-type>
+      </direction>
+      <note><pitch><step>E</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>half</type></note>
+      <note><pitch><step>A</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice><type>half</type></note>
+    </measure>
+    <measure number="9">
+      <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>half</type></note>
+      <direction>
+        <direction-type><dashes type="stop" number="1"/></direction-type>
+      </direction>
+      <direction>
+        <direction-type><words>Presto</words></direction-type>
+        <sound tempo="168"/>
+      </direction>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>half</type></note>
+    </measure>
+    <!-- M10: terminating tempo change with vertical notch at end of dashes (p. 185) -->
+    <measure number="10">
+      <print new-system="yes"/>
+      <direction>
+        <direction-type><words>poco accel.</words></direction-type>
+        <direction-type><bracket type="start" number="1" line-end="none" line-type="dashed"/></direction-type>
+      </direction>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice><type>half</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><voice>1</voice><type>quarter</type></note>
+      <direction>
+        <direction-type><bracket type="stop" number="1" line-end="down" line-type="dashed"/></direction-type>
+      </direction>
+      <direction>
+        <direction-type><words>a tempo</words></direction-type>
+      </direction>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>2</duration><voice>1</voice><type>quarter</type></note>
+    </measure>
+    <!-- M11-M12: tempo equation half = quarter at 3/2 -> 3/4 barline (p. 185) -->
+    <measure number="11">
+      <attributes>
+        <time><beats>3</beats><beat-type>2</beat-type></time>
+      </attributes>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>12</duration><voice>1</voice><type>whole</type><dot/></note>
+    </measure>
+    <measure number="12">
+      <attributes>
+        <time><beats>3</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <direction>
+        <direction-type>
+          <metronome>
+            <beat-unit>half</beat-unit>
+            <beat-unit>quarter</beat-unit>
+          </metronome>
+        </direction-type>
+      </direction>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>6</duration><voice>1</voice><type>half</type><dot/></note>
+    </measure>
+  </part>
+</score-partwise>

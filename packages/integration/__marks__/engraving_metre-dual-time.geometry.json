@@ -1,0 +1,34 @@
+{
+	"screenshot": "engraving_metre-dual-time.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 322.84 },
+		{ "index": 1, "system": 0, "x": 353.84, "w": 293.33 },
+		{ "index": 2, "system": 0, "x": 647.16, "w": 253.84 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 322.84
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 353.84,
+			"w": 293.33
+		},
+		{
+			"part": 0,
+			"measure": 2,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 647.16,
+			"w": 253.84
+		}
+	]
+}

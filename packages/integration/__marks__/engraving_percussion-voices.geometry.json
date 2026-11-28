@@ -1,0 +1,25 @@
+{
+	"screenshot": "engraving_percussion-voices.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 360.56 },
+		{ "index": 1, "system": 0, "x": 391.56, "w": 509.44 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [101, 111, 121, 131, 141],
+			"x": 31,
+			"w": 360.56
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [101, 111, 121, 131, 141],
+			"x": 391.56,
+			"w": 509.44
+		}
+	]
+}

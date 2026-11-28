@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_kbd-hairpin-cross-staff-beam.png",
+	"width": 932,
+	"height": 457,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 443,
+				"y": 391
+			},
+			"to": {
+				"x": 648,
+				"y": 401
+			},
+			"label": "Hairpin",
+			"note": "Hairpin",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 360,
+				"y": 372
+			},
+			"to": {
+				"x": 485,
+				"y": 377
+			},
+			"label": "Beam",
+			"note": "Beam",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 525,
+				"y": 359
+			},
+			"to": {
+				"x": 608,
+				"y": 365
+			},
+			"label": "Beam",
+			"note": "Beam",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,5 +1,5 @@
-import { type CurveOptions, type StaveNote } from 'vexflow/core';
-import { CrispCurve } from './crisp-curve.js';
+import { type CurveOptions, StaveNote } from 'vexflow/core';
+import { CrispCurve, type CurveReach } from './crisp-curve.js';
 import type { DocumentBezier } from './score-reader.js';
 export declare class HeadCurve extends CrispCurve {
     private readonly fromY;
@@ -11,8 +11,8 @@ export declare class HeadCurve extends CrispCurve {
         toY: number;
         bezier?: DocumentBezier | null;
         reach?: {
-            start: boolean;
-            end: boolean;
+            start: CurveReach;
+            end: CurveReach;
         };
         openX?: number;
     });

@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tremolo-single-stroke-on-line.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 297,
+				"y": 102
+			},
+			"to": {
+				"x": 309,
+				"y": 110
+			},
+			"label": "Single stroke 1",
+			"note": "Single stroke 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 313,
+				"y": 122
+			},
+			"to": {
+				"x": 325,
+				"y": 130
+			},
+			"label": "Single stroke 2",
+			"note": "Single stroke 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

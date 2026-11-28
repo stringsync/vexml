@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_dyn-left-not-right.png",
+	"width": 932,
+	"height": 1373,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 73,
+				"y": 335
+			},
+			"to": {
+				"x": 112,
+				"y": 349
+			},
+			"label": "Dynamic 1",
+			"note": "Dynamic 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 126,
+				"y": 330
+			},
+			"to": {
+				"x": 154,
+				"y": 349
+			},
+			"label": "Dynamic 2",
+			"note": "Dynamic 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

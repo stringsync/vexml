@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_vocal-alt-rhythm-cue-rest.png",
+	"width": 932,
+	"height": 420,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 101.4,
+				"y": 253
+			},
+			"to": {
+				"x": 111.4,
+				"y": 271
+			},
+			"label": "Full eighth rest",
+			"note": "Full eighth rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 182.6,
+				"y": 301
+			},
+			"to": {
+				"x": 189.6,
+				"y": 313
+			},
+			"label": "Cue eighth rest",
+			"note": "Cue eighth rest",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 303.2,
+				"y": 286
+			},
+			"to": {
+				"x": 310.2,
+				"y": 306
+			},
+			"label": "Cue quarter rest",
+			"note": "Cue quarter rest",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

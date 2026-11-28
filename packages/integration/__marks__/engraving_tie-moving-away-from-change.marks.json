@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_tie-moving-away-from-change.png",
+	"width": 932,
+	"height": 897,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 389,
+				"y": 624
+			},
+			"to": {
+				"x": 419,
+				"y": 630
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 389,
+				"y": 602
+			},
+			"to": {
+				"x": 419,
+				"y": 608
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 474,
+				"y": 614
+			},
+			"to": {
+				"x": 503,
+				"y": 620
+			},
+			"label": "Tie",
+			"note": "Tie: curves down",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 474,
+				"y": 592
+			},
+			"to": {
+				"x": 503,
+				"y": 598
+			},
+			"label": "Tie",
+			"note": "Tie: curves up",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

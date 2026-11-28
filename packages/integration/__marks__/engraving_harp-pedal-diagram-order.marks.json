@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_harp-pedal-diagram-order.png",
+	"width": 932,
+	"height": 255,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 105,
+				"y": 74
+			},
+			"to": {
+				"x": 167,
+				"y": 92
+			},
+			"label": "Pedal diagram",
+			"note": "Pedal diagram",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

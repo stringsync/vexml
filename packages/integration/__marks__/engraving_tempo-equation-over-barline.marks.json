@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_tempo-equation-over-barline.png",
+	"width": 932,
+	"height": 607,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 364,
+				"y": 425
+			},
+			"to": {
+				"x": 390,
+				"y": 444
+			},
+			"label": "half = quarter",
+			"note": "half = quarter",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 364,
+				"y": 425
+			},
+			"to": {
+				"x": 390,
+				"y": 444
+			},
+			"label": "=",
+			"note": "=",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

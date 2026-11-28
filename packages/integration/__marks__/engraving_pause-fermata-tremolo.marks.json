@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_pause-fermata-tremolo.png",
+	"width": 932,
+	"height": 412,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 116,
+				"y": 247
+			},
+			"to": {
+				"x": 140,
+				"y": 260
+			},
+			"label": "Fermata",
+			"note": "Fermata",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

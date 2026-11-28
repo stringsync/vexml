@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_gliss-parallel-lines.png",
+	"width": 932,
+	"height": 242,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 793,
+				"y": 126
+			},
+			"to": {
+				"x": 839,
+				"y": 146
+			},
+			"label": "Glissando 1",
+			"note": "Glissando 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 793,
+				"y": 116
+			},
+			"to": {
+				"x": 839,
+				"y": 136
+			},
+			"label": "Glissando 2",
+			"note": "Glissando 2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

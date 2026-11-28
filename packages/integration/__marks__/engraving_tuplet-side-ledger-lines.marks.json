@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tuplet-side-ledger-lines.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 379,
+				"y": 32
+			},
+			"to": {
+				"x": 465,
+				"y": 51
+			},
+			"label": "ledger-line tuplet above",
+			"note": "ledger-line tuplet above",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

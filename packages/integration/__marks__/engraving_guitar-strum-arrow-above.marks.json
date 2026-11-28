@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_guitar-strum-arrow-above.png",
+	"width": 932,
+	"height": 419,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 581,
+				"y": 58
+			},
+			"to": {
+				"x": 593,
+				"y": 158
+			},
+			"label": "Strum 1",
+			"note": "Strum 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 613,
+				"y": 57
+			},
+			"to": {
+				"x": 625,
+				"y": 158
+			},
+			"label": "Strum 2",
+			"note": "Strum 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 644,
+				"y": 58
+			},
+			"to": {
+				"x": 656,
+				"y": 158
+			},
+			"label": "Strum 3",
+			"note": "Strum 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 676,
+				"y": 57
+			},
+			"to": {
+				"x": 688,
+				"y": 158
+			},
+			"label": "Strum 4",
+			"note": "Strum 4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

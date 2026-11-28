@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_rest-beat-align.png",
+	"width": 932,
+	"height": 422,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 507.3,
+				"y": 102
+			},
+			"to": {
+				"x": 522.3,
+				"y": 132
+			},
+			"label": "-1",
+			"note": "M4 V1 rest 1 displaced -1 spaces from home",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 527.6,
+				"y": 102
+			},
+			"to": {
+				"x": 539.6,
+				"y": 122
+			},
+			"label": "-1",
+			"note": "M4 V1 rest 2 displaced -1 spaces from home",
+			"pass": true,
+			"role": "measure"
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 582.3,
+				"y": 104
+			},
+			"to": {
+				"x": 595.3,
+				"y": 112
+			},
+			"label": "-1",
+			"note": "M4 V1 rest 3 displaced -1 spaces from home",
+			"pass": true,
+			"role": "measure"
+		}
+	]
+}

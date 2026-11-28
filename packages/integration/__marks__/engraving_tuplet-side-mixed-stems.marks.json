@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_tuplet-side-mixed-stems.png",
+	"width": 932,
+	"height": 402,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 495,
+				"y": 72
+			},
+			"to": {
+				"x": 612,
+				"y": 91
+			},
+			"label": "mixed-stem tuplet",
+			"note": "mixed-stem tuplet",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

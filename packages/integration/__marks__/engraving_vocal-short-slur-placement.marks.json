@@ -1,0 +1,67 @@
+{
+	"screenshot": "engraving_vocal-short-slur-placement.png",
+	"width": 932,
+	"height": 427,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 129,
+				"y": 137
+			},
+			"to": {
+				"x": 187,
+				"y": 151
+			},
+			"label": "M1 slur 1",
+			"note": "M1 slur 1",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 244,
+				"y": 132
+			},
+			"to": {
+				"x": 302,
+				"y": 146
+			},
+			"label": "M1 slur 2",
+			"note": "M1 slur 2",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 547,
+				"y": 162
+			},
+			"to": {
+				"x": 600,
+				"y": 175
+			},
+			"label": "M2 slur 1",
+			"note": "M2 slur 1",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 651,
+				"y": 157
+			},
+			"to": {
+				"x": 704,
+				"y": 170
+			},
+			"label": "M2 slur 2",
+			"note": "M2 slur 2",
+			"role": "measure",
+			"pass": false
+		}
+	]
+}

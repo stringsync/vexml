@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1"><part-name>Side Drum</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>percussion</sign></clef>
+      </attributes>
+      <note>
+        <grace/>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <voice>1</voice><type>16th</type>
+        <beam number="1">begin</beam><beam number="2">begin</beam>
+        <notations><slur type="start" number="1"/></notations>
+      </note>
+      <note>
+        <grace/>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <voice>1</voice><type>16th</type>
+        <beam number="1">end</beam><beam number="2">end</beam>
+      </note>
+      <note>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <notations><slur type="stop" number="1"/></notations>
+      </note>
+      <note>
+        <grace/>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <voice>1</voice><type>16th</type>
+        <beam number="1">begin</beam><beam number="2">begin</beam>
+        <notations><slur type="start" number="1"/></notations>
+      </note>
+      <note>
+        <grace/>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <voice>1</voice><type>16th</type>
+        <beam number="1">continue</beam><beam number="2">continue</beam>
+      </note>
+      <note>
+        <grace/>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <voice>1</voice><type>16th</type>
+        <beam number="1">end</beam><beam number="2">end</beam>
+      </note>
+      <note>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+        <notations><slur type="stop" number="1"/></notations>
+      </note>
+      <note>
+        <rest/><duration>8</duration><voice>1</voice><type>half</type>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <grace/>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <voice>1</voice><type>16th</type>
+        <beam number="1">begin</beam><beam number="2">begin</beam>
+      </note>
+      <note>
+        <grace/>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <voice>1</voice><type>16th</type>
+        <beam number="1">end</beam><beam number="2">end</beam>
+      </note>
+      <note>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+      </note>
+      <note>
+        <grace/>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <voice>1</voice><type>16th</type>
+        <beam number="1">begin</beam><beam number="2">begin</beam>
+      </note>
+      <note>
+        <grace/>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <voice>1</voice><type>16th</type>
+        <beam number="1">continue</beam><beam number="2">continue</beam>
+      </note>
+      <note>
+        <grace/>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <voice>1</voice><type>16th</type>
+        <beam number="1">end</beam><beam number="2">end</beam>
+      </note>
+      <note>
+        <unpitched><display-step>G</display-step><display-octave>4</display-octave></unpitched>
+        <duration>4</duration><voice>1</voice><type>quarter</type>
+      </note>
+      <note>
+        <rest/><duration>8</duration><voice>1</voice><type>half</type>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

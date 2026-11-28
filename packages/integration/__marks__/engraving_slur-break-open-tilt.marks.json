@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_slur-break-open-tilt.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 697,
+				"y": 75
+			},
+			"to": {
+				"x": 901,
+				"y": 92
+			},
+			"label": "Slur",
+			"note": "Slur",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

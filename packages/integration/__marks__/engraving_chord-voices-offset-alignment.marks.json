@@ -1,0 +1,187 @@
+{
+	"screenshot": "engraving_chord-voices-offset-alignment.png",
+	"width": 932,
+	"height": 1049,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 520,
+				"y": 343
+			},
+			"to": {
+				"x": 532,
+				"y": 353
+			},
+			"label": "M7 notehead",
+			"note": "M7 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 534,
+				"y": 343
+			},
+			"to": {
+				"x": 546,
+				"y": 353
+			},
+			"label": "M7 notehead",
+			"note": "M7 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 520.2,
+				"y": 448
+			},
+			"to": {
+				"x": 532.2,
+				"y": 458
+			},
+			"label": "M7 reference head",
+			"note": "M7 reference head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 719,
+				"y": 338
+			},
+			"to": {
+				"x": 736,
+				"y": 348
+			},
+			"label": "M8 notehead",
+			"note": "M8 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 738,
+				"y": 338
+			},
+			"to": {
+				"x": 750,
+				"y": 348
+			},
+			"label": "M8 notehead",
+			"note": "M8 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 719.1,
+				"y": 448
+			},
+			"to": {
+				"x": 731.1,
+				"y": 458
+			},
+			"label": "M8 reference head",
+			"note": "M8 reference head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 107,
+				"y": 608
+			},
+			"to": {
+				"x": 119,
+				"y": 618
+			},
+			"label": "M9 notehead",
+			"note": "M9 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 608
+			},
+			"to": {
+				"x": 105,
+				"y": 618
+			},
+			"label": "M9 notehead",
+			"note": "M9 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 88,
+				"y": 688
+			},
+			"to": {
+				"x": 100,
+				"y": 698
+			},
+			"label": "M9 reference head",
+			"note": "M9 reference head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 290,
+				"y": 598
+			},
+			"to": {
+				"x": 307,
+				"y": 608
+			},
+			"label": "M10 notehead",
+			"note": "M10 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 309,
+				"y": 603
+			},
+			"to": {
+				"x": 321,
+				"y": 613
+			},
+			"label": "M10 notehead",
+			"note": "M10 notehead",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 289.5,
+				"y": 688
+			},
+			"to": {
+				"x": 301.5,
+				"y": 698
+			},
+			"label": "M10 reference head",
+			"note": "M10 reference head",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

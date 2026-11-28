@@ -9,7 +9,6 @@ import { DurationTranslator } from './duration-translator';
 import { DynamicGlyphs } from './dynamic-glyphs';
 import { ElementFactory } from './element-factory';
 import { FakePaintProbe } from './fake-paint-probe';
-import { FontShorthandPatch } from './font-shorthand-patch';
 import { GapInserter } from './gap-inserter';
 import { Gaps } from './gaps';
 import { InertDecoration } from './inert-decoration';
@@ -138,7 +137,6 @@ function columnsOf(geometry: RawGeometry): string[] {
 
 // The layout builds vexflow elements, which measure text through the probe.
 new ProbeTextCanvas(new FakePaintProbe()).install();
-new FontShorthandPatch().install();
 
 async function expectForecastMatchesDraw(fixture: string) {
 	const { drawn, provisional } = await engrave(fixture);

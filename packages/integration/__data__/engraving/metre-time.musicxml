@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name/>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <!-- M1 (index 0): time-numeral-height & time-opening-not-repeated (p. 152) — clef, key, 3/4 -->
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <key><fifths>2</fifths></key>
+        <time><beats>3</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M2 (index 1): time-opening-not-repeated (p. 152) — new system, unchanged 3/4 -->
+    <measure number="2">
+      <print new-system="yes"/>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M3 (index 2): time-numeral-height & time-change-after-barline (p. 152) — mid-system 12/16 -->
+    <measure number="3">
+      <attributes>
+        <time><beats>12</beats><beat-type>16</beat-type></time>
+      </attributes>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>3</duration><type>eighth</type><dot/></note>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>3</duration><type>eighth</type><dot/></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>3</duration><type>eighth</type><dot/></note>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>3</duration><type>eighth</type><dot/></note>
+    </measure>
+
+    <!-- M4 (index 3): time-numeral-height & time-change-system-break (p. 152) — 5/8 at end of system 2 -->
+    <measure number="4">
+      <attributes>
+        <time><beats>5</beats><beat-type>8</beat-type></time>
+      </attributes>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>B</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>2</duration><type>eighth</type></note>
+    </measure>
+
+    <!-- M5 (index 4): time-change-system-break (p. 152) — new system opens in 2/4 -->
+    <measure number="5">
+      <print new-system="yes"/>
+      <attributes>
+        <time><beats>2</beats><beat-type>4</beat-type></time>
+      </attributes>
+      <note><pitch><step>G</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+      <note><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><type>quarter</type></note>
+    </measure>
+
+    <!-- M6 (index 5): beam-feathered-converge (p. 158) — rit and accel feathered beams -->
+    <measure number="6">
+      <attributes>
+        <divisions>8</divisions>
+      </attributes>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><type>32nd</type>
+        <beam number="1" fan="rit">begin</beam>
+        <beam number="2">begin</beam>
+        <beam number="3">begin</beam>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><type>32nd</type>
+        <beam number="1" fan="rit">continue</beam>
+        <beam number="2">continue</beam>
+        <beam number="3">continue</beam>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><type>32nd</type>
+        <beam number="1" fan="rit">continue</beam>
+        <beam number="2">continue</beam>
+        <beam number="3">continue</beam>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><type>32nd</type>
+        <beam number="1" fan="rit">end</beam>
+        <beam number="2">end</beam>
+        <beam number="3">end</beam>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><type>32nd</type>
+        <beam number="1" fan="accel">begin</beam>
+        <beam number="2">begin</beam>
+        <beam number="3">begin</beam>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><type>32nd</type>
+        <beam number="1" fan="accel">continue</beam>
+        <beam number="2">continue</beam>
+        <beam number="3">continue</beam>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><type>32nd</type>
+        <beam number="1" fan="accel">continue</beam>
+        <beam number="2">continue</beam>
+        <beam number="3">continue</beam>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>2</duration><type>32nd</type>
+        <beam number="1" fan="accel">end</beam>
+        <beam number="2">end</beam>
+        <beam number="3">end</beam>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

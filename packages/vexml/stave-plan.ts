@@ -4,6 +4,7 @@ import {
 	BRACKET_GLYPH_OVERHANG,
 	BRACKET_X_SHIFT,
 } from './constants';
+import type { PartGroup } from './score-reader';
 
 /* Which kinds of stave the caller asked to see. See Config.showTabs/showNotation. */
 export interface StaveVisibility {
@@ -204,17 +205,29 @@ export class StavePlan {
 	}
 
 	/* The symbol opening a system's left edge: a bracket (a notation+tab pair split across
-	 * parts, or any part's own bracket) outranks a brace; null when no symbol joins staves. */
-	systemSymbol(parts: Part[]): 'brace' | 'bracket' | null {
+	 * parts, or any part's own bracket) outranks a brace (a multi-stave part's brace, or a
+	 * single-part `<part-group>` brace); null when no symbol joins staves. */
+	systemSymbol(
+		parts: Part[],
+		partGroups: readonly PartGroup[] = [],
+	): 'brace' | 'bracket' | null {
 		let bracket = this.partsPairTabWithNotation(parts);
 		let brace = false;
+		let totalStaves = 0;
 		for (const part of parts) {
-			if (this.visibleNumbers(part).length <= 1) {
+			const count = this.visibleNumbers(part).length;
+			totalStaves += count;
+			if (count <= 1) {
 				continue;
 			}
 			const symbol = this.symbolOf(part);
 			bracket ||= symbol === 'bracket';
 			brace ||= symbol === 'brace';
+		}
+		if (totalStaves > 1) {
+			for (const group of partGroups) {
+				brace ||= group.symbol === 'brace' && group.fromPart === group.toPart;
+			}
 		}
 		if (bracket) {
 			return 'bracket';
@@ -225,8 +238,8 @@ export class StavePlan {
 	/* How far left of a system's first stave its opening symbol reaches (0 with none).
 	 * Layout reserves it in front of the system when a gap sits there; draw measures the
 	 * system's left furniture with it. */
-	systemOverhang(parts: Part[]): number {
-		switch (this.systemSymbol(parts)) {
+	systemOverhang(parts: Part[], partGroups: readonly PartGroup[] = []): number {
+		switch (this.systemSymbol(parts, partGroups)) {
 			case 'bracket':
 				return BRACKET_X_SHIFT + BRACKET_GLYPH_OVERHANG;
 			case 'brace':

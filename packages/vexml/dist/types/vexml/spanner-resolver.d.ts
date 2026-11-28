@@ -48,7 +48,9 @@ export declare class SpannerResolver {
     private readonly reporter;
     private readonly systemReach;
     private readonly bows;
+    private readonly belowOttavas;
     private readonly stackedHairpins;
+    private readonly stackedOttavas;
     constructor(opts: SpannerResolverOptions);
     mark(): SystemStart;
     rewind(mark: SystemStart): void;
@@ -69,14 +71,21 @@ export declare class SpannerResolver {
     private dropPedalClear;
     private clearWedge;
     private startPastDynamic;
+    private stopAtBarlineBeforeDynamic;
     private observeStackedWords;
     observedHairpinBands(): Map<number, HairpinBand[]>;
+    private observeStackedOttava;
+    observedOttavaBands(): Map<number, HairpinBand[]>;
     private alignWedgeChains;
     private bowsOnRowOf;
     private addBow;
+    private belowOttavasOnRowOf;
+    private addBelowOttava;
     private reportBow;
     private clearLyricsOfBow;
     private tieRect;
+    private splitBySystem;
+    private systemEndX;
     private clearOctaveBracket;
 }
 interface SystemStart {

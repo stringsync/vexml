@@ -1,0 +1,37 @@
+{
+	"screenshot": "engraving_choral-omitted-note-brackets.png",
+	"width": 932,
+	"height": 499,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 478.9,
+				"y": 150.4
+			},
+			"to": {
+				"x": 490.9,
+				"y": 160.4
+			},
+			"label": "Bracketed full head",
+			"note": "Bracketed full head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 694.8,
+				"y": 150.4
+			},
+			"to": {
+				"x": 702.8,
+				"y": 160.4
+			},
+			"label": "Bracketed cue head",
+			"note": "Bracketed cue head",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

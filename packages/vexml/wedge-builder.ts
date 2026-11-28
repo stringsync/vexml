@@ -87,28 +87,36 @@ export class WedgeBuilder {
 				...rowStaves(lastNote).map((s) => s.getNoteStartX()),
 			);
 			// A stop trailing its opening note ends at that measure, not the system edge.
-			const wrapped = firstNote === lastNote || wraps(firstNote, lastNote);
+			const trailing = firstNote === lastNote;
+			const wrapped = trailing || wraps(firstNote, lastNote);
 			const halves = wrapped
 				? [
 						new Hairpin(firstNote, firstNote, {
 							...opts,
 							runsOff: 'right',
-							edgeX:
-								firstNote === lastNote
-									? firstNote.checkStave().getNoteEndX() - HAIRPIN_BARLINE_GAP
-									: rowEnd,
+							openPoint: !trailing && !opts.crescendo,
+							edgeX: trailing
+								? firstNote.checkStave().getNoteEndX() - HAIRPIN_BARLINE_GAP
+								: rowEnd,
 						}),
-						...(firstNote === lastNote
+						...(trailing
 							? []
 							: [
 									new Hairpin(lastNote, lastNote, {
 										...opts,
 										runsOff: 'left',
+										openPoint: opts.crescendo,
 										edgeX: rowStart,
 									}),
 								]),
 					]
-				: [new Hairpin(firstNote, lastNote, opts)];
+				: [
+						new Hairpin(firstNote, lastNote, {
+							...opts,
+							stopOnDownbeat: marker.downbeat ?? false,
+							stopPositioned: marker.positioned ?? false,
+						}),
+					];
 			for (const half of halves) {
 				wedges.push(half.setLineWidth(this.appearance.lineWidth('wedge')));
 			}

@@ -1,0 +1,41 @@
+{
+	"screenshot": "engraving_barline-score.png",
+	"measures": [
+		{ "index": 0, "system": 0, "x": 31, "w": 351.36 },
+		{ "index": 1, "system": 0, "x": 382.36, "w": 518.64 }
+	],
+	"staves": [
+		{
+			"part": 0,
+			"measure": 0,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 31,
+			"w": 351.36
+		},
+		{
+			"part": 0,
+			"measure": 1,
+			"staff": 1,
+			"lines": [96, 106, 116, 126, 136],
+			"x": 382.36,
+			"w": 518.64
+		},
+		{
+			"part": 1,
+			"measure": 0,
+			"staff": 1,
+			"lines": [176, 186, 196, 206, 216],
+			"x": 31,
+			"w": 351.36
+		},
+		{
+			"part": 1,
+			"measure": 1,
+			"staff": 1,
+			"lines": [176, 186, 196, 206, 216],
+			"x": 382.36,
+			"w": 518.64
+		}
+	]
+}

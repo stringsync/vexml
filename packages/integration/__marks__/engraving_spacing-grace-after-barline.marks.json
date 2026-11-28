@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_spacing-grace-after-barline.png",
+	"width": 932,
+	"height": 722,
+	"marks": [
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 297.2,
+				"y": 89
+			},
+			"to": {
+				"x": 316.2,
+				"y": 89
+			},
+			"label": "2",
+			"note": "Barline to grace note: 2 stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

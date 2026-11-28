@@ -1,0 +1,97 @@
+{
+	"screenshot": "engraving_vocal-dynamics-above.png",
+	"width": 932,
+	"height": 481,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 137,
+				"y": 69
+			},
+			"to": {
+				"x": 229,
+				"y": 86
+			},
+			"label": "M1 dir 1",
+			"note": "M1 dir 1",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 132,
+				"y": 201
+			},
+			"to": {
+				"x": 148,
+				"y": 220
+			},
+			"label": "M1 dir 2",
+			"note": "M1 dir 2",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 244,
+				"y": 191
+			},
+			"to": {
+				"x": 459,
+				"y": 201
+			},
+			"label": "M1 hairpin 1",
+			"note": "M1 hairpin 1",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 662,
+				"y": 69
+			},
+			"to": {
+				"x": 700,
+				"y": 82
+			},
+			"label": "M2 dir 1",
+			"note": "M2 dir 1",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 571,
+				"y": 206
+			},
+			"to": {
+				"x": 586,
+				"y": 220
+			},
+			"label": "M2 dir 2",
+			"note": "M2 dir 2",
+			"role": "measure",
+			"pass": false
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 661,
+				"y": 191
+			},
+			"to": {
+				"x": 835,
+				"y": 201
+			},
+			"label": "M2 hairpin 1",
+			"note": "M2 hairpin 1",
+			"role": "measure",
+			"pass": false
+		}
+	]
+}

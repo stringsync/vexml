@@ -1,0 +1,52 @@
+{
+	"screenshot": "engraving_time-change-system-break.png",
+	"width": 932,
+	"height": 562,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 870,
+				"y": 256
+			},
+			"to": {
+				"x": 872,
+				"y": 297
+			},
+			"label": "M4 closing barline",
+			"note": "M4 closing barline",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 878,
+				"y": 256
+			},
+			"to": {
+				"x": 895,
+				"y": 296
+			},
+			"label": "Cautionary 2/4 after barline",
+			"note": "Cautionary 2/4 after barline",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 110,
+				"y": 416
+			},
+			"to": {
+				"x": 127,
+				"y": 456
+			},
+			"label": "M5 opening 2/4",
+			"note": "M5 opening 2/4",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

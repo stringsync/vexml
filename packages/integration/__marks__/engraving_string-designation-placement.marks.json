@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_string-designation-placement.png",
+	"width": 932,
+	"height": 1265,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 116,
+				"y": 73
+			},
+			"to": {
+				"x": 130,
+				"y": 87
+			},
+			"label": "M1 String 1",
+			"note": "M1 String 1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 234,
+				"y": 73
+			},
+			"to": {
+				"x": 249,
+				"y": 87
+			},
+			"label": "M1 String 2",
+			"note": "M1 String 2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 353,
+				"y": 73
+			},
+			"to": {
+				"x": 367,
+				"y": 87
+			},
+			"label": "M1 String 3",
+			"note": "M1 String 3",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 471,
+				"y": 73
+			},
+			"to": {
+				"x": 486,
+				"y": 87
+			},
+			"label": "M1 String 4",
+			"note": "M1 String 4",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 632,
+				"y": 63
+			},
+			"to": {
+				"x": 647,
+				"y": 77
+			},
+			"label": "M2 B1 V1",
+			"note": "M2 B1 V1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 632,
+				"y": 186
+			},
+			"to": {
+				"x": 647,
+				"y": 201
+			},
+			"label": "M2 B1 V2",
+			"note": "M2 B1 V2",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 755,
+				"y": 58
+			},
+			"to": {
+				"x": 770,
+				"y": 72
+			},
+			"label": "M2 B3 V1",
+			"note": "M2 B3 V1",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 755,
+				"y": 184
+			},
+			"to": {
+				"x": 770,
+				"y": 198
+			},
+			"label": "M2 B3 V2",
+			"note": "M2 B3 V2",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -1,0 +1,127 @@
+{
+	"screenshot": "engraving_dot-head-gap.png",
+	"width": 932,
+	"height": 1362,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 116
+			},
+			"to": {
+				"x": 129,
+				"y": 126
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 134,
+				"y": 119
+			},
+			"to": {
+				"x": 138,
+				"y": 123
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 122,
+				"y": 130
+			},
+			"to": {
+				"x": 125,
+				"y": 133
+			},
+			"label": "Staccato",
+			"note": "Staccato",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 287,
+				"y": 119
+			},
+			"to": {
+				"x": 291,
+				"y": 123
+			},
+			"label": "Dot glyph",
+			"note": "Dot glyph",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 117,
+				"y": 116
+			},
+			"to": {
+				"x": 129,
+				"y": 126
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 129,
+				"y": 115
+			},
+			"to": {
+				"x": 134,
+				"y": 115
+			},
+			"label": "½",
+			"note": "Clear head-to-dot gap: ½ stave spaces",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "box",
+			"from": {
+				"x": 269.7,
+				"y": 121
+			},
+			"to": {
+				"x": 281.7,
+				"y": 131
+			},
+			"label": "Voice 1 head",
+			"note": "Voice 1 head",
+			"role": "measure",
+			"pass": true
+		},
+		{
+			"kind": "bracket",
+			"from": {
+				"x": 281.7,
+				"y": 115
+			},
+			"to": {
+				"x": 287,
+				"y": 115
+			},
+			"label": "½",
+			"note": "Clear head-to-dot gap: ½ stave spaces",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

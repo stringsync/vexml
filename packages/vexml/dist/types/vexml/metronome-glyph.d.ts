@@ -1,10 +1,11 @@
 import { type RenderContext } from 'vexflow/core';
 import type { DocumentPosition } from './score-reader.js';
 export declare class MetronomeGlyph {
-    /** Total advance width, and how far the ink reaches above/below the baseline. */
+    /** Total advance width, how far the ink reaches above/below the baseline, and the center of `=`. */
     readonly width: number;
     readonly ascent: number;
     readonly descent: number;
+    readonly equalsCenter: number;
     private readonly placed;
     private readonly bars;
     private readonly curves;
@@ -28,6 +29,8 @@ export declare class MetronomeGlyph {
     draw(context: RenderContext, x: number, baseline: number): void;
     private drawArrow;
 }
+/** SMuFL metronome note glyph for a MusicXML beat-unit or VexFlow duration code. */
+export declare function metronomeNoteGlyph(duration: string): string;
 /** A `<metronome-tuplet>` marker: the ratio's `actual-notes`, and which end of the span this is. */
 export type ModulationTuplet = {
     actual: number;

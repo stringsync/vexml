@@ -1,0 +1,22 @@
+{
+	"screenshot": "engraving_kbd-braced-system.png",
+	"width": 932,
+	"height": 344,
+	"marks": [
+		{
+			"kind": "box",
+			"from": {
+				"x": 17,
+				"y": 96
+			},
+			"to": {
+				"x": 29,
+				"y": 239
+			},
+			"label": "Curly brace",
+			"note": "Curly brace",
+			"role": "measure",
+			"pass": true
+		}
+	]
+}

@@ -7,6 +7,7 @@ import {
 	SLUR_BOW_MAX,
 	SLUR_BOW_MIN,
 	SLUR_END_ZONE,
+	SLUR_FERMATA_GAP,
 	SLUR_GHOST_OVERLAP,
 	SLUR_GRACE_CP_Y,
 	SLUR_GRACE_MARGIN,
@@ -20,6 +21,9 @@ import type { SlurBow } from './slur-bow';
 
 /* Where the two ends of a curve are drawn: xL/yL to xR/yR. */
 export type SlurChord = { xL: number; xR: number; yL: number; yR: number };
+
+/* An extra point (such as a sample along a nested inner slur) that the bow must clear. */
+export type SlurObstaclePoint = { x: number; y: number; gap: number };
 
 // How the curve clears every note it passes over, given where its two ends are
 // drawn (its chord). Two independent knobs, and which one does the work
@@ -67,7 +71,13 @@ export class SlurShape {
 	/* Whether a note the bow passes still stands through it. */
 	readonly blocked: boolean;
 
-	constructor(bow: SlurBow, spanNotes: StaveNote[], chord: SlurChord) {
+	constructor(
+		bow: SlurBow,
+		spanNotes: StaveNote[],
+		chord: SlurChord,
+		extraObstacles: readonly SlurObstaclePoint[] = [],
+		minYShift = 0,
+	) {
 		const { xL, xR, yL, yR } = chord;
 		const width = Math.abs(xR - xL);
 		// A grace bow stays tight: it takes the clearance it needs and no more,
@@ -91,8 +101,9 @@ export class SlurShape {
 			const chordY = yL + bow.dir * bow.baseYShift + s * (yR - yL);
 			return { s, need: Math.max(0, bow.dir * (y - chordY) + gap) };
 		};
+		const interiorNotes = clearanceOf(bow, spanNotes);
 		const clearances = [
-			...clearanceOf(bow, spanNotes).map((n) => {
+			...interiorNotes.map((n) => {
 				const extents = bow.extentsOf(n);
 				return needAt(
 					n.getAbsoluteX(),
@@ -102,7 +113,7 @@ export class SlurShape {
 			// Every accidental the bow passes, the cautionary flat of the note it
 			// arrives at included, sits left of its head where the notes' own extents
 			// don't reach. The slur's own start has none behind it.
-			...(bow.isGrace
+			...(bow.isGrace && !bow.bulgeUp
 				? []
 				: spanNotes
 						.filter((n) => n !== bow.from)
@@ -114,17 +125,46 @@ export class SlurShape {
 								SLUR_ACCIDENTAL_GAP,
 							),
 						)),
+			...extraObstacles.map((o) => needAt(o.x, o.y, o.gap)),
 		];
+		// Behind Bars p. 189 (pause-fermata-inside-slur): a mid-phrase fermata on the
+		// slur's side sits inside the arc with clear separation. Sample its centre and
+		// arch shoulders and exempt them from the aspect ceiling so the bow arches over
+		// the fermata even on a compact three-note slur.
+		const fermataClearances = bow.isGrace
+			? []
+			: interiorNotes
+					.flatMap((n) => bow.obstacles.fermataBoxes(n, bow.bulgeUp))
+					.flatMap((box) => {
+						const outerY = bow.bulgeUp ? box.getY() : box.getY() + box.getH();
+						return [0.25, 0.5, 0.75].map((f) =>
+							needAt(box.getX() + f * box.getW(), outerY, SLUR_FERMATA_GAP),
+						);
+					});
+		// A nested outer slur pulls its shoulders closer to the ends so it clears an inner
+		// slur near a shared endpoint without ballooning high across the middle.
+		let baseShoulder = SLUR_SHOULDER;
+		if (bow.isGrace) {
+			baseShoulder = 0.25;
+		} else if (extraObstacles.length > 0) {
+			baseShoulder = 0.09;
+		}
 		// Only the notes clear of both ends set the bow's depth. Math.max seeded
 		// with 0, not spread bare: with no mid-span notes an unseeded Math.min
 		// against the cap would return the cap itself.
+		const inMiddle = (c: { s: number }) =>
+			c.s >= SLUR_END_ZONE && c.s <= 1 - SLUR_END_ZONE;
 		const inflation = Math.max(
 			0,
 			...clearances
-				.filter((c) => c.s >= SLUR_END_ZONE && c.s <= 1 - SLUR_END_ZONE)
-				.map(
-					(c) => c.need / riseFactor(c.s, bow.isGrace ? 0.25 : SLUR_SHOULDER),
-				),
+				.filter(inMiddle)
+				.map((c) => c.need / riseFactor(c.s, baseShoulder)),
+		);
+		const fermataInflation = Math.max(
+			0,
+			...fermataClearances
+				.filter(inMiddle)
+				.map((c) => c.need / riseFactor(c.s, baseShoulder)),
 		);
 		// One ceiling for both knobs: how far past its base lift the curve may stand
 		// off the chord at all. Beyond this it stops reading as a bow, whether it
@@ -132,18 +172,19 @@ export class SlurShape {
 		// clear everything a span might hold (a second voice, the stem of a run
 		// beamed into the other hand) and shouldn't deform itself pretending to.
 		const reach = width * SLUR_MAX_ASPECT;
+		const maxCpY = bow.isGrace ? Infinity : SLUR_MAX_CP_Y;
 		const cpY = Math.max(
 			floor,
-			Math.min(reach, inflation, bow.isGrace ? Infinity : SLUR_MAX_CP_Y),
+			Math.min(reach, inflation, maxCpY),
+			Math.min(fermataInflation, maxCpY),
 		);
 		// A bow held under the ceiling flattens instead: its control points slide
 		// toward the ends, as little as clears the notes the depth was for. Only the
 		// ceiling does this: a short slur the aspect cap stopped keeps its shape.
-		const capped = cpY === SLUR_MAX_CP_Y && inflation > cpY;
-		const middle = clearances.filter(
-			(c) => c.s >= SLUR_END_ZONE && c.s <= 1 - SLUR_END_ZONE,
-		);
-		let shoulder = bow.isGrace ? 0.25 : SLUR_SHOULDER;
+		const capped =
+			cpY === SLUR_MAX_CP_Y && Math.max(inflation, fermataInflation) > cpY;
+		const middle = [...clearances, ...fermataClearances].filter(inMiddle);
+		let shoulder = baseShoulder;
 		while (
 			capped &&
 			shoulder > SLUR_MIN_SHOULDER &&
@@ -152,14 +193,21 @@ export class SlurShape {
 			shoulder = Math.max(SLUR_MIN_SHOULDER, shoulder - 0.01);
 		}
 		// Whatever that bow still doesn't reach, the endpoints make up by rising,
-		// out of what's left of the same budget.
+		// out of what's left of the same budget (fermatas bypass the aspect ceiling).
 		const shortfall = Math.max(
 			0,
 			...clearances.map((c) => c.need - riseFactor(c.s, shoulder) * cpY),
 		);
-		const yShift =
-			bow.baseYShift + Math.min(shortfall, Math.max(0, reach - 0.75 * cpY));
-		const blocked = clearances.some(
+		const fermataShortfall = Math.max(
+			0,
+			...fermataClearances.map((c) => c.need - riseFactor(c.s, shoulder) * cpY),
+		);
+		const yShift = Math.max(
+			bow.baseYShift + Math.min(shortfall, Math.max(0, reach - 0.75 * cpY)),
+			bow.baseYShift + fermataShortfall,
+			minYShift,
+		);
+		const blocked = [...clearances, ...fermataClearances].some(
 			(c) =>
 				c.need - riseFactor(c.s, shoulder) * cpY - (yShift - bow.baseYShift) >
 				SLUR_GHOST_OVERLAP,
@@ -169,6 +217,11 @@ export class SlurShape {
 		this.shoulder = shoulder;
 		this.width = width;
 		this.blocked = blocked;
+	}
+
+	/** How far the curve's near edge stands off its raw chord at horizontal fraction `s`. */
+	riseAt(s: number): number {
+		return this.yShift + riseFactor(s, this.shoulder) * this.cpY;
 	}
 }
 
